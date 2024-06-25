@@ -95,7 +95,7 @@ UPB_INLINE upb_StringView xds_type_matcher_v3_CelMatcher_description(const xds_t
 
 UPB_INLINE void xds_type_matcher_v3_CelMatcher_set_expr_match(xds_type_matcher_v3_CelMatcher *msg, struct xds_type_v3_CelExpression* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_v3_CelExpression* xds_type_matcher_v3_CelMatcher_mutable_expr_match(xds_type_matcher_v3_CelMatcher* msg, upb_Arena* arena) {
   struct xds_type_v3_CelExpression* sub = (struct xds_type_v3_CelExpression*)xds_type_matcher_v3_CelMatcher_expr_match(msg);
@@ -107,7 +107,7 @@ UPB_INLINE struct xds_type_v3_CelExpression* xds_type_matcher_v3_CelMatcher_muta
 }
 UPB_INLINE void xds_type_matcher_v3_CelMatcher_set_description(xds_type_matcher_v3_CelMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

@@ -141,7 +141,7 @@ UPB_INLINE bool envoy_type_matcher_v3_MetadataMatcher_invert(const envoy_type_ma
 
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_set_filter(envoy_type_matcher_v3_MetadataMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE envoy_type_matcher_v3_MetadataMatcher_PathSegment** envoy_type_matcher_v3_MetadataMatcher_mutable_path(envoy_type_matcher_v3_MetadataMatcher* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -175,7 +175,7 @@ UPB_INLINE struct envoy_type_matcher_v3_MetadataMatcher_PathSegment* envoy_type_
 }
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_set_value(envoy_type_matcher_v3_MetadataMatcher *msg, struct envoy_type_matcher_v3_ValueMatcher* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher* envoy_type_matcher_v3_MetadataMatcher_mutable_value(envoy_type_matcher_v3_MetadataMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_ValueMatcher* sub = (struct envoy_type_matcher_v3_ValueMatcher*)envoy_type_matcher_v3_MetadataMatcher_value(msg);
@@ -187,7 +187,7 @@ UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher* envoy_type_matcher_v3_Meta
 }
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_set_invert(envoy_type_matcher_v3_MetadataMatcher *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.type.matcher.v3.MetadataMatcher.PathSegment */
@@ -254,7 +254,7 @@ UPB_INLINE bool envoy_type_matcher_v3_MetadataMatcher_PathSegment_has_key(const 
 
 UPB_INLINE void envoy_type_matcher_v3_MetadataMatcher_PathSegment_set_key(envoy_type_matcher_v3_MetadataMatcher_PathSegment *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

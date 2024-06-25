@@ -83,7 +83,7 @@ UPB_INLINE bool envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSess
 
 UPB_INLINE void envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_set_cookie(envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState *msg, struct envoy_type_http_v3_Cookie* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_http_v3_Cookie* envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_mutable_cookie(envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState* msg, upb_Arena* arena) {
   struct envoy_type_http_v3_Cookie* sub = (struct envoy_type_http_v3_Cookie*)envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_cookie(msg);

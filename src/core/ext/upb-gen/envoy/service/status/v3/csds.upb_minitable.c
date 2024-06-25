@@ -36,6 +36,9 @@ const upb_MiniTable envoy__service__status__v3__ClientStatusRequest_msg_init = {
   &envoy_service_status_v3_ClientStatusRequest_submsgs[0],
   &envoy_service_status_v3_ClientStatusRequest__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.status.v3.ClientStatusRequest",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_prm_1bt_maxmaxb},
@@ -66,6 +69,9 @@ const upb_MiniTable envoy__service__status__v3__PerXdsConfig_msg_init = {
   &envoy_service_status_v3_PerXdsConfig_submsgs[0],
   &envoy_service_status_v3_PerXdsConfig__fields[0],
   UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.status.v3.PerXdsConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -95,6 +101,9 @@ const upb_MiniTable envoy__service__status__v3__ClientConfig_msg_init = {
   &envoy_service_status_v3_ClientConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.status.v3.ClientConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -129,6 +138,9 @@ const upb_MiniTable envoy__service__status__v3__ClientConfig__GenericXdsConfig_m
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[0],
   UPB_SIZE(64, 96), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.status.v3.ClientConfig.GenericXdsConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f00000a, &upb_pss_1bt},
@@ -161,6 +173,9 @@ const upb_MiniTable envoy__service__status__v3__ClientStatusResponse_msg_init = 
   &envoy_service_status_v3_ClientStatusResponse_submsgs[0],
   &envoy_service_status_v3_ClientStatusResponse__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.status.v3.ClientStatusResponse",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},

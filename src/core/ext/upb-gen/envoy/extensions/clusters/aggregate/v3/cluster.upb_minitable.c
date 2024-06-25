@@ -23,6 +23,9 @@ const upb_MiniTable envoy__extensions__clusters__aggregate__v3__ClusterConfig_ms
   NULL,
   &envoy_extensions_clusters_aggregate_v3_ClusterConfig__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.clusters.aggregate.v3.ClusterConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prs_1bt},

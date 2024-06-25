@@ -36,6 +36,9 @@ const upb_MiniTable envoy__config__trace__v3__OpenTelemetryConfig_msg_init = {
   &envoy_config_trace_v3_OpenTelemetryConfig_submsgs[0],
   &envoy_config_trace_v3_OpenTelemetryConfig__fields[0],
   UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.OpenTelemetryConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

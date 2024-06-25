@@ -43,6 +43,9 @@ const upb_MiniTable envoy__extensions__filters__http__router__v3__Router_msg_ini
   &envoy_extensions_filters_http_router_v3_Router_submsgs[0],
   &envoy_extensions_filters_http_router_v3_Router__fields[0],
   UPB_SIZE(48, 56), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.router.v3.Router",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -76,6 +79,9 @@ const upb_MiniTable envoy__extensions__filters__http__router__v3__Router__Upstre
   &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_submsgs[0],
   &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.router.v3.Router.UpstreamAccessLogOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000900003f000008, &upb_psb1_1bt},

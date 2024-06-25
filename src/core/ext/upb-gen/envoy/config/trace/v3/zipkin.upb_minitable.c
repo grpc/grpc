@@ -36,6 +36,9 @@ const upb_MiniTable envoy__config__trace__v3__ZipkinConfig_msg_init = {
   &envoy_config_trace_v3_ZipkinConfig_submsgs[0],
   &envoy_config_trace_v3_ZipkinConfig__fields[0],
   UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.ZipkinConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f00000a, &upb_pss_1bt},

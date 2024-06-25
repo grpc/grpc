@@ -29,6 +29,9 @@ const upb_MiniTable google__api__expr__v1alpha1__ParsedExpr_msg_init = {
   &google_api_expr_v1alpha1_ParsedExpr_submsgs[0],
   &google_api_expr_v1alpha1_ParsedExpr__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.ParsedExpr",
+#endif
 };
 
 static const upb_MiniTableSub google_api_expr_v1alpha1_Expr_submsgs[7] = {
@@ -56,6 +59,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr_msg_init = {
   &google_api_expr_v1alpha1_Expr_submsgs[0],
   &google_api_expr_v1alpha1_Expr__fields[0],
   UPB_SIZE(24, 32), 8, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -84,6 +90,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Ident_msg_init = {
   NULL,
   &google_api_expr_v1alpha1_Expr_Ident__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.Ident",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -104,6 +113,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Select_msg_init = {
   &google_api_expr_v1alpha1_Expr_Select_submsgs[0],
   &google_api_expr_v1alpha1_Expr_Select__fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.Select",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -127,6 +139,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Call_msg_init = {
   &google_api_expr_v1alpha1_Expr_Call_submsgs[0],
   &google_api_expr_v1alpha1_Expr_Call__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.Call",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -147,6 +162,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__CreateList_msg_init = {
   &google_api_expr_v1alpha1_Expr_CreateList_submsgs[0],
   &google_api_expr_v1alpha1_Expr_CreateList__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.CreateList",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -166,6 +184,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__CreateStruct_msg_init = {
   &google_api_expr_v1alpha1_Expr_CreateStruct_submsgs[0],
   &google_api_expr_v1alpha1_Expr_CreateStruct__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.CreateStruct",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -190,6 +211,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__CreateStruct__Entry_msg_i
   &google_api_expr_v1alpha1_Expr_CreateStruct_Entry_submsgs[0],
   &google_api_expr_v1alpha1_Expr_CreateStruct_Entry__fields[0],
   UPB_SIZE(40, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.CreateStruct.Entry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000003f000008, &upb_psv8_1bt},
@@ -220,6 +244,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Expr__Comprehension_msg_init = 
   &google_api_expr_v1alpha1_Expr_Comprehension_submsgs[0],
   &google_api_expr_v1alpha1_Expr_Comprehension__fields[0],
   UPB_SIZE(48, 88), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Expr.Comprehension",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -249,6 +276,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Constant_msg_init = {
   &google_api_expr_v1alpha1_Constant_submsgs[0],
   &google_api_expr_v1alpha1_Constant__fields[0],
   UPB_SIZE(24, 32), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.Constant",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0010000801000008, &upb_pov4_1bt},
@@ -286,6 +316,9 @@ const upb_MiniTable google__api__expr__v1alpha1__SourceInfo_msg_init = {
   &google_api_expr_v1alpha1_SourceInfo_submsgs[0],
   &google_api_expr_v1alpha1_SourceInfo__fields[0],
   UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.SourceInfo",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -303,6 +336,9 @@ const upb_MiniTable google__api__expr__v1alpha1__SourceInfo__PositionsEntry_msg_
   NULL,
   &google_api_expr_v1alpha1_SourceInfo_PositionsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.SourceInfo.PositionsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f000008, &upb_psv8_1bt},
@@ -324,6 +360,9 @@ const upb_MiniTable google__api__expr__v1alpha1__SourceInfo__MacroCallsEntry_msg
   &google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry_submsgs[0],
   &google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.SourceInfo.MacroCallsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f000008, &upb_psv8_1bt},
@@ -341,6 +380,9 @@ const upb_MiniTable google__api__expr__v1alpha1__SourcePosition_msg_init = {
   NULL,
   &google_api_expr_v1alpha1_SourcePosition__fields[0],
   UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.expr.v1alpha1.SourcePosition",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f00000a, &upb_pss_1bt},

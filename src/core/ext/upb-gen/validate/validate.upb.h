@@ -480,7 +480,7 @@ UPB_INLINE bool validate_FieldRules_has_timestamp(const validate_FieldRules* msg
 
 UPB_INLINE void validate_FieldRules_set_float(validate_FieldRules *msg, validate_FloatRules* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_FloatRules* validate_FieldRules_mutable_float(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_FloatRules* sub = (struct validate_FloatRules*)validate_FieldRules_float(msg);
@@ -492,7 +492,7 @@ UPB_INLINE struct validate_FloatRules* validate_FieldRules_mutable_float(validat
 }
 UPB_INLINE void validate_FieldRules_set_double(validate_FieldRules *msg, validate_DoubleRules* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_DoubleRules* validate_FieldRules_mutable_double(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_DoubleRules* sub = (struct validate_DoubleRules*)validate_FieldRules_double(msg);
@@ -504,7 +504,7 @@ UPB_INLINE struct validate_DoubleRules* validate_FieldRules_mutable_double(valid
 }
 UPB_INLINE void validate_FieldRules_set_int32(validate_FieldRules *msg, validate_Int32Rules* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_Int32Rules* validate_FieldRules_mutable_int32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Int32Rules* sub = (struct validate_Int32Rules*)validate_FieldRules_int32(msg);
@@ -516,7 +516,7 @@ UPB_INLINE struct validate_Int32Rules* validate_FieldRules_mutable_int32(validat
 }
 UPB_INLINE void validate_FieldRules_set_int64(validate_FieldRules *msg, validate_Int64Rules* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_Int64Rules* validate_FieldRules_mutable_int64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Int64Rules* sub = (struct validate_Int64Rules*)validate_FieldRules_int64(msg);
@@ -528,7 +528,7 @@ UPB_INLINE struct validate_Int64Rules* validate_FieldRules_mutable_int64(validat
 }
 UPB_INLINE void validate_FieldRules_set_uint32(validate_FieldRules *msg, validate_UInt32Rules* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_UInt32Rules* validate_FieldRules_mutable_uint32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_UInt32Rules* sub = (struct validate_UInt32Rules*)validate_FieldRules_uint32(msg);
@@ -540,7 +540,7 @@ UPB_INLINE struct validate_UInt32Rules* validate_FieldRules_mutable_uint32(valid
 }
 UPB_INLINE void validate_FieldRules_set_uint64(validate_FieldRules *msg, validate_UInt64Rules* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_UInt64Rules* validate_FieldRules_mutable_uint64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_UInt64Rules* sub = (struct validate_UInt64Rules*)validate_FieldRules_uint64(msg);
@@ -552,7 +552,7 @@ UPB_INLINE struct validate_UInt64Rules* validate_FieldRules_mutable_uint64(valid
 }
 UPB_INLINE void validate_FieldRules_set_sint32(validate_FieldRules *msg, validate_SInt32Rules* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_SInt32Rules* validate_FieldRules_mutable_sint32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SInt32Rules* sub = (struct validate_SInt32Rules*)validate_FieldRules_sint32(msg);
@@ -564,7 +564,7 @@ UPB_INLINE struct validate_SInt32Rules* validate_FieldRules_mutable_sint32(valid
 }
 UPB_INLINE void validate_FieldRules_set_sint64(validate_FieldRules *msg, validate_SInt64Rules* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_SInt64Rules* validate_FieldRules_mutable_sint64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SInt64Rules* sub = (struct validate_SInt64Rules*)validate_FieldRules_sint64(msg);
@@ -576,7 +576,7 @@ UPB_INLINE struct validate_SInt64Rules* validate_FieldRules_mutable_sint64(valid
 }
 UPB_INLINE void validate_FieldRules_set_fixed32(validate_FieldRules *msg, validate_Fixed32Rules* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_Fixed32Rules* validate_FieldRules_mutable_fixed32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Fixed32Rules* sub = (struct validate_Fixed32Rules*)validate_FieldRules_fixed32(msg);
@@ -588,7 +588,7 @@ UPB_INLINE struct validate_Fixed32Rules* validate_FieldRules_mutable_fixed32(val
 }
 UPB_INLINE void validate_FieldRules_set_fixed64(validate_FieldRules *msg, validate_Fixed64Rules* value) {
   const upb_MiniTableField field = {10, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_Fixed64Rules* validate_FieldRules_mutable_fixed64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Fixed64Rules* sub = (struct validate_Fixed64Rules*)validate_FieldRules_fixed64(msg);
@@ -600,7 +600,7 @@ UPB_INLINE struct validate_Fixed64Rules* validate_FieldRules_mutable_fixed64(val
 }
 UPB_INLINE void validate_FieldRules_set_sfixed32(validate_FieldRules *msg, validate_SFixed32Rules* value) {
   const upb_MiniTableField field = {11, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_SFixed32Rules* validate_FieldRules_mutable_sfixed32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SFixed32Rules* sub = (struct validate_SFixed32Rules*)validate_FieldRules_sfixed32(msg);
@@ -612,7 +612,7 @@ UPB_INLINE struct validate_SFixed32Rules* validate_FieldRules_mutable_sfixed32(v
 }
 UPB_INLINE void validate_FieldRules_set_sfixed64(validate_FieldRules *msg, validate_SFixed64Rules* value) {
   const upb_MiniTableField field = {12, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_SFixed64Rules* validate_FieldRules_mutable_sfixed64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SFixed64Rules* sub = (struct validate_SFixed64Rules*)validate_FieldRules_sfixed64(msg);
@@ -624,7 +624,7 @@ UPB_INLINE struct validate_SFixed64Rules* validate_FieldRules_mutable_sfixed64(v
 }
 UPB_INLINE void validate_FieldRules_set_bool(validate_FieldRules *msg, validate_BoolRules* value) {
   const upb_MiniTableField field = {13, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_BoolRules* validate_FieldRules_mutable_bool(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_BoolRules* sub = (struct validate_BoolRules*)validate_FieldRules_bool(msg);
@@ -636,7 +636,7 @@ UPB_INLINE struct validate_BoolRules* validate_FieldRules_mutable_bool(validate_
 }
 UPB_INLINE void validate_FieldRules_set_string(validate_FieldRules *msg, validate_StringRules* value) {
   const upb_MiniTableField field = {14, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_StringRules* validate_FieldRules_mutable_string(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_StringRules* sub = (struct validate_StringRules*)validate_FieldRules_string(msg);
@@ -648,7 +648,7 @@ UPB_INLINE struct validate_StringRules* validate_FieldRules_mutable_string(valid
 }
 UPB_INLINE void validate_FieldRules_set_bytes(validate_FieldRules *msg, validate_BytesRules* value) {
   const upb_MiniTableField field = {15, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_BytesRules* validate_FieldRules_mutable_bytes(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_BytesRules* sub = (struct validate_BytesRules*)validate_FieldRules_bytes(msg);
@@ -660,7 +660,7 @@ UPB_INLINE struct validate_BytesRules* validate_FieldRules_mutable_bytes(validat
 }
 UPB_INLINE void validate_FieldRules_set_enum(validate_FieldRules *msg, validate_EnumRules* value) {
   const upb_MiniTableField field = {16, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_EnumRules* validate_FieldRules_mutable_enum(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_EnumRules* sub = (struct validate_EnumRules*)validate_FieldRules_enum(msg);
@@ -672,7 +672,7 @@ UPB_INLINE struct validate_EnumRules* validate_FieldRules_mutable_enum(validate_
 }
 UPB_INLINE void validate_FieldRules_set_message(validate_FieldRules *msg, validate_MessageRules* value) {
   const upb_MiniTableField field = {17, UPB_SIZE(12, 16), 64, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_MessageRules* validate_FieldRules_mutable_message(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_MessageRules* sub = (struct validate_MessageRules*)validate_FieldRules_message(msg);
@@ -684,7 +684,7 @@ UPB_INLINE struct validate_MessageRules* validate_FieldRules_mutable_message(val
 }
 UPB_INLINE void validate_FieldRules_set_repeated(validate_FieldRules *msg, validate_RepeatedRules* value) {
   const upb_MiniTableField field = {18, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_RepeatedRules* validate_FieldRules_mutable_repeated(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_RepeatedRules* sub = (struct validate_RepeatedRules*)validate_FieldRules_repeated(msg);
@@ -696,7 +696,7 @@ UPB_INLINE struct validate_RepeatedRules* validate_FieldRules_mutable_repeated(v
 }
 UPB_INLINE void validate_FieldRules_set_map(validate_FieldRules *msg, validate_MapRules* value) {
   const upb_MiniTableField field = {19, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_MapRules* validate_FieldRules_mutable_map(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_MapRules* sub = (struct validate_MapRules*)validate_FieldRules_map(msg);
@@ -708,7 +708,7 @@ UPB_INLINE struct validate_MapRules* validate_FieldRules_mutable_map(validate_Fi
 }
 UPB_INLINE void validate_FieldRules_set_any(validate_FieldRules *msg, validate_AnyRules* value) {
   const upb_MiniTableField field = {20, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_AnyRules* validate_FieldRules_mutable_any(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_AnyRules* sub = (struct validate_AnyRules*)validate_FieldRules_any(msg);
@@ -720,7 +720,7 @@ UPB_INLINE struct validate_AnyRules* validate_FieldRules_mutable_any(validate_Fi
 }
 UPB_INLINE void validate_FieldRules_set_duration(validate_FieldRules *msg, validate_DurationRules* value) {
   const upb_MiniTableField field = {21, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_DurationRules* validate_FieldRules_mutable_duration(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_DurationRules* sub = (struct validate_DurationRules*)validate_FieldRules_duration(msg);
@@ -732,7 +732,7 @@ UPB_INLINE struct validate_DurationRules* validate_FieldRules_mutable_duration(v
 }
 UPB_INLINE void validate_FieldRules_set_timestamp(validate_FieldRules *msg, validate_TimestampRules* value) {
   const upb_MiniTableField field = {22, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_TimestampRules* validate_FieldRules_mutable_timestamp(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_TimestampRules* sub = (struct validate_TimestampRules*)validate_FieldRules_timestamp(msg);
@@ -942,23 +942,23 @@ UPB_INLINE bool validate_FloatRules_has_ignore_empty(const validate_FloatRules* 
 
 UPB_INLINE void validate_FloatRules_set_const(validate_FloatRules *msg, float value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_lt(validate_FloatRules *msg, float value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_lte(validate_FloatRules *msg, float value) {
   const upb_MiniTableField field = {3, 20, 66, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_gt(validate_FloatRules *msg, float value) {
   const upb_MiniTableField field = {4, 24, 67, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_gte(validate_FloatRules *msg, float value) {
   const upb_MiniTableField field = {5, 28, 68, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE float* validate_FloatRules_mutable_in(validate_FloatRules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(32, 40), 0, kUpb_NoSub, 2, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1018,7 +1018,7 @@ UPB_INLINE bool validate_FloatRules_add_not_in(validate_FloatRules* msg, float v
 }
 UPB_INLINE void validate_FloatRules_set_ignore_empty(validate_FloatRules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(40, 32), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.DoubleRules */
@@ -1220,23 +1220,23 @@ UPB_INLINE bool validate_DoubleRules_has_ignore_empty(const validate_DoubleRules
 
 UPB_INLINE void validate_DoubleRules_set_const(validate_DoubleRules *msg, double value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_lt(validate_DoubleRules *msg, double value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_lte(validate_DoubleRules *msg, double value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_gt(validate_DoubleRules *msg, double value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 40), 67, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_gte(validate_DoubleRules *msg, double value) {
   const upb_MiniTableField field = {5, UPB_SIZE(56, 48), 68, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE double* validate_DoubleRules_mutable_in(validate_DoubleRules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1296,7 +1296,7 @@ UPB_INLINE bool validate_DoubleRules_add_not_in(validate_DoubleRules* msg, doubl
 }
 UPB_INLINE void validate_DoubleRules_set_ignore_empty(validate_DoubleRules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 9), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.Int32Rules */
@@ -1498,23 +1498,23 @@ UPB_INLINE bool validate_Int32Rules_has_ignore_empty(const validate_Int32Rules* 
 
 UPB_INLINE void validate_Int32Rules_set_const(validate_Int32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_lt(validate_Int32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_lte(validate_Int32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {3, 20, 66, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_gt(validate_Int32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {4, 24, 67, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_gte(validate_Int32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {5, 28, 68, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int32_t* validate_Int32Rules_mutable_in(validate_Int32Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(32, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1574,7 +1574,7 @@ UPB_INLINE bool validate_Int32Rules_add_not_in(validate_Int32Rules* msg, int32_t
 }
 UPB_INLINE void validate_Int32Rules_set_ignore_empty(validate_Int32Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(40, 32), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.Int64Rules */
@@ -1776,23 +1776,23 @@ UPB_INLINE bool validate_Int64Rules_has_ignore_empty(const validate_Int64Rules* 
 
 UPB_INLINE void validate_Int64Rules_set_const(validate_Int64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_lt(validate_Int64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_lte(validate_Int64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_gt(validate_Int64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 40), 67, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_gte(validate_Int64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(56, 48), 68, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int64_t* validate_Int64Rules_mutable_in(validate_Int64Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1852,7 +1852,7 @@ UPB_INLINE bool validate_Int64Rules_add_not_in(validate_Int64Rules* msg, int64_t
 }
 UPB_INLINE void validate_Int64Rules_set_ignore_empty(validate_Int64Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 9), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.UInt32Rules */
@@ -2054,23 +2054,23 @@ UPB_INLINE bool validate_UInt32Rules_has_ignore_empty(const validate_UInt32Rules
 
 UPB_INLINE void validate_UInt32Rules_set_const(validate_UInt32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_lt(validate_UInt32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_lte(validate_UInt32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {3, 20, 66, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_gt(validate_UInt32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {4, 24, 67, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_gte(validate_UInt32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {5, 28, 68, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE uint32_t* validate_UInt32Rules_mutable_in(validate_UInt32Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(32, 40), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -2130,7 +2130,7 @@ UPB_INLINE bool validate_UInt32Rules_add_not_in(validate_UInt32Rules* msg, uint3
 }
 UPB_INLINE void validate_UInt32Rules_set_ignore_empty(validate_UInt32Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(40, 32), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.UInt64Rules */
@@ -2332,23 +2332,23 @@ UPB_INLINE bool validate_UInt64Rules_has_ignore_empty(const validate_UInt64Rules
 
 UPB_INLINE void validate_UInt64Rules_set_const(validate_UInt64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_lt(validate_UInt64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_lte(validate_UInt64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_gt(validate_UInt64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 40), 67, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_gte(validate_UInt64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(56, 48), 68, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE uint64_t* validate_UInt64Rules_mutable_in(validate_UInt64Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -2408,7 +2408,7 @@ UPB_INLINE bool validate_UInt64Rules_add_not_in(validate_UInt64Rules* msg, uint6
 }
 UPB_INLINE void validate_UInt64Rules_set_ignore_empty(validate_UInt64Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 9), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.SInt32Rules */
@@ -2610,23 +2610,23 @@ UPB_INLINE bool validate_SInt32Rules_has_ignore_empty(const validate_SInt32Rules
 
 UPB_INLINE void validate_SInt32Rules_set_const(validate_SInt32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_lt(validate_SInt32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_lte(validate_SInt32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {3, 20, 66, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_gt(validate_SInt32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {4, 24, 67, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_gte(validate_SInt32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {5, 28, 68, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int32_t* validate_SInt32Rules_mutable_in(validate_SInt32Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(32, 40), 0, kUpb_NoSub, 17, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -2686,7 +2686,7 @@ UPB_INLINE bool validate_SInt32Rules_add_not_in(validate_SInt32Rules* msg, int32
 }
 UPB_INLINE void validate_SInt32Rules_set_ignore_empty(validate_SInt32Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(40, 32), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.SInt64Rules */
@@ -2888,23 +2888,23 @@ UPB_INLINE bool validate_SInt64Rules_has_ignore_empty(const validate_SInt64Rules
 
 UPB_INLINE void validate_SInt64Rules_set_const(validate_SInt64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_lt(validate_SInt64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_lte(validate_SInt64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_gt(validate_SInt64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 40), 67, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_gte(validate_SInt64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(56, 48), 68, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int64_t* validate_SInt64Rules_mutable_in(validate_SInt64Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 18, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -2964,7 +2964,7 @@ UPB_INLINE bool validate_SInt64Rules_add_not_in(validate_SInt64Rules* msg, int64
 }
 UPB_INLINE void validate_SInt64Rules_set_ignore_empty(validate_SInt64Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 9), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.Fixed32Rules */
@@ -3166,23 +3166,23 @@ UPB_INLINE bool validate_Fixed32Rules_has_ignore_empty(const validate_Fixed32Rul
 
 UPB_INLINE void validate_Fixed32Rules_set_const(validate_Fixed32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_lt(validate_Fixed32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_lte(validate_Fixed32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {3, 20, 66, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_gt(validate_Fixed32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {4, 24, 67, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_gte(validate_Fixed32Rules *msg, uint32_t value) {
   const upb_MiniTableField field = {5, 28, 68, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_in(validate_Fixed32Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(32, 40), 0, kUpb_NoSub, 7, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -3242,7 +3242,7 @@ UPB_INLINE bool validate_Fixed32Rules_add_not_in(validate_Fixed32Rules* msg, uin
 }
 UPB_INLINE void validate_Fixed32Rules_set_ignore_empty(validate_Fixed32Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(40, 32), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.Fixed64Rules */
@@ -3444,23 +3444,23 @@ UPB_INLINE bool validate_Fixed64Rules_has_ignore_empty(const validate_Fixed64Rul
 
 UPB_INLINE void validate_Fixed64Rules_set_const(validate_Fixed64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_lt(validate_Fixed64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_lte(validate_Fixed64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_gt(validate_Fixed64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 40), 67, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_gte(validate_Fixed64Rules *msg, uint64_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(56, 48), 68, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_in(validate_Fixed64Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 6, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -3520,7 +3520,7 @@ UPB_INLINE bool validate_Fixed64Rules_add_not_in(validate_Fixed64Rules* msg, uin
 }
 UPB_INLINE void validate_Fixed64Rules_set_ignore_empty(validate_Fixed64Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 9), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.SFixed32Rules */
@@ -3722,23 +3722,23 @@ UPB_INLINE bool validate_SFixed32Rules_has_ignore_empty(const validate_SFixed32R
 
 UPB_INLINE void validate_SFixed32Rules_set_const(validate_SFixed32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_lt(validate_SFixed32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_lte(validate_SFixed32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {3, 20, 66, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_gt(validate_SFixed32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {4, 24, 67, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_gte(validate_SFixed32Rules *msg, int32_t value) {
   const upb_MiniTableField field = {5, 28, 68, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int32_t* validate_SFixed32Rules_mutable_in(validate_SFixed32Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(32, 40), 0, kUpb_NoSub, 15, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -3798,7 +3798,7 @@ UPB_INLINE bool validate_SFixed32Rules_add_not_in(validate_SFixed32Rules* msg, i
 }
 UPB_INLINE void validate_SFixed32Rules_set_ignore_empty(validate_SFixed32Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(40, 32), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.SFixed64Rules */
@@ -4000,23 +4000,23 @@ UPB_INLINE bool validate_SFixed64Rules_has_ignore_empty(const validate_SFixed64R
 
 UPB_INLINE void validate_SFixed64Rules_set_const(validate_SFixed64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_lt(validate_SFixed64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_lte(validate_SFixed64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_gt(validate_SFixed64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 40), 67, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_gte(validate_SFixed64Rules *msg, int64_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(56, 48), 68, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int64_t* validate_SFixed64Rules_mutable_in(validate_SFixed64Rules* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 16, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -4076,7 +4076,7 @@ UPB_INLINE bool validate_SFixed64Rules_add_not_in(validate_SFixed64Rules* msg, i
 }
 UPB_INLINE void validate_SFixed64Rules_set_ignore_empty(validate_SFixed64Rules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 9), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.BoolRules */
@@ -4134,7 +4134,7 @@ UPB_INLINE bool validate_BoolRules_has_const(const validate_BoolRules* msg) {
 
 UPB_INLINE void validate_BoolRules_set_const(validate_BoolRules *msg, bool value) {
   const upb_MiniTableField field = {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.StringRules */
@@ -4642,39 +4642,39 @@ UPB_INLINE bool validate_StringRules_has_ignore_empty(const validate_StringRules
 
 UPB_INLINE void validate_StringRules_set_const(validate_StringRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(32, 24), 64, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_min_len(validate_StringRules *msg, uint64_t value) {
   const upb_MiniTableField field = {2, 40, 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_max_len(validate_StringRules *msg, uint64_t value) {
   const upb_MiniTableField field = {3, 48, 66, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_min_bytes(validate_StringRules *msg, uint64_t value) {
   const upb_MiniTableField field = {4, 56, 67, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_max_bytes(validate_StringRules *msg, uint64_t value) {
   const upb_MiniTableField field = {5, 64, 68, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_pattern(validate_StringRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {6, 72, 69, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_prefix(validate_StringRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {7, UPB_SIZE(80, 88), 70, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_suffix(validate_StringRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {8, UPB_SIZE(88, 104), 71, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_contains(validate_StringRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {9, UPB_SIZE(96, 120), 72, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* validate_StringRules_mutable_in(validate_StringRules* msg, size_t* size) {
   upb_MiniTableField field = {10, UPB_SIZE(12, 136), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -4734,63 +4734,63 @@ UPB_INLINE bool validate_StringRules_add_not_in(validate_StringRules* msg, upb_S
 }
 UPB_INLINE void validate_StringRules_set_email(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {12, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_hostname(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {13, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ip(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {14, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ipv4(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {15, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ipv6(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {16, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_uri(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {17, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_uri_ref(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {18, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_len(validate_StringRules *msg, uint64_t value) {
   const upb_MiniTableField field = {19, UPB_SIZE(104, 152), 73, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_len_bytes(validate_StringRules *msg, uint64_t value) {
   const upb_MiniTableField field = {20, UPB_SIZE(112, 160), 74, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_address(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {21, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_uuid(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {22, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_not_contains(validate_StringRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {23, UPB_SIZE(120, 168), 75, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_well_known_regex(validate_StringRules *msg, int32_t value) {
   const upb_MiniTableField field = {24, UPB_SIZE(28, 20), UPB_SIZE(-21, -13), 0, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_strict(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {25, UPB_SIZE(24, 16), 76, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ignore_empty(validate_StringRules *msg, bool value) {
   const upb_MiniTableField field = {26, UPB_SIZE(25, 17), 77, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.BytesRules */
@@ -5099,31 +5099,31 @@ UPB_INLINE bool validate_BytesRules_has_ignore_empty(const validate_BytesRules* 
 
 UPB_INLINE void validate_BytesRules_set_const(validate_BytesRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 24), 64, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_min_len(validate_BytesRules *msg, uint64_t value) {
   const upb_MiniTableField field = {2, 40, 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_max_len(validate_BytesRules *msg, uint64_t value) {
   const upb_MiniTableField field = {3, 48, 66, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_pattern(validate_BytesRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {4, 56, 67, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_prefix(validate_BytesRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {5, UPB_SIZE(64, 72), 68, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_suffix(validate_BytesRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {6, UPB_SIZE(72, 88), 69, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_contains(validate_BytesRules *msg, upb_StringView value) {
   const upb_MiniTableField field = {7, UPB_SIZE(80, 104), 70, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* validate_BytesRules_mutable_in(validate_BytesRules* msg, size_t* size) {
   upb_MiniTableField field = {8, UPB_SIZE(12, 120), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -5183,23 +5183,23 @@ UPB_INLINE bool validate_BytesRules_add_not_in(validate_BytesRules* msg, upb_Str
 }
 UPB_INLINE void validate_BytesRules_set_ip(validate_BytesRules *msg, bool value) {
   const upb_MiniTableField field = {10, 10, UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_ipv4(validate_BytesRules *msg, bool value) {
   const upb_MiniTableField field = {11, 10, UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_ipv6(validate_BytesRules *msg, bool value) {
   const upb_MiniTableField field = {12, 10, UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_len(validate_BytesRules *msg, uint64_t value) {
   const upb_MiniTableField field = {13, UPB_SIZE(88, 136), 71, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_ignore_empty(validate_BytesRules *msg, bool value) {
   const upb_MiniTableField field = {14, UPB_SIZE(24, 16), 72, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.EnumRules */
@@ -5337,11 +5337,11 @@ UPB_INLINE upb_Array* _validate_EnumRules_not_in_mutable_upb_array(validate_Enum
 
 UPB_INLINE void validate_EnumRules_set_const(validate_EnumRules *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 64, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_EnumRules_set_defined_only(validate_EnumRules *msg, bool value) {
   const upb_MiniTableField field = {2, 16, 65, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int32_t* validate_EnumRules_mutable_in(validate_EnumRules* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(20, 24), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -5471,11 +5471,11 @@ UPB_INLINE bool validate_MessageRules_has_required(const validate_MessageRules* 
 
 UPB_INLINE void validate_MessageRules_set_skip(validate_MessageRules *msg, bool value) {
   const upb_MiniTableField field = {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_MessageRules_set_required(validate_MessageRules *msg, bool value) {
   const upb_MiniTableField field = {2, 10, 65, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.RepeatedRules */
@@ -5597,19 +5597,19 @@ UPB_INLINE bool validate_RepeatedRules_has_ignore_empty(const validate_RepeatedR
 
 UPB_INLINE void validate_RepeatedRules_set_min_items(validate_RepeatedRules *msg, uint64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_RepeatedRules_set_max_items(validate_RepeatedRules *msg, uint64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_RepeatedRules_set_unique(validate_RepeatedRules *msg, bool value) {
   const upb_MiniTableField field = {3, 9, 66, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_RepeatedRules_set_items(validate_RepeatedRules *msg, validate_FieldRules* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 32), 67, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_FieldRules* validate_RepeatedRules_mutable_items(validate_RepeatedRules* msg, upb_Arena* arena) {
   struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_RepeatedRules_items(msg);
@@ -5621,7 +5621,7 @@ UPB_INLINE struct validate_FieldRules* validate_RepeatedRules_mutable_items(vali
 }
 UPB_INLINE void validate_RepeatedRules_set_ignore_empty(validate_RepeatedRules *msg, bool value) {
   const upb_MiniTableField field = {5, UPB_SIZE(16, 10), 68, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.MapRules */
@@ -5759,19 +5759,19 @@ UPB_INLINE bool validate_MapRules_has_ignore_empty(const validate_MapRules* msg)
 
 UPB_INLINE void validate_MapRules_set_min_pairs(validate_MapRules *msg, uint64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_MapRules_set_max_pairs(validate_MapRules *msg, uint64_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_MapRules_set_no_sparse(validate_MapRules *msg, bool value) {
   const upb_MiniTableField field = {3, 9, 66, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_MapRules_set_keys(validate_MapRules *msg, validate_FieldRules* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 32), 67, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_keys(validate_MapRules* msg, upb_Arena* arena) {
   struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_MapRules_keys(msg);
@@ -5783,7 +5783,7 @@ UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_keys(validate_M
 }
 UPB_INLINE void validate_MapRules_set_values(validate_MapRules *msg, validate_FieldRules* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(16, 40), 68, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_values(validate_MapRules* msg, upb_Arena* arena) {
   struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_MapRules_values(msg);
@@ -5795,7 +5795,7 @@ UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_values(validate
 }
 UPB_INLINE void validate_MapRules_set_ignore_empty(validate_MapRules *msg, bool value) {
   const upb_MiniTableField field = {6, UPB_SIZE(20, 10), 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* validate.AnyRules */
@@ -5917,7 +5917,7 @@ UPB_INLINE upb_Array* _validate_AnyRules_not_in_mutable_upb_array(validate_AnyRu
 
 UPB_INLINE void validate_AnyRules_set_required(validate_AnyRules *msg, bool value) {
   const upb_MiniTableField field = {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* validate_AnyRules_mutable_in(validate_AnyRules* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -6175,11 +6175,11 @@ UPB_INLINE upb_Array* _validate_DurationRules_not_in_mutable_upb_array(validate_
 
 UPB_INLINE void validate_DurationRules_set_required(validate_DurationRules *msg, bool value) {
   const upb_MiniTableField field = {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_DurationRules_set_const(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 65, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_const(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_const(msg);
@@ -6191,7 +6191,7 @@ UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_const
 }
 UPB_INLINE void validate_DurationRules_set_lt(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 66, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_lt(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_lt(msg);
@@ -6203,7 +6203,7 @@ UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_lt(va
 }
 UPB_INLINE void validate_DurationRules_set_lte(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 67, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_lte(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_lte(msg);
@@ -6215,7 +6215,7 @@ UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_lte(v
 }
 UPB_INLINE void validate_DurationRules_set_gt(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 68, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_gt(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_gt(msg);
@@ -6227,7 +6227,7 @@ UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_gt(va
 }
 UPB_INLINE void validate_DurationRules_set_gte(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(28, 48), 69, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_gte(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_gte(msg);
@@ -6481,11 +6481,11 @@ UPB_INLINE bool validate_TimestampRules_has_within(const validate_TimestampRules
 
 UPB_INLINE void validate_TimestampRules_set_required(validate_TimestampRules *msg, bool value) {
   const upb_MiniTableField field = {1, 10, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_TimestampRules_set_const(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 65, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_const(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_const(msg);
@@ -6497,7 +6497,7 @@ UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_con
 }
 UPB_INLINE void validate_TimestampRules_set_lt(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 24), 66, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_lt(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_lt(msg);
@@ -6509,7 +6509,7 @@ UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_lt(
 }
 UPB_INLINE void validate_TimestampRules_set_lte(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 67, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_lte(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_lte(msg);
@@ -6521,7 +6521,7 @@ UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_lte
 }
 UPB_INLINE void validate_TimestampRules_set_gt(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 68, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_gt(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_gt(msg);
@@ -6533,7 +6533,7 @@ UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_gt(
 }
 UPB_INLINE void validate_TimestampRules_set_gte(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(28, 48), 69, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_gte(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_gte(msg);
@@ -6545,15 +6545,15 @@ UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_gte
 }
 UPB_INLINE void validate_TimestampRules_set_lt_now(validate_TimestampRules *msg, bool value) {
   const upb_MiniTableField field = {7, UPB_SIZE(32, 11), 70, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_TimestampRules_set_gt_now(validate_TimestampRules *msg, bool value) {
   const upb_MiniTableField field = {8, UPB_SIZE(33, 12), 71, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void validate_TimestampRules_set_within(validate_TimestampRules *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(36, 56), 72, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_TimestampRules_mutable_within(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_TimestampRules_within(msg);
@@ -6585,7 +6585,7 @@ UPB_INLINE void validate_set_disabled(struct google_protobuf_MessageOptions* msg
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_ignored(const struct google_protobuf_MessageOptions* msg) {
@@ -6609,7 +6609,7 @@ UPB_INLINE void validate_set_ignored(struct google_protobuf_MessageOptions* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_required(const struct google_protobuf_OneofOptions* msg) {
@@ -6633,7 +6633,7 @@ UPB_INLINE void validate_set_required(struct google_protobuf_OneofOptions* msg, 
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_rules(const struct google_protobuf_FieldOptions* msg) {
@@ -6657,8 +6657,17 @@ UPB_INLINE void validate_set_rules(struct google_protobuf_FieldOptions* msg, con
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
+}
+UPB_INLINE struct validate_FieldRules* validate_mutable_rules(struct google_protobuf_FieldOptions* msg,
+                                    upb_Arena* arena) {
+  struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_rules(msg);
+  if (sub == NULL) {
+    sub = (struct validate_FieldRules*)_upb_Message_New(&validate__FieldRules_msg_init, arena);
+    if (sub) validate_set_rules(msg, sub, arena);
+  }
+  return sub;
 }
 #ifdef __cplusplus
 }  /* extern "C" */

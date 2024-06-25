@@ -24,6 +24,9 @@ const upb_MiniTable envoy__admin__v3__MutexStats_msg_init = {
   NULL,
   &envoy_admin_v3_MutexStats__fields[0],
   32, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.MutexStats",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},

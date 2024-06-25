@@ -136,7 +136,7 @@ UPB_INLINE bool envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_d
 
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultDelay_set_fixed_delay(envoy_extensions_filters_common_fault_v3_FaultDelay *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_extensions_filters_common_fault_v3_FaultDelay_mutable_fixed_delay(envoy_extensions_filters_common_fault_v3_FaultDelay* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(msg);
@@ -148,7 +148,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_extensions_filters_common_faul
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultDelay_set_percentage(envoy_extensions_filters_common_fault_v3_FaultDelay *msg, struct envoy_type_v3_FractionalPercent* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_extensions_filters_common_fault_v3_FaultDelay_mutable_percentage(envoy_extensions_filters_common_fault_v3_FaultDelay* msg, upb_Arena* arena) {
   struct envoy_type_v3_FractionalPercent* sub = (struct envoy_type_v3_FractionalPercent*)envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(msg);
@@ -160,7 +160,7 @@ UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_extensions_filters_comm
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultDelay_set_header_delay(envoy_extensions_filters_common_fault_v3_FaultDelay *msg, envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* envoy_extensions_filters_common_fault_v3_FaultDelay_mutable_header_delay(envoy_extensions_filters_common_fault_v3_FaultDelay* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay* sub = (struct envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay*)envoy_extensions_filters_common_fault_v3_FaultDelay_header_delay(msg);
@@ -306,7 +306,7 @@ UPB_INLINE bool envoy_extensions_filters_common_fault_v3_FaultRateLimit_has_head
 
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_set_fixed_limit(envoy_extensions_filters_common_fault_v3_FaultRateLimit *msg, envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* envoy_extensions_filters_common_fault_v3_FaultRateLimit_mutable_fixed_limit(envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit* sub = (struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit*)envoy_extensions_filters_common_fault_v3_FaultRateLimit_fixed_limit(msg);
@@ -318,7 +318,7 @@ UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedL
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_set_percentage(envoy_extensions_filters_common_fault_v3_FaultRateLimit *msg, struct envoy_type_v3_FractionalPercent* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_extensions_filters_common_fault_v3_FaultRateLimit_mutable_percentage(envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg, upb_Arena* arena) {
   struct envoy_type_v3_FractionalPercent* sub = (struct envoy_type_v3_FractionalPercent*)envoy_extensions_filters_common_fault_v3_FaultRateLimit_percentage(msg);
@@ -330,7 +330,7 @@ UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_extensions_filters_comm
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_set_header_limit(envoy_extensions_filters_common_fault_v3_FaultRateLimit *msg, envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* envoy_extensions_filters_common_fault_v3_FaultRateLimit_mutable_header_limit(envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit* sub = (struct envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit*)envoy_extensions_filters_common_fault_v3_FaultRateLimit_header_limit(msg);
@@ -392,7 +392,7 @@ UPB_INLINE uint64_t envoy_extensions_filters_common_fault_v3_FaultRateLimit_Fixe
 
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_set_limit_kbps(envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *msg, uint64_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.extensions.filters.common.fault.v3.FaultRateLimit.HeaderLimit */

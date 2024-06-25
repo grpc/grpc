@@ -116,7 +116,7 @@ UPB_INLINE upb_Array* _envoy_type_metadata_v3_MetadataKey_path_mutable_upb_array
 
 UPB_INLINE void envoy_type_metadata_v3_MetadataKey_set_key(envoy_type_metadata_v3_MetadataKey *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE envoy_type_metadata_v3_MetadataKey_PathSegment** envoy_type_metadata_v3_MetadataKey_mutable_path(envoy_type_metadata_v3_MetadataKey* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -213,7 +213,7 @@ UPB_INLINE bool envoy_type_metadata_v3_MetadataKey_PathSegment_has_key(const env
 
 UPB_INLINE void envoy_type_metadata_v3_MetadataKey_PathSegment_set_key(envoy_type_metadata_v3_MetadataKey_PathSegment *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.type.metadata.v3.MetadataKind */
@@ -331,7 +331,7 @@ UPB_INLINE bool envoy_type_metadata_v3_MetadataKind_has_host(const envoy_type_me
 
 UPB_INLINE void envoy_type_metadata_v3_MetadataKind_set_request(envoy_type_metadata_v3_MetadataKind *msg, envoy_type_metadata_v3_MetadataKind_Request* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Request* envoy_type_metadata_v3_MetadataKind_mutable_request(envoy_type_metadata_v3_MetadataKind* msg, upb_Arena* arena) {
   struct envoy_type_metadata_v3_MetadataKind_Request* sub = (struct envoy_type_metadata_v3_MetadataKind_Request*)envoy_type_metadata_v3_MetadataKind_request(msg);
@@ -343,7 +343,7 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Request* envoy_type_metada
 }
 UPB_INLINE void envoy_type_metadata_v3_MetadataKind_set_route(envoy_type_metadata_v3_MetadataKind *msg, envoy_type_metadata_v3_MetadataKind_Route* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Route* envoy_type_metadata_v3_MetadataKind_mutable_route(envoy_type_metadata_v3_MetadataKind* msg, upb_Arena* arena) {
   struct envoy_type_metadata_v3_MetadataKind_Route* sub = (struct envoy_type_metadata_v3_MetadataKind_Route*)envoy_type_metadata_v3_MetadataKind_route(msg);
@@ -355,7 +355,7 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Route* envoy_type_metadata
 }
 UPB_INLINE void envoy_type_metadata_v3_MetadataKind_set_cluster(envoy_type_metadata_v3_MetadataKind *msg, envoy_type_metadata_v3_MetadataKind_Cluster* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Cluster* envoy_type_metadata_v3_MetadataKind_mutable_cluster(envoy_type_metadata_v3_MetadataKind* msg, upb_Arena* arena) {
   struct envoy_type_metadata_v3_MetadataKind_Cluster* sub = (struct envoy_type_metadata_v3_MetadataKind_Cluster*)envoy_type_metadata_v3_MetadataKind_cluster(msg);
@@ -367,7 +367,7 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Cluster* envoy_type_metada
 }
 UPB_INLINE void envoy_type_metadata_v3_MetadataKind_set_host(envoy_type_metadata_v3_MetadataKind *msg, envoy_type_metadata_v3_MetadataKind_Host* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKind_Host* envoy_type_metadata_v3_MetadataKind_mutable_host(envoy_type_metadata_v3_MetadataKind* msg, upb_Arena* arena) {
   struct envoy_type_metadata_v3_MetadataKind_Host* sub = (struct envoy_type_metadata_v3_MetadataKind_Host*)envoy_type_metadata_v3_MetadataKind_host(msg);

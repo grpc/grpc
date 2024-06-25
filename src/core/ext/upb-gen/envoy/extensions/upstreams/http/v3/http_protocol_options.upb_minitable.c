@@ -41,6 +41,9 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions__fields[0],
   UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -69,6 +72,9 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig__fields[0],
   UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.ExplicitHttpConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_maxmaxb},
@@ -93,6 +99,9 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.UseDownstreamHttpConfig",
+#endif
 };
 
 static const upb_MiniTableSub envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_submsgs[4] = {
@@ -113,6 +122,9 @@ const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.AutoHttpConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[4] = {

@@ -104,11 +104,11 @@ UPB_INLINE bool envoy_type_matcher_v3_FilterStateMatcher_has_string_match(const 
 
 UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_key(envoy_type_matcher_v3_FilterStateMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_string_match(envoy_type_matcher_v3_FilterStateMatcher *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_FilterStateMatcher_mutable_string_match(envoy_type_matcher_v3_FilterStateMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_StringMatcher* sub = (struct envoy_type_matcher_v3_StringMatcher*)envoy_type_matcher_v3_FilterStateMatcher_string_match(msg);

@@ -37,6 +37,9 @@ const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
   &envoy_admin_v3_ServerInfo_submsgs[0],
   &envoy_admin_v3_ServerInfo__fields[0],
   UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.ServerInfo",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -96,6 +99,9 @@ const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
   &envoy_admin_v3_CommandLineOptions_submsgs[0],
   &envoy_admin_v3_CommandLineOptions__fields[0],
   UPB_SIZE(184, 304), 34, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.CommandLineOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x004000003f000008, &upb_psv8_1bt},

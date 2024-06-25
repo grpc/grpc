@@ -31,6 +31,9 @@ const upb_MiniTable envoy__config__overload__v3__ResourceMonitor_msg_init = {
   &envoy_config_overload_v3_ResourceMonitor_submsgs[0],
   &envoy_config_overload_v3_ResourceMonitor__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.ResourceMonitor",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -47,6 +50,9 @@ const upb_MiniTable envoy__config__overload__v3__ThresholdTrigger_msg_init = {
   NULL,
   &envoy_config_overload_v3_ThresholdTrigger__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.ThresholdTrigger",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000009, &upb_psf8_1bt},
@@ -62,6 +68,9 @@ const upb_MiniTable envoy__config__overload__v3__ScaledTrigger_msg_init = {
   NULL,
   &envoy_config_overload_v3_ScaledTrigger__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.ScaledTrigger",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000009, &upb_psf8_1bt},
@@ -85,6 +94,9 @@ const upb_MiniTable envoy__config__overload__v3__Trigger_msg_init = {
   &envoy_config_overload_v3_Trigger_submsgs[0],
   &envoy_config_overload_v3_Trigger__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.Trigger",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -105,6 +117,9 @@ const upb_MiniTable envoy__config__overload__v3__ScaleTimersOverloadActionConfig
   &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_submsgs[0],
   &envoy_config_overload_v3_ScaleTimersOverloadActionConfig__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.ScaleTimersOverloadActionConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -126,6 +141,9 @@ const upb_MiniTable envoy__config__overload__v3__ScaleTimersOverloadActionConfig
   &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_submsgs[0],
   &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer__fields[0],
   24, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.ScaleTimersOverloadActionConfig.ScaleTimer",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -149,6 +167,9 @@ const upb_MiniTable envoy__config__overload__v3__OverloadAction_msg_init = {
   &envoy_config_overload_v3_OverloadAction_submsgs[0],
   &envoy_config_overload_v3_OverloadAction__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.OverloadAction",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -170,6 +191,9 @@ const upb_MiniTable envoy__config__overload__v3__LoadShedPoint_msg_init = {
   &envoy_config_overload_v3_LoadShedPoint_submsgs[0],
   &envoy_config_overload_v3_LoadShedPoint__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.LoadShedPoint",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -186,6 +210,9 @@ const upb_MiniTable envoy__config__overload__v3__BufferFactoryConfig_msg_init = 
   NULL,
   &envoy_config_overload_v3_BufferFactoryConfig__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.BufferFactoryConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -212,6 +239,9 @@ const upb_MiniTable envoy__config__overload__v3__OverloadManager_msg_init = {
   &envoy_config_overload_v3_OverloadManager_submsgs[0],
   &envoy_config_overload_v3_OverloadManager__fields[0],
   UPB_SIZE(32, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.overload.v3.OverloadManager",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

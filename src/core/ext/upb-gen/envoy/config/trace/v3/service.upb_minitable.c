@@ -28,6 +28,9 @@ const upb_MiniTable envoy__config__trace__v3__TraceServiceConfig_msg_init = {
   &envoy_config_trace_v3_TraceServiceConfig_submsgs[0],
   &envoy_config_trace_v3_TraceServiceConfig__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.TraceServiceConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {
