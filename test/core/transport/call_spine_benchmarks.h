@@ -279,7 +279,10 @@ class UnstartedCallDestinationFixture {
   BenchmarkCall MakeCall() {
     auto p = MakeCallPair(traits_->MakeClientInitialMetadata(),
                           event_engine_.get(), arena_allocator_->MakeArena());
-    top_destination_->StartCall(std::move(p.handler));
+    p.handler.SpawnInfallible("initiator_setup", [&]() {
+      top_destination_->StartCall(std::move(p.handler));
+      return Empty{};
+    });
     auto handler = bottom_destination_->TakeHandler();
     absl::optional<CallHandler> started_handler;
     Notification started;

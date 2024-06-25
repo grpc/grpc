@@ -265,3 +265,16 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_benchmark(
+    name = "bm_picker",
+    srcs = ["bm_picker.cc"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "//:config",
+        "//src/core:lb_policy",
+        "//:grpc",
+    ],
+)
