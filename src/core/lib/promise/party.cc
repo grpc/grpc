@@ -179,6 +179,7 @@ Party::Participant::~Participant() {
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
+  if (!sync_.has_participants()) return;
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
