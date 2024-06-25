@@ -56,13 +56,13 @@ jclass FindNativeConnectionHelper(
   //   from JNI_OnLoad
   //   * The APK does not correctly depends on the helper class, or the
   //   class get shrinked
-  gpr_log(GPR_ERROR,
-          "Cannot find binder transport Java helper class. Did you invoke "
-          "grpc::experimental::InitializeBinderChannelJavaClass correctly "
-          "beforehand? Did the APK correctly include the connection helper "
-          "class (i.e depends on build target "
-          "src/core/ext/transport/binder/java/io/grpc/binder/"
-          "cpp:connection_helper) ?");
+  LOG(ERROR)
+      << "Cannot find binder transport Java helper class. Did you invoke "
+         "grpc::experimental::InitializeBinderChannelJavaClass correctly "
+         "beforehand? Did the APK correctly include the connection helper "
+         "class (i.e depends on build target "
+         "src/core/ext/transport/binder/java/io/grpc/binder/"
+         "cpp:connection_helper) ?";
   // TODO(mingcl): Maybe it is worth to try again so the failure can be fixed
   // by invoking this function again at a different thread.
   return nullptr;

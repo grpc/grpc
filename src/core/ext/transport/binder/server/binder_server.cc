@@ -54,8 +54,8 @@ Java_io_grpc_binder_cpp_GrpcCppServerBuilder_GetEndpointBinderInternal__Ljava_la
     ai_binder = static_cast<grpc_binder::ndk_util::AIBinder*>(
         grpc_get_endpoint_binder(std::string(conn_id)));
     if (ai_binder == nullptr) {
-      gpr_log(GPR_ERROR, "Cannot find endpoint binder with connection id = %s",
-              conn_id);
+      LOG(ERROR) << "Cannot find endpoint binder with connection id = "
+                 << conn_id;
     }
     if (isCopy == JNI_TRUE) {
       jni_env->ReleaseStringUTFChars(conn_id_jstring, conn_id);
@@ -180,7 +180,7 @@ class BinderServerListener : public Server::ListenerInterface {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
 
-    gpr_log(GPR_INFO, "BinderServerListener calling uid = %d", uid);
+    LOG(INFO) << "BinderServerListener calling uid = " << uid;
     if (!security_policy_->IsAuthorized(uid)) {
       // TODO(mingcl): For now we just ignore this unauthorized
       // SETUP_TRANSPORT transaction and ghost the client. Check if we should
@@ -196,7 +196,7 @@ class BinderServerListener : public Server::ListenerInterface {
     if (!status.ok()) {
       return status;
     }
-    gpr_log(GPR_INFO, "BinderTransport client protocol version = %d", version);
+    LOG(INFO) << "BinderTransport client protocol version = " << version;
     // TODO(mingcl): Make sure we only give client a version that is not newer
     // than the version they specify. For now, we always tell client that we
     // only support version=1.

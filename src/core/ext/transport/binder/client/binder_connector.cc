@@ -71,8 +71,7 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 #else
     CHECK(0);
 #endif
-    gpr_log(GPR_INFO, "BinderConnector %p conn_id_ = %s", this,
-            conn_id_.c_str());
+    LOG(INFO) << "BinderConnector " << this << " conn_id_ = " << conn_id_;
 
     args_ = args;
     CHECK_EQ(notify_, nullptr);
@@ -124,7 +123,7 @@ namespace grpc_core {
 
 RefCountedPtr<Subchannel> BinderClientChannelFactory::CreateSubchannel(
     const grpc_resolved_address& address, const ChannelArgs& args) {
-  gpr_log(GPR_INFO, "BinderClientChannelFactory creating subchannel %p", this);
+  LOG(INFO) << "BinderClientChannelFactory creating subchannel " << this;
   return Subchannel::Create(
       MakeOrphanable<BinderConnector>(), address,
       args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "binder.authority"));
