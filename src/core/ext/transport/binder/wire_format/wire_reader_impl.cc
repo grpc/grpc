@@ -193,9 +193,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       // respond that version too.
       if (version != kWireFormatVersion) {
         LOG(ERROR) << "The other end respond with version = " << version
-                   << ", but we requested "
-                      "version "
-                   << kWireFormatVersion << ", trying to continue anyway";
+                   << ", but we requested version " << kWireFormatVersion
+                   << ", trying to continue anyway";
       }
       std::unique_ptr<Binder> binder{};
       GRPC_RETURN_IF_ERROR(parcel->ReadBinder(&binder));

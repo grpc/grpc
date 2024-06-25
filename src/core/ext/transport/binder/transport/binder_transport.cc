@@ -131,7 +131,7 @@ static void AssignMetadata(grpc_metadata_batch* mb,
     mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second),
                [&](absl::string_view error, const grpc_core::Slice&) {
                  VLOG(2) << "Failed to parse metadata: "
-                         << absl::StrCat("key=", p.first, " error=", error);
+                         << "key=" << p.first << " error=" << error;
                });
   }
 }
@@ -575,8 +575,8 @@ static void perform_stream_op_locked(void* stream_op,
 void grpc_binder_transport::PerformStreamOp(
     grpc_stream* gs, grpc_transport_stream_op_batch* op) {
   grpc_binder_stream* stream = reinterpret_cast<grpc_binder_stream*>(gs);
-  LOG(INFO) << __func__ << " = " << this << " " << gs << " " << op << " "
-            << stream->is_client;
+  LOG(INFO) << __func__ << " = " << this << " " << gs << " " << op
+            << " is_client = " << stream->is_client;
   GRPC_BINDER_STREAM_REF(stream, "perform_stream_op");
   op->handler_private.extra_arg = stream;
   combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
