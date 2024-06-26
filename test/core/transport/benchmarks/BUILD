@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_package")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
@@ -27,11 +26,11 @@ grpc_cc_benchmark(
     srcs = ["bm_chaotic_good.cc"],
     deps = [
         "//:grpc",
-        "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
+        "//src/core:default_event_engine",
         "//test/core/test_util:passthrough_endpoint",
+        "//test/core/transport:call_spine_benchmarks",
     ],
 )
 
@@ -40,10 +39,10 @@ grpc_cc_benchmark(
     srcs = ["bm_inproc.cc"],
     deps = [
         "//:grpc",
-        "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
+        "//src/core:default_event_engine",
         "//test/core/test_util:passthrough_endpoint",
+        "//test/core/transport:call_spine_benchmarks",
     ],
 )

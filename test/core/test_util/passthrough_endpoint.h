@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PASSTHROUGH_H
-#define PASSTHROUGH_H
+#ifndef GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
+#define GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
 
 #include <memory>
 
@@ -92,4 +92,4 @@ class PassthroughEndpoint final : public EventEngine::Endpoint {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // PASSTHROUGH_H
+#endif  // GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
