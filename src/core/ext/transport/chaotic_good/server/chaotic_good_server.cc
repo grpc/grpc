@@ -150,6 +150,8 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
     : listener_(std::move(listener)) {
+  arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
+      listener_->event_engine_.get());
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
@@ -438,7 +440,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           self->connection_->Done();
         }
       },
-      connection_->arena_.get(), connection_->listener_->event_engine_.get());
+      connection_->arena_.get());
   MutexLock lock(&connection_->mu_);
   if (connection_->orphaned_) return;
   connection_->receive_settings_activity_ = std::move(activity);

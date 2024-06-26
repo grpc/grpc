@@ -334,8 +334,12 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test"),
           1024);
-  auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                           allocator->MakeArena());
+  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto arena = allocator->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  auto call =
+      MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena));
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);
