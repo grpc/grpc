@@ -216,25 +216,6 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
           experimental::StatsPluginChannelScope("foo", "foo"));
 };
 
-#define BACKEND_RANGE RangeMultiplier(10)->Range(1, 100000)
-
-#define BENCHMARK_HELPER(name, config)                       \
-  []() -> BenchmarkHelper& {                                 \
-    static auto* helper = new BenchmarkHelper(name, config); \
-    return *helper;                                          \
-  }()
-
-#define PICKER_BENCHMARK(name)                                               \
-  BENCHMARK_CAPTURE(name, pick_first,                                        \
-                    BENCHMARK_HELPER("pick_first", "[{\"pick_first\":{}}]")) \
-      ->BACKEND_RANGE;                                                       \
-  BENCHMARK_CAPTURE(                                                         \
-      name, weighted_round_robin,                                            \
-      BENCHMARK_HELPER(                                                      \
-          "weighted_round_robin",                                            \
-          "[{\"weighted_round_robin\":{\"enableOobLoadReport\":false}}]"))   \
-      ->BACKEND_RANGE;
-
 void BM_Pick(benchmark::State& state, BenchmarkHelper& helper) {
   helper.UpdateState(state.range(0));
   auto picker = helper.GetPicker();
@@ -246,7 +227,20 @@ void BM_Pick(benchmark::State& state, BenchmarkHelper& helper) {
     });
   }
 }
-PICKER_BENCHMARK(BM_Pick);
+#define PICKER_BENCHMARK(policy, config)                        \
+  BENCHMARK_CAPTURE(BM_Pick, policy,                            \
+                    []() -> BenchmarkHelper& {                  \
+                      static auto* helper =                     \
+                          new BenchmarkHelper(#policy, config); \
+                      return *helper;                           \
+                    }())                                        \
+      ->RangeMultiplier(10)                                     \
+      ->Range(1, 100000)
+
+PICKER_BENCHMARK(pick_first, "[{\"pick_first\":{}}]");
+PICKER_BENCHMARK(
+    weighted_round_robin,
+    "[{\"weighted_round_robin\":{\"enableOobLoadReport\":false}}]");
 
 }  // namespace
 }  // namespace grpc_core
