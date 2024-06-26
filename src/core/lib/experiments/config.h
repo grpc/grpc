@@ -44,21 +44,21 @@ class ExperimentFlags {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsExperimentEnabled(
       size_t experiment_id) {
-    auto bit = experiment_id % 63;
-    auto word = experiment_id / 63;
+    auto bit = experiment_id % kFlagsPerWord;
+    auto word = experiment_id / kFlagsPerWord;
     auto cur = experiment_flags_[word].load(std::memory_order_relaxed);
     if (cur & (1ull << bit)) return true;
-    if (cur & (0x8000000000000000ull)) return false;
+    if (cur & kLoadedFlag) return false;
     return LoadFlagsAndCheck(experiment_id);
   }
 
   template <size_t kExperimentId>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsExperimentEnabled() {
-    auto bit = kExperimentId % 63;
-    auto word = kExperimentId / 63;
+    auto bit = kExperimentId % kFlagsPerWord;
+    auto word = kExperimentId / kFlagsPerWord;
     auto cur = experiment_flags_[word].load(std::memory_order_relaxed);
     if (cur & (1ull << bit)) return true;
-    if (cur & (0x8000000000000000ull)) return false;
+    if (cur & kLoadedFlag) return false;
     return LoadFlagsAndCheck(kExperimentId);
   }
 
@@ -68,6 +68,8 @@ class ExperimentFlags {
   static bool LoadFlagsAndCheck(size_t experiment_id);
 
   static constexpr size_t kNumExperimentFlagsWords = 8;
+  static constexpr size_t kFlagsPerWord = 63;
+  static constexpr uint64_t kLoadedFlag = 0x8000000000000000ull;
   static std::atomic<uint64_t> experiment_flags_[kNumExperimentFlagsWords];
 };
 

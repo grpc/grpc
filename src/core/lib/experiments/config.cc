@@ -185,18 +185,19 @@ std::atomic<uint64_t>
     ExperimentFlags::experiment_flags_[kNumExperimentFlagsWords];
 
 bool ExperimentFlags::LoadFlagsAndCheck(size_t experiment_id) {
-  static_assert(
-      kNumExperiments < kNumExperimentFlagsWords * 63,
-      "kNumExperiments must be less than kNumExperimentFlagsWords*63");
+  static_assert(kNumExperiments < kNumExperimentFlagsWords * kFlagsPerWord,
+                "kNumExperiments must be less than "
+                "kNumExperimentFlagsWords*kFlagsPerWord; if this fails then "
+                "make kNumExperimentFlagsWords bigger.");
   const auto& experiments = ExperimentsSingleton();
   uint64_t building[kNumExperimentFlagsWords];
   for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    building[i] = 0x8000000000000000ull;
+    building[i] = kLoadedFlag;
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
     if (!experiments.enabled[i]) continue;
-    auto bit = i % 63;
-    auto word = i / 63;
+    auto bit = i % kFlagsPerWord;
+    auto word = i / kFlagsPerWord;
     building[word] |= 1ull << bit;
   }
   for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
