@@ -41,7 +41,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     CHECK_OK(parsed_json);
     auto config_parsed =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            std::move(*parsed_json));
+            *parsed_json);
     CHECK_OK(config_parsed);
     config_ = std::move(*config_parsed);
   }

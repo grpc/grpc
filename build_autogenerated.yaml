@@ -5227,12 +5227,47 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_load_balanced_call_destination
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/client_channel/bm_load_balanced_call_destination.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_party
   build: test
   language: c
   headers: []
   src:
   - test/core/promise/bm_party.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
+- name: bm_picker
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/load_balancing/bm_picker.cc
   deps:
   - benchmark
   - grpc

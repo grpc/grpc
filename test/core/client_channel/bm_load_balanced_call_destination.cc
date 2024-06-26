@@ -89,7 +89,8 @@ class LoadBalancedCallDestinationTraits {
     explicit TestPicker(RefCountedPtr<TestSubchannel> subchannel)
         : subchannel_{subchannel} {}
 
-    LoadBalancingPolicy::PickResult Pick(LoadBalancingPolicy::PickArgs) {
+    LoadBalancingPolicy::PickResult Pick(
+        LoadBalancingPolicy::PickArgs) override {
       return LoadBalancingPolicy::PickResult::Complete(subchannel_);
     }
 
