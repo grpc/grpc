@@ -320,9 +320,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                            return absl::OkStatus();
                          });
                        },
-                       []() -> absl::Status {
-                         return absl::InternalError("Unexpected cancel frame");
-                       });
+                       []() -> absl::Status { return absl::OkStatus(); });
                  }),
             Default([frame_header]() {
               return absl::InternalError(
