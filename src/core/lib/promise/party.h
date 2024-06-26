@@ -41,6 +41,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/useful.h"
 
 // Two implementations of party synchronization are provided: one using a single
@@ -84,7 +85,7 @@ class PartySyncUsingAtomics {
   }
   GRPC_MUST_USE_RESULT bool RefIfNonZero();
   // Returns true if the ref count is now zero and the caller should call
-  // PartyOver
+  // PartyIsOver
   GRPC_MUST_USE_RESULT bool Unref() {
     const uint64_t prev_state =
         state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
@@ -367,6 +368,11 @@ class Party : public Activity, private Wakeable {
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
 
+  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
+  }
+
   // Spawn one promise into the party.
   // The promise will be polled until it is resolved, or until the party is shut
   // down.
@@ -406,6 +412,8 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
+  Arena* arena() { return arena_.get(); }
+
   class BulkSpawner {
    public:
     explicit BulkSpawner(Party* party) : party_(party) {}
@@ -424,25 +432,20 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(size_t initial_refs) : sync_(initial_refs) {}
+  friend class Arena;
+
+  // Derived types should be constructed upon `arena`.
+  explicit Party(RefCountedPtr<Arena> arena)
+      : sync_(1), arena_(std::move(arena)) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
   // Polls participants and drains the add queue until there is no work left to
   // be done.
-  // Derived types will likely want to override this to set up their
-  // contexts before polling.
-  // Should not be called by derived types except as a tail call to the base
-  // class RunParty when overriding this method to add custom context.
   // Returns true if the party is over.
-  GRPC_MUST_USE_RESULT virtual bool RunParty();
+  GRPC_MUST_USE_RESULT bool RunParty();
 
   bool RefIfNonZero() { return sync_.RefIfNonZero(); }
-
-  // Destroy any remaining participants.
-  // Should be called by derived types in response to PartyOver.
-  // Needs to have normal context setup before calling.
-  void CancelRemainingParticipants();
 
  private:
   // Concrete implementation of a participant for some promise & oncomplete
@@ -576,10 +579,9 @@ class Party : public Activity, private Wakeable {
     std::atomic<State> state_{State::kFactory};
   };
 
-  // Notification that the party has finished and this instance can be deleted.
-  // Derived types should arrange to call CancelRemainingParticipants during
-  // this sequence.
-  virtual void PartyOver() = 0;
+  // Destroy any remaining participants.
+  // Needs to have normal context setup before calling.
+  void CancelRemainingParticipants();
 
   // Run the locked part of the party until it is unlocked.
   void RunLocked();
@@ -597,9 +599,6 @@ class Party : public Activity, private Wakeable {
   void AddParticipants(Participant** participant, size_t count);
   bool RunOneParticipant(int i);
 
-  virtual grpc_event_engine::experimental::EventEngine* event_engine()
-      const = 0;
-
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
 
@@ -616,6 +615,7 @@ class Party : public Activity, private Wakeable {
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
   std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
+  RefCountedPtr<Arena> arena_;
 };
 
 template <>
