@@ -34,3 +34,16 @@ grpc_cc_benchmark(
         "//test/core/test_util:passthrough_endpoint",
     ],
 )
+
+grpc_cc_benchmark(
+    name = "bm_inproc",
+    srcs = ["bm_inproc.cc"],
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//test/core/transport:call_spine_benchmarks",
+        "//src/core:chaotic_good_client_transport",
+        "//src/core:chaotic_good_server_transport",
+        "//test/core/test_util:passthrough_endpoint",
+    ],
+)
