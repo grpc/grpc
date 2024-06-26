@@ -253,16 +253,3 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
-
-grpc_cc_benchmark(
-    name = "bm_chaotic_good",
-    srcs = ["bm_chaotic_good.cc"],
-    deps = [
-        "//:grpc",
-        "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
-        "//src/core:chaotic_good_client_transport",
-        "//src/core:chaotic_good_server_transport",
-        "//test/core/test_util:passthrough_endpoint",
-    ],
-)
