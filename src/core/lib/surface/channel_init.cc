@@ -126,13 +126,15 @@ class ChannelInit::DependencyTracker {
     auto it_a = nodes_.find(a);
     auto it_b = nodes_.find(b);
     if (it_a == nodes_.end()) {
-      LOG(ERROR) << "gRPC Filter " << a.name()
-                 << " was not declared before adding an edge to " << b.name();
+      GRPC_TRACE_LOG(channel_stack, ERROR)
+          << "gRPC Filter " << a.name()
+          << " was not declared before adding an edge to " << b.name();
       return;
     }
     if (it_b == nodes_.end()) {
-      LOG(ERROR) << "gRPC Filter " << b.name()
-                 << " was not declared before adding an edge from " << a.name();
+      GRPC_TRACE_LOG(channel_stack, ERROR)
+          << "gRPC Filter " << b.name()
+          << " was not declared before adding an edge from " << a.name();
       return;
     }
     auto& node_a = it_a->second;
