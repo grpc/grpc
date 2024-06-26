@@ -239,7 +239,8 @@ class FilterFixture {
   BenchmarkCall MakeCall() {
     auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
                           event_engine_.get(), arena_allocator_->MakeArena());
-    return {std::move(p.initiator), p.handler.StartCall(stack_)};
+    p.handler.AddCallStack(stack_);
+    return {std::move(p.initiator), p.handler.StartCall()};
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
@@ -284,7 +285,7 @@ class UnstartedCallDestinationFixture {
     absl::optional<CallHandler> started_handler;
     Notification started;
     handler.SpawnInfallible("handler_setup", [&]() {
-      started_handler = handler.StartCall(stack_);
+      started_handler = handler.StartCall();
       started.Notify();
       return Empty{};
     });
@@ -296,7 +297,6 @@ class UnstartedCallDestinationFixture {
   ~UnstartedCallDestinationFixture() {
     // TODO(ctiller): entire destructor can be deleted once ExecCtx is gone.
     ExecCtx exec_ctx;
-    stack_.reset();
     top_destination_.reset();
     bottom_destination_.reset();
     arena_allocator_.reset();
@@ -353,8 +353,6 @@ class UnstartedCallDestinationFixture {
       MakeRefCounted<SinkDestination>();
   RefCountedPtr<UnstartedCallDestination> top_destination_ =
       traits_->CreateCallDestination(bottom_destination_);
-  RefCountedPtr<CallFilters::Stack> stack_ =
-      CallFilters::StackBuilder().Build();
 };
 
 }  // namespace grpc_core

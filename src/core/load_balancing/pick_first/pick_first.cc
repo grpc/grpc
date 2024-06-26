@@ -39,7 +39,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -633,9 +632,8 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
   if (policy_->health_watcher_ != this) return;
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] health watch state update: %s (%s)",
-            policy_.get(), ConnectivityStateName(new_state),
-            status.ToString().c_str());
+    LOG(INFO) << "[PF " << policy_.get() << "] health watch state update: "
+              << ConnectivityStateName(new_state) << " (" << status << ")";
   }
   switch (new_state) {
     case GRPC_CHANNEL_READY:
@@ -675,9 +673,8 @@ PickFirst::SubchannelList::SubchannelData::SubchannelState::SubchannelState(
       pick_first_(subchannel_data_->subchannel_list_->policy_),
       subchannel_(std::move(subchannel)) {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "[PF %p] subchannel state %p (subchannel %p): starting watch",
-            pick_first_.get(), this, subchannel_.get());
+    LOG(INFO) << "[PF " << pick_first_.get() << "] subchannel state " << this
+              << " (subchannel " << subchannel_.get() << "): starting watch";
   }
   auto watcher = std::make_unique<Watcher>(Ref(DEBUG_LOCATION, "Watcher"));
   watcher_ = watcher.get();
@@ -686,10 +683,9 @@ PickFirst::SubchannelList::SubchannelData::SubchannelState::SubchannelState(
 
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "[PF %p] subchannel state %p (subchannel %p): "
-            "cancelling watch and unreffing subchannel",
-            pick_first_.get(), this, subchannel_.get());
+    LOG(INFO) << "[PF " << pick_first_.get() << "] subchannel state " << this
+              << " (subchannel " << subchannel_.get()
+              << "): cancelling watch and unreffing subchannel";
   }
   subchannel_data_ = nullptr;
   subchannel_->CancelConnectivityStateWatch(watcher_);
@@ -701,8 +697,8 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Orphan() {
 
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", pick_first_.get(),
-            subchannel_.get());
+    LOG(INFO) << "Pick First " << pick_first_.get() << " selected subchannel "
+              << subchannel_.get();
   }
   CHECK_NE(subchannel_data_, nullptr);
   pick_first_->UnsetSelectedSubchannel();  // Cancel health watch, if any.
@@ -713,7 +709,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
   // If health checking is NOT enabled, report READY.
   if (pick_first_->enable_health_watch_) {
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO, "[PF %p] starting health watch", pick_first_.get());
+      LOG(INFO) << "[PF " << pick_first_.get() << "] starting health watch";
     }
     auto watcher = std::make_unique<HealthWatcher>(
         pick_first_.Ref(DEBUG_LOCATION, "HealthWatcher"));
@@ -751,13 +747,13 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
                               absl::Status status) {
   if (watcher_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "[PF %p] subchannel state %p (subchannel %p): connectivity "
-            "changed: new_state=%s, status=%s, watcher=%p, "
-            "subchannel_data_=%p, pick_first_->selected_=%p",
-            pick_first_.get(), this, subchannel_.get(),
-            ConnectivityStateName(new_state), status.ToString().c_str(),
-            watcher_, subchannel_data_, pick_first_->selected_.get());
+    LOG(INFO) << "[PF " << pick_first_.get() << "] subchannel state " << this
+              << " (subchannel " << subchannel_.get()
+              << "): connectivity changed: new_state="
+              << ConnectivityStateName(new_state) << ", status=" << status
+              << ", watcher=" << watcher_
+              << ", subchannel_data_=" << subchannel_data_
+              << ", pick_first_->selected_=" << pick_first_->selected_.get();
   }
   // If we're still part of a subchannel list trying to connect, check
   // if we're connected.
@@ -774,9 +770,9 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // We aren't trying to connect, so we must be the selected subchannel.
   CHECK(pick_first_->selected_.get() == this);
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "Pick First %p selected subchannel connectivity changed to %s",
-            pick_first_.get(), ConnectivityStateName(new_state));
+    LOG(INFO) << "Pick First " << pick_first_.get()
+              << " selected subchannel connectivity changed to "
+              << ConnectivityStateName(new_state);
   }
   // Any state change is considered to be a failure of the existing
   // connection.  Report the failure.
@@ -798,10 +794,9 @@ PickFirst::SubchannelList::SubchannelData::SubchannelData(
     RefCountedPtr<SubchannelInterface> subchannel)
     : subchannel_list_(subchannel_list), index_(index) {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "[PF %p] subchannel list %p index %" PRIuPTR
-            ": creating subchannel data",
-            subchannel_list_->policy_.get(), subchannel_list_, index_);
+    LOG(INFO) << "[PF " << subchannel_list_->policy_.get()
+              << "] subchannel list " << subchannel_list_ << " index " << index_
+              << ": creating subchannel data";
   }
   subchannel_state_ =
       MakeOrphanable<SubchannelState>(this, std::move(subchannel));
@@ -811,20 +806,20 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
   PickFirst* p = subchannel_list_->policy_.get();
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(
-        GPR_INFO,
-        "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel_state %p): connectivity changed: old_state=%s, "
-        "new_state=%s, status=%s, seen_transient_failure=%d, p->selected_=%p, "
-        "p->subchannel_list_=%p, p->subchannel_list_->shutting_down_=%d",
-        p, subchannel_list_, index_, subchannel_list_->size(),
-        subchannel_state_.get(),
-        (connectivity_state_.has_value()
-             ? ConnectivityStateName(*connectivity_state_)
-             : "N/A"),
-        ConnectivityStateName(new_state), status.ToString().c_str(),
-        seen_transient_failure_, p->selected_.get(), p->subchannel_list_.get(),
-        p->subchannel_list_->shutting_down_);
+    LOG(INFO) << "[PF " << p << "] subchannel list " << subchannel_list_
+              << " index " << index_ << " of " << subchannel_list_->size()
+              << " (subchannel_state " << subchannel_state_.get()
+              << "): connectivity changed: old_state="
+              << (connectivity_state_.has_value()
+                      ? ConnectivityStateName(*connectivity_state_)
+                      : "N/A")
+              << ", new_state=" << ConnectivityStateName(new_state)
+              << ", status=" << status
+              << ", seen_transient_failure=" << seen_transient_failure_
+              << ", p->selected_=" << p->selected_.get()
+              << ", p->subchannel_list_=" << p->subchannel_list_.get()
+              << ", p->subchannel_list_->shutting_down_="
+              << p->subchannel_list_->shutting_down_;
   }
   if (subchannel_list_->shutting_down_) return;
   // The notification must be for a subchannel in the current list.
@@ -864,10 +859,9 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // connection and report IDLE.
     if (p->selected_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-        gpr_log(GPR_INFO,
-                "[PF %p] subchannel list %p: new update has no subchannels in "
-                "state READY; dropping existing connection and going IDLE",
-                p, subchannel_list_);
+        LOG(INFO) << "[PF " << p << "] subchannel list " << subchannel_list_
+                  << ": new update has no subchannels in "
+                  << "state READY; dropping existing connection and going IDLE";
       }
       p->GoIdle();
     } else {
@@ -965,11 +959,10 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
   if (index_ != subchannel_list_->size() - 1) {
     PickFirst* p = subchannel_list_->policy_.get();
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "Pick First %p subchannel list %p: starting Connection "
-              "Attempt Delay timer for %" PRId64 "ms for index %" PRIuPTR,
-              p, subchannel_list_, p->connection_attempt_delay_.millis(),
-              index_);
+      LOG(INFO) << "Pick First " << p << " subchannel list " << subchannel_list_
+                << ": starting Connection Attempt Delay timer for "
+                << p->connection_attempt_delay_.millis() << "ms for index "
+                << index_;
     }
     subchannel_list_->timer_handle_ =
         p->channel_control_helper()->GetEventEngine()->RunAfter(
@@ -982,14 +975,13 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
               sl->policy_->work_serializer()->Run(
                   [subchannel_list = std::move(subchannel_list)]() {
                     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-                      gpr_log(GPR_INFO,
-                              "Pick First %p subchannel list %p: Connection "
-                              "Attempt Delay timer fired (shutting_down=%d, "
-                              "selected=%p)",
-                              subchannel_list->policy_.get(),
-                              subchannel_list.get(),
-                              subchannel_list->shutting_down_,
-                              subchannel_list->policy_->selected_.get());
+                      LOG(INFO)
+                          << "Pick First " << subchannel_list->policy_.get()
+                          << " subchannel list " << subchannel_list.get()
+                          << ": Connection Attempt Delay timer fired "
+                             "(shutting_down="
+                          << subchannel_list->shutting_down_ << ", selected="
+                          << subchannel_list->policy_->selected_.get() << ")";
                     }
                     if (subchannel_list->shutting_down_) return;
                     if (subchannel_list->policy_->selected_ != nullptr) return;
@@ -1015,8 +1007,8 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
                 .Remove(
                     GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] Creating subchannel list %p - channel args: %s",
-            policy_.get(), this, args_.ToString().c_str());
+    LOG(INFO) << "[PF " << policy_.get() << "] Creating subchannel list "
+              << this << " - channel args: " << args_.ToString();
   }
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
@@ -1028,18 +1020,16 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-        gpr_log(GPR_INFO,
-                "[PF %p] could not create subchannel for address %s, ignoring",
-                policy_.get(), address.ToString().c_str());
+        LOG(INFO) << "[PF " << policy_.get()
+                  << "] could not create subchannel for address "
+                  << address.ToString() << ", ignoring";
       }
       return;
     }
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "[PF %p] subchannel list %p index %" PRIuPTR
-              ": Created subchannel %p for address %s",
-              policy_.get(), this, subchannels_.size(), subchannel.get(),
-              address.ToString().c_str());
+      LOG(INFO) << "[PF " << policy_.get() << "] subchannel list " << this
+                << " index " << subchannels_.size() << ": Created subchannel "
+                << subchannel.get() << " for address " << address.ToString();
     }
     subchannels_.emplace_back(std::make_unique<SubchannelData>(
         this, subchannels_.size(), std::move(subchannel)));
@@ -1048,15 +1038,15 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
 
 PickFirst::SubchannelList::~SubchannelList() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] Destroying subchannel_list %p", policy_.get(),
-            this);
+    LOG(INFO) << "[PF " << policy_.get() << "] Destroying subchannel_list "
+              << this;
   }
 }
 
 void PickFirst::SubchannelList::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p", policy_.get(),
-            this);
+    LOG(INFO) << "[PF " << policy_.get() << "] Shutting down subchannel_list "
+              << this;
   }
   CHECK(!shutting_down_);
   shutting_down_ = true;
@@ -1100,10 +1090,8 @@ void PickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
   // so report TRANSIENT_FAILURE and switch to a mode in which we try to
   // connect to all addresses in parallel.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "Pick First %p subchannel list %p failed to connect to "
-            "all subchannels",
-            policy_.get(), this);
+    LOG(INFO) << "Pick First " << policy_.get() << " subchannel list " << this
+              << " failed to connect to all subchannels";
   }
   // Re-resolve and report TRANSIENT_FAILURE.
   policy_->channel_control_helper()->RequestReresolution();
@@ -1577,9 +1565,8 @@ void OldPickFirst::HealthWatcher::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
   if (policy_->health_watcher_ != this) return;
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] health watch state update: %s (%s)",
-            policy_.get(), ConnectivityStateName(new_state),
-            status.ToString().c_str());
+    LOG(INFO) << "[PF " << policy_.get() << "] health watch state update: "
+              << ConnectivityStateName(new_state) << " (" << status << ")";
   }
   switch (new_state) {
     case GRPC_CHANNEL_READY:
@@ -1619,11 +1606,9 @@ OldPickFirst::SubchannelList::SubchannelData::SubchannelData(
       index_(index),
       subchannel_(std::move(subchannel)) {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "[PF %p] subchannel list %p index %" PRIuPTR
-            " (subchannel %p): starting watch",
-            subchannel_list_->policy_.get(), subchannel_list_, index_,
-            subchannel_.get());
+    LOG(INFO) << "[PF " << subchannel_list_->policy_.get()
+              << "] subchannel list " << subchannel_list_ << " index " << index_
+              << " (subchannel " << subchannel_.get() << "): starting watch";
   }
   auto watcher = std::make_unique<Watcher>(
       subchannel_list_->Ref(DEBUG_LOCATION, "Watcher"), index_);
@@ -1634,11 +1619,11 @@ OldPickFirst::SubchannelList::SubchannelData::SubchannelData(
 void OldPickFirst::SubchannelList::SubchannelData::ShutdownLocked() {
   if (subchannel_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-              " (subchannel %p): cancelling watch and unreffing subchannel",
-              subchannel_list_->policy_.get(), subchannel_list_, index_,
-              subchannel_list_->size(), subchannel_.get());
+      LOG(INFO) << "[PF " << subchannel_list_->policy_.get()
+                << "] subchannel list " << subchannel_list_ << " index "
+                << index_ << " of " << subchannel_list_->size()
+                << " (subchannel " << subchannel_.get()
+                << "): cancelling watch and unreffing subchannel";
     }
     subchannel_->CancelConnectivityStateWatch(pending_watcher_);
     pending_watcher_ = nullptr;
@@ -1650,22 +1635,22 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
   OldPickFirst* p = subchannel_list_->policy_.get();
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(
-        GPR_INFO,
-        "[PF %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel %p): connectivity changed: old_state=%s, new_state=%s, "
-        "status=%s, shutting_down=%d, pending_watcher=%p, "
-        "seen_transient_failure=%d, p->selected_=%p, "
-        "p->subchannel_list_=%p, p->latest_pending_subchannel_list_=%p",
-        p, subchannel_list_, index_, subchannel_list_->size(),
-        subchannel_.get(),
-        (connectivity_state_.has_value()
-             ? ConnectivityStateName(*connectivity_state_)
-             : "N/A"),
-        ConnectivityStateName(new_state), status.ToString().c_str(),
-        subchannel_list_->shutting_down_, pending_watcher_,
-        seen_transient_failure_, p->selected_, p->subchannel_list_.get(),
-        p->latest_pending_subchannel_list_.get());
+    LOG(INFO) << "[PF " << p << "] subchannel list " << subchannel_list_
+              << " index " << index_ << " of " << subchannel_list_->size()
+              << " (subchannel " << subchannel_.get()
+              << "): connectivity changed: old_state="
+              << (connectivity_state_.has_value()
+                      ? ConnectivityStateName(*connectivity_state_)
+                      : "N/A")
+              << ", new_state=" << ConnectivityStateName(new_state)
+              << ", status=" << status
+              << ", shutting_down=" << subchannel_list_->shutting_down_
+              << ", pending_watcher=" << pending_watcher_
+              << ", seen_transient_failure=" << seen_transient_failure_
+              << ", p->selected_=" << p->selected_
+              << ", p->subchannel_list_=" << p->subchannel_list_.get()
+              << ", p->latest_pending_subchannel_list_="
+              << p->latest_pending_subchannel_list_.get();
   }
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
   auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
@@ -1682,9 +1667,9 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   if (p->selected_ == this) {
     CHECK(subchannel_list_ == p->subchannel_list_.get());
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "Pick First %p selected subchannel connectivity changed to %s", p,
-              ConnectivityStateName(new_state));
+      LOG(INFO) << "Pick First " << p
+                << " selected subchannel connectivity changed to "
+                << ConnectivityStateName(new_state);
     }
     // Any state change is considered to be a failure of the existing
     // connection.
@@ -1701,11 +1686,9 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // If there is a pending update, switch to the pending update.
     if (p->latest_pending_subchannel_list_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-        gpr_log(GPR_INFO,
-                "Pick First %p promoting pending subchannel list %p to "
-                "replace %p",
-                p, p->latest_pending_subchannel_list_.get(),
-                p->subchannel_list_.get());
+        LOG(INFO) << "Pick First " << p << " promoting pending subchannel "
+                  << "list " << p->latest_pending_subchannel_list_.get()
+                  << " to replace " << p->subchannel_list_.get();
       }
       p->UnsetSelectedSubchannel();
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
@@ -1865,11 +1848,10 @@ void OldPickFirst::SubchannelList::SubchannelData::
   if (index_ != subchannel_list_->size() - 1) {
     OldPickFirst* p = subchannel_list_->policy_.get();
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "Pick First %p subchannel list %p: starting Connection "
-              "Attempt Delay timer for %" PRId64 "ms for index %" PRIuPTR,
-              p, subchannel_list_, p->connection_attempt_delay_.millis(),
-              index_);
+      LOG(INFO) << "Pick First " << p << " subchannel list " << subchannel_list_
+                << ": starting Connection Attempt Delay timer for "
+                << p->connection_attempt_delay_.millis() << "ms for index "
+                << index_;
     }
     subchannel_list_->timer_handle_ =
         p->channel_control_helper()->GetEventEngine()->RunAfter(
@@ -1882,14 +1864,13 @@ void OldPickFirst::SubchannelList::SubchannelData::
               sl->policy_->work_serializer()->Run(
                   [subchannel_list = std::move(subchannel_list)]() {
                     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-                      gpr_log(GPR_INFO,
-                              "Pick First %p subchannel list %p: Connection "
-                              "Attempt Delay timer fired (shutting_down=%d, "
-                              "selected=%p)",
-                              subchannel_list->policy_.get(),
-                              subchannel_list.get(),
-                              subchannel_list->shutting_down_,
-                              subchannel_list->policy_->selected_);
+                      LOG(INFO)
+                          << "Pick First " << subchannel_list->policy_.get()
+                          << " subchannel list " << subchannel_list.get()
+                          << ": Connection Attempt Delay timer fired "
+                          << "(shutting_down="
+                          << subchannel_list->shutting_down_ << ", selected="
+                          << subchannel_list->policy_->selected_ << ")";
                     }
                     if (subchannel_list->shutting_down_) return;
                     if (subchannel_list->policy_->selected_ != nullptr) return;
@@ -1923,19 +1904,17 @@ void OldPickFirst::SubchannelList::SubchannelData::
   // Case 2.  Promote p->latest_pending_subchannel_list_ to p->subchannel_list_.
   if (subchannel_list_ == p->latest_pending_subchannel_list_.get()) {
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "Pick First %p promoting pending subchannel list %p to "
-              "replace %p",
-              p, p->latest_pending_subchannel_list_.get(),
-              p->subchannel_list_.get());
+      LOG(INFO) << "Pick First " << p << " promoting pending subchannel list "
+                << p->latest_pending_subchannel_list_.get() << " to replace "
+                << p->subchannel_list_.get();
     }
     p->UnsetSelectedSubchannel();
     p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
   }
   // Cases 1 and 2.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p,
-            subchannel_.get());
+    LOG(INFO) << "Pick First " << p << " selected subchannel "
+              << subchannel_.get();
   }
   p->selected_ = this;
   // If health checking is enabled, start the health watch, but don't
@@ -1944,7 +1923,7 @@ void OldPickFirst::SubchannelList::SubchannelData::
   // If health checking is NOT enabled, report READY.
   if (p->enable_health_watch_) {
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO, "[PF %p] starting health watch", p);
+      LOG(INFO) << "[PF " << p << "] starting health watch";
     }
     auto watcher = std::make_unique<HealthWatcher>(
         p->RefAsSubclass<OldPickFirst>(DEBUG_LOCATION, "HealthWatcher"));
@@ -1979,8 +1958,8 @@ OldPickFirst::SubchannelList::SubchannelList(
                 .Remove(
                     GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] Creating subchannel list %p - channel args: %s",
-            policy_.get(), this, args_.ToString().c_str());
+    LOG(INFO) << "[PF " << policy_.get() << "] Creating subchannel list "
+              << this << " - channel args: " << args_.ToString();
   }
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
@@ -1992,18 +1971,16 @@ OldPickFirst::SubchannelList::SubchannelList(
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-        gpr_log(GPR_INFO,
-                "[PF %p] could not create subchannel for address %s, ignoring",
-                policy_.get(), address.ToString().c_str());
+        LOG(INFO) << "[PF " << policy_.get()
+                  << "] could not create subchannel for address "
+                  << address.ToString() << ", ignoring";
       }
       return;
     }
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "[PF %p] subchannel list %p index %" PRIuPTR
-              ": Created subchannel %p for address %s",
-              policy_.get(), this, subchannels_.size(), subchannel.get(),
-              address.ToString().c_str());
+      LOG(INFO) << "[PF " << policy_.get() << "] subchannel list " << this
+                << " index " << subchannels_.size() << ": Created subchannel "
+                << subchannel.get() << " for address " << address.ToString();
     }
     subchannels_.emplace_back(this, subchannels_.size(), std::move(subchannel));
   });
@@ -2011,15 +1988,15 @@ OldPickFirst::SubchannelList::SubchannelList(
 
 OldPickFirst::SubchannelList::~SubchannelList() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] Destroying subchannel_list %p", policy_.get(),
-            this);
+    LOG(INFO) << "[PF " << policy_.get() << "] Destroying subchannel_list "
+              << this;
   }
 }
 
 void OldPickFirst::SubchannelList::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p", policy_.get(),
-            this);
+    LOG(INFO) << "[PF " << policy_.get() << "] Shutting down subchannel_list "
+              << this;
   }
   CHECK(!shutting_down_);
   shutting_down_ = true;
@@ -2065,21 +2042,18 @@ void OldPickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
   // so report TRANSIENT_FAILURE and switch to a mode in which we try to
   // connect to all addresses in parallel.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    gpr_log(GPR_INFO,
-            "Pick First %p subchannel list %p failed to connect to "
-            "all subchannels",
-            policy_.get(), this);
+    LOG(INFO) << "Pick First " << policy_.get() << " subchannel list " << this
+              << " failed to connect to all subchannels";
   }
   // In case 2, swap to the new subchannel list.  This means reporting
   // TRANSIENT_FAILURE and dropping the existing (working) connection,
   // but we can't ignore what the control plane has told us.
   if (policy_->latest_pending_subchannel_list_.get() == this) {
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      gpr_log(GPR_INFO,
-              "Pick First %p promoting pending subchannel list %p to "
-              "replace %p",
-              policy_.get(), policy_->latest_pending_subchannel_list_.get(),
-              this);
+      LOG(INFO) << "Pick First " << policy_.get()
+                << " promoting pending subchannel list "
+                << policy_->latest_pending_subchannel_list_.get()
+                << " to replace " << this;
     }
     policy_->UnsetSelectedSubchannel();
     policy_->subchannel_list_ =
@@ -2108,7 +2082,6 @@ void OldPickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
     }
   }
 }
-
 //
 // factory
 //

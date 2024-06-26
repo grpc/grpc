@@ -27,9 +27,6 @@ using testing::StrictMock;
 namespace grpc_core {
 
 namespace {
-// Offset a void pointer by a given amount
-void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
-
 // A mock activity that can be activated and deactivated.
 class MockActivity : public Activity, public Wakeable {
  public:
@@ -1102,246 +1099,6 @@ TEST(OperationExecutorTest, PromiseTwo) {
   gpr_free_aligned(call_data1);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// CallState
-
-TEST(CallStateTest, NoOp) { CallState state; }
-
-TEST(CallStateTest, StartTwiceCrashes) {
-  CallState state;
-  state.Start();
-  EXPECT_DEATH(state.Start(), "");
-}
-
-TEST(CallStateTest, PullServerInitialMetadataBlocksUntilStart) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.PushServerInitialMetadata());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.Start());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
-}
-
-TEST(CallStateTest, PullClientInitialMetadata) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_DEATH(state.FinishPullClientInitialMetadata(), "");
-  state.BeginPullClientInitialMetadata();
-  state.FinishPullClientInitialMetadata();
-}
-
-TEST(CallStateTest, ClientToServerMessagesWaitForInitialMetadata) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  state.BeginPushClientToServerMessage();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  state.BeginPullClientInitialMetadata();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientInitialMetadata());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-}
-
-TEST(CallStateTest, RepeatedClientToServerMessagesWithHalfClose) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.BeginPullClientInitialMetadata();
-  state.FinishPullClientInitialMetadata();
-
-  // Message 0
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // Message 1
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // Message 2: push before polling
-  state.BeginPushClientToServerMessage();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // Message 3: push before polling and half close
-  state.BeginPushClientToServerMessage();
-  state.ClientToServerHalfClose();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // ... and now we should see the half close
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(false));
-}
-
-TEST(CallStateTest, ImmediateClientToServerHalfClose) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.BeginPullClientInitialMetadata();
-  state.FinishPullClientInitialMetadata();
-  state.ClientToServerHalfClose();
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(false));
-}
-
-TEST(CallStateTest, ServerToClientMessagesWaitForInitialMetadata) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.Start());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.PushServerInitialMetadata());
-  state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity,
-                EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(),
-                            IsReady(true)));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerInitialMetadata());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-}
-
-TEST(CallStateTest, RepeatedServerToClientMessages) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.PushServerInitialMetadata();
-  state.Start();
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(true));
-  state.FinishPullServerInitialMetadata();
-
-  // Message 0
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-
-  // Message 1
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-
-  // Message 2: push before polling
-  state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-
-  // Message 3: push before polling
-  state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-}
-
-TEST(CallStateTest, ReceiveTrailersOnly) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerTrailingMetadata(false);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
-}
-
-TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.PushServerTrailingMetadata(false);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
-}
-
-TEST(CallStateTest, RecallNoCancellation) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerTrailingMetadata(false);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
-  EXPECT_THAT(state.PollWasCancelled(), IsReady(false));
-}
-
-TEST(CallStateTest, RecallCancellation) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerTrailingMetadata(true);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
-  EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
-}
-
-TEST(CallStateTest, ReceiveTrailingMetadataAfterMessageRead) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerInitialMetadata();
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(true));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.PushServerTrailingMetadata(false));
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(false));
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-}
-
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1405,7 +1162,101 @@ TEST(CallFiltersTest, UnaryCall) {
   builder.Add(&f2);
   auto arena = SimpleArenaAllocator()->MakeArena();
   CallFilters filters(Arena::MakePooled<ClientMetadata>());
-  filters.SetStack(builder.Build());
+  filters.AddStack(builder.Build());
+  filters.Start();
+  promise_detail::Context<Arena> ctx(arena.get());
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  // Pull client initial metadata
+  auto pull_client_initial_metadata = filters.PullClientInitialMetadata();
+  EXPECT_THAT(pull_client_initial_metadata(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push client to server message
+  auto push_client_to_server_message = filters.PushClientToServerMessage(
+      Arena::MakePooled<Message>(SliceBuffer(), 0));
+  EXPECT_THAT(push_client_to_server_message(), IsPending());
+  auto pull_client_to_server_message = filters.PullClientToServerMessage();
+  // Pull client to server message, expect a wakeup
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_client_to_server_message(), IsReady()));
+  // Push should be done
+  EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
+  // Push server initial metadata
+  filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
+  auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
+  // Pull server initial metadata
+  EXPECT_THAT(pull_server_initial_metadata(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push server to client message
+  auto push_server_to_client_message = filters.PushServerToClientMessage(
+      Arena::MakePooled<Message>(SliceBuffer(), 0));
+  EXPECT_THAT(push_server_to_client_message(), IsPending());
+  auto pull_server_to_client_message = filters.PullServerToClientMessage();
+  // Pull server to client message, expect a wakeup
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_server_to_client_message(), IsReady()));
+  // Push should be done
+  EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
+  // Push server trailing metadata
+  filters.PushServerTrailingMetadata(Arena::MakePooled<ServerMetadata>());
+  // Pull server trailing metadata
+  auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
+  // Should be done
+  EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
+  filters.Finalize(nullptr);
+  EXPECT_THAT(steps,
+              ::testing::ElementsAre(
+                  "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",
+                  "f1:OnClientToServerMessage", "f2:OnClientToServerMessage",
+                  "f2:OnServerInitialMetadata", "f1:OnServerInitialMetadata",
+                  "f2:OnServerToClientMessage", "f1:OnServerToClientMessage",
+                  "f2:OnServerTrailingMetadata", "f1:OnServerTrailingMetadata",
+                  "f1:OnFinalize", "f2:OnFinalize"));
+}
+
+TEST(CallFiltersTest, UnaryCallWithMultiStack) {
+  struct Filter {
+    struct Call {
+      void OnClientInitialMetadata(ClientMetadata&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnClientInitialMetadata"));
+      }
+      void OnServerInitialMetadata(ServerMetadata&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerInitialMetadata"));
+      }
+      void OnClientToServerMessage(Message&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
+      }
+      void OnClientToServerHalfClose(Filter* f) {
+        f->steps.push_back(
+            absl::StrCat(f->label, ":OnClientToServerHalfClose"));
+      }
+      void OnServerToClientMessage(Message&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));
+      }
+      void OnServerTrailingMetadata(ServerMetadata&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerTrailingMetadata"));
+      }
+      void OnFinalize(const grpc_call_final_info*, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnFinalize"));
+      }
+      std::unique_ptr<int> i = std::make_unique<int>(3);
+    };
+
+    const std::string label;
+    std::vector<std::string>& steps;
+  };
+  std::vector<std::string> steps;
+  Filter f1{"f1", steps};
+  Filter f2{"f2", steps};
+  CallFilters::StackBuilder builder1;
+  CallFilters::StackBuilder builder2;
+  builder1.Add(&f1);
+  builder2.Add(&f2);
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  CallFilters filters(Arena::MakePooled<ClientMetadata>());
+  filters.AddStack(builder1.Build());
+  filters.AddStack(builder2.Build());
+  filters.Start();
   promise_detail::Context<Arena> ctx(arena.get());
   StrictMock<MockActivity> activity;
   activity.Activate();
