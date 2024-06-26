@@ -93,7 +93,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
-  std::shared_ptr<HandshakeManager> handshake_mgr_;
+  RefCountedPtr<HandshakeManager> handshake_mgr_;
   HPackCompressor hpack_compressor_;
   HPackParser hpack_parser_;
   absl::BitGen bitgen_;

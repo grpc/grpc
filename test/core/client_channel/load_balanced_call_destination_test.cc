@@ -75,7 +75,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
+      handlers_.push(unstarted_call_handler.StartCall());
     }
 
     absl::optional<CallHandler> PopHandler() {
