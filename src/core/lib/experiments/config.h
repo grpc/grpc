@@ -67,6 +67,13 @@ class ExperimentFlags {
  private:
   static bool LoadFlagsAndCheck(size_t experiment_id);
 
+  // We layout experiment flags in groups of 63... each 64 bit word contains
+  // 63 enablement flags (one per experiment), and the high bit which indicates
+  // whether the flags have been loaded from the configuration.
+  // Consequently, with one load, we can tell if the experiment is definitely
+  // enabled (the bit is set), or definitely disabled (the bit is clear, and the
+  // loaded flag is set), or if we need to load the flags and re-check.
+
   static constexpr size_t kNumExperimentFlagsWords = 8;
   static constexpr size_t kFlagsPerWord = 63;
   static constexpr uint64_t kLoadedFlag = 0x8000000000000000ull;
