@@ -23,10 +23,14 @@
 #ifdef GRPC_WINSOCK_SOCKET
 #include <errno.h>
 #include <fcntl.h>
-#include <grpc/event_engine/event_engine.h>
 #include <string.h>
 
 #include <memory>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -38,8 +42,6 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -64,7 +66,7 @@ void CreateSockets(SOCKET sv[2]) {
         SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                       ::grpc_get_default_wsa_socket_flags());
+                       grpc_get_default_wsa_socket_flags());
   CHECK(cli_sock != INVALID_SOCKET);
 
   CHECK(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL, NULL,

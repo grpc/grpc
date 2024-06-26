@@ -76,8 +76,6 @@ TraceFlag event_engine_dns_trace(false, "event_engine_dns");
 TraceFlag event_engine_endpoint_trace(false, "event_engine_endpoint");
 TraceFlag event_engine_endpoint_data_trace(false, "event_engine_endpoint_data");
 TraceFlag event_engine_poller_trace(false, "event_engine_poller");
-TraceFlag event_engine_secure_endpoint_trace(false,
-                                             "event_engine_secure_endpoint");
 TraceFlag executor_trace(false, "executor");
 TraceFlag fault_injection_filter_trace(false, "fault_injection_filter");
 TraceFlag flowctl_trace(false, "flowctl");

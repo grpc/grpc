@@ -18,19 +18,26 @@
 
 #include "src/core/handshaker/security/secure_endpoint.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
 
-#include "include/grpc/event_engine/event_engine.h"
-#include "include/grpc/event_engine/slice.h"
-#include "include/grpc/event_engine/slice_buffer.h"
-#include "include/grpc/slice.h"
-#include "include/grpc/support/alloc.h"
-#include "include/grpc/support/log.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -44,12 +51,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -522,7 +523,7 @@ class SecureEndpoint
                                      std::move(to_wrap), leftover_slices,
                                      channel_args, leftover_nslices)) {}
 
-  ~SecureEndpoint() = default;
+  ~SecureEndpoint() override = default;
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override {
@@ -563,7 +564,7 @@ CreateSecureEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         to_wrap,
     grpc_event_engine::experimental::Slice* leftover_slices,
-    const grpc_core::ChannelArgs& channel_args, size_t leftover_nslices) {
+    const ChannelArgs& channel_args, size_t leftover_nslices) {
   return std::make_unique<SecureEndpoint>(protector, zero_copy_protector,
                                           std::move(to_wrap), leftover_slices,
                                           channel_args, leftover_nslices);
