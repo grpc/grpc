@@ -23,10 +23,6 @@
 
 namespace grpc_core {
 
-namespace {
-void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
-}  // namespace
-
 namespace filters_detail {
 
 void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data) {
@@ -129,39 +125,62 @@ char g_empty_call_data;
 // CallFilters
 
 CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
-    : stack_(nullptr),
-      call_data_(nullptr),
+    : call_data_(nullptr),
       push_client_initial_metadata_(std::move(client_initial_metadata)) {}
 
 CallFilters::~CallFilters() {
   if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
-    for (const auto& destructor : stack_->data_.filter_destructor) {
-      destructor.call_destroy(Offset(call_data_, destructor.call_offset));
+    for (const auto& stack : stacks_) {
+      for (const auto& destructor : stack.stack->data_.filter_destructor) {
+        destructor.call_destroy(filters_detail::Offset(
+            call_data_, stack.call_data_offset + destructor.call_offset));
+      }
     }
     gpr_free_aligned(call_data_);
   }
 }
 
-void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
+void CallFilters::Start() {
   CHECK_EQ(call_data_, nullptr);
-  stack_ = std::move(stack);
-  if (stack_->data_.call_data_size != 0) {
-    call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
-                                    stack_->data_.call_data_alignment);
+  size_t call_data_alignment = 1;
+  for (const auto& stack : stacks_) {
+    call_data_alignment =
+        std::max(call_data_alignment, stack.stack->data_.call_data_alignment);
+  }
+  size_t call_data_size = 0;
+  for (auto& stack : stacks_) {
+    stack.call_data_offset = call_data_size;
+    size_t stack_call_data_size = stack.stack->data_.call_data_size;
+    if (stack_call_data_size % call_data_alignment != 0) {
+      stack_call_data_size +=
+          call_data_alignment - stack_call_data_size % call_data_alignment;
+    }
+    call_data_size += stack_call_data_size;
+  }
+  if (call_data_size != 0) {
+    call_data_ = gpr_malloc_aligned(call_data_size, call_data_alignment);
   } else {
     call_data_ = &g_empty_call_data;
   }
-  for (const auto& constructor : stack_->data_.filter_constructor) {
-    constructor.call_init(Offset(call_data_, constructor.call_offset),
-                          constructor.channel_data);
+  for (const auto& stack : stacks_) {
+    for (const auto& constructor : stack.stack->data_.filter_constructor) {
+      constructor.call_init(
+          filters_detail::Offset(
+              call_data_, stack.call_data_offset + constructor.call_offset),
+          constructor.channel_data);
+    }
   }
   call_state_.Start();
 }
 
 void CallFilters::Finalize(const grpc_call_final_info* final_info) {
-  for (auto& finalizer : stack_->data_.finalizers) {
-    finalizer.final(Offset(call_data_, finalizer.call_offset),
-                    finalizer.channel_data, final_info);
+  for (auto& stack : stacks_) {
+    for (auto& finalizer : stack.stack->data_.finalizers) {
+      finalizer.final(
+          filters_detail::Offset(
+              call_data_, stack.call_data_offset + finalizer.call_offset),
+          finalizer.channel_data, final_info);
+    }
   }
 }
 

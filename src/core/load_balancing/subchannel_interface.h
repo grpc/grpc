@@ -76,6 +76,8 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
+  // TODO(roth): This interface has an ABA issue.  Fix this before we
+  // make this API public.
   virtual void CancelConnectivityStateWatch(
       ConnectivityStateWatcherInterface* watcher) = 0;
 
@@ -96,6 +98,8 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
       std::unique_ptr<DataWatcherInterface> watcher) = 0;
 
   // Cancels a data watch.
+  // TODO(roth): This interface has an ABA issue.  Fix this before we
+  // make this API public.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
 
  protected:
