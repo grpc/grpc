@@ -96,6 +96,11 @@ void HandshakeManager::DoHandshake(
     Timestamp deadline, grpc_tcp_server_acceptor* acceptor,
     absl::AnyInvocable<void(absl::StatusOr<HandshakerArgs*>)>
         on_handshake_done) {
+  // We hold a ref until after the mutex is released, because we might
+  // wind up invoking on_handshake_done in another thread before we
+  // return from this function, and on_handshake_done might release the
+  // last ref to this object.
+  auto self = Ref();
   MutexLock lock(&mu_);
   CHECK_EQ(index_, 0u);
   on_handshake_done_ = std::move(on_handshake_done);
