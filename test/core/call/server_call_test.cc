@@ -51,7 +51,7 @@ class ServerCallTest : public YodelTest {
         MakeCallPair(std::move(client_initial_metadata), std::move(arena));
     call.initiator.SpawnGuarded(
         "initial_metadata",
-        [this, handler = call.handler.StartWithEmptyFilterStack()]() mutable {
+        [this, handler = call.handler.StartCall()]() mutable {
           return TrySeq(
               handler.PullClientInitialMetadata(),
               [this,
