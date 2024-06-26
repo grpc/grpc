@@ -637,8 +637,8 @@ class XdsClientTest : public ::testing::Test {
     }
     const ServerFailureMap& server_failures() const { return server_failures_; }
 
-    // Returns true if the matcher returns true before the timeout.
-    // Runs the predicate once as soon as it is called and then again
+    // Returns true if matchers return true before the timeout.
+    // Runs matchers once as soon as it is called and then again
     // every time the metrics reporter sees an update.
     bool WaitForMetricsReporterData(
         ::testing::Matcher<ResourceUpdateMap> resource_updates_valid_matcher,
@@ -970,6 +970,12 @@ TEST_F(XdsClientTest, BasicWatch) {
                           XdsFooResourceType::Get()->type_url()),
           1)),
       ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
   // XdsClient should have sent an ACK message to the xDS server.
