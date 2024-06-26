@@ -29,7 +29,6 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -186,10 +185,9 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
     max_frame_size = std::max<size_t>(max_frame_size, kTsiAltsMinFrameSize);
   }
   max_output_protected_frame_size = &max_frame_size;
-  gpr_log(GPR_DEBUG,
-          "After Frame Size Negotiation, maximum frame size used by frame "
-          "protector equals %zu",
-          *max_output_protected_frame_size);
+  VLOG(2) << "After Frame Size Negotiation, maximum frame size used by frame "
+             "protector equals "
+          << *max_output_protected_frame_size;
   tsi_result ok = alts_zero_copy_grpc_protector_create(
       grpc_core::GsecKeyFactory({reinterpret_cast<uint8_t*>(result->key_data),
                                  kAltsAes128GcmRekeyKeyLength},
@@ -392,9 +390,8 @@ static void on_handshaker_service_resp_recv(void* arg,
   }
   bool success = true;
   if (!error.ok()) {
-    gpr_log(GPR_INFO,
-            "ALTS handshaker on_handshaker_service_resp_recv error: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(INFO) << "ALTS handshaker on_handshaker_service_resp_recv error: "
+              << grpc_core::StatusToString(error);
     success = false;
   }
   alts_handshaker_client_handle_response(client, success);
