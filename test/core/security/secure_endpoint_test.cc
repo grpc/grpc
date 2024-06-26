@@ -19,12 +19,17 @@
 #include "src/core/handshaker/security/secure_endpoint.h"
 
 #include <fcntl.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <gtest/gtest.h>
 #include <sys/types.h>
 
 #include <memory>
+
+#include <gtest/gtest.h>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
 #include "src/core/handshaker/security/legacy_secure_endpoint.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -44,8 +49,6 @@
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/test_config.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -73,7 +76,7 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 class InterceptEndpoint : public EventEngine::Endpoint,
                           EndpointSupportsFdExtension {
  public:
-  InterceptEndpoint(std::unique_ptr<EventEngine::Endpoint> wrapped_ep)
+  explicit InterceptEndpoint(std::unique_ptr<EventEngine::Endpoint> wrapped_ep)
       : wrapped_ep_(std::move(wrapped_ep)) {}
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
