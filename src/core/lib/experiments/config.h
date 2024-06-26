@@ -18,6 +18,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <atomic>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 
@@ -38,15 +40,58 @@ struct ExperimentMetadata {
 };
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
+class ExperimentFlags {
+ public:
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsExperimentEnabled(
+      size_t experiment_id) {
+    auto bit = experiment_id % 63;
+    auto word = experiment_id / 63;
+    auto cur = experiment_flags_[word].load(std::memory_order_relaxed);
+    if (cur & (1ull << bit)) return true;
+    if (cur & (0x8000000000000000ull)) return false;
+    return LoadFlagsAndCheck(experiment_id);
+  }
+
+  template <size_t kExperimentId>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsExperimentEnabled() {
+    auto bit = kExperimentId % 63;
+    auto word = kExperimentId / 63;
+    auto cur = experiment_flags_[word].load(std::memory_order_relaxed);
+    if (cur & (1ull << bit)) return true;
+    if (cur & (0x8000000000000000ull)) return false;
+    return LoadFlagsAndCheck(kExperimentId);
+  }
+
+  static void TestOnlyClear();
+
+ private:
+  static bool LoadFlagsAndCheck(size_t experiment_id);
+
+  static constexpr size_t kNumExperimentFlagsWords = 8;
+  static std::atomic<uint64_t> experiment_flags_[kNumExperimentFlagsWords];
+};
+
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
-bool IsExperimentEnabled(size_t experiment_id);
+inline bool IsExperimentEnabled(size_t experiment_id) {
+  return ExperimentFlags::IsExperimentEnabled(experiment_id);
+}
+
+template <size_t kExperimentId>
+inline bool IsExperimentEnabled() {
+  return ExperimentFlags::IsExperimentEnabled<kExperimentId>();
+}
 
 // Given a test experiment id, returns true if the test experiment is enabled.
 // Test experiments can be loaded using the LoadTestOnlyExperimentsFromMetadata
 // method.
 bool IsTestExperimentEnabled(size_t experiment_id);
+
+template <size_t kExperimentId>
+inline bool IsTestExperimentEnabled() {
+  return IsTestExperimentEnabled(kExperimentId);
+}
 
 // Slow check for if a named experiment is enabled.
 // Parses the configuration and looks up the experiment in that, so it does not
