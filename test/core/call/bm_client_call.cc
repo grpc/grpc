@@ -136,7 +136,7 @@ void BM_Unary(benchmark::State& state) {
     // back a response.
     auto unstarted_handler = helper.TakeHandler();
     unstarted_handler.SpawnInfallible("run_handler", [&]() mutable {
-      auto handler = unstarted_handler.StartWithEmptyFilterStack();
+      auto handler = unstarted_handler.StartCall();
       handler.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
       auto response =
           Arena::MakePooled<Message>(SliceBuffer(response_payload.Copy()), 0);

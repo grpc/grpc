@@ -35,7 +35,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -251,10 +250,8 @@ XdsClusterManagerLb::XdsClusterManagerLb(Args args)
 
 XdsClusterManagerLb::~XdsClusterManagerLb() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_cluster_manager_lb %p] destroying xds_cluster_manager LB policy",
-        this);
+    LOG(INFO) << "[xds_cluster_manager_lb " << this
+              << "] destroying xds_cluster_manager LB policy";
   }
 }
 

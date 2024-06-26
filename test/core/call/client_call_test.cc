@@ -117,7 +117,7 @@ class ClientCallTest : public YodelTest {
     void Orphaned() override {}
     void StartCall(UnstartedCallHandler handler) override {
       CHECK(!test_->handler_.has_value());
-      test_->handler_.emplace(handler.StartWithEmptyFilterStack());
+      test_->handler_.emplace(handler.StartCall());
     }
 
    private:
