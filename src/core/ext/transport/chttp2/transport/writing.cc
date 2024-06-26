@@ -297,9 +297,9 @@ class WriteContext {
     uint32_t transport_announce = t_->flow_control.MaybeSendUpdate(
         t_->outbuf.c_slice_buffer()->count > 0);
     if (transport_announce) {
-      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
-                            grpc_chttp2_window_update_create(
-                                0, transport_announce, nullptr));
+      grpc_slice_buffer_add(
+          t_->outbuf.c_slice_buffer(),
+          grpc_chttp2_window_update_create(0, transport_announce, nullptr));
       grpc_chttp2_reset_ping_clock(t_);
     }
   }
@@ -470,8 +470,7 @@ class StreamWriteContext {
               t_->settings.peer()
                   .allow_true_binary_metadata(),     // use_true_binary_metadata
               t_->settings.peer().max_frame_size(),  // max_frame_size
-              &s_->call_tracer_wrapper
-          },
+              &s_->call_tracer_wrapper},
           *s_->send_initial_metadata, t_->outbuf.c_slice_buffer());
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
@@ -507,10 +506,10 @@ class StreamWriteContext {
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
-    grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
-                          grpc_chttp2_window_update_create(
-                              s_->id, stream_announce,
-                              &s_->call_tracer_wrapper));
+    grpc_slice_buffer_add(
+        t_->outbuf.c_slice_buffer(),
+        grpc_chttp2_window_update_create(s_->id, stream_announce,
+                                         &s_->call_tracer_wrapper));
     grpc_chttp2_reset_ping_clock(t_);
     write_context_->IncWindowUpdateWrites();
   }
@@ -630,10 +629,10 @@ class StreamWriteContext {
     s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {
-      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
-                            grpc_chttp2_rst_stream_create(
-                                s_->id, GRPC_HTTP2_NO_ERROR,
-                                &s_->call_tracer_wrapper));
+      grpc_slice_buffer_add(
+          t_->outbuf.c_slice_buffer(),
+          grpc_chttp2_rst_stream_create(s_->id, GRPC_HTTP2_NO_ERROR,
+                                        &s_->call_tracer_wrapper));
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());

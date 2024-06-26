@@ -365,7 +365,8 @@ void Chttp2CallTracerWrapper::RecordOutgoingBytes(
   // Update legacy API.
   stream_->stats.outgoing.framing_bytes += transport_byte_size.framing_bytes;
   stream_->stats.outgoing.data_bytes += transport_byte_size.data_bytes;
-  stream_->stats.outgoing.header_bytes += transport_byte_size.header_bytes;       // Update new API.
+  stream_->stats.outgoing.header_bytes +=
+      transport_byte_size.header_bytes;  // Update new API.
   if (stream_->call_tracer != nullptr) {
     stream_->call_tracer->RecordOutgoingBytes(transport_byte_size);
   }

@@ -200,8 +200,7 @@ grpc_slice EncodeHeaderIntoBytes(
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       16384,       // max_frame_size
-      &call_tracer
-  };
+      &call_tracer};
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
 
