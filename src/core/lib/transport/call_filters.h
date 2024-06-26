@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <type_traits>
@@ -35,6 +36,7 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/call_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -119,6 +121,10 @@ namespace grpc_core {
 struct NoInterceptor {};
 
 namespace filters_detail {
+
+inline void* Offset(void* base, size_t amt) {
+  return static_cast<char*>(base) + amt;
+}
 
 // One call filter constructor
 // Contains enough information to allocate and initialize the
@@ -870,6 +876,17 @@ struct StackData {
   // (to capture ownership of channel data)
   std::vector<ChannelDataDestructor> channel_data_destructors;
 
+  bool empty() const {
+    return filter_constructor.empty() && filter_destructor.empty() &&
+           client_initial_metadata.ops.empty() &&
+           server_initial_metadata.ops.empty() &&
+           client_to_server_messages.ops.empty() &&
+           client_to_server_half_close.empty() &&
+           server_to_client_messages.ops.empty() &&
+           server_trailing_metadata.empty() && finalizers.empty() &&
+           channel_data_destructors.empty();
+  }
+
   // Add one filter to the list of filters, and update alignment.
   // Returns the offset of the call data for this filter.
   // Specifically does not update any of the layouts or finalizers.
@@ -1099,244 +1116,6 @@ class OperationExecutor {
   const Operator<T>* end_ops_;
 };
 
-class CallState {
- public:
-  CallState();
-  // Start the call: allows pulls to proceed
-  void Start();
-  // PUSH: client -> server
-  void BeginPushClientToServerMessage();
-  Poll<StatusFlag> PollPushClientToServerMessage();
-  void ClientToServerHalfClose();
-  // PULL: client -> server
-  void BeginPullClientInitialMetadata();
-  void FinishPullClientInitialMetadata();
-  Poll<ValueOrFailure<bool>> PollPullClientToServerMessageAvailable();
-  void FinishPullClientToServerMessage();
-  // PUSH: server -> client
-  StatusFlag PushServerInitialMetadata();
-  void BeginPushServerToClientMessage();
-  Poll<StatusFlag> PollPushServerToClientMessage();
-  bool PushServerTrailingMetadata(bool cancel);
-  // PULL: server -> client
-  Poll<bool> PollPullServerInitialMetadataAvailable();
-  void FinishPullServerInitialMetadata();
-  Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
-  void FinishPullServerToClientMessage();
-  Poll<Empty> PollServerTrailingMetadataAvailable();
-  void FinishPullServerTrailingMetadata();
-  Poll<bool> PollWasCancelled();
-  // Debug
-  std::string DebugString() const;
-
-  friend std::ostream& operator<<(std::ostream& out,
-                                  const CallState& call_state) {
-    return out << call_state.DebugString();
-  }
-
- private:
-  enum class ClientToServerPullState : uint16_t {
-    // Ready to read: client initial metadata is there, but not yet processed
-    kBegin,
-    // Processing client initial metadata
-    kProcessingClientInitialMetadata,
-    // Main call loop: not reading
-    kIdle,
-    // Main call loop: reading but no message available
-    kReading,
-    // Main call loop: processing one message
-    kProcessingClientToServerMessage,
-    // Processing complete
-    kTerminated,
-  };
-  static const char* ClientToServerPullStateString(
-      ClientToServerPullState state) {
-    switch (state) {
-      case ClientToServerPullState::kBegin:
-        return "Begin";
-      case ClientToServerPullState::kProcessingClientInitialMetadata:
-        return "ProcessingClientInitialMetadata";
-      case ClientToServerPullState::kIdle:
-        return "Idle";
-      case ClientToServerPullState::kReading:
-        return "Reading";
-      case ClientToServerPullState::kProcessingClientToServerMessage:
-        return "ProcessingClientToServerMessage";
-      case ClientToServerPullState::kTerminated:
-        return "Terminated";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ClientToServerPullState state) {
-    out.Append(ClientToServerPullStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ClientToServerPullState state) {
-    return out << ClientToServerPullStateString(state);
-  }
-  enum class ClientToServerPushState : uint16_t {
-    kIdle,
-    kPushedMessage,
-    kPushedHalfClose,
-    kPushedMessageAndHalfClosed,
-    kFinished,
-  };
-  static const char* ClientToServerPushStateString(
-      ClientToServerPushState state) {
-    switch (state) {
-      case ClientToServerPushState::kIdle:
-        return "Idle";
-      case ClientToServerPushState::kPushedMessage:
-        return "PushedMessage";
-      case ClientToServerPushState::kPushedHalfClose:
-        return "PushedHalfClose";
-      case ClientToServerPushState::kPushedMessageAndHalfClosed:
-        return "PushedMessageAndHalfClosed";
-      case ClientToServerPushState::kFinished:
-        return "Finished";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ClientToServerPushState state) {
-    out.Append(ClientToServerPushStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ClientToServerPushState state) {
-    return out << ClientToServerPushStateString(state);
-  }
-  enum class ServerToClientPullState : uint16_t {
-    // Not yet started: cannot read
-    kUnstarted,
-    kUnstartedReading,
-    kStarted,
-    kStartedReading,
-    // Processing server initial metadata
-    kProcessingServerInitialMetadata,
-    kProcessingServerInitialMetadataReading,
-    // Main call loop: not reading
-    kIdle,
-    // Main call loop: reading but no message available
-    kReading,
-    // Main call loop: processing one message
-    kProcessingServerToClientMessage,
-    // Processing server trailing metadata
-    kProcessingServerTrailingMetadata,
-    kTerminated,
-  };
-  static const char* ServerToClientPullStateString(
-      ServerToClientPullState state) {
-    switch (state) {
-      case ServerToClientPullState::kUnstarted:
-        return "Unstarted";
-      case ServerToClientPullState::kUnstartedReading:
-        return "UnstartedReading";
-      case ServerToClientPullState::kStarted:
-        return "Started";
-      case ServerToClientPullState::kStartedReading:
-        return "StartedReading";
-      case ServerToClientPullState::kProcessingServerInitialMetadata:
-        return "ProcessingServerInitialMetadata";
-      case ServerToClientPullState::kProcessingServerInitialMetadataReading:
-        return "ProcessingServerInitialMetadataReading";
-      case ServerToClientPullState::kIdle:
-        return "Idle";
-      case ServerToClientPullState::kReading:
-        return "Reading";
-      case ServerToClientPullState::kProcessingServerToClientMessage:
-        return "ProcessingServerToClientMessage";
-      case ServerToClientPullState::kProcessingServerTrailingMetadata:
-        return "ProcessingServerTrailingMetadata";
-      case ServerToClientPullState::kTerminated:
-        return "Terminated";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerToClientPullState state) {
-    out.Append(ServerToClientPullStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientPullState state) {
-    return out << ServerToClientPullStateString(state);
-  }
-  enum class ServerToClientPushState : uint16_t {
-    kStart,
-    kPushedServerInitialMetadata,
-    kPushedServerInitialMetadataAndPushedMessage,
-    kTrailersOnly,
-    kIdle,
-    kPushedMessage,
-    kFinished,
-  };
-  static const char* ServerToClientPushStateString(
-      ServerToClientPushState state) {
-    switch (state) {
-      case ServerToClientPushState::kStart:
-        return "Start";
-      case ServerToClientPushState::kPushedServerInitialMetadata:
-        return "PushedServerInitialMetadata";
-      case ServerToClientPushState::
-          kPushedServerInitialMetadataAndPushedMessage:
-        return "PushedServerInitialMetadataAndPushedMessage";
-      case ServerToClientPushState::kTrailersOnly:
-        return "TrailersOnly";
-      case ServerToClientPushState::kIdle:
-        return "Idle";
-      case ServerToClientPushState::kPushedMessage:
-        return "PushedMessage";
-      case ServerToClientPushState::kFinished:
-        return "Finished";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerToClientPushState state) {
-    out.Append(ServerToClientPushStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientPushState state) {
-    return out << ServerToClientPushStateString(state);
-  }
-  enum class ServerTrailingMetadataState : uint16_t {
-    kNotPushed,
-    kPushed,
-    kPushedCancel,
-    kPulled,
-    kPulledCancel,
-  };
-  static const char* ServerTrailingMetadataStateString(
-      ServerTrailingMetadataState state) {
-    switch (state) {
-      case ServerTrailingMetadataState::kNotPushed:
-        return "NotPushed";
-      case ServerTrailingMetadataState::kPushed:
-        return "Pushed";
-      case ServerTrailingMetadataState::kPushedCancel:
-        return "PushedCancel";
-      case ServerTrailingMetadataState::kPulled:
-        return "Pulled";
-      case ServerTrailingMetadataState::kPulledCancel:
-        return "PulledCancel";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerTrailingMetadataState state) {
-    out.Append(ServerTrailingMetadataStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerTrailingMetadataState state) {
-    return out << ServerTrailingMetadataStateString(state);
-  }
-  ClientToServerPullState client_to_server_pull_state_ : 3;
-  ClientToServerPushState client_to_server_push_state_ : 3;
-  ServerToClientPullState server_to_client_pull_state_ : 4;
-  ServerToClientPushState server_to_client_push_state_ : 3;
-  ServerTrailingMetadataState server_trailing_metadata_state_ : 3;
-  IntraActivityWaiter client_to_server_pull_waiter_;
-  IntraActivityWaiter server_to_client_pull_waiter_;
-  IntraActivityWaiter client_to_server_push_waiter_;
-  IntraActivityWaiter server_to_client_push_waiter_;
-  IntraActivityWaiter server_trailing_metadata_waiter_;
-};
-
 template <typename Fn>
 class ServerTrailingMetadataInterceptor {
  public:
@@ -1505,7 +1284,11 @@ class CallFilters {
   CallFilters(CallFilters&&) = delete;
   CallFilters& operator=(CallFilters&&) = delete;
 
-  void SetStack(RefCountedPtr<Stack> stack);
+  void AddStack(RefCountedPtr<Stack> stack) {
+    if (stack->data_.empty()) return;
+    stacks_.emplace_back(std::move(stack));
+  }
+  void Start();
 
   // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
@@ -1513,47 +1296,72 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, void (filters_detail::CallState::*on_done)(),
-            typename Input>
-  Poll<ValueOrFailure<Output>> FinishStep(
-      Poll<filters_detail::ResultOr<Input>> p) {
-    auto* r = p.value_if_ready();
-    if (r == nullptr) return Pending{};
-    (call_state_.*on_done)();
-    if (r->ok != nullptr) {
-      return ValueOrFailure<Output>{std::move(r->ok)};
-    }
-    PushServerTrailingMetadata(std::move(r->error));
-    return Failure{};
-  }
-
   template <typename Output, typename Input,
             Input(CallFilters::*input_location),
             filters_detail::Layout<Input>(filters_detail::StackData::*layout),
-            void (filters_detail::CallState::*on_done)()>
-  auto RunExecutor() {
-    DCHECK_NE((this->*input_location).get(), nullptr);
-    filters_detail::OperationExecutor<Input> executor;
-    return [this, executor = std::move(executor)]() mutable {
-      if ((this->*input_location) != nullptr) {
-        return FinishStep<Output, on_done>(
-            executor.Start(&(stack_->data_.*layout),
-                           std::move(this->*input_location), call_data_));
+            void (CallState::*on_done)(), typename StackIterator>
+  class Executor {
+   public:
+    Executor(CallFilters* filters, StackIterator stack_begin,
+             StackIterator stack_end)
+        : stack_current_(stack_begin),
+          stack_end_(stack_end),
+          filters_(filters) {
+      DCHECK_NE((filters_->*input_location).get(), nullptr);
+    }
+
+    Poll<ValueOrFailure<Output>> operator()() {
+      if ((filters_->*input_location) != nullptr) {
+        if (stack_current_ == stack_end_) {
+          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          (filters_->call_state_.*on_done)();
+          return Output(std::move(filters_->*input_location));
+        }
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout),
+            std::move(filters_->*input_location), filters_->call_data_));
+      } else {
+        return FinishStep(executor_.Step(filters_->call_data_));
       }
-      return FinishStep<Output, on_done>(executor.Step(call_data_));
-    };
-  }
+    }
+
+   private:
+    Poll<ValueOrFailure<Output>> FinishStep(
+        Poll<filters_detail::ResultOr<Input>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      if (r->ok != nullptr) {
+        ++stack_current_;
+        if (stack_current_ == stack_end_) {
+          (filters_->call_state_.*on_done)();
+          return ValueOrFailure<Output>{std::move(r->ok)};
+        }
+        return FinishStep(
+            executor_.Start(&(stack_current_->stack->data_.*layout),
+                            std::move(r->ok), filters_->call_data_));
+      }
+      (filters_->call_state_.*on_done)();
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    StackIterator stack_current_;
+    StackIterator stack_end_;
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<Input> executor_;
+  };
 
  public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
-    return RunExecutor<
-        ClientMetadataHandle, ClientMetadataHandle,
-        &CallFilters::push_client_initial_metadata_,
-        &filters_detail::StackData::client_initial_metadata,
-        &filters_detail::CallState::FinishPullClientInitialMetadata>();
+    return Executor<ClientMetadataHandle, ClientMetadataHandle,
+                    &CallFilters::push_client_initial_metadata_,
+                    &filters_detail::StackData::client_initial_metadata,
+                    &CallState::FinishPullClientInitialMetadata,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1573,13 +1381,14 @@ class CallFilters {
               has_server_initial_metadata,
               [this]() {
                 return Map(
-                    RunExecutor<
+                    Executor<
                         absl::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
-                        &filters_detail::CallState::
-                            FinishPullServerInitialMetadata>(),
+                        &CallState::FinishPullServerInitialMetadata,
+                        StacksVector::const_reverse_iterator>(
+                        this, stacks_.crbegin(), stacks_.crend()),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
                       return absl::optional<ServerMetadataHandle>{};
@@ -1612,12 +1421,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_client_to_server_message_,
                     &filters_detail::StackData::client_to_server_messages,
-                    &filters_detail::CallState::
-                        FinishPullClientToServerMessage>();
+                    &CallState::FinishPullClientToServerMessage,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1642,12 +1452,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_server_to_client_message_,
                     &filters_detail::StackData::server_to_client_messages,
-                    &filters_detail::CallState::
-                        FinishPullServerToClientMessage>();
+                    &CallState::FinishPullServerToClientMessage,
+                    StacksVector::const_reverse_iterator>(
+                    this, stacks_.crbegin(), stacks_.crend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1665,12 +1476,17 @@ class CallFilters {
     return Map(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
-          auto result = std::move(push_server_trailing_metadata_);
+          auto value = std::move(push_server_trailing_metadata_);
+          if (call_data_ != nullptr) {
+            for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
+              value = filters_detail::RunServerTrailingMetadata(
+                  it->stack->data_.server_trailing_metadata,
+                  filters_detail::Offset(call_data_, it->call_data_offset),
+                  std::move(value));
+            }
+          }
           call_state_.FinishPullServerTrailingMetadata();
-          if (call_data_ == nullptr) return result;
-          return filters_detail::RunServerTrailingMetadata(
-              stack_->data_.server_trailing_metadata, call_data_,
-              std::move(result));
+          return value;
         });
   }
   // Server: Wait for server trailing metadata to have been sent
@@ -1689,9 +1505,19 @@ class CallFilters {
  private:
   void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
-  RefCountedPtr<Stack> stack_;
+  struct AddedStack {
+    explicit AddedStack(RefCountedPtr<Stack> stack)
+        : call_data_offset(std::numeric_limits<size_t>::max()),
+          stack(std::move(stack)) {}
+    size_t call_data_offset;
+    RefCountedPtr<Stack> stack;
+  };
 
-  filters_detail::CallState call_state_;
+  using StacksVector = absl::InlinedVector<AddedStack, 2>;
+
+  StacksVector stacks_;
+
+  CallState call_state_;
 
   void* call_data_;
   ClientMetadataHandle push_client_initial_metadata_;

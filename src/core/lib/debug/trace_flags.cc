@@ -26,6 +26,7 @@ namespace grpc_core {
 DebugOnlyTraceFlag auth_context_refcount_trace(false, "auth_context_refcount");
 DebugOnlyTraceFlag call_combiner_trace(false, "call_combiner");
 DebugOnlyTraceFlag call_refcount_trace(false, "call_refcount");
+DebugOnlyTraceFlag call_state_trace(false, "call_state");
 DebugOnlyTraceFlag closure_trace(false, "closure");
 DebugOnlyTraceFlag combiner_trace(false, "combiner");
 DebugOnlyTraceFlag cq_refcount_trace(false, "cq_refcount");
@@ -229,6 +230,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"auth_context_refcount", &auth_context_refcount_trace},
           {"call_combiner", &call_combiner_trace},
           {"call_refcount", &call_refcount_trace},
+          {"call_state", &call_state_trace},
           {"closure", &closure_trace},
           {"combiner", &combiner_trace},
           {"cq_refcount", &cq_refcount_trace},
