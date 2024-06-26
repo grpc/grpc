@@ -24,8 +24,9 @@
 
 #include <algorithm>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -57,7 +58,7 @@ bool alts_reset_frame_writer(alts_frame_writer* writer,
   if (buffer == nullptr) return false;
   size_t max_input_size = SIZE_MAX - kFrameLengthFieldSize;
   if (length > max_input_size) {
-    gpr_log(GPR_ERROR, "length must be at most %zu", max_input_size);
+    LOG(ERROR) << "length must be at most " << max_input_size;
     return false;
   }
   writer->input_buffer = buffer;
@@ -181,17 +182,17 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
     size_t frame_length = load_32_le(reader->header_buffer);
     if (frame_length < kFrameMessageTypeFieldSize ||
         frame_length > kFrameMaxSize) {
-      gpr_log(GPR_ERROR,
-              "Bad frame length (should be at least %zu, and at most %zu)",
-              kFrameMessageTypeFieldSize, kFrameMaxSize);
+      LOG(ERROR) << "Bad frame length (should be at least "
+                 << kFrameMessageTypeFieldSize << ", and at most "
+                 << kFrameMaxSize << ")";
       *bytes_size = 0;
       return false;
     }
     size_t message_type =
         load_32_le(reader->header_buffer + kFrameLengthFieldSize);
     if (message_type != kFrameMessageType) {
-      gpr_log(GPR_ERROR, "Unsupported message type %zu (should be %zu)",
-              message_type, kFrameMessageType);
+      LOG(ERROR) << "Unsupported message type " << message_type
+                 << " (should be " << kFrameMessageType << ")";
       *bytes_size = 0;
       return false;
     }
