@@ -100,11 +100,7 @@ BaseCallData::BaseCallData(
       receive_message_(
           flags & kFilterExaminesInboundMessages
               ? arena_->New<ReceiveMessage>(this, make_recv_interceptor())
-              : nullptr),
-      event_engine_(
-          ChannelFilterFromElem(elem)
-              ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
-}
+              : nullptr) {}
 
 BaseCallData::~BaseCallData() {
   FakeActivity(this).Run([this] {

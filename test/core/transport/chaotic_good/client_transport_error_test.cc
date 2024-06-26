@@ -38,6 +38,7 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
@@ -141,8 +142,10 @@ class ClientTransportTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                        call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
   }
 
  private:
