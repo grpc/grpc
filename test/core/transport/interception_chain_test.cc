@@ -156,7 +156,7 @@ const NoInterceptor FailsToInstantiateFilter<I>::Call::OnFinalize;
 template <int I>
 class TestConsumingInterceptor final : public Interceptor {
  public:
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     Consume(std::move(unstarted_call_handler))
         .PushServerTrailingMetadata(
             ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
@@ -170,12 +170,29 @@ class TestConsumingInterceptor final : public Interceptor {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// Test call interceptor - passes through calls
+
+template <int I>
+class TestPassThroughInterceptor final : public Interceptor {
+ public:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    PassThrough(std::move(unstarted_call_handler));
+  }
+  void Orphaned() override {}
+  static absl::StatusOr<RefCountedPtr<TestPassThroughInterceptor<I>>> Create(
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
+    return MakeRefCounted<TestPassThroughInterceptor<I>>();
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Test call interceptor - fails to instantiate
 
 template <int I>
 class TestFailingInterceptor final : public Interceptor {
  public:
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     Crash("unreachable");
   }
   void Orphaned() override {}
@@ -192,7 +209,7 @@ class TestFailingInterceptor final : public Interceptor {
 template <int I>
 class TestHijackingInterceptor final : public Interceptor {
  public:
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     unstarted_call_handler.SpawnInfallible(
         "hijack", [this, unstarted_call_handler]() mutable {
           return Map(Hijack(std::move(unstarted_call_handler)),
@@ -283,6 +300,20 @@ class InterceptionChainTest : public ::testing::Test {
 
 TEST_F(InterceptionChainTest, Empty) {
   auto r = InterceptionChainBuilder(ChannelArgs()).Build(destination());
+  ASSERT_TRUE(r.ok()) << r.status();
+  auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "👊 cancelled");
+  EXPECT_NE(finished_call.client_metadata, nullptr);
+}
+
+TEST_F(InterceptionChainTest, PassThrough) {
+  auto r = InterceptionChainBuilder(ChannelArgs())
+               .Add<TestPassThroughInterceptor<1>>()
+               .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
