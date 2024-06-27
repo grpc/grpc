@@ -21,12 +21,12 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # some distribtests use a pre-registered binfmt_misc hook
 # to automatically execute foreign binaries (such as aarch64)
 # under qemu emulator.
-# source tools/internal_ci/helper_scripts/prepare_qemu_rc
+source tools/internal_ci/helper_scripts/prepare_qemu_rc
 
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
@@ -42,9 +42,6 @@ function maybe_run_command () {
 BASEDIR=$(dirname "$0")
 
 PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
-
-echo $BASEDIR
-echo $PACKAGES
 
 cd "$BASEDIR";
 pip install --upgrade "cython<3.0.0rc1";
