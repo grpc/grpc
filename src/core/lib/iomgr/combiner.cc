@@ -77,8 +77,8 @@ static void start_destroy(grpc_core::Combiner* lock) {
             << gpr_atm_no_barrier_load(&lock->refs.count) << " --> "       \
             << gpr_atm_no_barrier_load(&lock->refs.count) + (delta) << " " \
             << reason;                                                     \
-  }                                                                        \
-  #else
+  }
+#else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif
 
