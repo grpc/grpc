@@ -24,7 +24,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -85,8 +84,8 @@ static tsi_result alts_grpc_integrity_only_protect(
   // Input sanity check.
   if (rp == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to alts_grpc_record_protocol protect.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol protect.";
     return TSI_INVALID_ARGUMENT;
   }
   alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
@@ -127,9 +126,8 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   // Input sanity check.
   if (rp == nullptr || protected_slices == nullptr ||
       unprotected_slices == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid nullptr arguments to alts_grpc_record_protocol unprotect.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol unprotect.";
     return TSI_INVALID_ARGUMENT;
   }
   if (protected_slices->length < rp->header_length + rp->tag_length) {
@@ -202,8 +200,8 @@ tsi_result alts_grpc_integrity_only_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
     bool is_protect, bool enable_extra_copy, alts_grpc_record_protocol** rp) {
   if (crypter == nullptr || rp == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to alts_grpc_record_protocol create.");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol create.";
     return TSI_INVALID_ARGUMENT;
   }
   alts_grpc_integrity_only_record_protocol* impl =

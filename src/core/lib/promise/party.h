@@ -41,6 +41,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -83,7 +84,7 @@ class PartySyncUsingAtomics {
   }
   GRPC_MUST_USE_RESULT bool RefIfNonZero();
   // Returns true if the ref count is now zero and the caller should call
-  // PartyOver
+  // PartyIsOver
   GRPC_MUST_USE_RESULT bool Unref() {
     const uint64_t prev_state =
         state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
@@ -107,7 +108,6 @@ class PartySyncUsingAtomics {
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
     uint64_t prev_state;
-    iteration_.fetch_add(1, std::memory_order_relaxed);
     for (;;) {
       // Grab the current state, and clear the wakeup bits & add flag.
       prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
@@ -144,25 +144,12 @@ class PartySyncUsingAtomics {
       // TODO(ctiller): consider mitigations for the accidental wakeup on owning
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
-      if (wake_after_poll_ == 0) {
-        if (state_.compare_exchange_weak(
-                prev_state, (prev_state & (kRefMask | kAllocatedMask)),
-                std::memory_order_acq_rel, std::memory_order_acquire)) {
-          LogStateChange("Run:End", prev_state,
-                         prev_state & (kRefMask | kAllocatedMask));
-          return false;
-        }
-      } else {
-        if (state_.compare_exchange_weak(
-                prev_state,
-                (prev_state & (kRefMask | kAllocatedMask | kLocked)) |
-                    wake_after_poll_,
-                std::memory_order_acq_rel, std::memory_order_acquire)) {
-          LogStateChange("Run:EndIteration", prev_state,
-                         prev_state & (kRefMask | kAllocatedMask));
-          iteration_.fetch_add(1, std::memory_order_relaxed);
-          wake_after_poll_ = 0;
-        }
+      if (state_.compare_exchange_weak(
+              prev_state, (prev_state & (kRefMask | kAllocatedMask)),
+              std::memory_order_acq_rel, std::memory_order_acquire)) {
+        LogStateChange("Run:End", prev_state,
+                       prev_state & (kRefMask | kAllocatedMask));
+        return false;
       }
     }
     return false;
@@ -219,11 +206,6 @@ class PartySyncUsingAtomics {
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
-  void WakeAfterPoll(WakeupMask mask) { wake_after_poll_ |= mask; }
-  uint32_t iteration() const {
-    return iteration_.load(std::memory_order_relaxed);
-  }
-
   bool has_participants() const {
     return (state_.load(std::memory_order_relaxed) & kAllocatedMask) != 0;
   }
@@ -276,8 +258,6 @@ class PartySyncUsingAtomics {
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
   std::atomic<uint64_t> state_;
-  std::atomic<uint32_t> iteration_{0};
-  WakeupMask wake_after_poll_ = 0;
 };
 
 class PartySyncUsingMutex {
@@ -375,6 +355,11 @@ class Party : public Activity, private Wakeable {
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
 
+  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
+  }
+
   // Spawn one promise into the party.
   // The promise will be polled until it is resolved, or until the party is shut
   // down.
@@ -414,19 +399,7 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
-  // Return a promise that resolves to Empty{} when the current party poll is
-  // complete.
-  // This is useful for implementing batching and the like: we can hold some
-  // action until the rest of the party resolves itself.
-  auto AfterCurrentPoll() {
-    DCHECK(GetContext<Activity>() == this);
-    sync_.WakeAfterPoll(CurrentParticipant());
-    return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
-      DCHECK(GetContext<Activity>() == this);
-      if (iteration == sync_.iteration()) return Pending{};
-      return Empty{};
-    };
-  }
+  Arena* arena() { return arena_.get(); }
 
   class BulkSpawner {
    public:
@@ -446,25 +419,20 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(size_t initial_refs) : sync_(initial_refs) {}
+  friend class Arena;
+
+  // Derived types should be constructed upon `arena`.
+  explicit Party(RefCountedPtr<Arena> arena)
+      : sync_(1), arena_(std::move(arena)) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
   // Polls participants and drains the add queue until there is no work left to
   // be done.
-  // Derived types will likely want to override this to set up their
-  // contexts before polling.
-  // Should not be called by derived types except as a tail call to the base
-  // class RunParty when overriding this method to add custom context.
   // Returns true if the party is over.
-  GRPC_MUST_USE_RESULT virtual bool RunParty();
+  GRPC_MUST_USE_RESULT bool RunParty();
 
   bool RefIfNonZero() { return sync_.RefIfNonZero(); }
-
-  // Destroy any remaining participants.
-  // Should be called by derived types in response to PartyOver.
-  // Needs to have normal context setup before calling.
-  void CancelRemainingParticipants();
 
  private:
   // Concrete implementation of a participant for some promise & oncomplete
@@ -598,10 +566,9 @@ class Party : public Activity, private Wakeable {
     std::atomic<State> state_{State::kFactory};
   };
 
-  // Notification that the party has finished and this instance can be deleted.
-  // Derived types should arrange to call CancelRemainingParticipants during
-  // this sequence.
-  virtual void PartyOver() = 0;
+  // Destroy any remaining participants.
+  // Needs to have normal context setup before calling.
+  void CancelRemainingParticipants();
 
   // Run the locked part of the party until it is unlocked.
   void RunLocked();
@@ -619,9 +586,6 @@ class Party : public Activity, private Wakeable {
   void AddParticipants(Participant** participant, size_t count);
   bool RunOneParticipant(int i);
 
-  virtual grpc_event_engine::experimental::EventEngine* event_engine()
-      const = 0;
-
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
 
@@ -638,6 +602,7 @@ class Party : public Activity, private Wakeable {
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
   std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
+  RefCountedPtr<Arena> arena_;
 };
 
 template <>
