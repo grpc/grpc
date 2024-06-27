@@ -21,6 +21,7 @@
 #include "src/core/client_channel/load_balanced_call_destination.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
@@ -119,16 +120,9 @@ void LbCallTracingFilter::Call::OnServerTrailingMetadata(
       MaybeGetContext<LoadBalancingPolicy::SubchannelCallTrackerInterface>();
   absl::Status status;
   if (tracer != nullptr || call_tracker != nullptr) {
-    grpc_status_code code =
-        metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
-    if (code != GRPC_STATUS_OK) {
-      absl::string_view message;
-      if (const auto* grpc_message =
-              metadata.get_pointer(GrpcMessageMetadata())) {
-        message = grpc_message->as_string_view();
-      }
-      status = absl::Status(static_cast<absl::StatusCode>(code), message);
-    }
+    status = absl::Status(
+        static_cast<absl::StatusCode>(StatusCodeFromMetadata(metadata)),
+        StatusMessageFromMetadata(metadata));
   }
   if (tracer != nullptr) {
     tracer->RecordReceivedTrailingMetadata(status, &metadata, nullptr);

@@ -7698,6 +7698,9 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/metadata.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "error_utils",
         "metadata_batch",

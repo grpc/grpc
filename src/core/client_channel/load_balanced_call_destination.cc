@@ -221,7 +221,7 @@ void LoadBalancedCallDestination::StartCall(
                         // Returns 3 possible things:
                         // - Continue to queue the pick
                         // - non-OK status to fail the pick
-                        // - a connected subchannel to complete the pick
+                        // - an unstarted call destination to complete the pick
                         return PickSubchannel(*last_picker, unstarted_handler);
                       });
                 })),

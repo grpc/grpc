@@ -94,6 +94,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
@@ -2985,15 +2986,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
     } else {
       // Get status from headers.
       const auto& md = *self->recv_trailing_metadata_;
-      grpc_status_code code =
-          md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
-      if (code != GRPC_STATUS_OK) {
-        absl::string_view message;
-        if (const auto* grpc_message = md.get_pointer(GrpcMessageMetadata())) {
-          message = grpc_message->as_string_view();
-        }
-        status = absl::Status(static_cast<absl::StatusCode>(code), message);
-      }
+      status = absl::Status(
+          static_cast<absl::StatusCode>(StatusCodeFromMetadata(md)),
+          StatusMessageFromMetadata(md));
     }
     absl::string_view peer_string;
     if (self->peer_string_.has_value()) {

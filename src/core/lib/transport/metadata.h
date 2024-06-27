@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -86,6 +88,17 @@ struct StatusCastImpl<
     return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
   }
 };
+
+inline grpc_status_code StatusCodeFromMetadata(
+    const ServerMetadata& metadata) {
+  return metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+}
+inline absl::string_view StatusMessageFromMetadata(
+    const ServerMetadata& metadata) {
+  const auto* grpc_message = metadata.get_pointer(GrpcMessageMetadata());
+  if (grpc_message == nullptr) return absl::string_view();
+  return grpc_message->as_string_view();
+}
 
 }  // namespace grpc_core
 
