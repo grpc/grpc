@@ -56,13 +56,13 @@ def generate_run_tests_portability_tests(name):
             # TODO(https://github.com/grpc/grpc/issues/36751): Replace gcc_8 with gcc_7 once it's fixed.
             # ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_7_x64.current_version"],
             ["gcc_8", "", "tools/dockerfile/test/cxx_gcc_8_x64.current_version"],
-            ["gcc_12", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
+            ["gcc_12_cxx20", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
             ["gcc10.2_openssl102", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version"],
             ["gcc10.2_openssl111", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl111_x64.current_version"],
             ["gcc_12_openssl309", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version"],
             ["gcc_musl", "", "tools/dockerfile/test/cxx_alpine_x64.current_version"],
             ["clang_6", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_6_x64.current_version"],
-            ["clang_17", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++ --cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=23", "tools/dockerfile/test/cxx_clang_17_x64.current_version"],
+            ["clang_17_cxx23", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++ --cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=23", "tools/dockerfile/test/cxx_clang_17_x64.current_version"],
         ]
 
         for compiler_name, args, docker_image_version in compiler_configs:
