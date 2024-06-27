@@ -100,8 +100,8 @@ grpc_cc_library(
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
