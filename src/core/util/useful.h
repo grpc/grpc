@@ -21,10 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-
 #include <cstddef>
 
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
