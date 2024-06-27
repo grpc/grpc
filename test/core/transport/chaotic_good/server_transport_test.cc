@@ -91,8 +91,8 @@ class MockCallDestination : public UnstartedCallDestination {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1);
+  MockPromiseEndpoint data_endpoint(2);
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(

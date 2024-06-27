@@ -102,8 +102,8 @@ ChannelArgs MakeChannelArgs() {
 }
 
 TEST_F(TransportTest, AddOneStream) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1000);
+  MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kFragment, 7, 1, 26, 8, 56, 15),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
@@ -120,7 +120,6 @@ TEST_F(TransportTest, AddOneStream) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.StartCall());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -136,6 +135,7 @@ TEST_F(TransportTest, AddOneStream) {
       {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
+  transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 1);
@@ -183,8 +183,8 @@ TEST_F(TransportTest, AddOneStream) {
 }
 
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1000);
+  MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kFragment, 3, 1, 26, 8, 56, 0),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
@@ -206,7 +206,6 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.StartCall());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -227,6 +226,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       {EventEngineSlice::FromCopiedString("1"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
+  transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 2);
