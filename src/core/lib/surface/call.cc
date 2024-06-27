@@ -63,6 +63,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
@@ -118,12 +119,13 @@ using GrpcClosure = Closure;
 ///////////////////////////////////////////////////////////////////////////////
 // Call
 
-Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-           grpc_event_engine::experimental::EventEngine* event_engine)
+Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
     : arena_(std::move(arena)),
       send_deadline_(send_deadline),
-      is_client_(is_client),
-      event_engine_(event_engine) {
+      is_client_(is_client) {
+  DCHECK_NE(arena_.get(), nullptr);
+  DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
   arena_->SetContext<Call>(this);
 }
 
@@ -350,20 +352,25 @@ void Call::UpdateDeadline(Timestamp deadline) {
         StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
     return;
   }
+  auto* event_engine =
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
   if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine_->Cancel(deadline_task_)) return;
+    if (!event_engine->Cancel(deadline_task_)) return;
   } else {
     InternalRef("deadline");
   }
   deadline_ = deadline;
-  deadline_task_ = event_engine_->RunAfter(deadline - Timestamp::Now(), this);
+  deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
 }
 
 void Call::ResetDeadline() {
   {
     MutexLock lock(&deadline_mu_);
     if (deadline_ == Timestamp::InfFuture()) return;
-    if (!event_engine_->Cancel(deadline_task_)) return;
+    if (!arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
+             ->Cancel(deadline_task_)) {
+      return;
+    }
     deadline_ = Timestamp::InfFuture();
   }
   InternalUnref("deadline[reset]");
@@ -563,5 +570,8 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
 
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb) {
-  grpc_core::Call::FromC(call)->event_engine()->Run(std::move(cb));
+  grpc_core::Call::FromC(call)
+      ->arena()
+      ->GetContext<grpc_event_engine::experimental::EventEngine>()
+      ->Run(std::move(cb));
 }
