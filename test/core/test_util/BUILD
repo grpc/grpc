@@ -539,8 +539,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "passthrough_endpoint",
     testonly = True,
-    hdrs = ["passthrough_endpoint.h"],
     srcs = ["passthrough_endpoint.cc"],
+    hdrs = ["passthrough_endpoint.h"],
     external_deps = [
     ],
     deps = [
