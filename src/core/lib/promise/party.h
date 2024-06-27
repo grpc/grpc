@@ -124,7 +124,7 @@ class PartySyncUsingAtomics {
       // For each wakeup bit...
       while (wakeups != 0) {
         uint64_t t = LowestOneBit(wakeups);
-        const int i = CountTrailingZeros(t);
+        const int i = absl::countr_zero(t);
         wakeups ^= t;
         // If the bit is not set, skip.
         if (poll_one_participant(i)) {

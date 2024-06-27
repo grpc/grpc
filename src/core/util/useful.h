@@ -57,30 +57,6 @@ bool GetBit(T i, size_t n) {
   return (i & (T(1) << n)) != 0;
 }
 
-#if GRPC_HAS_BUILTIN(__builtin_ctz)
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
-CountTrailingZeros(uint32_t i) {
-  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
-  return __builtin_ctz(i);
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
-CountTrailingZeros(uint64_t i) {
-  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
-  return __builtin_ctzll(i);
-}
-#else
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
-CountTrailingZeros(uint32_t i) {
-  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
-  return absl::popcount((i & -i) - 1);
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
-CountTrailingZeros(uint64_t i) {
-  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
-  return absl::popcount((i & -i) - 1);
-}
-#endif
-
 // This function uses operator< to implement a qsort-style comparison, whereby:
 // if a is smaller than b, a number smaller than 0 is returned.
 // if a is bigger than b, a number greater than 0 is returned.
