@@ -786,6 +786,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_bootstrap_format.md \
 doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
@@ -2000,7 +2001,6 @@ src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
 src/core/lib/event_engine/thready_event_engine/thready_event_engine.h \
 src/core/lib/event_engine/time_util.cc \
 src/core/lib/event_engine/time_util.h \
-src/core/lib/event_engine/trace.h \
 src/core/lib/event_engine/utils.cc \
 src/core/lib/event_engine/utils.h \
 src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
@@ -2475,6 +2475,8 @@ src/core/lib/transport/call_final_info.cc \
 src/core/lib/transport/call_final_info.h \
 src/core/lib/transport/call_spine.cc \
 src/core/lib/transport/call_spine.h \
+src/core/lib/transport/call_state.cc \
+src/core/lib/transport/call_state.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/custom_metadata.h \
@@ -2735,6 +2737,7 @@ src/core/util/time.cc \
 src/core/util/time_precise.cc \
 src/core/util/time_precise.h \
 src/core/util/tmpfile.h \
+src/core/util/upb_utils.h \
 src/core/util/useful.h \
 src/core/util/windows/cpu.cc \
 src/core/util/windows/log.cc \
@@ -2747,7 +2750,6 @@ src/core/xds/grpc/certificate_provider_store.cc \
 src/core/xds/grpc/certificate_provider_store.h \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.h \
-src/core/xds/grpc/upb_utils.h \
 src/core/xds/grpc/xds_audit_logger_registry.cc \
 src/core/xds/grpc/xds_audit_logger_registry.h \
 src/core/xds/grpc/xds_bootstrap_grpc.cc \

@@ -18,6 +18,10 @@
 
 namespace grpc_core {
 
+//
+// LbMetadata
+//
+
 namespace {
 
 class Encoder {
@@ -50,36 +54,46 @@ class Encoder {
 
 }  // namespace
 
-void LbMetadata::Add(absl::string_view key, absl::string_view value) {
-  if (batch_ == nullptr) return;
-  // Gross, egregious hack to support legacy grpclb behavior.
-  // TODO(ctiller): Use a promise context for this once that plumbing is done.
-  if (key == GrpcLbClientStatsMetadata::key()) {
-    batch_->Set(
-        GrpcLbClientStatsMetadata(),
-        const_cast<GrpcLbClientStats*>(
-            reinterpret_cast<const GrpcLbClientStats*>(value.data())));
-    return;
-  }
-  batch_->Append(key, Slice::FromStaticString(value),
-                 [key](absl::string_view error, const Slice& value) {
-                   LOG(ERROR) << error << " key:" << key
-                              << " value:" << value.as_string_view();
-                 });
+absl::optional<absl::string_view> LbMetadata::Lookup(
+    absl::string_view key, std::string* buffer) const {
+  if (batch_ == nullptr) return absl::nullopt;
+  return batch_->GetStringValue(key, buffer);
 }
 
 std::vector<std::pair<std::string, std::string>>
-LbMetadata::TestOnlyCopyToVector() {
+LbMetadata::TestOnlyCopyToVector() const {
   if (batch_ == nullptr) return {};
   Encoder encoder;
   batch_->Encode(&encoder);
   return encoder.Take();
 }
 
-absl::optional<absl::string_view> LbMetadata::Lookup(
-    absl::string_view key, std::string* buffer) const {
-  if (batch_ == nullptr) return absl::nullopt;
-  return batch_->GetStringValue(key, buffer);
+//
+// MetadataMutationHandler
+//
+
+void MetadataMutationHandler::Apply(
+    LoadBalancingPolicy::MetadataMutations& metadata_mutations,
+    grpc_metadata_batch* metadata) {
+  for (auto& p : metadata_mutations.additions_) {
+    absl::string_view key = p.first;
+    Slice& value =
+        grpc_event_engine::experimental::internal::SliceCast<Slice>(p.second);
+    // Gross, egregious hack to support legacy grpclb behavior.
+    // TODO(ctiller): Use a promise context for this once that plumbing is done.
+    if (key == GrpcLbClientStatsMetadata::key()) {
+      metadata->Set(
+          GrpcLbClientStatsMetadata(),
+          const_cast<GrpcLbClientStats*>(
+              reinterpret_cast<const GrpcLbClientStats*>(value.data())));
+      continue;
+    }
+    metadata->Append(key, std::move(value),
+                     [key](absl::string_view error, const Slice& value) {
+                       LOG(ERROR) << error << " key:" << key
+                                  << " value:" << value.as_string_view();
+                     });
+  }
 }
 
 }  // namespace grpc_core

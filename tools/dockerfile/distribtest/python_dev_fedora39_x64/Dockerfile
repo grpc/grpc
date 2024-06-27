@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+FROM fedora:39
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_microbenchmark_diff.sh"
-timeout_mins: 120
-before_action {
-  fetch_keystore {
-    keystore_resource {
-      keystore_config_id: 73836
-      keyname: "grpc_checks_private_key"
-    }
-  }
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+RUN yum clean all && yum update -y && yum install -y python3 python3-pip
+RUN python3 -m pip install virtualenv
+
+RUN yum groupinstall -y "Development Tools"
+RUN yum install -y redhat-rpm-config
+RUN yum install -y gcc-c++
+RUN yum install -y python3-devel
+
+RUN yum install -y findutils

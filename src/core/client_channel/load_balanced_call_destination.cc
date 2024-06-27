@@ -146,6 +146,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
           complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
+        // Apply metadata mutations, if any.
+        MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
+                                       &client_initial_metadata);
         // Return the subchannel's call destination.
         return call_destination;
       },

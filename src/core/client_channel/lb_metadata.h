@@ -30,16 +30,19 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
  public:
   explicit LbMetadata(grpc_metadata_batch* batch) : batch_(batch) {}
 
-  void Add(absl::string_view key, absl::string_view value) override;
-
-  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
-      override;
-
   absl::optional<absl::string_view> Lookup(absl::string_view key,
                                            std::string* buffer) const override;
 
+  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector() const;
+
  private:
   grpc_metadata_batch* batch_;
+};
+
+class MetadataMutationHandler {
+ public:
+  static void Apply(LoadBalancingPolicy::MetadataMutations& metadata_mutations,
+                    grpc_metadata_batch* metadata);
 };
 
 }  // namespace grpc_core

@@ -57,6 +57,7 @@
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
+#include "src/core/client_channel/lb_metadata.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
@@ -316,7 +317,7 @@ const grpc_channel_filter ClientChannelFilter::kFilter = {
     grpc_channel_stack_no_post_init,
     ClientChannelFilter::Destroy,
     ClientChannelFilter::GetChannelInfo,
-    "client-channel",
+    GRPC_UNIQUE_TYPE_NAME_HERE("client-channel"),
 };
 
 //
@@ -443,7 +444,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     DynamicTerminationFilter::Destroy,
     DynamicTerminationFilter::GetChannelInfo,
-    "dynamic_filter_termination",
+    GRPC_UNIQUE_TYPE_NAME_HERE("dynamic_filter_termination"),
 };
 
 }  // namespace
@@ -2354,79 +2355,6 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState final
 };
 
 //
-// ClientChannelFilter::LoadBalancedCall::Metadata
-//
-
-class ClientChannelFilter::LoadBalancedCall::Metadata final
-    : public LoadBalancingPolicy::MetadataInterface {
- public:
-  explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
-
-  void Add(absl::string_view key, absl::string_view value) override {
-    if (batch_ == nullptr) return;
-    // Gross, egregious hack to support legacy grpclb behavior.
-    // TODO(ctiller): Use a promise context for this once that plumbing is done.
-    if (key == GrpcLbClientStatsMetadata::key()) {
-      batch_->Set(
-          GrpcLbClientStatsMetadata(),
-          const_cast<GrpcLbClientStats*>(
-              reinterpret_cast<const GrpcLbClientStats*>(value.data())));
-      return;
-    }
-    batch_->Append(key, Slice::FromStaticString(value),
-                   [key](absl::string_view error, const Slice& value) {
-                     LOG(ERROR) << error << " key:" << key
-                                << " value:" << value.as_string_view();
-                   });
-  }
-
-  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
-      override {
-    if (batch_ == nullptr) return {};
-    Encoder encoder;
-    batch_->Encode(&encoder);
-    return encoder.Take();
-  }
-
-  absl::optional<absl::string_view> Lookup(absl::string_view key,
-                                           std::string* buffer) const override {
-    if (batch_ == nullptr) return absl::nullopt;
-    return batch_->GetStringValue(key, buffer);
-  }
-
- private:
-  class Encoder final {
-   public:
-    void Encode(const Slice& key, const Slice& value) {
-      out_.emplace_back(std::string(key.as_string_view()),
-                        std::string(value.as_string_view()));
-    }
-
-    template <class Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      auto value_slice = Which::Encode(value);
-      out_.emplace_back(std::string(Which::key()),
-                        std::string(value_slice.as_string_view()));
-    }
-
-    void Encode(GrpcTimeoutMetadata,
-                const typename GrpcTimeoutMetadata::ValueType&) {}
-    void Encode(HttpPathMetadata, const Slice&) {}
-    void Encode(HttpMethodMetadata,
-                const typename HttpMethodMetadata::ValueType&) {}
-
-    std::vector<std::pair<std::string, std::string>> Take() {
-      return std::move(out_);
-    }
-
-   private:
-    std::vector<std::pair<std::string, std::string>> out_;
-  };
-
-  grpc_metadata_batch* batch_;
-};
-
-//
 // ClientChannelFilter::LoadBalancedCall::LbCallState
 //
 
@@ -2537,7 +2465,7 @@ void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
   // If the LB policy requested a callback for trailing metadata, invoke
   // the callback.
   if (lb_subchannel_call_tracker_ != nullptr) {
-    Metadata trailing_metadata(recv_trailing_metadata);
+    LbMetadata trailing_metadata(recv_trailing_metadata);
     BackendMetricAccessor backend_metric_accessor(this, recv_trailing_metadata);
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
         peer_address, status, &trailing_metadata, &backend_metric_accessor};
@@ -2684,7 +2612,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
-  Metadata initial_metadata(send_initial_metadata());
+  LbMetadata initial_metadata(send_initial_metadata());
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker->Pick(pick_args);
   return HandlePickResult<bool>(
@@ -2717,6 +2645,9 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (lb_subchannel_call_tracker_ != nullptr) {
           lb_subchannel_call_tracker_->Start();
         }
+        // Handle metadata mutations.
+        MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
+                                       send_initial_metadata());
         return true;
       },
       // QueuePick
