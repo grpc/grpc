@@ -124,8 +124,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// A list of metadata mutations to be returned along with a PickResult.
   class MetadataMutations {
    public:
-    /// Adds a key/value pair.  If the key is already present, the new
-    /// value will be appended with a comma delimiter.
+    /// Adds a key/value pair.  If the key is already present, it will
+    /// be replaced with the new value.
     void Add(absl::string_view key, absl::string_view value) {
       Add(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
     }
