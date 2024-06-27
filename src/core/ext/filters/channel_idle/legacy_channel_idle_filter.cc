@@ -177,7 +177,7 @@ void LegacyMaxAgeFilter::PostInit() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
-    auto arena = SimpleArenaAllocator()->MakeArena();
+    auto arena = SimpleArenaAllocator(0)->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         channel_stack->EventEngine());
     max_age_activity_.Set(MakeActivity(

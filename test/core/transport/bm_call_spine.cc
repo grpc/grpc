@@ -30,7 +30,7 @@ class CallSpineFixture {
         event_engine_.get());
     auto p =
         MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena));
-    return {std::move(p.initiator), p.handler.StartCall(stack_)};
+    return {std::move(p.initiator), p.handler.StartCall()};
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
@@ -51,8 +51,6 @@ class CallSpineFixture {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test-allocator"),
           1024);
-  RefCountedPtr<CallFilters::Stack> stack_ =
-      CallFilters::StackBuilder().Build();
 };
 GRPC_CALL_SPINE_BENCHMARK(CallSpineFixture);
 
@@ -70,7 +68,7 @@ class ForwardCallFixture {
     auto p2 =
         MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena2));
     p1.handler.SpawnInfallible("initial_metadata", [&]() {
-      auto p1_handler = p1.handler.StartCall(stack_);
+      auto p1_handler = p1.handler.StartCall();
       return Map(
           p1_handler.PullClientInitialMetadata(),
           [p1_handler, &p2](ValueOrFailure<ClientMetadataHandle> md) mutable {
@@ -81,7 +79,7 @@ class ForwardCallFixture {
     });
     absl::optional<CallHandler> p2_handler;
     p2.handler.SpawnInfallible("start", [&]() {
-      p2_handler = p2.handler.StartCall(stack_);
+      p2_handler = p2.handler.StartCall();
       return Empty{};
     });
     return {std::move(p1.initiator), std::move(*p2_handler)};
@@ -105,8 +103,6 @@ class ForwardCallFixture {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test-allocator"),
           1024);
-  RefCountedPtr<CallFilters::Stack> stack_ =
-      CallFilters::StackBuilder().Build();
 };
 GRPC_CALL_SPINE_BENCHMARK(ForwardCallFixture);
 

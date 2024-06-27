@@ -108,7 +108,6 @@ class PartySyncUsingAtomics {
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
     uint64_t prev_state;
-    iteration_.fetch_add(1, std::memory_order_relaxed);
     for (;;) {
       // Grab the current state, and clear the wakeup bits & add flag.
       prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
@@ -145,25 +144,12 @@ class PartySyncUsingAtomics {
       // TODO(ctiller): consider mitigations for the accidental wakeup on owning
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
-      if (wake_after_poll_ == 0) {
-        if (state_.compare_exchange_weak(
-                prev_state, (prev_state & (kRefMask | kAllocatedMask)),
-                std::memory_order_acq_rel, std::memory_order_acquire)) {
-          LogStateChange("Run:End", prev_state,
-                         prev_state & (kRefMask | kAllocatedMask));
-          return false;
-        }
-      } else {
-        if (state_.compare_exchange_weak(
-                prev_state,
-                (prev_state & (kRefMask | kAllocatedMask | kLocked)) |
-                    wake_after_poll_,
-                std::memory_order_acq_rel, std::memory_order_acquire)) {
-          LogStateChange("Run:EndIteration", prev_state,
-                         prev_state & (kRefMask | kAllocatedMask));
-          iteration_.fetch_add(1, std::memory_order_relaxed);
-          wake_after_poll_ = 0;
-        }
+      if (state_.compare_exchange_weak(
+              prev_state, (prev_state & (kRefMask | kAllocatedMask)),
+              std::memory_order_acq_rel, std::memory_order_acquire)) {
+        LogStateChange("Run:End", prev_state,
+                       prev_state & (kRefMask | kAllocatedMask));
+        return false;
       }
     }
     return false;
@@ -220,9 +206,8 @@ class PartySyncUsingAtomics {
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
-  void WakeAfterPoll(WakeupMask mask) { wake_after_poll_ |= mask; }
-  uint32_t iteration() const {
-    return iteration_.load(std::memory_order_relaxed);
+  bool has_participants() const {
+    return (state_.load(std::memory_order_relaxed) & kAllocatedMask) != 0;
   }
 
  private:
@@ -273,8 +258,6 @@ class PartySyncUsingAtomics {
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
   std::atomic<uint64_t> state_;
-  std::atomic<uint32_t> iteration_{0};
-  WakeupMask wake_after_poll_ = 0;
 };
 
 class PartySyncUsingMutex {
@@ -373,7 +356,8 @@ class Party : public Activity, private Wakeable {
   Party& operator=(const Party&) = delete;
 
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
-    return RefCountedPtr<Party>(arena->New<Party>(std::move(arena)));
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
   }
 
   // Spawn one promise into the party.
@@ -416,20 +400,6 @@ class Party : public Activity, private Wakeable {
   }
 
   Arena* arena() { return arena_.get(); }
-
-  // Return a promise that resolves to Empty{} when the current party poll is
-  // complete.
-  // This is useful for implementing batching and the like: we can hold some
-  // action until the rest of the party resolves itself.
-  auto AfterCurrentPoll() {
-    DCHECK(GetContext<Activity>() == this);
-    sync_.WakeAfterPoll(CurrentParticipant());
-    return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
-      DCHECK(GetContext<Activity>() == this);
-      if (iteration == sync_.iteration()) return Pending{};
-      return Empty{};
-    };
-  }
 
   class BulkSpawner {
    public:
