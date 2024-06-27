@@ -34,6 +34,8 @@ class LbCallTracingFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "lb_call_tracer"; }
+
   class Call {
    public:
     void OnClientInitialMetadata(ClientMetadata& metadata);

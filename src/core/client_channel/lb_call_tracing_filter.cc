@@ -31,8 +31,7 @@ namespace grpc_core {
 const grpc_channel_filter LbCallTracingFilter::kFilter =
     MakePromiseBasedFilter<LbCallTracingFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata |
-                               kFilterExaminesOutboundMessages>(
-                               "lb_call_tracer");
+                               kFilterExaminesOutboundMessages>();
 
 const NoInterceptor LbCallTracingFilter::Call::OnServerToClientMessage;
 
@@ -110,14 +109,6 @@ class BackendMetricAccessor
   const BackendMetricData* backend_metric_data_ = nullptr;
 };
 
-// TODO(ctiller): This can't be inlined in a method of
-// LbCallTracingFilter::Call without a redundant namespace qualifier,
-// because in that scope, GetContext<Call> is interpreted as meaning
-// LbCallTracingFilter::Call instead of grpc_core::Call.
-#if 0
-grpc_call_stats* GetCallStats() { return GetContext<Call>()->call_stats(); }
-#endif
-
 }  // namespace
 
 void LbCallTracingFilter::Call::OnServerTrailingMetadata(
@@ -140,12 +131,7 @@ void LbCallTracingFilter::Call::OnServerTrailingMetadata(
     }
   }
   if (tracer != nullptr) {
-// FIXME: pass transport stream stats into RecordEnd() instead of
-// RecordReceivedTrailingMetadata().
-#if 0
-    tracer->RecordReceivedTrailingMetadata(
-        status, &metadata, GetCallStats()->transport_stream_stats);
-#endif
+    tracer->RecordReceivedTrailingMetadata(status, &metadata, nullptr);
   }
   if (call_tracker != nullptr) {
     LbMetadata lb_metadata(&metadata);
@@ -171,8 +157,9 @@ void LbCallTracingFilter::Call::OnFinalize(const grpc_call_final_info*) {
 void RegisterLbCallTracingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<LbCallTracingFilter>(GRPC_CLIENT_SUBCHANNEL)
-      // FIXME: make sure it's at the top of the stack!
-      ;
+      // Needs to be at the top of the stack, so that we properly
+      // measure call attempt latency in the CallTracer.
+      .FloatToTop();
 }
 
 }  // namespace grpc_core
