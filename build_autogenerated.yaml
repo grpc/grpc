@@ -3631,8 +3631,8 @@ libs:
   - test/cpp/microbenchmarks/helpers.cc
   deps:
   - benchmark
-  - grpc++_unsecure
-  - grpc_test_util_unsecure
+  - grpc++
+  - grpc_test_util
   - grpc++_test_config
   defaults: benchmark
 - name: grpc++
