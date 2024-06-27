@@ -220,11 +220,24 @@ void Party::RunLocked(Party* party) {
       nullptr, Thread::Options().set_joinable(false));
   thd.Start();
 #else
+  struct RunState;
+  static thread_local RunState* g_run_state = nullptr;
   struct RunState {
+    explicit RunState(Party* party) : running(party), next(nullptr) {}
     Party* running;
     Party* next;
+    void Run() {
+      g_run_state = this;
+      do {
+        if (running->RunParty()) {
+          running->PartyIsOver();
+        }
+        running = std::exchange(next, nullptr);
+      } while (running != nullptr);
+      DCHECK(g_run_state == this);
+      g_run_state = nullptr;
+    }
   };
-  static thread_local RunState* g_run_state = nullptr;
   // If there is a party running, then we don't run it immediately
   // but instead add it to the end of the list of parties to run.
   // This enables a fairly straightforward batching of work from a
@@ -237,27 +250,22 @@ void Party::RunLocked(Party* party) {
     if (g_run_state->next != nullptr) {
       // If there's already a different party queued, we're better off asking
       // event engine to run it so we can spread load.
+      // We swap the oldest party to run on the event engine so that we don't
+      // accidentally end up with a tail latency problem whereby one party
+      // gets held for a really long time.
+      std::swap(g_run_state->next, party);
       party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
           ->Run([party]() {
             ApplicationCallbackExecCtx app_exec_ctx;
             ExecCtx exec_ctx;
-            RunLocked(party);
+            RunState{party}.Run();
           });
       return;
     }
     g_run_state->next = party;
     return;
   }
-  RunState run_state = {party, nullptr};
-  g_run_state = &run_state;
-  do {
-    if (run_state.running->RunParty()) {
-      run_state.running->PartyIsOver();
-    }
-    run_state.running = std::exchange(run_state.next, nullptr);
-  } while (run_state.running != nullptr);
-  CHECK(g_run_state == &run_state);
-  g_run_state = nullptr;
+  RunState{party}.Run();
 #endif
 }
 
