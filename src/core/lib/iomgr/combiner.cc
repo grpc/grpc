@@ -23,9 +23,9 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/experiments/experiments.h"
