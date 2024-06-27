@@ -34,8 +34,8 @@ source tools/internal_ci/helper_scripts/prepare_ccache_rc
 # unit-tests setup starts from here
 
 function maybe_run_command () {
-  if python setup.py --help-commands | grep "$1" &>/dev/null; then
-    python setup.py "$1";
+  if python3 setup.py --help-commands | grep "$1" &>/dev/null; then
+    python3 setup.py "$1";
   fi
 }
 
@@ -45,7 +45,7 @@ PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grp
 
 cd "$BASEDIR";
 pip install --upgrade "cython<3.0.0rc1";
-python setup.py install;
+python3 setup.py install;
 pushd tools/distrib/python/grpcio_tools;
   ../make_grpcio_tools.py
   GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
@@ -60,16 +60,16 @@ popd;
 pushd src/python;
   for PACKAGE in ${PACKAGES}; do
     pushd "${PACKAGE}";
-      python setup.py clean;
+      python3 setup.py clean;
       maybe_run_command preprocess
       maybe_run_command build_package_protos
-      python -m pip install .;
+      python3 -m pip install .;
     popd;
   done
 popd;
 pushd src/python/grpcio_tests;
-  python setup.py test_lite
+  python3 setup.py test_lite
 #  python setup.py test_aio
-  python setup.py test_py3_only
+  python3 setup.py test_py3_only
 popd;
 
