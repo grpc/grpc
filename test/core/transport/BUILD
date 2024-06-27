@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -65,7 +65,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc_base",
+        "//:grpc",
         "//src/core:interception_chain",
         "//src/core:resource_quota",
         "//test/core/promise:poll_matcher",
@@ -83,6 +83,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:call_filters",
+        "//test/core/promise:poll_matcher",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_state_test",
+    srcs = ["call_state_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:call_state",
         "//test/core/promise:poll_matcher",
     ],
 )
@@ -226,17 +241,9 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_call_spine",
-    size = "small",
     srcs = ["bm_call_spine.cc"],
-    args = grpc_benchmark_args(),
-    external_deps = ["benchmark"],
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
     deps = [
         ":call_spine_benchmarks",
         "//:grpc",

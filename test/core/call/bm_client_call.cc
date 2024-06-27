@@ -17,6 +17,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -58,11 +59,13 @@ class Helper {
   }
 
   auto MakeCall() {
+    auto arena = arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
     return std::unique_ptr<grpc_call, void (*)(grpc_call*)>(
         MakeClientCall(nullptr, 0, cq_, path_.Copy(), absl::nullopt, true,
                        Timestamp::InfFuture(), compression_options_,
-                       event_engine_.get(), arena_allocator_->MakeArena(),
-                       destination_),
+                       std::move(arena), destination_),
         grpc_call_unref);
   }
 
@@ -136,7 +139,7 @@ void BM_Unary(benchmark::State& state) {
     // back a response.
     auto unstarted_handler = helper.TakeHandler();
     unstarted_handler.SpawnInfallible("run_handler", [&]() mutable {
-      auto handler = unstarted_handler.StartWithEmptyFilterStack();
+      auto handler = unstarted_handler.StartCall();
       handler.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
       auto response =
           Arena::MakePooled<Message>(SliceBuffer(response_payload.Copy()), 0);

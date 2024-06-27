@@ -415,6 +415,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "absl/strings:str_format",
+        "absl/container:flat_hash_map",
     ],
     language = "c++",
     uses_event_engine = False,

@@ -678,6 +678,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/direct_channel.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/lb_metadata.cc \
     src/core/client_channel/load_balanced_call_destination.cc \
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
@@ -1342,6 +1343,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_spine.cc \
+    src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/interception_chain.cc \

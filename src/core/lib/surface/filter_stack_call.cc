@@ -41,12 +41,12 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -83,7 +83,7 @@ using GrpcClosure = Closure;
 FilterStackCall::FilterStackCall(RefCountedPtr<Arena> arena,
                                  const grpc_call_create_args& args)
     : Call(args.server_transport_data == nullptr, args.send_deadline,
-           std::move(arena), args.channel->event_engine()),
+           std::move(arena)),
       channel_(args.channel->RefAsSubclass<Channel>()),
       cq_(args.cq),
       stream_op_payload_{} {}
@@ -109,6 +109,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       channel_stack->call_stack_size;
 
   RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      args->channel->event_engine());
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   DCHECK(FromC(call->c_ptr()) == call);
   DCHECK(FromCallStack(call->call_stack()) == call);
@@ -414,11 +416,10 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
     }
     batch->Append(StringViewFromSlice(md->key), Slice(CSliceRef(md->value)),
                   [md](absl::string_view error, const Slice& value) {
-                    gpr_log(GPR_DEBUG, "Append error: %s",
-                            absl::StrCat("key=", StringViewFromSlice(md->key),
-                                         " error=", error,
-                                         " value=", value.as_string_view())
-                                .c_str());
+                    VLOG(2)
+                        << "Append error: key=" << StringViewFromSlice(md->key)
+                        << " error=" << error
+                        << " value=" << value.as_string_view();
                   });
   }
 
@@ -749,13 +750,12 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   if (!is_client() &&
       (seen_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER)) != 0 &&
       (seen_ops & (1u << GRPC_OP_RECV_MESSAGE)) != 0) {
-    gpr_log(GPR_ERROR,
-            "******************* SEND_STATUS WITH RECV_MESSAGE "
-            "*******************");
+    LOG(ERROR) << "******************* SEND_STATUS WITH RECV_MESSAGE "
+                  "*******************";
     return GRPC_CALL_ERROR;
   }
 
-  GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
+  GRPC_CALL_LOG_BATCH(ops, nops);
 
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);

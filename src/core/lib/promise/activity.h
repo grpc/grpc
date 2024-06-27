@@ -33,7 +33,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -548,7 +547,7 @@ class PromiseActivity final
 
   void WakeupAsync(WakeupMask) final {
     GRPC_LATENT_SEE_INNER_SCOPE("PromiseActivity::WakeupAsync");
-    wakeup_flow_.emplace(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
+    wakeup_flow_.Begin(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       this->ScheduleWakeup();
@@ -573,7 +572,7 @@ class PromiseActivity final
   // settles. Then check for completion, and if we have completed, call on_done.
   void Step() ABSL_LOCKS_EXCLUDED(mu()) {
     GRPC_LATENT_SEE_PARENT_SCOPE("PromiseActivity::Step");
-    wakeup_flow_.reset();
+    wakeup_flow_.End();
     // Poll the promise until things settle out under a lock.
     mu()->Lock();
     if (done_) {

@@ -20,6 +20,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/poll_matcher.h"
@@ -156,7 +158,7 @@ const NoInterceptor FailsToInstantiateFilter<I>::Call::OnFinalize;
 template <int I>
 class TestConsumingInterceptor final : public Interceptor {
  public:
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     Consume(std::move(unstarted_call_handler))
         .PushServerTrailingMetadata(
             ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
@@ -170,12 +172,29 @@ class TestConsumingInterceptor final : public Interceptor {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// Test call interceptor - passes through calls
+
+template <int I>
+class TestPassThroughInterceptor final : public Interceptor {
+ public:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    PassThrough(std::move(unstarted_call_handler));
+  }
+  void Orphaned() override {}
+  static absl::StatusOr<RefCountedPtr<TestPassThroughInterceptor<I>>> Create(
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
+    return MakeRefCounted<TestPassThroughInterceptor<I>>();
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Test call interceptor - fails to instantiate
 
 template <int I>
 class TestFailingInterceptor final : public Interceptor {
  public:
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     Crash("unreachable");
   }
   void Orphaned() override {}
@@ -192,7 +211,7 @@ class TestFailingInterceptor final : public Interceptor {
 template <int I>
 class TestHijackingInterceptor final : public Interceptor {
  public:
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     unstarted_call_handler.SpawnInfallible(
         "hijack", [this, unstarted_call_handler]() mutable {
           return Map(Hijack(std::move(unstarted_call_handler)),
@@ -230,8 +249,11 @@ class InterceptionChainTest : public ::testing::Test {
 
   // Run a call through a UnstartedCallDestination until it's complete.
   FinishedCall RunCall(UnstartedCallDestination* destination) {
-    auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                             call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto call =
+        MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena));
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
@@ -270,6 +292,8 @@ class InterceptionChainTest : public ::testing::Test {
    private:
     ClientMetadataHandle metadata_;
   };
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
   RefCountedPtr<Destination> destination_ = MakeRefCounted<Destination>();
   RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
       MakeRefCounted<CallArenaAllocator>(
@@ -283,6 +307,20 @@ class InterceptionChainTest : public ::testing::Test {
 
 TEST_F(InterceptionChainTest, Empty) {
   auto r = InterceptionChainBuilder(ChannelArgs()).Build(destination());
+  ASSERT_TRUE(r.ok()) << r.status();
+  auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "👊 cancelled");
+  EXPECT_NE(finished_call.client_metadata, nullptr);
+}
+
+TEST_F(InterceptionChainTest, PassThrough) {
+  auto r = InterceptionChainBuilder(ChannelArgs())
+               .Add<TestPassThroughInterceptor<1>>()
+               .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -406,5 +444,8 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_tracer_init();
   gpr_log_verbosity_init();
-  return RUN_ALL_TESTS();
+  grpc_init();
+  auto r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

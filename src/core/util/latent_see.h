@@ -136,11 +136,15 @@ class Flow {
     return *this;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool has_value() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool is_active() const {
     return metadata_ != nullptr;
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void reset() { emplace(nullptr); }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void emplace(const Metadata* metadata) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void End() {
+    if (metadata_ == nullptr) return;
+    Log::Append(metadata_, EventType::kFlowEnd, id_);
+    metadata_ = nullptr;
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(const Metadata* metadata) {
     if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
     metadata_ = metadata;
     if (metadata_ == nullptr) return;
@@ -179,20 +183,18 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
   grpc_core::latent_see::InnerScope latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
 // Mark: logs a single event.
+// This is not flushed automatically, and so should only be used within a parent
+// scope.
 #define GRPC_LATENT_SEE_MARK(name) \
   grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
-// Flow: creates a movable object that logs a flow start and end event -
-// potentially across threads.
-#define GRPC_LATENT_SEE_FLOW(name) \
-  grpc_core::latent_see::Flow(GRPC_LATENT_SEE_METADATA(name))
 #else  // !def(GRPC_ENABLE_LATENT_SEE)
 namespace grpc_core {
 namespace latent_see {
 struct Metadata {};
 struct Flow {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool has_value() const { return false; }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void reset() {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void emplace(Metadata*) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool is_active() const { return false; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void End() {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(Metadata*) {}
 };
 }  // namespace latent_see
 }  // namespace grpc_core
@@ -206,8 +208,6 @@ struct Flow {
 #define GRPC_LATENT_SEE_MARK(name) \
   do {                             \
   } while (0)
-#define GRPC_LATENT_SEE_FLOW(name) \
-  grpc_core::latent_see::Flow {}
 #endif  // GRPC_ENABLE_LATENT_SEE
 
 #endif  // GRPC_SRC_CORE_UTIL_LATENT_SEE_H
