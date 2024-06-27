@@ -17,6 +17,12 @@ Server should accept these arguments:
     *   When set to true it uses XdsServerCredentials with the test server for security test cases.
         In case of secure mode, port and maintenance_port should be different.
 
+Servers that want to support dual stack testing (like Java) should also accept:
+
+*  --address_type=IPV4|IPV6|IPV4_IPV6
+    *   Type of IP address to bind to.  IPV4_IPV6 will use the wildcard address.
+        IPV4 and IPV6 will cause server to bind to one non-localhost and the localhost address of the appropriate type
+
 In addition, when handling requests, if the initial request metadata contains the `rpc-behavior` key, it should modify its handling of the request as follows:
 
  - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before resuming behavior matching and RPC processing.

@@ -27,6 +27,7 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/call_spine.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -359,6 +360,88 @@ class UnstartedCallDestinationFixture {
       MakeRefCounted<SinkDestination>();
   RefCountedPtr<UnstartedCallDestination> top_destination_ =
       traits_->CreateCallDestination(bottom_destination_);
+};
+
+// Base class for transports
+// Traits should have MakeClientInitialMetadata, MakeServerInitialMetadata,
+// MakePayload, MakeServerTrailingMetadata.
+// They should also have a MakeTransport returning a BenchmarkTransport.
+
+struct BenchmarkTransport {
+  OrphanablePtr<ClientTransport> client;
+  OrphanablePtr<ServerTransport> server;
+};
+
+template <class Traits>
+class TransportFixture {
+ public:
+  TransportFixture() { transport_.server->SetCallDestination(acceptor_); };
+
+  BenchmarkCall MakeCall() {
+    auto arena = arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto p =
+        MakeCallPair(traits_.MakeClientInitialMetadata(), std::move(arena));
+    transport_.client->StartCall(p.handler.StartCall());
+    auto handler = acceptor_->TakeHandler();
+    absl::optional<CallHandler> started_handler;
+    Notification started;
+    handler.SpawnInfallible("handler_setup", [&]() {
+      started_handler = handler.StartCall();
+      started.Notify();
+      return Empty{};
+    });
+    started.WaitForNotification();
+    CHECK(started_handler.has_value());
+    return {std::move(p.initiator), std::move(*started_handler)};
+  }
+
+  ServerMetadataHandle MakeServerInitialMetadata() {
+    return traits_.MakeServerInitialMetadata();
+  }
+
+  MessageHandle MakePayload() { return traits_.MakePayload(); }
+
+  ServerMetadataHandle MakeServerTrailingMetadata() {
+    return traits_.MakeServerTrailingMetadata();
+  }
+
+ private:
+  class Acceptor : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler handler) override {
+      MutexLock lock(&mu_);
+      handler_ = std::move(handler);
+    }
+    void Orphaned() override {}
+
+    UnstartedCallHandler TakeHandler() {
+      mu_.LockWhen(absl::Condition(
+          +[](Acceptor* dest) ABSL_EXCLUSIVE_LOCKS_REQUIRED(dest->mu_) {
+            return dest->handler_.has_value();
+          },
+          this));
+      auto h = std::move(*handler_);
+      handler_.reset();
+      mu_.Unlock();
+      return h;
+    }
+
+    absl::Mutex mu_;
+    absl::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
+  };
+
+  Traits traits_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test-allocator"),
+          1024);
+  RefCountedPtr<Acceptor> acceptor_ = MakeRefCounted<Acceptor>();
+  BenchmarkTransport transport_ = traits_.MakeTransport();
 };
 
 }  // namespace grpc_core
