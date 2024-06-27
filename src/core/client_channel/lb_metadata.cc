@@ -75,7 +75,7 @@ LbMetadata::TestOnlyCopyToVector() const {
 void MetadataMutationHandler::Apply(
     LoadBalancingPolicy::MetadataMutations& metadata_mutations,
     grpc_metadata_batch* metadata) {
-  for (auto& p : metadata_mutations.additions_) {
+  for (auto& p : metadata_mutations.metadata_) {
     absl::string_view key = p.first;
     Slice& value =
         grpc_event_engine::experimental::internal::SliceCast<Slice>(p.second);

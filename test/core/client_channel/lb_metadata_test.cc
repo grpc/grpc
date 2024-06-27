@@ -29,25 +29,25 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TEST(LbMetadataMutation, AddsUnknownHeader) {
+TEST(LbMetadataMutation, SetsUnknownHeader) {
   grpc_metadata_batch metadata;
   LoadBalancingPolicy::MetadataMutations mutations;
-  mutations.Add("key", "value");
+  mutations.Set("key", "value");
   MetadataMutationHandler::Apply(mutations, &metadata);
   std::string buffer;
   EXPECT_EQ(metadata.GetStringValue("key", &buffer), "value");
 }
 
-TEST(LbMetadataMutation, AddsTraitHeader) {
+TEST(LbMetadataMutation, SetsTraitHeader) {
   grpc_metadata_batch metadata;
   LoadBalancingPolicy::MetadataMutations mutations;
-  mutations.Add("user-agent", "value");
+  mutations.Set("user-agent", "value");
   MetadataMutationHandler::Apply(mutations, &metadata);
   std::string buffer;
   EXPECT_EQ(metadata.GetStringValue("user-agent", &buffer), "value");
 }
 
-TEST(LbMetadataMutation, OverwritesExistingKeys) {
+TEST(LbMetadataMutation, OverwritesExistingHeader) {
   grpc_metadata_batch metadata;
   metadata.Append("key", Slice::FromCopiedString("value1"),
                   [&](absl::string_view error, const Slice& value) {
@@ -60,12 +60,12 @@ TEST(LbMetadataMutation, OverwritesExistingKeys) {
   std::string buffer;
   EXPECT_EQ(metadata.GetStringValue("key", &buffer), "value1,value2");
   LoadBalancingPolicy::MetadataMutations mutations;
-  mutations.Add("key", "value3");
+  mutations.Set("key", "value3");
   MetadataMutationHandler::Apply(mutations, &metadata);
   EXPECT_EQ(metadata.GetStringValue("key", &buffer), "value3");
 }
 
-TEST(LbMetadataMutation, OverwritesTraitKeys) {
+TEST(LbMetadataMutation, OverwritesTraitHeader) {
   grpc_metadata_batch metadata;
   metadata.Append("user-agent", Slice::FromCopiedString("value1"),
                   [&](absl::string_view error, const Slice& value) {
@@ -74,7 +74,7 @@ TEST(LbMetadataMutation, OverwritesTraitKeys) {
   std::string buffer;
   EXPECT_EQ(metadata.GetStringValue("user-agent", &buffer), "value1");
   LoadBalancingPolicy::MetadataMutations mutations;
-  mutations.Add("user-agent", "value2");
+  mutations.Set("user-agent", "value2");
   MetadataMutationHandler::Apply(mutations, &metadata);
   EXPECT_EQ(metadata.GetStringValue("user-agent", &buffer), "value2");
 }
