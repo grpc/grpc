@@ -14,14 +14,13 @@
 
 #include "src/core/util/latent_see.h"
 
+#ifdef GRPC_ENABLE_LATENT_SEE
 #include <chrono>
 #include <cstdint>
-#include <ratio>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#ifdef GRPC_ENABLE_LATENT_SEE
 namespace grpc_core {
 namespace latent_see {
 
