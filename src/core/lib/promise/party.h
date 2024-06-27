@@ -108,19 +108,19 @@ class PartySyncUsingAtomics {
   // participant completed and should be removed from the allocated set.
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
-    uint64_t prev_state;
+    // Grab the current state, and clear the wakeup bits & add flag.
+    uint64_t prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
+                                           std::memory_order_acquire);
+    LogStateChange("Run", prev_state,
+                   prev_state & (kRefMask | kLocked | kAllocatedMask));
+    CHECK(prev_state & kLocked);
+    if (prev_state & kDestroying) return true;
+    // From the previous state, extract which participants we're to wakeup.
+    uint64_t wakeups = prev_state & kWakeupMask;
+    // Now update prev_state to be what we want the CAS to see below.
+    prev_state &= kRefMask | kLocked | kAllocatedMask;
     for (;;) {
-      // Grab the current state, and clear the wakeup bits & add flag.
-      prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
-                                    std::memory_order_acquire);
-      LogStateChange("Run", prev_state,
-                     prev_state & (kRefMask | kLocked | kAllocatedMask));
-      CHECK(prev_state & kLocked);
-      if (prev_state & kDestroying) return true;
-      // From the previous state, extract which participants we're to wakeup.
-      uint64_t wakeups = prev_state & kWakeupMask;
-      // Now update prev_state to be what we want the CAS to see below.
-      prev_state &= kRefMask | kLocked | kAllocatedMask;
+      uint64_t keep_allocated_mask = kAllocatedMask;
       // For each wakeup bit...
       while (wakeups != 0) {
         uint64_t t = LowestOneBit(wakeups);
@@ -129,11 +129,7 @@ class PartySyncUsingAtomics {
         // If the bit is not set, skip.
         if (poll_one_participant(i)) {
           const uint64_t allocated_bit = (1u << i << kAllocatedShift);
-          prev_state &= ~allocated_bit;
-          uint64_t finished_prev_state =
-              state_.fetch_and(~allocated_bit, std::memory_order_release);
-          LogStateChange("Run:ParticipantComplete", finished_prev_state,
-                         finished_prev_state & ~allocated_bit);
+          keep_allocated_mask &= ~allocated_bit;
         }
       }
       // Try to CAS the state we expected to have (with no wakeups or adds)
@@ -148,12 +144,26 @@ class PartySyncUsingAtomics {
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
       if (state_.compare_exchange_weak(
-              prev_state, (prev_state & (kRefMask | kAllocatedMask)),
+              prev_state, (prev_state & (kRefMask | keep_allocated_mask)),
               std::memory_order_acq_rel, std::memory_order_acquire)) {
         LogStateChange("Run:End", prev_state,
                        prev_state & (kRefMask | kAllocatedMask));
         return false;
       }
+      while (!state_.compare_exchange_weak(
+          prev_state,
+          prev_state & (kRefMask | kLocked | keep_allocated_mask))) {
+        // Nothing to do here.
+      }
+      LogStateChange("Run:Continue", prev_state,
+                     prev_state & (kRefMask | kLocked | keep_allocated_mask));
+      CHECK(prev_state & kLocked);
+      if (prev_state & kDestroying) return true;
+      // From the previous state, extract which participants we're to wakeup.
+      wakeups = prev_state & kWakeupMask;
+      // Now update prev_state to be what we want the CAS to see once wakeups
+      // complete next iteration.
+      prev_state &= kRefMask | kLocked | keep_allocated_mask;
     }
     return false;
   }
@@ -176,15 +186,12 @@ class PartySyncUsingAtomics {
     do {
       wakeup_mask = 0;
       allocated = (state & kAllocatedMask) >> kAllocatedShift;
-      size_t n = 0;
-      for (size_t bit = 0; n < count && bit < party_detail::kMaxParticipants;
-           bit++) {
-        if (allocated & (1 << bit)) continue;
-        wakeup_mask |= (1 << bit);
-        slots[n++] = bit;
-        allocated |= 1 << bit;
+      for (size_t i = 0; i < count; i++) {
+        auto new_mask = LowestOneBit(~allocated);
+        wakeup_mask |= new_mask;
+        allocated |= new_mask;
+        slots[i] = CountTrailingZeros(new_mask);
       }
-      CHECK(n == count);
       // Try to allocate this slot and take a ref (atomically).
       // Ref needs to be taken because once we store the participant it could be
       // spuriously woken up and unref the party.
@@ -195,6 +202,44 @@ class PartySyncUsingAtomics {
                    (state | (allocated << kAllocatedShift)) + kOneRef);
 
     store(slots);
+
+    // Now we need to wake up the party.
+    state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
+    LogStateChange("AddParticipantsAndRef:Wakeup", state,
+                   state | wakeup_mask | kLocked);
+
+    // If the party was already locked, we're done.
+    return ((state & kLocked) == 0);
+  }
+
+  template <typename F>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT bool
+  AddParticipantAndRef(F store) {
+    uint64_t state = state_.load(std::memory_order_acquire);
+    uint64_t allocated;
+    size_t slot;
+
+    // Find slots for each new participant, ordering them from lowest available
+    // slot upwards to ensure the same poll ordering as presentation ordering to
+    // this function.
+    WakeupMask wakeup_mask;
+    do {
+      wakeup_mask = 0;
+      allocated = (state & kAllocatedMask) >> kAllocatedShift;
+      auto new_mask = LowestOneBit(~allocated);
+      wakeup_mask |= new_mask;
+      allocated |= new_mask;
+      slot = CountTrailingZeros(new_mask);
+      // Try to allocate this slot and take a ref (atomically).
+      // Ref needs to be taken because once we store the participant it could be
+      // spuriously woken up and unref the party.
+    } while (!state_.compare_exchange_weak(
+        state, (state | (allocated << kAllocatedShift)) + kOneRef,
+        std::memory_order_acq_rel, std::memory_order_acquire));
+    LogStateChange("AddParticipantsAndRef", state,
+                   (state | (allocated << kAllocatedShift)) + kOneRef);
+
+    store(slot);
 
     // Now we need to wake up the party.
     state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
@@ -587,6 +632,22 @@ class Party : public Activity, private Wakeable {
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void AddParticipant(
+      Participant* participant) {
+    bool run_party =
+        sync_.AddParticipantAndRef([this, participant](size_t slot) {
+          if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
+            gpr_log(GPR_INFO,
+                    "Party %p                 AddParticipant: %s @ %" PRIdPTR
+                    " [participant=%p]",
+                    &sync_, std::string(participant->name()).c_str(), slot,
+                    participant);
+          }
+          participants_[slot].store(participant, std::memory_order_release);
+        });
+    if (run_party) RunLocked();
+    Unref();
+  }
   bool RunOneParticipant(int i);
 
   // Sentinal value for currently_polling_ when no participant is being polled.
@@ -626,8 +687,8 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
 template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
-  BulkSpawner(this).Spawn(name, std::move(promise_factory),
-                          std::move(on_complete));
+  AddParticipant(new ParticipantImpl<Factory, OnComplete>(
+      name, std::move(promise_factory), std::move(on_complete)));
 }
 
 template <typename Factory>
@@ -635,7 +696,7 @@ auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
   auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
       name, std::move(promise_factory));
   Participant* p = participant->Ref().release();
-  AddParticipants(&p, 1);
+  AddParticipant(p);
   return [participant = std::move(participant)]() mutable {
     return participant->PollCompletion();
   };

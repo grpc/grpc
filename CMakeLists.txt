@@ -8677,6 +8677,7 @@ target_include_directories(bitset_test
 target_link_libraries(bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
 )
 
 
@@ -30366,6 +30367,7 @@ target_include_directories(table_test
 target_link_libraries(table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   absl::type_traits
   absl::utility
 )
@@ -32897,6 +32899,7 @@ target_link_libraries(unique_type_name_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::flat_hash_map
+  absl::check
   absl::str_format
 )
 
@@ -33016,6 +33019,7 @@ target_include_directories(useful_test
 target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
 )
 
 
