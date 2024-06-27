@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -76,7 +77,10 @@ const int32_t kTimeoutSecs = 120;
 ChaoticGoodConnector::ChaoticGoodConnector(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : event_engine_(std::move(event_engine)),
-      handshake_mgr_(std::make_shared<HandshakeManager>()) {}
+      handshake_mgr_(MakeRefCounted<HandshakeManager>()) {
+  arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine_.get());
+}
 
 ChaoticGoodConnector::~ChaoticGoodConnector() {
   CHECK_EQ(notify_, nullptr);
@@ -333,7 +337,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
                          status);
           }
         },
-        arena_, event_engine_.get());
+        arena_);
     MutexLock lock(&mu_);
     if (!is_shutdown_) {
       connect_activity_ = std::move(activity);

@@ -45,6 +45,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -58,6 +59,7 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -100,14 +102,13 @@ grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
 
 }  // namespace
 
-ClientCall::ClientCall(
-    grpc_call*, uint32_t, grpc_completion_queue* cq, Slice path,
-    absl::optional<Slice> authority, bool registered_method, Timestamp deadline,
-    grpc_compression_options compression_options,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena,
-    RefCountedPtr<UnstartedCallDestination> destination)
-    : Call(false, deadline, std::move(arena), event_engine),
+ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
+                       Slice path, absl::optional<Slice> authority,
+                       bool registered_method, Timestamp deadline,
+                       grpc_compression_options compression_options,
+                       RefCountedPtr<Arena> arena,
+                       RefCountedPtr<UnstartedCallDestination> destination)
+    : Call(false, deadline, std::move(arena)),
       DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
@@ -129,6 +130,7 @@ ClientCall::ClientCall(
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
+  GRPC_LATENT_SEE_PARENT_SCOPE("ClientCall::StartBatch");
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
@@ -228,8 +230,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
               send_initial_metadata_.get());
   PrepareOutgoingInitialMetadata(send_initial_metadata_op,
                                  *send_initial_metadata_);
-  auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
-                           arena()->Ref());
+  auto call = MakeCallPair(std::move(send_initial_metadata_), arena()->Ref());
   started_call_initiator_ = std::move(call.initiator);
   while (true) {
     GRPC_TRACE_LOG(call, INFO)
@@ -409,18 +410,20 @@ char* ClientCall::GetPeer() {
   return gpr_strdup("unknown");
 }
 
-grpc_call* MakeClientCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
-    bool registered_method, Timestamp deadline,
-    grpc_compression_options compression_options,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena,
-    RefCountedPtr<UnstartedCallDestination> destination) {
+grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
+                          grpc_completion_queue* cq, Slice path,
+                          absl::optional<Slice> authority,
+                          bool registered_method, Timestamp deadline,
+                          grpc_compression_options compression_options,
+                          RefCountedPtr<Arena> arena,
+                          RefCountedPtr<UnstartedCallDestination> destination) {
+  DCHECK_NE(arena.get(), nullptr);
+  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), registered_method, deadline,
-                        compression_options, event_engine, arena, destination)
+                        compression_options, arena, destination)
       ->c_ptr();
 }
 

@@ -777,6 +777,7 @@ doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
 doc/core/grpc-polling-engines.md \
+doc/core/latent_see.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
 doc/core/transport_explainer.md \
@@ -786,6 +787,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_bootstrap_format.md \
 doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \

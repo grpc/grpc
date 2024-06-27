@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <type_traits>
@@ -120,6 +121,10 @@ namespace grpc_core {
 struct NoInterceptor {};
 
 namespace filters_detail {
+
+inline void* Offset(void* base, size_t amt) {
+  return static_cast<char*>(base) + amt;
+}
 
 // One call filter constructor
 // Contains enough information to allocate and initialize the
@@ -871,6 +876,17 @@ struct StackData {
   // (to capture ownership of channel data)
   std::vector<ChannelDataDestructor> channel_data_destructors;
 
+  bool empty() const {
+    return filter_constructor.empty() && filter_destructor.empty() &&
+           client_initial_metadata.ops.empty() &&
+           server_initial_metadata.ops.empty() &&
+           client_to_server_messages.ops.empty() &&
+           client_to_server_half_close.empty() &&
+           server_to_client_messages.ops.empty() &&
+           server_trailing_metadata.empty() && finalizers.empty() &&
+           channel_data_destructors.empty();
+  }
+
   // Add one filter to the list of filters, and update alignment.
   // Returns the offset of the call data for this filter.
   // Specifically does not update any of the layouts or finalizers.
@@ -1268,7 +1284,11 @@ class CallFilters {
   CallFilters(CallFilters&&) = delete;
   CallFilters& operator=(CallFilters&&) = delete;
 
-  void SetStack(RefCountedPtr<Stack> stack);
+  void AddStack(RefCountedPtr<Stack> stack) {
+    if (stack->data_.empty()) return;
+    stacks_.emplace_back(std::move(stack));
+  }
+  void Start();
 
   // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
@@ -1276,45 +1296,72 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, void (CallState::*on_done)(), typename Input>
-  Poll<ValueOrFailure<Output>> FinishStep(
-      Poll<filters_detail::ResultOr<Input>> p) {
-    auto* r = p.value_if_ready();
-    if (r == nullptr) return Pending{};
-    (call_state_.*on_done)();
-    if (r->ok != nullptr) {
-      return ValueOrFailure<Output>{std::move(r->ok)};
-    }
-    PushServerTrailingMetadata(std::move(r->error));
-    return Failure{};
-  }
-
   template <typename Output, typename Input,
             Input(CallFilters::*input_location),
             filters_detail::Layout<Input>(filters_detail::StackData::*layout),
-            void (CallState::*on_done)()>
-  auto RunExecutor() {
-    DCHECK_NE((this->*input_location).get(), nullptr);
-    filters_detail::OperationExecutor<Input> executor;
-    return [this, executor = std::move(executor)]() mutable {
-      if ((this->*input_location) != nullptr) {
-        return FinishStep<Output, on_done>(
-            executor.Start(&(stack_->data_.*layout),
-                           std::move(this->*input_location), call_data_));
+            void (CallState::*on_done)(), typename StackIterator>
+  class Executor {
+   public:
+    Executor(CallFilters* filters, StackIterator stack_begin,
+             StackIterator stack_end)
+        : stack_current_(stack_begin),
+          stack_end_(stack_end),
+          filters_(filters) {
+      DCHECK_NE((filters_->*input_location).get(), nullptr);
+    }
+
+    Poll<ValueOrFailure<Output>> operator()() {
+      if ((filters_->*input_location) != nullptr) {
+        if (stack_current_ == stack_end_) {
+          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          (filters_->call_state_.*on_done)();
+          return Output(std::move(filters_->*input_location));
+        }
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout),
+            std::move(filters_->*input_location), filters_->call_data_));
+      } else {
+        return FinishStep(executor_.Step(filters_->call_data_));
       }
-      return FinishStep<Output, on_done>(executor.Step(call_data_));
-    };
-  }
+    }
+
+   private:
+    Poll<ValueOrFailure<Output>> FinishStep(
+        Poll<filters_detail::ResultOr<Input>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      if (r->ok != nullptr) {
+        ++stack_current_;
+        if (stack_current_ == stack_end_) {
+          (filters_->call_state_.*on_done)();
+          return ValueOrFailure<Output>{std::move(r->ok)};
+        }
+        return FinishStep(
+            executor_.Start(&(stack_current_->stack->data_.*layout),
+                            std::move(r->ok), filters_->call_data_));
+      }
+      (filters_->call_state_.*on_done)();
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    StackIterator stack_current_;
+    StackIterator stack_end_;
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<Input> executor_;
+  };
 
  public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
-    return RunExecutor<ClientMetadataHandle, ClientMetadataHandle,
-                       &CallFilters::push_client_initial_metadata_,
-                       &filters_detail::StackData::client_initial_metadata,
-                       &CallState::FinishPullClientInitialMetadata>();
+    return Executor<ClientMetadataHandle, ClientMetadataHandle,
+                    &CallFilters::push_client_initial_metadata_,
+                    &filters_detail::StackData::client_initial_metadata,
+                    &CallState::FinishPullClientInitialMetadata,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1334,12 +1381,14 @@ class CallFilters {
               has_server_initial_metadata,
               [this]() {
                 return Map(
-                    RunExecutor<
+                    Executor<
                         absl::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
-                        &CallState::FinishPullServerInitialMetadata>(),
+                        &CallState::FinishPullServerInitialMetadata,
+                        StacksVector::const_reverse_iterator>(
+                        this, stacks_.crbegin(), stacks_.crend()),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
                       return absl::optional<ServerMetadataHandle>{};
@@ -1372,11 +1421,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_client_to_server_message_,
                     &filters_detail::StackData::client_to_server_messages,
-                    &CallState::FinishPullClientToServerMessage>();
+                    &CallState::FinishPullClientToServerMessage,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1401,11 +1452,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_server_to_client_message_,
                     &filters_detail::StackData::server_to_client_messages,
-                    &CallState::FinishPullServerToClientMessage>();
+                    &CallState::FinishPullServerToClientMessage,
+                    StacksVector::const_reverse_iterator>(
+                    this, stacks_.crbegin(), stacks_.crend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1423,12 +1476,17 @@ class CallFilters {
     return Map(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
-          auto result = std::move(push_server_trailing_metadata_);
+          auto value = std::move(push_server_trailing_metadata_);
+          if (call_data_ != nullptr) {
+            for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
+              value = filters_detail::RunServerTrailingMetadata(
+                  it->stack->data_.server_trailing_metadata,
+                  filters_detail::Offset(call_data_, it->call_data_offset),
+                  std::move(value));
+            }
+          }
           call_state_.FinishPullServerTrailingMetadata();
-          if (call_data_ == nullptr) return result;
-          return filters_detail::RunServerTrailingMetadata(
-              stack_->data_.server_trailing_metadata, call_data_,
-              std::move(result));
+          return value;
         });
   }
   // Server: Wait for server trailing metadata to have been sent
@@ -1447,7 +1505,17 @@ class CallFilters {
  private:
   void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
-  RefCountedPtr<Stack> stack_;
+  struct AddedStack {
+    explicit AddedStack(RefCountedPtr<Stack> stack)
+        : call_data_offset(std::numeric_limits<size_t>::max()),
+          stack(std::move(stack)) {}
+    size_t call_data_offset;
+    RefCountedPtr<Stack> stack;
+  };
+
+  using StacksVector = absl::InlinedVector<AddedStack, 2>;
+
+  StacksVector stacks_;
 
   CallState call_state_;
 

@@ -45,17 +45,15 @@ class CallSpine final : public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
-      grpc_event_engine::experimental::EventEngine* event_engine,
       RefCountedPtr<Arena> arena) {
     Arena* arena_ptr = arena.get();
     return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
-        std::move(client_initial_metadata), event_engine, std::move(arena)));
+        std::move(client_initial_metadata), std::move(arena)));
   }
 
   ~CallSpine() override {}
 
   CallFilters& call_filters() { return call_filters_; }
-  Arena* arena() { return arena_.get(); }
 
   // Add a callback to be called when server trailing metadata is received.
   void OnDone(absl::AnyInvocable<void()> fn) {
@@ -114,10 +112,6 @@ class CallSpine final : public Party {
 
   ClientMetadata& UnprocessedClientInitialMetadata() {
     return *call_filters().unprocessed_client_initial_metadata();
-  }
-
-  grpc_event_engine::experimental::EventEngine* event_engine() const override {
-    return event_engine_;
   }
 
   // Wrap a promise so that if it returns failure it automatically cancels
@@ -190,45 +184,12 @@ class CallSpine final : public Party {
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
-            grpc_event_engine::experimental::EventEngine* event_engine,
             RefCountedPtr<Arena> arena)
-      : Party(1),
-        arena_(std::move(arena)),
-        call_filters_(std::move(client_initial_metadata)),
-        event_engine_(event_engine) {}
+      : Party(std::move(arena)),
+        call_filters_(std::move(client_initial_metadata)) {}
 
-  class ScopedContext : public ScopedActivity,
-                        public promise_detail::Context<Arena>,
-                        public promise_detail::Context<
-                            grpc_event_engine::experimental::EventEngine> {
-   public:
-    explicit ScopedContext(CallSpine* spine)
-        : ScopedActivity(spine),
-          Context<Arena>(spine->arena_.get()),
-          Context<grpc_event_engine::experimental::EventEngine>(
-              spine->event_engine()) {}
-  };
-
-  bool RunParty() override {
-    ScopedContext context(this);
-    return Party::RunParty();
-  }
-
-  void PartyOver() override {
-    auto arena = arena_;
-    {
-      ScopedContext context(this);
-      CancelRemainingParticipants();
-      arena->DestroyManagedNewObjects();
-    }
-    this->~CallSpine();
-  }
-
-  const RefCountedPtr<Arena> arena_;
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
-  // Event engine associated with this call
-  grpc_event_engine::experimental::EventEngine* const event_engine_;
   absl::AnyInvocable<void()> on_done_{nullptr};
 };
 
@@ -292,10 +253,6 @@ class CallInitiator {
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return spine_->event_engine();
-  }
-
  private:
   RefCountedPtr<CallSpine> spine_;
 };
@@ -357,10 +314,6 @@ class CallHandler {
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return spine_->event_engine();
-  }
-
  private:
   RefCountedPtr<CallSpine> spine_;
 };
@@ -407,14 +360,12 @@ class UnstartedCallHandler {
     return spine_->UnprocessedClientInitialMetadata();
   }
 
-  // Helper for the very common situation in tests where we want to start a call
-  // with an empty filter stack.
-  CallHandler StartWithEmptyFilterStack() {
-    return StartCall(CallFilters::StackBuilder().Build());
+  void AddCallStack(RefCountedPtr<CallFilters::Stack> call_filters) {
+    spine_->call_filters().AddStack(std::move(call_filters));
   }
 
-  CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters) {
-    spine_->call_filters().SetStack(std::move(call_filters));
+  CallHandler StartCall() {
+    spine_->call_filters().Start();
     return CallHandler(std::move(spine_));
   }
 
@@ -430,9 +381,7 @@ struct CallInitiatorAndHandler {
 };
 
 CallInitiatorAndHandler MakeCallPair(
-    ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena);
+    ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {
