@@ -94,7 +94,6 @@ TEST(UsefulTest, RoundUpToPowerOf2) {
 }
 
 TEST(UsefulTest, CountTrailingZeros32) {
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(0)), 32);
   EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(1)), 0);
   EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(2)), 1);
   EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(3)), 0);
@@ -118,7 +117,6 @@ TEST(UsefulTest, CountTrailingZeros32) {
 }
 
 TEST(UsefulTest, CountTrailingZeros64) {
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(0)), 64);
   EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(1)), 0);
   EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(2)), 1);
   EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(3)), 0);

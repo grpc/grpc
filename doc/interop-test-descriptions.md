@@ -1287,6 +1287,12 @@ Servers should accept these arguments:
 
     * Whether to use a plaintext or encrypted connection
 
+Servers that want to be used for dual stack testing must accept this argument:
+
+* --address_type=IPV4|IPV6|IPV4_IPV6
+    
+    * What type of addresses to listen on. Default IPV4_IPV6
+
 Servers must support TLS with ALPN. They should use
 [server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)
 for their certificate.
