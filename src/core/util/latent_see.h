@@ -116,7 +116,8 @@ class Flow {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Flow() : metadata_(nullptr) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata)
-      : metadata_(metadata) {
+      : metadata_(metadata),
+        id_(next_flow_id_.fetch_add(1, std::memory_order_relaxed)) {
     Log::Append(metadata_, EventType::kFlowStart, id_);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Flow() {
@@ -154,7 +155,7 @@ class Flow {
 
  private:
   const Metadata* metadata_;
-  uint64_t id_{next_flow_id_.fetch_add(1, std::memory_order_relaxed)};
+  uint64_t id_;
   static std::atomic<uint64_t> next_flow_id_;
 };
 
