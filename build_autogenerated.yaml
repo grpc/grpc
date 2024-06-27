@@ -6454,6 +6454,7 @@ targets:
   - test/core/gprpp/bitset_test.cc
   deps:
   - gtest
+  - absl/log:check
   uses_polling: false
 - name: buffer_list_test
   gtest: true
@@ -19730,6 +19731,7 @@ targets:
   - test/core/gprpp/table_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/utility:utility
   uses_polling: false
@@ -20930,6 +20932,7 @@ targets:
   deps:
   - gtest
   - absl/container:flat_hash_map
+  - absl/log:check
   - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
@@ -20966,6 +20969,7 @@ targets:
   - test/core/util/useful_test.cc
   deps:
   - gtest
+  - absl/log:check
   uses_polling: false
 - name: uuid_v4_test
   gtest: true
