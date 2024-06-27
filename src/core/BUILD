@@ -88,6 +88,9 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/strings",
     ],
+    visibility = [
+        "@grpc:event_engine_base_hdrs",
+    ],
     deps = [
         ":memory_quota",
         "//:event_engine_base_hdrs",
