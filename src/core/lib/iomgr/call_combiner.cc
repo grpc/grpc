@@ -114,10 +114,11 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure,
 
 void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
-  GRPC_TRACE_LOG(call_combiner, INFO)
-      << "==> CallCombiner::Start() [" << this
-      << "] closure=" << closure->DebugString() << " [" DEBUG_FMT_STR
-      << "] error=" << StatusToString(error) << " " << reason;
+  GRPC_TRACE_LOG(call_combiner, INFO) << absl::StrFormat(
+      "==> CallCombiner::Start() [%p] closure=%s [" DEBUG_FMT_STR
+      "%s] error=%s",
+      this, closure->DebugString().c_str() DEBUG_FMT_ARGS, reason,
+      StatusToString(error).c_str());
   size_t prev_size =
       static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)1));
   GRPC_TRACE_LOG(call_combiner, INFO)
@@ -136,8 +137,9 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
 }
 
 void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
-  GRPC_TRACE_LOG(call_combiner, INFO) << "==> CallCombiner::Stop() [" << this
-                                      << "] [" DEBUG_FMT_STR << "] " << reason;
+  GRPC_TRACE_LOG(call_combiner, INFO)
+      << absl::StrFormat("==> CallCombiner::Stop() [%p] [" DEBUG_FMT_STR "%s]",
+                         this DEBUG_FMT_ARGS, reason);
   size_t prev_size =
       static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)-1));
   GRPC_TRACE_LOG(call_combiner, INFO)
