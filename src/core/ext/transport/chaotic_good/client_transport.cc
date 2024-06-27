@@ -51,7 +51,6 @@ namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
-  LOG(INFO) << "ChaoticGoodClientTransport::Orphan";
   AbortWithError();
   RefCountedPtr<Party> party;
   {

@@ -18,7 +18,7 @@
 
 static void BM_IsExperimentEnabled(benchmark::State& state) {
   for (auto _ : state) {
-    grpc_core::IsMonitoringExperimentEnabled();
+    benchmark::DoNotOptimize(grpc_core::IsMonitoringExperimentEnabled());
   }
 }
 BENCHMARK(BM_IsExperimentEnabled);

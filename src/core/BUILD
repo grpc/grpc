@@ -242,6 +242,7 @@ grpc_cc_library(
     name = "useful",
     hdrs = ["util/useful.h"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:variant",
     ],
@@ -583,6 +584,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "ref_counted",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
