@@ -683,8 +683,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
     }
 #if GPR_ARCH_64
     VLOG(2) << "TIMER CHECK BEGIN: now="
-            << now.milliseconds_after_process_epoch()
-            << " next=" << next_str.c_str()
+            << now.milliseconds_after_process_epoch() << " next=" << next_str
             << " tls_min=" << min_timer.milliseconds_after_process_epoch()
             << " glob_min="
             << grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
@@ -693,8 +692,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
                    .milliseconds_after_process_epoch();
 #else
     VLOG(2) << "TIMER CHECK BEGIN: now="
-            << now.milliseconds_after_process_epoch()
-            << " next=" << next_str.c_str()
+            << now.milliseconds_after_process_epoch() << " next=" << next_str
             << " min=" << min_timer.milliseconds_after_process_epoch();
 #endif
   }
