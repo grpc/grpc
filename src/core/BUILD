@@ -242,6 +242,7 @@ grpc_cc_library(
     name = "useful",
     hdrs = ["util/useful.h"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:variant",
     ],
