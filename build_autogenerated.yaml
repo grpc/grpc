@@ -13246,6 +13246,17 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: lb_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/lb_metadata_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: load_balanced_call_destination_test
   gtest: true
   build: test
