@@ -21,6 +21,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/internal/slice_cast.h>
@@ -97,6 +98,11 @@ class BaseSlice {
   }
 
   uint32_t Hash() const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& s, const BaseSlice& r) {
+    s.Append(absl::CEscape(r.as_string_view()));
+  }
 
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
