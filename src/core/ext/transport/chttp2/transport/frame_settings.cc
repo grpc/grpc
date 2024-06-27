@@ -110,7 +110,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             if (t->notify_on_receive_settings != nullptr) {
               if (t->interested_parties_until_recv_settings != nullptr) {
                 grpc_endpoint_delete_from_pollset_set(
-                    t->ep, t->interested_parties_until_recv_settings);
+                    t->ep.get(), t->interested_parties_until_recv_settings);
                 t->interested_parties_until_recv_settings = nullptr;
               }
               grpc_core::ExecCtx::Run(DEBUG_LOCATION,

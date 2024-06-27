@@ -44,6 +44,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -51,7 +52,6 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -165,22 +165,21 @@ static grpc_error_handle CreateEventEngineListener(
                       ->GetWrappedFd();
               if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                               &(addr.len)) < 0) {
-                gpr_log(GPR_ERROR, "Failed getpeername: %s",
-                        grpc_core::StrError(errno).c_str());
+                LOG(ERROR) << "Failed getpeername: "
+                           << grpc_core::StrError(errno);
                 close(fd);
                 return;
               }
               (void)grpc_set_socket_no_sigpipe_if_possible(fd);
               auto addr_uri = grpc_sockaddr_to_uri(&addr);
               if (!addr_uri.ok()) {
-                gpr_log(GPR_ERROR, "Invalid address: %s",
-                        addr_uri.status().ToString().c_str());
+                LOG(ERROR) << "Invalid address: "
+                           << addr_uri.status().ToString();
                 return;
               }
               if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-                gpr_log(GPR_INFO,
-                        "SERVER_CONNECT: incoming external connection: %s",
-                        addr_uri->c_str());
+                LOG(INFO) << "SERVER_CONNECT: incoming external connection: "
+                          << addr_uri->c_str();
               }
             }
             read_notifier_pollset =
@@ -410,8 +409,7 @@ static void on_read(void* arg, grpc_error_handle err) {
       }
       gpr_mu_lock(&sp->server->mu);
       if (!sp->server->shutdown_listeners) {
-        gpr_log(GPR_ERROR, "Failed accept4: %s",
-                grpc_core::StrError(errno).c_str());
+        LOG(ERROR) << "Failed accept4: " << grpc_core::StrError(errno);
       } else {
         // if we have shutdown listeners, accept4 could fail, and we
         // needn't notify users
@@ -424,10 +422,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       int64_t dropped_connections_count =
           num_dropped_connections.fetch_add(1, std::memory_order_relaxed) + 1;
       if (dropped_connections_count % 1000 == 1) {
-        gpr_log(GPR_INFO,
-                "Dropped >= %" PRId64
-                " new connection attempts due to high memory pressure",
-                dropped_connections_count);
+        LOG(INFO) << "Dropped >= " << dropped_connections_count
+                  << " new connection attempts due to high memory pressure";
       }
       close(fd);
       continue;
@@ -441,13 +437,11 @@ static void on_read(void* arg, grpc_error_handle err) {
       if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
         auto listener_addr_uri = grpc_sockaddr_to_uri(&sp->addr);
-        gpr_log(
-            GPR_ERROR,
-            "Failed getpeername: %s. Dropping the connection, and continuing "
-            "to listen on %s:%d.",
-            grpc_core::StrError(errno).c_str(),
-            listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
-            sp->port);
+        LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
+                   << ". Dropping the connection, and continuing to listen on "
+                   << (listener_addr_uri.ok() ? *listener_addr_uri
+                                              : "<unknown>")
+                   << ":" << sp->port;
         close(fd);
         continue;
       }
@@ -463,13 +457,11 @@ static void on_read(void* arg, grpc_error_handle err) {
 
     auto addr_uri = grpc_sockaddr_to_uri(&addr);
     if (!addr_uri.ok()) {
-      gpr_log(GPR_ERROR, "Invalid address: %s",
-              addr_uri.status().ToString().c_str());
+      LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
-              addr_uri->c_str());
+      LOG(INFO) << "SERVER_CONNECT: incoming connection: " << *addr_uri;
     }
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
@@ -549,16 +541,14 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   }
   if (*out_port > 0) {
     if (!v6_err.ok()) {
-      gpr_log(GPR_INFO,
-              "Failed to add :: listener, "
-              "the environment may not support IPv6: %s",
-              grpc_core::StatusToString(v6_err).c_str());
+      LOG(INFO) << "Failed to add :: listener, "
+                << "the environment may not support IPv6: "
+                << grpc_core::StatusToString(v6_err);
     }
     if (!v4_err.ok()) {
-      gpr_log(GPR_INFO,
-              "Failed to add 0.0.0.0 listener, "
-              "the environment may not support IPv4: %s",
-              grpc_core::StatusToString(v4_err).c_str());
+      LOG(INFO) << "Failed to add 0.0.0.0 listener, "
+                << "the environment may not support IPv4: "
+                << grpc_core::StatusToString(v4_err);
     }
     return absl::OkStatus();
   } else {
@@ -916,21 +906,19 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
 
     if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                     &(addr.len)) < 0) {
-      gpr_log(GPR_ERROR, "Failed getpeername: %s",
-              grpc_core::StrError(errno).c_str());
+      LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno);
       close(fd);
       return;
     }
     (void)grpc_set_socket_no_sigpipe_if_possible(fd);
     auto addr_uri = grpc_sockaddr_to_uri(&addr);
     if (!addr_uri.ok()) {
-      gpr_log(GPR_ERROR, "Invalid address: %s",
-              addr_uri.status().ToString().c_str());
+      LOG(ERROR) << "Invalid address: " << addr_uri.status();
       return;
     }
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
-              addr_uri->c_str());
+      LOG(INFO) << "SERVER_CONNECT: incoming external connection: "
+                << *addr_uri;
     }
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);

@@ -40,7 +40,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -572,14 +571,13 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    gpr_log(
-        GPR_INFO,
-        "[RH %p] connectivity changed for endpoint %p (%s, child_policy=%p): "
-        "prev_state=%s new_state=%s (%s)",
-        ring_hash_.get(), this,
-        ring_hash_->endpoints_[index_].ToString().c_str(), child_policy_.get(),
-        ConnectivityStateName(connectivity_state_),
-        ConnectivityStateName(new_state), status.ToString().c_str());
+    LOG(INFO) << "[RH " << ring_hash_.get()
+              << "] connectivity changed for endpoint " << this << " ("
+              << ring_hash_->endpoints_[index_].ToString()
+              << ", child_policy=" << child_policy_.get()
+              << "): prev_state=" << ConnectivityStateName(connectivity_state_)
+              << " new_state=" << ConnectivityStateName(new_state) << " ("
+              << status << ")";
   }
   if (child_policy_ == nullptr) return;  // Already orphaned.
   // Update state.

@@ -228,8 +228,9 @@ static void init_openssl(void) {
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
   if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi)) {
-    gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
-            SSL_state_string_long(ssl), SSL_state_string(ssl));
+    LOG(INFO) << absl::StrFormat("%20.20s - %30.30s  - %5.10s", msg,
+                                 SSL_state_string_long(ssl),
+                                 SSL_state_string(ssl));
   }
 }
 
@@ -978,10 +979,10 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   if (ssl_index < 0) {
     char err_str[256];
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-    gpr_log(GPR_INFO,
-            "error getting the SSL index from the X509_STORE_CTX while looking "
-            "up Crl: %s",
-            err_str);
+    LOG(INFO)
+        << "error getting the SSL index from the X509_STORE_CTX while looking "
+           "up Crl: "
+        << err_str;
     return nullptr;
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
@@ -1519,8 +1520,7 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
   protector_impl->buffer =
       static_cast<unsigned char*>(gpr_malloc(protector_impl->buffer_size));
   if (protector_impl->buffer == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Could not allocated buffer for tsi_ssl_frame_protector.");
+    LOG(ERROR) << "Could not allocate buffer for tsi_ssl_frame_protector.";
     gpr_free(protector_impl);
     return TSI_INTERNAL_ERROR;
   }
@@ -1647,8 +1647,8 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-        gpr_log(GPR_ERROR, "Handshake failed with fatal error %s: %s.",
-                grpc_core::SslErrorString(ssl_result), err_str);
+        LOG(ERROR) << "Handshake failed with fatal error "
+                   << grpc_core::SslErrorString(ssl_result) << ": " << err_str;
         if (error != nullptr) {
           *error = absl::StrCat(grpc_core::SslErrorString(ssl_result), ": ",
                                 err_str);
@@ -1712,8 +1712,8 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
   // If an unexpected number of bytes were read, return an error status and
   // free all of the bytes that were read.
   if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
-    gpr_log(GPR_ERROR,
-            "Failed to read the expected number of bytes from SSL object.");
+    LOG(ERROR)
+        << "Failed to read the expected number of bytes from SSL object.";
     gpr_free(*bytes_remaining);
     *bytes_remaining = nullptr;
     if (error != nullptr) {
@@ -1896,8 +1896,8 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     if (server_name_indication != nullptr &&
         !looks_like_ip_address(server_name_indication)) {
       if (!SSL_set_tlsext_host_name(ssl, server_name_indication)) {
-        gpr_log(GPR_ERROR, "Invalid server name indication %s.",
-                server_name_indication);
+        LOG(ERROR) << "Invalid server name indication "
+                   << server_name_indication;
         SSL_free(ssl);
         BIO_free(network_io);
         return TSI_INTERNAL_ERROR;
@@ -1913,9 +1913,9 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     ssl_result = SSL_do_handshake(ssl);
     ssl_result = SSL_get_error(ssl, ssl_result);
     if (ssl_result != SSL_ERROR_WANT_READ) {
-      gpr_log(GPR_ERROR,
-              "Unexpected error received from first SSL_do_handshake call: %s",
-              grpc_core::SslErrorString(ssl_result));
+      LOG(ERROR)
+          << "Unexpected error received from first SSL_do_handshake call: "
+          << grpc_core::SslErrorString(ssl_result);
       SSL_free(ssl);
       BIO_free(network_io);
       return TSI_INTERNAL_ERROR;
