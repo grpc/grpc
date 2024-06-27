@@ -175,8 +175,7 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   };
 
   explicit FakeCertificateProvider(CertDataMap cert_data_map)
-      : distributor_(
-            grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>()),
+      : distributor_(std::make_shared<TlsCertificateDistributor>()),
         cert_data_map_(std::move(cert_data_map)) {
     distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                                 bool root_being_watched,
@@ -206,8 +205,7 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
     distributor_->SetWatchStatusCallback(nullptr);
   }
 
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const override {
+  std::shared_ptr<TlsCertificateDistributor> distributor() const override {
     return distributor_;
   }
 
@@ -223,7 +221,7 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
         static_cast<const grpc_tls_certificate_provider*>(this), other);
   }
 
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<TlsCertificateDistributor> distributor_;
   CertDataMap cert_data_map_;
 };
 

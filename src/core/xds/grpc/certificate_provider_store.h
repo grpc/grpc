@@ -90,8 +90,7 @@ class CertificateProviderStore final
       store_->ReleaseCertificateProvider(key_, this);
     }
 
-    RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-        const override {
+    std::shared_ptr<TlsCertificateDistributor> distributor() const override {
       return certificate_provider_->distributor();
     }
 
