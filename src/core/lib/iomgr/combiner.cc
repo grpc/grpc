@@ -51,19 +51,19 @@ grpc_core::Combiner* grpc_combiner_create(
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_TRACE_LOG(INFO, combiner) << "C:" << lock << " create";
+  GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " create";
   return lock;
 }
 
 static void really_destroy(grpc_core::Combiner* lock) {
-  GRPC_TRACE_LOG(INFO, combiner) << "C:" << lock << " really_destroy";
+  GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " really_destroy";
   CHECK_EQ(gpr_atm_no_barrier_load(&lock->state), 0);
   delete lock;
 }
 
 static void start_destroy(grpc_core::Combiner* lock) {
   gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -STATE_UNORPHANED);
-  GRPC_TRACE_LOG(INFO, combiner)
+  GRPC_TRACE_LOG(combiner, INFO)
       << "C:" << lock << " really_destroy old_state=" << old_state;
   if (old_state == 1) {
     really_destroy(lock);
@@ -121,7 +121,7 @@ static void push_first_on_exec_ctx(grpc_core::Combiner* lock) {
 static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
                           grpc_error_handle error) {
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
-  GRPC_TRACE_LOG(INFO, combiner)
+  GRPC_TRACE_LOG(combiner, INFO)
       << "C:" << lock << " grpc_combiner_execute c=" << cl << " last=" << last;
   if (last == 1) {
     gpr_atm_no_barrier_store(
@@ -161,7 +161,7 @@ static void queue_offload(grpc_core::Combiner* lock) {
   // Make the combiner look uncontended by storing a non-null value here, so
   // that we don't immediately offload again.
   gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 1);
-  GRPC_TRACE_LOG(INFO, combiner) << "C:" << lock << " queue_offload";
+  GRPC_TRACE_LOG(combiner, INFO) << "C:" << lock << " queue_offload";
   lock->event_engine->Run([lock] {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx(0);
@@ -180,7 +180,7 @@ bool grpc_combiner_continue_exec_ctx() {
   bool contended =
       gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null) == 0;
 
-  GRPC_TRACE_LOG(INFO, combiner)
+  GRPC_TRACE_LOG(combiner, INFO)
       << "C:" << lock << " grpc_combiner_continue_exec_ctx "
       << "contended=" << contended << " exec_ctx_ready_to_finish="
       << grpc_core::ExecCtx::Get()->IsReadyToFinish()
@@ -201,7 +201,7 @@ bool grpc_combiner_continue_exec_ctx() {
       // priority
       (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
     grpc_core::MultiProducerSingleConsumerQueue::Node* n = lock->queue.Pop();
-    GRPC_TRACE_LOG(INFO, combiner)
+    GRPC_TRACE_LOG(combiner, INFO)
         << "C:" << lock << " maybe_finish_one n=" << n;
 
     if (n == nullptr) {
@@ -224,7 +224,7 @@ bool grpc_combiner_continue_exec_ctx() {
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
     while (c != nullptr) {
-      GRPC_TRACE_LOG(INFO, combiner)
+      GRPC_TRACE_LOG(combiner, INFO)
           << "C:" << lock << " execute_final[" << loops << "] c=" << c;
       grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
@@ -242,7 +242,7 @@ bool grpc_combiner_continue_exec_ctx() {
   lock->time_to_execute_final_list = false;
   gpr_atm old_state =
       gpr_atm_full_fetch_add(&lock->state, -STATE_ELEM_COUNT_LOW_BIT);
-  GRPC_TRACE_LOG(INFO, combiner)
+  GRPC_TRACE_LOG(combiner, INFO)
       << "C:" << lock << " finish old_state=" << old_state;
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
@@ -284,7 +284,7 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error) {
   CHECK_NE(lock, nullptr);
-  GRPC_TRACE_LOG(INFO, combiner)
+  GRPC_TRACE_LOG(combiner, INFO)
       << "C:" << lock << " grpc_combiner_execute_finally c=" << closure
       << "; ac=" << grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;
   if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner != lock) {
