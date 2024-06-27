@@ -35,11 +35,6 @@
 
 namespace grpc_core {
 
-namespace {
-// TODO(ctiller): Once all activities are parties we can remove this.
-thread_local Party** g_current_party_run_next = nullptr;
-}  // namespace
-
 ///////////////////////////////////////////////////////////////////////////////
 // PartySyncUsingAtomics
 
@@ -108,7 +103,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -213,52 +208,56 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
   sync_.ForceImmediateRepoll(mask);
 }
 
-void Party::RunLocked() {
-  // If there is a party running, then we don't run it immediately
-  // but instead add it to the end of the list of parties to run.
-  // This enables a fairly straightforward batching of work from a
-  // call to a transport (or back again).
-  if (g_current_party_run_next != nullptr) {
-    if (*g_current_party_run_next == nullptr) {
-      *g_current_party_run_next = this;
-    } else {
-      // But if there's already a party queued, we're better off asking event
-      // engine to run it so we can spread load.
-      arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
-          [this]() {
-            ApplicationCallbackExecCtx app_exec_ctx;
-            ExecCtx exec_ctx;
-            RunLocked();
-          });
-    }
-    return;
-  }
-  auto body = [this]() {
-    DCHECK_EQ(g_current_party_run_next, nullptr);
-    Party* run_next = nullptr;
-    g_current_party_run_next = &run_next;
-    const bool done = RunParty();
-    DCHECK(g_current_party_run_next == &run_next);
-    g_current_party_run_next = nullptr;
-    if (done) {
-      PartyIsOver();
-    }
-    if (run_next != nullptr) {
-      run_next->RunLocked();
-    }
-  };
+void Party::RunLocked(Party* party) {
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
       [body]() {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        body();
+        if (RunParty()) PartyIsOver();
       },
       nullptr, Thread::Options().set_joinable(false));
   thd.Start();
 #else
-  body();
+  struct RunState {
+    Party* running;
+    Party* next;
+  };
+  static thread_local RunState* g_run_state = nullptr;
+  // If there is a party running, then we don't run it immediately
+  // but instead add it to the end of the list of parties to run.
+  // This enables a fairly straightforward batching of work from a
+  // call to a transport (or back again).
+  if (g_run_state != nullptr) {
+    if (g_run_state->running == party || g_run_state->next == party) {
+      // Already running or already queued.
+      return;
+    }
+    if (g_run_state->next != nullptr) {
+      // If there's already a different party queued, we're better off asking
+      // event engine to run it so we can spread load.
+      party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
+          ->Run([party]() {
+            ApplicationCallbackExecCtx app_exec_ctx;
+            ExecCtx exec_ctx;
+            RunLocked(party);
+          });
+      return;
+    }
+    g_run_state->next = party;
+    return;
+  }
+  RunState run_state = {party, nullptr};
+  g_run_state = &run_state;
+  do {
+    if (run_state.running->RunParty()) {
+      run_state.running->PartyIsOver();
+    }
+    run_state.running = std::exchange(run_state.next, nullptr);
+  } while (run_state.running != nullptr);
+  CHECK(g_run_state == &run_state);
+  g_run_state = nullptr;
 #endif
 }
 
@@ -317,12 +316,12 @@ void Party::AddParticipants(Participant** participants, size_t count) {
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }
   });
-  if (run_party) RunLocked();
+  if (run_party) RunLocked(this);
   Unref();
 }
 
 void Party::Wakeup(WakeupMask wakeup_mask) {
-  if (sync_.ScheduleWakeup(wakeup_mask)) RunLocked();
+  if (sync_.ScheduleWakeup(wakeup_mask)) RunLocked(this);
   Unref();
 }
 
@@ -332,7 +331,7 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
         [this]() {
           ApplicationCallbackExecCtx app_exec_ctx;
           ExecCtx exec_ctx;
-          RunLocked();
+          RunLocked(this);
           Unref();
         });
   } else {
