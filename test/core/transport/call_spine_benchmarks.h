@@ -378,8 +378,11 @@ class TransportFixture {
   TransportFixture() { transport_.server->SetCallDestination(acceptor_); };
 
   BenchmarkCall MakeCall() {
-    auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
-                          event_engine_.get(), arena_allocator_->MakeArena());
+    auto arena = arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto p =
+        MakeCallPair(traits_.MakeClientInitialMetadata(), std::move(arena));
     transport_.client->StartCall(p.handler.StartCall());
     auto handler = acceptor_->TakeHandler();
     absl::optional<CallHandler> started_handler;
