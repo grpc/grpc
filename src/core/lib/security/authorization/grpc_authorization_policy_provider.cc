@@ -114,10 +114,9 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
       absl::Status status = provider->ForceUpdate();
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api) && !status.ok()) {
-        gpr_log(GPR_ERROR,
-                "authorization policy reload status. code=%d error_details=%s",
-                static_cast<int>(status.code()),
-                std::string(status.message()).c_str());
+        LOG(ERROR) << "authorization policy reload status. code="
+                   << static_cast<int>(status.code())
+                   << " error_details=" << status.message();
       }
     }
   };
@@ -169,10 +168,9 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     cb_(contents_changed, absl::OkStatus());
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    gpr_log(GPR_INFO,
-            "authorization policy reload status: successfully loaded new "
-            "policy\n%s",
-            file_contents_.c_str());
+    LOG(INFO) << "authorization policy reload status: successfully loaded new "
+                 "policy\n"
+              << file_contents_;
   }
   return absl::OkStatus();
 }
