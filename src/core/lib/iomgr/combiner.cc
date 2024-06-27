@@ -121,8 +121,8 @@ static void push_first_on_exec_ctx(grpc_core::Combiner* lock) {
 static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
                           grpc_error_handle error) {
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
-  GRPC_TRACE_LOG(INFO, combiner) < < < <
-      "C:" << lock << " grpc_combiner_execute c=" << cl << " last=" << last;
+  GRPC_TRACE_LOG(INFO, combiner)
+      << "C:" << lock << " grpc_combiner_execute c=" << cl << " last=" << last;
   if (last == 1) {
     gpr_atm_no_barrier_store(
         &lock->initiating_exec_ctx_or_null,
@@ -182,10 +182,9 @@ bool grpc_combiner_continue_exec_ctx() {
 
   GRPC_TRACE_LOG(INFO, combiner)
       << "C:" << lock << " grpc_combiner_continue_exec_ctx "
-      << "contended=" << contended << " "
-      << "exec_ctx_ready_to_finish="
-      << grpc_core::ExecCtx::Get()->IsReadyToFinish() << " "
-      << "time_to_execute_final_list=" << lock->time_to_execute_final_list;
+      << "contended=" << contended << " exec_ctx_ready_to_finish="
+      << grpc_core::ExecCtx::Get()->IsReadyToFinish()
+      << " time_to_execute_final_list=" << lock->time_to_execute_final_list;
 
   // offload only if both (1) the combiner is contended and has more than one
   // closure to execute, and (2) the current execution context needs to finish

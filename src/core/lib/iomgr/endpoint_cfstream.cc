@@ -111,7 +111,7 @@ static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error) {
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
     VLOG(2) << "CFStream endpoint:" << ep << " call_read_cb " << ep->read_cb
-            << " " << ep->read_cb->cb << " " << ep->read_cb->cb_arg;
+            << " " << ep->read_cb->cb << ":" << ep->read_cb->cb_arg;
     size_t i;
     VLOG(2) << "read: error=" << grpc_core::StatusToString(error);
 
@@ -131,7 +131,7 @@ static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     VLOG(2) << "CFStream endpoint:" << ep << " call_write_cb " << ep->write_cb
-            << " " << ep->write_cb->cb << " " << ep->write_cb->cb_arg;
+            << " " << ep->write_cb->cb << ":" << ep->write_cb->cb_arg;
     VLOG(2) << "write: error=" << grpc_core::StatusToString(error);
   }
   grpc_closure* cb = ep->write_cb;
