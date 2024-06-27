@@ -25,7 +25,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -641,9 +640,9 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
     if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
-      gpr_log(GPR_INFO, "%s prepared %s.",
-              impl->is_client ? "Client" : "Server",
-              tsi_fake_handshake_message_to_string(impl->next_message_to_send));
+      LOG(INFO) << (impl->is_client ? "Client" : "Server") << " prepared "
+                << tsi_fake_handshake_message_to_string(
+                       impl->next_message_to_send);
     }
     impl->next_message_to_send = next_message_to_send;
   }
@@ -688,9 +687,10 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
     return result;
   }
   if (received_msg != expected_msg) {
-    gpr_log(GPR_ERROR, "Invalid received message (%s instead of %s)",
-            tsi_fake_handshake_message_to_string(received_msg),
-            tsi_fake_handshake_message_to_string(expected_msg));
+    LOG(ERROR) << "Invalid received message ("
+               << tsi_fake_handshake_message_to_string(received_msg)
+               << " instead of "
+               << tsi_fake_handshake_message_to_string(expected_msg) << ")";
   }
   GRPC_TRACE_LOG(tsi, INFO)
       << (impl->is_client ? "Client" : "Server") << " received "
