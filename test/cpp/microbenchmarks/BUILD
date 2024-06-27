@@ -98,10 +98,10 @@ grpc_cc_library(
         "benchmark",
     ],
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/test_util:grpc_test_util_base",
-        "//test/core/test_util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
@@ -350,10 +350,6 @@ grpc_cc_benchmark(
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
-    tags = [
-        "manual",
-        "notap",
-    ],
     deps = [":callback_unary_ping_pong_h"],
 )
 
@@ -376,10 +372,6 @@ grpc_cc_benchmark(
     name = "bm_callback_streaming_ping_pong",
     srcs = [
         "bm_callback_streaming_ping_pong.cc",
-    ],
-    tags = [
-        "manual",
-        "notap",
     ],
     deps = [":callback_streaming_ping_pong_h"],
 )
