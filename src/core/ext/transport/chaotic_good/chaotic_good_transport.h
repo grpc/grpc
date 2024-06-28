@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/absl_log.h"
+#include "absl/log/log.h"
 #include "absl/random/random.h"
 
 #include <grpc/support/port_platform.h>
@@ -57,10 +57,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
     // ignore encoding errors: they will be logged separately already
     if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      ABSL_LOG(INFO) << "CHAOTIC_GOOD: WriteFrame to:" ResolvedAddressToString(
-                            control_endpoint_.GetPeerAddress())
-                            .value_or("<<unknown peer address>>")
-                     << " " << frame.ToString();
+      LOG(INFO) << "CHAOTIC_GOOD: WriteFrame to:" ResolvedAddressToString(
+                       control_endpoint_.GetPeerAddress())
+                       .value_or("<<unknown peer address>>")
+                << " " << frame.ToString();
     }
     return TryJoin<absl::StatusOr>(
         control_endpoint_.Write(std::move(buffers.control)),
@@ -77,7 +77,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
           if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-            ABSL_LOG(INFO)
+            LOG(INFO)
                 << "CHAOTIC_GOOD: ReadHeader from:" ResolvedAddressToString(
                        control_endpoint_.GetPeerAddress())
                        .value_or("<<unknown peer address>>")
@@ -126,8 +126,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
     if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      ABSL_LOG(INFO) << "CHAOTIC_GOOD: DeserializeFrame "
-                     << (s.ok() ? frame.ToString() : s.ToString());
+      LOG(INFO) << "CHAOTIC_GOOD: DeserializeFrame "
+                << (s.ok() ? frame.ToString() : s.ToString());
     }
     return s;
   }

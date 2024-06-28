@@ -125,7 +125,7 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
         // cannot be pushed into the call. No need to log such frames.
         if (!frame.end_of_stream) {
           LOG(INFO) << "CHAOTIC_GOOD: Cannot pass frame to stream. Error:"
-                    << error << " Frame:" << frame.ToString();
+                    << error.ToString() << " Frame:" << frame.ToString();
         }
         return Immediate(std::move(error));
       });
