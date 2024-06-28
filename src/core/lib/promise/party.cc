@@ -214,10 +214,10 @@ void Party::RunLocked(Party* party) {
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
-      [body]() {
+      [party]() {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        if (RunParty()) PartyIsOver();
+        if (party->RunParty()) party->PartyIsOver();
       },
       nullptr, Thread::Options().set_joinable(false));
   thd.Start();
