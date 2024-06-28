@@ -88,6 +88,9 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/strings",
     ],
+    visibility = [
+        "@grpc:event_engine_base_hdrs",
+    ],
     deps = [
         ":memory_quota",
         "//:event_engine_base_hdrs",
@@ -127,6 +130,25 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "latent_see",
+    srcs = [
+        "util/latent_see.cc",
+    ],
+    hdrs = [
+        "util/latent_see.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "per_cpu",
+        "//:gpr",
     ],
 )
 
@@ -581,6 +603,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "event_engine_context",
+        "latent_see",
         "poll",
         "promise_factory",
         "ref_counted",
@@ -961,6 +984,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "dump_args",
+        "latent_see",
         "no_destruct",
         "poll",
         "promise_factory",
@@ -5275,6 +5299,7 @@ grpc_cc_library(
         "certificate_provider_factory",
         "certificate_provider_registry",
         "channel_args",
+        "channel_args_endpoint_config",
         "channel_creds_registry",
         "channel_fwd",
         "closure",

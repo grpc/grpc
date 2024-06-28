@@ -1461,6 +1461,7 @@ LIBGRPC_SRC = \
     src/core/util/json/json_reader.cc \
     src/core/util/json/json_util.cc \
     src/core/util/json/json_writer.cc \
+    src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
     src/core/util/linux/log.cc \
     src/core/util/log.cc \
@@ -1683,6 +1684,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/compat.c \
     third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/compare_unknown.c \
     third_party/upb/upb/message/internal/extension.c \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \

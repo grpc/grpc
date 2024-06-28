@@ -200,7 +200,7 @@ UPB_INLINE bool envoy_type_matcher_v3_ValueMatcher_has_or_match(const envoy_type
 
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_null_match(envoy_type_matcher_v3_ValueMatcher *msg, envoy_type_matcher_v3_ValueMatcher_NullMatch* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher_NullMatch* envoy_type_matcher_v3_ValueMatcher_mutable_null_match(envoy_type_matcher_v3_ValueMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_ValueMatcher_NullMatch* sub = (struct envoy_type_matcher_v3_ValueMatcher_NullMatch*)envoy_type_matcher_v3_ValueMatcher_null_match(msg);
@@ -212,7 +212,7 @@ UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher_NullMatch* envoy_type_match
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_double_match(envoy_type_matcher_v3_ValueMatcher *msg, struct envoy_type_matcher_v3_DoubleMatcher* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_ValueMatcher_mutable_double_match(envoy_type_matcher_v3_ValueMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_DoubleMatcher* sub = (struct envoy_type_matcher_v3_DoubleMatcher*)envoy_type_matcher_v3_ValueMatcher_double_match(msg);
@@ -224,7 +224,7 @@ UPB_INLINE struct envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_Val
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_string_match(envoy_type_matcher_v3_ValueMatcher *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_ValueMatcher_mutable_string_match(envoy_type_matcher_v3_ValueMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_StringMatcher* sub = (struct envoy_type_matcher_v3_StringMatcher*)envoy_type_matcher_v3_ValueMatcher_string_match(msg);
@@ -236,15 +236,15 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_Val
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_bool_match(envoy_type_matcher_v3_ValueMatcher *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_present_match(envoy_type_matcher_v3_ValueMatcher *msg, bool value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_list_match(envoy_type_matcher_v3_ValueMatcher *msg, envoy_type_matcher_v3_ListMatcher* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_ListMatcher* envoy_type_matcher_v3_ValueMatcher_mutable_list_match(envoy_type_matcher_v3_ValueMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_ListMatcher* sub = (struct envoy_type_matcher_v3_ListMatcher*)envoy_type_matcher_v3_ValueMatcher_list_match(msg);
@@ -256,7 +256,7 @@ UPB_INLINE struct envoy_type_matcher_v3_ListMatcher* envoy_type_matcher_v3_Value
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_set_or_match(envoy_type_matcher_v3_ValueMatcher *msg, envoy_type_matcher_v3_OrMatcher* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_OrMatcher* envoy_type_matcher_v3_ValueMatcher_mutable_or_match(envoy_type_matcher_v3_ValueMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_OrMatcher* sub = (struct envoy_type_matcher_v3_OrMatcher*)envoy_type_matcher_v3_ValueMatcher_or_match(msg);
@@ -369,7 +369,7 @@ UPB_INLINE bool envoy_type_matcher_v3_ListMatcher_has_one_of(const envoy_type_ma
 
 UPB_INLINE void envoy_type_matcher_v3_ListMatcher_set_one_of(envoy_type_matcher_v3_ListMatcher *msg, envoy_type_matcher_v3_ValueMatcher* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher* envoy_type_matcher_v3_ListMatcher_mutable_one_of(envoy_type_matcher_v3_ListMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_ValueMatcher* sub = (struct envoy_type_matcher_v3_ValueMatcher*)envoy_type_matcher_v3_ListMatcher_one_of(msg);

@@ -24,6 +24,9 @@ const upb_MiniTable envoy__admin__v3__SimpleMetric_msg_init = {
   NULL,
   &envoy_admin_v3_SimpleMetric__fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SimpleMetric",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
