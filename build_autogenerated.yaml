@@ -1217,6 +1217,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -2023,6 +2024,7 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_util.cc
   - src/core/util/json/json_writer.cc
+  - src/core/util/latent_see.cc
   - src/core/xds/grpc/certificate_provider_store.cc
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   - src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -2690,6 +2692,7 @@ libs:
   - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
@@ -3105,6 +3108,7 @@ libs:
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
+  - src/core/util/latent_see.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -4750,6 +4754,7 @@ libs:
   - src/core/util/json/json_args.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -5035,6 +5040,7 @@ libs:
   - src/core/tsi/transport_security_grpc.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
+  - src/core/util/latent_see.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -5157,6 +5163,43 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_chaotic_good
+  build: test
+  language: c
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/test_util/passthrough_endpoint.h
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/test_util/passthrough_endpoint.cc
+  - test/core/transport/benchmarks/bm_chaotic_good.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_client_call
   build: test
   language: c
@@ -5216,6 +5259,43 @@ targets:
   - test/core/transport/call_spine_benchmarks.h
   src:
   - test/core/filters/bm_http_client_filter.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
+- name: bm_inproc
+  build: test
+  language: c
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/test_util/passthrough_endpoint.h
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/test_util/passthrough_endpoint.cc
+  - test/core/transport/benchmarks/bm_inproc.cc
   deps:
   - benchmark
   - grpc
@@ -5359,6 +5439,7 @@ targets:
   - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -5375,13 +5456,16 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
+  - src/core/util/latent_see.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/activity_test.cc
   deps:
   - gtest
@@ -6380,6 +6464,7 @@ targets:
   - test/core/gprpp/bitset_test.cc
   deps:
   - gtest
+  - absl/log:check
   uses_polling: false
 - name: buffer_list_test
   gtest: true
@@ -6540,6 +6625,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/ref_counted_string.h
@@ -6600,6 +6686,7 @@ targets:
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
@@ -6633,6 +6720,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -6664,6 +6752,7 @@ targets:
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
+  - src/core/util/latent_see.cc
   - test/core/transport/call_filters_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -6801,6 +6890,7 @@ targets:
   - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -6811,14 +6901,17 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/transport/call_state.h
+  - src/core/util/latent_see.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/transport/call_state.cc
+  - src/core/util/latent_see.cc
   - test/core/transport/call_state_test.cc
   deps:
   - gtest
@@ -7153,6 +7246,7 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -7407,6 +7501,7 @@ targets:
   - src/core/telemetry/stats_data.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/json/json_writer.cc
+  - src/core/util/latent_see.cc
   - test/core/call/call_utils_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -7796,6 +7891,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -7831,6 +7927,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -7860,6 +7957,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -7878,6 +7976,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/cancel_callback_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -8616,6 +8715,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -8650,6 +8750,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -8679,6 +8780,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -8697,6 +8799,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/gprpp/chunked_vector_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -10200,6 +10303,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -10222,6 +10326,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -10251,6 +10356,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10263,6 +10369,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -10760,6 +10867,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -10796,6 +10904,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -10828,6 +10937,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10847,6 +10957,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/util/latent_see.cc
   - test/core/transport/chttp2/flow_control_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -10893,6 +11004,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -10936,6 +11048,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -10966,6 +11079,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10984,6 +11098,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/for_each_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -12532,6 +12647,7 @@ targets:
   - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -12544,13 +12660,16 @@ targets:
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
+  - src/core/util/latent_see.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
@@ -12595,6 +12714,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -12630,6 +12750,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
@@ -12660,6 +12781,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -12678,6 +12800,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/interceptor_list_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -13111,6 +13234,7 @@ targets:
   - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -13126,13 +13250,16 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
+  - src/core/util/latent_see.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/latch_test.cc
   deps:
   - gtest
@@ -13301,6 +13428,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/status_helper.h
@@ -13344,6 +13472,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -13374,6 +13503,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -13392,6 +13522,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/map_pipe_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
@@ -13911,6 +14042,7 @@ targets:
   - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -13922,13 +14054,16 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_set.h
+  - src/core/util/latent_see.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
@@ -14220,6 +14355,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -14231,13 +14367,16 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
+  - src/core/util/latent_see.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/observable_test.cc
   deps:
   - gtest
@@ -15154,6 +15293,7 @@ targets:
   - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -15170,13 +15310,16 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
+  - src/core/util/latent_see.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
@@ -19656,6 +19799,7 @@ targets:
   - test/core/gprpp/table_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/utility:utility
   uses_polling: false
@@ -20856,6 +21000,7 @@ targets:
   deps:
   - gtest
   - absl/container:flat_hash_map
+  - absl/log:check
   - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
@@ -20892,6 +21037,7 @@ targets:
   - test/core/util/useful_test.cc
   deps:
   - gtest
+  - absl/log:check
   uses_polling: false
 - name: uuid_v4_test
   gtest: true
@@ -20939,6 +21085,7 @@ targets:
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
@@ -20949,13 +21096,16 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/wait_for_callback.h
+  - src/core/util/latent_see.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/latent_see.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest

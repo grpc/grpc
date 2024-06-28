@@ -42,6 +42,7 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/useful.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -107,30 +108,28 @@ class PartySyncUsingAtomics {
   // participant completed and should be removed from the allocated set.
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
-    uint64_t prev_state;
+    // Grab the current state, and clear the wakeup bits & add flag.
+    uint64_t prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
+                                           std::memory_order_acquire);
+    LogStateChange("Run", prev_state,
+                   prev_state & (kRefMask | kLocked | kAllocatedMask));
+    CHECK(prev_state & kLocked);
+    if (prev_state & kDestroying) return true;
+    // From the previous state, extract which participants we're to wakeup.
+    uint64_t wakeups = prev_state & kWakeupMask;
+    // Now update prev_state to be what we want the CAS to see below.
+    prev_state &= kRefMask | kLocked | kAllocatedMask;
     for (;;) {
-      // Grab the current state, and clear the wakeup bits & add flag.
-      prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
-                                    std::memory_order_acquire);
-      LogStateChange("Run", prev_state,
-                     prev_state & (kRefMask | kLocked | kAllocatedMask));
-      CHECK(prev_state & kLocked);
-      if (prev_state & kDestroying) return true;
-      // From the previous state, extract which participants we're to wakeup.
-      uint64_t wakeups = prev_state & kWakeupMask;
-      // Now update prev_state to be what we want the CAS to see below.
-      prev_state &= kRefMask | kLocked | kAllocatedMask;
+      uint64_t keep_allocated_mask = kAllocatedMask;
       // For each wakeup bit...
-      for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
+      while (wakeups != 0) {
+        uint64_t t = LowestOneBit(wakeups);
+        const int i = CountTrailingZeros(t);
+        wakeups ^= t;
         // If the bit is not set, skip.
-        if ((wakeups & 1) == 0) continue;
         if (poll_one_participant(i)) {
           const uint64_t allocated_bit = (1u << i << kAllocatedShift);
-          prev_state &= ~allocated_bit;
-          uint64_t finished_prev_state =
-              state_.fetch_and(~allocated_bit, std::memory_order_release);
-          LogStateChange("Run:ParticipantComplete", finished_prev_state,
-                         finished_prev_state & ~allocated_bit);
+          keep_allocated_mask &= ~allocated_bit;
         }
       }
       // Try to CAS the state we expected to have (with no wakeups or adds)
@@ -145,12 +144,26 @@ class PartySyncUsingAtomics {
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
       if (state_.compare_exchange_weak(
-              prev_state, (prev_state & (kRefMask | kAllocatedMask)),
+              prev_state, (prev_state & (kRefMask | keep_allocated_mask)),
               std::memory_order_acq_rel, std::memory_order_acquire)) {
         LogStateChange("Run:End", prev_state,
                        prev_state & (kRefMask | kAllocatedMask));
         return false;
       }
+      while (!state_.compare_exchange_weak(
+          prev_state,
+          prev_state & (kRefMask | kLocked | keep_allocated_mask))) {
+        // Nothing to do here.
+      }
+      LogStateChange("Run:Continue", prev_state,
+                     prev_state & (kRefMask | kLocked | keep_allocated_mask));
+      CHECK(prev_state & kLocked);
+      if (prev_state & kDestroying) return true;
+      // From the previous state, extract which participants we're to wakeup.
+      wakeups = prev_state & kWakeupMask;
+      // Now update prev_state to be what we want the CAS to see once wakeups
+      // complete next iteration.
+      prev_state &= kRefMask | kLocked | keep_allocated_mask;
     }
     return false;
   }
