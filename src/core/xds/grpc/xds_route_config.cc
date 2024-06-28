@@ -877,13 +877,10 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
   // Host rewrite fields
   if (XdsAuthorityRewriteEnabled() &&
       DownCast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server)
-          .AllowAuthorityRewriting()) {
+          .TrustedXdsServer()) {
     route_action.auto_host_rewrite =
         ParseBoolValue(envoy_config_route_v3_RouteAction_auto_host_rewrite(
             route_action_proto));
-    route_action.append_x_forwarded_host =
-        envoy_config_route_v3_RouteAction_append_x_forwarded_host(
-            route_action_proto);
   }
   // Parse cluster specifier, which is one of several options.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action_proto)) {

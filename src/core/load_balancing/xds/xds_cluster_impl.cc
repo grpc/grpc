@@ -473,17 +473,6 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
           route_state_attribute->route().auto_host_rewrite) {
         complete_pick->metadata_mutations.Add(
             ":authority", subchannel_wrapper->hostname().Ref());
-        // If configured, set x-forward-for header to the original authority.
-        // We use the channel's default authority if the header is not
-        // already set.
-        if (route_state_attribute->route().append_x_forwarded_host) {
-          std::string buffer;
-          absl::string_view old_authority =
-              args.initial_metadata->Lookup(":authority", &buffer);
-          if (old_authority.empty()) old_authority = default_authority_;
-          complete_pick->metadata_mutations.Add("x-forwarded-host",
-                                                old_authority);
-        }
       }
     }
     // Unwrap subchannel to pass back up the stack.

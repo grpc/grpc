@@ -57,7 +57,7 @@ namespace testing {
 namespace {
 
 MATCHER_P4(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
-           allow_authority_rewiting, "equals XdsServer") {
+           trusted_xds_server, "equals XdsServer") {
   auto* server = static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(arg);
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), server,
                                      result_listener)) {
@@ -69,8 +69,8 @@ MATCHER_P4(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
       ::testing::ExplainMatchResult(server->IgnoreResourceDeletion(),
                                     ignore_resource_deletion, result_listener);
   ok |=
-      ::testing::ExplainMatchResult(server->AllowAuthorityRewriting(),
-                                    allow_authority_rewiting, result_listener);
+      ::testing::ExplainMatchResult(server->TrustedXdsServer(),
+                                    trusted_xds_server, result_listener);
   auto creds_config = server->channel_creds_config();
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), creds_config,
                                      result_listener)) {
@@ -149,7 +149,7 @@ TEST(XdsBootstrapTest, Basic) {
       "          ],"
       "          \"server_features\": ["
       "            \"xds_v3\","
-      "            \"allow_authority_rewriting\""
+      "            \"trusted_xds_server\""
       "          ]"
       "        }"
       "      ]"
@@ -731,7 +731,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       "      \"ignore\": 0,"
       "      \"server_features\": ["
       "        \"ignore_resource_deletion\","
-      "        \"allow_authority_rewriting\""
+      "        \"trusted_xds_server\""
       "      ]"
       "    }";
   auto json = JsonParse(json_str);

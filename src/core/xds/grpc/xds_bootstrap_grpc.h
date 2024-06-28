@@ -96,7 +96,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
 
     Json ToJson() const;
 
-    bool AllowAuthorityRewriting() const;
+    bool TrustedXdsServer() const;
 
    private:
     std::string server_uri_;

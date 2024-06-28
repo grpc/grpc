@@ -178,14 +178,12 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       absl::optional<Duration> max_stream_duration;
 
       bool auto_host_rewrite = false;
-      bool append_x_forwarded_host = false;
 
       bool operator==(const RouteAction& other) const {
         return hash_policies == other.hash_policies &&
                retry_policy == other.retry_policy && action == other.action &&
                max_stream_duration == other.max_stream_duration &&
-               auto_host_rewrite == other.auto_host_rewrite &&
-               append_x_forwarded_host == other.append_x_forwarded_host;
+               auto_host_rewrite == other.auto_host_rewrite;
       }
       std::string ToString() const;
     };
