@@ -710,9 +710,8 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
         channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
-          self->MaybeStartCompletion(
-              absl::DeadlineExceededError(
-                  "Timed out waiting for connection state change"));
+          self->MaybeStartCompletion(absl::DeadlineExceededError(
+              "Timed out waiting for connection state change"));
           // ExternalStateWatcher deletion might require an active ExecCtx.
           self.reset();
         });
@@ -748,7 +747,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
     // Send CQ completion.
     Ref().release();  // Released in FinishedCompletion().
     grpc_cq_end_op(cq_, tag_, status, FinishedCompletion, this,
-                     &completion_storage_);
+                   &completion_storage_);
   }
 
   // Called when the completion is returned to the CQ.
@@ -770,9 +769,10 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
 
 }  // namespace
 
-void ClientChannel::WatchConnectivityState(
-    grpc_connectivity_state state, Timestamp deadline,
-    grpc_completion_queue* cq, void* tag) {
+void ClientChannel::WatchConnectivityState(grpc_connectivity_state state,
+                                           Timestamp deadline,
+                                           grpc_completion_queue* cq,
+                                           void* tag) {
   new ExternalStateWatcher(WeakRefAsSubclass<ClientChannel>(), cq, tag, state,
                            deadline);
 }
