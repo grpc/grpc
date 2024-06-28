@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -89,8 +89,7 @@ struct StatusCastImpl<
   }
 };
 
-inline grpc_status_code StatusCodeFromMetadata(
-    const ServerMetadata& metadata) {
+inline grpc_status_code StatusCodeFromMetadata(const ServerMetadata& metadata) {
   return metadata.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
 }
 inline absl::string_view StatusMessageFromMetadata(

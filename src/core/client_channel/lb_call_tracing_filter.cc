@@ -71,8 +71,7 @@ namespace {
 class BackendMetricAccessor
     : public LoadBalancingPolicy::BackendMetricAccessor {
  public:
-  explicit BackendMetricAccessor(
-      grpc_metadata_batch* server_trailing_metadata)
+  explicit BackendMetricAccessor(grpc_metadata_batch* server_trailing_metadata)
       : server_trailing_metadata_(server_trailing_metadata) {}
 
   ~BackendMetricAccessor() override {
