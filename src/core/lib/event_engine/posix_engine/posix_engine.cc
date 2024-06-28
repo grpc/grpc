@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
@@ -93,15 +92,6 @@ class TimerForkCallbackMethods {
   static void PostforkParent() { g_timer_fork_manager->PostforkParent(); }
   static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
 };
-
-bool ShouldUseAresDnsResolver() {
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  auto resolver_env = grpc_core::ConfigVars::Get().DnsResolver();
-  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
-#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  return false;
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-}
 
 }  // namespace
 

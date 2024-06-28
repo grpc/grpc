@@ -26,6 +26,7 @@
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -112,8 +113,10 @@ class InprocServerTransport final : public ServerTransport {
       case ConnectionState::kReady:
         break;
     }
-    auto server_call = MakeCallPair(std::move(md), event_engine_.get(),
-                                    call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto server_call = MakeCallPair(std::move(md), std::move(arena));
     unstarted_call_handler_->StartCall(std::move(server_call.handler));
     return std::move(server_call.initiator);
   }

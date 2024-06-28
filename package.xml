@@ -132,6 +132,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/lb_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/lb_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/load_balanced_call_destination.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/load_balanced_call_destination.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/local_subchannel_pool.cc" role="src" />
@@ -1676,6 +1678,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_spine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_spine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_state.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/custom_metadata.h" role="src" />
@@ -1930,6 +1934,7 @@
     <file baseinstalldir="/" name="src/core/util/time_precise.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/tmpfile.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/log.cc" role="src" />
@@ -1942,7 +1947,6 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.cc" role="src" />

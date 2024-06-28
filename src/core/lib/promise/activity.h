@@ -33,7 +33,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -673,8 +672,6 @@ inline Pending IntraActivityWaiter::pending() {
 }
 
 inline void IntraActivityWaiter::Wake() {
-  GRPC_TRACE_LOG(promise_primitives, INFO)
-      << "IntraActivityWaiter::Wake: " << GRPC_DUMP_ARGS(this, wakeups_);
   if (wakeups_ == 0) return;
   GetContext<Activity>()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
 }

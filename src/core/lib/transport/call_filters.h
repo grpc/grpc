@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <type_traits>
@@ -35,6 +36,7 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/call_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -120,6 +122,10 @@ struct NoInterceptor {};
 
 namespace filters_detail {
 
+inline void* Offset(void* base, size_t amt) {
+  return static_cast<char*>(base) + amt;
+}
+
 // One call filter constructor
 // Contains enough information to allocate and initialize the
 // call data for one filter.
@@ -172,11 +178,10 @@ struct ResultOr {
 };
 
 // One filter operation metadata
-// Given a value of type V, produces a promise of type R.
-template <typename R, typename V>
+// Given a value of type T, produces a promise of type ResultOr<T>.
+template <typename T>
 struct Operator {
-  using Result = R;
-  using Arg = V;
+  using Arg = T;
   // Pointer to corresponding channel data for this filter
   void* channel_data;
   // Offset of the call data for this filter within the call data memory
@@ -184,13 +189,13 @@ struct Operator {
   // Initialize the promise data for this filter, and poll once.
   // Return the result of the poll.
   // If the promise finishes, also destroy the promise data!
-  Poll<R> (*promise_init)(void* promise_data, void* call_data,
-                          void* channel_data, V value);
+  Poll<ResultOr<T>> (*promise_init)(void* promise_data, void* call_data,
+                                    void* channel_data, T value);
   // Poll the promise data for this filter.
   // If the promise finishes, also destroy the promise data!
   // Note that if the promise always finishes on the first poll, then supplying
   // this method is unnecessary (as it will never be called).
-  Poll<R> (*poll)(void* promise_data);
+  Poll<ResultOr<T>> (*poll)(void* promise_data);
   // Destroy the promise data for this filter for an in-progress operation
   // before the promise finishes.
   // Note that if the promise always finishes on the first poll, then supplying
@@ -206,24 +211,19 @@ struct HalfCloseOperator {
   void (*half_close)(void* call_data, void* channel_data);
 };
 
+struct ServerTrailingMetadataOperator {
+  // Pointer to corresponding channel data for this filter
+  void* channel_data;
+  // Offset of the call data for this filter within the call data memory
+  size_t call_offset;
+  ServerMetadataHandle (*server_trailing_metadata)(
+      void* call_data, void* channel_data, ServerMetadataHandle metadata);
+};
+
 void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data);
-
-// We divide operations into fallible and infallible.
-// Fallible operations can fail, and that failure terminates the call.
-// Infallible operations cannot fail.
-// Fallible operations are used for client initial, and server initial metadata,
-// and messages.
-// Infallible operations are used for server trailing metadata.
-// (This is because server trailing metadata occurs when the call is finished -
-// and so we couldn't possibly become more finished - and also because it's the
-// preferred representation of failure anyway!)
-
-// An operation that could fail: takes a T argument, produces a ResultOr<T>
-template <typename T>
-using FallibleOperator = Operator<ResultOr<T>, T>;
-// And one that cannot: takes a T argument, produces a T
-template <typename T>
-using InfallibleOperator = Operator<T, T>;
+ServerMetadataHandle RunServerTrailingMetadata(
+    absl::Span<const ServerTrailingMetadataOperator> ops, void* call_data,
+    ServerMetadataHandle md);
 
 // One call finalizer
 struct Finalizer {
@@ -235,19 +235,20 @@ struct Finalizer {
 
 // A layout of operations for a given filter stack
 // This includes which operations, how much memory is required, what alignment.
-template <typename Op>
+template <typename T>
 struct Layout {
   size_t promise_size = 0;
   size_t promise_alignment = 0;
-  std::vector<Op> ops;
+  std::vector<Operator<T>> ops;
 
-  void Add(size_t filter_promise_size, size_t filter_promise_alignment, Op op) {
+  void Add(size_t filter_promise_size, size_t filter_promise_alignment,
+           Operator<T> op) {
     promise_size = std::max(promise_size, filter_promise_size);
     promise_alignment = std::max(promise_alignment, filter_promise_alignment);
     ops.push_back(op);
   }
 
-  void Reverse() { std::reverse(ops.begin(), ops.end()); }
+  void Reverse() { absl::c_reverse(ops); }
 };
 
 // AddOp and friends
@@ -267,16 +268,7 @@ struct AddOpImpl;
 
 template <typename FunctionImpl, FunctionImpl impl, typename FilterType,
           typename T>
-void AddOp(FilterType* channel_data, size_t call_offset,
-           Layout<FallibleOperator<T>>& to) {
-  AddOpImpl<FilterType, T, FunctionImpl, impl>::Add(channel_data, call_offset,
-                                                    to);
-}
-
-template <typename FunctionImpl, FunctionImpl impl, typename FilterType,
-          typename T>
-void AddOp(FilterType* channel_data, size_t call_offset,
-           Layout<InfallibleOperator<T>>& to) {
+void AddOp(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
   AddOpImpl<FilterType, T, FunctionImpl, impl>::Add(channel_data, call_offset,
                                                     to);
 }
@@ -307,13 +299,73 @@ template <typename FilterType>
 void AddHalfClose(FilterType*, size_t, const NoInterceptor*,
                   std::vector<HalfCloseOperator>&) {}
 
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    void (FilterType::Call::*)(ServerMetadata&),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void*, ServerMetadataHandle metadata) {
+        static_cast<typename FilterType::Call*>(call_data)
+            ->OnServerTrailingMetadata(*metadata);
+        return metadata;
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    void (FilterType::Call::*)(ServerMetadata&, FilterType*),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void* channel_data, ServerMetadataHandle metadata) {
+        static_cast<typename FilterType::Call*>(call_data)
+            ->OnServerTrailingMetadata(*metadata,
+                                       static_cast<FilterType*>(channel_data));
+        return metadata;
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    absl::Status (FilterType::Call::*)(ServerMetadata&),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void*, ServerMetadataHandle metadata) {
+        auto r = static_cast<typename FilterType::Call*>(call_data)
+                     ->OnServerTrailingMetadata(*metadata);
+        if (r.ok()) return metadata;
+        return CancelledServerMetadataFromStatus(r);
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    ServerMetadataHandle (FilterType::Call::*)(ServerMetadataHandle),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void*, ServerMetadataHandle metadata) {
+        return static_cast<typename FilterType::Call*>(call_data)
+            ->OnServerTrailingMetadata(std::move(metadata));
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(FilterType*, size_t, const NoInterceptor*,
+                               std::vector<ServerTrailingMetadataOperator>&) {}
+
 // const NoInterceptor $EVENT
 // These do nothing, and specifically DO NOT add an operation to the layout.
 // Supported for fallible & infallible operations.
 template <typename FilterType, typename T, const NoInterceptor* which>
 struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
-  static void Add(FilterType*, size_t, Layout<FallibleOperator<T>>&) {}
-  static void Add(FilterType*, size_t, Layout<InfallibleOperator<T>>&) {}
+  static void Add(FilterType*, size_t, Layout<T>&) {}
 };
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&)
@@ -321,31 +373,15 @@ template <typename FilterType, typename T,
           void (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
                      *value);
                  return ResultOr<T>{std::move(value), nullptr};
-               },
-               nullptr,
-               nullptr,
-           });
-  }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(0, 0,
-           InfallibleOperator<T>{
-               channel_data,
-               call_offset,
-               [](void*, void* call_data, void*, T value) -> Poll<T> {
-                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                     *value);
-                 return std::move(value);
                },
                nullptr,
                nullptr,
@@ -360,10 +396,9 @@ template <typename FilterType, typename T,
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void*, void* call_data, void* channel_data,
@@ -376,33 +411,16 @@ struct AddOpImpl<
                nullptr,
            });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data, T value) -> Poll<T> {
-              (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  *value, static_cast<FilterType*>(channel_data));
-              return std::move(value);
-            },
-            nullptr,
-            nullptr,
-        });
-  }
 };
 
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
           T (FilterType::Call::*impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -416,24 +434,6 @@ struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
             nullptr,
         });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data, T value) -> Poll<T> {
-              (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  *value, static_cast<FilterType*>(channel_data));
-              return (
-                  static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  std::move(value), static_cast<FilterType*>(channel_data));
-            },
-            nullptr,
-            nullptr,
-        });
-  }
 };
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
@@ -442,11 +442,10 @@ template <typename FilterType, typename T,
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -461,24 +460,6 @@ struct AddOpImpl<FilterType, T,
             nullptr,
         });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void*, T value) -> Poll<T> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value);
-              if (r.ok()) return std::move(value);
-              return StatusCast<ServerMetadataHandle>(std::move(r));
-            },
-            nullptr,
-            nullptr,
-        });
-  }
 };
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
@@ -488,11 +469,10 @@ template <typename FilterType, typename T,
 struct AddOpImpl<
     FilterType, T,
     absl::Status (FilterType::Call::*)(const typename T::element_type&), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -517,11 +497,10 @@ struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&,
                                                     FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -547,11 +526,10 @@ struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
                      const typename T::element_type&, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -575,11 +553,10 @@ template <typename FilterType, typename T,
 struct AddOpImpl<FilterType, T,
                  absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -605,11 +582,10 @@ struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -634,11 +610,10 @@ struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      const typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -663,11 +638,10 @@ struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      typename T::element_type&, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -693,11 +667,10 @@ struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      const typename T::element_type&, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -721,8 +694,7 @@ template <typename FilterType, typename T, typename R,
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
     absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data, FilterType*)
@@ -745,7 +717,7 @@ struct AddOpImpl<
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
     to.Add(sizeof(Promise), alignof(Promise),
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void* promise_data, void* call_data, void* channel_data,
@@ -774,8 +746,7 @@ struct AddOpImpl<
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
     absl::enable_if_t<!std::is_same<R, absl::Status>::value &&
                       std::is_same<absl::Status, PromiseResult<R>>::value>> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data,
@@ -800,7 +771,7 @@ struct AddOpImpl<
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
     to.Add(sizeof(Promise), alignof(Promise),
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void* promise_data, void* call_data, void* channel_data,
@@ -828,8 +799,7 @@ template <typename FilterType, typename T, typename R,
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data,
@@ -850,7 +820,7 @@ struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
     to.Add(sizeof(Promise), alignof(Promise),
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void* promise_data, void* call_data, void* channel_data,
@@ -892,12 +862,12 @@ struct StackData {
   // For each kind of operation, a layout of the operations for this call.
   // (there's some duplicate data here, and that's ok: we want to avoid
   // pointer chasing as much as possible when executing a call)
-  Layout<FallibleOperator<ClientMetadataHandle>> client_initial_metadata;
-  Layout<FallibleOperator<ServerMetadataHandle>> server_initial_metadata;
-  Layout<FallibleOperator<MessageHandle>> client_to_server_messages;
+  Layout<ClientMetadataHandle> client_initial_metadata;
+  Layout<ServerMetadataHandle> server_initial_metadata;
+  Layout<MessageHandle> client_to_server_messages;
   std::vector<HalfCloseOperator> client_to_server_half_close;
-  Layout<FallibleOperator<MessageHandle>> server_to_client_messages;
-  Layout<InfallibleOperator<ServerMetadataHandle>> server_trailing_metadata;
+  Layout<MessageHandle> server_to_client_messages;
+  std::vector<ServerTrailingMetadataOperator> server_trailing_metadata;
   // A list of finalizers for this call.
   // We use a bespoke data structure here because finalizers can never be
   // asynchronous.
@@ -905,6 +875,17 @@ struct StackData {
   // A list of functions to call when this stack data is destroyed
   // (to capture ownership of channel data)
   std::vector<ChannelDataDestructor> channel_data_destructors;
+
+  bool empty() const {
+    return filter_constructor.empty() && filter_destructor.empty() &&
+           client_initial_metadata.ops.empty() &&
+           server_initial_metadata.ops.empty() &&
+           client_to_server_messages.ops.empty() &&
+           client_to_server_half_close.empty() &&
+           server_to_client_messages.ops.empty() &&
+           server_trailing_metadata.empty() && finalizers.empty() &&
+           channel_data_destructors.empty();
+  }
 
   // Add one filter to the list of filters, and update alignment.
   // Returns the offset of the call data for this filter.
@@ -1035,9 +1016,9 @@ struct StackData {
   template <typename FilterType>
   void AddServerTrailingMetadataOp(FilterType* channel_data,
                                    size_t call_offset) {
-    AddOp<decltype(&FilterType::Call::OnServerTrailingMetadata),
-          &FilterType::Call::OnServerTrailingMetadata>(
-        channel_data, call_offset, server_trailing_metadata);
+    AddServerTrailingMetadata(channel_data, call_offset,
+                              &FilterType::Call::OnServerTrailingMetadata,
+                              server_trailing_metadata);
   }
 
   // Finalizer interception adders
@@ -1109,8 +1090,7 @@ class OperationExecutor {
   // Start executing a layout. May allocate space to store the relevant promise.
   // Returns the result of the first poll.
   // If the promise finishes, also destroy the promise data.
-  Poll<ResultOr<T>> Start(const Layout<FallibleOperator<T>>* layout, T input,
-                          void* call_data);
+  Poll<ResultOr<T>> Start(const Layout<T>* layout, T input, void* call_data);
   // Continue executing a layout. Returns the result of the next poll.
   // If the promise finishes, also destroy the promise data.
   Poll<ResultOr<T>> Step(void* call_data);
@@ -1132,292 +1112,8 @@ class OperationExecutor {
   Poll<ResultOr<T>> ContinueStep(void* call_data);
 
   void* promise_data_ = nullptr;
-  const FallibleOperator<T>* ops_;
-  const FallibleOperator<T>* end_ops_;
-};
-
-// Per OperationExecutor, but for infallible operation sequences.
-template <typename T>
-class InfallibleOperationExecutor {
- public:
-  InfallibleOperationExecutor() = default;
-  ~InfallibleOperationExecutor();
-  InfallibleOperationExecutor(const InfallibleOperationExecutor&) = delete;
-  InfallibleOperationExecutor& operator=(const InfallibleOperationExecutor&) =
-      delete;
-  InfallibleOperationExecutor(InfallibleOperationExecutor&& other) noexcept
-      : ops_(other.ops_), end_ops_(other.end_ops_) {
-    // Movable iff we're not running.
-    DCHECK_EQ(other.promise_data_, nullptr);
-  }
-  InfallibleOperationExecutor& operator=(
-      InfallibleOperationExecutor&& other) noexcept {
-    DCHECK_EQ(other.promise_data_, nullptr);
-    DCHECK_EQ(promise_data_, nullptr);
-    ops_ = other.ops_;
-    end_ops_ = other.end_ops_;
-    return *this;
-  }
-
-  // IsRunning() is true if we're currently executing a sequence of operations.
-  bool IsRunning() const { return promise_data_ != nullptr; }
-  // Start executing a layout. May allocate space to store the relevant promise.
-  // Returns the result of the first poll.
-  // If the promise finishes, also destroy the promise data.
-  Poll<T> Start(const Layout<InfallibleOperator<T>>* layout, T input,
-                void* call_data);
-  // Continue executing a layout. Returns the result of the next poll.
-  // If the promise finishes, also destroy the promise data.
-  Poll<T> Step(void* call_data);
-
- private:
-  // Start polling on the current step of the layout.
-  // `input` is the current value (either the input to the first step, or the
-  // so far transformed value)
-  // `call_data` is the call data for the filter stack.
-  // If this op finishes immediately then we iterative move to the next step.
-  // If we reach the end up the ops, we return the overall poll result,
-  // otherwise we return Pending.
-  Poll<T> InitStep(T input, void* call_data);
-  // Continue polling on the current step of the layout.
-  // Called on the next poll after InitStep returns pending.
-  // If the promise is still pending, returns this.
-  // If the promise completes we call into InitStep to continue execution
-  // through the filters.
-  Poll<T> ContinueStep(void* call_data);
-
-  void* promise_data_ = nullptr;
-  const InfallibleOperator<T>* ops_;
-  const InfallibleOperator<T>* end_ops_;
-};
-
-class CallState {
- public:
-  CallState();
-  // Start the call: allows pulls to proceed
-  void Start();
-  // PUSH: client -> server
-  void BeginPushClientToServerMessage();
-  Poll<StatusFlag> PollPushClientToServerMessage();
-  void ClientToServerHalfClose();
-  // PULL: client -> server
-  void BeginPullClientInitialMetadata();
-  void FinishPullClientInitialMetadata();
-  Poll<ValueOrFailure<bool>> PollPullClientToServerMessageAvailable();
-  void FinishPullClientToServerMessage();
-  // PUSH: server -> client
-  StatusFlag PushServerInitialMetadata();
-  void BeginPushServerToClientMessage();
-  Poll<StatusFlag> PollPushServerToClientMessage();
-  bool PushServerTrailingMetadata(bool cancel);
-  // PULL: server -> client
-  Poll<bool> PollPullServerInitialMetadataAvailable();
-  void FinishPullServerInitialMetadata();
-  Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
-  void FinishPullServerToClientMessage();
-  Poll<Empty> PollServerTrailingMetadataAvailable();
-  void FinishPullServerTrailingMetadata();
-  Poll<bool> PollWasCancelled();
-  // Debug
-  std::string DebugString() const;
-
-  friend std::ostream& operator<<(std::ostream& out,
-                                  const CallState& call_state) {
-    return out << call_state.DebugString();
-  }
-
- private:
-  enum class ClientToServerPullState : uint16_t {
-    // Ready to read: client initial metadata is there, but not yet processed
-    kBegin,
-    // Processing client initial metadata
-    kProcessingClientInitialMetadata,
-    // Main call loop: not reading
-    kIdle,
-    // Main call loop: reading but no message available
-    kReading,
-    // Main call loop: processing one message
-    kProcessingClientToServerMessage,
-    // Processing complete
-    kTerminated,
-  };
-  static const char* ClientToServerPullStateString(
-      ClientToServerPullState state) {
-    switch (state) {
-      case ClientToServerPullState::kBegin:
-        return "Begin";
-      case ClientToServerPullState::kProcessingClientInitialMetadata:
-        return "ProcessingClientInitialMetadata";
-      case ClientToServerPullState::kIdle:
-        return "Idle";
-      case ClientToServerPullState::kReading:
-        return "Reading";
-      case ClientToServerPullState::kProcessingClientToServerMessage:
-        return "ProcessingClientToServerMessage";
-      case ClientToServerPullState::kTerminated:
-        return "Terminated";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ClientToServerPullState state) {
-    out.Append(ClientToServerPullStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ClientToServerPullState state) {
-    return out << ClientToServerPullStateString(state);
-  }
-  enum class ClientToServerPushState : uint16_t {
-    kIdle,
-    kPushedMessage,
-    kPushedHalfClose,
-    kPushedMessageAndHalfClosed,
-    kFinished,
-  };
-  static const char* ClientToServerPushStateString(
-      ClientToServerPushState state) {
-    switch (state) {
-      case ClientToServerPushState::kIdle:
-        return "Idle";
-      case ClientToServerPushState::kPushedMessage:
-        return "PushedMessage";
-      case ClientToServerPushState::kPushedHalfClose:
-        return "PushedHalfClose";
-      case ClientToServerPushState::kPushedMessageAndHalfClosed:
-        return "PushedMessageAndHalfClosed";
-      case ClientToServerPushState::kFinished:
-        return "Finished";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ClientToServerPushState state) {
-    out.Append(ClientToServerPushStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ClientToServerPushState state) {
-    return out << ClientToServerPushStateString(state);
-  }
-  enum class ServerToClientPullState : uint16_t {
-    // Not yet started: cannot read
-    kUnstarted,
-    kStarted,
-    // Processing server initial metadata
-    kProcessingServerInitialMetadata,
-    // Main call loop: not reading
-    kIdle,
-    // Main call loop: reading but no message available
-    kReading,
-    // Main call loop: processing one message
-    kProcessingServerToClientMessage,
-    // Processing server trailing metadata
-    kProcessingServerTrailingMetadata,
-    kTerminated,
-  };
-  static const char* ServerToClientPullStateString(
-      ServerToClientPullState state) {
-    switch (state) {
-      case ServerToClientPullState::kUnstarted:
-        return "Unstarted";
-      case ServerToClientPullState::kStarted:
-        return "Started";
-      case ServerToClientPullState::kProcessingServerInitialMetadata:
-        return "ProcessingServerInitialMetadata";
-      case ServerToClientPullState::kIdle:
-        return "Idle";
-      case ServerToClientPullState::kReading:
-        return "Reading";
-      case ServerToClientPullState::kProcessingServerToClientMessage:
-        return "ProcessingServerToClientMessage";
-      case ServerToClientPullState::kProcessingServerTrailingMetadata:
-        return "ProcessingServerTrailingMetadata";
-      case ServerToClientPullState::kTerminated:
-        return "Terminated";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerToClientPullState state) {
-    out.Append(ServerToClientPullStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientPullState state) {
-    return out << ServerToClientPullStateString(state);
-  }
-  enum class ServerToClientPushState : uint16_t {
-    kStart,
-    kPushedServerInitialMetadata,
-    kPushedServerInitialMetadataAndPushedMessage,
-    kTrailersOnly,
-    kIdle,
-    kPushedMessage,
-    kFinished,
-  };
-  static const char* ServerToClientPushStateString(
-      ServerToClientPushState state) {
-    switch (state) {
-      case ServerToClientPushState::kStart:
-        return "Start";
-      case ServerToClientPushState::kPushedServerInitialMetadata:
-        return "PushedServerInitialMetadata";
-      case ServerToClientPushState::
-          kPushedServerInitialMetadataAndPushedMessage:
-        return "PushedServerInitialMetadataAndPushedMessage";
-      case ServerToClientPushState::kTrailersOnly:
-        return "TrailersOnly";
-      case ServerToClientPushState::kIdle:
-        return "Idle";
-      case ServerToClientPushState::kPushedMessage:
-        return "PushedMessage";
-      case ServerToClientPushState::kFinished:
-        return "Finished";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerToClientPushState state) {
-    out.Append(ServerToClientPushStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientPushState state) {
-    return out << ServerToClientPushStateString(state);
-  }
-  enum class ServerTrailingMetadataState : uint16_t {
-    kNotPushed,
-    kPushed,
-    kPushedCancel,
-    kPulled,
-    kPulledCancel,
-  };
-  static const char* ServerTrailingMetadataStateString(
-      ServerTrailingMetadataState state) {
-    switch (state) {
-      case ServerTrailingMetadataState::kNotPushed:
-        return "NotPushed";
-      case ServerTrailingMetadataState::kPushed:
-        return "Pushed";
-      case ServerTrailingMetadataState::kPushedCancel:
-        return "PushedCancel";
-      case ServerTrailingMetadataState::kPulled:
-        return "Pulled";
-      case ServerTrailingMetadataState::kPulledCancel:
-        return "PulledCancel";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerTrailingMetadataState state) {
-    out.Append(ServerTrailingMetadataStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerTrailingMetadataState state) {
-    return out << ServerTrailingMetadataStateString(state);
-  }
-  ClientToServerPullState client_to_server_pull_state_ : 3;
-  ClientToServerPushState client_to_server_push_state_ : 3;
-  ServerToClientPullState server_to_client_pull_state_ : 4;
-  ServerToClientPushState server_to_client_push_state_ : 3;
-  ServerTrailingMetadataState server_trailing_metadata_state_ : 3;
-  IntraActivityWaiter client_to_server_pull_waiter_;
-  IntraActivityWaiter server_to_client_pull_waiter_;
-  IntraActivityWaiter client_to_server_push_waiter_;
-  IntraActivityWaiter server_to_client_push_waiter_;
-  IntraActivityWaiter server_trailing_metadata_waiter_;
+  const Operator<T>* ops_;
+  const Operator<T>* end_ops_;
 };
 
 template <typename Fn>
@@ -1588,7 +1284,11 @@ class CallFilters {
   CallFilters(CallFilters&&) = delete;
   CallFilters& operator=(CallFilters&&) = delete;
 
-  void SetStack(RefCountedPtr<Stack> stack);
+  void AddStack(RefCountedPtr<Stack> stack) {
+    if (stack->data_.empty()) return;
+    stacks_.emplace_back(std::move(stack));
+  }
+  void Start();
 
   // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
@@ -1596,48 +1296,72 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, void (filters_detail::CallState::*on_done)(),
-            typename Input>
-  Poll<ValueOrFailure<Output>> FinishStep(
-      Poll<filters_detail::ResultOr<Input>> p) {
-    auto* r = p.value_if_ready();
-    if (r == nullptr) return Pending{};
-    (call_state_.*on_done)();
-    if (r->ok != nullptr) {
-      return ValueOrFailure<Output>{std::move(r->ok)};
-    }
-    PushServerTrailingMetadata(std::move(r->error));
-    return Failure{};
-  }
-
   template <typename Output, typename Input,
             Input(CallFilters::*input_location),
-            filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
-                filters_detail::StackData::*layout),
-            void (filters_detail::CallState::*on_done)()>
-  auto RunExecutor() {
-    DCHECK_NE((this->*input_location).get(), nullptr);
-    filters_detail::OperationExecutor<Input> executor;
-    return [this, executor = std::move(executor)]() mutable {
-      if ((this->*input_location) != nullptr) {
-        return FinishStep<Output, on_done>(
-            executor.Start(&(stack_->data_.*layout),
-                           std::move(this->*input_location), call_data_));
+            filters_detail::Layout<Input>(filters_detail::StackData::*layout),
+            void (CallState::*on_done)(), typename StackIterator>
+  class Executor {
+   public:
+    Executor(CallFilters* filters, StackIterator stack_begin,
+             StackIterator stack_end)
+        : stack_current_(stack_begin),
+          stack_end_(stack_end),
+          filters_(filters) {
+      DCHECK_NE((filters_->*input_location).get(), nullptr);
+    }
+
+    Poll<ValueOrFailure<Output>> operator()() {
+      if ((filters_->*input_location) != nullptr) {
+        if (stack_current_ == stack_end_) {
+          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          (filters_->call_state_.*on_done)();
+          return Output(std::move(filters_->*input_location));
+        }
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout),
+            std::move(filters_->*input_location), filters_->call_data_));
+      } else {
+        return FinishStep(executor_.Step(filters_->call_data_));
       }
-      return FinishStep<Output, on_done>(executor.Step(call_data_));
-    };
-  }
+    }
+
+   private:
+    Poll<ValueOrFailure<Output>> FinishStep(
+        Poll<filters_detail::ResultOr<Input>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      if (r->ok != nullptr) {
+        ++stack_current_;
+        if (stack_current_ == stack_end_) {
+          (filters_->call_state_.*on_done)();
+          return ValueOrFailure<Output>{std::move(r->ok)};
+        }
+        return FinishStep(
+            executor_.Start(&(stack_current_->stack->data_.*layout),
+                            std::move(r->ok), filters_->call_data_));
+      }
+      (filters_->call_state_.*on_done)();
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    StackIterator stack_current_;
+    StackIterator stack_end_;
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<Input> executor_;
+  };
 
  public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
-    return RunExecutor<
-        ClientMetadataHandle, ClientMetadataHandle,
-        &CallFilters::push_client_initial_metadata_,
-        &filters_detail::StackData::client_initial_metadata,
-        &filters_detail::CallState::FinishPullClientInitialMetadata>();
+    return Executor<ClientMetadataHandle, ClientMetadataHandle,
+                    &CallFilters::push_client_initial_metadata_,
+                    &filters_detail::StackData::client_initial_metadata,
+                    &CallState::FinishPullClientInitialMetadata,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1657,13 +1381,14 @@ class CallFilters {
               has_server_initial_metadata,
               [this]() {
                 return Map(
-                    RunExecutor<
+                    Executor<
                         absl::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
-                        &filters_detail::CallState::
-                            FinishPullServerInitialMetadata>(),
+                        &CallState::FinishPullServerInitialMetadata,
+                        StacksVector::const_reverse_iterator>(
+                        this, stacks_.crbegin(), stacks_.crend()),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
                       return absl::optional<ServerMetadataHandle>{};
@@ -1696,12 +1421,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_client_to_server_message_,
                     &filters_detail::StackData::client_to_server_messages,
-                    &filters_detail::CallState::
-                        FinishPullClientToServerMessage>();
+                    &CallState::FinishPullClientToServerMessage,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1726,12 +1452,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_server_to_client_message_,
                     &filters_detail::StackData::server_to_client_messages,
-                    &filters_detail::CallState::
-                        FinishPullServerToClientMessage>();
+                    &CallState::FinishPullServerToClientMessage,
+                    StacksVector::const_reverse_iterator>(
+                    this, stacks_.crbegin(), stacks_.crend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1746,33 +1473,20 @@ class CallFilters {
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
-    return Seq(
+    return Map(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
-          filters_detail::InfallibleOperationExecutor<ServerMetadataHandle>
-              executor;
-          return [this, executor = std::move(
-                            executor)]() mutable -> Poll<ServerMetadataHandle> {
-            auto finish_step = [this](Poll<ServerMetadataHandle> p)
-                -> Poll<ServerMetadataHandle> {
-              auto* r = p.value_if_ready();
-              if (r == nullptr) return Pending{};
-              call_state_.FinishPullServerTrailingMetadata();
-              return std::move(*r);
-            };
-            if (push_server_trailing_metadata_ != nullptr) {
-              // If no stack has been set, we can just return the result of the
-              // call
-              if (stack_ == nullptr) {
-                call_state_.FinishPullServerTrailingMetadata();
-                return std::move(push_server_trailing_metadata_);
-              }
-              return finish_step(executor.Start(
-                  &(stack_->data_.server_trailing_metadata),
-                  std::move(push_server_trailing_metadata_), call_data_));
+          auto value = std::move(push_server_trailing_metadata_);
+          if (call_data_ != nullptr) {
+            for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
+              value = filters_detail::RunServerTrailingMetadata(
+                  it->stack->data_.server_trailing_metadata,
+                  filters_detail::Offset(call_data_, it->call_data_offset),
+                  std::move(value));
             }
-            return finish_step(executor.Step(call_data_));
-          };
+          }
+          call_state_.FinishPullServerTrailingMetadata();
+          return value;
         });
   }
   // Server: Wait for server trailing metadata to have been sent
@@ -1791,9 +1505,19 @@ class CallFilters {
  private:
   void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
-  RefCountedPtr<Stack> stack_;
+  struct AddedStack {
+    explicit AddedStack(RefCountedPtr<Stack> stack)
+        : call_data_offset(std::numeric_limits<size_t>::max()),
+          stack(std::move(stack)) {}
+    size_t call_data_offset;
+    RefCountedPtr<Stack> stack;
+  };
 
-  filters_detail::CallState call_state_;
+  using StacksVector = absl::InlinedVector<AddedStack, 2>;
+
+  StacksVector stacks_;
+
+  CallState call_state_;
 
   void* call_data_;
   ClientMetadataHandle push_client_initial_metadata_;

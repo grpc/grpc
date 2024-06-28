@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.25'
+  s.add_dependency 'google-protobuf', '>= 3.25', '< 5.0'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -150,6 +150,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/dynamic_filters.h )
   s.files += %w( src/core/client_channel/global_subchannel_pool.cc )
   s.files += %w( src/core/client_channel/global_subchannel_pool.h )
+  s.files += %w( src/core/client_channel/lb_metadata.cc )
+  s.files += %w( src/core/client_channel/lb_metadata.h )
   s.files += %w( src/core/client_channel/load_balanced_call_destination.cc )
   s.files += %w( src/core/client_channel/load_balanced_call_destination.h )
   s.files += %w( src/core/client_channel/local_subchannel_pool.cc )
@@ -1694,6 +1696,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/call_final_info.h )
   s.files += %w( src/core/lib/transport/call_spine.cc )
   s.files += %w( src/core/lib/transport/call_spine.h )
+  s.files += %w( src/core/lib/transport/call_state.cc )
+  s.files += %w( src/core/lib/transport/call_state.h )
   s.files += %w( src/core/lib/transport/connectivity_state.cc )
   s.files += %w( src/core/lib/transport/connectivity_state.h )
   s.files += %w( src/core/lib/transport/custom_metadata.h )
@@ -1948,6 +1952,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/time_precise.cc )
   s.files += %w( src/core/util/time_precise.h )
   s.files += %w( src/core/util/tmpfile.h )
+  s.files += %w( src/core/util/upb_utils.h )
   s.files += %w( src/core/util/useful.h )
   s.files += %w( src/core/util/windows/cpu.cc )
   s.files += %w( src/core/util/windows/log.cc )
@@ -1960,7 +1965,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/certificate_provider_store.h )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.cc )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.h )
-  s.files += %w( src/core/xds/grpc/upb_utils.h )
   s.files += %w( src/core/xds/grpc/xds_audit_logger_registry.cc )
   s.files += %w( src/core/xds/grpc/xds_audit_logger_registry.h )
   s.files += %w( src/core/xds/grpc/xds_bootstrap_grpc.cc )
