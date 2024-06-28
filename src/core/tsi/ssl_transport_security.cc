@@ -1831,13 +1831,14 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       // handshaker_result has been created.
       self->handshaker_result_created = true;
       // Output Cipher information
-      if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
+      if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
         tsi_ssl_handshaker_result* result =
             reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
         auto cipher = SSL_get_current_cipher(result->ssl);
         if (cipher != nullptr) {
-          gpr_log(GPR_INFO, "SSL Cipher Version: %s Name: %s",
-                  SSL_CIPHER_get_version(cipher), SSL_CIPHER_get_name(cipher));
+          LOG(INFO) << absl::StrFormat("SSL Cipher Version: %s Name: %s",
+                                       SSL_CIPHER_get_version(cipher),
+                                       SSL_CIPHER_get_name(cipher));
         }
       }
     }
