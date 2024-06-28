@@ -539,7 +539,7 @@ void MaybeAddToBody(const char* field_name, const char* field,
 grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
   auto slice = LoadFile(path, /*add_null_terminator=*/true);
   if (!slice.ok()) return slice.status();
-  if (slice->length() == 0) {
+  if (slice->empty()) {
     LOG(ERROR) << "Token file " << path << " is empty";
     return GRPC_ERROR_CREATE("Token file is empty.");
   }
