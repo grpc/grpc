@@ -370,6 +370,31 @@ describe GRPC::ActiveCall do
       expect(server_call.metadata_sent).to eq(false)
       blk = proc { server_call.send_status(OK) }
       expect { blk.call }.to_not raise_error
+      expect(server_call.metadata_sent).to eq(true)
+    end
+
+    it 'sends the status in one batch' do
+      call = make_test_call
+      ActiveCall.client_invoke(call)
+
+      recvd_rpc = @received_rpcs_queue.pop
+
+      server_call = ActiveCall.new(
+        recvd_rpc.call,
+        @pass_through,
+        @pass_through,
+        deadline,
+        started: false)
+
+      server_call.send_status(OK)
+
+      # Check that we can receive initial metadata and a status
+      call.run_batch(
+        CallOps::RECV_INITIAL_METADATA => nil)
+      batch_result = call.run_batch(
+        CallOps::RECV_STATUS_ON_CLIENT => nil)
+
+      expect(batch_result.status.code).to eq(OK)
     end
   end
 
