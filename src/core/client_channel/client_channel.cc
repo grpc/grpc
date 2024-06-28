@@ -61,6 +61,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -637,8 +638,10 @@ ClientChannel::ClientChannel(
     keepalive_time_ = -1;  // unset
   }
   // Get stats plugins for channel.
-  experimental::StatsPluginChannelScope scope(this->target(),
-                                              default_authority_);
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
+      channel_args_);
+  experimental::StatsPluginChannelScope scope(
+      this->target(), default_authority_, endpoint_config);
   stats_plugin_group_ =
       GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
