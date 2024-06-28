@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:17-bookworm
+FROM silkeh/clang:18-bookworm
 
 #=================
 # Basic C core dependencies
@@ -63,21 +63,12 @@ RUN git config --global protocol.file.allow always
 
 
 
-# Install Python 3.7 from source (and installed as a default python3)
-# (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
-RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                            libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
-tar -xf Python-3.7.9.tar.xz && \
-cd Python-3.7.9 && \
-./configure && \
-make -j 4 && \
-make install
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+# Install Python & PIP
+RUN apt update && apt install -y python3 python3-pip && apt-get clean
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
 RUN mkdir /var/local/jenkins
@@ -96,10 +87,10 @@ RUN apt-get update && apt-get install -y \
 # otherwise clang-tidy will report missing <gtest/gtest.h> header
 RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
 
-RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
+RUN python3 -m pip install --break-system-packages simplejson mako virtualenv==16.7.9 lxml six
 
 # Upgrade Python's YAML library
-RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
+RUN python3 -m pip install --break-system-packages --upgrade --ignore-installed PyYAML==6.0.1 --user
 
 # Install prerequisites for the clang-tidy script
 RUN apt-get update && apt-get install -y jq git && apt-get clean
