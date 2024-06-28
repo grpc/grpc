@@ -167,7 +167,7 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
     // adding this variance in Status return value just to improve coverage in
     // this test.
     auto* reactor = context->DefaultReactor();
-    if (request->message().length() > 0) {
+    if (!request->message().empty()) {
       response->set_message(request->message());
       reactor->Finish(Status::OK);
     } else {

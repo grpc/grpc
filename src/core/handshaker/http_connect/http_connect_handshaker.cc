@@ -189,7 +189,7 @@ bool HttpConnectHandshaker::OnReadDoneLocked(absl::Status error) {
   // Add buffer to parser.
   while (args_->read_buffer.Count() > 0) {
     Slice slice = args_->read_buffer.TakeFirst();
-    if (slice.length() > 0) {
+    if (!slice.empty()) {
       size_t body_start_offset = 0;
       error = grpc_http_parser_parse(&http_parser_, slice.c_slice(),
                                      &body_start_offset);
