@@ -67,9 +67,9 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
     VLOG(2) << "checking request: url_path=" << args.GetPath()
             << ", transport_security_type=" << args.GetTransportSecurityType()
-            << ", uri_sans=[" << absl::StrJoin(args.GetUriSans(), ",") << "]"
-            << ", dns_sans=[" << absl::StrJoin(args.GetDnsSans(), ",") << "]"
-            << ", subject=" << args.GetSubject();
+            << ", uri_sans=[" << absl::StrJoin(args.GetUriSans(), ",")
+            << "], dns_sans=[" << absl::StrJoin(args.GetDnsSans(), ",")
+            << "], subject=" << args.GetSubject();
   }
   grpc_authorization_policy_provider::AuthorizationEngines engines =
       provider_->engines();
@@ -89,8 +89,8 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-        LOG(INFO) << "chand=" << this << ": request allowed by policy "
-                  << decision.matching_policy_name;
+        VLOG(2) << "chand=" << this << ": request allowed by policy "
+                << decision.matching_policy_name;
       }
       return true;
     }

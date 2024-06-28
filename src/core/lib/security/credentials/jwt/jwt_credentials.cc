@@ -157,12 +157,12 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
   if (GRPC_TRACE_FLAG_ENABLED(api)) {
     char* clean_json = redact_private_key(json_key);
     LOG(INFO) << "grpc_service_account_jwt_access_credentials_create("
-              << "json_key=" << clean_json << ", "
-              << "token_lifetime="
-              << "gpr_timespec { tv_sec: " << token_lifetime.tv_sec
+              << "json_key=" << clean_json
+              << ", token_lifetime=gpr_timespec { tv_sec: "
+              << token_lifetime.tv_sec
               << ", tv_nsec: " << token_lifetime.tv_nsec
-              << ", clock_type: " << token_lifetime.clock_type << " }, "
-              << "reserved=" << reserved << ")";
+              << ", clock_type: " << token_lifetime.clock_type
+              << " }, reserved=" << reserved << ")";
     gpr_free(clean_json);
   }
   CHECK_EQ(reserved, nullptr);
