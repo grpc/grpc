@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
@@ -355,7 +356,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-        LOG(INFO) << "[%p] Early return " << ret << " bytes";
+        LOG(INFO) << "[" << this << "] Early return " << ret << " bytes";
       }
       CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
