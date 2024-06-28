@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -377,6 +378,8 @@ class WorkSerializer::DispatchingWorkSerializer final
   // rate of mutex acquisitions per work item tends towards 1.
   CallbackVector incoming_ ABSL_GUARDED_BY(mu_);
 
+  GPR_NO_UNIQUE_ADDRESS latent_see::Flow flow_;
+
 #ifndef NDEBUG
   static thread_local DispatchingWorkSerializer* running_work_serializer_;
 #endif
@@ -428,6 +431,8 @@ void WorkSerializer::DispatchingWorkSerializer::Run(
 
 // Implementation of EventEngine::Closure::Run - our actual work loop
 void WorkSerializer::DispatchingWorkSerializer::Run() {
+  GRPC_LATENT_SEE_PARENT_SCOPE("WorkSerializer::Run");
+  flow_.End();
   // TODO(ctiller): remove these when we can deprecate ExecCtx
   ApplicationCallbackExecCtx app_exec_ctx;
   ExecCtx exec_ctx;
@@ -457,6 +462,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   if (processing_.empty() && !Refill()) return;
   // There's still work in processing_, so schedule ourselves again on
   // EventEngine.
+  flow_.Begin(GRPC_LATENT_SEE_METADATA("WorkSerializer::Link"));
   event_engine_->Run(this);
 }
 
