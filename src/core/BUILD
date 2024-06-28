@@ -3539,6 +3539,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_common",
         "lb_policy",
         "metadata_batch",
     ],
