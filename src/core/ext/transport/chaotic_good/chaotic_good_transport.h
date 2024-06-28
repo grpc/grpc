@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/log/absl_log.h"
 #include "absl/random/random.h"
 
 #include <grpc/support/port_platform.h>
@@ -56,11 +57,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
     // ignore encoding errors: they will be logged separately already
     if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
-              ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                  .value_or("<<unknown peer address>>")
-                  .c_str(),
-              frame.ToString().c_str());
+      ABSL_LOG(INFO) << "CHAOTIC_GOOD: WriteFrame to:" ResolvedAddressToString(
+                            control_endpoint_.GetPeerAddress())
+                            .value_or("<<unknown peer address>>")
+                     << " " << frame.ToString();
     }
     return TryJoin<absl::StatusOr>(
         control_endpoint_.Write(std::move(buffers.control)),
@@ -77,13 +77,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
           if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-            gpr_log(GPR_INFO, "CHAOTIC_GOOD: ReadHeader from:%s %s",
-                    ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                        .value_or("<<unknown peer address>>")
-                        .c_str(),
-                    frame_header.ok()
-                        ? frame_header->ToString().c_str()
-                        : frame_header.status().ToString().c_str());
+            ABSL_LOG(INFO)
+                << "CHAOTIC_GOOD: ReadHeader from:" ResolvedAddressToString(
+                       control_endpoint_.GetPeerAddress())
+                       .value_or("<<unknown peer address>>")
+                << " "
+                << (frame_header.ok() ? frame_header->ToString()
+                                      : frame_header.status().ToString());
           }
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
@@ -126,8 +126,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
     if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      gpr_log(GPR_INFO, "CHAOTIC_GOOD: DeserializeFrame %s",
-              s.ok() ? frame.ToString().c_str() : s.ToString().c_str());
+      ABSL_LOG(INFO) << "CHAOTIC_GOOD: DeserializeFrame "
+                     << (s.ok() ? frame.ToString() : s.ToString());
     }
     return s;
   }
