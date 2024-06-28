@@ -186,15 +186,12 @@ class PartySyncUsingAtomics {
     do {
       wakeup_mask = 0;
       allocated = (state & kAllocatedMask) >> kAllocatedShift;
-      size_t n = 0;
-      for (size_t bit = 0; n < count && bit < party_detail::kMaxParticipants;
-           bit++) {
-        if (allocated & (1 << bit)) continue;
-        wakeup_mask |= (1 << bit);
-        slots[n++] = bit;
-        allocated |= 1 << bit;
+      for (size_t i = 0; i < count; i++) {
+        auto new_mask = LowestOneBit(~allocated);
+        wakeup_mask |= new_mask;
+        allocated |= new_mask;
+        slots[i] = CountTrailingZeros(new_mask);
       }
-      CHECK(n == count);
       // Try to allocate this slot and take a ref (atomically).
       // Ref needs to be taken because once we store the participant it could be
       // spuriously woken up and unref the party.
