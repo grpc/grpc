@@ -7516,6 +7516,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
