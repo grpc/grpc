@@ -127,3 +127,13 @@ grpc_cc_benchmark(
         "//test/core/transport:call_spine_benchmarks",
     ],
 )
+
+grpc_cc_benchmark(
+    name = "bm_load_balanced_call_destination",
+    srcs = ["bm_load_balanced_call_destination.cc"],
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//test/core/transport:call_spine_benchmarks",
+    ],
+)
