@@ -28,6 +28,9 @@ const upb_MiniTable envoy__config__core__v3__EventServiceConfig_msg_init = {
   &envoy_config_core_v3_EventServiceConfig_submsgs[0],
   &envoy_config_core_v3_EventServiceConfig__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.EventServiceConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_maxmaxb},

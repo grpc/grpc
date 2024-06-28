@@ -149,11 +149,11 @@ UPB_INLINE bool envoy_config_listener_v3_Filter_has_config_discovery(const envoy
 
 UPB_INLINE void envoy_config_listener_v3_Filter_set_name(envoy_config_listener_v3_Filter *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_listener_v3_Filter_set_typed_config(envoy_config_listener_v3_Filter *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_Filter_mutable_typed_config(envoy_config_listener_v3_Filter* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_listener_v3_Filter_typed_config(msg);
@@ -165,7 +165,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_Filter_mutable_t
 }
 UPB_INLINE void envoy_config_listener_v3_Filter_set_config_discovery(envoy_config_listener_v3_Filter *msg, struct envoy_config_core_v3_ExtensionConfigSource* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ExtensionConfigSource* envoy_config_listener_v3_Filter_mutable_config_discovery(envoy_config_listener_v3_Filter* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_ExtensionConfigSource* sub = (struct envoy_config_core_v3_ExtensionConfigSource*)envoy_config_listener_v3_Filter_config_discovery(msg);
@@ -505,11 +505,11 @@ UPB_INLINE struct envoy_config_core_v3_CidrRange* envoy_config_listener_v3_Filte
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChainMatch_set_address_suffix(envoy_config_listener_v3_FilterChainMatch *msg, upb_StringView value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChainMatch_set_suffix_len(envoy_config_listener_v3_FilterChainMatch *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(16, 40), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_listener_v3_FilterChainMatch_mutable_suffix_len(envoy_config_listener_v3_FilterChainMatch* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_listener_v3_FilterChainMatch_suffix_len(msg);
@@ -579,7 +579,7 @@ UPB_INLINE bool envoy_config_listener_v3_FilterChainMatch_add_source_ports(envoy
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChainMatch_set_destination_port(envoy_config_listener_v3_FilterChainMatch *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(28, 64), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_listener_v3_FilterChainMatch_mutable_destination_port(envoy_config_listener_v3_FilterChainMatch* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_listener_v3_FilterChainMatch_destination_port(msg);
@@ -591,7 +591,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_listener_v3_FilterCh
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChainMatch_set_transport_protocol(envoy_config_listener_v3_FilterChainMatch *msg, upb_StringView value) {
   const upb_MiniTableField field = {9, UPB_SIZE(56, 72), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* envoy_config_listener_v3_FilterChainMatch_mutable_application_protocols(envoy_config_listener_v3_FilterChainMatch* msg, size_t* size) {
   upb_MiniTableField field = {10, UPB_SIZE(32, 88), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -651,7 +651,7 @@ UPB_INLINE bool envoy_config_listener_v3_FilterChainMatch_add_server_names(envoy
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChainMatch_set_source_type(envoy_config_listener_v3_FilterChainMatch *msg, int32_t value) {
   const upb_MiniTableField field = {12, UPB_SIZE(40, 12), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_CidrRange** envoy_config_listener_v3_FilterChainMatch_mutable_direct_source_prefix_ranges(envoy_config_listener_v3_FilterChainMatch* msg, size_t* size) {
   upb_MiniTableField field = {13, UPB_SIZE(44, 104), 0, 4, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -863,7 +863,7 @@ UPB_INLINE bool envoy_config_listener_v3_FilterChain_has_transport_socket_connec
 
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_filter_chain_match(envoy_config_listener_v3_FilterChain *msg, envoy_config_listener_v3_FilterChainMatch* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_FilterChainMatch* envoy_config_listener_v3_FilterChain_mutable_filter_chain_match(envoy_config_listener_v3_FilterChain* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_FilterChainMatch* sub = (struct envoy_config_listener_v3_FilterChainMatch*)envoy_config_listener_v3_FilterChain_filter_chain_match(msg);
@@ -905,7 +905,7 @@ UPB_INLINE struct envoy_config_listener_v3_Filter* envoy_config_listener_v3_Filt
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_use_proxy_proto(envoy_config_listener_v3_FilterChain *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_listener_v3_FilterChain_mutable_use_proxy_proto(envoy_config_listener_v3_FilterChain* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_listener_v3_FilterChain_use_proxy_proto(msg);
@@ -917,7 +917,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_listener_v3_FilterChai
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_metadata(envoy_config_listener_v3_FilterChain *msg, struct envoy_config_core_v3_Metadata* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Metadata* envoy_config_listener_v3_FilterChain_mutable_metadata(envoy_config_listener_v3_FilterChain* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Metadata* sub = (struct envoy_config_core_v3_Metadata*)envoy_config_listener_v3_FilterChain_metadata(msg);
@@ -929,7 +929,7 @@ UPB_INLINE struct envoy_config_core_v3_Metadata* envoy_config_listener_v3_Filter
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_transport_socket(envoy_config_listener_v3_FilterChain *msg, struct envoy_config_core_v3_TransportSocket* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(28, 48), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_config_listener_v3_FilterChain_mutable_transport_socket(envoy_config_listener_v3_FilterChain* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_TransportSocket* sub = (struct envoy_config_core_v3_TransportSocket*)envoy_config_listener_v3_FilterChain_transport_socket(msg);
@@ -941,11 +941,11 @@ UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_config_listener_v3
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_name(envoy_config_listener_v3_FilterChain *msg, upb_StringView value) {
   const upb_MiniTableField field = {7, UPB_SIZE(40, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_on_demand_configuration(envoy_config_listener_v3_FilterChain *msg, envoy_config_listener_v3_FilterChain_OnDemandConfiguration* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(32, 72), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_FilterChain_OnDemandConfiguration* envoy_config_listener_v3_FilterChain_mutable_on_demand_configuration(envoy_config_listener_v3_FilterChain* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_FilterChain_OnDemandConfiguration* sub = (struct envoy_config_listener_v3_FilterChain_OnDemandConfiguration*)envoy_config_listener_v3_FilterChain_on_demand_configuration(msg);
@@ -957,7 +957,7 @@ UPB_INLINE struct envoy_config_listener_v3_FilterChain_OnDemandConfiguration* en
 }
 UPB_INLINE void envoy_config_listener_v3_FilterChain_set_transport_socket_connect_timeout(envoy_config_listener_v3_FilterChain *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(36, 80), 69, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_listener_v3_FilterChain_mutable_transport_socket_connect_timeout(envoy_config_listener_v3_FilterChain* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_listener_v3_FilterChain_transport_socket_connect_timeout(msg);
@@ -1023,7 +1023,7 @@ UPB_INLINE bool envoy_config_listener_v3_FilterChain_OnDemandConfiguration_has_r
 
 UPB_INLINE void envoy_config_listener_v3_FilterChain_OnDemandConfiguration_set_rebuild_timeout(envoy_config_listener_v3_FilterChain_OnDemandConfiguration *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_listener_v3_FilterChain_OnDemandConfiguration_mutable_rebuild_timeout(envoy_config_listener_v3_FilterChain_OnDemandConfiguration* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_listener_v3_FilterChain_OnDemandConfiguration_rebuild_timeout(msg);
@@ -1166,7 +1166,7 @@ UPB_INLINE bool envoy_config_listener_v3_ListenerFilterChainMatchPredicate_has_d
 
 UPB_INLINE void envoy_config_listener_v3_ListenerFilterChainMatchPredicate_set_or_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate *msg, envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet* envoy_config_listener_v3_ListenerFilterChainMatchPredicate_mutable_or_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet* sub = (struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet*)envoy_config_listener_v3_ListenerFilterChainMatchPredicate_or_match(msg);
@@ -1178,7 +1178,7 @@ UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_Mat
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilterChainMatchPredicate_set_and_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate *msg, envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet* envoy_config_listener_v3_ListenerFilterChainMatchPredicate_mutable_and_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet* sub = (struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet*)envoy_config_listener_v3_ListenerFilterChainMatchPredicate_and_match(msg);
@@ -1190,7 +1190,7 @@ UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate_Mat
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilterChainMatchPredicate_set_not_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate *msg, envoy_config_listener_v3_ListenerFilterChainMatchPredicate* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate* envoy_config_listener_v3_ListenerFilterChainMatchPredicate_mutable_not_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate* sub = (struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate*)envoy_config_listener_v3_ListenerFilterChainMatchPredicate_not_match(msg);
@@ -1202,11 +1202,11 @@ UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate* en
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilterChainMatchPredicate_set_any_match(envoy_config_listener_v3_ListenerFilterChainMatchPredicate *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilterChainMatchPredicate_set_destination_port_range(envoy_config_listener_v3_ListenerFilterChainMatchPredicate *msg, struct envoy_type_v3_Int32Range* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Int32Range* envoy_config_listener_v3_ListenerFilterChainMatchPredicate_mutable_destination_port_range(envoy_config_listener_v3_ListenerFilterChainMatchPredicate* msg, upb_Arena* arena) {
   struct envoy_type_v3_Int32Range* sub = (struct envoy_type_v3_Int32Range*)envoy_config_listener_v3_ListenerFilterChainMatchPredicate_destination_port_range(msg);
@@ -1426,11 +1426,11 @@ UPB_INLINE bool envoy_config_listener_v3_ListenerFilter_has_config_discovery(con
 
 UPB_INLINE void envoy_config_listener_v3_ListenerFilter_set_name(envoy_config_listener_v3_ListenerFilter *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilter_set_typed_config(envoy_config_listener_v3_ListenerFilter *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 40), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ListenerFilter_mutable_typed_config(envoy_config_listener_v3_ListenerFilter* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_listener_v3_ListenerFilter_typed_config(msg);
@@ -1442,7 +1442,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ListenerFilter_m
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilter_set_filter_disabled(envoy_config_listener_v3_ListenerFilter *msg, envoy_config_listener_v3_ListenerFilterChainMatchPredicate* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 32), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate* envoy_config_listener_v3_ListenerFilter_mutable_filter_disabled(envoy_config_listener_v3_ListenerFilter* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate* sub = (struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate*)envoy_config_listener_v3_ListenerFilter_filter_disabled(msg);
@@ -1454,7 +1454,7 @@ UPB_INLINE struct envoy_config_listener_v3_ListenerFilterChainMatchPredicate* en
 }
 UPB_INLINE void envoy_config_listener_v3_ListenerFilter_set_config_discovery(envoy_config_listener_v3_ListenerFilter *msg, struct envoy_config_core_v3_ExtensionConfigSource* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 40), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ExtensionConfigSource* envoy_config_listener_v3_ListenerFilter_mutable_config_discovery(envoy_config_listener_v3_ListenerFilter* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_ExtensionConfigSource* sub = (struct envoy_config_core_v3_ExtensionConfigSource*)envoy_config_listener_v3_ListenerFilter_config_discovery(msg);

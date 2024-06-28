@@ -27,6 +27,9 @@ const upb_MiniTable envoy__extensions__http__stateful_0session__cookie__v3__Cook
   &envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_submsgs[0],
   &envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.http.stateful_session.cookie.v3.CookieBasedSessionState",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

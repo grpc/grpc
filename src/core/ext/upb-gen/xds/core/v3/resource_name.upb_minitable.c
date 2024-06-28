@@ -30,6 +30,9 @@ const upb_MiniTable xds__core__v3__ResourceName_msg_init = {
   &xds_core_v3_ResourceName_submsgs[0],
   &xds_core_v3_ResourceName__fields[0],
   UPB_SIZE(40, 72), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.core.v3.ResourceName",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
