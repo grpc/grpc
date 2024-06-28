@@ -28,7 +28,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -161,10 +160,10 @@ namespace experimental {
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
+  LOG(ERROR) << "This APK is compiled with Android API level = "
+             << __ANDROID_API__
+             << ", which is not supported. See port_platform.h for supported "
+                "versions.";
   CHECK(0);
   return {};
 }
@@ -173,10 +172,10 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
+  LOG(ERROR) << "This APK is compiled with Android API level = "
+             << __ANDROID_API__
+             << ", which is not supported. See port_platform.h for supported "
+                "versions.";
   CHECK(0);
   return {};
 }
@@ -184,10 +183,10 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void*, jobject, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
+  LOG(ERROR) << "This APK is compiled with Android API level = "
+             << __ANDROID_API__
+             << ", which is not supported. See port_platform.h for supported "
+                "versions.";
   CHECK(0);
   return {};
 }
@@ -196,29 +195,29 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
+  LOG(ERROR) << "This APK is compiled with Android API level = "
+             << __ANDROID_API__
+             << ", which is not supported. See port_platform.h for supported "
+                "versions.";
   CHECK(0);
   return {};
 }
 
 bool InitializeBinderChannelJavaClass(void* jni_env_void) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
+  LOG(ERROR) << "This APK is compiled with Android API level = "
+             << __ANDROID_API__
+             << ", which is not supported. See port_platform.h for supported "
+                "versions.";
   CHECK(0);
   return {};
 }
 
 bool InitializeBinderChannelJavaClass(
     void* jni_env_void, std::function<void*(std::string)> class_finder) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
+  LOG(ERROR) << "This APK is compiled with Android API level = "
+             << __ANDROID_API__
+             << ", which is not supported. See port_platform.h for supported "
+                "versions.";
   CHECK(0);
   return {};
 }
