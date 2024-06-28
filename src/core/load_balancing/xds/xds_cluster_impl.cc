@@ -471,8 +471,8 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
           call_state->GetCallAttribute<XdsRouteStateAttribute>();
       if (route_state_attribute != nullptr &&
           route_state_attribute->route().auto_host_rewrite) {
-        complete_pick->metadata_mutations.Add(
-            ":authority", subchannel_wrapper->hostname().Ref());
+        complete_pick->authority_override =
+            subchannel_wrapper->hostname().Ref();
       }
     }
     // Unwrap subchannel to pass back up the stack.
