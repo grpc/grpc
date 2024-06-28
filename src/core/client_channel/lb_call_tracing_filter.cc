@@ -125,6 +125,9 @@ void LbCallTracingFilter::Call::OnServerTrailingMetadata(
         StatusMessageFromMetadata(metadata));
   }
   if (tracer != nullptr) {
+    if (metadata.get(GrpcCallWasCancelled()).value_or(false)) {
+      tracer->RecordCancel(status);
+    }
     tracer->RecordReceivedTrailingMetadata(status, &metadata, nullptr);
   }
   if (call_tracker != nullptr) {
