@@ -57,7 +57,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
@@ -70,8 +69,7 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
 
 const grpc_channel_filter StatefulSessionFilter::kFilter =
     MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>(
-        "stateful_session_filter");
+                           kFilterExaminesServerInitialMetadata>();
 
 absl::StatusOr<std::unique_ptr<StatefulSessionFilter>>
 StatefulSessionFilter::Create(const ChannelArgs&,

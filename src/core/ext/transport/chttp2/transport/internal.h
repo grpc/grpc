@@ -226,7 +226,8 @@ typedef enum {
 struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                                      public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
-                        grpc_endpoint* ep, bool is_client);
+                        grpc_core::OrphanablePtr<grpc_endpoint> endpoint,
+                        bool is_client);
   ~grpc_chttp2_transport() override;
 
   void Orphan() override;
@@ -257,7 +258,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
 
-  grpc_endpoint* ep;
+  grpc_core::OrphanablePtr<grpc_endpoint> ep;
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
   grpc_core::Slice peer_string;
@@ -807,13 +808,12 @@ void grpc_chttp2_settings_timeout(
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-// extern grpc_core::TraceFlag grpc_flowctl_trace;
-
-#define GRPC_CHTTP2_IF_TRACING(stmt)                \
-  do {                                              \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
-      (stmt);                                       \
-    }                                               \
+//
+#define GRPC_CHTTP2_IF_TRACING(stmt)     \
+  do {                                   \
+    if (GRPC_TRACE_FLAG_ENABLED(http)) { \
+      (stmt);                            \
+    }                                    \
   } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,

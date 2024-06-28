@@ -40,7 +40,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -138,12 +137,12 @@ size_t MessageSizeParser::ParserIndex() {
 const grpc_channel_filter ClientMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ClientMessageSizeFilter, FilterEndpoint::kClient,
                            kFilterExaminesOutboundMessages |
-                               kFilterExaminesInboundMessages>("message_size");
+                               kFilterExaminesInboundMessages>();
 
 const grpc_channel_filter ServerMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
                            kFilterExaminesOutboundMessages |
-                               kFilterExaminesInboundMessages>("message_size");
+                               kFilterExaminesInboundMessages>();
 
 absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>>
 ClientMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
@@ -160,7 +159,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
                                   absl::optional<uint32_t> max_length,
                                   bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
             GetContext<Activity>()->DebugTag().c_str(),
             is_send ? "send" : "recv", msg.payload()->Length(), *max_length);

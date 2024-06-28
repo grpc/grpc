@@ -35,6 +35,8 @@ build --define=use_fast_cpp_protos=true
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
 
+build:latent_see --copt=-DGRPC_ENABLE_LATENT_SEE
+
 build:dbg --compilation_mode=dbg
 
 # Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
@@ -43,6 +45,12 @@ build:macos --dynamic_mode=off
 
 build:windows_opt --compilation_mode=opt
 build:windows_dbg --compilation_mode=dbg
+
+build:clang-cl --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl
+build:clang-cl --extra_execution_platforms=//:x64_windows-clang-cl
+build:clang-cl --incompatible_enable_cc_toolchain_resolution
+build:clang-cl --define=use_strict_warning_windows=true
+build:clang-cl --compiler=clang-cl
 
 build:asan --strip=never
 build:asan --copt=-fsanitize=address
@@ -127,7 +135,6 @@ build:thready_tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:thready_tsan --copt=-DGRPC_TSAN
 build:thready_tsan --copt=-DGRPC_MAXIMIZE_THREADYNESS
 build:thready_tsan --linkopt=-fsanitize=thread
-build:thready_tsan --test_tag_filters=thready_tsan
 build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 build:tsan_macos --strip=never

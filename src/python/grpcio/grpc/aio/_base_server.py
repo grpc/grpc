@@ -18,7 +18,7 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata
+from ._metadata import Metadata  # pylint: disable=unused-import
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -225,7 +225,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    def invocation_metadata(self) -> Optional[Metadata]:
+    def invocation_metadata(self) -> Optional[MetadataType]:
         """Accesses the metadata sent by the client.
 
         Returns:

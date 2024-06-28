@@ -36,7 +36,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -56,7 +55,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "src/core/xds/xds_client/xds_api.h"
@@ -198,11 +197,10 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   auto path = GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
-              "environment variable: %s",
-              path->c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+      LOG(INFO) << "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
+                   "environment variable: "
+                << *path;
     }
     auto contents = LoadFile(*path, /*add_null_terminator=*/true);
     if (!contents.ok()) return contents.status();
@@ -211,18 +209,16 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
   auto env_config = GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (env_config.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
-              "environment variable");
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+      LOG(INFO) << "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
+                   "environment variable";
     }
     return std::move(*env_config);
   }
   // Finally, try fallback config.
   if (fallback_config != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      LOG(INFO) << "Got bootstrap contents from fallback config";
-    }
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "Got bootstrap contents from fallback config";
     return fallback_config;
   }
   // No bootstrap config found.
@@ -261,9 +257,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   // Find bootstrap contents.
   auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);
   if (!bootstrap_contents.ok()) return bootstrap_contents.status();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
-            bootstrap_contents->c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+    LOG(INFO) << "xDS bootstrap contents: " << *bootstrap_contents;
   }
   // Parse bootstrap.
   auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
@@ -274,9 +269,9 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       key, std::move(*bootstrap), channel_args,
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] Created xDS client for key %s",
-            xds_client.get(), std::string(key).c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
+    LOG(INFO) << "[xds_client " << xds_client.get()
+              << "] Created xDS client for key " << key;
   }
   return xds_client;
 }

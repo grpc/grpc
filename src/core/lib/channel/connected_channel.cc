@@ -72,7 +72,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -268,7 +267,7 @@ const grpc_channel_filter kConnectedFilter{
     },
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
-    "connected",
+    GRPC_UNIQUE_TYPE_NAME_HERE("connected"),
 };
 
 // noop filter for the v3 stack: placeholder for now because other code requires
@@ -289,7 +288,7 @@ const grpc_channel_filter kPromiseBasedTransportFilter = {
     +[](grpc_channel_stack*, grpc_channel_element*) {},
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
-    "connected",
+    GRPC_UNIQUE_TYPE_NAME_HERE("connected"),
 };
 
 bool TransportSupportsClientPromiseBasedCalls(const ChannelArgs& args) {

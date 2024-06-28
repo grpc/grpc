@@ -36,7 +36,6 @@
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -420,9 +419,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
   if (pem_root_certs == nullptr && !skip_server_certificate_verification) {
-    gpr_log(GPR_INFO,
-            "No root certificates specified; use ones stored in system default "
-            "locations instead");
+    LOG(INFO) << "No root certificates specified; use ones stored in system "
+                 "default locations instead";
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (root_certs == nullptr) {
@@ -459,8 +457,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
                                                             handshaker_factory);
   gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-            tsi_result_to_string(result));
+    LOG(ERROR) << "Handshaker factory creation failed with "
+               << tsi_result_to_string(result);
     return GRPC_SECURITY_ERROR;
   }
   return GRPC_SECURITY_OK;
@@ -498,8 +496,8 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
                                                             handshaker_factory);
   gpr_free(alpn_protocol_strings);
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-            tsi_result_to_string(result));
+    LOG(ERROR) << "Handshaker factory creation failed with "
+               << tsi_result_to_string(result);
     return GRPC_SECURITY_ERROR;
   }
   return GRPC_SECURITY_OK;
@@ -576,9 +574,8 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     auto slice =
         LoadFile(default_root_certs_path, /*add_null_terminator=*/true);
     if (!slice.ok()) {
-      gpr_log(GPR_ERROR, "error loading file %s: %s",
-              default_root_certs_path.c_str(),
-              slice.status().ToString().c_str());
+      LOG(ERROR) << "error loading file " << default_root_certs_path << ": "
+                 << slice.status();
     } else {
       result = std::move(*slice);
     }
@@ -604,8 +601,8 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     auto slice = LoadFile(installed_roots_path, /*add_null_terminator=*/true);
     if (!slice.ok()) {
-      gpr_log(GPR_ERROR, "error loading file %s: %s", installed_roots_path,
-              slice.status().ToString().c_str());
+      LOG(ERROR) << "error loading file " << installed_roots_path << ": "
+                 << slice.status();
     } else {
       result = std::move(*slice);
     }

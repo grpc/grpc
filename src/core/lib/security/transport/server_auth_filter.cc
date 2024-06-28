@@ -56,15 +56,13 @@
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 const grpc_channel_filter ServerAuthFilter::kFilter =
-    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>(
-        "server-auth");
+    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
@@ -133,7 +131,7 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_ERROR,
             "%s[server-auth]: Delegate to application: filter=%p this=%p "
             "auth_ctx=%p",

@@ -63,6 +63,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
@@ -109,11 +110,6 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
-grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
-grpc_core::TraceFlag grpc_compression_trace(false, "compression");
-grpc_core::TraceFlag grpc_call_trace(false, "call");
-grpc_core::DebugOnlyTraceFlag grpc_call_refcount_trace(false, "call_refcount");
-
 namespace grpc_core {
 
 // Alias to make this type available in Call implementation without a grpc_core
@@ -123,12 +119,13 @@ using GrpcClosure = Closure;
 ///////////////////////////////////////////////////////////////////////////////
 // Call
 
-Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-           grpc_event_engine::experimental::EventEngine* event_engine)
+Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
     : arena_(std::move(arena)),
       send_deadline_(send_deadline),
-      is_client_(is_client),
-      event_engine_(event_engine) {
+      is_client_(is_client) {
+  DCHECK_NE(arena_.get(), nullptr);
+  DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
   arena_->SetContext<Call>(this);
 }
 
@@ -312,7 +309,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   // GRPC_COMPRESS_NONE is always set.
   DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
   if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       HandleCompressionAlgorithmNotAccepted(compression_algorithm);
     }
   }
@@ -343,7 +340,7 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
             deadline_.ToString().c_str(), deadline.ToString().c_str());
   }
@@ -355,20 +352,25 @@ void Call::UpdateDeadline(Timestamp deadline) {
         StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
     return;
   }
+  auto* event_engine =
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
   if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine_->Cancel(deadline_task_)) return;
+    if (!event_engine->Cancel(deadline_task_)) return;
   } else {
     InternalRef("deadline");
   }
   deadline_ = deadline;
-  deadline_task_ = event_engine_->RunAfter(deadline - Timestamp::Now(), this);
+  deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
 }
 
 void Call::ResetDeadline() {
   {
     MutexLock lock(&deadline_mu_);
     if (deadline_ == Timestamp::InfFuture()) return;
-    if (!event_engine_->Cancel(deadline_task_)) return;
+    if (!arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
+             ->Cancel(deadline_task_)) {
+      return;
+    }
     deadline_ = Timestamp::InfFuture();
   }
   InternalUnref("deadline[reset]");
@@ -377,10 +379,9 @@ void Call::ResetDeadline() {
 void Call::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
-  if (grpc_call_trace.enabled()) {
-    LOG(INFO) << "call deadline expired "
-              << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << "call deadline expired "
+      << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
   CancelWithError(grpc_error_set_int(
       absl::DeadlineExceededError("Deadline Exceeded"),
       StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
@@ -569,5 +570,8 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
 
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb) {
-  grpc_core::Call::FromC(call)->event_engine()->Run(std::move(cb));
+  grpc_core::Call::FromC(call)
+      ->arena()
+      ->GetContext<grpc_event_engine::experimental::EventEngine>()
+      ->Run(std::move(cb));
 }

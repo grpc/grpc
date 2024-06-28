@@ -128,10 +128,8 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%s[call] Send initial metadata",
-                  DebugTag().c_str());
-        }
+        GRPC_TRACE_LOG(call, INFO)
+            << DebugTag() << "[call] Send initial metadata";
         return [this, metadata = std::move(metadata)]() mutable {
           return call_handler_.PushServerInitialMetadata(std::move(metadata));
         };
@@ -190,6 +188,8 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         [this, cancelled = op->data.recv_close_on_server.cancelled]() {
           return Map(call_handler_.WasCancelled(),
                      [cancelled, this](bool result) -> Success {
+                       saw_was_cancelled_.store(true,
+                                                std::memory_order_relaxed);
                        ResetDeadline();
                        *cancelled = result ? 1 : 0;
                        return Success{};

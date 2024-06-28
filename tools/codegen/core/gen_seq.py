@@ -85,7 +85,7 @@ union {
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
   GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p,
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(P&& p,
            ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))},
            DebugLocation whence) noexcept: whence(whence)  {
     Construct(&${"prior."*(n-1)}current_promise, std::forward<P>(p));
@@ -93,7 +93,7 @@ union {
     Construct(&${"prior."*(n-1-i)}next_factory, std::forward<F${i}>(f${i}));
 % endfor
   }
-  ~SeqState() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~SeqState() {
     switch (state) {
 % for i in range(0,n-1):
      case State::kState${i}:
@@ -109,7 +109,7 @@ tail${i}:
     Destruct(&${"prior."*(n-1-i)}next_factory);
 % endfor
   }
-  SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
     CHECK(state == State::kState0);
     Construct(&${"prior."*(n-1-i)}current_promise,
             other.${"prior."*(n-1-i)}current_promise);
@@ -119,7 +119,7 @@ tail${i}:
 % endfor
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
     switch (state) {
 % for i in range(0,n-1):
      case State::kState${i}:
@@ -137,18 +137,18 @@ tail${i}:
               std::move(other.${"prior."*(n-1-i)}next_factory));
 % endfor
   }
-  SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) = delete;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
-        if (grpc_trace_promise_primitives.enabled()) {
-          VLOG(2).AtLocation(whence.file(), whence.line()) 
+        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+          VLOG(2).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${i+1}/${n}";
         }
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
-        if (grpc_trace_promise_primitives.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
           VLOG(2).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${i+1}/${n} gets "
                 << (p != nullptr
@@ -171,14 +171,14 @@ tail${i}:
 % endfor
       default:
       case State::kState${n-1}: {
-        if (grpc_trace_promise_primitives.enabled()) {
-          VLOG(2).AtLocation(whence.file(), whence.line()) 
+        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+          VLOG(2).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${n}/${n}";
         }
         auto result = current_promise();
-        if (grpc_trace_promise_primitives.enabled()) {
-          VLOG(2).AtLocation(whence.file(), whence.line()) 
-                << "seq[" << this << "]: poll step ${n}/${n} gets " 
+        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+          VLOG(2).AtLocation(whence.file(), whence.line())
+                << "seq[" << this << "]: poll step ${n}/${n} gets "
                 << (result.ready()? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -207,12 +207,12 @@ front_matter = """
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.

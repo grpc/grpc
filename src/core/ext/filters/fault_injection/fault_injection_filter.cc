@@ -53,7 +53,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 const NoInterceptor FaultInjectionFilter::Call::OnServerInitialMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnClientToServerMessage;
@@ -151,7 +150,7 @@ FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
 ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, FaultInjectionFilter* filter) {
   auto decision = filter->MakeInjectionDecision(md);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(fault_injection_filter)) {
     gpr_log(GPR_INFO, "chand=%p: Fault injection triggered %s", this,
             decision.ToString().c_str());
   }
@@ -271,8 +270,7 @@ std::string FaultInjectionFilter::InjectionDecision::ToString() const {
 }
 
 const grpc_channel_filter FaultInjectionFilter::kFilter =
-    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>(
-        "fault_injection_filter");
+    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>();
 
 void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
   FaultInjectionServiceConfigParser::Register(builder);

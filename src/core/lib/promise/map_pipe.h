@@ -26,7 +26,6 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
@@ -46,16 +45,12 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
        dst = std::move(dst)](T t) mutable {
         return TrySeq(
             [] {
-              if (grpc_trace_promise_primitives.enabled()) {
-                VLOG(2) << "MapPipe: start map";
-              }
+              GRPC_TRACE_VLOG(promise_primitives, 2) << "MapPipe: start map";
               return Empty{};
             },
             filter_factory.Make(std::move(t)),
             [&dst](T t) {
-              if (grpc_trace_promise_primitives.enabled()) {
-                VLOG(2) << "MapPipe: start push";
-              }
+              GRPC_TRACE_VLOG(promise_primitives, 2) << "MapPipe: start push";
               return Map(dst.Push(std::move(t)), [](bool successful_push) {
                 if (successful_push) {
                   return absl::OkStatus();

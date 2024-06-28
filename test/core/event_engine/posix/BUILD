@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -109,20 +110,13 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "lock_free_event_test",
     srcs = ["lock_free_event_test.cc"],
     external_deps = [
-        "benchmark",
         "gtest",
     ],
-    language = "C++",
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
     uses_event_engine = True,
-    uses_polling = False,
     deps = [
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",

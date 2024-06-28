@@ -17,9 +17,13 @@
 #include <iosfwd>
 #include <map>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+using testing::Pair;
+using testing::UnorderedElementsAre;
 
 namespace grpc_core {
 
@@ -91,6 +95,43 @@ TEST(UniqueTypeNameTest, CanUseAsMapKey) {
   EXPECT_THAT(m,
               ::testing::UnorderedElementsAre(::testing::Pair(foo.type(), 1),
                                               ::testing::Pair(bar.type(), 2)));
+}
+
+struct Filter1 {
+  static absl::string_view TypeName() { return "Filter1"; }
+};
+
+struct Filter2 {
+  static absl::string_view TypeName() { return "Filter2"; }
+};
+
+TEST(UniqueTypeNameTest, UniqueTypeNameFor) {
+  EXPECT_EQ(UniqueTypeNameFor<Filter1>(), UniqueTypeNameFor<Filter1>());
+  EXPECT_NE(UniqueTypeNameFor<Filter1>(), UniqueTypeNameFor<Filter2>());
+}
+
+TEST(UniqueTypeNameTest, UniqueTypeNameHere) {
+  auto name1 = GRPC_UNIQUE_TYPE_NAME_HERE("name");
+  auto name2 = GRPC_UNIQUE_TYPE_NAME_HERE("name");
+  EXPECT_EQ(name1.name(), name2.name());
+  EXPECT_NE(name1, name2);
+}
+
+TEST(UniqueTypenameTest, Stringify) {
+  auto name = GRPC_UNIQUE_TYPE_NAME_HERE("bob");
+  EXPECT_EQ("bob", absl::StrFormat("%v", name));
+}
+
+TEST(UniqueTypeNameTest, Hash) {
+  auto name1 = GRPC_UNIQUE_TYPE_NAME_HERE("name");
+  auto name2 = GRPC_UNIQUE_TYPE_NAME_HERE("name");
+  auto name3 = GRPC_UNIQUE_TYPE_NAME_HERE("other");
+  absl::flat_hash_map<UniqueTypeName, int> m;
+  m[name1] = 1;
+  m[name2] = 2;
+  m[name3] = 3;
+  EXPECT_THAT(
+      m, UnorderedElementsAre(Pair(name1, 1), Pair(name2, 2), Pair(name3, 3)));
 }
 
 }  // namespace

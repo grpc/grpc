@@ -272,6 +272,9 @@
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GRPC_CFSTREAM 1
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+#define GRPC_IOS_EVENT_ENGINE_CLIENT 1
+#endif /* GRPC_IOS_EVENT_ENGINE_CLIENT */
 /* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
@@ -743,6 +746,22 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
 
+#ifndef GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#ifdef __cplusplus
+#if GPR_HAS_CPP_ATTRIBUTE(clang::always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION [[clang::always_inline]]
+#elif GPR_HAS_ATTRIBUTE(always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION __attribute__((always_inline))
+#else
+// TODO(ctiller): add __forceinline for MSVC
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#else
+// Disable for C code
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#endif /* GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION */
+
 #ifndef GPR_NO_UNIQUE_ADDRESS
 #if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
 #define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
@@ -816,6 +835,12 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif /* __EXCEPTIONS */
 #endif /* __GPR_WINDOWS */
 #endif /* GRPC_ALLOW_EXCEPTIONS */
+
+#ifdef __has_builtin
+#define GRPC_HAS_BUILTIN(a) __has_builtin(a)
+#else
+#define GRPC_HAS_BUILTIN(a) 0
+#endif
 
 /* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
  * most likely. Ideally, also collect performance numbers to justify the claim.

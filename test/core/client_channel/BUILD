@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/client_channel")
 
@@ -57,7 +58,10 @@ grpc_yodel_simple_test(
 grpc_yodel_simple_test(
     name = "load_balanced_call_destination",
     srcs = ["load_balanced_call_destination_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     deps = [
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
@@ -111,5 +115,15 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_client_channel",
+    srcs = ["bm_client_channel.cc"],
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//test/core/transport:call_spine_benchmarks",
     ],
 )

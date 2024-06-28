@@ -31,7 +31,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
@@ -86,7 +85,7 @@ class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
  public:
-  Arena* arena() { return arena_.get(); }
+  Arena* arena() const { return arena_.get(); }
   bool is_client() const { return is_client_; }
 
   virtual bool Completed() = 0;
@@ -120,11 +119,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
-
-  // Return the EventEngine used for this call's async execution.
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return event_engine_;
-  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() final;
@@ -163,8 +157,7 @@ class Call : public CppImplOf<Call, grpc_call>,
     Call* sibling_prev = nullptr;
   };
 
-  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-       grpc_event_engine::experimental::EventEngine* event_engine);
+  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena);
   ~Call() override = default;
 
   ParentCall* GetOrCreateParentCall();
@@ -234,7 +227,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
   grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
       deadline_mu_) deadline_task_;
-  grpc_event_engine::experimental::EventEngine* const event_engine_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
@@ -269,18 +261,18 @@ void grpc_call_cancel_internal(grpc_call* call);
 // Given the top call_element, get the call object.
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 
-void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
-                         const grpc_op* ops, size_t nops);
+void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
+                         size_t nops);
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
 void* grpc_call_tracer_get(grpc_call* call);
 
-#define GRPC_CALL_LOG_BATCH(sev, ops, nops)        \
-  do {                                             \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) { \
-      grpc_call_log_batch(sev, ops, nops);         \
-    }                                              \
+#define GRPC_CALL_LOG_BATCH(ops, nops)                    \
+  do {                                                    \
+    if (GRPC_TRACE_FLAG_ENABLED(api)) {                   \
+      grpc_call_log_batch(__FILE__, __LINE__, ops, nops); \
+    }                                                     \
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
@@ -297,8 +289,5 @@ bool grpc_call_is_trailers_only(const grpc_call* call);
 
 // Returns the authority for the call, as seen on the server side.
 absl::string_view grpc_call_server_authority(const grpc_call* call);
-
-extern grpc_core::TraceFlag grpc_call_error_trace;
-extern grpc_core::TraceFlag grpc_compression_trace;
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_CALL_H

@@ -33,7 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"
@@ -111,7 +110,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             if (t->notify_on_receive_settings != nullptr) {
               if (t->interested_parties_until_recv_settings != nullptr) {
                 grpc_endpoint_delete_from_pollset_set(
-                    t->ep, t->interested_parties_until_recv_settings);
+                    t->ep.get(), t->interested_parties_until_recv_settings);
                 t->interested_parties_until_recv_settings = nullptr;
               }
               grpc_core::ExecCtx::Run(DEBUG_LOCATION,
@@ -171,8 +170,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           t->initial_window_update +=
               static_cast<int64_t>(parser->value) -
               parser->incoming_settings->initial_window_size();
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-              GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(http) ||
+              GRPC_TRACE_FLAG_ENABLED(flowctl)) {
             gpr_log(GPR_INFO, "%p[%s] adding %d for initial_window change", t,
                     t->is_client ? "cli" : "svr",
                     static_cast<int>(t->initial_window_update));
@@ -188,7 +187,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(http)) {
           gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
                   t->is_client ? "CLI" : "SVR",
                   std::string(t->peer_string.as_string_view()).c_str(),
