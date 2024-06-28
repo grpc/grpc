@@ -19,12 +19,12 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
