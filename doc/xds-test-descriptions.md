@@ -16,6 +16,8 @@ Server should accept these arguments:
 *   --secure_mode=BOOLEAN
     *   When set to true it uses XdsServerCredentials with the test server for security test cases.
         In case of secure mode, port and maintenance_port should be different.
+*   --enable-csm-observability=BOOLEAN
+    *   When set to true, enable CSM Observability.
 
 Servers that want to support dual stack testing (like Java) should also accept:
 
@@ -64,6 +66,12 @@ Clients should accept these arguments:
     *   The timeout to set on all outbound RPCs. Default is 20.
 *   --secure_mode=BOOLEAN
     *   When set to true it uses XdsChannelCredentials with the test client for security test cases.
+*   --enable-csm-observability=BOOLEAN
+    *   When set to true, enable CSM Observability.
+*   --request_payload_size=INT32
+    *   Set the SimpleRequest.payload.body to a string of repeated '0' characters of the given size in bytes.
+*   --response_payload_size=INT32
+    *   Ask the server to respond with SimpleResponse.payload.body of the given length.
 
 ### XdsUpdateClientConfigureService
 
