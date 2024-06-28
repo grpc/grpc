@@ -178,8 +178,7 @@ grpc_plugin_credentials::GetRequestMetadata(
   // Synchronous return.
   if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     LOG(INFO) << "plugin_credentials[" << this << "]: request " << request.get()
-              << ": plugin returned "
-              << "synchronously";
+              << ": plugin returned synchronously";
   }
   auto result = request->ProcessPluginResult(creds_md, num_creds_md, status,
                                              error_details);
