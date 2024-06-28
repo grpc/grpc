@@ -1933,6 +1933,8 @@ let package = Package(
         "src/core/util/json/json_util.h",
         "src/core/util/json/json_writer.cc",
         "src/core/util/json/json_writer.h",
+        "src/core/util/latent_see.cc",
+        "src/core/util/latent_see.h",
         "src/core/util/linux/cpu.cc",
         "src/core/util/linux/log.cc",
         "src/core/util/log.cc",
