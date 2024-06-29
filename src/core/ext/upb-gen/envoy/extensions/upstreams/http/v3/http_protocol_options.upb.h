@@ -218,7 +218,7 @@ UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_has_heade
 
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_common_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, struct envoy_config_core_v3_HttpProtocolOptions* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HttpProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_common_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_HttpProtocolOptions* sub = (struct envoy_config_core_v3_HttpProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_common_http_protocol_options(msg);
@@ -230,7 +230,7 @@ UPB_INLINE struct envoy_config_core_v3_HttpProtocolOptions* envoy_extensions_ups
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_upstream_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, struct envoy_config_core_v3_UpstreamHttpProtocolOptions* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_UpstreamHttpProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_upstream_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_UpstreamHttpProtocolOptions* sub = (struct envoy_config_core_v3_UpstreamHttpProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_http_protocol_options(msg);
@@ -242,7 +242,7 @@ UPB_INLINE struct envoy_config_core_v3_UpstreamHttpProtocolOptions* envoy_extens
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_explicit_http_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_explicit_http_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* sub = (struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_explicit_http_config(msg);
@@ -254,7 +254,7 @@ UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_Explici
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_use_downstream_protocol_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_use_downstream_protocol_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* sub = (struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_use_downstream_protocol_config(msg);
@@ -266,7 +266,7 @@ UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDown
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_auto_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(32, 48), UPB_SIZE(-21, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_auto_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* sub = (struct envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_auto_config(msg);
@@ -308,7 +308,7 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_set_header_validation_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_mutable_header_validation_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_header_validation_config(msg);
@@ -417,7 +417,7 @@ UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitH
 
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_set_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig *msg, struct envoy_config_core_v3_Http1ProtocolOptions* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_mutable_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http1ProtocolOptions* sub = (struct envoy_config_core_v3_Http1ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_http_protocol_options(msg);
@@ -429,7 +429,7 @@ UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_set_http2_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig *msg, struct envoy_config_core_v3_Http2ProtocolOptions* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_mutable_http2_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http2ProtocolOptions* sub = (struct envoy_config_core_v3_Http2ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_http2_protocol_options(msg);
@@ -441,7 +441,7 @@ UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_set_http3_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig *msg, struct envoy_config_core_v3_Http3ProtocolOptions* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http3ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_mutable_http3_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http3ProtocolOptions* sub = (struct envoy_config_core_v3_Http3ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_http3_protocol_options(msg);
@@ -539,7 +539,7 @@ UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownst
 
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_set_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig *msg, struct envoy_config_core_v3_Http1ProtocolOptions* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_mutable_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http1ProtocolOptions* sub = (struct envoy_config_core_v3_Http1ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_http_protocol_options(msg);
@@ -551,7 +551,7 @@ UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_set_http2_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig *msg, struct envoy_config_core_v3_Http2ProtocolOptions* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_mutable_http2_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http2ProtocolOptions* sub = (struct envoy_config_core_v3_Http2ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_http2_protocol_options(msg);
@@ -563,7 +563,7 @@ UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_set_http3_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig *msg, struct envoy_config_core_v3_Http3ProtocolOptions* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http3ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_mutable_http3_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http3ProtocolOptions* sub = (struct envoy_config_core_v3_Http3ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_UseDownstreamHttpConfig_http3_protocol_options(msg);
@@ -677,7 +677,7 @@ UPB_INLINE bool envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpC
 
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_set_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig *msg, struct envoy_config_core_v3_Http1ProtocolOptions* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_mutable_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http1ProtocolOptions* sub = (struct envoy_config_core_v3_Http1ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_http_protocol_options(msg);
@@ -689,7 +689,7 @@ UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_set_http2_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig *msg, struct envoy_config_core_v3_Http2ProtocolOptions* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_mutable_http2_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http2ProtocolOptions* sub = (struct envoy_config_core_v3_Http2ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_http2_protocol_options(msg);
@@ -701,7 +701,7 @@ UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_set_http3_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig *msg, struct envoy_config_core_v3_Http3ProtocolOptions* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http3ProtocolOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_mutable_http3_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http3ProtocolOptions* sub = (struct envoy_config_core_v3_Http3ProtocolOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_http3_protocol_options(msg);
@@ -713,7 +713,7 @@ UPB_INLINE struct envoy_config_core_v3_Http3ProtocolOptions* envoy_extensions_up
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_set_alternate_protocols_cache_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig *msg, struct envoy_config_core_v3_AlternateProtocolsCacheOptions* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_AlternateProtocolsCacheOptions* envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_mutable_alternate_protocols_cache_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_AlternateProtocolsCacheOptions* sub = (struct envoy_config_core_v3_AlternateProtocolsCacheOptions*)envoy_extensions_upstreams_http_v3_HttpProtocolOptions_AutoHttpConfig_alternate_protocols_cache_options(msg);

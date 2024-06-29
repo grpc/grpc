@@ -37,6 +37,9 @@ const upb_MiniTable envoy__config__endpoint__v3__Endpoint_msg_init = {
   &envoy_config_endpoint_v3_Endpoint_submsgs[0],
   &envoy_config_endpoint_v3_Endpoint__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.Endpoint",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -64,6 +67,9 @@ const upb_MiniTable envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg
   &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_submsgs[0],
   &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.Endpoint.HealthCheckConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -88,6 +94,9 @@ const upb_MiniTable envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg
   &envoy_config_endpoint_v3_Endpoint_AdditionalAddress_submsgs[0],
   &envoy_config_endpoint_v3_Endpoint_AdditionalAddress__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.Endpoint.AdditionalAddress",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_endpoint_v3_LbEndpoint_submsgs[3] = {
@@ -108,6 +117,9 @@ const upb_MiniTable envoy__config__endpoint__v3__LbEndpoint_msg_init = {
   &envoy_config_endpoint_v3_LbEndpoint_submsgs[0],
   &envoy_config_endpoint_v3_LbEndpoint__fields[0],
   UPB_SIZE(40, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.LbEndpoint",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800100100000a, &upb_pom_1bt_max64b},
@@ -133,6 +145,9 @@ const upb_MiniTable envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_i
   &envoy_config_endpoint_v3_LedsClusterLocalityConfig_submsgs[0],
   &envoy_config_endpoint_v3_LedsClusterLocalityConfig__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.LedsClusterLocalityConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -164,6 +179,9 @@ const upb_MiniTable envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init = 
   &envoy_config_endpoint_v3_LocalityLbEndpoints_submsgs[0],
   &envoy_config_endpoint_v3_LocalityLbEndpoints__fields[0],
   UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.LocalityLbEndpoints",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -196,6 +214,9 @@ const upb_MiniTable envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpoint
   &envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_submsgs[0],
   &envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.LocalityLbEndpoints.LbEndpointList",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
