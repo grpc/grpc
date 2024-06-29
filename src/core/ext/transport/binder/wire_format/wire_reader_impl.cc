@@ -30,6 +30,8 @@
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
@@ -107,10 +109,11 @@ std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
 
 void WireReaderImpl::SendSetupTransport(Binder* binder) {
   binder->Initialize();
-  VLOG(2) << "prepare transaction = " << binder->PrepareTransaction().ok();
+  gpr_log(GPR_DEBUG, "prepare transaction = %d",
+          binder->PrepareTransaction().ok());
   WritableParcel* writable_parcel = binder->GetWritableParcel();
-  VLOG(2) << "write int32 = "
-          << writable_parcel->WriteInt32(kWireFormatVersion).ok();
+  gpr_log(GPR_DEBUG, "write int32 = %d",
+          writable_parcel->WriteInt32(kWireFormatVersion).ok());
   // The lifetime of the transaction receiver is the same as the wire writer's.
   // The transaction receiver is responsible for not calling the on-transact
   // callback when it's dead.
@@ -124,11 +127,11 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
         return this->ProcessTransaction(code, readable_parcel, uid);
       });
 
-  VLOG(2) << "tx_receiver = " << tx_receiver_->GetRawBinder();
-  VLOG(2) << "AParcel_writeStrongBinder = "
-          << writable_parcel->WriteBinder(tx_receiver_.get()).ok();
-  VLOG(2) << "AIBinder_transact = "
-          << binder->Transact(BinderTransportTxCode::SETUP_TRANSPORT).ok();
+  gpr_log(GPR_DEBUG, "tx_receiver = %p", tx_receiver_->GetRawBinder());
+  gpr_log(GPR_DEBUG, "AParcel_writeStrongBinder = %d",
+          writable_parcel->WriteBinder(tx_receiver_.get()).ok());
+  gpr_log(GPR_DEBUG, "AIBinder_transact = %d",
+          binder->Transact(BinderTransportTxCode::SETUP_TRANSPORT).ok());
 }
 
 std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
