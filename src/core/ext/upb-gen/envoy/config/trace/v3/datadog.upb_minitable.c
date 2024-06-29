@@ -26,6 +26,9 @@ const upb_MiniTable envoy__config__trace__v3__DatadogConfig_msg_init = {
   NULL,
   &envoy_config_trace_v3_DatadogConfig__fields[0],
   UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.DatadogConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},

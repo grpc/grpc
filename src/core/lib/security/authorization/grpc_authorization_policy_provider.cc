@@ -19,12 +19,12 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -114,10 +114,9 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
       absl::Status status = provider->ForceUpdate();
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api) && !status.ok()) {
-        gpr_log(GPR_ERROR,
-                "authorization policy reload status. code=%d error_details=%s",
-                static_cast<int>(status.code()),
-                std::string(status.message()).c_str());
+        LOG(ERROR) << "authorization policy reload status. code="
+                   << static_cast<int>(status.code())
+                   << " error_details=" << status.message();
       }
     }
   };
@@ -169,10 +168,9 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     cb_(contents_changed, absl::OkStatus());
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    gpr_log(GPR_INFO,
-            "authorization policy reload status: successfully loaded new "
-            "policy\n%s",
-            file_contents_.c_str());
+    LOG(INFO) << "authorization policy reload status: successfully loaded new "
+                 "policy\n"
+              << file_contents_;
   }
   return absl::OkStatus();
 }

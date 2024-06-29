@@ -83,7 +83,7 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLoca
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_set_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality *msg, struct envoy_config_cluster_v3_LoadBalancingPolicy* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_mutable_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality* msg, upb_Arena* arena) {
   struct envoy_config_cluster_v3_LoadBalancingPolicy* sub = (struct envoy_config_cluster_v3_LoadBalancingPolicy*)envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_endpoint_picking_policy(msg);

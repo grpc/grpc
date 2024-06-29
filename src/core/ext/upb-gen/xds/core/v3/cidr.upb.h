@@ -95,11 +95,11 @@ UPB_INLINE bool xds_core_v3_CidrRange_has_prefix_len(const xds_core_v3_CidrRange
 
 UPB_INLINE void xds_core_v3_CidrRange_set_address_prefix(xds_core_v3_CidrRange *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_core_v3_CidrRange_set_prefix_len(xds_core_v3_CidrRange *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* xds_core_v3_CidrRange_mutable_prefix_len(xds_core_v3_CidrRange* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)xds_core_v3_CidrRange_prefix_len(msg);
