@@ -46,8 +46,17 @@ UPB_INLINE void google_api_set_http(struct google_protobuf_MethodOptions* msg, c
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
+}
+UPB_INLINE struct google_api_HttpRule* google_api_mutable_http(struct google_protobuf_MethodOptions* msg,
+                                    upb_Arena* arena) {
+  struct google_api_HttpRule* sub = (struct google_api_HttpRule*)google_api_http(msg);
+  if (sub == NULL) {
+    sub = (struct google_api_HttpRule*)_upb_Message_New(&google__api__HttpRule_msg_init, arena);
+    if (sub) google_api_set_http(msg, sub, arena);
+  }
+  return sub;
 }
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -18,6 +18,7 @@
 
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
+    "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",

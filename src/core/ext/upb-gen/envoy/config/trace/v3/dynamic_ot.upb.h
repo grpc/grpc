@@ -98,11 +98,11 @@ UPB_INLINE bool envoy_config_trace_v3_DynamicOtConfig_has_config(const envoy_con
 
 UPB_INLINE void envoy_config_trace_v3_DynamicOtConfig_set_library(envoy_config_trace_v3_DynamicOtConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_DynamicOtConfig_set_config(envoy_config_trace_v3_DynamicOtConfig *msg, struct google_protobuf_Struct* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_config_trace_v3_DynamicOtConfig_mutable_config(envoy_config_trace_v3_DynamicOtConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_config_trace_v3_DynamicOtConfig_config(msg);

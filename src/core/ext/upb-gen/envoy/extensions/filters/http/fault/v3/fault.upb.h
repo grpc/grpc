@@ -154,11 +154,11 @@ UPB_INLINE bool envoy_extensions_filters_http_fault_v3_FaultAbort_has_grpc_statu
 
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_FaultAbort_set_http_status(envoy_extensions_filters_http_fault_v3_FaultAbort *msg, uint32_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_FaultAbort_set_percentage(envoy_extensions_filters_http_fault_v3_FaultAbort *msg, struct envoy_type_v3_FractionalPercent* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_extensions_filters_http_fault_v3_FaultAbort_mutable_percentage(envoy_extensions_filters_http_fault_v3_FaultAbort* msg, upb_Arena* arena) {
   struct envoy_type_v3_FractionalPercent* sub = (struct envoy_type_v3_FractionalPercent*)envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(msg);
@@ -170,7 +170,7 @@ UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_extensions_filters_http
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_FaultAbort_set_header_abort(envoy_extensions_filters_http_fault_v3_FaultAbort *msg, envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort* envoy_extensions_filters_http_fault_v3_FaultAbort_mutable_header_abort(envoy_extensions_filters_http_fault_v3_FaultAbort* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort* sub = (struct envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort*)envoy_extensions_filters_http_fault_v3_FaultAbort_header_abort(msg);
@@ -182,7 +182,7 @@ UPB_INLINE struct envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort*
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_FaultAbort_set_grpc_status(envoy_extensions_filters_http_fault_v3_FaultAbort *msg, uint32_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.extensions.filters.http.fault.v3.FaultAbort.HeaderAbort */
@@ -514,7 +514,7 @@ UPB_INLINE bool envoy_extensions_filters_http_fault_v3_HTTPFault_has_filter_meta
 
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_delay(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, struct envoy_extensions_filters_common_fault_v3_FaultDelay* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultDelay* envoy_extensions_filters_http_fault_v3_HTTPFault_mutable_delay(envoy_extensions_filters_http_fault_v3_HTTPFault* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_common_fault_v3_FaultDelay* sub = (struct envoy_extensions_filters_common_fault_v3_FaultDelay*)envoy_extensions_filters_http_fault_v3_HTTPFault_delay(msg);
@@ -526,7 +526,7 @@ UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultDelay* envoy_ext
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_abort(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, envoy_extensions_filters_http_fault_v3_FaultAbort* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_fault_v3_FaultAbort* envoy_extensions_filters_http_fault_v3_HTTPFault_mutable_abort(envoy_extensions_filters_http_fault_v3_HTTPFault* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_http_fault_v3_FaultAbort* sub = (struct envoy_extensions_filters_http_fault_v3_FaultAbort*)envoy_extensions_filters_http_fault_v3_HTTPFault_abort(msg);
@@ -538,7 +538,7 @@ UPB_INLINE struct envoy_extensions_filters_http_fault_v3_FaultAbort* envoy_exten
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_upstream_cluster(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(44, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_route_v3_HeaderMatcher** envoy_extensions_filters_http_fault_v3_HTTPFault_mutable_headers(envoy_extensions_filters_http_fault_v3_HTTPFault* msg, size_t* size) {
   upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -600,7 +600,7 @@ UPB_INLINE bool envoy_extensions_filters_http_fault_v3_HTTPFault_add_downstream_
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_max_active_faults(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_filters_http_fault_v3_HTTPFault_mutable_max_active_faults(envoy_extensions_filters_http_fault_v3_HTTPFault* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(msg);
@@ -612,7 +612,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_filters_http_fau
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_response_rate_limit(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, struct envoy_extensions_filters_common_fault_v3_FaultRateLimit* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(32, 72), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultRateLimit* envoy_extensions_filters_http_fault_v3_HTTPFault_mutable_response_rate_limit(envoy_extensions_filters_http_fault_v3_HTTPFault* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_common_fault_v3_FaultRateLimit* sub = (struct envoy_extensions_filters_common_fault_v3_FaultRateLimit*)envoy_extensions_filters_http_fault_v3_HTTPFault_response_rate_limit(msg);
@@ -624,39 +624,39 @@ UPB_INLINE struct envoy_extensions_filters_common_fault_v3_FaultRateLimit* envoy
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_delay_percent_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {8, UPB_SIZE(52, 80), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_abort_percent_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {9, UPB_SIZE(60, 96), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_delay_duration_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {10, UPB_SIZE(68, 112), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_abort_http_status_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {11, UPB_SIZE(76, 128), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_max_active_faults_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {12, UPB_SIZE(84, 144), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_response_rate_limit_percent_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {13, UPB_SIZE(92, 160), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_abort_grpc_status_runtime(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, upb_StringView value) {
   const upb_MiniTableField field = {14, UPB_SIZE(100, 176), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_disable_downstream_cluster_stats(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, bool value) {
   const upb_MiniTableField field = {15, UPB_SIZE(36, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_filter_metadata(envoy_extensions_filters_http_fault_v3_HTTPFault *msg, struct google_protobuf_Struct* value) {
   const upb_MiniTableField field = {16, UPB_SIZE(40, 192), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_extensions_filters_http_fault_v3_HTTPFault_mutable_filter_metadata(envoy_extensions_filters_http_fault_v3_HTTPFault* msg, upb_Arena* arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)envoy_extensions_filters_http_fault_v3_HTTPFault_filter_metadata(msg);

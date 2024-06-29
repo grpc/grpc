@@ -778,7 +778,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
       // NOLINTBEGIN(bugprone-string-constructor)
-      complete_pick->metadata_mutations.Add(
+      complete_pick->metadata_mutations.Set(
           GrpcLbClientStatsMetadata::key(),
           grpc_event_engine::experimental::Slice(grpc_slice_from_static_buffer(
               reinterpret_cast<const char*>(client_stats), 0)));
@@ -791,7 +791,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     // may get refreshed between when we return this pick and when the
     // initial metadata goes out on the wire.
     if (!subchannel_wrapper->lb_token().empty()) {
-      complete_pick->metadata_mutations.Add(
+      complete_pick->metadata_mutations.Set(
           LbTokenMetadata::key(), subchannel_wrapper->lb_token().Ref());
     }
     // Unwrap subchannel to pass up to the channel.
