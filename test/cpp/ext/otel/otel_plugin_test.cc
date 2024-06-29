@@ -39,6 +39,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -1286,6 +1287,9 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
 class OpenTelemetryPluginNPCMetricsTest
     : public OpenTelemetryPluginEnd2EndTest {
  protected:
+  OpenTelemetryPluginNPCMetricsTest()
+      : endpoint_config_(grpc_core::ChannelArgs()) {}
+
   void TearDown() override {
     // We are tearing down OpenTelemetryPluginEnd2EndTest first to ensure that
     // gRPC has shutdown before we reset the instruments registry.
@@ -1293,6 +1297,8 @@ class OpenTelemetryPluginNPCMetricsTest
     grpc_core::GlobalInstrumentsRegistryTestPeer::
         ResetGlobalInstrumentsRegistry();
   }
+
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config_;
 };
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
@@ -1327,7 +1333,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
@@ -1377,7 +1383,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
@@ -1709,7 +1715,14 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
   EXPECT_FALSE(stats_plugins.IsInstrumentEnabled(counter_handle));
 }
 
-using OpenTelemetryPluginCallbackMetricsTest = OpenTelemetryPluginEnd2EndTest;
+class OpenTelemetryPluginCallbackMetricsTest
+    : public OpenTelemetryPluginEnd2EndTest {
+ protected:
+  OpenTelemetryPluginCallbackMetricsTest()
+      : endpoint_config_(grpc_core::ChannelArgs()) {}
+
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config_;
+};
 
 // The callback minimal interval is longer than the OT reporting interval, so we
 // expect to collect duplicated (cached) values.
@@ -1753,7 +1766,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   // Multiple callbacks for the same metrics, each reporting different
   // label values.
   int report_count_1 = 0;
@@ -1888,7 +1901,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
-              "dns:///localhost:8080", ""));
+              "dns:///localhost:8080", "", endpoint_config_));
   // Multiple callbacks for the same metrics, each reporting different
   // label values.
   int report_count_1 = 0;

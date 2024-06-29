@@ -33,6 +33,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay_ms
   &envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultDelay__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultDelay",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -49,6 +52,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay__H
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultDelay.HeaderDelay",
+#endif
 };
 
 static const upb_MiniTableSub envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[3] = {
@@ -67,6 +73,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimi
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultRateLimit",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0018000c0100000a, &upb_pom_1bt_max64b},
@@ -83,6 +92,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimi
   NULL,
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultRateLimit.FixedLimit",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},
@@ -93,6 +105,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimi
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultRateLimit.HeaderLimit",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[5] = {
