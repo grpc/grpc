@@ -107,10 +107,12 @@ std::shared_ptr<WireWriter> WireReaderImpl::SetupTransport(
 
 void WireReaderImpl::SendSetupTransport(Binder* binder) {
   binder->Initialize();
-  VLOG(2) << "prepare transaction = " << binder->PrepareTransaction().ok();
+  const absl::Status prep_transaction_status = binder->PrepareTransaction();
+  VLOG(2) << "prepare transaction = " << prep_transaction_status;
   WritableParcel* writable_parcel = binder->GetWritableParcel();
-  VLOG(2) << "write int32 = "
-          << writable_parcel->WriteInt32(kWireFormatVersion).ok();
+  const absl::Status write_status =
+      writable_parcel->WriteInt32(kWireFormatVersion);
+  VLOG(2) << "write int32 = " << write_status;
   // The lifetime of the transaction receiver is the same as the wire writer's.
   // The transaction receiver is responsible for not calling the on-transact
   // callback when it's dead.
@@ -125,10 +127,12 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
       });
 
   VLOG(2) << "tx_receiver = " << tx_receiver_->GetRawBinder();
-  VLOG(2) << "AParcel_writeStrongBinder = "
-          << writable_parcel->WriteBinder(tx_receiver_.get()).ok();
-  VLOG(2) << "AIBinder_transact = "
-          << binder->Transact(BinderTransportTxCode::SETUP_TRANSPORT).ok();
+  const absl::Status write_binder_status =
+      writable_parcel->WriteBinder(tx_receiver_.get());
+  VLOG(2) << "AParcel_writeStrongBinder = " << write_binder_status;
+  const absl::Status transact_status =
+      binder->Transact(BinderTransportTxCode::SETUP_TRANSPORT);
+  VLOG(2) << "AIBinder_transact = " << transact_status;
 }
 
 std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
