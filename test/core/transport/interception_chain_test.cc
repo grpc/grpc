@@ -252,8 +252,8 @@ class InterceptionChainTest : public ::testing::Test {
     auto arena = call_arena_allocator_->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
-    auto call =
-        MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena));
+    auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                             std::move(arena));
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
@@ -278,7 +278,7 @@ class InterceptionChainTest : public ::testing::Test {
                 << unstarted_call_handler.UnprocessedClientInitialMetadata()
                        .DebugString();
       EXPECT_EQ(metadata_.get(), nullptr);
-      metadata_ = Arena::MakePooled<ClientMetadata>();
+      metadata_ = Arena::MakePooledForOverwrite<ClientMetadata>();
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
       unstarted_call_handler.PushServerTrailingMetadata(

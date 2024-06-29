@@ -25,15 +25,22 @@ namespace {
 
 void BM_MetadataMapCreateDestroy(benchmark::State& state) {
   for (auto _ : state) {
-    auto md = Arena::MakePooled<ServerMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 }
 BENCHMARK(BM_MetadataMapCreateDestroy);
 
+void BM_MetadataMapCreateDestroyOnStack(benchmark::State& state) {
+  for (auto _ : state) {
+    ServerMetadata md;
+  }
+}
+BENCHMARK(BM_MetadataMapCreateDestroyOnStack);
+
 void BM_MetadataMapCreateDestroySetStatus(benchmark::State& state) {
   auto message = Slice::FromExternalString("message");
   for (auto _ : state) {
-    auto md = Arena::MakePooled<ServerMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
     md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
     md->Set(GrpcMessageMetadata(), message.Copy());
   }
@@ -43,7 +50,7 @@ BENCHMARK(BM_MetadataMapCreateDestroySetStatus);
 void BM_MetadataMapCreateDestroySetStatusCancelled(benchmark::State& state) {
   auto message = Slice::FromExternalString("message");
   for (auto _ : state) {
-    auto md = Arena::MakePooled<ServerMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
     md->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
   }
 }

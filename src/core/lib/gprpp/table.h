@@ -41,10 +41,13 @@ struct Elements;
 template <typename T, typename... Ts>
 struct Elements<absl::enable_if_t<!std::is_empty<T>::value>, T, Ts...>
     : Elements<void, Ts...> {
+  struct alignas(T) Data {
+    unsigned char bytes[sizeof(T)];
+  };
+  Data x;
   Elements() {}
-  alignas(T) char x[sizeof(T)];
-  T* ptr() { return reinterpret_cast<T*>(x); }
-  const T* ptr() const { return reinterpret_cast<const T*>(x); }
+  T* ptr() { return reinterpret_cast<T*>(x.bytes); }
+  const T* ptr() const { return reinterpret_cast<const T*>(x.bytes); }
 };
 template <typename T, typename... Ts>
 struct Elements<absl::enable_if_t<std::is_empty<T>::value>, T, Ts...>
@@ -447,9 +450,9 @@ class Table {
   }
 
   // Bit field indicating which elements are set.
-  GPR_NO_UNIQUE_ADDRESS PresentBits present_bits_;
+  PresentBits present_bits_;
   // The memory to store the elements themselves.
-  GPR_NO_UNIQUE_ADDRESS Elements elements_;
+  Elements elements_;
 };
 
 }  // namespace grpc_core
