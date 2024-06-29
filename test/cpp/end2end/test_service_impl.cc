@@ -290,7 +290,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         }
       }
       if (req_->has_param() &&
-          (req_->param().expected_client_identity().length() > 0 ||
+          (!req_->param().expected_client_identity().empty() ||
            req_->param().check_auth_context())) {
         internal::CheckServerAuthContext(
             ctx_, req_->param().expected_transport_security_type(),

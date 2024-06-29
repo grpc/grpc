@@ -185,7 +185,7 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
       return ret;
     }
     write_bytes = write_bytes.substr(ret, std::string::npos);
-  } while (write_bytes.length() > 0);
+  } while (!write_bytes.empty());
   return original_write_length;
 }
 }  // namespace
