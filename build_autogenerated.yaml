@@ -129,10 +129,10 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/log:absl_vlog_is_on
   - absl/log:check
   - absl/log:globals
   - absl/log:log
-  - absl/log:vlog_is_on
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
