@@ -33,6 +33,9 @@ const upb_MiniTable xds__core__v3__ResourceLocator_msg_init = {
   &xds_core_v3_ResourceLocator_submsgs[0],
   &xds_core_v3_ResourceLocator__fields[0],
   UPB_SIZE(48, 80), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.core.v3.ResourceLocator",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -58,6 +61,9 @@ const upb_MiniTable xds__core__v3__ResourceLocator__Directive_msg_init = {
   &xds_core_v3_ResourceLocator_Directive_submsgs[0],
   &xds_core_v3_ResourceLocator_Directive__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.core.v3.ResourceLocator.Directive",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max128b},
