@@ -28,6 +28,9 @@ const upb_MiniTable envoy__config__core__v3__TypedExtensionConfig_msg_init = {
   &envoy_config_core_v3_TypedExtensionConfig_submsgs[0],
   &envoy_config_core_v3_TypedExtensionConfig__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.TypedExtensionConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

@@ -211,7 +211,7 @@ UPB_INLINE upb_Array* _envoy_config_core_v3_GrpcMethodList_Service_method_names_
 
 UPB_INLINE void envoy_config_core_v3_GrpcMethodList_Service_set_name(envoy_config_core_v3_GrpcMethodList_Service *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* envoy_config_core_v3_GrpcMethodList_Service_mutable_method_names(envoy_config_core_v3_GrpcMethodList_Service* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

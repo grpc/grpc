@@ -52,5 +52,6 @@ py_test(
         ":client",
         ":server",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
+        "@com_google_protobuf//:protobuf_python",
     ],
 )
