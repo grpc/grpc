@@ -28,6 +28,9 @@ const upb_MiniTable envoy__config__core__v3__SocketOption_msg_init = {
   NULL,
   &envoy_config_core_v3_SocketOption__fields[0],
   UPB_SIZE(48, 64), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.SocketOption",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000003f00000a, &upb_pss_1bt},
@@ -52,6 +55,9 @@ const upb_MiniTable envoy__config__core__v3__SocketOptionsOverride_msg_init = {
   &envoy_config_core_v3_SocketOptionsOverride_submsgs[0],
   &envoy_config_core_v3_SocketOptionsOverride__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.SocketOptionsOverride",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max128b},

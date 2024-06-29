@@ -191,7 +191,7 @@ UPB_INLINE struct envoy_type_matcher_v3_NodeMatcher* envoy_service_status_v3_Cli
 }
 UPB_INLINE void envoy_service_status_v3_ClientStatusRequest_set_node(envoy_service_status_v3_ClientStatusRequest *msg, struct envoy_config_core_v3_Node* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Node* envoy_service_status_v3_ClientStatusRequest_mutable_node(envoy_service_status_v3_ClientStatusRequest* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Node* sub = (struct envoy_config_core_v3_Node*)envoy_service_status_v3_ClientStatusRequest_node(msg);
@@ -203,7 +203,7 @@ UPB_INLINE struct envoy_config_core_v3_Node* envoy_service_status_v3_ClientStatu
 }
 UPB_INLINE void envoy_service_status_v3_ClientStatusRequest_set_exclude_resource_contents(envoy_service_status_v3_ClientStatusRequest *msg, bool value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.service.status.v3.PerXdsConfig */
@@ -362,11 +362,11 @@ UPB_INLINE int32_t envoy_service_status_v3_PerXdsConfig_client_status(const envo
 
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_status(envoy_service_status_v3_PerXdsConfig *msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_listener_config(envoy_service_status_v3_PerXdsConfig *msg, struct envoy_admin_v3_ListenersConfigDump* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(20, 24), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_ListenersConfigDump* envoy_service_status_v3_PerXdsConfig_mutable_listener_config(envoy_service_status_v3_PerXdsConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ListenersConfigDump* sub = (struct envoy_admin_v3_ListenersConfigDump*)envoy_service_status_v3_PerXdsConfig_listener_config(msg);
@@ -378,7 +378,7 @@ UPB_INLINE struct envoy_admin_v3_ListenersConfigDump* envoy_service_status_v3_Pe
 }
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_cluster_config(envoy_service_status_v3_PerXdsConfig *msg, struct envoy_admin_v3_ClustersConfigDump* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_ClustersConfigDump* envoy_service_status_v3_PerXdsConfig_mutable_cluster_config(envoy_service_status_v3_PerXdsConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ClustersConfigDump* sub = (struct envoy_admin_v3_ClustersConfigDump*)envoy_service_status_v3_PerXdsConfig_cluster_config(msg);
@@ -390,7 +390,7 @@ UPB_INLINE struct envoy_admin_v3_ClustersConfigDump* envoy_service_status_v3_Per
 }
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_route_config(envoy_service_status_v3_PerXdsConfig *msg, struct envoy_admin_v3_RoutesConfigDump* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 24), -13, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_RoutesConfigDump* envoy_service_status_v3_PerXdsConfig_mutable_route_config(envoy_service_status_v3_PerXdsConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_RoutesConfigDump* sub = (struct envoy_admin_v3_RoutesConfigDump*)envoy_service_status_v3_PerXdsConfig_route_config(msg);
@@ -402,7 +402,7 @@ UPB_INLINE struct envoy_admin_v3_RoutesConfigDump* envoy_service_status_v3_PerXd
 }
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_scoped_route_config(envoy_service_status_v3_PerXdsConfig *msg, struct envoy_admin_v3_ScopedRoutesConfigDump* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 24), -13, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_ScopedRoutesConfigDump* envoy_service_status_v3_PerXdsConfig_mutable_scoped_route_config(envoy_service_status_v3_PerXdsConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ScopedRoutesConfigDump* sub = (struct envoy_admin_v3_ScopedRoutesConfigDump*)envoy_service_status_v3_PerXdsConfig_scoped_route_config(msg);
@@ -414,7 +414,7 @@ UPB_INLINE struct envoy_admin_v3_ScopedRoutesConfigDump* envoy_service_status_v3
 }
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_endpoint_config(envoy_service_status_v3_PerXdsConfig *msg, struct envoy_admin_v3_EndpointsConfigDump* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(20, 24), -13, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_EndpointsConfigDump* envoy_service_status_v3_PerXdsConfig_mutable_endpoint_config(envoy_service_status_v3_PerXdsConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_EndpointsConfigDump* sub = (struct envoy_admin_v3_EndpointsConfigDump*)envoy_service_status_v3_PerXdsConfig_endpoint_config(msg);
@@ -426,7 +426,7 @@ UPB_INLINE struct envoy_admin_v3_EndpointsConfigDump* envoy_service_status_v3_Pe
 }
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_set_client_status(envoy_service_status_v3_PerXdsConfig *msg, int32_t value) {
   const upb_MiniTableField field = {7, 16, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.service.status.v3.ClientConfig */
@@ -560,7 +560,7 @@ UPB_INLINE upb_StringView envoy_service_status_v3_ClientConfig_client_scope(cons
 
 UPB_INLINE void envoy_service_status_v3_ClientConfig_set_node(envoy_service_status_v3_ClientConfig *msg, struct envoy_config_core_v3_Node* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Node* envoy_service_status_v3_ClientConfig_mutable_node(envoy_service_status_v3_ClientConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Node* sub = (struct envoy_config_core_v3_Node*)envoy_service_status_v3_ClientConfig_node(msg);
@@ -632,7 +632,7 @@ UPB_INLINE struct envoy_service_status_v3_ClientConfig_GenericXdsConfig* envoy_s
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_set_client_scope(envoy_service_status_v3_ClientConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.service.status.v3.ClientConfig.GenericXdsConfig */
@@ -794,19 +794,19 @@ UPB_INLINE bool envoy_service_status_v3_ClientConfig_GenericXdsConfig_is_static_
 
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(36, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(44, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(52, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_xds_config(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 72), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(envoy_service_status_v3_ClientConfig_GenericXdsConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_service_status_v3_ClientConfig_GenericXdsConfig_xds_config(msg);
@@ -818,7 +818,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_service_status_v3_ClientConfig_Gene
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(16, 80), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_last_updated(envoy_service_status_v3_ClientConfig_GenericXdsConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_service_status_v3_ClientConfig_GenericXdsConfig_last_updated(msg);
@@ -830,15 +830,15 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_service_status_v3_ClientConfi
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_config_status(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, int32_t value) {
   const upb_MiniTableField field = {6, UPB_SIZE(20, 12), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, int32_t value) {
   const upb_MiniTableField field = {7, UPB_SIZE(24, 16), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, struct envoy_admin_v3_UpdateFailureState* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(28, 88), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_error_state(envoy_service_status_v3_ClientConfig_GenericXdsConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_service_status_v3_ClientConfig_GenericXdsConfig_error_state(msg);
@@ -850,7 +850,7 @@ UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_service_status_v3_Cli
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_is_static_resource(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, bool value) {
   const upb_MiniTableField field = {9, UPB_SIZE(32, 20), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.service.status.v3.ClientStatusResponse */

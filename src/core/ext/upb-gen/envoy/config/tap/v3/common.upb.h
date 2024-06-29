@@ -164,7 +164,7 @@ UPB_INLINE bool envoy_config_tap_v3_TapConfig_has_match(const envoy_config_tap_v
 
 UPB_INLINE void envoy_config_tap_v3_TapConfig_set_match_config(envoy_config_tap_v3_TapConfig *msg, envoy_config_tap_v3_MatchPredicate* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_MatchPredicate* envoy_config_tap_v3_TapConfig_mutable_match_config(envoy_config_tap_v3_TapConfig* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_MatchPredicate* sub = (struct envoy_config_tap_v3_MatchPredicate*)envoy_config_tap_v3_TapConfig_match_config(msg);
@@ -176,7 +176,7 @@ UPB_INLINE struct envoy_config_tap_v3_MatchPredicate* envoy_config_tap_v3_TapCon
 }
 UPB_INLINE void envoy_config_tap_v3_TapConfig_set_output_config(envoy_config_tap_v3_TapConfig *msg, envoy_config_tap_v3_OutputConfig* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_OutputConfig* envoy_config_tap_v3_TapConfig_mutable_output_config(envoy_config_tap_v3_TapConfig* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_OutputConfig* sub = (struct envoy_config_tap_v3_OutputConfig*)envoy_config_tap_v3_TapConfig_output_config(msg);
@@ -188,7 +188,7 @@ UPB_INLINE struct envoy_config_tap_v3_OutputConfig* envoy_config_tap_v3_TapConfi
 }
 UPB_INLINE void envoy_config_tap_v3_TapConfig_set_tap_enabled(envoy_config_tap_v3_TapConfig *msg, struct envoy_config_core_v3_RuntimeFractionalPercent* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RuntimeFractionalPercent* envoy_config_tap_v3_TapConfig_mutable_tap_enabled(envoy_config_tap_v3_TapConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_RuntimeFractionalPercent* sub = (struct envoy_config_core_v3_RuntimeFractionalPercent*)envoy_config_tap_v3_TapConfig_tap_enabled(msg);
@@ -200,7 +200,7 @@ UPB_INLINE struct envoy_config_core_v3_RuntimeFractionalPercent* envoy_config_ta
 }
 UPB_INLINE void envoy_config_tap_v3_TapConfig_set_match(envoy_config_tap_v3_TapConfig *msg, struct envoy_config_common_matcher_v3_MatchPredicate* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_common_matcher_v3_MatchPredicate* envoy_config_tap_v3_TapConfig_mutable_match(envoy_config_tap_v3_TapConfig* msg, upb_Arena* arena) {
   struct envoy_config_common_matcher_v3_MatchPredicate* sub = (struct envoy_config_common_matcher_v3_MatchPredicate*)envoy_config_tap_v3_TapConfig_match(msg);
@@ -428,7 +428,7 @@ UPB_INLINE bool envoy_config_tap_v3_MatchPredicate_has_http_response_generic_bod
 
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_or_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_MatchPredicate_MatchSet* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_MatchPredicate_MatchSet* envoy_config_tap_v3_MatchPredicate_mutable_or_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_MatchPredicate_MatchSet* sub = (struct envoy_config_tap_v3_MatchPredicate_MatchSet*)envoy_config_tap_v3_MatchPredicate_or_match(msg);
@@ -440,7 +440,7 @@ UPB_INLINE struct envoy_config_tap_v3_MatchPredicate_MatchSet* envoy_config_tap_
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_and_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_MatchPredicate_MatchSet* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_MatchPredicate_MatchSet* envoy_config_tap_v3_MatchPredicate_mutable_and_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_MatchPredicate_MatchSet* sub = (struct envoy_config_tap_v3_MatchPredicate_MatchSet*)envoy_config_tap_v3_MatchPredicate_and_match(msg);
@@ -452,7 +452,7 @@ UPB_INLINE struct envoy_config_tap_v3_MatchPredicate_MatchSet* envoy_config_tap_
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_not_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_MatchPredicate* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_MatchPredicate* envoy_config_tap_v3_MatchPredicate_mutable_not_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_MatchPredicate* sub = (struct envoy_config_tap_v3_MatchPredicate*)envoy_config_tap_v3_MatchPredicate_not_match(msg);
@@ -464,11 +464,11 @@ UPB_INLINE struct envoy_config_tap_v3_MatchPredicate* envoy_config_tap_v3_MatchP
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_any_match(envoy_config_tap_v3_MatchPredicate *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_http_request_headers_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_HttpHeadersMatch* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_MatchPredicate_mutable_http_request_headers_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_HttpHeadersMatch* sub = (struct envoy_config_tap_v3_HttpHeadersMatch*)envoy_config_tap_v3_MatchPredicate_http_request_headers_match(msg);
@@ -480,7 +480,7 @@ UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_Matc
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_http_request_trailers_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_HttpHeadersMatch* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_MatchPredicate_mutable_http_request_trailers_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_HttpHeadersMatch* sub = (struct envoy_config_tap_v3_HttpHeadersMatch*)envoy_config_tap_v3_MatchPredicate_http_request_trailers_match(msg);
@@ -492,7 +492,7 @@ UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_Matc
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_http_response_headers_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_HttpHeadersMatch* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_MatchPredicate_mutable_http_response_headers_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_HttpHeadersMatch* sub = (struct envoy_config_tap_v3_HttpHeadersMatch*)envoy_config_tap_v3_MatchPredicate_http_response_headers_match(msg);
@@ -504,7 +504,7 @@ UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_Matc
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_http_response_trailers_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_HttpHeadersMatch* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_MatchPredicate_mutable_http_response_trailers_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_HttpHeadersMatch* sub = (struct envoy_config_tap_v3_HttpHeadersMatch*)envoy_config_tap_v3_MatchPredicate_http_response_trailers_match(msg);
@@ -516,7 +516,7 @@ UPB_INLINE struct envoy_config_tap_v3_HttpHeadersMatch* envoy_config_tap_v3_Matc
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_http_request_generic_body_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_HttpGenericBodyMatch* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(12, 16), -9, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_HttpGenericBodyMatch* envoy_config_tap_v3_MatchPredicate_mutable_http_request_generic_body_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_HttpGenericBodyMatch* sub = (struct envoy_config_tap_v3_HttpGenericBodyMatch*)envoy_config_tap_v3_MatchPredicate_http_request_generic_body_match(msg);
@@ -528,7 +528,7 @@ UPB_INLINE struct envoy_config_tap_v3_HttpGenericBodyMatch* envoy_config_tap_v3_
 }
 UPB_INLINE void envoy_config_tap_v3_MatchPredicate_set_http_response_generic_body_match(envoy_config_tap_v3_MatchPredicate *msg, envoy_config_tap_v3_HttpGenericBodyMatch* value) {
   const upb_MiniTableField field = {10, UPB_SIZE(12, 16), -9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_HttpGenericBodyMatch* envoy_config_tap_v3_MatchPredicate_mutable_http_response_generic_body_match(envoy_config_tap_v3_MatchPredicate* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_HttpGenericBodyMatch* sub = (struct envoy_config_tap_v3_HttpGenericBodyMatch*)envoy_config_tap_v3_MatchPredicate_http_response_generic_body_match(msg);
@@ -822,7 +822,7 @@ UPB_INLINE upb_Array* _envoy_config_tap_v3_HttpGenericBodyMatch_patterns_mutable
 
 UPB_INLINE void envoy_config_tap_v3_HttpGenericBodyMatch_set_bytes_limit(envoy_config_tap_v3_HttpGenericBodyMatch *msg, uint32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch** envoy_config_tap_v3_HttpGenericBodyMatch_mutable_patterns(envoy_config_tap_v3_HttpGenericBodyMatch* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -936,11 +936,11 @@ UPB_INLINE bool envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch_has_bi
 
 UPB_INLINE void envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch_set_string_match(envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch_set_binary_match(envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.tap.v3.OutputConfig */
@@ -1088,7 +1088,7 @@ UPB_INLINE struct envoy_config_tap_v3_OutputSink* envoy_config_tap_v3_OutputConf
 }
 UPB_INLINE void envoy_config_tap_v3_OutputConfig_set_max_buffered_rx_bytes(envoy_config_tap_v3_OutputConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_tap_v3_OutputConfig_mutable_max_buffered_rx_bytes(envoy_config_tap_v3_OutputConfig* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_tap_v3_OutputConfig_max_buffered_rx_bytes(msg);
@@ -1100,7 +1100,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_tap_v3_OutputConfig_
 }
 UPB_INLINE void envoy_config_tap_v3_OutputConfig_set_max_buffered_tx_bytes(envoy_config_tap_v3_OutputConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_tap_v3_OutputConfig_mutable_max_buffered_tx_bytes(envoy_config_tap_v3_OutputConfig* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_tap_v3_OutputConfig_max_buffered_tx_bytes(msg);
@@ -1112,7 +1112,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_tap_v3_OutputConfig_
 }
 UPB_INLINE void envoy_config_tap_v3_OutputConfig_set_streaming(envoy_config_tap_v3_OutputConfig *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.tap.v3.OutputSink */
@@ -1259,11 +1259,11 @@ UPB_INLINE bool envoy_config_tap_v3_OutputSink_has_custom_sink(const envoy_confi
 
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_format(envoy_config_tap_v3_OutputSink *msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_streaming_admin(envoy_config_tap_v3_OutputSink *msg, envoy_config_tap_v3_StreamingAdminSink* value) {
   const upb_MiniTableField field = {2, 16, -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_StreamingAdminSink* envoy_config_tap_v3_OutputSink_mutable_streaming_admin(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_StreamingAdminSink* sub = (struct envoy_config_tap_v3_StreamingAdminSink*)envoy_config_tap_v3_OutputSink_streaming_admin(msg);
@@ -1275,7 +1275,7 @@ UPB_INLINE struct envoy_config_tap_v3_StreamingAdminSink* envoy_config_tap_v3_Ou
 }
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_file_per_tap(envoy_config_tap_v3_OutputSink *msg, envoy_config_tap_v3_FilePerTapSink* value) {
   const upb_MiniTableField field = {3, 16, -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_FilePerTapSink* envoy_config_tap_v3_OutputSink_mutable_file_per_tap(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_FilePerTapSink* sub = (struct envoy_config_tap_v3_FilePerTapSink*)envoy_config_tap_v3_OutputSink_file_per_tap(msg);
@@ -1287,7 +1287,7 @@ UPB_INLINE struct envoy_config_tap_v3_FilePerTapSink* envoy_config_tap_v3_Output
 }
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_streaming_grpc(envoy_config_tap_v3_OutputSink *msg, envoy_config_tap_v3_StreamingGrpcSink* value) {
   const upb_MiniTableField field = {4, 16, -13, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_StreamingGrpcSink* envoy_config_tap_v3_OutputSink_mutable_streaming_grpc(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_StreamingGrpcSink* sub = (struct envoy_config_tap_v3_StreamingGrpcSink*)envoy_config_tap_v3_OutputSink_streaming_grpc(msg);
@@ -1299,7 +1299,7 @@ UPB_INLINE struct envoy_config_tap_v3_StreamingGrpcSink* envoy_config_tap_v3_Out
 }
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_buffered_admin(envoy_config_tap_v3_OutputSink *msg, envoy_config_tap_v3_BufferedAdminSink* value) {
   const upb_MiniTableField field = {5, 16, -13, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_OutputSink_mutable_buffered_admin(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_BufferedAdminSink* sub = (struct envoy_config_tap_v3_BufferedAdminSink*)envoy_config_tap_v3_OutputSink_buffered_admin(msg);
@@ -1311,7 +1311,7 @@ UPB_INLINE struct envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_Out
 }
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_custom_sink(envoy_config_tap_v3_OutputSink *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {6, 16, -13, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_tap_v3_OutputSink_mutable_custom_sink(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_tap_v3_OutputSink_custom_sink(msg);
@@ -1427,11 +1427,11 @@ UPB_INLINE bool envoy_config_tap_v3_BufferedAdminSink_has_timeout(const envoy_co
 
 UPB_INLINE void envoy_config_tap_v3_BufferedAdminSink_set_max_traces(envoy_config_tap_v3_BufferedAdminSink *msg, uint64_t value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_tap_v3_BufferedAdminSink_set_timeout(envoy_config_tap_v3_BufferedAdminSink *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_tap_v3_BufferedAdminSink_mutable_timeout(envoy_config_tap_v3_BufferedAdminSink* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_tap_v3_BufferedAdminSink_timeout(msg);
@@ -1493,7 +1493,7 @@ UPB_INLINE upb_StringView envoy_config_tap_v3_FilePerTapSink_path_prefix(const e
 
 UPB_INLINE void envoy_config_tap_v3_FilePerTapSink_set_path_prefix(envoy_config_tap_v3_FilePerTapSink *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.tap.v3.StreamingGrpcSink */
@@ -1563,11 +1563,11 @@ UPB_INLINE bool envoy_config_tap_v3_StreamingGrpcSink_has_grpc_service(const env
 
 UPB_INLINE void envoy_config_tap_v3_StreamingGrpcSink_set_tap_id(envoy_config_tap_v3_StreamingGrpcSink *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_tap_v3_StreamingGrpcSink_set_grpc_service(envoy_config_tap_v3_StreamingGrpcSink *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_tap_v3_StreamingGrpcSink_mutable_grpc_service(envoy_config_tap_v3_StreamingGrpcSink* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_GrpcService* sub = (struct envoy_config_core_v3_GrpcService*)envoy_config_tap_v3_StreamingGrpcSink_grpc_service(msg);
