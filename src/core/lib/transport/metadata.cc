@@ -41,4 +41,21 @@ ServerMetadataHandle CancelledServerMetadataFromStatus(
   return hdl;
 }
 
+ServerMetadataHandle ServerMetadataFromStatus(grpc_status_code code,
+                                              absl::string_view message) {
+  auto hdl = Arena::MakePooled<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
+  return hdl;
+}
+
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    grpc_status_code code, absl::string_view message) {
+  auto hdl = Arena::MakePooled<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
+  hdl->Set(GrpcCallWasCancelled(), true);
+  return hdl;
+}
+
 }  // namespace grpc_core

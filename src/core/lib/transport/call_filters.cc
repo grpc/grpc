@@ -193,7 +193,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
             DebugString().c_str());
   }
   auto status =
-      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
+      ServerMetadataFromStatus(GRPC_STATUS_CANCELLED, "Failed pipe operation");
   status->Set(GrpcCallWasCancelled(), true);
   PushServerTrailingMetadata(std::move(status));
 }

@@ -227,7 +227,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
                                  });
   call.handler.SpawnInfallible("done", [handler = call.handler]() mutable {
     handler.PushServerTrailingMetadata(
-        CancelledServerMetadataFromStatus(absl::CancelledError()));
+        CancelledServerMetadataFromStatus(GRPC_STATUS_CANCELLED));
     return Empty{};
   });
 }

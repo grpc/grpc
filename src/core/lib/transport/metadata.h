@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_H
 
+#include "src/core/lib/transport/metadata_batch.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
@@ -51,9 +53,30 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
+// Convert absl::Status to ServerMetadata
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+// Convert absl::Status to ServerMetadata, and set GrpcCallWasCancelled() to
+// true
 ServerMetadataHandle CancelledServerMetadataFromStatus(
     const absl::Status& status);
+// Server metadata with status code set
+inline ServerMetadataHandle ServerMetadataFromStatus(grpc_status_code code) {
+  auto hdl = Arena::MakePooled<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  return hdl;
+}
+inline ServerMetadataHandle CancelledServerMetadataFromStatus(
+    grpc_status_code code) {
+  auto hdl = Arena::MakePooled<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  hdl->Set(GrpcCallWasCancelled(), true);
+  return hdl;
+}
+// The same, but with an error string
+ServerMetadataHandle ServerMetadataFromStatus(grpc_status_code code,
+                                              absl::string_view message);
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    grpc_status_code code, absl::string_view message);
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {

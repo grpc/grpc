@@ -498,7 +498,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
         md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
         bool first = std::exchange(first_, false);
         return first ? nullptr
-                     : ServerMetadataFromStatus(absl::CancelledError());
+                     : ServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
       }
 
      private:
@@ -557,7 +557,7 @@ TEST(StackDataTest,
         const bool first = std::exchange(first_, false);
         p->v.push_back(first ? 11 : 22);
         return first ? nullptr
-                     : ServerMetadataFromStatus(absl::CancelledError());
+                     : ServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
       }
 
      private:

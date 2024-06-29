@@ -161,7 +161,7 @@ class TestConsumingInterceptor final : public Interceptor {
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     Consume(std::move(unstarted_call_handler))
         .PushServerTrailingMetadata(
-            ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "👊 consumed"));
   }
   void Orphaned() override {}
   static absl::StatusOr<RefCountedPtr<TestConsumingInterceptor<I>>> Create(
@@ -282,7 +282,7 @@ class InterceptionChainTest : public ::testing::Test {
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
       unstarted_call_handler.PushServerTrailingMetadata(
-          ServerMetadataFromStatus(absl::InternalError("👊 cancelled")));
+          ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "👊 cancelled"));
     }
 
     void Orphaned() override {}
