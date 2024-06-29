@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "absl/log/globals.h"
+#include "absl/log/vlog_is_on.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 

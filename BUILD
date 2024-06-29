@@ -779,6 +779,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:globals",
         "absl/log:log",
+        "absl/log:vlog_is_on",
         "absl/memory",
         "absl/random",
         "absl/status",
