@@ -346,13 +346,8 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
 void Party::Drop(WakeupMask) { Unref(); }
 
 void Party::PartyIsOver() {
-  auto arena = arena_;
-  {
-    ScopedActivity activity(this);
-    promise_detail::Context<Arena> arena_ctx(arena_.get());
-    CancelRemainingParticipants();
-    arena->DestroyManagedNewObjects();
-  }
+  CancelRemainingParticipants();
+  auto arena = std::move(arena_);
   this->~Party();
 }
 
