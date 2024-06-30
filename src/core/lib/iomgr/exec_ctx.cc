@@ -20,6 +20,7 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
+#include "exec_ctx.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -72,23 +73,16 @@ ApplicationCallbackExecCtx*& ApplicationCallbackExecCtx::callback_exec_ctx() {
 }
 #endif  // _WIN32
 
-bool ExecCtx::Flush() {
+bool ExecCtx::RunClosures() {
+  grpc_closure* c = closure_list_.head;
+  closure_list_.head = closure_list_.tail = nullptr;
   bool did_something = false;
-  for (;;) {
-    if (!grpc_closure_list_empty(closure_list_)) {
-      grpc_closure* c = closure_list_.head;
-      closure_list_.head = closure_list_.tail = nullptr;
-      while (c != nullptr) {
-        grpc_closure* next = c->next_data.next;
-        did_something = true;
-        exec_ctx_run(c);
-        c = next;
-      }
-    } else if (!grpc_combiner_continue_exec_ctx()) {
-      break;
-    }
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
+    did_something = true;
+    exec_ctx_run(c);
+    c = next;
   }
-  CHECK_EQ(combiner_data_.active_combiner, nullptr);
   return did_something;
 }
 

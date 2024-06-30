@@ -86,6 +86,6 @@ grpc_core::Combiner* grpc_combiner_ref(
     grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 
-bool grpc_combiner_continue_exec_ctx();
+void grpc_combiner_continue_exec_ctx(grpc_core::Combiner* lock);
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H

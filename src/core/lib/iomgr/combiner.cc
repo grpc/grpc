@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "combiner.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -178,13 +179,7 @@ static void queue_offload(grpc_core::Combiner* lock) {
   });
 }
 
-bool grpc_combiner_continue_exec_ctx() {
-  grpc_core::Combiner* lock =
-      grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;
-  if (lock == nullptr) {
-    return false;
-  }
-
+void grpc_combiner_continue_exec_ctx(grpc_core::Combiner* lock) {
   bool contended =
       gpr_atm_no_barrier_load(&lock->initiating_exec_ctx_or_null) == 0;
 
@@ -204,7 +199,7 @@ bool grpc_combiner_continue_exec_ctx() {
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor
     queue_offload(lock);
-    return true;
+    return;
   }
 
   if (!lock->time_to_execute_final_list ||
@@ -218,7 +213,7 @@ bool grpc_combiner_continue_exec_ctx() {
       // queue is in an inconsistent state: use this as a cue that we should
       // go off and do something else for a while (and come back later)
       queue_offload(lock);
-      return true;
+      return;
     }
     grpc_closure* cl = reinterpret_cast<grpc_closure*>(n);
 #ifndef NDEBUG
@@ -273,19 +268,18 @@ bool grpc_combiner_continue_exec_ctx() {
       break;
     case OLD_STATE_WAS(false, 1):
       // had one count, one unorphaned --> unlocked unorphaned
-      return true;
+      return;
     case OLD_STATE_WAS(true, 1):
       // and one count, one orphaned --> unlocked and orphaned
       really_destroy(lock);
-      return true;
+      return;
     case OLD_STATE_WAS(false, 0):
     case OLD_STATE_WAS(true, 0):
       // these values are illegal - representing an already unlocked or
       // deleted lock
-      GPR_UNREACHABLE_CODE(return true);
+      GPR_UNREACHABLE_CODE(return);
   }
   push_first_on_exec_ctx(lock);
-  return true;
 }
 
 static void enqueue_finally(void* closure, grpc_error_handle error);

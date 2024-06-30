@@ -71,6 +71,11 @@ typedef struct grpc_combiner grpc_combiner;
 
 namespace grpc_core {
 class Combiner;
+}
+
+extern void grpc_combiner_continue_exec_ctx(grpc_core::Combiner* lock);
+
+namespace grpc_core {
 /// Execution context.
 /// A bag of data that collects information along a callstack.
 /// It is created on the stack at core entry points (public API or iomgr), and
@@ -113,13 +118,15 @@ class GRPC_DLL ExecCtx {
  public:
   /// Default Constructor
 
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ExecCtx()
+      : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
     Fork::IncExecCtxCount();
     Set(this);
   }
 
   /// Parameterised Constructor
-  explicit ExecCtx(uintptr_t fl) : flags_(fl) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit ExecCtx(uintptr_t fl)
+      : flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::IncExecCtxCount();
     }
@@ -127,7 +134,7 @@ class GRPC_DLL ExecCtx {
   }
 
   /// Destructor
-  virtual ~ExecCtx() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~ExecCtx() {
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);
@@ -166,7 +173,20 @@ class GRPC_DLL ExecCtx {
   /// Caller must guarantee that no interfering locks are held.
   /// Returns true if work was performed, false otherwise.
   ///
-  bool Flush();
+  bool Flush() {
+    bool did_something = false;
+    for (;;) {
+      if (!grpc_closure_list_empty(closure_list_)) {
+        did_something |= RunClosures();
+        continue;
+      }
+      auto* active_combiner = combiner_data_.active_combiner;
+      if (active_combiner == nullptr) break;
+      grpc_combiner_continue_exec_ctx(active_combiner);
+    }
+    DCHECK_EQ(combiner_data_.active_combiner, nullptr);
+    return did_something;
+  }
 
   /// Returns true if we'd like to leave this execution context as soon as
   /// possible: useful for deciding whether to do something more or not
@@ -224,6 +244,7 @@ class GRPC_DLL ExecCtx {
   static void operator delete(void* /* p */) { abort(); }
 
  private:
+  bool RunClosures();
   /// Set EXEC_CTX to ctx.
   static void Set(ExecCtx* ctx) { EXEC_CTX = ctx; }
 
