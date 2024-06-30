@@ -60,14 +60,6 @@ GRPC_MUST_USE_RESULT bool PartySyncUsingAtomics::RefIfNonZero() {
   return true;
 }
 
-bool PartySyncUsingAtomics::UnreffedLast() {
-  uint64_t prev_state =
-      state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
-  LogStateChange("UnreffedLast", prev_state,
-                 prev_state | kDestroying | kLocked);
-  return (prev_state & kLocked) == 0;
-}
-
 bool PartySyncUsingAtomics::ScheduleWakeup(WakeupMask mask) {
   // Or in the wakeup bit for the participant, AND the locked bit.
   uint64_t prev_state = state_.fetch_or((mask & kWakeupMask) | kLocked,
@@ -109,7 +101,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock

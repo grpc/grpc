@@ -216,15 +216,22 @@ class PartySyncUsingAtomics {
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
-  bool has_participants() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool has_participants() const {
     return (state_.load(std::memory_order_relaxed) & kAllocatedMask) != 0;
   }
 
  private:
-  bool UnreffedLast();
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool UnreffedLast() {
+    uint64_t prev_state =
+        state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
+    LogStateChange("UnreffedLast", prev_state,
+                   prev_state | kDestroying | kLocked);
+    return (prev_state & kLocked) == 0;
+  }
 
-  void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
-                      DebugLocation loc = {}) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
+      const char* op, uint64_t prev_state, uint64_t new_state,
+      DebugLocation loc = {}) {
     if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
       gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
               "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
