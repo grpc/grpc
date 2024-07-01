@@ -881,6 +881,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_route_config.cc \
     src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \
+    src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/xds_api.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \

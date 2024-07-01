@@ -143,7 +143,7 @@ class XdsHttpFilterTest : public ::testing::Test {
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
-  GrpcXdsBootstrap::GrpcXdsServer xds_server_;
+  GrpcXdsServer xds_server_;
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;

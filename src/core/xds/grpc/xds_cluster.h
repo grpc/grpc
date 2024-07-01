@@ -40,6 +40,7 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -84,7 +85,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
+  absl::optional<GrpcXdsServer> lrs_load_reporting_server;
 
   // Tls Context used by clients
   CommonTlsContext common_tls_context;

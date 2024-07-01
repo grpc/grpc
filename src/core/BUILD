@@ -5352,6 +5352,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_server_grpc",
+    srcs = [
+        "xds/grpc/xds_server_grpc.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_server_grpc.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_creds_registry",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "json_writer",
+        "validation_errors",
+        "//:config",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5527,6 +5554,7 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",
+        "xds_server_grpc",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",

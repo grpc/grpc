@@ -2006,6 +2006,8 @@ let package = Package(
         "src/core/xds/grpc/xds_route_config_parser.h",
         "src/core/xds/grpc/xds_routing.cc",
         "src/core/xds/grpc/xds_routing.h",
+        "src/core/xds/grpc/xds_server_grpc.cc",
+        "src/core/xds/grpc/xds_server_grpc.h",
         "src/core/xds/grpc/xds_transport_grpc.cc",
         "src/core/xds/grpc/xds_transport_grpc.h",
         "src/core/xds/xds_client/xds_api.cc",

@@ -527,7 +527,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       errors.AddError("ConfigSource is not self");
     }
     cds_update->lrs_load_reporting_server.emplace(
-        static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
+        static_cast<const GrpcXdsServer&>(context.server));
   }
   // Protocol options.
   auto* upstream_config =
