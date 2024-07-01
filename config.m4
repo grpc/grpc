@@ -872,7 +872,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_endpoint.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
-    src/core/xds/grpc/xds_http_filters.cc \
+    src/core/xds/grpc/xds_http_filter_registry.cc \
     src/core/xds/grpc/xds_http_rbac_filter.cc \
     src/core/xds/grpc/xds_http_stateful_session_filter.cc \
     src/core/xds/grpc/xds_lb_policy_registry.cc \

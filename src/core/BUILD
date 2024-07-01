@@ -5251,6 +5251,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_filter",
+    hdrs = [
+        "xds/grpc/xds_http_filter.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "@com_google_protobuf//upb:reflection",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_args",
+        "channel_fwd",
+        "interception_chain",
+        "json",
+        "json_writer",
+        "validation_errors",
+        "xds_common_types",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5262,7 +5287,7 @@ grpc_cc_library(
         "xds/grpc/xds_endpoint.cc",
         "xds/grpc/xds_health_status.cc",
         "xds/grpc/xds_http_fault_filter.cc",
-        "xds/grpc/xds_http_filters.cc",
+        "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_lb_policy_registry.cc",
@@ -5281,7 +5306,7 @@ grpc_cc_library(
         "xds/grpc/xds_endpoint.h",
         "xds/grpc/xds_health_status.h",
         "xds/grpc/xds_http_fault_filter.h",
-        "xds/grpc/xds_http_filters.h",
+        "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_lb_policy_registry.h",
@@ -5424,6 +5449,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_credentials",
         "xds_file_watcher_certificate_provider_factory",
+        "xds_http_filter",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
@@ -5516,6 +5542,7 @@ grpc_cc_library(
         "xds_certificate_provider_store",
         "xds_common_types",
         "xds_credentials",
+        "xds_http_filter",
         "//:api_trace",
         "//:config",
         "//:debug_location",
@@ -6785,6 +6812,7 @@ grpc_cc_library(
         "slice",
         "time",
         "xds_dependency_manager",
+        "xds_http_filter",
         "xxhash_inline",
         "//:channel_arg_names",
         "//:config",
