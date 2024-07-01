@@ -5291,6 +5291,24 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_metadata
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/transport/bm_metadata.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_party
   build: test
   language: c
