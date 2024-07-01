@@ -1977,6 +1977,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_client_grpc.h )
   s.files += %w( src/core/xds/grpc/xds_cluster.cc )
   s.files += %w( src/core/xds/grpc/xds_cluster.h )
+  s.files += %w( src/core/xds/grpc/xds_cluster_parser.cc )
+  s.files += %w( src/core/xds/grpc/xds_cluster_parser.h )
   s.files += %w( src/core/xds/grpc/xds_cluster_specifier_plugin.cc )
   s.files += %w( src/core/xds/grpc/xds_cluster_specifier_plugin.h )
   s.files += %w( src/core/xds/grpc/xds_common_types.cc )

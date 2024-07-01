@@ -5379,12 +5379,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_cluster",
+    srcs = [
+        "xds/grpc/xds_cluster.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_cluster.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_outlier_detection_header",
+        "json",
+        "json_writer",
+        "match",
+        "time",
+        "xds_common_types",
+        "xds_health_status",
+        "xds_server_grpc",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
         "xds/grpc/xds_bootstrap_grpc.cc",
         "xds/grpc/xds_client_grpc.cc",
-        "xds/grpc/xds_cluster.cc",
+        "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint.cc",
@@ -5402,7 +5430,7 @@ grpc_cc_library(
         "xds/grpc/xds_audit_logger_registry.h",
         "xds/grpc/xds_bootstrap_grpc.h",
         "xds/grpc/xds_client_grpc.h",
-        "xds/grpc/xds_cluster.h",
+        "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint.h",
@@ -5547,6 +5575,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
+        "xds_cluster",
         "xds_common_types",
         "xds_credentials",
         "xds_file_watcher_certificate_provider_factory",
@@ -5732,6 +5761,7 @@ grpc_cc_library(
         "time",
         "unique_type_name",
         "xds_health_status",
+        "xds_cluster",
         "xds_common_types",
         "xds_dependency_manager",
         "//:config",
@@ -6873,6 +6903,7 @@ grpc_cc_library(
         "grpc_xds_client",
         "match",
         "ref_counted",
+        "xds_cluster",
         "xds_listener",
         "xds_route_config",
         "//:config",

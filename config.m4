@@ -866,6 +866,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_certificate_provider.cc \
     src/core/xds/grpc/xds_client_grpc.cc \
     src/core/xds/grpc/xds_cluster.cc \
+    src/core/xds/grpc/xds_cluster_parser.cc \
     src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
     src/core/xds/grpc/xds_common_types.cc \
     src/core/xds/grpc/xds_common_types_parser.cc \
