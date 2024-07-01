@@ -220,13 +220,21 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       /// Metadata mutations to be applied to the call.
       MetadataMutations metadata_mutations;
 
+      /// Authority override for the RPC.
+      /// Will be used only if the application has not explicitly set
+      /// the authority for the RPC.
+      grpc_event_engine::experimental::Slice authority_override;
+
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
           std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr,
-          MetadataMutations md = MetadataMutations())
+          MetadataMutations md = MetadataMutations(),
+          grpc_event_engine::experimental::Slice authority =
+              grpc_event_engine::experimental::Slice())
           : subchannel(std::move(sc)),
             subchannel_call_tracker(std::move(tracker)),
-            metadata_mutations(std::move(md)) {}
+            metadata_mutations(std::move(md)),
+            authority_override(std::move(authority)) {}
     };
 
     /// Pick cannot be completed until something changes on the control

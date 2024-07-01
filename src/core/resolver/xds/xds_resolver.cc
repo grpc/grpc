@@ -308,6 +308,10 @@ class XdsResolver final : public Resolver {
 
     bool HasClusterForRoute(absl::string_view cluster_name) const override;
 
+    const XdsRouteConfigResource::Route& route() const override {
+      return route_->route;
+    }
+
    private:
     RefCountedPtr<RouteConfigData> route_config_data_;
     RouteConfigData::RouteEntry* route_;

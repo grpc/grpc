@@ -26,6 +26,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
+#include "google/protobuf/wrappers.upb.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -39,6 +40,12 @@ namespace grpc_core {
 
 Duration ParseDuration(const google_protobuf_Duration* proto_duration,
                        ValidationErrors* errors);
+
+inline bool ParseBoolValue(const google_protobuf_BoolValue* bool_value_proto,
+                           bool default_value = false) {
+  if (bool_value_proto == nullptr) return default_value;
+  return google_protobuf_BoolValue_value(bool_value_proto);
+}
 
 struct CommonTlsContext {
   struct CertificateProviderPluginInstance {

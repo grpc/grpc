@@ -144,6 +144,8 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         // Apply metadata mutations, if any.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
                                        &client_initial_metadata);
+        MaybeOverrideAuthority(std::move(complete_pick->authority_override),
+                               &client_initial_metadata);
         // Return the connected subchannel.
         return call_destination;
       },

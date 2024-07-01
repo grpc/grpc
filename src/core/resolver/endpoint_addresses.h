@@ -40,6 +40,9 @@
 // A channel arg indicating the weight of an address.
 #define GRPC_ARG_ADDRESS_WEIGHT GRPC_ARG_NO_SUBCHANNEL_PREFIX "address.weight"
 
+// Name associated with individual address, if available (e.g., DNS name).
+#define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
+
 namespace grpc_core {
 
 // A list of addresses for a given endpoint with an associated set of channel

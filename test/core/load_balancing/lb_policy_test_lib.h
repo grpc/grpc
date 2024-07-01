@@ -628,6 +628,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return it->second;
     }
 
+    std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
+        override {
+      return {};  // Not used.
+    }
+
     std::map<std::string, std::string> metadata_;
   };
 

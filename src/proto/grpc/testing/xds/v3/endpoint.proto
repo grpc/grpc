@@ -45,6 +45,12 @@ message Endpoint {
   //   and will be resolved via DNS.
   core.v3.Address address = 1;
 
+  // The hostname associated with this endpoint. This hostname is not used for routing or address
+  // resolution. If provided, it will be associated with the endpoint, and can be used for features
+  // that require a hostname, like
+  // :ref:`auto_host_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.auto_host_rewrite>`.
+  string hostname = 3;
+
   // An ordered list of addresses that together with `address` comprise the
   // list of addresses for an endpoint. The address given in the `address` is
   // prepended to this list. It is assumed that the list must already be
