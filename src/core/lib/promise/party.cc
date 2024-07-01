@@ -440,6 +440,7 @@ void Party::DelayAddParticipants(Participant** participants, size_t count) {
         ExecCtx exec_ctx;
         AddParticipants(delayed_participants.data(),
                         delayed_participants.size());
+        Unref();
       });
 }
 
