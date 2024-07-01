@@ -5331,6 +5331,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_health_status",
+    srcs = [
+        "xds/grpc/xds_health_status.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_health_status.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "envoy_config_core_upb",
+        "//:endpoint_addresses",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5340,7 +5361,6 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint.cc",
-        "xds/grpc/xds_health_status.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
@@ -5359,7 +5379,6 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint.h",
-        "xds/grpc/xds_health_status.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_rbac_filter.h",
@@ -5504,6 +5523,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_credentials",
         "xds_file_watcher_certificate_provider_factory",
+        "xds_health_status",
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",
@@ -5683,6 +5703,7 @@ grpc_cc_library(
         "pollset_set",
         "time",
         "unique_type_name",
+        "xds_health_status",
         "xds_common_types",
         "xds_dependency_manager",
         "//:config",
@@ -6460,6 +6481,7 @@ grpc_cc_library(
         "subchannel_interface",
         "validation_errors",
         "xds_dependency_manager",
+        "xds_health_status",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
