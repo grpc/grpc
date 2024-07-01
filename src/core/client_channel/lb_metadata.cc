@@ -104,7 +104,7 @@ void MetadataMutationHandler::Apply(
 //
 
 void MaybeOverrideAuthority(
-    grpc_event_engine::experimental::internal::Slice authority_override,
+    grpc_event_engine::experimental::Slice authority_override,
     grpc_metadata_batch* metadata) {
   // Skip if no override requested.
   if (authority_override.empty()) return;

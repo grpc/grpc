@@ -48,7 +48,7 @@ class MetadataMutationHandler {
 };
 
 void MaybeOverrideAuthority(
-    grpc_event_engine::experimental::internal::Slice authority_override,
+    grpc_event_engine::experimental::Slice authority_override,
     grpc_metadata_batch* metadata);
 
 }  // namespace grpc_core
