@@ -828,8 +828,11 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of metadata size annotations in client span.
-  auto sent_span_data =
-      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  auto sent_span_data = GetSpanByName(
+      recorded_spans,
+      absl::StrCat(
+          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
       sent_span_data,
@@ -871,8 +874,11 @@ TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
-  auto client_span_data =
-      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  auto client_span_data = GetSpanByName(
+      recorded_spans,
+      absl::StrCat(
+          grpc_core::IsCallTracerInTransportEnabled() ? "Attempt." : "Sent.",
+          client_method_name_));
   ASSERT_NE(client_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(client_span_data,
                                   "HttpAnnotation type: Start time: .* "
