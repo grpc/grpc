@@ -4076,8 +4076,8 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_BENCHMARK_LIBRARIES}
-  grpc++_unsecure
-  grpc_test_util_unsecure
+  grpc++
+  grpc_test_util
   grpc++_test_config
 )
 
