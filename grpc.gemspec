@@ -2002,6 +2002,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_listener.h )
   s.files += %w( src/core/xds/grpc/xds_route_config.cc )
   s.files += %w( src/core/xds/grpc/xds_route_config.h )
+  s.files += %w( src/core/xds/grpc/xds_route_config_parser.cc )
+  s.files += %w( src/core/xds/grpc/xds_route_config_parser.h )
   s.files += %w( src/core/xds/grpc/xds_routing.cc )
   s.files += %w( src/core/xds/grpc/xds_routing.h )
   s.files += %w( src/core/xds/grpc/xds_transport_grpc.cc )

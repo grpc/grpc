@@ -1984,6 +1984,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.cc" role="src" />

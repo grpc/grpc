@@ -1503,6 +1503,7 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
     src/core/xds/grpc/xds_route_config.cc \
+    src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/xds_api.cc \

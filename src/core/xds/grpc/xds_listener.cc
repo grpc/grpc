@@ -58,6 +58,7 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
@@ -464,7 +465,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
             http_connection_manager_proto);
     ValidationErrors::ScopedField field(errors, ".route_config");
     http_connection_manager.route_config =
-        XdsRouteConfigResource::Parse(context, route_config, errors);
+        XdsRouteConfigResourceParse(context, route_config, errors);
   } else {
     // Validate that RDS must be used to get the route_config dynamically.
     const envoy_extensions_filters_network_http_connection_manager_v3_Rds* rds =
