@@ -106,10 +106,11 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 * **Response** → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
 * **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
-* **Trailers** → Status [Status-Message] \*Custom-Metadata
+* **Trailers** → Status [Status-Message] [Status-Details] \*Custom-Metadata
 * **HTTP-Status** → ":status 200"
 * **Status** → "grpc-status" 1\*DIGIT ; 0-9
 * **Status-Message** → "grpc-message" Percent-Encoded
+* **Status-Details** → "grpc-status-details-bin" {base64 encoded value} # See notes below.
 * **Percent-Encoded** → 1\*(Percent-Byte-Unencoded / Percent-Byte-Encoded)
 * **Percent-Byte-Unencoded** → 1\*( %x20-%x24 / %x26-%x7E ) ; space and VCHAR, except %
 * **Percent-Byte-Encoded** → "%" 2HEXDIGIT ; 0-9 A-F
@@ -137,6 +138,11 @@ user would received the raw percent-encoded form. Alternatively, the
 implementation can decode valid portions while leaving broken %-encodings as-is
 or replacing them with a replacement character (e.g., '?' or the Unicode
 replacement character).
+
+**Status-Details** is allowed only if **Status** is not OK. If it is set, it
+contains additional information about the RPC error. If it contains a status
+code field, it MUST NOT contradict the **Status** header. The consumer MUST
+verify this requirement.
 
 #### Example
 
@@ -257,3 +263,4 @@ to be used.
 * **Service-Name** → ?( {_proto package name_} "." ) {_service name_}
 * **Message-Type** → {_fully qualified proto message name_}
 * **Content-Type** → "application/grpc+proto"
+* **Status-Details** → {_google.rpc.Status proto message_}
