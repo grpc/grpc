@@ -1987,6 +1987,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_common_types_parser.h )
   s.files += %w( src/core/xds/grpc/xds_endpoint.cc )
   s.files += %w( src/core/xds/grpc/xds_endpoint.h )
+  s.files += %w( src/core/xds/grpc/xds_endpoint_parser.cc )
+  s.files += %w( src/core/xds/grpc/xds_endpoint_parser.h )
   s.files += %w( src/core/xds/grpc/xds_health_status.cc )
   s.files += %w( src/core/xds/grpc/xds_health_status.h )
   s.files += %w( src/core/xds/grpc/xds_http_fault_filter.cc )

@@ -1969,6 +1969,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_common_types_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.cc" role="src" />

@@ -1985,6 +1985,8 @@ let package = Package(
         "src/core/xds/grpc/xds_common_types_parser.h",
         "src/core/xds/grpc/xds_endpoint.cc",
         "src/core/xds/grpc/xds_endpoint.h",
+        "src/core/xds/grpc/xds_endpoint_parser.cc",
+        "src/core/xds/grpc/xds_endpoint_parser.h",
         "src/core/xds/grpc/xds_health_status.cc",
         "src/core/xds/grpc/xds_health_status.h",
         "src/core/xds/grpc/xds_http_fault_filter.cc",

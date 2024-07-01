@@ -5407,6 +5407,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_endpoint",
+    srcs = [
+        "xds/grpc/xds_endpoint.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_endpoint.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
+        "absl/strings",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "ref_counted",
+        "//:endpoint_addresses",
+        "//:gpr",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+# TODO(roth): Split this up into individual targets.
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5415,7 +5440,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
-        "xds/grpc/xds_endpoint.cc",
+        "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
@@ -5433,7 +5458,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
-        "xds/grpc/xds_endpoint.h",
+        "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_rbac_filter.h",
@@ -5578,6 +5603,7 @@ grpc_cc_library(
         "xds_cluster",
         "xds_common_types",
         "xds_credentials",
+        "xds_endpoint",
         "xds_file_watcher_certificate_provider_factory",
         "xds_health_status",
         "xds_http_filter",
@@ -5828,6 +5854,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_credentials",
         "xds_dependency_manager",
+        "xds_endpoint",
         "//:call_tracer",
         "//:config",
         "//:debug_location",
@@ -6904,6 +6931,7 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "xds_cluster",
+        "xds_endpoint",
         "xds_listener",
         "xds_route_config",
         "//:config",
