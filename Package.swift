@@ -2098,8 +2098,6 @@ let package = Package(
         "third_party/upb/upb/message/copy.h",
         "third_party/upb/upb/message/internal/accessors.h",
         "third_party/upb/upb/message/internal/array.h",
-        "third_party/upb/upb/message/internal/compare_unknown.c",
-        "third_party/upb/upb/message/internal/compare_unknown.h",
         "third_party/upb/upb/message/internal/extension.c",
         "third_party/upb/upb/message/internal/extension.h",
         "third_party/upb/upb/message/internal/map.h",
