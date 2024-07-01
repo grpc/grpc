@@ -523,6 +523,7 @@ TEST_F(PartyTest, NestedWakeup) {
   auto party2 = MakeParty();
   auto party3 = MakeParty();
   int whats_going_on = 0;
+  Notification done1;
   Notification started2;
   Notification done2;
   Notification started3;
@@ -535,6 +536,7 @@ TEST_F(PartyTest, NestedWakeup) {
         party2->Spawn(
             "p2",
             [&]() {
+              done1.WaitForNotification();
               started2.Notify();
               started3.WaitForNotification();
               EXPECT_EQ(whats_going_on, 3);
@@ -568,6 +570,7 @@ TEST_F(PartyTest, NestedWakeup) {
       [&](Empty) {
         EXPECT_EQ(whats_going_on, 2);
         whats_going_on = 3;
+        done1.Notify();
       });
   notify_done.WaitForNotification();
 }
