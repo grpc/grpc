@@ -253,8 +253,8 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
 
 namespace {
 
-RefCountedPtr<Channel> CreateXdsChannel(
-    const ChannelArgs& args, const GrpcXdsServer& server) {
+RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
+                                        const GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());

@@ -29,8 +29,8 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_endpoint_parser.h"
-#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/grpc/xds_listener_parser.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/grpc/xds_routing.h"
 
 namespace grpc_core {

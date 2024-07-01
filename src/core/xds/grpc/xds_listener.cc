@@ -111,9 +111,9 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
         for (const auto& source_port_pair : source_ip.ports_map) {
           std::vector<std::string> match_contents;
           if (destination_ip.prefix_range.has_value()) {
-            match_contents.push_back(absl::StrCat(
-                "prefix_ranges={", destination_ip.prefix_range->ToString(),
-                "}"));
+            match_contents.push_back(
+                absl::StrCat("prefix_ranges={",
+                             destination_ip.prefix_range->ToString(), "}"));
           }
           if (static_cast<ConnectionSourceType>(source_type) ==
               ConnectionSourceType::kSameIpOrLoopback) {
