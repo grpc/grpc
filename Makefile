@@ -1685,6 +1685,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/compat.c \
     third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/compare_unknown.c \
     third_party/upb/upb/message/internal/extension.c \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \

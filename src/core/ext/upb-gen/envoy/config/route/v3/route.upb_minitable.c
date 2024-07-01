@@ -57,6 +57,9 @@ const upb_MiniTable envoy__config__route__v3__RouteConfiguration_msg_init = {
   &envoy_config_route_v3_RouteConfiguration_submsgs[0],
   &envoy_config_route_v3_RouteConfiguration__fields[0],
   UPB_SIZE(80, 136), 17, kUpb_ExtMode_NonExtendable, 17, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.RouteConfiguration",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -90,6 +93,9 @@ const upb_MiniTable envoy__config__route__v3__RouteConfiguration__TypedPerFilter
   &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_submsgs[0],
   &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.RouteConfiguration.TypedPerFilterConfigEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -108,6 +114,9 @@ const upb_MiniTable envoy__config__route__v3__Vhds_msg_init = {
   &envoy_config_route_v3_Vhds_submsgs[0],
   &envoy_config_route_v3_Vhds__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.Vhds",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[3] = {
