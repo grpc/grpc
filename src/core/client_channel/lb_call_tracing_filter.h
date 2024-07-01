@@ -50,7 +50,7 @@ class LbCallTracingFilter final
     // However, that doesn't build.  It looks like there's no simpler
     // form of this method that works with both the legacy stack and v3.
     ServerMetadataHandle OnClientToServerMessage(const Message&) {
-      return ServerMetadataFromStatus(absl::OkStatus());
+      return nullptr;
     }
     void OnClientToServerHalfClose();
 
