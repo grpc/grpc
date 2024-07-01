@@ -5303,6 +5303,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_listener",
+    srcs = [
+        "xds/grpc/xds_listener.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_listener.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "match",
+        "resolved_address",
+        "time",
+        "xds_common_types",
+        "xds_http_filter",
+        "xds_route_config",
+        "//:sockaddr_utils",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5318,7 +5346,7 @@ grpc_cc_library(
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_lb_policy_registry.cc",
-        "xds/grpc/xds_listener.cc",
+        "xds/grpc/xds_listener_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
         "xds/grpc/xds_routing.cc",
         "xds/grpc/xds_transport_grpc.cc",
@@ -5337,7 +5365,7 @@ grpc_cc_library(
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_lb_policy_registry.h",
-        "xds/grpc/xds_listener.h",
+        "xds/grpc/xds_listener_parser.h",
         "xds/grpc/xds_route_config_parser.h",
         "xds/grpc/xds_routing.h",
         "xds/grpc/xds_transport_grpc.h",
@@ -5477,6 +5505,7 @@ grpc_cc_library(
         "xds_credentials",
         "xds_file_watcher_certificate_provider_factory",
         "xds_http_filter",
+        "xds_listener",
         "xds_route_config",
         "xds_type_upb",
         "xds_type_upbdefs",
@@ -5571,6 +5600,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_credentials",
         "xds_http_filter",
+        "xds_listener",
         "xds_route_config",
         "//:api_trace",
         "//:config",
@@ -6793,6 +6823,7 @@ grpc_cc_library(
         "grpc_xds_client",
         "match",
         "ref_counted",
+        "xds_listener",
         "xds_route_config",
         "//:config",
         "//:gpr",
@@ -6843,6 +6874,7 @@ grpc_cc_library(
         "time",
         "xds_dependency_manager",
         "xds_http_filter",
+        "xds_listener",
         "xds_route_config",
         "xxhash_inline",
         "//:channel_arg_names",

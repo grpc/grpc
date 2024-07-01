@@ -2000,6 +2000,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_lb_policy_registry.h )
   s.files += %w( src/core/xds/grpc/xds_listener.cc )
   s.files += %w( src/core/xds/grpc/xds_listener.h )
+  s.files += %w( src/core/xds/grpc/xds_listener_parser.cc )
+  s.files += %w( src/core/xds/grpc/xds_listener_parser.h )
   s.files += %w( src/core/xds/grpc/xds_route_config.cc )
   s.files += %w( src/core/xds/grpc/xds_route_config.h )
   s.files += %w( src/core/xds/grpc/xds_route_config_parser.cc )
