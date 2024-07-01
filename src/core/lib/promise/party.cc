@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -192,10 +192,10 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
-      [party]() {
+      [party, prev_state, wakeup_mask]() {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        if (party->RunParty()) party->PartyIsOver();
+        party->RunPartyAndUnref(prev_state, wakeup_mask);
       },
       nullptr, Thread::Options().set_joinable(false));
   thd.Start();
@@ -362,6 +362,10 @@ void Party::AddParticipants(Participant** participants, size_t count) {
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
     for (size_t i = 0; i < count; i++) {
       auto new_mask = LowestOneBit(~allocated);
+      if (GPR_UNLIKELY((new_mask & kWakeupMask) == 0)) {
+        DelayAddParticipants(participants, count);
+        return;
+      }
       wakeup_mask |= new_mask;
       allocated |= new_mask;
       slots[i] = CountTrailingZeros(new_mask);
@@ -398,6 +402,13 @@ void Party::AddParticipant(Participant* participant) {
   do {
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
     wakeup_mask = LowestOneBit(~allocated);
+    if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
+      DelayAddParticipants(&participant, 1);
+      return;
+    }
+    DCHECK_NE(wakeup_mask & kWakeupMask, 0)
+        << "No available slots for new participant; allocated=" << allocated
+        << " state=" << state << " wakeup_mask=" << wakeup_mask;
     allocated |= wakeup_mask;
     slot = CountTrailingZeros(wakeup_mask);
     // Try to allocate this slot and take a ref (atomically).
@@ -413,6 +424,23 @@ void Party::AddParticipant(Participant* participant) {
   participants_[slot].store(participant, std::memory_order_release);
   // Now we need to wake up the party.
   WakeupFromState(new_state, wakeup_mask);
+}
+
+void Party::DelayAddParticipants(Participant** participants, size_t count) {
+  // We need to delay the addition of participants.
+  IncrementRefCount();
+  VLOG_EVERY_N_SEC(2, 10) << "Delaying addition of " << count
+                          << " participants to party " << this
+                          << " because it is full.";
+  std::vector<Participant*> delayed_participants{participants,
+                                                 participants + count};
+  arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+      [this, delayed_participants = std::move(delayed_participants)]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        AddParticipants(delayed_participants.data(),
+                        delayed_participants.size());
+      });
 }
 
 void Party::WakeupAsync(WakeupMask wakeup_mask) {

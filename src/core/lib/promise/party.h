@@ -352,7 +352,8 @@ class Party : public Activity, private Wakeable {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
-    DCHECK_NE(wakeup_mask & kWakeupMask, 0);
+    DCHECK_NE(wakeup_mask & kWakeupMask, 0)
+        << "Wakeup mask must be non-zero: " << wakeup_mask;
     while (true) {
       if (cur_state & kLocked) {
         // If the party is locked, we need to set the wakeup bits.
@@ -380,6 +381,7 @@ class Party : public Activity, private Wakeable {
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
   void AddParticipant(Participant* participant);
+  void DelayAddParticipants(Participant** participant, size_t count);
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
       const char* op, uint64_t prev_state, uint64_t new_state,
