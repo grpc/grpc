@@ -68,6 +68,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -171,7 +172,7 @@ CommonTlsContext UpstreamTlsContextParse(
   CommonTlsContext common_tls_context;
   if (common_tls_context_proto != nullptr) {
     common_tls_context =
-        CommonTlsContext::Parse(context, common_tls_context_proto, errors);
+        CommonTlsContextParse(context, common_tls_context_proto, errors);
   }
   if (common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name.empty()) {

@@ -57,6 +57,7 @@
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
@@ -549,7 +550,7 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
   if (common_tls_context != nullptr) {
     ValidationErrors::ScopedField field(errors, ".common_tls_context");
     downstream_tls_context.common_tls_context =
-        CommonTlsContext::Parse(context, common_tls_context, errors);
+        CommonTlsContextParse(context, common_tls_context, errors);
     // Note: We can't be more specific about the field name for this
     // error, because we don't know which fields they were found in
     // inside of CommonTlsContext, so we make the error message a bit

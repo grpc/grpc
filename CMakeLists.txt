@@ -2658,6 +2658,7 @@ add_library(grpc
   src/core/xds/grpc/xds_cluster.cc
   src/core/xds/grpc/xds_cluster_specifier_plugin.cc
   src/core/xds/grpc/xds_common_types.cc
+  src/core/xds/grpc/xds_common_types_parser.cc
   src/core/xds/grpc/xds_endpoint.cc
   src/core/xds/grpc/xds_health_status.cc
   src/core/xds/grpc/xds_http_fault_filter.cc

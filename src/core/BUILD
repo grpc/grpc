@@ -5229,6 +5229,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_common_types",
+    srcs = [
+        "xds/grpc/xds_common_types.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_common_types.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "json",
+        "validation_errors",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5236,7 +5258,7 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster.cc",
         "xds/grpc/xds_cluster_specifier_plugin.cc",
-        "xds/grpc/xds_common_types.cc",
+        "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint.cc",
         "xds/grpc/xds_health_status.cc",
         "xds/grpc/xds_http_fault_filter.cc",
@@ -5255,7 +5277,7 @@ grpc_cc_library(
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster.h",
         "xds/grpc/xds_cluster_specifier_plugin.h",
-        "xds/grpc/xds_common_types.h",
+        "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint.h",
         "xds/grpc/xds_health_status.h",
         "xds/grpc/xds_http_fault_filter.h",
@@ -5399,6 +5421,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
+        "xds_common_types",
         "xds_credentials",
         "xds_file_watcher_certificate_provider_factory",
         "xds_type_upb",
@@ -5491,6 +5514,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
+        "xds_common_types",
         "xds_credentials",
         "//:api_trace",
         "//:config",
@@ -5573,6 +5597,7 @@ grpc_cc_library(
         "pollset_set",
         "time",
         "unique_type_name",
+        "xds_common_types",
         "xds_dependency_manager",
         "//:config",
         "//:debug_location",
