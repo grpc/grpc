@@ -30,7 +30,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -114,8 +113,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
       };
   auto shutdown_cb = [](absl::Status status) {
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "Server accept connection failed: %s",
-              StatusToString(status).c_str());
+      LOG(ERROR) << "Server accept connection failed: " << status;
     }
   };
   CHECK_NE(event_engine_, nullptr);
@@ -303,10 +301,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
             if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-              gpr_log(
-                  GPR_INFO, "%p Data endpoint setup done: shutdown=%s",
-                  self->connection_.get(),
-                  self->connection_->listener_->shutdown_ ? "true" : "false");
+              LOG(INFO) << self->connection_.get()
+                        << " Data endpoint setup done: shutdown="
+                        << (self->connection_->listener_->shutdown_ ? "true"
+                                                                    : "false");
             }
             if (self->connection_->listener_->shutdown_) {
               return absl::UnavailableError("Server shutdown");

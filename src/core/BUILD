@@ -88,6 +88,9 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/strings",
     ],
+    visibility = [
+        "@grpc:event_engine_base_hdrs",
+    ],
     deps = [
         ":memory_quota",
         "//:event_engine_base_hdrs",
@@ -127,6 +130,25 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "latent_see",
+    srcs = [
+        "util/latent_see.cc",
+    ],
+    hdrs = [
+        "util/latent_see.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "per_cpu",
+        "//:gpr",
     ],
 )
 
@@ -242,6 +264,7 @@ grpc_cc_library(
     name = "useful",
     hdrs = ["util/useful.h"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:variant",
     ],
@@ -580,9 +603,11 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "event_engine_context",
+        "latent_see",
         "poll",
         "promise_factory",
         "ref_counted",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
@@ -959,6 +984,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "dump_args",
+        "latent_see",
         "no_destruct",
         "poll",
         "promise_factory",
@@ -5272,6 +5298,7 @@ grpc_cc_library(
         "certificate_provider_factory",
         "certificate_provider_registry",
         "channel_args",
+        "channel_args_endpoint_config",
         "channel_creds_registry",
         "channel_fwd",
         "closure",
@@ -7140,7 +7167,7 @@ grpc_cc_library(
         "ext/transport/inproc/legacy_inproc_transport.h",
     ],
     external_deps = [
-        "absl/log",
+        "absl/log:log",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
@@ -7490,6 +7517,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -7932,6 +7960,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
