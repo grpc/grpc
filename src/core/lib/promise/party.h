@@ -356,8 +356,12 @@ class Party : public Activity, private Wakeable {
         << "Wakeup mask must be non-zero: " << wakeup_mask;
     while (true) {
       if (cur_state & kLocked) {
-        // If the party is locked, we need to set the wakeup bits.
-        if (state_.compare_exchange_weak(cur_state, cur_state | wakeup_mask,
+        // If the party is locked, we need to set the wakeup bits, and then
+        // we'll immediately unref. Since something is running this should never
+        // bring the refcount to zero.
+        DCHECK_GT(cur_state & kRefMask, kOneRef);
+        auto new_state = (cur_state | wakeup_mask) - kOneRef;
+        if (state_.compare_exchange_weak(cur_state, new_state,
                                          std::memory_order_release)) {
           LogStateChange("Wakeup", cur_state, cur_state | wakeup_mask);
           return;
