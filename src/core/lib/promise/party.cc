@@ -325,13 +325,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Party::RunPartyAndUnref(
       }
       return;
     }
-    if (GPR_UNLIKELY(keep_allocated_mask != kAllocatedMask)) {
-      // We had some deallocations and need to CAS them out.
-      while (!state_.compare_exchange_weak(
-          prev_state,
-          prev_state & (kRefMask | kLocked | keep_allocated_mask))) {
-        // Nothing to do here.
-      }
+    // We had some deallocations and need to CAS them out.
+    while (!state_.compare_exchange_weak(
+        prev_state, prev_state & (kRefMask | kLocked | keep_allocated_mask))) {
+      // Nothing to do here.
     }
     LogStateChange("Run:Continue", prev_state,
                    prev_state & (kRefMask | kLocked | keep_allocated_mask));
