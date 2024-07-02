@@ -36,7 +36,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/backoff/backoff.h"
@@ -78,10 +77,10 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(hork): Add a test that checks for proper authority from balancer
 // addresses.
 
-#define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                    \
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_client_channel_resolver)) {   \
-    gpr_log(GPR_DEBUG, "(event_engine client channel resolver) " format, \
-            __VA_ARGS__);                                                \
+#define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                  \
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine_client_channel_resolver)) { \
+    VLOG(2) << "(event_engine client channel resolver) "               \
+            << absl::StrFormat(format, __VA_ARGS__);                   \
   }
 
 // ----------------------------------------------------------------------------
