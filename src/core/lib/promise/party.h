@@ -227,8 +227,7 @@ class Party : public Activity, private Wakeable {
     using Result = typename Promise::Result;
 
    public:
-    PromiseParticipantImpl(absl::string_view name,
-                           SuppliedFactory promise_factory) {
+    PromiseParticipantImpl(absl::string_view, SuppliedFactory promise_factory) {
       Construct(&factory_, std::move(promise_factory));
     }
 

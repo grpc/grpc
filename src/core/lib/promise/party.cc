@@ -203,12 +203,15 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
   struct RunState;
   static thread_local RunState* g_run_state = nullptr;
   struct PartyWakeup {
+    PartyWakeup() : party{nullptr} {}
+    PartyWakeup(Party* party, uint64_t prev_state, WakeupMask mask)
+        : party{party}, prev_state{prev_state}, mask{mask} {}
     Party* party;
     uint64_t prev_state;
     WakeupMask mask;
   };
   struct RunState {
-    explicit RunState(PartyWakeup first) : first{first}, next{nullptr} {}
+    explicit RunState(PartyWakeup first) : first{first}, next{} {}
     PartyWakeup first;
     PartyWakeup next;
     GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Run() {
@@ -216,7 +219,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
       do {
         GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
         first.party->RunPartyAndUnref(first.prev_state, first.mask);
-        first = std::exchange(next, {nullptr, 0, 0});
+        first = std::exchange(next, PartyWakeup{});
       } while (first.party != nullptr);
       DCHECK(g_run_state == this);
       g_run_state = nullptr;
@@ -266,11 +269,11 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
 void Party::RunPartyAndUnref(uint64_t prev_state, WakeupMask wakeup_mask) {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
-  DCHECK_EQ(prev_state & kLocked, 0)
+  DCHECK_EQ(prev_state & kLocked, 0u)
       << "Party should be unlocked prior to first wakeup";
   DCHECK_GE(prev_state & kRefMask, kOneRef);
   // Now update prev_state to be what we want the CAS to see below.
-  DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0)
+  DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
   for (;;) {
