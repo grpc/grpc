@@ -33,6 +33,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/bind_front.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -74,6 +75,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/event_engine/extensions/transport_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -560,6 +562,17 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .value_or(true);
 }
 
+void grpc_chttp2_transport::WriteSecureFrame(grpc_core::SliceBuffer& /*data*/) {
+  // TODO(alishananda): fill this out with taking combiner and calling
+  // WriteSecureFrameLocked
+}
+
+void grpc_chttp2_transport::WriteSecureFrameLocked(
+    grpc_core::SliceBuffer& /*data*/) {
+  // TODO(alishananda): fill this out, create secure frame and append to qbuf
+  // grpc_core::Http2SecureFrame{std::move(data)};
+}
+
 static void init_keepalive_pings_if_enabled_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
@@ -619,6 +632,15 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     if (epte != nullptr) {
       epte->InitializeAndReturnTcpTracer();
     }
+  }
+
+  auto transport_extension = QueryExtension<
+      grpc_event_engine::experimental::TransportExtension>(
+      grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+          ep.get()));
+  if (transport_extension != nullptr) {
+    transport_extension->SetSendDataCallback(
+        absl::bind_front(&grpc_chttp2_transport::WriteSecureFrame, this));
   }
 
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==

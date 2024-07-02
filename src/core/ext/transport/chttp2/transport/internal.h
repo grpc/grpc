@@ -257,6 +257,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
+  void WriteSecureFrame(grpc_core::SliceBuffer& data);
+  void WriteSecureFrameLocked(grpc_core::SliceBuffer& data);
 
   grpc_core::OrphanablePtr<grpc_endpoint> ep;
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.

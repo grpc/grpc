@@ -82,6 +82,7 @@ grpc_cc_library(
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
         "lib/event_engine/extensions/tcp_trace.h",
+        "lib/event_engine/extensions/transport_extension.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -93,6 +94,7 @@ grpc_cc_library(
     ],
     deps = [
         ":memory_quota",
+        ":slice_buffer",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:tcp_tracer",
