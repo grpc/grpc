@@ -127,7 +127,8 @@ TEST(GeneratedCode, DeepCloneMessageSubMessage) {
   protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage*
       cloned_nested =
           (protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage*)
-              upb_Message_GetMessage(UPB_UPCAST(clone), nested_message_field);
+              upb_Message_GetMessage(UPB_UPCAST(clone), nested_message_field,
+                                     nullptr);
   EXPECT_EQ(protobuf_test_messages_proto2_TestAllTypesProto2_NestedMessage_a(
                 cloned_nested),
             kTestNestedInt32);
