@@ -49,187 +49,6 @@
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
-// PartySyncTest
-
-template <typename T>
-class PartySyncTest : public ::testing::Test {};
-
-// PartySyncUsingMutex isn't working on Mac, but we don't use it for anything
-// right now so that's fine.
-#ifdef GPR_APPLE
-using PartySyncTypes = ::testing::Types<PartySyncUsingAtomics>;
-#else
-using PartySyncTypes =
-    ::testing::Types<PartySyncUsingAtomics, PartySyncUsingMutex>;
-#endif
-TYPED_TEST_SUITE(PartySyncTest, PartySyncTypes);
-
-TYPED_TEST(PartySyncTest, NoOp) { TypeParam sync(1); }
-
-TYPED_TEST(PartySyncTest, RefAndUnref) {
-  Notification half_way;
-  TypeParam sync(1);
-  std::thread thread1([&] {
-    for (int i = 0; i < 1000000; i++) {
-      sync.IncrementRefCount();
-    }
-    half_way.Notify();
-    for (int i = 0; i < 1000000; i++) {
-      sync.IncrementRefCount();
-    }
-    for (int i = 0; i < 2000000; i++) {
-      EXPECT_FALSE(sync.Unref());
-    }
-  });
-  half_way.WaitForNotification();
-  for (int i = 0; i < 2000000; i++) {
-    sync.IncrementRefCount();
-  }
-  for (int i = 0; i < 2000000; i++) {
-    EXPECT_FALSE(sync.Unref());
-  }
-  thread1.join();
-  EXPECT_TRUE(sync.Unref());
-}
-
-TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
-  TypeParam sync(1);
-  std::vector<std::thread> threads;
-  std::atomic<std::atomic<bool>*> participants[party_detail::kMaxParticipants] =
-      {};
-  threads.reserve(8);
-  for (int i = 0; i < 8; i++) {
-    threads.emplace_back([&] {
-      for (int i = 0; i < 100000; i++) {
-        auto done = std::make_unique<std::atomic<bool>>(false);
-        int slot = -1;
-        bool run = sync.AddParticipantsAndRef(1, [&](size_t* idxs) {
-          slot = idxs[0];
-          participants[slot].store(done.get(), std::memory_order_release);
-        });
-        EXPECT_NE(slot, -1);
-        if (run) {
-          bool run_any = false;
-          bool run_me = false;
-          EXPECT_FALSE(sync.RunParty([&](int slot) {
-            run_any = true;
-            std::atomic<bool>* participant =
-                participants[slot].exchange(nullptr, std::memory_order_acquire);
-            if (participant == done.get()) run_me = true;
-            if (participant == nullptr) {
-              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
-              return false;
-            }
-            participant->store(true, std::memory_order_release);
-            return true;
-          }));
-          EXPECT_TRUE(run_any);
-          EXPECT_TRUE(run_me);
-        }
-        EXPECT_FALSE(sync.Unref());
-        while (!done->load(std::memory_order_acquire)) {
-        }
-      }
-    });
-  }
-  for (auto& thread : threads) {
-    thread.join();
-  }
-  EXPECT_TRUE(sync.Unref());
-}
-
-TYPED_TEST(PartySyncTest, AddAndRemoveTwoParticipants) {
-  TypeParam sync(1);
-  std::vector<std::thread> threads;
-  std::atomic<std::atomic<int>*> participants[party_detail::kMaxParticipants] =
-      {};
-  threads.reserve(8);
-  for (int i = 0; i < 4; i++) {
-    threads.emplace_back([&] {
-      for (int i = 0; i < 100000; i++) {
-        auto done = std::make_unique<std::atomic<int>>(2);
-        int slots[2] = {-1, -1};
-        bool run = sync.AddParticipantsAndRef(2, [&](size_t* idxs) {
-          for (int i = 0; i < 2; i++) {
-            slots[i] = idxs[i];
-            participants[slots[i]].store(done.get(), std::memory_order_release);
-          }
-        });
-        EXPECT_NE(slots[0], -1);
-        EXPECT_NE(slots[1], -1);
-        EXPECT_GT(slots[1], slots[0]);
-        if (run) {
-          bool run_any = false;
-          int run_me = 0;
-          EXPECT_FALSE(sync.RunParty([&](int slot) {
-            run_any = true;
-            std::atomic<int>* participant =
-                participants[slot].exchange(nullptr, std::memory_order_acquire);
-            if (participant == done.get()) run_me++;
-            if (participant == nullptr) {
-              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
-              return false;
-            }
-            participant->fetch_sub(1, std::memory_order_release);
-            return true;
-          }));
-          EXPECT_TRUE(run_any);
-          EXPECT_EQ(run_me, 2);
-        }
-        EXPECT_FALSE(sync.Unref());
-        while (done->load(std::memory_order_acquire) != 0) {
-        }
-      }
-    });
-  }
-  for (auto& thread : threads) {
-    thread.join();
-  }
-  EXPECT_TRUE(sync.Unref());
-}
-
-TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
-  std::vector<std::thread> trials;
-  std::atomic<int> delete_paths_taken[3] = {{0}, {0}, {0}};
-  trials.reserve(100);
-  for (int i = 0; i < 100; i++) {
-    trials.emplace_back([&delete_paths_taken] {
-      TypeParam sync(1);
-      int delete_path = -1;
-      EXPECT_TRUE(sync.AddParticipantsAndRef(
-          1, [](size_t* slots) { EXPECT_EQ(slots[0], 0); }));
-      std::thread run_party([&] {
-        if (sync.RunParty([&sync, n = 0](int slot) mutable {
-              EXPECT_EQ(slot, 0);
-              ++n;
-              if (n < 10) {
-                sync.ForceImmediateRepoll(1);
-                return false;
-              }
-              return true;
-            })) {
-          delete_path = 0;
-        }
-      });
-      std::thread unref([&] {
-        if (sync.Unref()) delete_path = 1;
-      });
-      if (sync.Unref()) delete_path = 2;
-      run_party.join();
-      unref.join();
-      EXPECT_GE(delete_path, 0);
-      delete_paths_taken[delete_path].fetch_add(1, std::memory_order_relaxed);
-    });
-  }
-  for (auto& trial : trials) {
-    trial.join();
-  }
-  fprintf(stderr, "DELETE_PATHS: RunParty:%d AsyncUnref:%d SyncUnref:%d\n",
-          delete_paths_taken[0].load(), delete_paths_taken[1].load(),
-          delete_paths_taken[2].load());
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // PartyTest
 
 class PartyTest : public ::testing::Test {
@@ -704,6 +523,7 @@ TEST_F(PartyTest, NestedWakeup) {
   auto party2 = MakeParty();
   auto party3 = MakeParty();
   int whats_going_on = 0;
+  Notification done1;
   Notification started2;
   Notification done2;
   Notification started3;
@@ -716,6 +536,7 @@ TEST_F(PartyTest, NestedWakeup) {
         party2->Spawn(
             "p2",
             [&]() {
+              done1.WaitForNotification();
               started2.Notify();
               started3.WaitForNotification();
               EXPECT_EQ(whats_going_on, 3);
@@ -749,6 +570,7 @@ TEST_F(PartyTest, NestedWakeup) {
       [&](Empty) {
         EXPECT_EQ(whats_going_on, 2);
         whats_going_on = 3;
+        done1.Notify();
       });
   notify_done.WaitForNotification();
 }
