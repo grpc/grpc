@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -325,7 +325,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Party::RunPartyAndUnref(
       }
       return;
     }
-    // We had some deallocations and need to CAS them out.
+    // CAS out (but retrieve) any allocations and wakeups that occurred during
+    // the run.
     while (!state_.compare_exchange_weak(
         prev_state, prev_state & (kRefMask | kLocked | keep_allocated_mask))) {
       // Nothing to do here.
