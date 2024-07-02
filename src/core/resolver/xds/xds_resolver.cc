@@ -1080,8 +1080,8 @@ void XdsResolver::GenerateResult() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
     LOG(INFO) << "[xds_resolver " << this << "] generated service config: "
               << (result.service_config.ok()
-                      ? (*result.service_config)->json_string()
-                      : result.service_config.status());
+                      ? ((*result.service_config)->json_string())
+                      : result.service_config.status().ToString());
   }
   result.args =
       args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
