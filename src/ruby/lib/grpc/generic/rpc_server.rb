@@ -62,7 +62,7 @@ module GRPC
           GRPC.logger.warn('did not schedule job, already stopped')
           return
         end
-        GRPC.logger.info('schedule another job')
+        GRPC.logger.debug('schedule another job')
         fail 'No worker threads available' if @ready_workers.empty?
         worker_queue = @ready_workers.pop
 
@@ -498,7 +498,7 @@ module GRPC
       return nil unless implemented?(an_rpc)
 
       # Create the ActiveCall. Indicate that metadata hasnt been sent yet.
-      GRPC.logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")
+      GRPC.logger.debug("deadline is #{an_rpc.deadline}; (now=#{Time.now})")
       rpc_desc = rpc_descs[an_rpc.method.to_sym]
       c = ActiveCall.new(an_rpc.call,
                          rpc_desc.marshal_proc,
