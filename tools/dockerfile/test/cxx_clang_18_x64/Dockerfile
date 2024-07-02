@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:17-bookworm
+FROM silkeh/clang:18-bookworm
 
 RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
 #=================
