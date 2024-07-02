@@ -135,7 +135,8 @@ class CallSpine final : public Party {
   // Spawn a promise that returns Empty{} and save some boilerplate handling
   // that detail.
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnInfallible(
+      absl::string_view name, PromiseFactory promise_factory) {
     Spawn(name, std::move(promise_factory), [](Empty) {});
   }
 
@@ -196,27 +197,32 @@ class CallSpine final : public Party {
 class CallInitiator {
  public:
   CallInitiator() = default;
-  explicit CallInitiator(RefCountedPtr<CallSpine> spine)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit CallInitiator(
+      RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
   }
 
-  auto PullServerInitialMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PullServerInitialMetadata() {
     return spine_->PullServerInitialMetadata();
   }
 
-  auto PushMessage(MessageHandle message) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PushMessage(MessageHandle message) {
     return spine_->PushClientToServerMessage(std::move(message));
   }
 
-  void FinishSends() { spine_->FinishSends(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void FinishSends() {
+    spine_->FinishSends();
+  }
 
-  auto PullMessage() { return spine_->PullServerToClientMessage(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PullMessage() {
+    return spine_->PullServerToClientMessage();
+  }
 
-  auto PullServerTrailingMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PullServerTrailingMetadata() {
     return spine_->PullServerTrailingMetadata();
   }
 
@@ -230,28 +236,33 @@ class CallInitiator {
   void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnGuarded(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuarded(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnGuardedUntilCallCompletes(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnInfallible(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SpawnWaitable(
+      absl::string_view name, PromiseFactory promise_factory) {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
-  Arena* arena() { return spine_->arena(); }
-  Party* party() { return spine_.get(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Arena* arena() {
+    return spine_->arena();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Party* party() { return spine_.get(); }
 
  private:
   RefCountedPtr<CallSpine> spine_;
@@ -262,57 +273,71 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
-  auto PullClientInitialMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PullClientInitialMetadata() {
     return spine_->PullClientInitialMetadata();
   }
 
-  auto PushServerInitialMetadata(ServerMetadataHandle md) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PushServerInitialMetadata(
+      ServerMetadataHandle md) {
     return spine_->PushServerInitialMetadata(std::move(md));
   }
 
-  void PushServerTrailingMetadata(ServerMetadataHandle status) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void PushServerTrailingMetadata(
+      ServerMetadataHandle status) {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void OnDone(
+      absl::AnyInvocable<void()> fn) {
+    spine_->OnDone(std::move(fn));
+  }
 
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
   }
 
-  auto PushMessage(MessageHandle message) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PushMessage(MessageHandle message) {
     return spine_->PushServerToClientMessage(std::move(message));
   }
 
-  auto PullMessage() { return spine_->PullClientToServerMessage(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto PullMessage() {
+    return spine_->PullClientToServerMessage();
+  }
 
-  auto WasCancelled() { return spine_->WasCancelled(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto WasCancelled() {
+    return spine_->WasCancelled();
+  }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
-                    DebugLocation whence = {}) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnGuarded(
+      absl::string_view name, PromiseFactory promise_factory,
+      DebugLocation whence = {}) {
     spine_->SpawnGuarded(name, std::move(promise_factory), whence);
   }
 
   template <typename PromiseFactory>
-  void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnGuardedUntilCallCompletes(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnInfallible(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SpawnWaitable(
+      absl::string_view name, PromiseFactory promise_factory) {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
-  Arena* arena() { return spine_->arena(); }
-  Party* party() { return spine_.get(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Arena* arena() {
+    return spine_->arena();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Party* party() { return spine_.get(); }
 
  private:
   RefCountedPtr<CallSpine> spine_;
@@ -323,53 +348,64 @@ class UnstartedCallHandler {
   explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
-  void PushServerTrailingMetadata(ServerMetadataHandle status) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void PushServerTrailingMetadata(
+      ServerMetadataHandle status) {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void OnDone(
+      absl::AnyInvocable<void()> fn) {
+    spine_->OnDone(std::move(fn));
+  }
 
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));
   }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
-                    DebugLocation whence = {}) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnGuarded(
+      absl::string_view name, PromiseFactory promise_factory,
+      DebugLocation whence = {}) {
     spine_->SpawnGuarded(name, std::move(promise_factory), whence);
   }
 
   template <typename PromiseFactory>
-  void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnGuardedUntilCallCompletes(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SpawnInfallible(
+      absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
-  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto SpawnWaitable(
+      absl::string_view name, PromiseFactory promise_factory) {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
-  ClientMetadata& UnprocessedClientInitialMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ClientMetadata&
+  UnprocessedClientInitialMetadata() {
     return spine_->UnprocessedClientInitialMetadata();
   }
 
-  void AddCallStack(RefCountedPtr<CallFilters::Stack> call_filters) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void AddCallStack(
+      RefCountedPtr<CallFilters::Stack> call_filters) {
     spine_->call_filters().AddStack(std::move(call_filters));
   }
 
-  CallHandler StartCall() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION CallHandler StartCall() {
     spine_->call_filters().Start();
     return CallHandler(std::move(spine_));
   }
 
-  Arena* arena() { return spine_->arena(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Arena* arena() {
+    return spine_->arena();
+  }
 
  private:
   RefCountedPtr<CallSpine> spine_;
@@ -384,10 +420,10 @@ CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
-auto OutgoingMessages(CallHalf h) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OutgoingMessages(CallHalf h) {
   struct Wrapper {
     CallHalf h;
-    auto Next() { return h.PullMessage(); }
+    GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Next() { return h.PullMessage(); }
   };
   return Wrapper{std::move(h)};
 }
