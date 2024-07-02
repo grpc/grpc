@@ -86,22 +86,21 @@ class XdsRouteConfigTest : public ::testing::Test {
                         &xds_route_config_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
-  static RefCountedPtr<XdsClient> MakeXdsClient(
-      bool trusted_xds_server) {
-    auto bootstrap = GrpcXdsBootstrap::Create(absl::StrCat(
-        "{\n"
-        "  \"xds_servers\": [\n"
-        "    {\n"
-        "      \"server_uri\": \"xds.example.com\",\n"
-        "      \"server_features\": [\n",
-        (trusted_xds_server ? "\"trusted_xds_server\"" : ""),
-        "      ],\n"
-        "      \"channel_creds\": [\n"
-        "        {\"type\": \"google_default\"}\n"
-        "      ]\n"
-        "    }\n"
-        "  ]\n"
-        "}"));
+  static RefCountedPtr<XdsClient> MakeXdsClient(bool trusted_xds_server) {
+    auto bootstrap = GrpcXdsBootstrap::Create(
+        absl::StrCat("{\n"
+                     "  \"xds_servers\": [\n"
+                     "    {\n"
+                     "      \"server_uri\": \"xds.example.com\",\n"
+                     "      \"server_features\": [\n",
+                     (trusted_xds_server ? "\"trusted_xds_server\"" : ""),
+                     "      ],\n"
+                     "      \"channel_creds\": [\n"
+                     "        {\"type\": \"google_default\"}\n"
+                     "      ]\n"
+                     "    }\n"
+                     "  ]\n"
+                     "}"));
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));

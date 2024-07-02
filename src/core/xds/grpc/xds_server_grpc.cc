@@ -48,8 +48,8 @@ bool GrpcXdsServer::IgnoreResourceDeletion() const {
 }
 
 bool GrpcXdsServer::TrustedXdsServer() const {
-  return server_features_.find(std::string(
-             kServerFeatureTrustedXdsServer)) != server_features_.end();
+  return server_features_.find(std::string(kServerFeatureTrustedXdsServer)) !=
+         server_features_.end();
 }
 
 bool GrpcXdsServer::Equals(const XdsServer& other) const {

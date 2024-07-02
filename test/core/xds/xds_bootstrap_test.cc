@@ -69,9 +69,8 @@ MATCHER_P4(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
   ok |=
       ::testing::ExplainMatchResult(server->IgnoreResourceDeletion(),
                                     ignore_resource_deletion, result_listener);
-  ok |=
-      ::testing::ExplainMatchResult(server->TrustedXdsServer(),
-                                    trusted_xds_server, result_listener);
+  ok |= ::testing::ExplainMatchResult(server->TrustedXdsServer(),
+                                      trusted_xds_server, result_listener);
   auto creds_config = server->channel_creds_config();
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), creds_config,
                                      result_listener)) {
