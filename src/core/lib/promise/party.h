@@ -190,7 +190,7 @@ class PartySyncUsingAtomics {
         auto new_mask = LowestOneBit(~allocated);
         wakeup_mask |= new_mask;
         allocated |= new_mask;
-        slots[i] = CountTrailingZeros(new_mask);
+        slots[i] = absl::numeric_internal::CountTrailingZeroes(new_mask);
       }
       // Try to allocate this slot and take a ref (atomically).
       // Ref needs to be taken because once we store the participant it could be
