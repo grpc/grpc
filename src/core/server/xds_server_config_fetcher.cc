@@ -585,10 +585,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     std::shared_ptr<const XdsListenerResource> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
-    LOG(INFO) << "[ListenerWatcher " << UniqueTypeName::ToString(this)
-              << "] Received LDS update from xds client "
-              << UniqueTypeName::ToString(xds_client_.get()) << ": "
-              << listener->ToString();
+    LOG(INFO) << "[ListenerWatcher " << this
+              << "] Received LDS update from xds client " << xds_client_.get()
+              << ": " << listener->ToString();
   }
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&listener->listener);
@@ -626,7 +625,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnError(
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ != nullptr ||
       pending_filter_chain_match_manager_ != nullptr) {
-    LOG(ERROR) << "ListenerWatcher:" << UniqueTypeName::ToString(this)
+    LOG(ERROR) << "ListenerWatcher:" << this
                << " XdsClient reports error: " << status << " for "
                << listening_address_
                << "; ignoring in favor of existing resource";
@@ -636,7 +635,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnError(
           serving_status_notifier_.user_data, listening_address_.c_str(),
           {GRPC_STATUS_UNAVAILABLE, status.ToString().c_str()});
     } else {
-      LOG(ERROR) << "ListenerWatcher:" << UniqueTypeName::ToString(this)
+      LOG(ERROR) << "ListenerWatcher:" << this
                  << " error obtaining xDS Listener resource: " << status
                  << "; not serving on " << listening_address_;
     }
@@ -658,9 +657,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
         {static_cast<grpc_status_code>(status.raw_code()),
          std::string(status.message()).c_str()});
   } else {
-    LOG(ERROR) << "ListenerWatcher:" << UniqueTypeName::ToString(this)
-               << " Encountered fatal error " << status << "; not serving on "
-               << listening_address_;
+    LOG(ERROR) << "ListenerWatcher:" << this << " Encountered fatal error "
+               << status << "; not serving on " << listening_address_;
   }
 }
 
