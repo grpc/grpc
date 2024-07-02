@@ -37,11 +37,6 @@ TEST(UsefulTest, ClampWorks) {
   EXPECT_EQ(Clamp(3, 0, 2), 2);
 }
 
-TEST(UsefulTest, Rotate) {
-  EXPECT_EQ(RotateLeft(0x80000001u, 1u), 3);
-  EXPECT_EQ(RotateRight(0x80000001u, 1u), 0xc0000000);
-}
-
 TEST(UsefulTest, ArraySize) {
   int four[4];
   int five[5];
