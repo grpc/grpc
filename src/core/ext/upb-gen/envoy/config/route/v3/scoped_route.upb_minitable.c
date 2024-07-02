@@ -34,6 +34,9 @@ const upb_MiniTable envoy__config__route__v3__ScopedRouteConfiguration_msg_init 
   &envoy_config_route_v3_ScopedRouteConfiguration_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration__fields[0],
   UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.ScopedRouteConfiguration",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -58,6 +61,9 @@ const upb_MiniTable envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_
   &envoy_config_route_v3_ScopedRouteConfiguration_Key_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration_Key__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.ScopedRouteConfiguration.Key",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -72,6 +78,9 @@ const upb_MiniTable envoy__config__route__v3__ScopedRouteConfiguration__Key__Fra
   NULL,
   &envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment__fields[0],
   UPB_SIZE(24, 32), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.route.v3.ScopedRouteConfiguration.Key.Fragment",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},

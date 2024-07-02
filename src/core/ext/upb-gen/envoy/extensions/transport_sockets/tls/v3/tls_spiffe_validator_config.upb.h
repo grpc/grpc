@@ -196,11 +196,11 @@ UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorCon
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_set_name(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_set_trust_bundle(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain *msg, struct envoy_config_core_v3_DataSource* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_mutable_trust_bundle(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_DataSource* sub = (struct envoy_config_core_v3_DataSource*)envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_trust_bundle(msg);

@@ -18,15 +18,13 @@
 
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
+    "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
-    "http2_stats_fix": "http2_stats_fix",
-    "keepalive_fix": "keepalive_fix",
-    "keepalive_server_fix": "keepalive_server_fix",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -41,7 +39,7 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
-    "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
+    "work_serializer_dispatch": "work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [

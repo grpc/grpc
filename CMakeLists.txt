@@ -1236,6 +1236,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
+  add_dependencies(buildtests_cxx lb_metadata_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx load_balanced_call_destination_test)
   endif()
@@ -1802,6 +1803,7 @@ target_link_libraries(gpr
   absl::log_globals
   absl::log
   absl::memory
+  absl::bits
   absl::random_random
   absl::status
   absl::cord
@@ -2647,6 +2649,7 @@ add_library(grpc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3363,6 +3366,7 @@ add_library(grpc_unsecure
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -3370,9 +3374,7 @@ add_library(grpc_unsecure
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -3695,9 +3697,7 @@ add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/service_def.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_json_lib PUBLIC cxx_std_14)
@@ -3806,6 +3806,7 @@ add_library(upb_message_lib
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
   third_party/upb/upb/message/compat.c
+  third_party/upb/upb/message/internal/compare_unknown.c
   third_party/upb/upb/message/internal/extension.c
   third_party/upb/upb/message/internal/message.c
   third_party/upb/upb/message/map.c
@@ -3814,6 +3815,8 @@ add_library(upb_message_lib
   third_party/upb/upb/mini_table/extension_registry.c
   third_party/upb/upb/mini_table/internal/message.c
   third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_message_lib PUBLIC cxx_std_14)
@@ -3896,9 +3899,7 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/text/encode.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_textformat_lib PUBLIC cxx_std_14)
@@ -4076,8 +4077,8 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_BENCHMARK_LIBRARIES}
-  grpc++_unsecure
-  grpc_test_util_unsecure
+  grpc++
+  grpc_test_util
   grpc++_test_config
 )
 
@@ -5441,6 +5442,7 @@ add_library(grpc_authorization_provider
   src/core/tsi/transport_security_grpc.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -5448,9 +5450,7 @@ add_library(grpc_authorization_provider
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -6376,7 +6376,9 @@ add_executable(activity_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8677,6 +8679,8 @@ target_include_directories(bitset_test
 target_link_libraries(bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
+  absl::bits
 )
 
 
@@ -8938,6 +8942,7 @@ add_executable(call_filters_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -8969,6 +8974,7 @@ add_executable(call_filters_test
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/util/latent_see.cc
   test/core/transport/call_filters_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -8977,9 +8983,7 @@ add_executable(call_filters_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9193,8 +9197,10 @@ add_executable(call_state_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/lib/transport/call_state.cc
+  src/core/util/latent_see.cc
   test/core/transport/call_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9517,6 +9523,7 @@ add_executable(call_utils_test
   src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   test/core/call/call_utils_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -9525,9 +9532,7 @@ add_executable(call_utils_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9954,6 +9959,7 @@ add_executable(cancel_callback_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -9972,6 +9978,7 @@ add_executable(cancel_callback_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/cancel_callback_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -9980,9 +9987,7 @@ add_executable(cancel_callback_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11062,6 +11067,7 @@ add_executable(chunked_vector_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -11080,6 +11086,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -11088,9 +11095,7 @@ add_executable(chunked_vector_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14372,6 +14377,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14384,6 +14390,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -14392,9 +14399,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15173,6 +15178,7 @@ add_executable(flow_control_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -15192,6 +15198,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/util/latent_see.cc
   test/core/transport/chttp2/flow_control_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -15200,9 +15207,7 @@ add_executable(flow_control_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15260,6 +15265,7 @@ add_executable(for_each_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -15278,6 +15284,7 @@ add_executable(for_each_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/for_each_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -15286,9 +15293,7 @@ add_executable(for_each_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18708,7 +18713,9 @@ add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18805,6 +18812,7 @@ add_executable(interceptor_list_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -18823,6 +18831,7 @@ add_executable(interceptor_list_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/interceptor_list_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -18831,9 +18840,7 @@ add_executable(interceptor_list_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19598,7 +19605,9 @@ add_executable(latch_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19728,6 +19737,48 @@ target_link_libraries(lb_load_data_store_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(lb_metadata_test
+  test/core/client_channel/lb_metadata_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lb_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(lb_metadata_test PUBLIC cxx_std_14)
+target_include_directories(lb_metadata_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(lb_metadata_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
   grpc_test_util
 )
 
@@ -20017,6 +20068,7 @@ add_executable(map_pipe_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -20035,6 +20087,7 @@ add_executable(map_pipe_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/map_pipe_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -20043,9 +20096,7 @@ add_executable(map_pipe_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21004,7 +21055,9 @@ add_executable(mpsc_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21505,7 +21558,9 @@ add_executable(observable_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22319,9 +22374,7 @@ add_executable(periodic_update_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23388,7 +23441,9 @@ add_executable(promise_mutex_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30366,7 +30421,9 @@ target_include_directories(table_test
 target_link_libraries(table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   absl::type_traits
+  absl::bits
   absl::utility
 )
 
@@ -32897,6 +32954,8 @@ target_link_libraries(unique_type_name_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::flat_hash_map
+  absl::check
+  absl::bits
   absl::str_format
 )
 
@@ -33016,6 +33075,8 @@ target_include_directories(useful_test
 target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
+  absl::bits
 )
 
 
@@ -33153,7 +33214,9 @@ add_executable(wait_for_callback_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -37908,7 +37971,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_any_invocable absl_base absl_bits absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   ""
   "-lgpr"
   ""
@@ -37919,7 +37982,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
@@ -37930,7 +37993,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
   "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
@@ -37941,7 +38004,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
@@ -37952,7 +38015,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
@@ -37963,7 +38026,7 @@ generate_pkgconfig(
   "gRPC++ OpenTelemetry Plugin"
   "OpenTelemetry Plugin for gRPC C++"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
   "libcares openssl re2 zlib"
   "-lgrpcpp_otel_plugin"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"

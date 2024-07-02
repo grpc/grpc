@@ -38,7 +38,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
@@ -160,9 +159,8 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
-            val - 1);
+    VLOG(2).AtLocation(file, line) << "SECENDP unref " << ep << " : " << reason
+                                   << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&ep->ref)) {
     destroy(ep);
@@ -173,9 +171,8 @@ static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
-            val + 1);
+    VLOG(2).AtLocation(file, line) << "SECENDP   ref " << ep << " : " << reason
+                                   << " " << val << " -> " << val + 1;
   }
   gpr_ref(&ep->ref);
 }
@@ -200,8 +197,7 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-              gpr_log(GPR_INFO,
-                      "secure endpoint: benign reclamation to free memory");
+              LOG(INFO) << "secure endpoint: benign reclamation to free memory";
             }
             grpc_slice temp_read_slice;
             grpc_slice temp_write_slice;
@@ -296,8 +292,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
               &unprotected_buffer_size_written);
           gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
-            gpr_log(GPR_ERROR, "Decryption error: %s",
-                    tsi_result_to_string(result));
+            LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
             break;
           }
           message_bytes += processed_message_size;
@@ -448,8 +443,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                                                &protected_buffer_size_to_send);
           gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
-            gpr_log(GPR_ERROR, "Encryption error: %s",
-                    tsi_result_to_string(result));
+            LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
             break;
           }
           message_bytes += processed_message_size;

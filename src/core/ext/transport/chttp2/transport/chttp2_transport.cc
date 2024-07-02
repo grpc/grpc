@@ -456,15 +456,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
   if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(grpc_core::IsKeepaliveFixEnabled()
-                          ? g_default_client_keepalive_permit_without_calls
-                          : false);
+            .value_or(g_default_client_keepalive_permit_without_calls);
   } else {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(grpc_core::IsKeepaliveServerFixEnabled()
-                          ? g_default_server_keepalive_permit_without_calls
-                          : false);
+            .value_or(g_default_server_keepalive_permit_without_calls);
   }
 
   t->settings_timeout =
@@ -1468,11 +1464,9 @@ static void perform_stream_op_locked(void* stream_op,
       frame_hdr[3] = static_cast<uint8_t>(len >> 8);
       frame_hdr[4] = static_cast<uint8_t>(len);
 
-      if (grpc_core::IsHttp2StatsFixEnabled()) {
-        s->stats.outgoing.framing_bytes += GRPC_HEADER_SIZE_IN_BYTES;
-        s->stats.outgoing.data_bytes +=
-            op_payload->send_message.send_message->Length();
-      }
+      s->stats.outgoing.framing_bytes += GRPC_HEADER_SIZE_IN_BYTES;
+      s->stats.outgoing.data_bytes +=
+          op_payload->send_message.send_message->Length();
       s->next_message_end_offset =
           s->flow_controlled_bytes_written +
           static_cast<int64_t>(s->flow_controlled_buffer.length) +
