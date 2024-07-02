@@ -538,7 +538,7 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     const Duration& default_max_stream_duration) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
     LOG(INFO) << "[xds_resolver " << resolver << "] XdsConfigSelector " << this
-              << ": route: " << route;
+              << ": route: " << route.ToString();
   }
   routes_.emplace_back(route);
   auto* route_entry = &routes_.back();
