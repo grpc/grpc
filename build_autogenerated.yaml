@@ -133,6 +133,7 @@ libs:
   - absl/log:globals
   - absl/log:log
   - absl/memory:memory
+  - absl/numeric:bits
   - absl/random:random
   - absl/status:status
   - absl/strings:cord
@@ -6449,6 +6450,7 @@ targets:
   deps:
   - gtest
   - absl/log:check
+  - absl/numeric:bits
   uses_polling: false
 - name: buffer_list_test
   gtest: true
@@ -19736,6 +19738,7 @@ targets:
   - gtest
   - absl/log:check
   - absl/meta:type_traits
+  - absl/numeric:bits
   - absl/utility:utility
   uses_polling: false
 - name: tcp_client_posix_test
@@ -20936,6 +20939,7 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/log:check
+  - absl/numeric:bits
   - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
@@ -20973,6 +20977,7 @@ targets:
   deps:
   - gtest
   - absl/log:check
+  - absl/numeric:bits
   uses_polling: false
 - name: uuid_v4_test
   gtest: true
