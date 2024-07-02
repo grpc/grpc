@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -403,7 +403,7 @@ void Party::AddParticipant(Participant* participant) {
       DelayAddParticipants(&participant, 1);
       return;
     }
-    DCHECK_NE(wakeup_mask & kWakeupMask, 0)
+    DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "No available slots for new participant; allocated=" << allocated
         << " state=" << state << " wakeup_mask=" << wakeup_mask;
     allocated |= wakeup_mask;
