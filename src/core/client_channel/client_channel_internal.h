@@ -26,6 +26,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_destination.h"
@@ -51,7 +52,7 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
   template <typename A>
   A* GetCallAttribute() const {
-    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+    return DownCast<A*>(GetCallAttribute(A::TypeName()));
   }
 
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(

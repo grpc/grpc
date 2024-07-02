@@ -3152,6 +3152,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "chunked_vector",
+        "down_cast",
         "ref_counted",
         "service_config_parser",
         "slice_refcount",
@@ -3251,6 +3252,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "call_destination",
+        "down_cast",
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
