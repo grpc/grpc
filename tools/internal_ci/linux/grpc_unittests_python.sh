@@ -21,12 +21,12 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+# source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # some distribtests use a pre-registered binfmt_misc hook
 # to automatically execute foreign binaries (such as aarch64)
 # under qemu emulator.
-source tools/internal_ci/helper_scripts/prepare_qemu_rc
+# source tools/internal_ci/helper_scripts/prepare_qemu_rc
 
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
@@ -34,8 +34,8 @@ source tools/internal_ci/helper_scripts/prepare_ccache_rc
 # unit-tests setup starts from here
 
 function maybe_run_command () {
-  if python3 setup.py --help-commands | grep "$1" &>/dev/null; then
-    python3 setup.py "$1";
+  if python setup.py --help-commands | grep "$1" &>/dev/null; then
+    python setup.py "$1";
   fi
 }
 
@@ -43,9 +43,12 @@ BASEDIR=$(dirname "$0")
 
 PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
 
+echo $BASEDIR
+echo $PACKAGES
+
 cd "$BASEDIR";
 pip install --upgrade "cython<3.0.0rc1";
-python3 setup.py install;
+python setup.py install;
 pushd tools/distrib/python/grpcio_tools;
   ../make_grpcio_tools.py
   GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
@@ -60,16 +63,16 @@ popd;
 pushd src/python;
   for PACKAGE in ${PACKAGES}; do
     pushd "${PACKAGE}";
-      python3 setup.py clean;
+      python setup.py clean;
       maybe_run_command preprocess
       maybe_run_command build_package_protos
-      python3 -m pip install .;
+      python -m pip install .;
     popd;
   done
 popd;
 pushd src/python/grpcio_tests;
-  python3 setup.py test_lite
+  python setup.py test_lite
 #  python setup.py test_aio
-  python3 setup.py test_py3_only
+  python setup.py test_py3_only
 popd;
 
