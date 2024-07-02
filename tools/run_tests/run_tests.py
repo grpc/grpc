@@ -1777,7 +1777,7 @@ argp.add_argument(
 argp.add_argument(
     "--cmake_configure_extra_args",
     default=[],
-    nargs="+",
+    action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()
