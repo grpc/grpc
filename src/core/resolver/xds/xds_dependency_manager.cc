@@ -19,6 +19,7 @@
 #include <set>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/port_platform.h>
@@ -360,9 +361,8 @@ XdsDependencyManager::XdsDependencyManager(
       args_(std::move(args)),
       interested_parties_(interested_parties) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO,
-            "[XdsDependencyManager %p] starting watch for listener %s", this,
-            listener_resource_name_.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] starting watch for listener " << listener_resource_name_;
   }
   auto listener_watcher = MakeRefCounted<ListenerWatcher>(Ref());
   listener_watcher_ = listener_watcher.get();
@@ -372,7 +372,7 @@ XdsDependencyManager::XdsDependencyManager(
 
 void XdsDependencyManager::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] shutting down", this);
+    LOG(INFO) << "[XdsDependencyManager " << this << "] shutting down";
   }
   if (listener_watcher_ != nullptr) {
     XdsListenerResourceType::CancelWatch(
@@ -405,8 +405,8 @@ void XdsDependencyManager::Orphan() {
 void XdsDependencyManager::OnListenerUpdate(
     std::shared_ptr<const XdsListenerResource> listener) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Listener update",
-            this);
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received Listener update";
   }
   if (xds_client_ == nullptr) return;
   const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
@@ -438,10 +438,9 @@ void XdsDependencyManager::OnListenerUpdate(
           // Start watch for the new RDS resource name.
           route_config_name_ = rds_name;
           if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-            gpr_log(
-                GPR_INFO,
-                "[XdsDependencyManager %p] starting watch for route config %s",
-                this, route_config_name_.c_str());
+            LOG(INFO) << "[XdsDependencyManager " << this
+                      << "] starting watch for route config "
+                      << route_config_name_;
           }
           auto watcher =
               MakeRefCounted<RouteConfigWatcher>(Ref(), route_config_name_);
@@ -526,9 +525,9 @@ void XdsDependencyManager::OnRouteConfigUpdate(
     const std::string& name,
     std::shared_ptr<const XdsRouteConfigResource> route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO,
-            "[XdsDependencyManager %p] received RouteConfig update for %s",
-            this, name.empty() ? "<inline>" : name.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received RouteConfig update for "
+              << (name.empty() ? "<inline>" : name);
   }
   if (xds_client_ == nullptr) return;
   // Ignore updates for stale names.
@@ -561,10 +560,9 @@ void XdsDependencyManager::OnRouteConfigUpdate(
 
 void XdsDependencyManager::OnError(std::string context, absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO,
-            "[XdsDependencyManager %p] received Listener or RouteConfig "
-            "error: %s %s",
-            this, context.c_str(), status.ToString().c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received Listener or RouteConfig error: " << context << " "
+              << status;
   }
   if (xds_client_ == nullptr) return;
   if (current_virtual_host_ != nullptr) return;
@@ -573,7 +571,7 @@ void XdsDependencyManager::OnError(std::string context, absl::Status status) {
 
 void XdsDependencyManager::OnResourceDoesNotExist(std::string context) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] %s", this, context.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this << "] " << context;
   }
   if (xds_client_ == nullptr) return;
   current_virtual_host_ = nullptr;
@@ -584,8 +582,8 @@ void XdsDependencyManager::OnClusterUpdate(
     const std::string& name,
     std::shared_ptr<const XdsClusterResource> cluster) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Cluster update: %s",
-            this, name.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received Cluster update: " << name;
   }
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
@@ -597,8 +595,8 @@ void XdsDependencyManager::OnClusterUpdate(
 void XdsDependencyManager::OnClusterError(const std::string& name,
                                           absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Cluster error: %s %s",
-            this, name.c_str(), status.ToString().c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received Cluster error: " << name << " " << status;
   }
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
@@ -612,8 +610,8 @@ void XdsDependencyManager::OnClusterError(const std::string& name,
 
 void XdsDependencyManager::OnClusterDoesNotExist(const std::string& name) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] Cluster does not exist: %s",
-            this, name.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] Cluster does not exist: " << name;
   }
   if (xds_client_ == nullptr) return;
   auto it = cluster_watchers_.find(name);
@@ -627,8 +625,8 @@ void XdsDependencyManager::OnEndpointUpdate(
     const std::string& name,
     std::shared_ptr<const XdsEndpointResource> endpoint) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received Endpoint update: %s",
-            this, name.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received Endpoint update: " << name;
   }
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
@@ -659,9 +657,8 @@ void XdsDependencyManager::OnEndpointUpdate(
 void XdsDependencyManager::OnEndpointError(const std::string& name,
                                            absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO,
-            "[XdsDependencyManager %p] received Endpoint error: %s %s", this,
-            name.c_str(), status.ToString().c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received Endpoint error: " << name << " " << status;
   }
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
@@ -675,8 +672,8 @@ void XdsDependencyManager::OnEndpointError(const std::string& name,
 
 void XdsDependencyManager::OnEndpointDoesNotExist(const std::string& name) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] Endpoint does not exist: %s",
-            this, name.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] Endpoint does not exist: " << name;
   }
   if (xds_client_ == nullptr) return;
   auto it = endpoint_watchers_.find(name);
@@ -690,8 +687,8 @@ void XdsDependencyManager::OnEndpointDoesNotExist(const std::string& name) {
 void XdsDependencyManager::OnDnsResult(const std::string& dns_name,
                                        Resolver::Result result) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] received DNS update: %s", this,
-            dns_name.c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] received DNS update: " << dns_name;
   }
   if (xds_client_ == nullptr) return;
   auto it = dns_resolvers_.find(dns_name);
@@ -749,9 +746,8 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
   if (state.watcher == nullptr) {
     auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(GPR_INFO,
-              "[XdsDependencyManager %p] starting watch for cluster %s", this,
-              std::string(name).c_str());
+      LOG(INFO) << "[XdsDependencyManager " << this
+                << "] starting watch for cluster " << name;
     }
     state.watcher = watcher.get();
     XdsClusterResourceType::StartWatch(xds_client_.get(), name,
@@ -777,9 +773,8 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         auto& eds_state = endpoint_watchers_[eds_resource_name];
         if (eds_state.watcher == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-            gpr_log(GPR_INFO,
-                    "[XdsDependencyManager %p] starting watch for endpoint %s",
-                    this, std::string(eds_resource_name).c_str());
+            LOG(INFO) << "[XdsDependencyManager " << this
+                      << "] starting watch for endpoint " << eds_resource_name;
           }
           auto watcher =
               MakeRefCounted<EndpointWatcher>(Ref(), eds_resource_name);
@@ -806,9 +801,8 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         auto& dns_state = dns_resolvers_[logical_dns.hostname];
         if (dns_state.resolver == nullptr) {
           if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-            gpr_log(GPR_INFO,
-                    "[XdsDependencyManager %p] starting DNS resolver for %s",
-                    this, logical_dns.hostname.c_str());
+            LOG(INFO) << "[XdsDependencyManager " << this
+                      << "] starting DNS resolver for " << logical_dns.hostname;
           }
           auto* fake_resolver_response_generator = args_.GetPointer<
               FakeResolverResponseGenerator>(
@@ -974,9 +968,8 @@ void XdsDependencyManager::MaybeReportUpdate() {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(GPR_INFO,
-              "[XdsDependencyManager %p] cancelling watch for cluster %s", this,
-              cluster_name.c_str());
+      LOG(INFO) << "[XdsDependencyManager " << this
+                << "] cancelling watch for cluster " << cluster_name;
     }
     XdsClusterResourceType::CancelWatch(xds_client_.get(), cluster_name,
                                         it->second.watcher,
@@ -993,9 +986,8 @@ void XdsDependencyManager::MaybeReportUpdate() {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(GPR_INFO,
-              "[XdsDependencyManager %p] cancelling watch for EDS resource %s",
-              this, eds_resource_name.c_str());
+      LOG(INFO) << "[XdsDependencyManager " << this
+                << "] cancelling watch for EDS resource " << eds_resource_name;
     }
     XdsEndpointResourceType::CancelWatch(xds_client_.get(), eds_resource_name,
                                          it->second.watcher,
@@ -1011,24 +1003,22 @@ void XdsDependencyManager::MaybeReportUpdate() {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(GPR_INFO,
-              "[XdsDependencyManager %p] shutting down DNS resolver for %s",
-              this, dns_name.c_str());
+      LOG(INFO) << "[XdsDependencyManager " << this
+                << "] shutting down DNS resolver for " << dns_name;
     }
     dns_resolvers_.erase(it++);
   }
   // If we have all the data we need, then send an update.
   if (!have_all_resources) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      gpr_log(GPR_INFO,
-              "[XdsDependencyManager %p] missing data -- NOT returning config",
-              this);
+      LOG(INFO) << "[XdsDependencyManager " << this
+                << "] missing data -- NOT returning config";
     }
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    gpr_log(GPR_INFO, "[XdsDependencyManager %p] returning config: %s", this,
-            config->ToString().c_str());
+    LOG(INFO) << "[XdsDependencyManager " << this
+              << "] returning config: " << config->ToString();
   }
   watcher_->OnUpdate(std::move(config));
 }

@@ -254,6 +254,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/numeric/bits', abseil_version
     ss.dependency 'abseil/random/bit_gen_ref', abseil_version
     ss.dependency 'abseil/random/distributions', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
@@ -1466,6 +1467,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/message/copy.h',
                       'third_party/upb/upb/message/internal/accessors.h',
                       'third_party/upb/upb/message/internal/array.h',
+                      'third_party/upb/upb/message/internal/compare_unknown.h',
                       'third_party/upb/upb/message/internal/extension.h',
                       'third_party/upb/upb/message/internal/map.h',
                       'third_party/upb/upb/message/internal/map_entry.h',
@@ -2693,6 +2695,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/message/copy.h',
                               'third_party/upb/upb/message/internal/accessors.h',
                               'third_party/upb/upb/message/internal/array.h',
+                              'third_party/upb/upb/message/internal/compare_unknown.h',
                               'third_party/upb/upb/message/internal/extension.h',
                               'third_party/upb/upb/message/internal/map.h',
                               'third_party/upb/upb/message/internal/map_entry.h',

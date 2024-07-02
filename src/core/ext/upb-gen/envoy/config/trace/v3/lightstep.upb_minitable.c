@@ -33,6 +33,9 @@ const upb_MiniTable envoy__config__trace__v3__LightstepConfig_msg_init = {
   &envoy_config_trace_v3_LightstepConfig_submsgs[0],
   &envoy_config_trace_v3_LightstepConfig__fields[0],
   UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.LightstepConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
