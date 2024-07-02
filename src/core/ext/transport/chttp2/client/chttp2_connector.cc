@@ -158,13 +158,15 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     grpc_chttp2_transport_start_reading(
         result_->transport, (*result)->read_buffer.c_slice_buffer(),
         &on_receive_settings_, args_.interested_parties, nullptr);
-    timer_handle_ =
-        event_engine_->RunAfter(args_.deadline - Timestamp::Now(),
-                                [self = RefAsSubclass<Chttp2Connector>()] {
-                                  ApplicationCallbackExecCtx callback_exec_ctx;
-                                  ExecCtx exec_ctx;
-                                  self->OnTimeout();
-                                });
+    timer_handle_ = event_engine_->RunAfter(
+        args_.deadline - Timestamp::Now(),
+        [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          self->OnTimeout();
+          // Ensure the Chttp2Connector is deleted under an ExecCtx.
+          self.reset();
+        });
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
