@@ -54,19 +54,19 @@ class ChaoticGoodTraits {
   }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto md = Arena::MakePooled<ClientMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
     md->Set(HttpPathMetadata(), kTestPath.Copy());
     return md;
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
   MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    auto md = Arena::MakePooled<ServerMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
     return md;
   }
 };

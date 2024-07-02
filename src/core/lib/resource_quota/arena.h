@@ -247,6 +247,11 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
     return PoolPtr<T>(new T(std::forward<Args>(args)...), PooledDeleter());
   }
 
+  template <typename T>
+  static PoolPtr<T> MakePooledForOverwrite() {
+    return PoolPtr<T>(new T, PooledDeleter());
+  }
+
   // Make a unique_ptr to an array of T that is allocated from the arena.
   // When the pointer is released, the memory may be reused for other
   // MakePooled(.*) calls.

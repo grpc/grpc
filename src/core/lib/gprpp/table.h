@@ -35,20 +35,28 @@ namespace grpc_core {
 namespace table_detail {
 
 // A tuple-like type that contains manually constructed elements.
-template <typename... Ts>
+template <typename, typename... Ts>
 struct Elements;
 
 template <typename T, typename... Ts>
-struct Elements<T, Ts...> : Elements<Ts...> {
-  union U {
-    U() {}
-    ~U() {}
-    GPR_NO_UNIQUE_ADDRESS T x;
+struct Elements<absl::enable_if_t<!std::is_empty<T>::value>, T, Ts...>
+    : Elements<void, Ts...> {
+  struct alignas(T) Data {
+    unsigned char bytes[sizeof(T)];
   };
-  U u;
+  Data x;
+  Elements() {}
+  T* ptr() { return reinterpret_cast<T*>(x.bytes); }
+  const T* ptr() const { return reinterpret_cast<const T*>(x.bytes); }
+};
+template <typename T, typename... Ts>
+struct Elements<absl::enable_if_t<std::is_empty<T>::value>, T, Ts...>
+    : Elements<void, Ts...> {
+  T* ptr() { return reinterpret_cast<T*>(this); }
+  const T* ptr() const { return reinterpret_cast<const T*>(this); }
 };
 template <>
-struct Elements<> {};
+struct Elements<void> {};
 
 // Element accessor for Elements<>
 // Provides a static method f that returns a pointer to the value of element I
@@ -58,17 +66,17 @@ struct GetElem;
 
 template <typename T, typename... Ts>
 struct GetElem<0, T, Ts...> {
-  static T* f(Elements<T, Ts...>* e) { return &e->u.x; }
-  static const T* f(const Elements<T, Ts...>* e) { return &e->u.x; }
+  static T* f(Elements<void, T, Ts...>* e) { return e->ptr(); }
+  static const T* f(const Elements<void, T, Ts...>* e) { return e->ptr(); }
 };
 
 template <size_t I, typename T, typename... Ts>
 struct GetElem<I, T, Ts...> {
-  static auto f(Elements<T, Ts...>* e)
+  static auto f(Elements<void, T, Ts...>* e)
       -> decltype(GetElem<I - 1, Ts...>::f(e)) {
     return GetElem<I - 1, Ts...>::f(e);
   }
-  static auto f(const Elements<T, Ts...>* e)
+  static auto f(const Elements<void, T, Ts...>* e)
       -> decltype(GetElem<I - 1, Ts...>::f(e)) {
     return GetElem<I - 1, Ts...>::f(e);
   }
@@ -340,7 +348,7 @@ class Table {
   // the default) -- one bit for each type in Ts.
   using PresentBits = BitSet<sizeof...(Ts)>;
   // The tuple-like backing structure for Table.
-  using Elements = table_detail::Elements<Ts...>;
+  using Elements = table_detail::Elements<void, Ts...>;
   // Extractor from Elements
   template <size_t I>
   using GetElem = table_detail::GetElem<I, Ts...>;
@@ -442,9 +450,9 @@ class Table {
   }
 
   // Bit field indicating which elements are set.
-  GPR_NO_UNIQUE_ADDRESS PresentBits present_bits_;
+  PresentBits present_bits_;
   // The memory to store the elements themselves.
-  GPR_NO_UNIQUE_ADDRESS Elements elements_;
+  Elements elements_;
 };
 
 }  // namespace grpc_core

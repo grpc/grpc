@@ -329,7 +329,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoid) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
@@ -364,7 +364,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoidTakingChannelPtr) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
@@ -409,7 +409,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -420,7 +420,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -467,7 +467,7 @@ TEST(StackDataTest,
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -478,7 +478,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -498,7 +498,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
         md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
         bool first = std::exchange(first_, false);
         return first ? nullptr
-                     : ServerMetadataFromStatus(absl::CancelledError());
+                     : ServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
       }
 
      private:
@@ -524,7 +524,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -535,7 +535,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -557,7 +557,7 @@ TEST(StackDataTest,
         const bool first = std::exchange(first_, false);
         p->v.push_back(first ? 11 : 22);
         return first ? nullptr
-                     : ServerMetadataFromStatus(absl::CancelledError());
+                     : ServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
       }
 
      private:
@@ -584,7 +584,7 @@ TEST(StackDataTest,
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -595,7 +595,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -642,7 +642,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -660,7 +660,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -673,7 +673,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   // A cancelled call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -723,7 +723,7 @@ TEST(StackDataTest,
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -741,7 +741,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -754,7 +754,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   // A cancelled call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -791,7 +791,7 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   EXPECT_EQ(d.server_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_initial_metadata.ops[0].promise_init(
@@ -889,7 +889,7 @@ TEST(StackDataTest, ServerTrailingMetadataReturningVoid) {
   EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
   // Check operation
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_trailing_metadata[0].server_trailing_metadata(
@@ -920,7 +920,7 @@ TEST(StackDataTest, ServerTrailingMetadataReturningVoidTakingChannelPtr) {
   EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
   // Check operation
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_trailing_metadata[0].server_trailing_metadata(
@@ -1007,7 +1007,7 @@ TEST(OperationExecutorTest, InstantTwo) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
@@ -1015,7 +1015,7 @@ TEST(OperationExecutorTest, InstantTwo) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
   // Second fails
-  md = Arena::MakePooled<ServerMetadata>();
+  md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
   EXPECT_TRUE(r.ready());
@@ -1070,7 +1070,7 @@ TEST(OperationExecutorTest, PromiseTwo) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds after two sets of two step delays.
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
@@ -1086,7 +1086,7 @@ TEST(OperationExecutorTest, PromiseTwo) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
   // Second fails after one set of two step delays.
-  md = Arena::MakePooled<ServerMetadata>();
+  md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
   EXPECT_FALSE(r.ready());
@@ -1161,7 +1161,7 @@ TEST(CallFiltersTest, UnaryCall) {
   builder.Add(&f1);
   builder.Add(&f2);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  CallFilters filters(Arena::MakePooled<ClientMetadata>());
+  CallFilters filters(Arena::MakePooledForOverwrite<ClientMetadata>());
   filters.AddStack(builder.Build());
   filters.Start();
   promise_detail::Context<Arena> ctx(arena.get());
@@ -1182,7 +1182,8 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
   // Push server initial metadata
-  filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
+  filters.PushServerInitialMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
   // Pull server initial metadata
   EXPECT_THAT(pull_server_initial_metadata(), IsReady());
@@ -1198,7 +1199,8 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
   // Push server trailing metadata
-  filters.PushServerTrailingMetadata(Arena::MakePooled<ServerMetadata>());
+  filters.PushServerTrailingMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
   // Pull server trailing metadata
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done
@@ -1253,7 +1255,7 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
   builder1.Add(&f1);
   builder2.Add(&f2);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  CallFilters filters(Arena::MakePooled<ClientMetadata>());
+  CallFilters filters(Arena::MakePooledForOverwrite<ClientMetadata>());
   filters.AddStack(builder1.Build());
   filters.AddStack(builder2.Build());
   filters.Start();
@@ -1275,7 +1277,8 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
   // Push should be done
   EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
   // Push server initial metadata
-  filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
+  filters.PushServerInitialMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
   // Pull server initial metadata
   EXPECT_THAT(pull_server_initial_metadata(), IsReady());
@@ -1291,7 +1294,8 @@ TEST(CallFiltersTest, UnaryCallWithMultiStack) {
   // Push should be done
   EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
   // Push server trailing metadata
-  filters.PushServerTrailingMetadata(Arena::MakePooled<ServerMetadata>());
+  filters.PushServerTrailingMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
   // Pull server trailing metadata
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done

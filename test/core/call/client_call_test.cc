@@ -196,7 +196,7 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterCancellation) {
         EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
                   kDefaultPath);
         handler().PushServerTrailingMetadata(
-            ServerMetadataFromStatus(absl::InternalError("test error")));
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "test error"));
         return Immediate(Empty{});
       });
   Expect(1, true);
