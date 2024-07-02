@@ -62,7 +62,7 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: Sequence[ChannelArgumentType], compression: Optional[grpc.Compression]
 ):
     compression_channel_argument = _compression.create_channel_option(
         compression
@@ -324,7 +324,7 @@ class Channel(_base_channel.Channel):
     def __init__(
         self,
         target: str,
-        options: ChannelArgumentType,
+        options: Sequence[ChannelArgumentType],
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
@@ -569,7 +569,7 @@ class Channel(_base_channel.Channel):
 
 def insecure_channel(
     target: str,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
@@ -599,7 +599,7 @@ def insecure_channel(
 def secure_channel(
     target: str,
     credentials: grpc.ChannelCredentials,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
