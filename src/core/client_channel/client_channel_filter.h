@@ -360,7 +360,6 @@ class ClientChannelFilter::LoadBalancedCall
   LoadBalancedCall(ClientChannelFilter* chand, Arena* arena,
                    absl::AnyInvocable<void()> on_commit,
                    bool is_transparent_retry);
-  ~LoadBalancedCall() override;
 
   void Orphan() override { Unref(); }
 
@@ -382,10 +381,6 @@ class ClientChannelFilter::LoadBalancedCall
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
   }
-  LoadBalancingPolicy::SubchannelCallTrackerInterface*
-  lb_subchannel_call_tracker() const {
-    return lb_subchannel_call_tracker_.get();
-  }
   Arena* arena() const { return arena_; }
 
   void Commit() {
@@ -405,17 +400,8 @@ class ClientChannelFilter::LoadBalancedCall
   //   stored and an OK status will be returned.
   absl::optional<absl::Status> PickSubchannel(bool was_queued);
 
-  void RecordCallCompletion(absl::Status status,
-                            grpc_metadata_batch* recv_trailing_metadata,
-                            grpc_transport_stream_stats* transport_stream_stats,
-                            absl::string_view peer_address);
-
-  void RecordLatency();
-
  private:
   class LbCallState;
-  class Metadata;
-  class BackendMetricAccessor;
 
   virtual grpc_polling_entity* pollent() = 0;
   virtual grpc_metadata_batch* send_initial_metadata() const = 0;
@@ -436,12 +422,7 @@ class ClientChannelFilter::LoadBalancedCall
 
   absl::AnyInvocable<void()> on_commit_;
 
-  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
-
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const BackendMetricData* backend_metric_data_ = nullptr;
-  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
-      lb_subchannel_call_tracker_;
   Arena* const arena_;
 };
 
@@ -461,8 +442,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
                               absl::AnyInvocable<void()> on_commit,
                               bool is_transparent_retry);
   ~FilterBasedLoadBalancedCall() override;
-
-  void Orphan() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
@@ -513,10 +492,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
-  static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
-  static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
-
   // Called to perform a pick, both when the call is initially started
   // and when it is queued and the channel gets a new picker.
   void TryPick(bool was_queued);
@@ -548,17 +523,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
       ABSL_GUARDED_BY(&ClientChannelFilter::lb_mu_) = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
-
-  // For intercepting recv_initial_metadata_ready.
-  grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-  grpc_closure recv_initial_metadata_ready_;
-  grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
-
-  // For intercepting recv_trailing_metadata_ready.
-  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
-  grpc_transport_stream_stats* transport_stream_stats_ = nullptr;
-  grpc_closure recv_trailing_metadata_ready_;
-  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
   // Batches are added to this list when received from above.
   // They are removed when we are done handling the batch (i.e., when

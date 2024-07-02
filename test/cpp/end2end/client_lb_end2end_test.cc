@@ -2461,7 +2461,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest,
   EXPECT_EQ(1, num_trailers_intercepted());
   absl::Status status_seen_by_lb = last_status();
   EXPECT_EQ(status_seen_by_lb.code(), absl::StatusCode::kCancelled);
-  EXPECT_EQ(status_seen_by_lb.message(), "call cancelled");
+  EXPECT_EQ(status_seen_by_lb.message(), "");
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {

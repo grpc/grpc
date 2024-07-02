@@ -39,6 +39,7 @@ namespace grpc_core {
 
 extern void BuildClientChannelConfiguration(
     CoreConfiguration::Builder* builder);
+extern void RegisterLbCallTracingFilter(CoreConfiguration::Builder* builder);
 extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
@@ -107,6 +108,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterRoundRobinLbPolicy(builder);
   RegisterWeightedRoundRobinLbPolicy(builder);
   BuildClientChannelConfiguration(builder);
+  RegisterLbCallTracingFilter(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
   RegisterLegacyChannelIdleFilters(builder);

@@ -31,6 +31,17 @@ using LbOnCommit = absl::AnyInvocable<void()>;
 template <>
 struct ContextType<LbOnCommit> {};
 
+// Context type for LB call start time.
+struct LoadBalancedCallStartTime {
+  gpr_cycle_counter lb_call_start_time = gpr_get_cycle_counter();
+};
+template <>
+struct ArenaContextType<LoadBalancedCallStartTime> {
+  static void Destroy(LoadBalancedCallStartTime* ptr) {
+    ptr->~LoadBalancedCallStartTime();
+  }
+};
+
 class LoadBalancedCallDestination final : public UnstartedCallDestination {
  public:
   explicit LoadBalancedCallDestination(ClientChannel::PickerObservable picker)
