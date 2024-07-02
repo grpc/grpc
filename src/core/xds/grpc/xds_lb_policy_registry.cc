@@ -40,6 +40,7 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 
 namespace grpc_core {
 
