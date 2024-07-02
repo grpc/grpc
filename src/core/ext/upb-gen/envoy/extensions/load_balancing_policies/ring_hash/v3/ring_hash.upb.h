@@ -182,11 +182,11 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_h
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_hash_function(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_minimum_ring_size(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_minimum_ring_size(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
   struct google_protobuf_UInt64Value* sub = (struct google_protobuf_UInt64Value*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(msg);
@@ -198,7 +198,7 @@ UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_p
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_maximum_ring_size(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_maximum_ring_size(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
   struct google_protobuf_UInt64Value* sub = (struct google_protobuf_UInt64Value*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(msg);
@@ -210,11 +210,11 @@ UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_p
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_use_hostname_for_hashing(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 16), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_hash_balance_factor(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(28, 40), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_hash_balance_factor(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_balance_factor(msg);
@@ -226,7 +226,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_p
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_consistent_hashing_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(32, 48), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_consistent_hashing_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
   struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_consistent_hashing_lb_config(msg);
@@ -238,7 +238,7 @@ UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_ConsistentH
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_set_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash *msg, struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(36, 56), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_mutable_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena) {
   struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_locality_weighted_lb_config(msg);

@@ -148,14 +148,20 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   return absl::OkStatus();
 }
 
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
+
+}  // namespace
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
+
 bool SetSocketDualStack(int fd) {
   const int off = 0;
   return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
 }
 
+#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
-}  // namespace
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   void* value;
@@ -627,12 +633,15 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     // if it is available.
     if (g_socket_supports_tcp_user_timeout.load() == 0) {
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+        // This log is intentionally not protected behind a flag, so that users
+        // know that TCP_USER_TIMEOUT is not being used.
         LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
                      "won't be used thereafter";
         g_socket_supports_tcp_user_timeout.store(-1);
       } else {
-        LOG(INFO) << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-                     "used thereafter";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+               "used thereafter";
         g_socket_supports_tcp_user_timeout.store(1);
       }
     }
