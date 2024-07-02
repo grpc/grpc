@@ -356,7 +356,8 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   wakeup_fd_ = *CreateWakeupFd();
   CHECK(wakeup_fd_ != nullptr);
   CHECK_GE(g_epoll_set_.epfd, 0);
-  LOG(INFO) << "grpc epoll fd: " << g_epoll_set_.epfd;
+  GRPC_TRACE_LOG(event_engine_poller, INFO)
+      << "grpc epoll fd: " << g_epoll_set_.epfd;
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd_.get();

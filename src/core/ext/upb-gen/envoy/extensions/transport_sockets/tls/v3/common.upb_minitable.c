@@ -35,6 +35,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsParameter
   NULL,
   &envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[0],
   UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.TlsParameters",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -61,6 +64,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__PrivateKeyPr
   &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider__fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.PrivateKeyProvider",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -99,6 +105,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsCertifica
   &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_TlsCertificate__fields[0],
   UPB_SIZE(48, 80), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.TlsCertificate",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -123,6 +132,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsSessionTi
   &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.TlsSessionTicketKeys",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
@@ -138,6 +150,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateP
   NULL,
   &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.CertificateProviderPluginInstance",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -159,6 +174,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SubjectAltNa
   &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.SubjectAltNameMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -198,6 +216,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateV
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[0],
   UPB_SIZE(72, 112), 14, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

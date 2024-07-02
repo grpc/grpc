@@ -78,9 +78,6 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
   stats->framing_bytes += header_size;
-  if (!grpc_core::IsHttp2StatsFixEnabled()) {
-    stats->data_bytes += write_bytes;
-  }
 }
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(

@@ -36,6 +36,9 @@ const upb_MiniTable envoy__config__trace__v3__XRayConfig_msg_init = {
   &envoy_config_trace_v3_XRayConfig_submsgs[0],
   &envoy_config_trace_v3_XRayConfig__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.XRayConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -57,6 +60,9 @@ const upb_MiniTable envoy__config__trace__v3__XRayConfig__SegmentFields_msg_init
   &envoy_config_trace_v3_XRayConfig_SegmentFields_submsgs[0],
   &envoy_config_trace_v3_XRayConfig_SegmentFields__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.XRayConfig.SegmentFields",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
