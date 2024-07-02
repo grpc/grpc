@@ -21,31 +21,13 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/util/json/json.h"
-#include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
-
-Duration ParseDuration(const google_protobuf_Duration* proto_duration,
-                       ValidationErrors* errors);
-
-inline bool ParseBoolValue(const google_protobuf_BoolValue* bool_value_proto,
-                           bool default_value = false) {
-  if (bool_value_proto == nullptr) return default_value;
-  return google_protobuf_BoolValue_value(bool_value_proto);
-}
 
 struct CommonTlsContext {
   struct CertificateProviderPluginInstance {
@@ -87,12 +69,6 @@ struct CommonTlsContext {
 
   std::string ToString() const;
   bool Empty() const;
-
-  static CommonTlsContext Parse(
-      const XdsResourceType::DecodeContext& context,
-      const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-          common_tls_context_proto,
-      ValidationErrors* errors);
 };
 
 struct XdsExtension {
@@ -105,10 +81,6 @@ struct XdsExtension {
   // processing the extension.
   std::vector<ValidationErrors::ScopedField> validation_fields;
 };
-
-absl::optional<XdsExtension> ExtractXdsExtension(
-    const XdsResourceType::DecodeContext& context,
-    const google_protobuf_Any* any, ValidationErrors* errors);
 
 }  // namespace grpc_core
 

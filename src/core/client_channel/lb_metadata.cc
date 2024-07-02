@@ -109,13 +109,12 @@ void MaybeOverrideAuthority(
   // Skip if no override requested.
   if (authority_override.empty()) return;
   // Skip if authority already set by the application on this RPC.
-  if (metadata->get(HttpAuthorityMetadata()).has_value()) return;
+  if (metadata->get_pointer(HttpAuthorityMetadata()) != nullptr) return;
   // Otherwise, apply override.
   Slice& authority =
       grpc_event_engine::experimental::internal::SliceCast<Slice>(
           authority_override);
-  send_initial_metadata()->Set(HttpAuthorityMetadata(),
-                               std::move(authority));
+  metadata->Set(HttpAuthorityMetadata(), std::move(authority));
 }
 
 }  // namespace grpc_core

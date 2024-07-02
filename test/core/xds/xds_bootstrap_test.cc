@@ -49,6 +49,7 @@
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 
@@ -58,7 +59,7 @@ namespace {
 
 MATCHER_P4(EqXdsServer, name, creds_config_type, ignore_resource_deletion,
            trusted_xds_server, "equals XdsServer") {
-  auto* server = static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(arg);
+  auto* server = static_cast<const GrpcXdsServer*>(arg);
   if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), server,
                                      result_listener)) {
     return false;
@@ -736,11 +737,10 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       "    }";
   auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  auto xds_server = LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(*json);
+  auto xds_server = LoadFromJson<GrpcXdsServer>(*json);
   ASSERT_TRUE(xds_server.ok()) << xds_server.status();
   Json output = xds_server->ToJson();
-  auto output_xds_server =
-      LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(output);
+  auto output_xds_server = LoadFromJson<GrpcXdsServer>(output);
   ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
   EXPECT_EQ(*xds_server, *output_xds_server);
 }

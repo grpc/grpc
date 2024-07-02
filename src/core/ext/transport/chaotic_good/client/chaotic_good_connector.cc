@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -319,8 +320,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
         EventEngineWakeupScheduler(event_engine_),
         [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
           if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-            gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
-                    status.ToString().c_str());
+            LOG(INFO) << "ChaoticGoodConnector::OnHandshakeDone: " << status;
           }
           if (status.ok()) {
             MutexLock lock(&self->mu_);

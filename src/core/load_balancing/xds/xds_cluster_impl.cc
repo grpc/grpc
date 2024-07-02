@@ -469,10 +469,14 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     if (!subchannel_wrapper->hostname().empty()) {
       auto* route_state_attribute =
           call_state->GetCallAttribute<XdsRouteStateAttribute>();
-      if (route_state_attribute != nullptr &&
-          route_state_attribute->route().auto_host_rewrite) {
-        complete_pick->authority_override =
-            subchannel_wrapper->hostname().Ref();
+      if (route_state_attribute != nullptr) {
+        auto* route_action =
+            absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+                &route_state_attribute->route().action);
+        if (route_action != nullptr && route_action->auto_host_rewrite) {
+          complete_pick->authority_override =
+              subchannel_wrapper->hostname().Ref();
+        }
       }
     }
     // Unwrap subchannel to pass back up the stack.

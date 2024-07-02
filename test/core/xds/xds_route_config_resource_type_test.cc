@@ -53,6 +53,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -78,22 +79,22 @@ namespace {
 
 class XdsRouteConfigTest : public ::testing::Test {
  protected:
-  explicit XdsRouteConfigTest(bool allow_authority_rewriting = false)
-      : xds_client_(MakeXdsClient(allow_authority_rewriting)),
+  explicit XdsRouteConfigTest(bool trusted_xds_server = false)
+      : xds_client_(MakeXdsClient(trusted_xds_server)),
         decode_context_{xds_client_.get(),
                         *xds_client_->bootstrap().servers().front(),
                         &xds_route_config_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(
-      bool allow_authority_rewriting) {
+      bool trusted_xds_server) {
     auto bootstrap = GrpcXdsBootstrap::Create(absl::StrCat(
         "{\n"
         "  \"xds_servers\": [\n"
         "    {\n"
         "      \"server_uri\": \"xds.example.com\",\n"
         "      \"server_features\": [\n",
-        (allow_authority_rewriting ? "\"allow_authority_rewriting\"" : ""),
+        (trusted_xds_server ? "\"trusted_xds_server\"" : ""),
         "      ],\n"
         "      \"channel_creds\": [\n"
         "        {\"type\": \"google_default\"}\n"
@@ -1626,7 +1627,7 @@ TEST_F(AuthorityRewriteDisabledInBootstrapTest, AutoHostRewriteIgnored) {
 class AuthorityRewriteEnabledInBootstrapTest : public XdsRouteConfigTest {
  protected:
   AuthorityRewriteEnabledInBootstrapTest()
-      : XdsRouteConfigTest(/*allow_authority_rewriting=*/true) {}
+      : XdsRouteConfigTest(/*trusted_xds_server=*/true) {}
 };
 
 TEST_F(AuthorityRewriteEnabledInBootstrapTest, AutoHostRewriteTrue) {

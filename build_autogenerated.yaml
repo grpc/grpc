@@ -133,6 +133,7 @@ libs:
   - absl/log:globals
   - absl/log:log
   - absl/memory:memory
+  - absl/numeric:bits
   - absl/random:random
   - absl/status:status
   - absl/strings:cord
@@ -1227,18 +1228,25 @@ libs:
   - src/core/xds/grpc/xds_certificate_provider.h
   - src/core/xds/grpc/xds_client_grpc.h
   - src/core/xds/grpc/xds_cluster.h
+  - src/core/xds/grpc/xds_cluster_parser.h
   - src/core/xds/grpc/xds_cluster_specifier_plugin.h
   - src/core/xds/grpc/xds_common_types.h
+  - src/core/xds/grpc/xds_common_types_parser.h
   - src/core/xds/grpc/xds_endpoint.h
+  - src/core/xds/grpc/xds_endpoint_parser.h
   - src/core/xds/grpc/xds_health_status.h
   - src/core/xds/grpc/xds_http_fault_filter.h
-  - src/core/xds/grpc/xds_http_filters.h
+  - src/core/xds/grpc/xds_http_filter.h
+  - src/core/xds/grpc/xds_http_filter_registry.h
   - src/core/xds/grpc/xds_http_rbac_filter.h
   - src/core/xds/grpc/xds_http_stateful_session_filter.h
   - src/core/xds/grpc/xds_lb_policy_registry.h
   - src/core/xds/grpc/xds_listener.h
+  - src/core/xds/grpc/xds_listener_parser.h
   - src/core/xds/grpc/xds_route_config.h
+  - src/core/xds/grpc/xds_route_config_parser.h
   - src/core/xds/grpc/xds_routing.h
+  - src/core/xds/grpc/xds_server_grpc.h
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/xds_api.h
   - src/core/xds/xds_client/xds_bootstrap.h
@@ -2032,18 +2040,24 @@ libs:
   - src/core/xds/grpc/xds_certificate_provider.cc
   - src/core/xds/grpc/xds_client_grpc.cc
   - src/core/xds/grpc/xds_cluster.cc
+  - src/core/xds/grpc/xds_cluster_parser.cc
   - src/core/xds/grpc/xds_cluster_specifier_plugin.cc
   - src/core/xds/grpc/xds_common_types.cc
+  - src/core/xds/grpc/xds_common_types_parser.cc
   - src/core/xds/grpc/xds_endpoint.cc
+  - src/core/xds/grpc/xds_endpoint_parser.cc
   - src/core/xds/grpc/xds_health_status.cc
   - src/core/xds/grpc/xds_http_fault_filter.cc
-  - src/core/xds/grpc/xds_http_filters.cc
+  - src/core/xds/grpc/xds_http_filter_registry.cc
   - src/core/xds/grpc/xds_http_rbac_filter.cc
   - src/core/xds/grpc/xds_http_stateful_session_filter.cc
   - src/core/xds/grpc/xds_lb_policy_registry.cc
   - src/core/xds/grpc/xds_listener.cc
+  - src/core/xds/grpc/xds_listener_parser.cc
   - src/core/xds/grpc/xds_route_config.cc
+  - src/core/xds/grpc/xds_route_config_parser.cc
   - src/core/xds/grpc/xds_routing.cc
+  - src/core/xds/grpc/xds_server_grpc.cc
   - src/core/xds/grpc/xds_transport_grpc.cc
   - src/core/xds/xds_client/xds_api.cc
   - src/core/xds/xds_client/xds_bootstrap.cc
@@ -2707,9 +2721,13 @@ libs:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -3112,7 +3130,9 @@ libs:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -3335,9 +3355,13 @@ libs:
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/json/decode.c
   - third_party/upb/upb/json/encode.c
@@ -3370,7 +3394,9 @@ libs:
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -3406,7 +3432,6 @@ libs:
   - third_party/upb/upb/message/compat.h
   - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
-  - third_party/upb/upb/message/internal/compare_unknown.h
   - third_party/upb/upb/message/internal/extension.h
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_entry.h
@@ -3433,16 +3458,11 @@ libs:
   - third_party/upb/upb/mini_table/internal/sub.h
   - third_party/upb/upb/mini_table/message.h
   - third_party/upb/upb/mini_table/sub.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/hash/common.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
   - third_party/upb/upb/message/compat.c
-  - third_party/upb/upb/message/internal/compare_unknown.c
   - third_party/upb/upb/message/internal/extension.c
   - third_party/upb/upb/message/internal/message.c
   - third_party/upb/upb/message/map.c
@@ -3451,8 +3471,6 @@ libs:
   - third_party/upb/upb/mini_table/extension_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/reader.c
   deps:
   - upb_base_lib
   - upb_mem_lib
@@ -3512,9 +3530,13 @@ libs:
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
@@ -3546,7 +3568,9 @@ libs:
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -3625,8 +3649,8 @@ libs:
   - test/cpp/microbenchmarks/helpers.cc
   deps:
   - benchmark
-  - grpc++_unsecure
-  - grpc_test_util_unsecure
+  - grpc++
+  - grpc_test_util
   - grpc++_test_config
   defaults: benchmark
 - name: grpc++
@@ -4758,9 +4782,13 @@ libs:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -5034,7 +5062,9 @@ libs:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
   - upb_message_lib
@@ -6449,6 +6479,7 @@ targets:
   deps:
   - gtest
   - absl/log:check
+  - absl/numeric:bits
   uses_polling: false
 - name: buffer_list_test
   gtest: true
@@ -6685,9 +6716,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -6741,7 +6776,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -7238,9 +7275,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -7484,7 +7525,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -7913,9 +7956,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -7953,7 +8000,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -8730,9 +8779,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -8770,7 +8823,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -10300,9 +10355,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -10334,7 +10393,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -10872,9 +10933,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -10916,7 +10981,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -11011,9 +11078,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -11051,7 +11122,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -12707,9 +12780,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -12747,7 +12824,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -13434,9 +13513,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -13474,7 +13557,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -14674,9 +14759,13 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -14705,7 +14794,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -19736,6 +19827,7 @@ targets:
   - gtest
   - absl/log:check
   - absl/meta:type_traits
+  - absl/numeric:bits
   - absl/utility:utility
   uses_polling: false
 - name: tcp_client_posix_test
@@ -20936,6 +21028,7 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/log:check
+  - absl/numeric:bits
   - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
@@ -20973,6 +21066,7 @@ targets:
   deps:
   - gtest
   - absl/log:check
+  - absl/numeric:bits
   uses_polling: false
 - name: uuid_v4_test
   gtest: true

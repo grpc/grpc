@@ -36,7 +36,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/matchers/matchers.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 
