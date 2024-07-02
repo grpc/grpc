@@ -44,7 +44,6 @@
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
-namespace experimental {
 
 class StaticCrlProvider : public CrlProvider {
  public:
@@ -125,7 +124,11 @@ class DirectoryReloaderCrlProvider
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       refresh_handle_;
 };
-
+namespace experimental {
+using grpc_core::CertificateInfoImpl;
+using grpc_core::CrlImpl;
+using grpc_core::DirectoryReloaderCrlProvider;
+using grpc_core::StaticCrlProvider;
 }  // namespace experimental
 }  // namespace grpc_core
 
