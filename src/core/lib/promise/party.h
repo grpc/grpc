@@ -177,7 +177,7 @@ class Party : public Activity, private Wakeable {
     using Promise = typename Factory::Promise;
 
    public:
-    ParticipantImpl(absl::string_view name, SuppliedFactory promise_factory,
+    ParticipantImpl(absl::string_view, SuppliedFactory promise_factory,
                     OnComplete on_complete)
         : on_complete_(std::move(on_complete)) {
       Construct(&factory_, std::move(promise_factory));
@@ -352,7 +352,7 @@ class Party : public Activity, private Wakeable {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
-    DCHECK_NE(wakeup_mask & kWakeupMask, 0)
+    DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "Wakeup mask must be non-zero: " << wakeup_mask;
     while (true) {
       if (cur_state & kLocked) {
