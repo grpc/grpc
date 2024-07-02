@@ -263,8 +263,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
 #endif
 }
 
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Party::RunPartyAndUnref(
-    uint64_t prev_state, WakeupMask wakeup_mask) {
+void Party::RunPartyAndUnref(uint64_t prev_state, WakeupMask wakeup_mask) {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
   DCHECK_EQ(prev_state & kLocked, 0)
