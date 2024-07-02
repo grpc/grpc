@@ -28,6 +28,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -44,7 +45,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -585,9 +585,10 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     std::shared_ptr<const XdsListenerResource> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
-    gpr_log(GPR_INFO,
-            "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
-            this, xds_client_.get(), listener->ToString().c_str());
+    LOG(INFO) << "[ListenerWatcher " << UniqueTypeName::ToString(this)
+              << "] Received LDS update from xds client "
+              << UniqueTypeName::ToString(xds_client_.get()) << ": "
+              << listener->ToString();
   }
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&listener->listener);
@@ -625,20 +626,19 @@ void XdsServerConfigFetcher::ListenerWatcher::OnError(
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ != nullptr ||
       pending_filter_chain_match_manager_ != nullptr) {
-    gpr_log(GPR_ERROR,
-            "ListenerWatcher:%p XdsClient reports error: %s for %s; "
-            "ignoring in favor of existing resource",
-            this, status.ToString().c_str(), listening_address_.c_str());
+    LOG(ERROR) << "ListenerWatcher:" << UniqueTypeName::ToString(this)
+               << " XdsClient reports error: " << status << " for "
+               << listening_address_
+               << "; ignoring in favor of existing resource";
   } else {
     if (serving_status_notifier_.on_serving_status_update != nullptr) {
       serving_status_notifier_.on_serving_status_update(
           serving_status_notifier_.user_data, listening_address_.c_str(),
           {GRPC_STATUS_UNAVAILABLE, status.ToString().c_str()});
     } else {
-      gpr_log(GPR_ERROR,
-              "ListenerWatcher:%p error obtaining xDS Listener resource: %s; "
-              "not serving on %s",
-              this, status.ToString().c_str(), listening_address_.c_str());
+      LOG(ERROR) << "ListenerWatcher:" << UniqueTypeName::ToString(this)
+                 << " error obtaining xDS Listener resource: " << status
+                 << "; not serving on " << listening_address_;
     }
   }
 }
@@ -658,9 +658,9 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
         {static_cast<grpc_status_code>(status.raw_code()),
          std::string(status.message()).c_str()});
   } else {
-    gpr_log(GPR_ERROR,
-            "ListenerWatcher:%p Encountered fatal error %s; not serving on %s",
-            this, status.ToString().c_str(), listening_address_.c_str());
+    LOG(ERROR) << "ListenerWatcher:" << UniqueTypeName::ToString(this)
+               << " Encountered fatal error " << status << "; not serving on "
+               << listening_address_;
   }
 }
 
@@ -686,9 +686,8 @@ void XdsServerConfigFetcher::ListenerWatcher::
           serving_status_notifier_.user_data, listening_address_.c_str(),
           {GRPC_STATUS_OK, ""});
     } else {
-      gpr_log(GPR_INFO,
-              "xDS Listener resource obtained; will start serving on %s",
-              listening_address_.c_str());
+      LOG(INFO) << "xDS Listener resource obtained; will start serving on "
+                << listening_address_;
     }
   }
   // Promote the pending FilterChainMatchManager
@@ -993,8 +992,8 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForSourceType(
   }
   auto source_addr = StringToSockaddr(host, 0);  // Port doesn't matter here.
   if (!source_addr.ok()) {
-    gpr_log(GPR_DEBUG, "Could not parse \"%s\" as socket address: %s",
-            host.c_str(), source_addr.status().ToString().c_str());
+    VLOG(2) << "Could not parse \"" << host
+            << "\" as socket address: " << source_addr.status();
     return nullptr;
   }
   // Use kAny only if kSameIporLoopback and kExternal are empty
@@ -1042,8 +1041,8 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
   auto destination_addr =
       StringToSockaddr(host, 0);  // Port doesn't matter here.
   if (!destination_addr.ok()) {
-    gpr_log(GPR_DEBUG, "Could not parse \"%s\" as socket address: %s",
-            host.c_str(), destination_addr.status().ToString().c_str());
+    VLOG(2) << "Could not parse \"" << host
+            << "\" as socket address: " << destination_addr.status();
     return nullptr;
   }
   const XdsListenerResource::FilterChainMap::DestinationIp* best_match =
@@ -1373,17 +1372,15 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       grpc_core::GrpcXdsClient::kServerKey, channel_args,
       "XdsServerConfigFetcher");
   if (!xds_client.ok()) {
-    gpr_log(GPR_ERROR, "Failed to create xds client: %s",
-            xds_client.status().ToString().c_str());
+    LOG(ERROR) << "Failed to create xds client: " << xds_client.status();
     return nullptr;
   }
   if (static_cast<const grpc_core::GrpcXdsBootstrap&>(
           (*xds_client)->bootstrap())
           .server_listener_resource_name_template()
           .empty()) {
-    gpr_log(GPR_ERROR,
-            "server_listener_resource_name_template not provided in bootstrap "
-            "file.");
+    LOG(ERROR) << "server_listener_resource_name_template not provided in "
+                  "bootstrap file.";
     return nullptr;
   }
   return new grpc_core::XdsServerConfigFetcher(std::move(*xds_client),
