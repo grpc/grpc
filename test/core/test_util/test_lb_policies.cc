@@ -719,6 +719,103 @@ class QueueOnceLoadBalancingPolicyFactory : public LoadBalancingPolicyFactory {
   }
 };
 
+//
+// AuthorityOverrideLbPolicy: A load balancing policy that delegates to
+// pick_first but adds an authority override on completed picks.
+//
+
+constexpr char kAuthorityOverridePolicyName[] = "authority_override_lb";
+
+class AuthorityOverrideLoadBalancingPolicy
+    : public ForwardingLoadBalancingPolicy {
+ public:
+  explicit AuthorityOverrideLoadBalancingPolicy(Args args)
+      : ForwardingLoadBalancingPolicy(
+            std::make_unique<Helper>(
+                RefCountedPtr<AuthorityOverrideLoadBalancingPolicy>(this)),
+            std::move(args), "pick_first",
+            /*initial_refcount=*/2) {}
+
+  absl::string_view name() const override {
+    return kAuthorityOverridePolicyName;
+  }
+
+  absl::Status UpdateLocked(UpdateArgs args) override {
+    authority_override_ =
+        grpc_event_engine::experimental::Slice::FromCopiedString(
+            args.args
+                .GetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE)
+                .value_or(""));
+    return ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
+  }
+
+ private:
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(RefCountedPtr<SubchannelPicker> picker,
+           grpc_event_engine::experimental::Slice authority_override)
+        : picker_(std::move(picker)),
+          authority_override_(std::move(authority_override)) {}
+
+    PickResult Pick(PickArgs args) override {
+      auto pick_result = picker_->Pick(args);
+      auto* complete_pick =
+          absl::get_if<PickResult::Complete>(&pick_result.result);
+      if (complete_pick != nullptr) {
+        complete_pick->authority_override = authority_override_.Ref();
+      }
+      return pick_result;
+    }
+
+   private:
+    RefCountedPtr<SubchannelPicker> picker_;
+    grpc_event_engine::experimental::Slice authority_override_;
+  };
+
+  class Helper : public ParentOwningDelegatingChannelControlHelper<
+                     AuthorityOverrideLoadBalancingPolicy> {
+   public:
+    explicit Helper(RefCountedPtr<AuthorityOverrideLoadBalancingPolicy> parent)
+        : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
+
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     RefCountedPtr<SubchannelPicker> picker) override {
+      parent_helper()->UpdateState(
+          state, status,
+          MakeRefCounted<Picker>(std::move(picker),
+                                 parent()->authority_override_.Ref()));
+    }
+  };
+
+  grpc_event_engine::experimental::Slice authority_override_;
+};
+
+class AuthorityOverrideLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  absl::string_view name() const override {
+    return kAuthorityOverridePolicyName;
+  }
+};
+
+class AuthorityOverrideLoadBalancingPolicyFactory
+    : public LoadBalancingPolicyFactory {
+ public:
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<AuthorityOverrideLoadBalancingPolicy>(
+        std::move(args));
+  }
+
+  absl::string_view name() const override {
+    return kAuthorityOverridePolicyName;
+  }
+
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+    return MakeRefCounted<AuthorityOverrideLbConfig>();
+  }
+};
+
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(
@@ -764,6 +861,12 @@ void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
 void RegisterQueueOnceLoadBalancingPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       std::make_unique<QueueOnceLoadBalancingPolicyFactory>());
+}
+
+void RegisterAuthorityOverrideLoadBalancingPolicy(
+    CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      std::make_unique<AuthorityOverrideLoadBalancingPolicyFactory>());
 }
 
 }  // namespace grpc_core
