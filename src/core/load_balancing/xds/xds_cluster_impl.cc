@@ -255,7 +255,6 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
-    std::string default_authority_;
   };
 
   class Helper final
@@ -404,9 +403,7 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
           xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
-      picker_(std::move(picker)),
-      default_authority_(
-          xds_cluster_impl_lb->channel_control_helper()->GetAuthority()) {
+      picker_(std::move(picker)) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     LOG(INFO) << "[xds_cluster_impl_lb " << xds_cluster_impl_lb
               << "] constructed new picker " << this;
