@@ -974,8 +974,8 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
             << "Tx0cp encountered an ENOBUFS error possibly because one or "
                "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
                "small for the intended user. Current system value of "
-               "RLIMIT_MEMLOCK is %"
-            << GetRLimitMemLockMax() << " and hard memlock ulimit is %"
+               "RLIMIT_MEMLOCK is "
+            << GetRLimitMemLockMax() << " and hard memlock ulimit is "
             << GetUlimitHardMemLock()
             << ".Consider increasing these values appropriately for the "
                "intended user.";
