@@ -32,6 +32,14 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
+#include "third_party/grpc/include/grpc/grpc.h"
+#include "third_party/grpc/include/grpc/slice.h"
+#include "third_party/grpc/src/core/ext/transport/chttp2/client/chttp2_connector.h"
+#include "third_party/grpc/src/core/lib/address_utils/parse_address.h"
+#include "third_party/grpc/src/core/lib/gprpp/notification.h"
+#include "third_party/grpc/src/core/lib/gprpp/orphanable.h"
+#include "third_party/grpc/src/core/lib/iomgr/endpoint.h"
+#include "third_party/grpc/src/core/lib/resource_quota/resource_quota.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
@@ -47,6 +55,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/promise.h"
@@ -315,6 +324,10 @@ grpc_http_response http_response(int status, const char* body) {
   response.body = gpr_strdup(const_cast<char*>(body));
   response.body_length = strlen(body);
   return response;
+}
+
+OrphanablePtr<grpc_endpoint> WrapOrphanable(grpc_endpoint* ep) {
+  return std::unique_ptr<grpc_endpoint, OrphanableDelete>(ep);
 }
 
 // -- Tests. --
@@ -1747,6 +1760,165 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   ExecCtx::Get()->Flush();
   channel_creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+class TestHandshaker : public Handshaker {
+ public:
+  TestHandshaker() {
+    ChannelArgs ep_args;
+    ep_args =
+        ep_args.SetObject(ResourceQuota::Default())
+            .SetObject(std::static_pointer_cast<
+                       grpc_event_engine::experimental::EventEngine>(
+                grpc_event_engine::experimental::GetDefaultEventEngine()));
+    pair_ = grpc_iomgr_create_endpoint_pair("test", ep_args.ToC().get());
+  }
+
+  ~TestHandshaker() override {
+    if (pair_.client != nullptr) {
+      grpc_endpoint_destroy(pair_.client);
+    }
+    if (pair_.server != nullptr) {
+      grpc_endpoint_destroy(pair_.server);
+    }
+  }
+
+  absl::string_view name() const override { return "test_handshaker"; }
+
+  void DoHandshake(
+      HandshakerArgs* args,
+      absl::AnyInvocable<void(absl::Status)> on_handshake_done) override {
+    args->endpoint = WrapOrphanable(pair_.client);
+    pair_.client = nullptr;
+    InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
+  }
+
+  void Shutdown(grpc_error_handle /*why*/) override {}
+
+ private:
+  grpc_endpoint_pair pair_;
+};
+
+class TestHandshakerFactory : public HandshakerFactory {
+ public:
+  void AddHandshakers(const ChannelArgs& /*args*/,
+                      grpc_pollset_set* /*interested_parties*/,
+                      HandshakeManager* handshake_mgr) override {
+    handshake_mgr->Add(MakeRefCounted<TestHandshaker>());
+  }
+
+  HandshakerPriority Priority() override {
+    // Needs to be after kTCPConnectHandshakers.
+    return HandshakerPriority::kSecurityHandshakers;
+  }
+};
+
+const absl::string_view kTestAddress = "ipv4:127.0.0.1:1234";
+const absl::string_view kDefaultAuthority = "test-authority";
+
+void OnConnectingFinished(void* arg, grpc_error_handle error) {
+  auto* notify = reinterpret_cast<grpc_core::Notification*>(arg);
+  notify->Notify();
+}
+
+void WaitForChttp2ConnectionComplete(grpc_channel_credentials* creds) {
+  CoreConfiguration::WithSubstituteBuilder builder(
+      [](CoreConfiguration::Builder* builder) {
+        grpc_event_engine::experimental::
+            RegisterEventEngineChannelArgPreconditioning(builder);
+        builder->handshaker_registry()->RegisterHandshakerFactory(
+            HANDSHAKER_CLIENT, std::make_unique<TestHandshakerFactory>());
+      });
+  grpc_resolved_address addr;
+  CHECK(grpc_parse_uri(URI::Parse(kTestAddress).value(), &addr));
+  ChannelArgs args;
+  args = args.SetObject(ResourceQuota::Default())
+             .SetObject(std::static_pointer_cast<
+                        grpc_event_engine::experimental::EventEngine>(
+                 grpc_event_engine::experimental::GetDefaultEventEngine()))
+             .SetObject(creds->Ref())
+             .Set(GRPC_ARG_DEFAULT_AUTHORITY, kDefaultAuthority);
+  creds->Unref();
+  SubchannelConnector::Args connector_args;
+  SubchannelConnector::Result connecting_result;
+  grpc_core::Notification notify;
+  grpc_closure on_connecting_finished;
+  GRPC_CLOSURE_INIT(&on_connecting_finished, OnConnectingFinished, &notify,
+                    grpc_schedule_on_exec_ctx);
+  {
+    auto connector = MakeOrphanable<Chttp2Connector>();
+    connector_args.address = &addr;
+    connector_args.interested_parties = nullptr;
+    connector_args.deadline = Timestamp::Now() + Duration::Seconds(1);
+    connector_args.channel_args = args;
+    connector->Connect(connector_args, &connecting_result,
+                       &on_connecting_finished);
+  }
+  notify.WaitForNotification();
+}
+
+void OnReadFinished(void* arg, grpc_error_handle error) {
+  auto* notify = reinterpret_cast<grpc_core::Notification*>(arg);
+  LOG(ERROR) << "OnReadFinished error = " << error;
+  notify->Notify();
+}
+
+TEST(CredentialsTest, TestGoogleDefaultCredsWithSubchannelCreation) {
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(),
+      "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
+  ExecCtx exec_ctx;
+  grpc_flush_cached_google_default_credentials();
+  grpc_call_credentials* call_creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
+  HttpRequest::SetOverride(
+      default_creds_metadata_server_detection_httpcli_get_success_override,
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
+  grpc_composite_channel_credentials* channel_creds =
+      reinterpret_cast<grpc_composite_channel_credentials*>(
+          grpc_google_default_credentials_create(call_creds));
+  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
+  CHECK_NE(channel_creds, nullptr);
+  CHECK_NE(channel_creds->call_creds(), nullptr);
+  grpc_endpoint_pair pair;
+  grpc_slice_buffer read_sb;
+  grpc_slice_buffer_init(&read_sb);
+  grpc_core::Notification notify;
+  grpc_closure on_read_finished;
+  GRPC_CLOSURE_INIT(&on_read_finished, OnReadFinished, &notify,
+                    grpc_schedule_on_exec_ctx);
+  HttpRequest::TestOnlyInjectEndpointFactory(
+      [&pair, &read_sb, &on_read_finished]() -> OrphanablePtr<grpc_endpoint> {
+        ChannelArgs ep_args;
+        ep_args =
+            ep_args.SetObject(ResourceQuota::Default())
+                .SetObject(std::static_pointer_cast<
+                           grpc_event_engine::experimental::EventEngine>(
+                    grpc_event_engine::experimental::GetDefaultEventEngine()));
+        pair = grpc_iomgr_create_endpoint_pair("test", ep_args.ToC().get());
+        grpc_endpoint_read(pair.client, &read_sb, &on_read_finished,
+                           /*urgent=*/true,
+                           /*min_progress_size=*/1);
+        return WrapOrphanable(pair.client);
+      });
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(channel_creds->mutable_call_creds(),
+                                kTestUrlScheme, kTestAuthority, kTestPath);
+  ExecCtx::Get()->Flush();
+
+  HttpRequest::TestOnlyInjectEndpointFactory(nullptr);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+
+  WaitForChttp2ConnectionComplete(channel_creds);
+  grpc_endpoint_destroy(pair.server);
+  ExecCtx::Get()->Flush();
+  notify.WaitForNotification();
+  grpc_slice_buffer_destroy(&read_sb);
 }
 
 struct fake_call_creds : public grpc_call_credentials {

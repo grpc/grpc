@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -73,7 +74,6 @@ typedef int (*grpc_httpcli_put_override)(
     grpc_closure* on_complete, grpc_http_response* response);
 
 namespace grpc_core {
-
 // Tracks an in-progress GET or POST request. Calling \a Start()
 // begins async work and calling \a Orphan() arranges for async work
 // to be completed as sooon as possible (possibly aborting the request
@@ -87,7 +87,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //  determine the port number. The authority field is the target host. The
   //  path field determines the path of the request. No other fields are used.
   // 'args' are optional channel args for the request.
-  // 'pollent' indicates a grpc_polling_entity that is interested in the result
+  // 'pollent' indicates a grpc_polling_entity that is interested in the
+  // result
   //   of the get - work on this entity may be used to progress the get
   //   operation
   // 'request' contains request parameters - these are caller owned and
@@ -111,7 +112,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //  determine the port number. The authority field is the target host. The
   //  path field determines the path of the request. No other fields are used.
   // 'args' are optional channel args for the request.
-  // 'pollent' indicates a grpc_polling_entity that is interested in the result
+  // 'pollent' indicates a grpc_polling_entity that is interested in the
+  // result
   //   of the post - work on this entity may be used to progress the post
   //   operation
   // 'request' contains request parameters - these are caller owned and can be
@@ -136,7 +138,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //  determine the port number. The authority field is the target host. The
   //  path field determines the path of the request. No other fields are used.
   // 'args' are optional channel args for the request.
-  // 'pollent' indicates a grpc_polling_entity that is interested in the result
+  // 'pollent' indicates a grpc_polling_entity that is interested in the
+  // result
   //   of the post - work on this entity may be used to progress the post
   //   operation
   // 'request' contains request parameters - these are caller owned and can be
@@ -175,6 +178,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   static void TestOnlySetOnHandshakeDoneIntercept(
       void (*intercept)(HttpRequest* req));
+
+  static void TestOnlyInjectEndpointFactory(
+      absl::AnyInvocable<OrphanablePtr<grpc_endpoint>()> factory);
 
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
