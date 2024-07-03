@@ -1167,13 +1167,15 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, EdsAuthorityRewriteTest,
 TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
-  constexpr char kAltAuthority[] = "alt_authority";
-  ChannelArguments channel_args;
-  channel_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, kAltAuthority);
+  constexpr char kAltAuthority1[] = "alt_authority1";
+  constexpr char kAltAuthority2[] = "alt_authority2";
+  // Note: We use InsecureCreds, since FakeCreds are too picky about
+  // what authority gets sent.
   InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
              /*lb_expected_authority=*/"",
              /*xds_resource_does_not_exist_timeout_ms=*/0,
-             /*balancer_authority_override=*/"", &channel_args);
+             /*balancer_authority_override=*/"", /*args=*/nullptr,
+             InsecureChannelCredentials());
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.mutable_virtual_hosts(0)
@@ -1182,21 +1184,34 @@ TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
       ->mutable_auto_host_rewrite()
       ->set_value(true);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Create a backend with a hostname in EDS.
-  CreateAndStartBackends(1);
+  // Create 3 backends.  Backend 0 does not have a hostname, but 1 and 2 do.
+  CreateAndStartBackends(3, /*enable_xds=*/false, InsecureServerCredentials());
   EdsResourceArgs args({
       {"locality0",
-       {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+       {CreateEndpoint(0),
+        CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
-                       /*hostname=*/kAltAuthority)}}});
+                       /*hostname=*/kAltAuthority1),
+        CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                       /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                       /*hostname=*/kAltAuthority2),
+       }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send an RPC and check the authority seen on the server side.
-  EchoResponse response;
-  Status status = SendRpc(
-      RpcOptions().set_echo_host_from_authority_header(true), &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(response.param().host(), kAltAuthority);
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Send one RPC for each backend, check the authority headers seen on
+  // the servers, and make sure we see the expected ones.
+  std::set<std::string> authorities_seen;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EchoResponse response;
+    Status status = SendRpc(
+        RpcOptions().set_echo_host_from_authority_header(true), &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    authorities_seen.insert(response.param().host());
+  }
+  EXPECT_THAT(
+      authorities_seen,
+      ::testing::ElementsAre(kAltAuthority1, kAltAuthority2, kServerName));
 }
 
 TEST_P(EdsAuthorityRewriteTest, NoRewriteWithoutEnvVar) {
@@ -1260,13 +1275,7 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfServerNotTrustedInBootstrap) {
 TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNoHostnameInEds) {
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
-  constexpr char kAltAuthority[] = "alt_authority";
-  ChannelArguments channel_args;
-  channel_args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, kAltAuthority);
-  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
-             /*lb_expected_authority=*/"",
-             /*xds_resource_does_not_exist_timeout_ms=*/0,
-             /*balancer_authority_override=*/"", &channel_args);
+  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.mutable_virtual_hosts(0)
