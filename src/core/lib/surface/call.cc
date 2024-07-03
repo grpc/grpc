@@ -34,14 +34,14 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
+#include "third_party/absl/base/thread_annotations.h"
+#include "third_party/absl/log/check.h"
+#include "third_party/absl/log/log.h"
+#include "third_party/absl/status/status.h"
+#include "third_party/absl/strings/str_cat.h"
+#include "third_party/absl/strings/str_format.h"
+#include "third_party/absl/strings/str_join.h"
+#include "third_party/absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -319,11 +319,10 @@ void Call::HandleCompressionAlgorithmNotAccepted(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  gpr_log(GPR_ERROR,
-          "Compression algorithm ('%s') not present in the "
-          "accepted encodings (%s)",
-          algo_name,
-          std::string(encodings_accepted_by_peer_.ToString()).c_str());
+  LOG(ERROR) << "Compression algorithm ('" << algo_name
+             << "') not present in the "
+                "accepted encodings ("
+             << encodings_accepted_by_peer_.ToString() << ")";
 }
 
 void Call::HandleCompressionAlgorithmDisabled(
@@ -341,8 +340,8 @@ void Call::HandleCompressionAlgorithmDisabled(
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
-            deadline_.ToString().c_str(), deadline.ToString().c_str());
+    VLOG(2) << "[call " << this << "] UpdateDeadline from=" << deadline_
+            << " to=" << deadline;
   }
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
