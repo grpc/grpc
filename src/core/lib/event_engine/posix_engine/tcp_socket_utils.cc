@@ -109,13 +109,12 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
     LOG_EVERY_N_SEC(ERROR, 10)
         << "socket(" << family << ", " << type << ", " << protocol
         << ") returned " << res << " with error: |"
-        << grpc_core::StrError(errno).c_str()
+        << grpc_core::StrError(errno)
         << "|. This process might not have a sufficient file descriptor limit "
-           "for "
-        << "the number of connections grpc wants to open (which is generally a "
-        << "function of the number of grpc channels, the lb policy of each "
-        << "channel, and the number of backends each channel is load balancing "
-        << "across).";
+           "for the number of connections grpc wants to open (which is "
+           "generally a function of the number of grpc channels, the lb policy "
+           "of each channel, and the number of backends each channel is load "
+           "balancing across).";
     errno = saved_errno;
   }
   return res;
