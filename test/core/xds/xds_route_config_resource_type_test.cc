@@ -53,6 +53,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"

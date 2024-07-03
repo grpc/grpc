@@ -6,7 +6,7 @@
 # https://developers.google.com/open-source/licenses/bsd
 
 load(
-    "//upb/bazel:build_defs.bzl",
+    "//bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
 )
 
@@ -117,6 +117,6 @@ filegroup(
             "**/*test.cc",
         ],
     ),
-    visibility = ["//upb:__pkg__"],
+    visibility = ["//pkg:__pkg__"],
 )
 # end:github_only
