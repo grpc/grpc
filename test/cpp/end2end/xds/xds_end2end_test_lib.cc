@@ -577,7 +577,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   if (credentials == nullptr) {
     credentials = std::make_shared<FakeTransportSecurityChannelCredentials>();
   }
-  return grpc::CreateCustomChannel(uri, std::move(credentials), *args);
+  return grpc::CreateCustomChannel(uri, credentials, *args);
 }
 
 Status XdsEnd2endTest::SendRpc(
@@ -858,7 +858,7 @@ XdsEnd2endTest::CreateXdsChannelCredentials() {
   options.set_verify_server_certs(true);
   options.set_check_call_host(false);
   auto tls_creds = grpc::experimental::TlsCredentials(options);
-  return XdsCredentials(std::move(tls_creds));
+  return XdsCredentials(tls_creds);
 }
 
 std::shared_ptr<ServerCredentials>
