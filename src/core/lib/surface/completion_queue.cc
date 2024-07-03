@@ -437,13 +437,14 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                           \
-  do {                                                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(api) &&                                        \
-        (GRPC_TRACE_FLAG_ENABLED(queue_pluck) ||                               \
-         (event)->type != GRPC_QUEUE_TIMEOUT)) {                               \
-      LOG(INFO) << "RETURN_EVENT[" << cq << "]: " << grpc_event_string(event); \
-    }                                                                          \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)  \
+  do {                                                \
+    if (GRPC_TRACE_FLAG_ENABLED(api) &&               \
+        (GRPC_TRACE_FLAG_ENABLED(queue_pluck) ||      \
+         (event)->type != GRPC_QUEUE_TIMEOUT)) {      \
+      LOG(INFO) << "RETURN_EVENT[" << (cq)            \
+                << "]: " << grpc_event_string(event); \
+    }                                                 \
   } while (0)
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
