@@ -82,7 +82,9 @@ HandshakeManager::HandshakeManager()
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO)<< "handshake_manager "<<this<<": adding handshaker "<<std::string(handshaker->name())<<" ["<<handshaker.get()<<"] at index " << handshakers_.size());
+    LOG(INFO) << "handshake_manager " << this << ": adding handshaker "
+              << std::string(handshaker->name()) << " [" << handshaker.get()
+              << "] at index " << handshakers_.size();
   }
   handshakers_.push_back(std::move(handshaker));
 }
