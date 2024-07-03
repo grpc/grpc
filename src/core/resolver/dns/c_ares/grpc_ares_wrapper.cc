@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/channel_arg_names.h>

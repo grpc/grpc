@@ -1059,8 +1059,8 @@ Server::RegisteredMethod* Server::RegisterMethod(
     return nullptr;
   }
   if (flags != 0) {
-    LOG(ERROR) << "grpc_server_register_method invalid flags 0x" << std::hex
-               << flags;
+    LOG(ERROR) << "grpc_server_register_method invalid flags "
+               << absl::StrFormat("0x%08x", flags);
     return nullptr;
   }
   auto it = registered_methods_.emplace(
