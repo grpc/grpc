@@ -15,6 +15,7 @@
 #include "src/core/lib/transport/call_filters.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/port_platform.h>
 
