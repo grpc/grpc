@@ -735,7 +735,8 @@ static void cq_end_op_for_next(
         gpr_mu_unlock(cq->mu);
 
         if (!kick_error.ok()) {
-          LOG(ERROR) << "Kick failed: " << kick_error;
+          LOG(ERROR) << "Kick failed: "
+                     << grpc_core::StatusToString(kick_error);
         }
       }
       if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -1247,9 +1248,9 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     if (!add_plucker(cq, tag, &worker)) {
-      LOG(INFO) << "Too many outstanding grpc_completion_queue_pluck calls: "
-                   "maximum is "
-                << GRPC_MAX_COMPLETION_QUEUE_PLUCKERS;
+      VLOG(2) << "Too many outstanding grpc_completion_queue_pluck calls: "
+                 "maximum is "
+              << GRPC_MAX_COMPLETION_QUEUE_PLUCKERS;
       gpr_mu_unlock(cq->mu);
       // TODO(ctiller): should we use a different result here
       ret.type = GRPC_QUEUE_TIMEOUT;

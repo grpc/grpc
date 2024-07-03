@@ -192,7 +192,7 @@ inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
     VLOG(2) << refcount->object_type << " " << refcount << ":"
-            << refcount->destroy.cb_arg << " UNREF " << reason;
+            << refcount->destroy.cb_arg << " REF " << reason;
   }
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }

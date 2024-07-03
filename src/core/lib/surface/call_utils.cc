@@ -88,10 +88,9 @@ void CToMetadata(grpc_metadata* metadata, size_t count,
     if (key == "content-length") continue;
     b->Append(key, Slice(CSliceRef(md->value)),
               [md](absl::string_view error, const Slice& value) {
-                VLOG(2) << "Append error: "
-                        << absl::StrCat("key=", StringViewFromSlice(md->key),
-                                        " error=", error,
-                                        " value=", value.as_string_view());
+                VLOG(2) << "Append error: key=" << StringViewFromSlice(md->key)
+                        << " error=" << error
+                        << " value=" << value.as_string_view();
               });
   }
 }

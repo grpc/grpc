@@ -319,8 +319,7 @@ void Call::HandleCompressionAlgorithmNotAccepted(
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
   LOG(ERROR) << "Compression algorithm ('" << algo_name
-             << "') not present in the "
-                "accepted encodings ("
+             << "') not present in the accepted encodings ("
              << encodings_accepted_by_peer_.ToString() << ")";
 }
 
@@ -339,8 +338,9 @@ void Call::HandleCompressionAlgorithmDisabled(
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    VLOG(2) << "[call " << this << "] UpdateDeadline from=" << deadline_
-            << " to=" << deadline;
+    VLOG(2) << "[call " << this
+            << "] UpdateDeadline from=" << deadline_.ToString()
+            << " to=" << deadline.ToString();
   }
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
