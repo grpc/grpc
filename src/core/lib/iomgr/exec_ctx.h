@@ -21,19 +21,13 @@
 
 #include <limits>
 
-#include <grpc/support/port_platform.h>
-
-#if __APPLE__
-// Provides TARGET_OS_IPHONE
-#include <TargetConditionals.h>
-#endif
-
 #include "absl/log/check.h"
 
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -189,13 +183,13 @@ class GRPC_DLL ExecCtx {
   Timestamp Now() { return Timestamp::Now(); }
 
   void InvalidateNow() {
-#if !TARGET_OS_IPHONE
+#ifndef GPR_APPLE
     time_cache_.InvalidateCache();
 #endif
   }
 
   void SetNowIomgrShutdown() {
-#if !TARGET_OS_IPHONE
+#ifndef GPR_APPLE
     // We get to do a test only set now on this path just because iomgr
     // is getting removed and no point adding more interfaces for it.
     time_cache_.TestOnlySetNow(Timestamp::InfFuture());
@@ -203,7 +197,7 @@ class GRPC_DLL ExecCtx {
   }
 
   void TestOnlySetNow(Timestamp now) {
-#if !TARGET_OS_IPHONE
+#ifndef GPR_APPLE
     time_cache_.TestOnlySetNow(now);
 #endif
   }
@@ -231,7 +225,7 @@ class GRPC_DLL ExecCtx {
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
 
-#if !TARGET_OS_IPHONE
+#ifndef GPR_APPLE
   ScopedTimeCache time_cache_;
 #endif
 
