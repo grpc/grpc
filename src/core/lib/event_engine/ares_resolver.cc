@@ -84,6 +84,10 @@ namespace experimental {
 
 namespace {
 
+// A rough limit on the number of records (A/AAAA or SRV) we may get from a
+// single response.
+constexpr int kMaxRecordSize = 65536;
+
 absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
   switch (status) {
     case ARES_ECANCELLED:
@@ -596,6 +600,10 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         "resolver:%p OnHostbynameDoneLocked name=%s ARES_SUCCESS",
         ares_resolver, hostname_qa->query_name.c_str());
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
+      if (hostname_qa->result.size() == kMaxRecordSize) {
+        LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
+        break;
+      }
       switch (hostent->h_addrtype) {
         case AF_INET6: {
           size_t addr_len = sizeof(struct sockaddr_in6);
@@ -704,6 +712,10 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   std::vector<EventEngine::DNSResolver::SRVRecord> result;
   for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
        srv_it = srv_it->next) {
+    if (result.size() == kMaxRecordSize) {
+      LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
+      break;
+    }
     EventEngine::DNSResolver::SRVRecord record;
     record.host = srv_it->host;
     record.port = srv_it->port;
