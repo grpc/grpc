@@ -142,9 +142,10 @@ MessageHandle ChannelCompression::CompressMessage(
       const float savings_ratio = 1.0f - static_cast<float>(after_size) /
                                              static_cast<float>(before_size);
       CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
-      LOG(INFO) << "Compressed[" << algo_name << "] " << before_size
-                << " bytes vs. " << after_size << " bytes ("
-                << 100 * savings_ratio << "% savings)";
+      LOG(INFO) << absl::StrFormat(
+          "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
+          " bytes (%.2f%% savings)",
+          algo_name, before_size, after_size, 100 * savings_ratio);
     }
     tmp.Swap(payload);
     flags |= GRPC_WRITE_INTERNAL_COMPRESS;
