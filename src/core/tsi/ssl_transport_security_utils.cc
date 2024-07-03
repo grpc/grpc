@@ -265,7 +265,7 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
-    VLOG(2) << "Could not public key from certificate.";
+    VLOG(2) << "Could not get public key from certificate.";
     EVP_PKEY_free(ikey);
     return false;
   }

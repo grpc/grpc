@@ -5,6 +5,7 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 load(
     "//bazel:upb_minitable_proto_library.bzl",
     "upb_minitable_proto_library",
@@ -14,7 +15,6 @@ load(
     "upb_c_proto_library",
     "upb_proto_reflection_library",
 )
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
 cc_library(
     name = "message",
@@ -46,7 +46,6 @@ cc_library(
         "//upb:mini_table",
         "//upb:port",
         "//upb/base:internal",
-        "//upb/hash",
         "//upb/mini_table:internal",
     ],
 )
@@ -54,15 +53,12 @@ cc_library(
 cc_library(
     name = "internal",
     srcs = [
-        "internal/compare_unknown.c",
         "internal/extension.c",
         "internal/message.c",
-        "value.h",
     ],
     hdrs = [
         "internal/accessors.h",
         "internal/array.h",
-        "internal/compare_unknown.h",
         "internal/extension.h",
         "internal/map.h",
         "internal/map_sorter.h",
@@ -74,11 +70,9 @@ cc_library(
     deps = [
         ":types",
         "//upb:base",
-        "//upb:eps_copy_input_stream",
         "//upb:mem",
         "//upb:mini_table",
         "//upb:port",
-        "//upb:wire_reader",
         "//upb/base:internal",
         "//upb/hash",
         "//upb/mini_table:internal",
@@ -96,12 +90,11 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":internal",
         ":message",
-        "//upb:base",
+        "//upb:mem",
         "//upb:mini_table",
         "//upb:port",
-        "//upb/mini_table:internal",
+        "//upb:wire",
     ],
 )
 
@@ -154,6 +147,7 @@ cc_library(
     name = "split64",
     hdrs = [
         "accessors_split64.h",
+        "array_split64.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
@@ -173,7 +167,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//upb:base",
-        "//upb:port",
         "//upb/hash",
     ],
 )
@@ -234,20 +227,6 @@ cc_test(
         ":message",
         "//upb:base",
         "//upb:mem",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "compare_unknown_test",
-    srcs = ["internal/compare_unknown_test.cc"],
-    deps = [
-        ":internal",
-        "//upb:port",
-        "//upb:wire_reader",
-        "//upb/base:internal",
-        "@com_google_absl//absl/types:variant",
         "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
@@ -411,18 +390,17 @@ filegroup(
         [
             "**/*test.cc",
         ],
-        exclude = ["promote_test.cc"],
     ),
-    visibility = ["//upb:__pkg__"],
+    visibility = ["//pkg:__pkg__"],
 )
 
 filegroup(
-    name = "test_protos",
+    name = "test_utils",
     srcs = glob(
         [
-            "**/*.proto",
+            "**/*test.proto",
         ],
     ),
-    visibility = ["//upb:__pkg__"],
+    visibility = ["//pkg:__pkg__"],
 )
 # end:github_only
