@@ -1,4 +1,4 @@
-# Copyright 2023 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+from datetime import datetime
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/psm-interop-test-cpp.sh"
-timeout_mins: 180
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*.log"
-    strip_prefix: "artifacts"
-  }
-}
-env_vars {
-  key: "PSM_TEST_SUITE"
-  value: "csm"
-}
+
+def get_current_time():
+    return datetime.now().strftime("%T.%f")
