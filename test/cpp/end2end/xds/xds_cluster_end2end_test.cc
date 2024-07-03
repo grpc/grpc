@@ -1186,16 +1186,17 @@ TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Create 3 backends.  Backend 0 does not have a hostname, but 1 and 2 do.
   CreateAndStartBackends(3, /*enable_xds=*/false, InsecureServerCredentials());
-  EdsResourceArgs args({
-      {"locality0",
-       {CreateEndpoint(0),
-        CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                       /*lb_weight=*/1, /*additional_backend_indxes=*/{},
-                       /*hostname=*/kAltAuthority1),
-        CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                       /*lb_weight=*/1, /*additional_backend_indxes=*/{},
-                       /*hostname=*/kAltAuthority2),
-       }}});
+  EdsResourceArgs args(
+      {{"locality0",
+        {
+            CreateEndpoint(0),
+            CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                           /*hostname=*/kAltAuthority1),
+            CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                           /*hostname=*/kAltAuthority2),
+        }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends(DEBUG_LOCATION);
   // Send one RPC for each backend, check the authority headers seen on
@@ -1227,11 +1228,11 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteWithoutEnvVar) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Create a backend with a hostname in EDS.
   CreateAndStartBackends(1);
-  EdsResourceArgs args({
-      {"locality0",
-       {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                       /*lb_weight=*/1, /*additional_backend_indxes=*/{},
-                       /*hostname=*/kAltAuthority)}}});
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                        /*hostname=*/kAltAuthority)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check the authority seen on the server side.
   EchoResponse response;
@@ -1257,11 +1258,11 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfServerNotTrustedInBootstrap) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Create a backend with a hostname in EDS.
   CreateAndStartBackends(1);
-  EdsResourceArgs args({
-      {"locality0",
-       {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                       /*lb_weight=*/1, /*additional_backend_indxes=*/{},
-                       /*hostname=*/kAltAuthority)}}});
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                        /*hostname=*/kAltAuthority)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check the authority seen on the server side.
   EchoResponse response;
@@ -1304,11 +1305,11 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNotEnabledInRoute) {
   InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
   // Create a backend with a hostname in EDS.
   CreateAndStartBackends(1);
-  EdsResourceArgs args({
-      {"locality0",
-       {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                       /*lb_weight=*/1, /*additional_backend_indxes=*/{},
-                       /*hostname=*/kAltAuthority)}}});
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                        /*hostname=*/kAltAuthority)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check the authority seen on the server side.
   EchoResponse response;

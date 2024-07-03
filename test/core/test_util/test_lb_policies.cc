@@ -743,8 +743,7 @@ class AuthorityOverrideLoadBalancingPolicy
   absl::Status UpdateLocked(UpdateArgs args) override {
     authority_override_ =
         grpc_event_engine::experimental::Slice::FromCopiedString(
-            args.args
-                .GetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE)
+            args.args.GetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE)
                 .value_or(""));
     return ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
   }

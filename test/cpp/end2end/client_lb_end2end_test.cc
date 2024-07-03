@@ -324,9 +324,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
       channel_creds =
           std::make_shared<FakeTransportSecurityChannelCredentials>();
     }
-    return grpc::CreateCustomChannel(
-        absl::StrCat("fake:", kDefaultAuthority), std::move(channel_creds),
-        args);
+    return grpc::CreateCustomChannel(absl::StrCat("fake:", kDefaultAuthority),
+                                     std::move(channel_creds), args);
   }
 
   Status SendRpc(
@@ -425,14 +424,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
     bool started_ ABSL_GUARDED_BY(mu_) = false;
 
     explicit ServerData(
-        int port = 0,
-        std::shared_ptr<ServerCredentials> server_creds = nullptr)
+        int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           server_creds_(
               server_creds == nullptr
-                  ? std::shared_ptr<ServerCredentials>(
-                        new SecureServerCredentials(
-                            grpc_fake_transport_security_server_credentials_create()))
+                  ? std::shared_ptr<
+                        ServerCredentials>(new SecureServerCredentials(
+                        grpc_fake_transport_security_server_credentials_create()))
                   : std::move(server_creds)),
           server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
@@ -444,8 +442,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
       LOG(INFO) << "starting server on port " << port_;
       grpc_core::MutexLock lock(&mu_);
       started_ = true;
-      thread_ = std::make_unique<std::thread>(
-          std::bind(&ServerData::Serve, this));
+      thread_ =
+          std::make_unique<std::thread>(std::bind(&ServerData::Serve, this));
       while (!server_ready_) {
         cond_.Wait(&mu_);
       }
@@ -761,8 +759,8 @@ TEST_F(AuthorityOverrideTest, OverrideFromLbPolicy) {
   FakeResolverResponseGeneratorWrapper response_generator;
   ChannelArguments args;
   args.SetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE, "from-lb.example.com");
-  auto channel = BuildChannel("authority_override_lb", response_generator,
-                              args, InsecureChannelCredentials());
+  auto channel = BuildChannel("authority_override_lb", response_generator, args,
+                              InsecureChannelCredentials());
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Send an RPC.
@@ -835,8 +833,8 @@ TEST_F(AuthorityOverrideTest,
   ChannelArguments args;
   args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "from-channel.example.com");
   args.SetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE, "from-lb.example.com");
-  auto channel = BuildChannel("authority_override_lb", response_generator,
-                              args, InsecureChannelCredentials());
+  auto channel = BuildChannel("authority_override_lb", response_generator, args,
+                              InsecureChannelCredentials());
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Send an RPC.
@@ -859,8 +857,8 @@ TEST_F(AuthorityOverrideTest,
   FakeResolverResponseGeneratorWrapper response_generator;
   ChannelArguments args;
   args.SetString(GRPC_ARG_TEST_LB_AUTHORITY_OVERRIDE, "from-lb.example.com");
-  auto channel = BuildChannel("authority_override_lb", response_generator,
-                              args, InsecureChannelCredentials());
+  auto channel = BuildChannel("authority_override_lb", response_generator, args,
+                              InsecureChannelCredentials());
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Send an RPC.
@@ -2146,16 +2144,16 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   FakeResolverResponseGeneratorWrapper response_generator1;
-  auto channel1 = BuildChannel("round_robin", response_generator1, args,
-                               channel_creds);
+  auto channel1 =
+      BuildChannel("round_robin", response_generator1, args, channel_creds);
   auto stub1 = BuildStub(channel1);
   std::vector<int> ports = GetServersPorts();
   response_generator1.SetNextResolution(ports);
   // Create a channel with health checking enabled but inhibited.
   args.SetInt(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
   FakeResolverResponseGeneratorWrapper response_generator2;
-  auto channel2 = BuildChannel("round_robin", response_generator2, args,
-                               channel_creds);
+  auto channel2 =
+      BuildChannel("round_robin", response_generator2, args, channel_creds);
   auto stub2 = BuildStub(channel2);
   response_generator2.SetNextResolution(ports);
   // First channel should not become READY, because health checks should be
@@ -2192,8 +2190,8 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   FakeResolverResponseGeneratorWrapper response_generator1;
-  auto channel1 = BuildChannel("round_robin", response_generator1, args,
-                               channel_creds);
+  auto channel1 =
+      BuildChannel("round_robin", response_generator1, args, channel_creds);
   auto stub1 = BuildStub(channel1);
   std::vector<int> ports = GetServersPorts();
   response_generator1.SetNextResolution(ports);
@@ -2204,8 +2202,8 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name2\"}}");
   FakeResolverResponseGeneratorWrapper response_generator2;
-  auto channel2 = BuildChannel("round_robin", response_generator2, args2,
-                               channel_creds);
+  auto channel2 =
+      BuildChannel("round_robin", response_generator2, args2, channel_creds);
   auto stub2 = BuildStub(channel2);
   response_generator2.SetNextResolution(ports);
   // Allow health checks from channel 2 to succeed.

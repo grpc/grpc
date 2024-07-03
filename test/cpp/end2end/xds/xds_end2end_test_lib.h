@@ -483,8 +483,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       additional_ports.push_back(backends_[idx]->port());
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
-                                     health_status, lb_weight,
-                                     additional_ports, hostname);
+                                     health_status, lb_weight, additional_ports,
+                                     hostname);
   }
 
   // Creates a vector of endpoints for a specified range of backends,
