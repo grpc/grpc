@@ -122,23 +122,15 @@ struct SeqState<Traits, P, F0> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.next_factory, other.prior.next_factory);
   }
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -259,7 +251,7 @@ struct SeqState<Traits, P, F0, F1> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
     Construct(&prior.next_factory, other.prior.next_factory);
@@ -267,23 +259,10 @@ struct SeqState<Traits, P, F0, F1> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail1:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -455,7 +434,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.next_factory,
               other.prior.prior.prior.next_factory);
@@ -465,30 +444,12 @@ struct SeqState<Traits, P, F0, F1, F2> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail1:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail2:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -710,7 +671,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.next_factory);
@@ -722,37 +683,14 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail1:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail2:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail3:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -1033,7 +971,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.prior.next_factory);
@@ -1047,45 +985,16 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail1:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail2:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail3:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail4:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -1420,7 +1329,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.prior.prior.next_factory);
@@ -1436,55 +1345,19 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail1:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail2:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail3:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail4:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail5:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -1873,7 +1746,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.prior.prior.prior.next_factory);
@@ -1891,65 +1764,23 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail6;
-      case State::kState7:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(
             other.prior.prior.prior.prior.prior.prior.prior.next_factory));
-  tail1:
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail2:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail3:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail4:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail5:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail6:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -2394,7 +2225,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -2415,75 +2246,26 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
-                          .current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail6;
-      case State::kState7:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail7;
-      case State::kState8:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .next_factory));
-  tail1:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(
             other.prior.prior.prior.prior.prior.prior.prior.next_factory));
-  tail2:
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail3:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail4:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail5:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail6:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail7:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -2989,7 +2771,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -3014,86 +2796,30 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
-                          .current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail6;
-      case State::kState7:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail7;
-      case State::kState8:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail8;
-      case State::kState9:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.prior.prior.prior
                       .next_factory));
-  tail1:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .next_factory));
-  tail2:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(
             other.prior.prior.prior.prior.prior.prior.prior.next_factory));
-  tail3:
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail4:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail5:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail6:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail7:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail8:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -3660,7 +3386,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
@@ -3689,97 +3415,34 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
-                          .current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail6;
-      case State::kState7:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail7;
-      case State::kState8:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail8;
-      case State::kState9:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail9;
-      case State::kState10:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.next_factory));
-  tail1:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.prior.prior.prior
                       .next_factory));
-  tail2:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .next_factory));
-  tail3:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(
             other.prior.prior.prior.prior.prior.prior.prior.next_factory));
-  tail4:
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail5:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail6:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail7:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail8:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail9:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -4408,7 +4071,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
@@ -4441,108 +4104,38 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
-                          .current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail6;
-      case State::kState7:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail7;
-      case State::kState8:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail8;
-      case State::kState9:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail9;
-      case State::kState10:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail10;
-      case State::kState11:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.prior.next_factory));
-  tail1:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.next_factory));
-  tail2:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.prior.prior.prior
                       .next_factory));
-  tail3:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .next_factory));
-  tail4:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(
             other.prior.prior.prior.prior.prior.prior.prior.next_factory));
-  tail5:
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail6:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail7:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail8:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail9:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail10:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
@@ -5235,7 +4828,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    CHECK(state == State::kState0);
+    DCHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .prior.next_factory,
@@ -5272,120 +4865,42 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    switch (state) {
-      case State::kState0:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.current_promise));
-        goto tail0;
-      case State::kState1:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.prior.prior.current_promise));
-        goto tail1;
-      case State::kState2:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.prior.current_promise));
-        goto tail2;
-      case State::kState3:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior
-                       .current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .prior.prior.current_promise));
-        goto tail3;
-      case State::kState4:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
-                          .current_promise));
-        goto tail4;
-      case State::kState5:
-        Construct(&prior.prior.prior.prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.prior.prior.prior
-                                .current_promise));
-        goto tail5;
-      case State::kState6:
-        Construct(
-            &prior.prior.prior.prior.prior.prior.current_promise,
-            std::move(
-                other.prior.prior.prior.prior.prior.prior.current_promise));
-        goto tail6;
-      case State::kState7:
-        Construct(
-            &prior.prior.prior.prior.prior.current_promise,
-            std::move(other.prior.prior.prior.prior.prior.current_promise));
-        goto tail7;
-      case State::kState8:
-        Construct(&prior.prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.prior.current_promise));
-        goto tail8;
-      case State::kState9:
-        Construct(&prior.prior.prior.current_promise,
-                  std::move(other.prior.prior.prior.current_promise));
-        goto tail9;
-      case State::kState10:
-        Construct(&prior.prior.current_promise,
-                  std::move(other.prior.prior.current_promise));
-        goto tail10;
-      case State::kState11:
-        Construct(&prior.current_promise,
-                  std::move(other.prior.current_promise));
-        goto tail11;
-      case State::kState12:
-        Construct(&current_promise, std::move(other.current_promise));
-        return;
-    }
-  tail0:
+    DCHECK(state == State::kState0);
+    Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.prior.prior.next_factory));
-  tail1:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.prior.next_factory));
-  tail2:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.next_factory));
-  tail3:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.prior.prior.prior
                       .next_factory));
-  tail4:
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .next_factory));
-  tail5:
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.next_factory,
         std::move(
             other.prior.prior.prior.prior.prior.prior.prior.next_factory));
-  tail6:
     Construct(
         &prior.prior.prior.prior.prior.prior.next_factory,
         std::move(other.prior.prior.prior.prior.prior.prior.next_factory));
-  tail7:
     Construct(&prior.prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.prior.next_factory));
-  tail8:
     Construct(&prior.prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.prior.next_factory));
-  tail9:
     Construct(&prior.prior.prior.next_factory,
               std::move(other.prior.prior.prior.next_factory));
-  tail10:
     Construct(&prior.prior.next_factory,
               std::move(other.prior.prior.next_factory));
-  tail11:
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =

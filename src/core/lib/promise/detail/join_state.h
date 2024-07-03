@@ -67,16 +67,9 @@ struct JoinState<Traits, P0, P1> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -182,21 +175,10 @@ struct JoinState<Traits, P0, P1, P2> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -339,26 +321,11 @@ struct JoinState<Traits, P0, P1, P2, P3> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -537,31 +504,12 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -776,36 +724,13 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -1056,41 +981,14 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
-    if (ready.is_set(6)) {
-      Construct(&result6, std::move(other.result6));
-    } else {
-      Construct(&promise6, std::move(other.promise6));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
+    Construct(&promise6, std::move(other.promise6));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -1377,46 +1275,15 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
-    if (ready.is_set(6)) {
-      Construct(&result6, std::move(other.result6));
-    } else {
-      Construct(&promise6, std::move(other.promise6));
-    }
-    if (ready.is_set(7)) {
-      Construct(&result7, std::move(other.result7));
-    } else {
-      Construct(&promise7, std::move(other.promise7));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
+    Construct(&promise6, std::move(other.promise6));
+    Construct(&promise7, std::move(other.promise7));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -1738,51 +1605,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
       : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
-    if (ready.is_set(6)) {
-      Construct(&result6, std::move(other.result6));
-    } else {
-      Construct(&promise6, std::move(other.promise6));
-    }
-    if (ready.is_set(7)) {
-      Construct(&result7, std::move(other.result7));
-    } else {
-      Construct(&promise7, std::move(other.promise7));
-    }
-    if (ready.is_set(8)) {
-      Construct(&result8, std::move(other.result8));
-    } else {
-      Construct(&promise8, std::move(other.promise8));
-    }
+    DCHECK(ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
+    Construct(&promise6, std::move(other.promise6));
+    Construct(&promise7, std::move(other.promise7));
+    Construct(&promise8, std::move(other.promise8));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
