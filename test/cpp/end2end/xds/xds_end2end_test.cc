@@ -292,8 +292,12 @@ class XdsSecurityTest : public XdsEnd2endTest {
                                      kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
-    InitClient(builder);
-    CreateAndStartBackends(2);
+    InitClient(builder, /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"",
+               CreateXdsChannelCredentials());
+    CreateAndStartBackends(2, /*xds_enabled=*/false,
+                           CreateMtlsServerCredentials());
     root_cert_ = grpc_core::testing::GetFileContents(kCaCertPath);
     bad_root_cert_ = grpc_core::testing::GetFileContents(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
@@ -921,8 +925,12 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                      kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
-    InitClient(builder);
-    CreateBackends(1, /*xds_enabled=*/true);
+    InitClient(builder, /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"",
+               CreateXdsChannelCredentials());
+    CreateBackends(1, /*xds_enabled=*/true,
+                   XdsServerCredentials(InsecureServerCredentials()));
     root_cert_ = grpc_core::testing::GetFileContents(kCaCertPath);
     bad_root_cert_ = grpc_core::testing::GetFileContents(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -3106,14 +3114,8 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   }
 }
 
-// CDS depends on XdsResolver.
-// Security depends on v3.
-// Not enabling load reporting or RDS, since those are irrelevant to these
-// tests.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsSecurityTest,
-    ::testing::Values(XdsTestType().set_use_xds_credentials()),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var, so that we use a global XdsClient
@@ -3126,39 +3128,28 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
 
 // We are only testing the server here.
 // Run with bootstrap from env var so that we use one XdsClient.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsServerSecurityTest,
-    ::testing::Values(
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_use_xds_credentials()),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
+                         ::testing::Values(XdsTestType().set_bootstrap_source(
+                             XdsTestType::kBootstrapFromEnvVar)),
+                         &XdsTestType::Name);
 
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsEnabledServerStatusNotificationTest,
-    ::testing::Values(XdsTestType().set_use_xds_credentials()),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 // Run with bootstrap from env var so that we use one XdsClient.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsServerFilterChainMatchTest,
-    ::testing::Values(
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_use_xds_credentials()),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
+                         ::testing::Values(XdsTestType().set_bootstrap_source(
+                             XdsTestType::kBootstrapFromEnvVar)),
+                         &XdsTestType::Name);
 
 // Test xDS-enabled server with and without RDS.
 // Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerRdsTest,
     ::testing::Values(
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_use_xds_credentials(),
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_use_xds_credentials()
             .set_enable_rds_testing()),
     &XdsTestType::Name);
 
@@ -3169,19 +3160,14 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTest,
     ::testing::Values(
-        XdsTestType().set_use_xds_credentials().set_bootstrap_source(
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
             XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
-            .set_enable_rds_testing()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_use_xds_credentials()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
@@ -3196,12 +3182,10 @@ INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
     ::testing::Values(
         XdsTestType()
-            .set_use_xds_credentials()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
@@ -3216,44 +3200,36 @@ INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithActionPermutations,
     ::testing::Values(
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_DENY)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_rbac_action(RBAC_Action_DENY)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_DENY)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
@@ -3265,37 +3241,31 @@ INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithActionAndAuditConditionPermutations,
     ::testing::Values(
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_rbac_audit_condition(
                 RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_rbac_audit_condition(
                 RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_ALLOW)
             .set_rbac_audit_condition(
                 RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_DENY)
             .set_rbac_audit_condition(
                 RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_DENY)
             .set_rbac_audit_condition(
                 RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
         XdsTestType()
-            .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_rbac_action(RBAC_Action_DENY)
             .set_rbac_audit_condition(
