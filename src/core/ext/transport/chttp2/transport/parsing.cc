@@ -334,8 +334,8 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         LOG(INFO) << "INCOMING[" << t << "]: "
                   << FrameTypeString(t->incoming_frame_type,
                                      t->incoming_frame_flags)
-                  << " len:" << t->incoming_frame_size << " id:0x"
-                  << t->incoming_stream_id;
+                  << " len:" << t->incoming_frame_size
+                  << absl::StrFormat(" id:0x%08x", t->incoming_stream_id);
       }
       t->deframe_state = GRPC_DTS_FRAME;
       err = init_frame_parser(t, requests_started);
