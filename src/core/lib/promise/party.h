@@ -227,8 +227,8 @@ class PartySyncUsingAtomics {
                       DebugLocation loc = {}) {
     if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
       LOG(INFO).AtLocation(loc.file(), loc.line())
-          << "Party " << this << " " << op << ": " << prev_state << " -> "
-          << new_state;
+          << absl::StrFormat("Party %p %30s: %016" PRIx64 " -> %016" PRIx64,
+                             this, op, prev_state, new_state);
     }
   }
 
