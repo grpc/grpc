@@ -233,8 +233,10 @@ void TransportFlowControl::UpdateSetting(
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
   if (new_desired_value != *desired_value) {
-    VLOG(2) << "[flowctl] UPDATE SETTING " << name << " from " << *desired_value
-            << " to " << new_desired_value;
+    if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
+      VLOG(2) << "[flowctl] UPDATE SETTING " << name << " from "
+              << *desired_value << " to " << new_desired_value;
+    }
     // Reaching zero can only happen for initial window size, and if it occurs
     // we really want to wake up writes and ensure all the queued stream
     // window updates are flushed, since stream flow control operates
