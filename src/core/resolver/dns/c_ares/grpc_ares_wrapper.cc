@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -48,13 +47,13 @@
 #include <ares.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
@@ -556,12 +555,11 @@ static void log_address_sorting_list(const grpc_ares_request* r,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
     auto addr_str = grpc_sockaddr_to_string(&addresses[i].address(), true);
-    gpr_log(GPR_INFO,
-            "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
-            "]=%s",
-            r, input_output_str, i,
-            addr_str.ok() ? addr_str->c_str()
-                          : addr_str.status().ToString().c_str());
+    LOG(INFO) << "(c-ares resolver) request:" << r
+              << " c-ares address sorting: " << input_output_str << "[" << i
+              << "]="
+              << (addr_str.ok() ? addr_str->c_str()
+                                : addr_str.status().ToString().c_str());
   }
 }
 
@@ -901,18 +899,14 @@ static bool inner_resolve_as_ip_literal_locked(
     std::unique_ptr<grpc_core::EndpointAddressesList>* addrs, std::string* host,
     std::string* port, std::string* hostport) {
   if (!grpc_core::SplitHostPort(name, host, port)) {
-    gpr_log(GPR_ERROR,
-            "Failed to parse %s to host:port while attempting to resolve as ip "
-            "literal.",
-            name);
+    LOG(ERROR) << "Failed to parse " << name
+               << " to host:port while attempting to resolve as ip literal.";
     return false;
   }
   if (port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
-      gpr_log(GPR_ERROR,
-              "No port or default port for %s while attempting to resolve as "
-              "ip literal.",
-              name);
+      LOG(ERROR) << "No port or default port for " << name
+                 << " while attempting to resolve as ip literal.";
       return false;
     }
     *port = default_port;
@@ -964,18 +958,14 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     std::string* port) {
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
-    gpr_log(GPR_ERROR,
-            "Failed to parse %s into host:port during manual localhost "
-            "resolution check.",
-            name);
+    LOG(ERROR) << "Failed to parse " << name
+               << " into host:port during manual localhost resolution check.";
     return false;
   }
   if (port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
-      gpr_log(GPR_ERROR,
-              "No port or default port for %s during manual localhost "
-              "resolution check.",
-              name);
+      LOG(ERROR) << "No port or default port for " << name
+                 << " during manual localhost resolution check.";
       return false;
     }
     *port = default_port;

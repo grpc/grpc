@@ -43,7 +43,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -1050,19 +1049,18 @@ Server::RegisteredMethod* Server::RegisterMethod(
   }
 
   if (!method) {
-    gpr_log(GPR_ERROR,
-            "grpc_server_register_method method string cannot be NULL");
+    LOG(ERROR) << "grpc_server_register_method method string cannot be NULL";
     return nullptr;
   }
   auto key = std::make_pair(host ? host : "", method);
   if (registered_methods_.find(key) != registered_methods_.end()) {
-    gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
-            host ? host : "*");
+    LOG(ERROR) << "duplicate registration for " << method << "@"
+               << (host ? host : "*");
     return nullptr;
   }
   if (flags != 0) {
-    gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
-            flags);
+    LOG(ERROR) << "grpc_server_register_method invalid flags "
+               << absl::StrFormat("0x%08x", flags);
     return nullptr;
   }
   auto it = registered_methods_.emplace(
@@ -1100,12 +1098,11 @@ void Server::MaybeFinishShutdown() {
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
-      gpr_log(GPR_DEBUG,
-              "Waiting for %" PRIuPTR " channels %" PRIuPTR
-              " connections and %" PRIuPTR "/%" PRIuPTR
-              " listeners to be destroyed before shutting down server",
-              channels_.size(), connections_open_,
-              listeners_.size() - listeners_destroyed_, listeners_.size());
+      VLOG(2) << "Waiting for " << channels_.size() << " channels "
+              << connections_open_ << " connections and "
+              << listeners_.size() - listeners_destroyed_ << "/"
+              << listeners_.size()
+              << " listeners to be destroyed before shutting down server";
     }
     return;
   }
@@ -1673,8 +1670,7 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
   if (!error.ok()) {
-    gpr_log(GPR_DEBUG, "Failed call creation: %s",
-            StatusToString(error).c_str());
+    VLOG(2) << "Failed call creation: " << StatusToString(error);
     calld->FailCallCreation();
     return;
   }
@@ -1798,10 +1794,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
   CHECK(!reserved);
   auto cq_type = grpc_get_cq_completion_type(cq);
   if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
-    gpr_log(GPR_INFO,
-            "Completion queue of type %d is being registered as a "
-            "server-completion-queue",
-            static_cast<int>(cq_type));
+    LOG(INFO) << "Completion queue of type " << static_cast<int>(cq_type)
+              << " is being registered as a server-completion-queue";
     // Ideally we should log an error and abort but ruby-wrapped-language API
     // calls grpc_completion_queue_pluck() on server completion queues
   }
