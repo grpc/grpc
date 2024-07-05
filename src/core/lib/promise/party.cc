@@ -287,16 +287,14 @@ bool Party::RunOneParticipant(int i) {
   auto* participant = participants_[i].load(std::memory_order_acquire);
   if (participant == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      gpr_log(GPR_INFO, "%s[party] wakeup %d already complete",
-              DebugTag().c_str(), i);
+      LOG(INFO) << DebugTag() << "[party] wakeup " << i << " already complete";
     }
     return false;
   }
   absl::string_view name;
   if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     name = participant->name();
-    gpr_log(GPR_INFO, "%s[%s] begin job %d", DebugTag().c_str(),
-            std::string(name).c_str(), i);
+    LOG(INFO) << DebugTag() << "[" << name << "] begin job " << i;
   }
   // Poll the participant.
   currently_polling_ = i;
@@ -304,13 +302,12 @@ bool Party::RunOneParticipant(int i) {
   currently_polling_ = kNotPolling;
   if (done) {
     if (!name.empty()) {
-      gpr_log(GPR_INFO, "%s[%s] end poll and finish job %d", DebugTag().c_str(),
-              std::string(name).c_str(), i);
+      LOG(INFO) << DebugTag() << "[" << name << "] end poll and finish job "
+                << i;
     }
     participants_[i].store(nullptr, std::memory_order_relaxed);
   } else if (!name.empty()) {
-    gpr_log(GPR_INFO, "%s[%s] end poll", DebugTag().c_str(),
-            std::string(name).c_str());
+    LOG(INFO) << DebugTag() << "[" << name << "] end poll";
   }
   return done;
 }
@@ -320,11 +317,9 @@ void Party::AddParticipants(Participant** participants, size_t count) {
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
       if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
-        gpr_log(GPR_INFO,
-                "Party %p                 AddParticipant: %s @ %" PRIdPTR
-                " [participant=%p]",
-                &sync_, std::string(participants[i]->name()).c_str(), slots[i],
-                participants[i]);
+        LOG(INFO) << "Party " << &sync_ << "                 AddParticipant: "
+                  << participants[i]->name() << " @ " << slots[i]
+                  << " [participant=" << participants[i] << "]";
       }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }

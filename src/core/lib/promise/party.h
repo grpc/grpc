@@ -226,9 +226,9 @@ class PartySyncUsingAtomics {
   void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
                       DebugLocation loc = {}) {
     if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
-      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
-              "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
-              prev_state, new_state);
+      LOG(INFO).AtLocation(loc.file(), loc.line())
+          << "Party " << this << " " << op << ": " << prev_state << " -> "
+          << new_state;
     }
   }
 

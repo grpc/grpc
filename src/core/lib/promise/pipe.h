@@ -636,8 +636,8 @@ class Push {
   Poll<bool> operator()() {
     if (center_ == nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_DEBUG, "%s Pipe push has a null center",
-                GetContext<Activity>()->DebugTag().c_str());
+        VLOG(2) << GetContext<Activity>()->DebugTag()
+                << " Pipe push has a null center";
       }
       return false;
     }
