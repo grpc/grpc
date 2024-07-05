@@ -36,7 +36,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -438,14 +437,14 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event) \
-  do {                                               \
-    if (GRPC_TRACE_FLAG_ENABLED(api) &&              \
-        (GRPC_TRACE_FLAG_ENABLED(queue_pluck) ||     \
-         (event)->type != GRPC_QUEUE_TIMEOUT)) {     \
-      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq,  \
-              grpc_event_string(event).c_str());     \
-    }                                                \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)  \
+  do {                                                \
+    if (GRPC_TRACE_FLAG_ENABLED(api) &&               \
+        (GRPC_TRACE_FLAG_ENABLED(queue_pluck) ||      \
+         (event)->type != GRPC_QUEUE_TIMEOUT)) {      \
+      LOG(INFO) << "RETURN_EVENT[" << (cq)            \
+                << "]: " << grpc_event_string(event); \
+    }                                                 \
   } while (0)
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
@@ -703,8 +702,7 @@ static void cq_end_op_for_next(
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
     if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
-      gpr_log(GPR_INFO, "Operation failed: tag=%p, error=%s", tag,
-              errmsg.c_str());
+      LOG(INFO) << "Operation failed: tag=" << tag << ", error=" << errmsg;
     }
   }
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
@@ -737,8 +735,8 @@ static void cq_end_op_for_next(
         gpr_mu_unlock(cq->mu);
 
         if (!kick_error.ok()) {
-          gpr_log(GPR_ERROR, "Kick failed: %s",
-                  grpc_core::StatusToString(kick_error).c_str());
+          LOG(ERROR) << "Kick failed: "
+                     << grpc_core::StatusToString(kick_error);
         }
       }
       if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -777,8 +775,7 @@ static void cq_end_op_for_pluck(
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
     if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
-      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag,
-              errmsg.c_str());
+      LOG(ERROR) << "Operation failed: tag=" << tag << ", error=" << errmsg;
     }
   }
 
@@ -813,8 +810,7 @@ static void cq_end_op_for_pluck(
         cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), pluck_worker);
     gpr_mu_unlock(cq->mu);
     if (!kick_error.ok()) {
-      gpr_log(GPR_ERROR, "Kick failed: %s",
-              grpc_core::StatusToString(kick_error).c_str());
+      LOG(ERROR) << "Kick failed: " << kick_error;
     }
   }
 }
@@ -839,8 +835,7 @@ static void cq_end_op_for_callback(
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
     if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
-      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag,
-              errmsg.c_str());
+      LOG(ERROR) << "Operation failed: tag=" << tag << ", error=" << errmsg;
     }
   }
 
@@ -1039,8 +1034,8 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     gpr_mu_unlock(cq->mu);
 
     if (!err.ok()) {
-      gpr_log(GPR_ERROR, "Completion queue next failed: %s",
-              grpc_core::StatusToString(err).c_str());
+      LOG(ERROR) << "Completion queue next failed: "
+                 << grpc_core::StatusToString(err);
       if (err == absl::CancelledError()) {
         ret.type = GRPC_QUEUE_SHUTDOWN;
       } else {
@@ -1253,10 +1248,9 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     if (!add_plucker(cq, tag, &worker)) {
-      gpr_log(GPR_DEBUG,
-              "Too many outstanding grpc_completion_queue_pluck calls: maximum "
-              "is %d",
-              GRPC_MAX_COMPLETION_QUEUE_PLUCKERS);
+      VLOG(2) << "Too many outstanding grpc_completion_queue_pluck calls: "
+                 "maximum is "
+              << GRPC_MAX_COMPLETION_QUEUE_PLUCKERS;
       gpr_mu_unlock(cq->mu);
       // TODO(ctiller): should we use a different result here
       ret.type = GRPC_QUEUE_TIMEOUT;
@@ -1279,8 +1273,8 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
     if (!err.ok()) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
-      gpr_log(GPR_ERROR, "Completion queue pluck failed: %s",
-              grpc_core::StatusToString(err).c_str());
+      LOG(ERROR) << "Completion queue pluck failed: "
+                 << grpc_core::StatusToString(err);
       ret.type = GRPC_QUEUE_TIMEOUT;
       ret.success = 0;
       dump_pending_tags(cq);
