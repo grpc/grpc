@@ -148,10 +148,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << t->is_client
-              ? "CLIENT"
-              : "SERVER"
-                    << "[" << t << "]: Ping delayed ["
+          LOG(INFO) << (t->is_client ? "CLIENT", : "SERVER") << "[" << t
+                    << "]: Ping delayed ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: too many recent pings: "
                     << t->ping_rate_policy.GetDebugString();
@@ -163,10 +161,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << t->is_client
-              ? "CLIENT"
-              : "SERVER"
-                    << "[" << t << "]: Ping delayed ["
+          LOG(INFO) << (t->is_client ? "CLIENT", : "SERVER") << "[" << t
+                    << "]: Ping delayed ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: not enough time elapsed since last "
                        "ping. Last ping:"
@@ -559,7 +555,7 @@ class StreamWriteContext {
     if (s_->send_trailing_metadata == nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
 
-    GRPC_CHTTP2_IF_TRACING(INFO) <<  "sending trailing_metadata");
+    GRPC_CHTTP2_IF_TRACING(INFO) << "sending trailing_metadata";
     if (s_->send_trailing_metadata->empty()) {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
@@ -610,7 +606,8 @@ class StreamWriteContext {
   };
 
   void ConvertInitialMetadataToTrailingMetadata() {
-    GRPC_CHTTP2_IF_TRACING(INFO) <<  "not sending initial_metadata (Trailers-Only)");
+    GRPC_CHTTP2_IF_TRACING(INFO)
+        << "not sending initial_metadata (Trailers-Only)";
     // When sending Trailers-Only, we need to move metadata from headers to
     // trailers.
     TrailersOnlyMetadataEncoder encoder(s_->send_trailing_metadata);
