@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/port_platform.h>
