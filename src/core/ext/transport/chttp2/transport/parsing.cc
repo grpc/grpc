@@ -695,7 +695,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                      << " rejecting grpc_chttp2_stream id="
                      << t->incoming_stream_id
                      << ", last grpc_chttp2_stream id=" << t->last_new_stream_id
-                     << " before settings have been acknowledged";);
+                     << " before settings have been acknowledged");
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
           &t->qbuf,
