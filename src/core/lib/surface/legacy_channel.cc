@@ -20,6 +20,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -27,7 +28,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
@@ -86,8 +86,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder.Build();
   if (!r.ok()) {
     auto status = r.status();
-    gpr_log(GPR_ERROR, "channel stack builder failed: %s",
-            status.ToString().c_str());
+    LOG(ERROR) << "channel stack builder failed: " << status;
     return status;
   }
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
@@ -210,9 +209,8 @@ grpc_connectivity_state LegacyChannel::CheckConnectivityState(
   ClientChannelFilter* client_channel = GetClientChannelFilter();
   if (GPR_UNLIKELY(client_channel == nullptr)) {
     if (IsLame()) return GRPC_CHANNEL_TRANSIENT_FAILURE;
-    gpr_log(GPR_ERROR,
-            "grpc_channel_check_connectivity_state called on something that is "
-            "not a client channel");
+    LOG(ERROR) << "grpc_channel_check_connectivity_state called on something "
+                  "that is not a client channel";
     return GRPC_CHANNEL_SHUTDOWN;
   }
   return client_channel->CheckConnectivityState(try_to_connect);
