@@ -79,8 +79,8 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    VLOG(2) << "CLIENT_CONNECT :%p OnAlarm, error:"
-            << grpc_core::StatusToString(error).c_str();
+    VLOG(2) << "CLIENT_CONNECT :" << connect
+            << " OnAlarm, error:" << grpc_core::StatusToString(error);
   }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
