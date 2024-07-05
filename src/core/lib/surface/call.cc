@@ -54,7 +54,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -319,11 +318,9 @@ void Call::HandleCompressionAlgorithmNotAccepted(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  gpr_log(GPR_ERROR,
-          "Compression algorithm ('%s') not present in the "
-          "accepted encodings (%s)",
-          algo_name,
-          std::string(encodings_accepted_by_peer_.ToString()).c_str());
+  LOG(ERROR) << "Compression algorithm ('" << algo_name
+             << "') not present in the accepted encodings ("
+             << encodings_accepted_by_peer_.ToString() << ")";
 }
 
 void Call::HandleCompressionAlgorithmDisabled(
@@ -341,8 +338,9 @@ void Call::HandleCompressionAlgorithmDisabled(
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
-            deadline_.ToString().c_str(), deadline.ToString().c_str());
+    VLOG(2) << "[call " << this
+            << "] UpdateDeadline from=" << deadline_.ToString()
+            << " to=" << deadline.ToString();
   }
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
