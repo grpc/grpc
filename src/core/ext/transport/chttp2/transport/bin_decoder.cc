@@ -187,7 +187,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
 
   if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
     char* s = grpc_slice_to_c_string(input);
-    LOG(ERROR) << "Base64 decoding failed, input string:\n" << s;
+    LOG(ERROR) << "Base64 decoding failed, input string:\n" << s << "\n";
     gpr_free(s);
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
@@ -216,7 +216,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
                    input_length / 4 * 3 + tail_xtra[input_length % 4])) {
     LOG(ERROR) << "Base64 decoding failed, output_length " << output_length
                << " is longer than the max possible output length "
-               << input_length / 4 * 3 + tail_xtra[input_length % 4] << ".\n";
+               << (input_length / 4 * 3 + tail_xtra[input_length % 4]) << ".\n";
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
@@ -229,7 +229,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
 
   if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
     char* s = grpc_slice_to_c_string(input);
-    LOG(ERROR) << "Base64 decoding failed, input string:\n" << s;
+    LOG(ERROR) << "Base64 decoding failed, input string:\n" << s << "\n";
     gpr_free(s);
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
