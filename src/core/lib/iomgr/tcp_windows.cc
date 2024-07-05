@@ -140,8 +140,8 @@ static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
                       int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    VLOG(2) << "TCP unref " << tcp << " : " << reason << " " << val << " -> "
-            << val - 1;
+    VLOG(2).AtLocation(file, line) << "TCP unref " << tcp << " : " << reason
+                                   << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(tcp);
@@ -152,8 +152,8 @@ static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
                     int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    VLOG(2) << "TCP   ref " << tcp << " : " << reason << " " << val << " -> "
-            << val + 1;
+    VLOG(2).AtLocation(file, line) << "TCP   ref " << tcp << " : " << reason
+                                   << " " << val << " -> " << val + 1;
   }
   gpr_ref(&tcp->refcount);
 }
