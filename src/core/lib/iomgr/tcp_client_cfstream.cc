@@ -27,9 +27,10 @@
 #include <netinet/in.h>
 #include <string.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -78,8 +79,8 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
-            grpc_core::StatusToString(error).c_str());
+    VLOG(2) << "CLIENT_CONNECT :%p OnAlarm, error:"
+            << grpc_core::StatusToString(error).c_str();
   }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
@@ -99,8 +100,8 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
 static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
-            grpc_core::StatusToString(error).c_str());
+    VLOG(2) << "CLIENT_CONNECT :" << connect
+            << " OnOpen, error:" << grpc_core::StatusToString(error);
   }
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
@@ -173,8 +174,8 @@ static int64_t CFStreamClientConnect(
   gpr_mu_init(&connect->mu);
 
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
-            connect, connect->addr_name.c_str());
+    VLOG(2) << "CLIENT_CONNECT: " << connect << ", " << connect->addr_name
+            << ": asynchronously connecting";
   }
 
   CFReadStreamRef read_stream;

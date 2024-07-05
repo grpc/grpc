@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 #include <atomic>
 #include <memory>
@@ -28,7 +28,6 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -41,9 +40,9 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -120,8 +119,7 @@ class EventEngineEndpointWrapper {
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
-              status.ToString().c_str());
+      LOG(INFO) << "TCP: " << eeep_->wrapper << " READ error=" << status;
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
@@ -151,8 +149,7 @@ class EventEngineEndpointWrapper {
     Ref();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", this,
-              std::string(PeerAddress()).c_str());
+      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress() << ")";
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < slices->count; i++) {
           char* dump =
@@ -177,8 +174,8 @@ class EventEngineEndpointWrapper {
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s) error=%s", this,
-              std::string(PeerAddress()).c_str(), status.ToString().c_str());
+      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress()
+                << ") error=" << status;
     }
     grpc_closure* cb = pending_write_cb_;
     pending_write_cb_ = nullptr;
