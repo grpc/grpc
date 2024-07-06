@@ -180,14 +180,10 @@ Waker Party::MakeNonOwningWaker() {
 
 void Party::ForceImmediateRepoll(WakeupMask mask) {
   DCHECK(is_current());
-  // Or in the bit for the currently polling participant.
-  // Will be grabbed next round to force a repoll of this promise.
-  const uint64_t prev_state = state_.fetch_or(mask, std::memory_order_relaxed);
-  LogStateChange("ForceImmediateRepoll", prev_state, prev_state | mask);
+  wakeup_mask_ |= mask;
 }
 
-void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
-                              WakeupMask wakeup_mask) {
+void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
   GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
@@ -204,11 +200,10 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
   static thread_local RunState* g_run_state = nullptr;
   struct PartyWakeup {
     PartyWakeup() : party{nullptr} {}
-    PartyWakeup(Party* party, uint64_t prev_state, WakeupMask mask)
-        : party{party}, prev_state{prev_state}, mask{mask} {}
+    PartyWakeup(Party* party, uint64_t prev_state)
+        : party{party}, prev_state{prev_state} {}
     Party* party;
     uint64_t prev_state;
-    WakeupMask mask;
   };
   struct RunState {
     explicit RunState(PartyWakeup first) : first{first}, next{} {}
@@ -218,7 +213,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
       g_run_state = this;
       do {
         GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
-        first.party->RunPartyAndUnref(first.prev_state, first.mask);
+        first.party->RunPartyAndUnref(first.prev_state);
         first = std::exchange(next, PartyWakeup{});
       } while (first.party != nullptr);
       DCHECK(g_run_state == this);
@@ -231,13 +226,11 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
   // call to a transport (or back again).
   if (GPR_UNLIKELY(g_run_state != nullptr)) {
     if (g_run_state->first.party == party) {
-      g_run_state->first.mask |= wakeup_mask;
       g_run_state->first.prev_state = prev_state;
       party->Unref();
       return;
     }
     if (g_run_state->next.party == party) {
-      g_run_state->next.mask |= wakeup_mask;
       g_run_state->next.prev_state = prev_state;
       party->Unref();
       return;
@@ -248,8 +241,8 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
       // We swap the oldest party to run on the event engine so that we don't
       // accidentally end up with a tail latency problem whereby one party
       // gets held for a really long time.
-      auto wakeup = std::exchange(g_run_state->next,
-                                  PartyWakeup{party, prev_state, wakeup_mask});
+      auto wakeup =
+          std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
       party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
           ->Run([wakeup]() {
             GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
@@ -259,14 +252,14 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state,
           });
       return;
     }
-    g_run_state->next = PartyWakeup{party, prev_state, wakeup_mask};
+    g_run_state->next = PartyWakeup{party, prev_state};
     return;
   }
-  RunState{{party, prev_state, wakeup_mask}}.Run();
+  RunState{{party, prev_state}}.Run();
 #endif
 }
 
-void Party::RunPartyAndUnref(uint64_t prev_state, WakeupMask wakeup_mask) {
+void Party::RunPartyAndUnref(uint64_t prev_state) {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
   DCHECK_EQ(prev_state & kLocked, 0u)
@@ -279,10 +272,10 @@ void Party::RunPartyAndUnref(uint64_t prev_state, WakeupMask wakeup_mask) {
   for (;;) {
     uint64_t keep_allocated_mask = kAllocatedMask;
     // For each wakeup bit...
-    while (wakeup_mask != 0) {
-      const uint64_t t = LowestOneBit(wakeup_mask);
+    while (wakeup_mask_ != 0) {
+      const uint64_t t = LowestOneBit(wakeup_mask_);
       const int i = CountTrailingZeros(t);
-      wakeup_mask ^= t;
+      wakeup_mask_ ^= t;
       // If the participant is null, skip.
       // This allows participants to complete whilst wakers still exist
       // somewhere.
@@ -339,7 +332,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state, WakeupMask wakeup_mask) {
         << "Party should be locked; prev_state=" << prev_state;
     DCHECK_GE(prev_state & kRefMask, kOneRef);
     // From the previous state, extract which participants we're to wakeup.
-    wakeup_mask = prev_state & kWakeupMask;
+    wakeup_mask_ |= prev_state & kWakeupMask;
     // Now update prev_state to be what we want the CAS to see once wakeups
     // complete next iteration.
     prev_state &= kRefMask | kLocked | keep_allocated_mask;
@@ -446,19 +439,32 @@ void Party::DelayAddParticipants(Participant** participants, size_t count) {
 
 void Party::WakeupAsync(WakeupMask wakeup_mask) {
   // Or in the wakeup bit for the participant, AND the locked bit.
-  uint64_t prev_state = state_.fetch_or((wakeup_mask & kWakeupMask) | kLocked,
-                                        std::memory_order_acq_rel);
+  uint64_t prev_state = state_.load(std::memory_order_relaxed);
   LogStateChange("ScheduleWakeup", prev_state,
                  prev_state | (wakeup_mask & kWakeupMask) | kLocked);
-  if ((prev_state & kLocked) == 0) {
-    arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
-        [this, prev_state, wakeup_mask]() {
-          ApplicationCallbackExecCtx app_exec_ctx;
-          ExecCtx exec_ctx;
-          RunLockedAndUnref(this, prev_state, wakeup_mask);
-        });
-  } else {
-    Unref();
+  while (true) {
+    if ((prev_state & kLocked) == 0) {
+      if (state_.compare_exchange_weak(prev_state, prev_state | kLocked,
+                                       std::memory_order_acq_rel,
+                                       std::memory_order_acquire)) {
+        LogStateChange("WakeupAsync", prev_state, prev_state | kLocked);
+        wakeup_mask_ |= wakeup_mask;
+        arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+            [this, prev_state]() {
+              ApplicationCallbackExecCtx app_exec_ctx;
+              ExecCtx exec_ctx;
+              RunLockedAndUnref(this, prev_state);
+            });
+        return;
+      }
+    } else {
+      if (state_.compare_exchange_weak(
+              prev_state, (prev_state | wakeup_mask) - kOneRef,
+              std::memory_order_acq_rel, std::memory_order_acquire)) {
+        LogStateChange("WakeupAsync", prev_state, prev_state | wakeup_mask);
+        return;
+      }
+    }
   }
 }
 

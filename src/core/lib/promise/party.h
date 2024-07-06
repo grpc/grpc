@@ -164,7 +164,7 @@ class Party : public Activity, private Wakeable {
   // Main run loop. Must be locked.
   // Polls participants and drains the add queue until there is no work left to
   // be done.
-  void RunPartyAndUnref(uint64_t prev_state, WakeupMask wakeup_mask);
+  void RunPartyAndUnref(uint64_t prev_state);
 
   bool RefIfNonZero();
 
@@ -336,16 +336,19 @@ class Party : public Activity, private Wakeable {
   void CancelRemainingParticipants();
 
   // Run the locked part of the party until it is unlocked.
-  static void RunLockedAndUnref(Party* party, uint64_t prev_state,
-                                WakeupMask wakeup_mask);
+  static void RunLockedAndUnref(Party* party, uint64_t prev_state);
   // Called in response to Unref() hitting zero - ultimately calls PartyOver,
   // but needs to set some stuff up.
   // Here so it gets compiled out of line.
   void PartyIsOver();
 
   // Wakeable implementation
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Wakeup(
-      WakeupMask wakeup_mask) final {
+  void Wakeup(WakeupMask wakeup_mask) final {
+    if (Activity::current() == this) {
+      wakeup_mask_ |= wakeup_mask;
+      Unref();
+      return;
+    }
     WakeupFromState(state_.load(std::memory_order_relaxed), wakeup_mask);
   }
 
@@ -371,7 +374,8 @@ class Party : public Activity, private Wakeable {
         if (state_.compare_exchange_weak(cur_state, cur_state | kLocked,
                                          std::memory_order_acq_rel)) {
           LogStateChange("WakeupAndRun", cur_state, cur_state | kLocked);
-          RunLockedAndUnref(this, cur_state, wakeup_mask);
+          wakeup_mask_ |= wakeup_mask;
+          RunLockedAndUnref(this, cur_state);
           return;
         }
       }
@@ -401,6 +405,7 @@ class Party : public Activity, private Wakeable {
 
   std::atomic<uint64_t> state_{kOneRef};
   uint8_t currently_polling_ = kNotPolling;
+  WakeupMask wakeup_mask_ = 0;
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
