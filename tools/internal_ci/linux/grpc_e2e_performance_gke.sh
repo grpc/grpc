@@ -119,42 +119,75 @@ buildConfigs() {
     -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-# Add languages
+# List all languages.
+declare -A useLanguage=(
+  [c++]=1
+  [dotnet]=1
+  [go]=1
+  [java]=1
+  [node]=1
+  [ruby]=1
+)
+
+# Disable specific languages.
+declare -a disabledLanguages=(
+  # Add a language here to disable it.
+  dotnet
+)
+for language in "${disabledLanguages[@]}"; do
+  unset "useLanguage[${language}]"
+done
+
+# Add arguments for languages.
 declare -a configLangArgs8core=()
 declare -a configLangArgs32core=()
 declare -a runnerLangArgs=()
 
 # c++
-configLangArgs8core+=(-l c++)
-configLangArgs32core+=(-l c++)
-runnerLangArgs+=(-l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+if [[ -v "useLanguage[c++]" ]]; then
+  configLangArgs8core+=(-l c++)
+  configLangArgs32core+=(-l c++)
+  runnerLangArgs+=(-l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
 
 # dotnet
-# configLangArgs8core+=( -l dotnet )
-# configLangArgs32core+=( -l dotnet )
-# runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
+if [[ -v "useLanguage[dotnet]" ]]; then
+  configLangArgs8core+=(-l dotnet)
+  configLangArgs32core+=(-l dotnet)
+  runnerLangArgs+=(-l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}")
+fi
 
-# # go
-configLangArgs8core+=(-l go)
-configLangArgs32core+=(-l go)
-runnerLangArgs+=(-l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}")
+# go
+if [[ -v "useLanguage[go]" ]]; then
+  configLangArgs8core+=(-l go)
+  configLangArgs32core+=(-l go)
+  runnerLangArgs+=(-l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}")
+fi
 
 # java
-configLangArgs8core+=(-l java)
-configLangArgs32core+=(-l java)
-runnerLangArgs+=(-l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}")
+if [[ -v "useLanguage[java]" ]]; then
+  configLangArgs8core+=(-l java)
+  configLangArgs32core+=(-l java)
+  runnerLangArgs+=(-l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}")
+fi
 
 # node
-configLangArgs8core+=(-l node) # 8-core only.
-runnerLangArgs+=(-l "node:${GRPC_NODE_REPO}:${GRPC_NODE_COMMIT}")
+if [[ -v "useLanguage[node]" ]]; then
+  configLangArgs8core+=(-l node) # 8-core only.
+  runnerLangArgs+=(-l "node:${GRPC_NODE_REPO}:${GRPC_NODE_COMMIT}")
+fi
 
 # python
-configLangArgs8core+=(-l python) # 8-core only.
-runnerLangArgs+=(-l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+if [[ -v "useLanguage[python]" ]]; then
+  configLangArgs8core+=(-l python) # 8-core only.
+  runnerLangArgs+=(-l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
 
 # ruby
-configLangArgs8core+=(-l ruby) # 8-core only.
-runnerLangArgs+=(-l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+if [[ -v "useLanguage[ruby]" ]]; then
+  configLangArgs8core+=(-l ruby) # 8-core only.
+  runnerLangArgs+=(-l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}")
+fi
 
 buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}"
 buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}"
