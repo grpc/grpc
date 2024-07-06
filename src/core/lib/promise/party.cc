@@ -188,10 +188,10 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
-      [party, prev_state, wakeup_mask]() {
+      [party, prev_state]() {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        party->RunPartyAndUnref(prev_state, wakeup_mask);
+        party->RunPartyAndUnref(prev_state);
       },
       nullptr, Thread::Options().set_joinable(false));
   thd.Start();
