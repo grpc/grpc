@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -273,27 +273,30 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
     uint64_t keep_allocated_mask = kAllocatedMask;
     // For each wakeup bit...
     while (wakeup_mask_ != 0) {
-      const uint64_t t = LowestOneBit(wakeup_mask_);
-      const int i = CountTrailingZeros(t);
-      wakeup_mask_ ^= t;
-      // If the participant is null, skip.
-      // This allows participants to complete whilst wakers still exist
-      // somewhere.
-      auto* participant = participants_[i].load(std::memory_order_acquire);
-      if (GPR_UNLIKELY(participant == nullptr)) {
+      auto wakeup_mask = std::exchange(wakeup_mask_, 0);
+      while (wakeup_mask != 0) {
+        const uint64_t t = LowestOneBit(wakeup_mask);
+        const int i = CountTrailingZeros(t);
+        wakeup_mask ^= t;
+        // If the participant is null, skip.
+        // This allows participants to complete whilst wakers still exist
+        // somewhere.
+        auto* participant = participants_[i].load(std::memory_order_acquire);
+        if (GPR_UNLIKELY(participant == nullptr)) {
+          GRPC_TRACE_LOG(promise_primitives, INFO)
+              << "Party " << this << "                 Run:Wakeup " << i
+              << " already complete";
+          continue;
+        }
         GRPC_TRACE_LOG(promise_primitives, INFO)
-            << "Party " << this << "                 Run:Wakeup " << i
-            << " already complete";
-        continue;
-      }
-      GRPC_TRACE_LOG(promise_primitives, INFO)
-          << "Party " << this << "                 Run:Wakeup " << i;
-      // Poll the participant.
-      currently_polling_ = i;
-      if (participant->PollParticipantPromise()) {
-        participants_[i].store(nullptr, std::memory_order_relaxed);
-        const uint64_t allocated_bit = (1u << i << kAllocatedShift);
-        keep_allocated_mask &= ~allocated_bit;
+            << "Party " << this << "                 Run:Wakeup " << i;
+        // Poll the participant.
+        currently_polling_ = i;
+        if (participant->PollParticipantPromise()) {
+          participants_[i].store(nullptr, std::memory_order_relaxed);
+          const uint64_t allocated_bit = (1u << i << kAllocatedShift);
+          keep_allocated_mask &= ~allocated_bit;
+        }
       }
     }
     currently_polling_ = kNotPolling;
