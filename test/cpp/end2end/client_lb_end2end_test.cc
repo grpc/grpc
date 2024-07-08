@@ -325,7 +325,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
           std::make_shared<FakeTransportSecurityChannelCredentials>();
     }
     return grpc::CreateCustomChannel(absl::StrCat("fake:", kDefaultAuthority),
-                                     std::move(channel_creds), args);
+                                     channel_creds, args);
   }
 
   Status SendRpc(

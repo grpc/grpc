@@ -153,7 +153,7 @@ TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
   // what authority gets sent.
   LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
                        InsecureChannelCredentials());
-  CreateAndStartBackends(1, /*enable_xds=*/false, InsecureServerCredentials());
+  CreateAndStartBackends(1, /*xds_enabled=*/false, InsecureServerCredentials());
   // Set Logical DNS result
   {
     grpc_core::ExecCtx exec_ctx;

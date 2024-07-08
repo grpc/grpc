@@ -1185,7 +1185,7 @@ TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
       ->set_value(true);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Create 3 backends.  Backend 0 does not have a hostname, but 1 and 2 do.
-  CreateAndStartBackends(3, /*enable_xds=*/false, InsecureServerCredentials());
+  CreateAndStartBackends(3, /*xds_enabled=*/false, InsecureServerCredentials());
   EdsResourceArgs args(
       {{"locality0",
         {
