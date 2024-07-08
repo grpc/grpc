@@ -148,7 +148,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << (t->is_client ? "CLIENT", : "SERVER") << "[" << t
+          LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                     << "]: Ping delayed ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: too many recent pings: "
@@ -161,7 +161,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
             GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-          LOG(INFO) << (t->is_client ? "CLIENT", : "SERVER") << "[" << t
+          LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
                     << "]: Ping delayed ["
                     << std::string(t->peer_string.as_string_view())
                     << "]: not enough time elapsed since last "
