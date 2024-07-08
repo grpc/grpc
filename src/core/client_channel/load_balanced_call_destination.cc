@@ -34,6 +34,11 @@ void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   SetContext<CallTracerInterface>(tracer);
+  // If we created a tracer, we also need to create context for the LB
+  // call start time, which we'll need when calling the tracer from the
+  // LB call tracing filter.
+  auto* arena = GetContext<Arena>();
+  arena->SetContext(arena->ManagedNew<LoadBalancedCallStartTime>());
 }
 
 class LbCallState : public ClientChannelLbCallState {
@@ -87,9 +92,8 @@ T HandlePickResult(
 // - Continue{}, meaning to queue the pick
 // - a non-OK status, meaning to fail the call
 // - a call destination, meaning that the pick is complete
-// When the pick is complete, pushes client_initial_metadata onto
-// call_initiator.  Also adds the subchannel call tracker (if any) to
-// context.
+// When the pick is complete, adds the subchannel call tracker (if any)
+// to context.
 LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
     LoadBalancingPolicy::SubchannelPicker& picker,
     UnstartedCallHandler& unstarted_handler) {
@@ -144,7 +148,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         // Apply metadata mutations, if any.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
                                        &client_initial_metadata);
-        // Return the connected subchannel.
+        // Return the subchannel's call destination.
         return call_destination;
       },
       // QueuePick
@@ -216,7 +220,7 @@ void LoadBalancedCallDestination::StartCall(
                         // Returns 3 possible things:
                         // - Continue to queue the pick
                         // - non-OK status to fail the pick
-                        // - a connected subchannel to complete the pick
+                        // - an unstarted call destination to complete the pick
                         return PickSubchannel(*last_picker, unstarted_handler);
                       });
                 })),

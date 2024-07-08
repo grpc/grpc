@@ -58,6 +58,7 @@
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/client_channel/lb_metadata.h"
+#include "src/core/client_channel/load_balanced_call_destination.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
@@ -94,6 +95,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
@@ -2346,74 +2348,17 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState final
   // Internal API to allow first-party LB policies to access per-call
   // attributes set by the ConfigSelector.
   ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
-      UniqueTypeName type) const override;
+      UniqueTypeName type) const override {
+    auto* service_config_call_data = GetServiceConfigCallData(lb_call_->arena_);
+    return service_config_call_data->GetCallAttribute(type);
+  }
 
-  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override;
-
- private:
-  LoadBalancedCall* lb_call_;
-};
-
-//
-// ClientChannelFilter::LoadBalancedCall::LbCallState
-//
-
-ServiceConfigCallData::CallAttributeInterface*
-ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttribute(
-    UniqueTypeName type) const {
-  auto* service_config_call_data = GetServiceConfigCallData(lb_call_->arena_);
-  return service_config_call_data->GetCallAttribute(type);
-}
-
-ClientCallTracer::CallAttemptTracer*
-ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttemptTracer()
-    const {
-  return lb_call_->call_attempt_tracer();
-}
-
-//
-// ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor
-//
-
-class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
-    : public LoadBalancingPolicy::BackendMetricAccessor {
- public:
-  BackendMetricAccessor(LoadBalancedCall* lb_call,
-                        grpc_metadata_batch* recv_trailing_metadata)
-      : lb_call_(lb_call), recv_trailing_metadata_(recv_trailing_metadata) {}
-
-  const BackendMetricData* GetBackendMetricData() override {
-    if (lb_call_->backend_metric_data_ == nullptr &&
-        recv_trailing_metadata_ != nullptr) {
-      if (const auto* md = recv_trailing_metadata_->get_pointer(
-              EndpointLoadMetricsBinMetadata())) {
-        BackendMetricAllocator allocator(lb_call_->arena_);
-        lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(md->as_string_view(), &allocator);
-      }
-    }
-    return lb_call_->backend_metric_data_;
+  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
+    return lb_call_->call_attempt_tracer();
   }
 
  private:
-  class BackendMetricAllocator final : public BackendMetricAllocatorInterface {
-   public:
-    explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
-
-    BackendMetricData* AllocateBackendMetricData() override {
-      return arena_->New<BackendMetricData>();
-    }
-
-    char* AllocateString(size_t size) override {
-      return static_cast<char*>(arena_->Alloc(size));
-    }
-
-   private:
-    Arena* arena_;
-  };
-
   LoadBalancedCall* lb_call_;
-  grpc_metadata_batch* recv_trailing_metadata_;
 };
 
 //
@@ -2422,12 +2367,16 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-void CreateCallAttemptTracer(Arena* arena, bool is_transparent_retry) {
+void MaybeCreateCallAttemptTracer(Arena* arena, bool is_transparent_retry) {
   auto* call_tracer = DownCast<ClientCallTracer*>(
       arena->GetContext<CallTracerAnnotationInterface>());
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   arena->SetContext<CallTracerInterface>(tracer);
+  // If we created a tracer, we also need to create context for the LB
+  // call start time, which we'll need when calling the tracer from the
+  // LB call tracing filter.
+  arena->SetContext(arena->ManagedNew<LoadBalancedCallStartTime>());
 }
 
 }  // namespace
@@ -2441,45 +2390,9 @@ ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
       chand_(chand),
       on_commit_(std::move(on_commit)),
       arena_(arena) {
-  CreateCallAttemptTracer(arena, is_transparent_retry);
+  MaybeCreateCallAttemptTracer(arena, is_transparent_retry);
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this << ": created";
-}
-
-ClientChannelFilter::LoadBalancedCall::~LoadBalancedCall() {
-  if (backend_metric_data_ != nullptr) {
-    backend_metric_data_->BackendMetricData::~BackendMetricData();
-  }
-}
-
-void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
-    absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-    grpc_transport_stream_stats* transport_stream_stats,
-    absl::string_view peer_address) {
-  // If we have a tracer, notify it.
-  if (call_attempt_tracer() != nullptr) {
-    call_attempt_tracer()->RecordReceivedTrailingMetadata(
-        status, recv_trailing_metadata, transport_stream_stats);
-  }
-  // If the LB policy requested a callback for trailing metadata, invoke
-  // the callback.
-  if (lb_subchannel_call_tracker_ != nullptr) {
-    LbMetadata trailing_metadata(recv_trailing_metadata);
-    BackendMetricAccessor backend_metric_accessor(this, recv_trailing_metadata);
-    LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-        peer_address, status, &trailing_metadata, &backend_metric_accessor};
-    lb_subchannel_call_tracker_->Finish(args);
-    lb_subchannel_call_tracker_.reset();
-  }
-}
-
-void ClientChannelFilter::LoadBalancedCall::RecordLatency() {
-  // Compute latency and report it to the tracer.
-  if (call_attempt_tracer() != nullptr) {
-    gpr_timespec latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
-    call_attempt_tracer()->RecordEnd(latency);
-  }
 }
 
 void ClientChannelFilter::LoadBalancedCall::
@@ -2585,8 +2498,11 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     }
     // Pick is complete.
     // If it was queued, add a trace annotation.
-    if (was_queued && call_attempt_tracer() != nullptr) {
-      call_attempt_tracer()->RecordAnnotation("Delayed LB pick complete.");
+    if (was_queued) {
+      auto* tracer = call_attempt_tracer();
+      if (tracer != nullptr) {
+        tracer->RecordAnnotation("Delayed LB pick complete.");
+      }
     }
     // If the pick failed, fail the call.
     if (!error.ok()) {
@@ -2639,10 +2555,9 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
                  "has no connected subchannel; queueing pick";
           return false;
         }
-        lb_subchannel_call_tracker_ =
-            std::move(complete_pick->subchannel_call_tracker);
-        if (lb_subchannel_call_tracker_ != nullptr) {
-          lb_subchannel_call_tracker_->Start();
+        if (complete_pick->subchannel_call_tracker != nullptr) {
+          complete_pick->subchannel_call_tracker->Start();
+          arena_->SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Handle metadata mutations.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
@@ -2711,19 +2626,6 @@ ClientChannelFilter::FilterBasedLoadBalancedCall::
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
                  absl::OkStatus());
   }
-}
-
-void ClientChannelFilter::FilterBasedLoadBalancedCall::Orphan() {
-  // If the recv_trailing_metadata op was never started, then notify
-  // about call completion here, as best we can.  We assume status
-  // CANCELLED in this case.
-  if (recv_trailing_metadata_ == nullptr) {
-    RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
-                         nullptr, "");
-  }
-  RecordLatency();
-  // Delegate to parent.
-  LoadBalancedCall::Orphan();
 }
 
 size_t ClientChannelFilter::FilterBasedLoadBalancedCall::GetBatchIndex(
@@ -2841,49 +2743,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
       GRPC_TRACE_FLAG_ENABLED(channel)) {
     LOG(INFO) << "chand=" << chand() << " lb_call=" << this
               << ": batch started from above: "
-              << grpc_transport_stream_op_batch_string(batch, false)
-              << ", call_attempt_tracer()=" << call_attempt_tracer();
-  }
-  // Handle call tracing.
-  if (call_attempt_tracer() != nullptr) {
-    // Record send ops in tracer.
-    if (batch->cancel_stream) {
-      call_attempt_tracer()->RecordCancel(
-          batch->payload->cancel_stream.cancel_error);
-    }
-    if (batch->send_initial_metadata) {
-      call_attempt_tracer()->RecordSendInitialMetadata(
-          batch->payload->send_initial_metadata.send_initial_metadata);
-    }
-    if (batch->send_trailing_metadata) {
-      call_attempt_tracer()->RecordSendTrailingMetadata(
-          batch->payload->send_trailing_metadata.send_trailing_metadata);
-    }
-    // Intercept recv ops.
-    if (batch->recv_initial_metadata) {
-      recv_initial_metadata_ =
-          batch->payload->recv_initial_metadata.recv_initial_metadata;
-      original_recv_initial_metadata_ready_ =
-          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-      GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
-                        this, nullptr);
-      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-          &recv_initial_metadata_ready_;
-    }
-  }
-  // Intercept recv_trailing_metadata even if there is no call tracer,
-  // since we may need to notify the LB policy about trailing metadata.
-  if (batch->recv_trailing_metadata) {
-    recv_trailing_metadata_ =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-    transport_stream_stats_ =
-        batch->payload->recv_trailing_metadata.collect_stats;
-    original_recv_trailing_metadata_ready_ =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
-                      this, nullptr);
-    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &recv_trailing_metadata_ready_;
+              << grpc_transport_stream_op_batch_string(batch, false);
   }
   // If we've already gotten a subchannel call, pass the batch down to it.
   // Note that once we have picked a subchannel, we do not need to acquire
@@ -2940,74 +2800,6 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
     GRPC_CALL_COMBINER_STOP(call_combiner_,
                             "batch does not include send_initial_metadata");
   }
-}
-
-void ClientChannelFilter::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
-  GRPC_TRACE_LOG(client_channel_lb_call, INFO)
-      << "chand=" << self->chand() << " lb_call=" << self
-      << ": got recv_initial_metadata_ready: error=" << StatusToString(error);
-  if (error.ok()) {
-    // recv_initial_metadata_flags is not populated for clients
-    self->call_attempt_tracer()->RecordReceivedInitialMetadata(
-        self->recv_initial_metadata_);
-    auto* peer_string = self->recv_initial_metadata_->get_pointer(PeerString());
-    if (peer_string != nullptr) self->peer_string_ = peer_string->Ref();
-  }
-  Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
-               error);
-}
-
-void ClientChannelFilter::FilterBasedLoadBalancedCall::
-    RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
-  auto* self = static_cast<FilterBasedLoadBalancedCall*>(arg);
-  GRPC_TRACE_LOG(client_channel_lb_call, INFO)
-      << "chand=" << self->chand() << " lb_call=" << self
-      << ": got recv_trailing_metadata_ready: error=" << StatusToString(error)
-      << " call_attempt_tracer()=" << self->call_attempt_tracer()
-      << " lb_subchannel_call_tracker_=" << self->lb_subchannel_call_tracker()
-      << " failure_error_=" << StatusToString(self->failure_error_);
-  // Check if we have a tracer or an LB callback to invoke.
-  if (self->call_attempt_tracer() != nullptr ||
-      self->lb_subchannel_call_tracker() != nullptr) {
-    // Get the call's status.
-    absl::Status status;
-    if (!error.ok()) {
-      // Get status from error.
-      grpc_status_code code;
-      std::string message;
-      grpc_error_get_status(
-          error, self->arena()->GetContext<Call>()->deadline(), &code, &message,
-          /*http_error=*/nullptr, /*error_string=*/nullptr);
-      status = absl::Status(static_cast<absl::StatusCode>(code), message);
-    } else {
-      // Get status from headers.
-      const auto& md = *self->recv_trailing_metadata_;
-      grpc_status_code code =
-          md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
-      if (code != GRPC_STATUS_OK) {
-        absl::string_view message;
-        if (const auto* grpc_message = md.get_pointer(GrpcMessageMetadata())) {
-          message = grpc_message->as_string_view();
-        }
-        status = absl::Status(static_cast<absl::StatusCode>(code), message);
-      }
-    }
-    absl::string_view peer_string;
-    if (self->peer_string_.has_value()) {
-      peer_string = self->peer_string_->as_string_view();
-    }
-    self->RecordCallCompletion(status, self->recv_trailing_metadata_,
-                               self->transport_stream_stats_, peer_string);
-  }
-  // Chain to original callback.
-  if (!self->failure_error_.ok()) {
-    error = self->failure_error_;
-    self->failure_error_ = absl::OkStatus();
-  }
-  Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
-               error);
 }
 
 // A class to handle the call combiner cancellation callback for a

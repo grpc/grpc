@@ -109,6 +109,9 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   // Only invoked if message was actually decompressed.
   virtual void RecordReceivedDecompressedMessage(
       const SliceBuffer& recv_decompressed_message) = 0;
+  // TODO(roth): When the legacy filter stack goes away, remove this
+  // method, since cancellation will always be reported at the same
+  // time as we report the call's status.
   virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
   // Traces a new TCP transport attempt for this call attempt. Note the TCP
   // transport may finish tracing and unref the TCP tracer before or after the
