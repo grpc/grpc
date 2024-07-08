@@ -63,10 +63,14 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   void Send(const absl::LogEntry& entry) override {
-    // Ignore VLOG(n) if ( n > 0 ).
-    // Only check for LOG(INFO), LOG(WARNING) and LOG(ERROR)
     if (entry.log_severity() > absl::LogSeverity::kInfo ||
         entry.verbosity() < 1) {
+      // For LOG(INFO) severity is INFO and verbosity is 0.
+      // For VLOG(n) severity is INFO and verbosity is n.
+      // LOG(INFO) and VLOG(0) have identical severity and verbosity.
+      // We check log noise for LOG(INFO), LOG(WARNING) and LOG(ERROR).
+      // We ignore VLOG(n) if ( n > 0 ) because we dont expect (n>0) in
+      // production systems.
       CheckForNoisyLogs(entry);
     }
   }
