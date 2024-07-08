@@ -69,7 +69,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
       // For VLOG(n) severity is INFO and verbosity is n.
       // LOG(INFO) and VLOG(0) have identical severity and verbosity.
       // We check log noise for LOG(INFO), LOG(WARNING) and LOG(ERROR).
-      // We ignore VLOG(n) if ( n > 0 ) because we dont expect (n>0) in
+      // We ignore VLOG(n) if (n>0) because we dont expect (n>0) in
       // production systems.
       CheckForNoisyLogs(entry);
     }
