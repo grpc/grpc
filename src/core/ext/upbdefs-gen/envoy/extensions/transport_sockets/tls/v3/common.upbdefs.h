@@ -53,6 +53,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_Certi
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_SystemRootCerts_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_transport_sockets_tls_v3_common_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext.SystemRootCerts");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
