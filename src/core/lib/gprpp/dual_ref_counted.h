@@ -214,8 +214,8 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      LOG(INFO) << trace << ":" << this << " weak_unref " << weak_refs << " -> "
-                << weak_refs - 1 << " (refs=" << strong_refs << ")";
+      VLOG(2) << trace << ":" << this << " weak_unref " << weak_refs << " -> "
+              << weak_refs - 1 << " (refs=" << strong_refs << ")";
     }
     CHECK_GT(weak_refs, 0u);
 #endif
@@ -236,9 +236,9 @@ class DualRefCounted : public Impl {
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      LOG(INFO) << trace << ":" << this << " " << location.file() << ":"
-                << location.line() << " weak_unref " << weak_refs << " -> "
-                << weak_refs - 1 << " (refs=" << strong_refs << ") " << reason;
+      VLOG(2) << trace << ":" << this << " " << location.file() << ":"
+              << location.line() << " weak_unref " << weak_refs << " -> "
+              << weak_refs - 1 << " (refs=" << strong_refs << ") " << reason;
     }
     CHECK_GT(weak_refs, 0u);
 #else
