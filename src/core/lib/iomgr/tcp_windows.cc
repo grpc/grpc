@@ -29,8 +29,6 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -142,9 +140,8 @@ static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
                       int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val - 1);
+    VLOG(2).AtLocation(file, line) << "TCP unref " << tcp << " : " << reason
+                                   << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(tcp);
@@ -155,9 +152,8 @@ static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
                     int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val + 1);
+    VLOG(2).AtLocation(file, line) << "TCP   ref " << tcp << " : " << reason
+                                   << " " << val << " -> " << val + 1;
   }
   gpr_ref(&tcp->refcount);
 }
@@ -181,7 +177,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
   grpc_winsocket_callback_info* info = &socket->read_info;
 
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
+    LOG(INFO) << "TCP:" << tcp << " on_read";
   }
 
   if (error.ok()) {
@@ -213,7 +209,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         }
       } else {
         if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-          gpr_log(GPR_INFO, "TCP:%p unref read_slice", tcp);
+          LOG(INFO) << "TCP:" << tcp << " unref read_slice";
         }
         grpc_slice_buffer_reset_and_unref(tcp->read_slices);
         error = grpc_error_set_int(
@@ -244,7 +240,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   size_t i;
 
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "TCP:%p win_read", tcp);
+    LOG(INFO) << "TCP:" << tcp << " win_read";
   }
 
   if (tcp->shutting_down) {
@@ -315,7 +311,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   grpc_closure* cb;
 
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
+    LOG(INFO) << "TCP:" << tcp << " on_write";
   }
 
   gpr_mu_lock(&tcp->mu);
