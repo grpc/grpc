@@ -116,6 +116,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap_msg_init = {
   &envoy_config_bootstrap_v3_Bootstrap_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap__fields[0],
   UPB_SIZE(192, 344), 39, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -168,6 +171,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg
   &envoy_config_bootstrap_v3_Bootstrap_StaticResources_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_StaticResources__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.StaticResources",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
@@ -194,6 +200,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__DynamicResources_ms
   &envoy_config_bootstrap_v3_Bootstrap_DynamicResources_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_DynamicResources__fields[0],
   UPB_SIZE(40, 72), 5, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.DynamicResources",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -218,6 +227,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfi
   &envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.ApplicationLogConfig",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_submsgs[1] = {
@@ -233,6 +245,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfi
   &envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.ApplicationLogConfig.LogFormat",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_maxmaxb},
@@ -249,6 +264,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions
   NULL,
   &envoy_config_bootstrap_v3_Bootstrap_DeferredStatOptions__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.DeferredStatOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -267,6 +285,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientMana
   &envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.GrpcAsyncClientManagerConfig",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_submsgs[1] = {
@@ -282,6 +303,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__CertificateProvider
   &envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Bootstrap.CertificateProviderInstancesEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -307,6 +331,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Admin_msg_init = {
   &envoy_config_bootstrap_v3_Admin_submsgs[0],
   &envoy_config_bootstrap_v3_Admin__fields[0],
   UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Admin",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -337,6 +364,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__ClusterManager_msg_init = {
   &envoy_config_bootstrap_v3_ClusterManager_submsgs[0],
   &envoy_config_bootstrap_v3_ClusterManager__fields[0],
   UPB_SIZE(40, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.ClusterManager",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -362,6 +392,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__ClusterManager__OutlierDetecti
   &envoy_config_bootstrap_v3_ClusterManager_OutlierDetection_submsgs[0],
   &envoy_config_bootstrap_v3_ClusterManager_OutlierDetection__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.ClusterManager.OutlierDetection",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -382,6 +415,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Watchdogs_msg_init = {
   &envoy_config_bootstrap_v3_Watchdogs_submsgs[0],
   &envoy_config_bootstrap_v3_Watchdogs__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Watchdogs",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_bootstrap_v3_Watchdog_submsgs[7] = {
@@ -408,6 +444,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Watchdog_msg_init = {
   &envoy_config_bootstrap_v3_Watchdog_submsgs[0],
   &envoy_config_bootstrap_v3_Watchdog__fields[0],
   UPB_SIZE(40, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Watchdog",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -433,6 +472,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Watchdog__WatchdogAction_msg_i
   &envoy_config_bootstrap_v3_Watchdog_WatchdogAction_submsgs[0],
   &envoy_config_bootstrap_v3_Watchdog_WatchdogAction__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Watchdog.WatchdogAction",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -453,6 +495,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__FatalAction_msg_init = {
   &envoy_config_bootstrap_v3_FatalAction_submsgs[0],
   &envoy_config_bootstrap_v3_FatalAction__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.FatalAction",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_bootstrap_v3_Runtime_submsgs[1] = {
@@ -470,6 +515,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Runtime_msg_init = {
   &envoy_config_bootstrap_v3_Runtime_submsgs[0],
   &envoy_config_bootstrap_v3_Runtime__fields[0],
   UPB_SIZE(40, 72), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.Runtime",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -497,6 +545,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer_msg_init = {
   &envoy_config_bootstrap_v3_RuntimeLayer_submsgs[0],
   &envoy_config_bootstrap_v3_RuntimeLayer__fields[0],
   UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.RuntimeLayer",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -519,6 +570,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__DiskLayer_msg_in
   NULL,
   &envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.RuntimeLayer.DiskLayer",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -531,6 +585,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_i
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.RuntimeLayer.AdminLayer",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[1] = {
@@ -546,6 +603,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_in
   &envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[0],
   &envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.RuntimeLayer.RtdsLayer",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -564,6 +624,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__LayeredRuntime_msg_init = {
   &envoy_config_bootstrap_v3_LayeredRuntime_submsgs[0],
   &envoy_config_bootstrap_v3_LayeredRuntime__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.LayeredRuntime",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -579,6 +642,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__CustomInlineHeader_msg_init = 
   NULL,
   &envoy_config_bootstrap_v3_CustomInlineHeader__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.CustomInlineHeader",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -600,6 +666,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_ini
   &envoy_config_bootstrap_v3_MemoryAllocatorManager_submsgs[0],
   &envoy_config_bootstrap_v3_MemoryAllocatorManager__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.bootstrap.v3.MemoryAllocatorManager",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f000008, &upb_psv8_1bt},

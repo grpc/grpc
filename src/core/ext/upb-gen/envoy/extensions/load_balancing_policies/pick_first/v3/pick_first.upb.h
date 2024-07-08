@@ -76,7 +76,7 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_set_shuffle_address_list(envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst *msg, bool value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

@@ -108,7 +108,7 @@ UPB_INLINE upb_StringView envoy_type_matcher_v3_RegexMatcher_regex(const envoy_t
 
 UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_set_google_re2(envoy_type_matcher_v3_RegexMatcher *msg, envoy_type_matcher_v3_RegexMatcher_GoogleRE2* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher_GoogleRE2* envoy_type_matcher_v3_RegexMatcher_mutable_google_re2(envoy_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_RegexMatcher_GoogleRE2* sub = (struct envoy_type_matcher_v3_RegexMatcher_GoogleRE2*)envoy_type_matcher_v3_RegexMatcher_google_re2(msg);
@@ -120,7 +120,7 @@ UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher_GoogleRE2* envoy_type_match
 }
 UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_set_regex(envoy_type_matcher_v3_RegexMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.type.matcher.v3.RegexMatcher.GoogleRE2 */
@@ -178,7 +178,7 @@ UPB_INLINE bool envoy_type_matcher_v3_RegexMatcher_GoogleRE2_has_max_program_siz
 
 UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_GoogleRE2_set_max_program_size(envoy_type_matcher_v3_RegexMatcher_GoogleRE2 *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_matcher_v3_RegexMatcher_GoogleRE2_mutable_max_program_size(envoy_type_matcher_v3_RegexMatcher_GoogleRE2* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_type_matcher_v3_RegexMatcher_GoogleRE2_max_program_size(msg);
@@ -256,7 +256,7 @@ UPB_INLINE upb_StringView envoy_type_matcher_v3_RegexMatchAndSubstitute_substitu
 
 UPB_INLINE void envoy_type_matcher_v3_RegexMatchAndSubstitute_set_pattern(envoy_type_matcher_v3_RegexMatchAndSubstitute *msg, envoy_type_matcher_v3_RegexMatcher* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_type_matcher_v3_RegexMatchAndSubstitute_mutable_pattern(envoy_type_matcher_v3_RegexMatchAndSubstitute* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_RegexMatcher* sub = (struct envoy_type_matcher_v3_RegexMatcher*)envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(msg);
@@ -268,7 +268,7 @@ UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_type_matcher_v3_Rege
 }
 UPB_INLINE void envoy_type_matcher_v3_RegexMatchAndSubstitute_set_substitution(envoy_type_matcher_v3_RegexMatchAndSubstitute *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

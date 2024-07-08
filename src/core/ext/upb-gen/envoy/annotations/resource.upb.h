@@ -77,7 +77,7 @@ UPB_INLINE upb_StringView envoy_annotations_ResourceAnnotation_type(const envoy_
 
 UPB_INLINE void envoy_annotations_ResourceAnnotation_set_type(envoy_annotations_ResourceAnnotation *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 UPB_INLINE bool envoy_annotations_has_resource(const struct google_protobuf_ServiceOptions* msg) {
@@ -101,8 +101,17 @@ UPB_INLINE void envoy_annotations_set_resource(struct google_protobuf_ServiceOpt
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
+}
+UPB_INLINE struct envoy_annotations_ResourceAnnotation* envoy_annotations_mutable_resource(struct google_protobuf_ServiceOptions* msg,
+                                    upb_Arena* arena) {
+  struct envoy_annotations_ResourceAnnotation* sub = (struct envoy_annotations_ResourceAnnotation*)envoy_annotations_resource(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_annotations_ResourceAnnotation*)_upb_Message_New(&envoy__annotations__ResourceAnnotation_msg_init, arena);
+    if (sub) envoy_annotations_set_resource(msg, sub, arena);
+  }
+  return sub;
 }
 #ifdef __cplusplus
 }  /* extern "C" */

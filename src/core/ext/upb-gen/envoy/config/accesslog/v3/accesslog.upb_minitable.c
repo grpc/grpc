@@ -37,6 +37,9 @@ const upb_MiniTable envoy__config__accesslog__v3__AccessLog_msg_init = {
   &envoy_config_accesslog_v3_AccessLog_submsgs[0],
   &envoy_config_accesslog_v3_AccessLog__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.AccessLog",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -85,6 +88,9 @@ const upb_MiniTable envoy__config__accesslog__v3__AccessLogFilter_msg_init = {
   &envoy_config_accesslog_v3_AccessLogFilter_submsgs[0],
   &envoy_config_accesslog_v3_AccessLogFilter__fields[0],
   UPB_SIZE(16, 24), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.AccessLogFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max64b},
@@ -118,6 +124,9 @@ const upb_MiniTable envoy__config__accesslog__v3__ComparisonFilter_msg_init = {
   &envoy_config_accesslog_v3_ComparisonFilter_submsgs[0],
   &envoy_config_accesslog_v3_ComparisonFilter__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.ComparisonFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -136,6 +145,9 @@ const upb_MiniTable envoy__config__accesslog__v3__StatusCodeFilter_msg_init = {
   &envoy_config_accesslog_v3_StatusCodeFilter_submsgs[0],
   &envoy_config_accesslog_v3_StatusCodeFilter__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.StatusCodeFilter",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_accesslog_v3_DurationFilter_submsgs[1] = {
@@ -150,18 +162,27 @@ const upb_MiniTable envoy__config__accesslog__v3__DurationFilter_msg_init = {
   &envoy_config_accesslog_v3_DurationFilter_submsgs[0],
   &envoy_config_accesslog_v3_DurationFilter__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.DurationFilter",
+#endif
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__NotHealthCheckFilter_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.NotHealthCheckFilter",
+#endif
 };
 
 const upb_MiniTable envoy__config__accesslog__v3__TraceableFilter_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.TraceableFilter",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_accesslog_v3_RuntimeFilter_submsgs[1] = {
@@ -178,6 +199,9 @@ const upb_MiniTable envoy__config__accesslog__v3__RuntimeFilter_msg_init = {
   &envoy_config_accesslog_v3_RuntimeFilter_submsgs[0],
   &envoy_config_accesslog_v3_RuntimeFilter__fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.RuntimeFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -198,6 +222,9 @@ const upb_MiniTable envoy__config__accesslog__v3__AndFilter_msg_init = {
   &envoy_config_accesslog_v3_AndFilter_submsgs[0],
   &envoy_config_accesslog_v3_AndFilter__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.AndFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -216,6 +243,9 @@ const upb_MiniTable envoy__config__accesslog__v3__OrFilter_msg_init = {
   &envoy_config_accesslog_v3_OrFilter_submsgs[0],
   &envoy_config_accesslog_v3_OrFilter__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.OrFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -236,6 +266,9 @@ const upb_MiniTable envoy__config__accesslog__v3__HeaderFilter_msg_init = {
   &envoy_config_accesslog_v3_HeaderFilter_submsgs[0],
   &envoy_config_accesslog_v3_HeaderFilter__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.HeaderFilter",
+#endif
 };
 
 static const upb_MiniTableField envoy_config_accesslog_v3_ResponseFlagFilter__fields[1] = {
@@ -246,6 +279,9 @@ const upb_MiniTable envoy__config__accesslog__v3__ResponseFlagFilter_msg_init = 
   NULL,
   &envoy_config_accesslog_v3_ResponseFlagFilter__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.ResponseFlagFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prs_1bt},
@@ -261,6 +297,9 @@ const upb_MiniTable envoy__config__accesslog__v3__GrpcStatusFilter_msg_init = {
   NULL,
   &envoy_config_accesslog_v3_GrpcStatusFilter__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.GrpcStatusFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_ppv4_1bt},
@@ -283,6 +322,9 @@ const upb_MiniTable envoy__config__accesslog__v3__MetadataFilter_msg_init = {
   &envoy_config_accesslog_v3_MetadataFilter_submsgs[0],
   &envoy_config_accesslog_v3_MetadataFilter__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.MetadataFilter",
+#endif
 };
 
 static const upb_MiniTableField envoy_config_accesslog_v3_LogTypeFilter__fields[2] = {
@@ -294,6 +336,9 @@ const upb_MiniTable envoy__config__accesslog__v3__LogTypeFilter_msg_init = {
   NULL,
   &envoy_config_accesslog_v3_LogTypeFilter__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.LogTypeFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_ppv4_1bt},
@@ -315,6 +360,9 @@ const upb_MiniTable envoy__config__accesslog__v3__ExtensionFilter_msg_init = {
   &envoy_config_accesslog_v3_ExtensionFilter_submsgs[0],
   &envoy_config_accesslog_v3_ExtensionFilter__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.accesslog.v3.ExtensionFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
