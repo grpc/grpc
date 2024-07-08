@@ -28,6 +28,9 @@ const upb_MiniTable envoy__config__trace__v3__Tracing_msg_init = {
   &envoy_config_trace_v3_Tracing_submsgs[0],
   &envoy_config_trace_v3_Tracing__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.Tracing",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_trace_v3_Tracing_Http_submsgs[1] = {
@@ -43,6 +46,9 @@ const upb_MiniTable envoy__config__trace__v3__Tracing__Http_msg_init = {
   &envoy_config_trace_v3_Tracing_Http_submsgs[0],
   &envoy_config_trace_v3_Tracing_Http__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.Tracing.Http",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

@@ -24,6 +24,9 @@ const upb_MiniTable envoy__config__core__v3__DnsResolverOptions_msg_init = {
   NULL,
   &envoy_config_core_v3_DnsResolverOptions__fields[0],
   16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.DnsResolverOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -46,6 +49,9 @@ const upb_MiniTable envoy__config__core__v3__DnsResolutionConfig_msg_init = {
   &envoy_config_core_v3_DnsResolutionConfig_submsgs[0],
   &envoy_config_core_v3_DnsResolutionConfig__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.DnsResolutionConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_prm_1bt_maxmaxb},

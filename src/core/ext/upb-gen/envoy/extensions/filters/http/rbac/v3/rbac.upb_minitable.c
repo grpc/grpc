@@ -39,6 +39,9 @@ const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBAC_msg_init = 
   &envoy_extensions_filters_http_rbac_v3_RBAC_submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBAC__fields[0],
   UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.rbac.v3.RBAC",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -63,6 +66,9 @@ const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBACPerRoute_msg
   &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBACPerRoute__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.rbac.v3.RBACPerRoute",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

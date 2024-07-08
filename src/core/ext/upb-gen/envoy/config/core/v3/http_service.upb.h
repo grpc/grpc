@@ -117,7 +117,7 @@ UPB_INLINE upb_Array* _envoy_config_core_v3_HttpService_request_headers_to_add_m
 
 UPB_INLINE void envoy_config_core_v3_HttpService_set_http_uri(envoy_config_core_v3_HttpService *msg, struct envoy_config_core_v3_HttpUri* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpService_mutable_http_uri(envoy_config_core_v3_HttpService* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_HttpUri* sub = (struct envoy_config_core_v3_HttpUri*)envoy_config_core_v3_HttpService_http_uri(msg);

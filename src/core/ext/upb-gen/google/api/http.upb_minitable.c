@@ -25,6 +25,9 @@ const upb_MiniTable google__api__Http_msg_init = {
   &google_api_Http_submsgs[0],
   &google_api_Http__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.Http",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_prm_1bt_max128b},
@@ -55,6 +58,9 @@ const upb_MiniTable google__api__HttpRule_msg_init = {
   &google_api_HttpRule_submsgs[0],
   &google_api_HttpRule__fields[0],
   UPB_SIZE(48, 88), 10, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.HttpRule",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000003f00000a, &upb_pss_1bt},
@@ -84,6 +90,9 @@ const upb_MiniTable google__api__CustomHttpPattern_msg_init = {
   NULL,
   &google_api_CustomHttpPattern__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.CustomHttpPattern",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},

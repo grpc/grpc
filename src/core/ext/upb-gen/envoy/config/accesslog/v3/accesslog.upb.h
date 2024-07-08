@@ -173,11 +173,11 @@ UPB_INLINE bool envoy_config_accesslog_v3_AccessLog_has_typed_config(const envoy
 
 UPB_INLINE void envoy_config_accesslog_v3_AccessLog_set_name(envoy_config_accesslog_v3_AccessLog *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLog_set_filter(envoy_config_accesslog_v3_AccessLog *msg, envoy_config_accesslog_v3_AccessLogFilter* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_AccessLogFilter* envoy_config_accesslog_v3_AccessLog_mutable_filter(envoy_config_accesslog_v3_AccessLog* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_AccessLogFilter* sub = (struct envoy_config_accesslog_v3_AccessLogFilter*)envoy_config_accesslog_v3_AccessLog_filter(msg);
@@ -189,7 +189,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_AccessLogFilter* envoy_config_access
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLog_set_typed_config(envoy_config_accesslog_v3_AccessLog *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 40), UPB_SIZE(-17, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_accesslog_v3_AccessLog_mutable_typed_config(envoy_config_accesslog_v3_AccessLog* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_accesslog_v3_AccessLog_typed_config(msg);
@@ -468,7 +468,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_AccessLogFilter_has_log_type_filter(co
 
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_status_code_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_StatusCodeFilter* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_StatusCodeFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_status_code_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_StatusCodeFilter* sub = (struct envoy_config_accesslog_v3_StatusCodeFilter*)envoy_config_accesslog_v3_AccessLogFilter_status_code_filter(msg);
@@ -480,7 +480,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_StatusCodeFilter* envoy_config_acces
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_duration_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_DurationFilter* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_DurationFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_duration_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_DurationFilter* sub = (struct envoy_config_accesslog_v3_DurationFilter*)envoy_config_accesslog_v3_AccessLogFilter_duration_filter(msg);
@@ -492,7 +492,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_DurationFilter* envoy_config_accessl
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_not_health_check_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_NotHealthCheckFilter* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_NotHealthCheckFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_not_health_check_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_NotHealthCheckFilter* sub = (struct envoy_config_accesslog_v3_NotHealthCheckFilter*)envoy_config_accesslog_v3_AccessLogFilter_not_health_check_filter(msg);
@@ -504,7 +504,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_NotHealthCheckFilter* envoy_config_a
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_traceable_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_TraceableFilter* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_TraceableFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_traceable_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_TraceableFilter* sub = (struct envoy_config_accesslog_v3_TraceableFilter*)envoy_config_accesslog_v3_AccessLogFilter_traceable_filter(msg);
@@ -516,7 +516,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_TraceableFilter* envoy_config_access
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_runtime_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_RuntimeFilter* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_RuntimeFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_runtime_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_RuntimeFilter* sub = (struct envoy_config_accesslog_v3_RuntimeFilter*)envoy_config_accesslog_v3_AccessLogFilter_runtime_filter(msg);
@@ -528,7 +528,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_RuntimeFilter* envoy_config_accesslo
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_and_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_AndFilter* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_AndFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_and_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_AndFilter* sub = (struct envoy_config_accesslog_v3_AndFilter*)envoy_config_accesslog_v3_AccessLogFilter_and_filter(msg);
@@ -540,7 +540,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_AndFilter* envoy_config_accesslog_v3
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_or_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_OrFilter* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_OrFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_or_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_OrFilter* sub = (struct envoy_config_accesslog_v3_OrFilter*)envoy_config_accesslog_v3_AccessLogFilter_or_filter(msg);
@@ -552,7 +552,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_OrFilter* envoy_config_accesslog_v3_
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_header_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_HeaderFilter* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_HeaderFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_header_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_HeaderFilter* sub = (struct envoy_config_accesslog_v3_HeaderFilter*)envoy_config_accesslog_v3_AccessLogFilter_header_filter(msg);
@@ -564,7 +564,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_HeaderFilter* envoy_config_accesslog
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_response_flag_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_ResponseFlagFilter* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(12, 16), -9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_ResponseFlagFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_response_flag_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_ResponseFlagFilter* sub = (struct envoy_config_accesslog_v3_ResponseFlagFilter*)envoy_config_accesslog_v3_AccessLogFilter_response_flag_filter(msg);
@@ -576,7 +576,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_ResponseFlagFilter* envoy_config_acc
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_grpc_status_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_GrpcStatusFilter* value) {
   const upb_MiniTableField field = {10, UPB_SIZE(12, 16), -9, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_GrpcStatusFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_grpc_status_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_GrpcStatusFilter* sub = (struct envoy_config_accesslog_v3_GrpcStatusFilter*)envoy_config_accesslog_v3_AccessLogFilter_grpc_status_filter(msg);
@@ -588,7 +588,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_GrpcStatusFilter* envoy_config_acces
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_extension_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_ExtensionFilter* value) {
   const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_ExtensionFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_extension_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_ExtensionFilter* sub = (struct envoy_config_accesslog_v3_ExtensionFilter*)envoy_config_accesslog_v3_AccessLogFilter_extension_filter(msg);
@@ -600,7 +600,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_ExtensionFilter* envoy_config_access
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_metadata_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_MetadataFilter* value) {
   const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_MetadataFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_metadata_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_MetadataFilter* sub = (struct envoy_config_accesslog_v3_MetadataFilter*)envoy_config_accesslog_v3_AccessLogFilter_metadata_filter(msg);
@@ -612,7 +612,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_MetadataFilter* envoy_config_accessl
 }
 UPB_INLINE void envoy_config_accesslog_v3_AccessLogFilter_set_log_type_filter(envoy_config_accesslog_v3_AccessLogFilter *msg, envoy_config_accesslog_v3_LogTypeFilter* value) {
   const upb_MiniTableField field = {13, UPB_SIZE(12, 16), -9, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_LogTypeFilter* envoy_config_accesslog_v3_AccessLogFilter_mutable_log_type_filter(envoy_config_accesslog_v3_AccessLogFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_LogTypeFilter* sub = (struct envoy_config_accesslog_v3_LogTypeFilter*)envoy_config_accesslog_v3_AccessLogFilter_log_type_filter(msg);
@@ -690,11 +690,11 @@ UPB_INLINE bool envoy_config_accesslog_v3_ComparisonFilter_has_value(const envoy
 
 UPB_INLINE void envoy_config_accesslog_v3_ComparisonFilter_set_op(envoy_config_accesslog_v3_ComparisonFilter *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_accesslog_v3_ComparisonFilter_set_value(envoy_config_accesslog_v3_ComparisonFilter *msg, struct envoy_config_core_v3_RuntimeUInt32* value) {
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RuntimeUInt32* envoy_config_accesslog_v3_ComparisonFilter_mutable_value(envoy_config_accesslog_v3_ComparisonFilter* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_RuntimeUInt32* sub = (struct envoy_config_core_v3_RuntimeUInt32*)envoy_config_accesslog_v3_ComparisonFilter_value(msg);
@@ -760,7 +760,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_StatusCodeFilter_has_comparison(const 
 
 UPB_INLINE void envoy_config_accesslog_v3_StatusCodeFilter_set_comparison(envoy_config_accesslog_v3_StatusCodeFilter *msg, envoy_config_accesslog_v3_ComparisonFilter* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_ComparisonFilter* envoy_config_accesslog_v3_StatusCodeFilter_mutable_comparison(envoy_config_accesslog_v3_StatusCodeFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_ComparisonFilter* sub = (struct envoy_config_accesslog_v3_ComparisonFilter*)envoy_config_accesslog_v3_StatusCodeFilter_comparison(msg);
@@ -826,7 +826,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_DurationFilter_has_comparison(const en
 
 UPB_INLINE void envoy_config_accesslog_v3_DurationFilter_set_comparison(envoy_config_accesslog_v3_DurationFilter *msg, envoy_config_accesslog_v3_ComparisonFilter* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_ComparisonFilter* envoy_config_accesslog_v3_DurationFilter_mutable_comparison(envoy_config_accesslog_v3_DurationFilter* msg, upb_Arena* arena) {
   struct envoy_config_accesslog_v3_ComparisonFilter* sub = (struct envoy_config_accesslog_v3_ComparisonFilter*)envoy_config_accesslog_v3_DurationFilter_comparison(msg);
@@ -992,11 +992,11 @@ UPB_INLINE bool envoy_config_accesslog_v3_RuntimeFilter_use_independent_randomne
 
 UPB_INLINE void envoy_config_accesslog_v3_RuntimeFilter_set_runtime_key(envoy_config_accesslog_v3_RuntimeFilter *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_accesslog_v3_RuntimeFilter_set_percent_sampled(envoy_config_accesslog_v3_RuntimeFilter *msg, struct envoy_type_v3_FractionalPercent* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_config_accesslog_v3_RuntimeFilter_mutable_percent_sampled(envoy_config_accesslog_v3_RuntimeFilter* msg, upb_Arena* arena) {
   struct envoy_type_v3_FractionalPercent* sub = (struct envoy_type_v3_FractionalPercent*)envoy_config_accesslog_v3_RuntimeFilter_percent_sampled(msg);
@@ -1008,7 +1008,7 @@ UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_config_accesslog_v3_Run
 }
 UPB_INLINE void envoy_config_accesslog_v3_RuntimeFilter_set_use_independent_randomness(envoy_config_accesslog_v3_RuntimeFilter *msg, bool value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.accesslog.v3.AndFilter */
@@ -1266,7 +1266,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_HeaderFilter_has_header(const envoy_co
 
 UPB_INLINE void envoy_config_accesslog_v3_HeaderFilter_set_header(envoy_config_accesslog_v3_HeaderFilter *msg, struct envoy_config_route_v3_HeaderMatcher* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_route_v3_HeaderMatcher* envoy_config_accesslog_v3_HeaderFilter_mutable_header(envoy_config_accesslog_v3_HeaderFilter* msg, upb_Arena* arena) {
   struct envoy_config_route_v3_HeaderMatcher* sub = (struct envoy_config_route_v3_HeaderMatcher*)envoy_config_accesslog_v3_HeaderFilter_header(msg);
@@ -1486,7 +1486,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_GrpcStatusFilter_add_statuses(envoy_co
 }
 UPB_INLINE void envoy_config_accesslog_v3_GrpcStatusFilter_set_exclude(envoy_config_accesslog_v3_GrpcStatusFilter *msg, bool value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 8), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.accesslog.v3.MetadataFilter */
@@ -1560,7 +1560,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_MetadataFilter_has_match_if_key_not_fo
 
 UPB_INLINE void envoy_config_accesslog_v3_MetadataFilter_set_matcher(envoy_config_accesslog_v3_MetadataFilter *msg, struct envoy_type_matcher_v3_MetadataMatcher* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_MetadataMatcher* envoy_config_accesslog_v3_MetadataFilter_mutable_matcher(envoy_config_accesslog_v3_MetadataFilter* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_MetadataMatcher* sub = (struct envoy_type_matcher_v3_MetadataMatcher*)envoy_config_accesslog_v3_MetadataFilter_matcher(msg);
@@ -1572,7 +1572,7 @@ UPB_INLINE struct envoy_type_matcher_v3_MetadataMatcher* envoy_config_accesslog_
 }
 UPB_INLINE void envoy_config_accesslog_v3_MetadataFilter_set_match_if_key_not_found(envoy_config_accesslog_v3_MetadataFilter *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_accesslog_v3_MetadataFilter_mutable_match_if_key_not_found(envoy_config_accesslog_v3_MetadataFilter* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_accesslog_v3_MetadataFilter_match_if_key_not_found(msg);
@@ -1694,7 +1694,7 @@ UPB_INLINE bool envoy_config_accesslog_v3_LogTypeFilter_add_types(envoy_config_a
 }
 UPB_INLINE void envoy_config_accesslog_v3_LogTypeFilter_set_exclude(envoy_config_accesslog_v3_LogTypeFilter *msg, bool value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 8), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.accesslog.v3.ExtensionFilter */
@@ -1773,11 +1773,11 @@ UPB_INLINE bool envoy_config_accesslog_v3_ExtensionFilter_has_typed_config(const
 
 UPB_INLINE void envoy_config_accesslog_v3_ExtensionFilter_set_name(envoy_config_accesslog_v3_ExtensionFilter *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_accesslog_v3_ExtensionFilter_set_typed_config(envoy_config_accesslog_v3_ExtensionFilter *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_accesslog_v3_ExtensionFilter_mutable_typed_config(envoy_config_accesslog_v3_ExtensionFilter* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_accesslog_v3_ExtensionFilter_typed_config(msg);

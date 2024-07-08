@@ -27,6 +27,9 @@ const upb_MiniTable envoy__admin__v3__Listeners_msg_init = {
   &envoy_admin_v3_Listeners_submsgs[0],
   &envoy_admin_v3_Listeners__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.Listeners",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -48,6 +51,9 @@ const upb_MiniTable envoy__admin__v3__ListenerStatus_msg_init = {
   &envoy_admin_v3_ListenerStatus_submsgs[0],
   &envoy_admin_v3_ListenerStatus__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.ListenerStatus",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

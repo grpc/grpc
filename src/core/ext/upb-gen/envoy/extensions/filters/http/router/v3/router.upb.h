@@ -252,7 +252,7 @@ UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_has_upstream_log_
 
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_dynamic_stats(envoy_extensions_filters_http_router_v3_Router *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_http_router_v3_Router_mutable_dynamic_stats(envoy_extensions_filters_http_router_v3_Router* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_extensions_filters_http_router_v3_Router_dynamic_stats(msg);
@@ -264,7 +264,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_http_route
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_start_child_span(envoy_extensions_filters_http_router_v3_Router *msg, bool value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_accesslog_v3_AccessLog** envoy_extensions_filters_http_router_v3_Router_mutable_upstream_log(envoy_extensions_filters_http_router_v3_Router* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(20, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -298,7 +298,7 @@ UPB_INLINE struct envoy_config_accesslog_v3_AccessLog* envoy_extensions_filters_
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_suppress_envoy_headers(envoy_extensions_filters_http_router_v3_Router *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 10), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* envoy_extensions_filters_http_router_v3_Router_mutable_strict_check_headers(envoy_extensions_filters_http_router_v3_Router* msg, size_t* size) {
   upb_MiniTableField field = {5, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -330,11 +330,11 @@ UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_add_strict_check_
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_respect_expected_rq_timeout(envoy_extensions_filters_http_router_v3_Router *msg, bool value) {
   const upb_MiniTableField field = {6, UPB_SIZE(32, 11), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_suppress_grpc_request_failure_code_stats(envoy_extensions_filters_http_router_v3_Router *msg, bool value) {
   const upb_MiniTableField field = {7, UPB_SIZE(33, 12), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter** envoy_extensions_filters_http_router_v3_Router_mutable_upstream_http_filters(envoy_extensions_filters_http_router_v3_Router* msg, size_t* size) {
   upb_MiniTableField field = {8, UPB_SIZE(36, 40), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -368,7 +368,7 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_upstream_log_options(envoy_extensions_filters_http_router_v3_Router *msg, envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(40, 48), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* envoy_extensions_filters_http_router_v3_Router_mutable_upstream_log_options(envoy_extensions_filters_http_router_v3_Router* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* sub = (struct envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions*)envoy_extensions_filters_http_router_v3_Router_upstream_log_options(msg);
@@ -446,11 +446,11 @@ UPB_INLINE bool envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLog
 
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_set_flush_upstream_log_on_upstream_stream(envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions *msg, bool value) {
   const upb_MiniTableField field = {1, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_set_upstream_log_flush_interval(envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_mutable_upstream_log_flush_interval(envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_upstream_log_flush_interval(msg);

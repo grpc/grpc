@@ -23,6 +23,9 @@ const upb_MiniTable grpc__gcp__Endpoint_msg_init = {
   NULL,
   &grpc_gcp_Endpoint__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.Endpoint",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -45,6 +48,9 @@ const upb_MiniTable grpc__gcp__Identity_msg_init = {
   &grpc_gcp_Identity_submsgs[0],
   &grpc_gcp_Identity__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.Identity",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},
@@ -62,6 +68,9 @@ const upb_MiniTable grpc__gcp__Identity__AttributesEntry_msg_init = {
   NULL,
   &grpc_gcp_Identity_AttributesEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.Identity.AttributesEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -95,6 +104,9 @@ const upb_MiniTable grpc__gcp__StartClientHandshakeReq_msg_init = {
   &grpc_gcp_StartClientHandshakeReq_submsgs[0],
   &grpc_gcp_StartClientHandshakeReq__fields[0],
   UPB_SIZE(56, 96), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.StartClientHandshakeReq",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -128,6 +140,9 @@ const upb_MiniTable grpc__gcp__ServerHandshakeParameters_msg_init = {
   &grpc_gcp_ServerHandshakeParameters_submsgs[0],
   &grpc_gcp_ServerHandshakeParameters__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.ServerHandshakeParameters",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prs_1bt},
@@ -157,6 +172,9 @@ const upb_MiniTable grpc__gcp__StartServerHandshakeReq_msg_init = {
   &grpc_gcp_StartServerHandshakeReq_submsgs[0],
   &grpc_gcp_StartServerHandshakeReq__fields[0],
   UPB_SIZE(48, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.StartServerHandshakeReq",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_prs_1bt},
@@ -182,6 +200,9 @@ const upb_MiniTable grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry
   &grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_submsgs[0],
   &grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.StartServerHandshakeReq.HandshakeParametersEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f000008, &upb_psv4_1bt},
@@ -196,6 +217,9 @@ const upb_MiniTable grpc__gcp__NextHandshakeMessageReq_msg_init = {
   NULL,
   &grpc_gcp_NextHandshakeMessageReq__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.NextHandshakeMessageReq",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_psb_1bt},
@@ -218,6 +242,9 @@ const upb_MiniTable grpc__gcp__HandshakerReq_msg_init = {
   &grpc_gcp_HandshakerReq_submsgs[0],
   &grpc_gcp_HandshakerReq__fields[0],
   UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.HandshakerReq",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max128b},
@@ -247,6 +274,9 @@ const upb_MiniTable grpc__gcp__HandshakerResult_msg_init = {
   &grpc_gcp_HandshakerResult_submsgs[0],
   &grpc_gcp_HandshakerResult__fields[0],
   UPB_SIZE(56, 88), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.HandshakerResult",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -276,6 +306,9 @@ const upb_MiniTable grpc__gcp__HandshakerStatus_msg_init = {
   NULL,
   &grpc_gcp_HandshakerStatus__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.HandshakerStatus",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -300,6 +333,9 @@ const upb_MiniTable grpc__gcp__HandshakerResp_msg_init = {
   &grpc_gcp_HandshakerResp_submsgs[0],
   &grpc_gcp_HandshakerResp__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.HandshakerResp",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_psb_1bt},

@@ -44,6 +44,9 @@ const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init 
   &envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[0],
   &envoy_config_endpoint_v3_UpstreamLocalityStats__fields[0],
   UPB_SIZE(88, 96), 11, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.UpstreamLocalityStats",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -84,6 +87,9 @@ const upb_MiniTable envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init 
   &envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[0],
   &envoy_config_endpoint_v3_UpstreamEndpointStats__fields[0],
   UPB_SIZE(56, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.UpstreamEndpointStats",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -106,6 +112,9 @@ const upb_MiniTable envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_ini
   NULL,
   &envoy_config_endpoint_v3_EndpointLoadMetricStats__fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.EndpointLoadMetricStats",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -133,6 +142,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterStats_msg_init = {
   &envoy_config_endpoint_v3_ClusterStats_submsgs[0],
   &envoy_config_endpoint_v3_ClusterStats__fields[0],
   UPB_SIZE(48, 80), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.ClusterStats",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -154,6 +166,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterStats__DroppedRequests_m
   NULL,
   &envoy_config_endpoint_v3_ClusterStats_DroppedRequests__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.ClusterStats.DroppedRequests",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
