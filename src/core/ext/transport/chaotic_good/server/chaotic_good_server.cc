@@ -510,7 +510,8 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   } else if (!error_list.empty()) {
     LOG(INFO) << "Failed to bind some addresses for " << addr;
     for (const auto& error : error_list) {
-      LOG(INFO) << "Binding Failed: " << error.first << ": " << error.second;
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "Binding Failed: " << error.first << ": " << error.second;
     }
   }
   return port_num;
