@@ -88,6 +88,9 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
               std::regex("Sending goaway.*Channel Destroyed")},
              {"config.cc", std::regex("gRPC experiments:.*")},
              {"config.cc", std::regex("gRPC experiments enabled:.*")},
+             {"chaotic_good_server.cc",
+              std::regex("Failed to bind some addresses for.*")},
+             {"chaotic_good_server.cc", std::regex("Binding Failed: .*")},
              {"log.cc",
               std::regex("Prefer WARNING or ERROR. However if you see this "
                          "message in a debug environmenmt or test environmenmt "
