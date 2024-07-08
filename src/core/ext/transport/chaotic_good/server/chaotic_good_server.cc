@@ -488,7 +488,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
         grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr);
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
-    LOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(chaotic_good)) << "BIND: " << addr_str;
+    GRPC_TRACE_LOG(chaotic_good, INFO) << "BIND: " << addr_str;
     auto bind_result = listener->Bind(ee_addr);
     if (!bind_result.ok()) {
       error_list.push_back(
