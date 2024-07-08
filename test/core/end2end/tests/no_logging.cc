@@ -62,6 +62,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     absl::SetMinLogLevel(saved_absl_severity_);
   }
 
+  // This function is called each time LOG or VLOG is called.
   void Send(const absl::LogEntry& entry) override {
     if (entry.log_severity() > absl::LogSeverity::kInfo ||
         entry.verbosity() < 1) {
@@ -112,9 +113,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
-  VLOG(1)
-      << "When the test fails on this statement, the test is broken because "
-         "it is not able to differentiate between LOG(INFO) and VLOG(1)";
+  VLOG(1) << "If the test fails here, the test is broken because it is not "
+             "able to differentiate between LOG(INFO) and VLOG(1)";
 
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
