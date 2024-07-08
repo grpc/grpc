@@ -21816,7 +21816,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
@@ -21911,6 +21912,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -22400,6 +22402,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
