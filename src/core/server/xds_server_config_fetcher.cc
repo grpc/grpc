@@ -801,23 +801,21 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   auto it = certificate_providers_map_.find(filter_chain);
   if (it != certificate_providers_map_.end()) return it->second;
   // Configure root cert.
-  absl::string_view root_provider_instance_name =
-      filter_chain->downstream_tls_context.common_tls_context
-          .certificate_validation_context.ca_certificate_provider_instance
-          .instance_name;
-  absl::string_view root_provider_cert_name =
-      filter_chain->downstream_tls_context.common_tls_context
-          .certificate_validation_context.ca_certificate_provider_instance
-          .certificate_name;
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &filter_chain->downstream_tls_context.common_tls_context
+               .certificate_validation_context.ca_certs);
+  absl::string_view root_provider_cert_name;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
-  if (!root_provider_instance_name.empty()) {
+  if (ca_cert_provider != nullptr) {
+    root_provider_cert_name = ca_cert_provider->certificate_name;
     root_cert_provider =
         xds_client_->certificate_provider_store()
-            .CreateOrGetCertificateProvider(root_provider_instance_name);
+            .CreateOrGetCertificateProvider(ca_cert_provider->instance_name);
     if (root_cert_provider == nullptr) {
       return absl::NotFoundError(
           absl::StrCat("Certificate provider instance name: \"",
-                       root_provider_instance_name, "\" not recognized."));
+                       ca_cert_provider->instance_name, "\" not recognized."));
     }
   }
   // Configure identity cert.
