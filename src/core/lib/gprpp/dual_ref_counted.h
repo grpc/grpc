@@ -336,8 +336,8 @@ class DualRefCounted : public Impl {
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      LOG(INFO) << trace_ << ":" << this << " weak_ref " << weak_refs << " -> "
-                << weak_refs + 1 << "; (refs=" << strong_refs << ")";
+      VLOG(2) << trace_ << ":" << this << " weak_ref " << weak_refs << " -> "
+              << weak_refs + 1 << "; (refs=" << strong_refs << ")";
     }
     if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
