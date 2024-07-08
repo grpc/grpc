@@ -1643,6 +1643,18 @@ UPB_INLINE bool envoy_data_accesslog_v3_ResponseFlags_dns_resolution_failure(con
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_clear_downstream_remote_reset(envoy_data_accesslog_v3_ResponseFlags* msg) {
+  const upb_MiniTableField field = {28, UPB_SIZE(42, 35), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_data_accesslog_v3_ResponseFlags_downstream_remote_reset(const envoy_data_accesslog_v3_ResponseFlags* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {28, UPB_SIZE(42, 35), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_set_failed_local_healthcheck(envoy_data_accesslog_v3_ResponseFlags *msg, bool value) {
   const upb_MiniTableField field = {1, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
@@ -1758,6 +1770,10 @@ UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_set_overload_manager(envoy
 }
 UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_set_dns_resolution_failure(envoy_data_accesslog_v3_ResponseFlags *msg, bool value) {
   const upb_MiniTableField field = {27, UPB_SIZE(41, 34), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_data_accesslog_v3_ResponseFlags_set_downstream_remote_reset(envoy_data_accesslog_v3_ResponseFlags *msg, bool value) {
+  const upb_MiniTableField field = {28, UPB_SIZE(42, 35), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
 }
 
