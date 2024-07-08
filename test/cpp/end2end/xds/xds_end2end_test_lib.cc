@@ -350,6 +350,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (server_notify_client_when_started) {
     request->mutable_param()->set_server_notify_client_when_started(true);
   }
+  if (echo_host_from_authority_header) {
+    request->mutable_param()->set_echo_host_from_authority_header(true);
+  }
 }
 
 //
@@ -479,7 +482,7 @@ void XdsEnd2endTest::InitClient(
     absl::optional<XdsBootstrapBuilder> builder,
     std::string lb_expected_authority,
     int xds_resource_does_not_exist_timeout_ms,
-    std::string balancer_authority_override,
+    std::string balancer_authority_override, ChannelArguments* args,
     std::shared_ptr<ChannelCredentials> credentials) {
   if (!builder.has_value()) {
     builder = MakeBootstrapBuilder();
@@ -529,8 +532,7 @@ void XdsEnd2endTest::InitClient(
     grpc_core::internal::UnsetGlobalXdsClientsForTest();
   }
   // Create channel and stub.
-  ResetStub(/*failover_timeout_ms=*/0, /*args=*/nullptr,
-            std::move(credentials));
+  ResetStub(/*failover_timeout_ms=*/0, args, std::move(credentials));
 }
 
 void XdsEnd2endTest::ResetStub(

@@ -3152,6 +3152,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "chunked_vector",
+        "down_cast",
         "ref_counted",
         "service_config_parser",
         "slice_refcount",
@@ -3251,6 +3252,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "call_destination",
+        "down_cast",
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
@@ -3564,6 +3566,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
+        "event_engine_common",
         "lb_policy",
         "metadata_batch",
     ],
@@ -5839,6 +5842,7 @@ grpc_cc_library(
         "delegating_helper",
         "grpc_backend_metric_data",
         "grpc_lb_xds_channel_args",
+        "grpc_resolver_xds_attributes",
         "grpc_xds_client",
         "json",
         "json_args",
@@ -6906,6 +6910,7 @@ grpc_cc_library(
     deps = [
         "grpc_service_config",
         "unique_type_name",
+        "xds_route_config",
         "//:gpr_platform",
     ],
 )
