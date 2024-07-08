@@ -47,10 +47,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
                                  const int verbosity) {
     saved_absl_severity_ = absl::MinLogLevel();
+    absl::SetMinLogLevel(severity);
     // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
     saved_absl_verbosity_ = absl::SetGlobalVLogLevel(verbosity);
-    absl::SetMinLogLevel(severity);
-    grpc_tracer_set_enabled("all", 0);
+    grpc_tracer_set_enabled("all", false);
     absl::AddLogSink(this);
   }
 
@@ -58,13 +58,14 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     //  Reverse everything done in the constructor.
     absl::RemoveLogSink(this);
     saved_trace_flags_.Restore();
-    absl::SetMinLogLevel(saved_absl_severity_);
     absl::SetGlobalVLogLevel(saved_absl_verbosity_);
+    absl::SetMinLogLevel(saved_absl_severity_);
   }
 
   void Send(const absl::LogEntry& entry) override {
     // Ignore VLOG(). Only check for LOG(INFO), LOG(WARNING) and LOG(ERROR)
-    if (entry.verbosity() < 1) {
+    if (entry.log_severity() > absl::LogSeverity::kInfo ||
+        entry.verbosity() < 1) {
       CheckForNoisyLogs(entry);
     }
   }
