@@ -30,6 +30,9 @@ const upb_MiniTable envoy__admin__v3__ConfigDump_msg_init = {
   &envoy_admin_v3_ConfigDump_submsgs[0],
   &envoy_admin_v3_ConfigDump__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.ConfigDump",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
@@ -50,6 +53,9 @@ const upb_MiniTable envoy__admin__v3__BootstrapConfigDump_msg_init = {
   &envoy_admin_v3_BootstrapConfigDump_submsgs[0],
   &envoy_admin_v3_BootstrapConfigDump__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.BootstrapConfigDump",
+#endif
 };
 
 static const upb_MiniTableSub envoy_admin_v3_SecretsConfigDump_submsgs[3] = {
@@ -68,6 +74,9 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump_msg_init = {
   &envoy_admin_v3_SecretsConfigDump_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SecretsConfigDump",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -95,6 +104,9 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump__DynamicSecret_msg_init 
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[0],
   UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SecretsConfigDump.DynamicSecret",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -122,6 +134,9 @@ const upb_MiniTable envoy__admin__v3__SecretsConfigDump__StaticSecret_msg_init =
   &envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SecretsConfigDump.StaticSecret",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

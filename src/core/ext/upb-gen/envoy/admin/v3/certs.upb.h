@@ -449,11 +449,11 @@ UPB_INLINE bool envoy_admin_v3_CertificateDetails_has_ocsp_details(const envoy_a
 
 UPB_INLINE void envoy_admin_v3_CertificateDetails_set_path(envoy_admin_v3_CertificateDetails *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_set_serial_number(envoy_admin_v3_CertificateDetails *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(36, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE envoy_admin_v3_SubjectAlternateName** envoy_admin_v3_CertificateDetails_mutable_subject_alt_names(envoy_admin_v3_CertificateDetails* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -487,11 +487,11 @@ UPB_INLINE struct envoy_admin_v3_SubjectAlternateName* envoy_admin_v3_Certificat
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_set_days_until_expiration(envoy_admin_v3_CertificateDetails *msg, uint64_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(48, 56), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_set_valid_from(envoy_admin_v3_CertificateDetails *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(16, 64), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_mutable_valid_from(envoy_admin_v3_CertificateDetails* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_CertificateDetails_valid_from(msg);
@@ -503,7 +503,7 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_m
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_set_expiration_time(envoy_admin_v3_CertificateDetails *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(20, 72), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_mutable_expiration_time(envoy_admin_v3_CertificateDetails* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_CertificateDetails_expiration_time(msg);
@@ -515,7 +515,7 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_m
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_set_ocsp_details(envoy_admin_v3_CertificateDetails *msg, envoy_admin_v3_CertificateDetails_OcspDetails* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(24, 80), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_CertificateDetails_OcspDetails* envoy_admin_v3_CertificateDetails_mutable_ocsp_details(envoy_admin_v3_CertificateDetails* msg, upb_Arena* arena) {
   struct envoy_admin_v3_CertificateDetails_OcspDetails* sub = (struct envoy_admin_v3_CertificateDetails_OcspDetails*)envoy_admin_v3_CertificateDetails_ocsp_details(msg);
@@ -597,7 +597,7 @@ UPB_INLINE bool envoy_admin_v3_CertificateDetails_OcspDetails_has_expiration(con
 
 UPB_INLINE void envoy_admin_v3_CertificateDetails_OcspDetails_set_valid_from(envoy_admin_v3_CertificateDetails_OcspDetails *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_OcspDetails_mutable_valid_from(envoy_admin_v3_CertificateDetails_OcspDetails* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_CertificateDetails_OcspDetails_valid_from(msg);
@@ -609,7 +609,7 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_O
 }
 UPB_INLINE void envoy_admin_v3_CertificateDetails_OcspDetails_set_expiration(envoy_admin_v3_CertificateDetails_OcspDetails *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_CertificateDetails_OcspDetails_mutable_expiration(envoy_admin_v3_CertificateDetails_OcspDetails* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_CertificateDetails_OcspDetails_expiration(msg);
@@ -718,15 +718,15 @@ UPB_INLINE bool envoy_admin_v3_SubjectAlternateName_has_ip_address(const envoy_a
 
 UPB_INLINE void envoy_admin_v3_SubjectAlternateName_set_dns(envoy_admin_v3_SubjectAlternateName *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SubjectAlternateName_set_uri(envoy_admin_v3_SubjectAlternateName *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SubjectAlternateName_set_ip_address(envoy_admin_v3_SubjectAlternateName *msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

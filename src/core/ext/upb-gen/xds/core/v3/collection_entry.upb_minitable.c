@@ -30,6 +30,9 @@ const upb_MiniTable xds__core__v3__CollectionEntry_msg_init = {
   &xds_core_v3_CollectionEntry_submsgs[0],
   &xds_core_v3_CollectionEntry__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.core.v3.CollectionEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_maxmaxb},
@@ -52,6 +55,9 @@ const upb_MiniTable xds__core__v3__CollectionEntry__InlineEntry_msg_init = {
   &xds_core_v3_CollectionEntry_InlineEntry_submsgs[0],
   &xds_core_v3_CollectionEntry_InlineEntry__fields[0],
   UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.core.v3.CollectionEntry.InlineEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

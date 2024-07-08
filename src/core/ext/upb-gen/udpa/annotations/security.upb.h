@@ -90,11 +90,11 @@ UPB_INLINE bool udpa_annotations_FieldSecurityAnnotation_configure_for_untrusted
 
 UPB_INLINE void udpa_annotations_FieldSecurityAnnotation_set_configure_for_untrusted_downstream(udpa_annotations_FieldSecurityAnnotation *msg, bool value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void udpa_annotations_FieldSecurityAnnotation_set_configure_for_untrusted_upstream(udpa_annotations_FieldSecurityAnnotation *msg, bool value) {
   const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 UPB_INLINE bool udpa_annotations_has_security(const struct google_protobuf_FieldOptions* msg) {
@@ -118,8 +118,17 @@ UPB_INLINE void udpa_annotations_set_security(struct google_protobuf_FieldOption
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
+}
+UPB_INLINE struct udpa_annotations_FieldSecurityAnnotation* udpa_annotations_mutable_security(struct google_protobuf_FieldOptions* msg,
+                                    upb_Arena* arena) {
+  struct udpa_annotations_FieldSecurityAnnotation* sub = (struct udpa_annotations_FieldSecurityAnnotation*)udpa_annotations_security(msg);
+  if (sub == NULL) {
+    sub = (struct udpa_annotations_FieldSecurityAnnotation*)_upb_Message_New(&udpa__annotations__FieldSecurityAnnotation_msg_init, arena);
+    if (sub) udpa_annotations_set_security(msg, sub, arena);
+  }
+  return sub;
 }
 #ifdef __cplusplus
 }  /* extern "C" */
