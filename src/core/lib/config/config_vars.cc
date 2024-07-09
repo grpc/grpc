@@ -55,9 +55,6 @@ ABSL_FLAG(std::vector<std::string>, grpc_trace, {},
           "into how gRPC C core is processing requests via debug logs.");
 ABSL_FLAG(absl::optional<std::string>, grpc_verbosity, {},
           "Logging verbosity.");
-ABSL_FLAG(absl::optional<std::string>, grpc_stacktrace_minloglevel, {},
-          "Messages logged at the same or higher level than this will print "
-          "stacktrace");
 ABSL_FLAG(absl::optional<bool>, grpc_enable_fork_support, {},
           "Enable fork support");
 ABSL_FLAG(absl::optional<std::string>, grpc_poll_strategy, {},
@@ -97,9 +94,6 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, "GRPC_VERBOSITY",
                             overrides.verbosity,
                             GPR_DEFAULT_LOG_VERBOSITY_STRING)),
-      stacktrace_minloglevel_(LoadConfig(FLAGS_grpc_stacktrace_minloglevel,
-                                         "GRPC_STACKTRACE_MINLOGLEVEL",
-                                         overrides.stacktrace_minloglevel, "")),
       poll_strategy_(LoadConfig(FLAGS_grpc_poll_strategy, "GRPC_POLL_STRATEGY",
                                 overrides.poll_strategy, "all")),
       ssl_cipher_suites_(LoadConfig(
@@ -134,8 +128,7 @@ std::string ConfigVars::ToString() const {
       ClientChannelBackupPollIntervalMs(), ", dns_resolver: ", "\"",
       absl::CEscape(DnsResolver()), "\"", ", trace: ", "\"",
       absl::CEscape(Trace()), "\"", ", verbosity: ", "\"",
-      absl::CEscape(Verbosity()), "\"", ", stacktrace_minloglevel: ", "\"",
-      absl::CEscape(StacktraceMinloglevel()), "\"",
+      absl::CEscape(Verbosity()), "\"",
       ", enable_fork_support: ", EnableForkSupport() ? "true" : "false",
       ", poll_strategy: ", "\"", absl::CEscape(PollStrategy()), "\"",
       ", abort_on_leaks: ", AbortOnLeaks() ? "true" : "false",
