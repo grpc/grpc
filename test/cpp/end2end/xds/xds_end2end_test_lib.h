@@ -475,15 +475,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1, std::vector<size_t> additional_backend_indxees = {}) {
+      int lb_weight = 1, std::vector<size_t> additional_backend_indxes = {},
+      absl::string_view hostname = "") {
     std::vector<int> additional_ports;
-    additional_ports.reserve(additional_backend_indxees.size());
-    for (size_t idx : additional_backend_indxees) {
+    additional_ports.reserve(additional_backend_indxes.size());
+    for (size_t idx : additional_backend_indxes) {
       additional_ports.push_back(backends_[idx]->port());
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
-                                     health_status, lb_weight,
-                                     additional_ports);
+                                     health_status, lb_weight, additional_ports,
+                                     hostname);
   }
 
   // Creates a vector of endpoints for a specified range of backends,
@@ -570,6 +571,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                   std::string lb_expected_authority = "",
                   int xds_resource_does_not_exist_timeout_ms = 0,
                   std::string balancer_authority_override = "",
+                  ChannelArguments* args = nullptr,
                   std::shared_ptr<ChannelCredentials> credentials = nullptr);
 
   XdsBootstrapBuilder MakeBootstrapBuilder() {
@@ -610,6 +612,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     StatusCode server_expected_error = StatusCode::OK;
     absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
     bool server_notify_client_when_started = false;
+    bool echo_host_from_authority_header = false;
 
     RpcOptions() {}
 
@@ -678,6 +681,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     RpcOptions& set_server_notify_client_when_started(
         bool rpc_server_notify_client_when_started) {
       server_notify_client_when_started = rpc_server_notify_client_when_started;
+      return *this;
+    }
+
+    RpcOptions& set_echo_host_from_authority_header(bool value) {
+      echo_host_from_authority_header = value;
       return *this;
     }
 

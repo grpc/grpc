@@ -21,13 +21,13 @@
 #include <stddef.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -111,9 +111,8 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
     if (GRPC_TRACE_FLAG_ENABLED(http)) {
-      gpr_log(GPR_INFO,
-              "[chttp2 transport=%p stream=%p] received RST_STREAM(reason=%d)",
-              t, s, reason);
+      LOG(INFO) << "[chttp2 transport=" << t << " stream=" << s
+                << "] received RST_STREAM(reason=" << reason << ")";
     }
     grpc_error_handle error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {

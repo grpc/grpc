@@ -28,6 +28,9 @@ const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__Sta
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession_submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.stateful_session.v3.StatefulSession",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -49,6 +52,9 @@ const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__Sta
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.http.stateful_session.v3.StatefulSessionPerRoute",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0010000801000008, &upb_pob1_1bt},

@@ -17,7 +17,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nHenvoy/extensions/filters/listener/proxy_protocol/v3/proxy_protocol.proto\x12\x33\x65nvoy.extensions.filters.listener.proxy_protocol.v3\x1a)envoy/config/core/v3/proxy_protocol.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xfa\x03\n\rProxyProtocol\x12V\n\x05rules\x18\x01 \x03(\x0b\x32G.envoy.extensions.filters.listener.proxy_protocol.v3.ProxyProtocol.Rule\x12-\n%allow_requests_without_proxy_protocol\x18\x02 \x01(\x08\x12M\n\x11pass_through_tlvs\x18\x03 \x01(\x0b\x32\x32.envoy.config.core.v3.ProxyProtocolPassThroughTLVs\x1a@\n\x0cKeyValuePair\x12\x1a\n\x12metadata_namespace\x18\x01 \x01(\t\x12\x14\n\x03key\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a\x8b\x01\n\x04Rule\x12\x1a\n\x08tlv_type\x18\x01 \x01(\rB\x08\xfa\x42\x05*\x03\x10\x80\x02\x12g\n\x0eon_tlv_present\x18\x02 \x01(\x0b\x32O.envoy.extensions.filters.listener.proxy_protocol.v3.ProxyProtocol.KeyValuePair:C\x9a\xc5\x88\x1e>\n<envoy.config.filter.listener.proxy_protocol.v2.ProxyProtocolB\xce\x01\nAio.envoyproxy.envoy.extensions.filters.listener.proxy_protocol.v3B\x12ProxyProtocolProtoP\x01Zkgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3;proxy_protocolv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nHenvoy/extensions/filters/listener/proxy_protocol/v3/proxy_protocol.proto\x12\x33\x65nvoy.extensions.filters.listener.proxy_protocol.v3\x1a)envoy/config/core/v3/proxy_protocol.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xdf\x04\n\rProxyProtocol\x12V\n\x05rules\x18\x01 \x03(\x0b\x32G.envoy.extensions.filters.listener.proxy_protocol.v3.ProxyProtocol.Rule\x12-\n%allow_requests_without_proxy_protocol\x18\x02 \x01(\x08\x12M\n\x11pass_through_tlvs\x18\x03 \x01(\x0b\x32\x32.envoy.config.core.v3.ProxyProtocolPassThroughTLVs\x12N\n\x13\x64isallowed_versions\x18\x04 \x03(\x0e\x32\x31.envoy.config.core.v3.ProxyProtocolConfig.Version\x12\x13\n\x0bstat_prefix\x18\x05 \x01(\t\x1a@\n\x0cKeyValuePair\x12\x1a\n\x12metadata_namespace\x18\x01 \x01(\t\x12\x14\n\x03key\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x1a\x8b\x01\n\x04Rule\x12\x1a\n\x08tlv_type\x18\x01 \x01(\rB\x08\xfa\x42\x05*\x03\x10\x80\x02\x12g\n\x0eon_tlv_present\x18\x02 \x01(\x0b\x32O.envoy.extensions.filters.listener.proxy_protocol.v3.ProxyProtocol.KeyValuePair:C\x9a\xc5\x88\x1e>\n<envoy.config.filter.listener.proxy_protocol.v2.ProxyProtocolB\xce\x01\nAio.envoyproxy.envoy.extensions.filters.listener.proxy_protocol.v3B\x12ProxyProtocolProtoP\x01Zkgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3;proxy_protocolv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,9 +32,9 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _PROXYPROTOCOL._options = None
   _PROXYPROTOCOL._serialized_options = b'\232\305\210\036>\n<envoy.config.filter.listener.proxy_protocol.v2.ProxyProtocol'
   _globals['_PROXYPROTOCOL']._serialized_start=264
-  _globals['_PROXYPROTOCOL']._serialized_end=770
-  _globals['_PROXYPROTOCOL_KEYVALUEPAIR']._serialized_start=495
-  _globals['_PROXYPROTOCOL_KEYVALUEPAIR']._serialized_end=559
-  _globals['_PROXYPROTOCOL_RULE']._serialized_start=562
-  _globals['_PROXYPROTOCOL_RULE']._serialized_end=701
+  _globals['_PROXYPROTOCOL']._serialized_end=871
+  _globals['_PROXYPROTOCOL_KEYVALUEPAIR']._serialized_start=596
+  _globals['_PROXYPROTOCOL_KEYVALUEPAIR']._serialized_end=660
+  _globals['_PROXYPROTOCOL_RULE']._serialized_start=663
+  _globals['_PROXYPROTOCOL_RULE']._serialized_end=802
 # @@protoc_insertion_point(module_scope)

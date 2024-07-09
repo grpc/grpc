@@ -88,11 +88,11 @@ UPB_INLINE int64_t xds_type_v3_Int64Range_end(const xds_type_v3_Int64Range* msg)
 
 UPB_INLINE void xds_type_v3_Int64Range_set_start(xds_type_v3_Int64Range *msg, int64_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_type_v3_Int64Range_set_end(xds_type_v3_Int64Range *msg, int64_t value) {
   const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* xds.type.v3.Int32Range */
@@ -158,11 +158,11 @@ UPB_INLINE int32_t xds_type_v3_Int32Range_end(const xds_type_v3_Int32Range* msg)
 
 UPB_INLINE void xds_type_v3_Int32Range_set_start(xds_type_v3_Int32Range *msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_type_v3_Int32Range_set_end(xds_type_v3_Int32Range *msg, int32_t value) {
   const upb_MiniTableField field = {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* xds.type.v3.DoubleRange */
@@ -228,11 +228,11 @@ UPB_INLINE double xds_type_v3_DoubleRange_end(const xds_type_v3_DoubleRange* msg
 
 UPB_INLINE void xds_type_v3_DoubleRange_set_start(xds_type_v3_DoubleRange *msg, double value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_type_v3_DoubleRange_set_end(xds_type_v3_DoubleRange *msg, double value) {
   const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

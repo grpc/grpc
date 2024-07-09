@@ -36,7 +36,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
@@ -238,10 +237,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       const grpc_resolved_address& address, const ChannelArgs& args) override {
     absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
     if (!new_args.ok()) {
-      gpr_log(GPR_ERROR,
-              "Failed to create channel args during subchannel creation: %s; "
-              "Got args: %s",
-              new_args.status().ToString().c_str(), args.ToString().c_str());
+      LOG(ERROR) << "Failed to create channel args during subchannel creation: "
+                 << new_args.status() << "; Got args: " << args.ToString();
       return nullptr;
     }
     RefCountedPtr<Subchannel> s = Subchannel::Create(

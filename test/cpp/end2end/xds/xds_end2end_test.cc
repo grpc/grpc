@@ -294,7 +294,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder, /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
-               /*balancer_authority_override=*/"",
+               /*balancer_authority_override=*/"", /*args=*/nullptr,
                CreateXdsChannelCredentials());
     CreateAndStartBackends(2, /*xds_enabled=*/false,
                            CreateMtlsServerCredentials());
@@ -927,7 +927,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder, /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
-               /*balancer_authority_override=*/"",
+               /*balancer_authority_override=*/"", /*args=*/nullptr,
                CreateXdsChannelCredentials());
     CreateBackends(1, /*xds_enabled=*/true,
                    XdsServerCredentials(InsecureServerCredentials()));
