@@ -975,7 +975,8 @@ void inproc_transport::PerformStreamOp(grpc_stream* gs,
     error = s->cancel_self_error;
   } else {
     INPROC_INFO_LOG
-        << "perform_stream_op " << s << (s->t->is_client ? "client" : "server")
+        << "perform_stream_op " << s
+        << (s->t->is_client ? " client" : " server")
         << (op->send_initial_metadata ? " send_initial_metadata" : "")
         << (op->send_message ? " send_message" : "")
         << (op->send_trailing_metadata ? " send_trailing_metadata" : "")
