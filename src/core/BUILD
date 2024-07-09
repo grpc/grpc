@@ -1910,6 +1910,7 @@ grpc_cc_library(
     ],
     hdrs = ["lib/event_engine/thread_pool/thread_count.h"],
     external_deps = [
+        "absl/log:log",
         "absl/base:core_headers",
         "absl/time",
         "absl/status",
@@ -2280,7 +2281,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
-        "absl/log",
+        "absl/log:log",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
