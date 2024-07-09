@@ -406,8 +406,7 @@ grpc_tls_certificate_provider_file_watcher_create(
 
 void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider) {
-  GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1,
-                 (provider));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_tls_certificate_provider_release(provider="<< provider <<")";
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
 }

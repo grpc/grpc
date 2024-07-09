@@ -234,8 +234,7 @@ grpc_tls_certificate_verifier_host_name_create() {
 
 void grpc_tls_certificate_verifier_release(
     grpc_tls_certificate_verifier* verifier) {
-  GRPC_API_TRACE("grpc_tls_certificate_verifier_release(verifier=%p)", 1,
-                 (verifier));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_tls_certificate_verifier_release(verifier="<< verifier <<")";
   grpc_core::ExecCtx exec_ctx;
   if (verifier != nullptr) verifier->Unref();
 }

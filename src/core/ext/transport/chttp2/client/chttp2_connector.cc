@@ -310,8 +310,7 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_credentials* creds,
                                   const grpc_channel_args* c_args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
-                 (target, (void*)creds, (void*)c_args));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_secure_channel_create(target="<< target <<", creds="<< (void*)creds <<", args="<< (void*)c_args <<")";
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   if (creds != nullptr) {
@@ -350,9 +349,8 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
                                           grpc_channel_credentials* creds,
                                           const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_channel_create_from_fd(target=%p, fd=%d, creds=%p, args=%p)", 4,
-      (target, fd, creds, args));
+GRPC_TRACE_LOG(api, INFO) <<
+      "grpc_channel_create_from_fd(target="<< target <<", fd="<< fd <<", creds="<< creds <<", args="<< args <<")";
   // For now, we only support insecure channel credentials.
   if (creds == nullptr ||
       creds->type() != grpc_core::InsecureCredentials::Type()) {

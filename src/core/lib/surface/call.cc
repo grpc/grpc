@@ -413,7 +413,7 @@ char* grpc_call_get_peer(grpc_call* call) {
 }
 
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
-  GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_call_cancel(call="<<call<<", reserved="<<reserved<<")";
   CHECK_EQ(reserved, nullptr);
   if (call == nullptr) {
     return GRPC_CALL_ERROR;
@@ -428,10 +428,9 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
                                              grpc_status_code status,
                                              const char* description,
                                              void* reserved) {
-  GRPC_API_TRACE(
+  GRPC_TRACE_LOG(api, INFO) <<
       "grpc_call_cancel_with_status("
-      "c=%p, status=%d, description=%s, reserved=%p)",
-      4, (c, (int)status, description, reserved));
+      "c="<<c<<", status="<<(int)status<<", description="<<description<<", reserved="<<reserved<<")";
   CHECK_EQ(reserved, nullptr);
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
@@ -471,10 +470,8 @@ grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
 
 grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
                                       size_t nops, void* tag, void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, "
-      "reserved=%p)",
-      5, (call, ops, (unsigned long)nops, tag, reserved));
+GRPC_TRACE_LOG(api, INFO) <<     "grpc_call_start_batch(call="<<call<<", ops="<<ops<<", nops="<<(unsigned long)nops<<", tag="<<tag<<", "
+      "reserved="<<reserved<<")";
 
   if (reserved != nullptr || call == nullptr) {
     return GRPC_CALL_ERROR;

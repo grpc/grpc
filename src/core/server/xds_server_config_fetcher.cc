@@ -1365,10 +1365,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
                                             .channel_args_preconditioning()
                                             .PreconditionChannelArgs(args);
-  GRPC_API_TRACE(
-      "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
-      "update=%p, user_data=%p}, args=%p)",
-      3, (notifier.on_serving_status_update, notifier.user_data, args));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_update="<< notifier.on_serving_status_update <<", user_data="<< notifier.user_data <<"}, args="<< args <<")";
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
       grpc_core::GrpcXdsClient::kServerKey, channel_args,
       "XdsServerConfigFetcher");

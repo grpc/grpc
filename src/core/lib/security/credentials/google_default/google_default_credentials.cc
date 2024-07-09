@@ -385,8 +385,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
-                 (call_credentials));
+GRPC_TRACE_LOG(api, INFO) << "grpc_google_default_credentials_create("<< call_credentials <<")";
 
   if (call_creds == nullptr) {
     call_creds = make_default_call_creds(&error);
