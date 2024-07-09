@@ -97,10 +97,10 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
     if (remaining < std::chrono::seconds{0}) {
       grpc_core::Crash("Timed out waiting for a single EventEngine owner");
     }
-    GRPC_LOG_EVERY_N_SEC(
-        2, GPR_INFO, "engine.use_count() = %ld timeout_remaining = %s",
-        engine.use_count(),
-        absl::FormatDuration(absl::Nanoseconds(remaining.count())).c_str());
+    LOG_EVERY_N_SEC(INFO, 2)
+        << "engine.use_count() = " << engine.use_count()
+        << " timeout_remaining = "
+        << absl::FormatDuration(absl::Nanoseconds(remaining.count()));
     absl::SleepFor(absl::Milliseconds(100));
   }
 }

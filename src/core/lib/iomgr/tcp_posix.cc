@@ -592,9 +592,9 @@ void LogCommonIOErrors(absl::string_view prefix, int error_no) {
       return;
     default:
       grpc_core::global_stats().IncrementUncommonIoErrorCount();
-      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s encountered uncommon error: %s",
-                           prefix.data(),
-                           grpc_core::StrError(error_no).c_str());
+      LOG_EVERY_N_SEC(ERROR, 1)
+          << prefix.data()
+          << " encountered uncommon error: " << grpc_core::StrError(error_no);
       return;
   }
 }
