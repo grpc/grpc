@@ -26,7 +26,8 @@ build:macos --host_copt=-Wno-typedef-redefinition
 build:android --noenable_platform_specific_config
 build:ios --noenable_platform_specific_config
 
-build --client_env=CC=clang
+# build --client_env=CC=clang
+build --client_env=CC=gcc-12
 build --copt=-DGRPC_BAZEL_BUILD
 build --host_copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1

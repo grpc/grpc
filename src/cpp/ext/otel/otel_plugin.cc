@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "opentelemetry/logs/logger.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -156,6 +157,13 @@ OpenTelemetryPluginBuilderImpl::SetMeterProvider(
   return *this;
 }
 
+OpenTelemetryPluginBuilderImpl&
+OpenTelemetryPluginBuilderImpl::SetLoggerProvider(
+    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider) {
+  logger_provider_ = std::move(logger_provider);
+  return *this;
+}
+
 OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::EnableMetrics(
     absl::Span<const absl::string_view> metric_names) {
   for (const auto& metric_name : metric_names) {
@@ -227,6 +235,10 @@ OpenTelemetryPluginBuilderImpl::SetChannelScopeFilter(
 }
 
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
+  if (logger_provider_ != nullptr) {
+    logger_provider_->GetLogger("otel_plugin_logger")
+        ->Debug("hi from otel_plugin!");
+  }
   if (meter_provider_ == nullptr) {
     return absl::InvalidArgumentError(
         "Need to configure a valid meter provider.");
@@ -242,6 +254,10 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
 
 absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilderImpl::Build() {
+  if (logger_provider_ != nullptr) {
+    logger_provider_->GetLogger("otel_plugin_logger")
+        ->Debug("hi from otel_plugin!");
+  }
   if (meter_provider_ == nullptr) {
     return absl::InvalidArgumentError(
         "Need to configure a valid meter provider.");
@@ -1005,6 +1021,12 @@ OpenTelemetryPluginBuilder::~OpenTelemetryPluginBuilder() = default;
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetMeterProvider(
     std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
   impl_->SetMeterProvider(std::move(meter_provider));
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLoggerProvider(
+    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider) {
+  impl_->SetLoggerProvider(std::move(logger_provider));
   return *this;
 }
 
