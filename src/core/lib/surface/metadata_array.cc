@@ -26,11 +26,13 @@
 #include "src/core/lib/surface/api_trace.h"
 
 void grpc_metadata_array_init(grpc_metadata_array* array) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_metadata_array_init(array="<<array<<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_metadata_array_init(array=" << array << ")";
   memset(array, 0, sizeof(*array));
 }
 
 void grpc_metadata_array_destroy(grpc_metadata_array* array) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_metadata_array_destroy(array="<<array<<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_metadata_array_destroy(array=" << array << ")";
   gpr_free(array->metadata);
 }

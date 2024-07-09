@@ -36,13 +36,15 @@
 // -- Common. --
 
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_channel_credentials_release(creds="<< creds <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
 
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_call_credentials_release(creds="<< creds <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
@@ -95,14 +97,19 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 }
 
 void grpc_server_credentials_release(grpc_server_credentials* creds) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_server_credentials_release(creds="<< creds <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
 
 void grpc_server_credentials::set_auth_metadata_processor(
     const grpc_auth_metadata_processor& processor) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_server_credentials_set_auth_metadata_processor(creds="<< this <<", processor=grpc_auth_metadata_processor { process: "<< (void*)(intptr_t)processor.process <<", state: "<< processor.state <<" })";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_credentials_set_auth_metadata_processor(creds=" << this
+      << ", processor=grpc_auth_metadata_processor { process: "
+      << (void*)(intptr_t)processor.process << ", state: " << processor.state
+      << " })";
   DestroyProcessor();
   processor_ = processor;
 }

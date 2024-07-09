@@ -269,7 +269,7 @@ void FilterStackCall::ExternalUnref() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
-  GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c="<<this<<")";
+  GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c=" << this << ")";
 
   MaybeUnpublishFromParent();
 

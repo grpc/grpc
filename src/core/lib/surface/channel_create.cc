@@ -105,7 +105,10 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               grpc_status_code error_code,
                                               const char* error_message) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) << "grpc_lame_client_channel_create(target="<<target<<", error_code="<<(int)error_code<<", error_message="<<error_message<<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_lame_client_channel_create(target=" << target
+      << ", error_code=" << (int)error_code
+      << ", error_message=" << error_message << ")";
   if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
   grpc_core::ChannelArgs args =
       grpc_core::CoreConfiguration::Get()

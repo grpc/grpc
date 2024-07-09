@@ -423,7 +423,8 @@ class grpc_compute_engine_token_fetcher_credentials
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_compute_engine_credentials_create(reserved="<< reserved <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
@@ -742,7 +743,9 @@ std::string grpc_access_token_credentials::debug_string() {
 
 grpc_call_credentials* grpc_access_token_credentials_create(
     const char* access_token, void* reserved) {
-  GRPC_TRACE_LOG(api, INFO) <<  "grpc_access_token_credentials_create(access_token=<redacted>, reserved="<< reserved <<")";
+  GRPC_TRACE_LOG(api, INFO) << "grpc_access_token_credentials_create(access_"
+                               "token=<redacted>, reserved="
+                            << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();

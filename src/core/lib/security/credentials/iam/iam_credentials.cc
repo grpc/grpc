@@ -70,7 +70,9 @@ grpc_core::UniqueTypeName grpc_google_iam_credentials::Type() {
 grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* token, const char* authority_selector, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
-GRPC_TRACE_LOG(api, INFO) <<  "grpc_iam_credentials_create(token="<< token <<", authority_selector="<< authority_selector <<", reserved="<< reserved <<")";
+  GRPC_TRACE_LOG(api, INFO) << "grpc_iam_credentials_create(token=" << token
+                            << ", authority_selector=" << authority_selector
+                            << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   CHECK_NE(token, nullptr);
   CHECK_NE(authority_selector, nullptr);

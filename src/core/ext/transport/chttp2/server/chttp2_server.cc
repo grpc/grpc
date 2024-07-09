@@ -1078,7 +1078,8 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
   int port_num = 0;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   grpc_core::ChannelArgs args = core_server->channel_args();
-  GRPC_TRACE_LOG(api, INFO) << "grpc_server_add_http2_port(server="<< server <<", addr="<< addr <<", creds="<< creds <<")";
+  GRPC_TRACE_LOG(api, INFO) << "grpc_server_add_http2_port(server=" << server
+                            << ", addr=" << addr << ", creds=" << creds << ")";
   // Create security context.
   if (creds == nullptr) {
     err = GRPC_ERROR_CREATE(
@@ -1173,7 +1174,9 @@ absl::Status grpc_server_add_passive_listener(
     std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
         passive_listener) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) << "grpc_server_add_passive_listener(server="<< server <<", credentials="<< credentials <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_add_passive_listener(server=" << server
+      << ", credentials=" << credentials << ")";
   // Create security context.
   if (credentials == nullptr) {
     return absl::UnavailableError(

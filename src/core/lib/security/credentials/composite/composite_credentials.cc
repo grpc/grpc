@@ -127,7 +127,9 @@ composite_call_credentials_create(
 grpc_call_credentials* grpc_composite_call_credentials_create(
     grpc_call_credentials* creds1, grpc_call_credentials* creds2,
     void* reserved) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_composite_call_credentials_create(creds1="<< creds1 <<", creds2="<< creds2 <<", reserved="<< reserved <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_composite_call_credentials_create(creds1=" << creds1
+      << ", creds2=" << creds2 << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   CHECK_NE(creds1, nullptr);
   CHECK_NE(creds2, nullptr);
@@ -160,7 +162,10 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
     void* reserved) {
   CHECK(channel_creds != nullptr && call_creds != nullptr &&
         reserved == nullptr);
-GRPC_TRACE_LOG(api, INFO) <<  "grpc_composite_channel_credentials_create(channel_creds="<< channel_creds <<", call_creds="<< call_creds <<", reserved="<< reserved <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_composite_channel_credentials_create(channel_creds="
+      << channel_creds << ", call_creds=" << call_creds
+      << ", reserved=" << reserved << ")";
   return new grpc_composite_channel_credentials(channel_creds->Ref(),
                                                 call_creds->Ref());
 }

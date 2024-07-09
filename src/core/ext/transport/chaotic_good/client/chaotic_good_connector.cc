@@ -373,7 +373,9 @@ class ChaoticGoodChannelFactory final : public ClientChannelFactory {
 grpc_channel* grpc_chaotic_good_channel_create(const char* target,
                                                const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) << "grpc_chaotic_good_channel_create(target="<< target <<",  args="<< (void*)args <<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_chaotic_good_channel_create(target=" << target
+      << ",  args=" << (void*)args << ")";
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   // Create channel.

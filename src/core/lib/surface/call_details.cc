@@ -26,13 +26,15 @@
 #include "src/core/lib/surface/api_trace.h"
 
 void grpc_call_details_init(grpc_call_details* details) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_call_details_init(details="<<details<<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_details_init(details=" << details << ")";
   details->method = grpc_empty_slice();
   details->host = grpc_empty_slice();
 }
 
 void grpc_call_details_destroy(grpc_call_details* details) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_call_details_destroy(details="<<details<<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_details_destroy(details=" << details << ")";
   grpc_core::ExecCtx exec_ctx;
   grpc_core::CSliceUnref(details->method);
   grpc_core::CSliceUnref(details->host);
