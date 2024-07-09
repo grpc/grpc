@@ -974,14 +974,14 @@ void inproc_transport::PerformStreamOp(grpc_stream* gs,
     // already self-canceled so still give it an error
     error = s->cancel_self_error;
   } else {
-    INPROC_INFO_LOG << "perform_stream_op " << s << s->t->is_client ? "client"
-    : "server" << op->send_initial_metadata ? " send_initial_metadata"
-    : "" << op->send_message                ? " send_message"
-    : "" << op->send_trailing_metadata      ? " send_trailing_metadata"
-    : "" << op->recv_initial_metadata       ? " recv_initial_metadata"
-    : "" << op->recv_message                ? " recv_message"
-    : "" << op->recv_trailing_metadata      ? " recv_trailing_metadata"
-                                            : "";
+    INPROC_INFO_LOG
+        << "perform_stream_op " << s << (s->t->is_client ? "client" : "server")
+        << (op->send_initial_metadata ? " send_initial_metadata" : "")
+        << (op->send_message ? " send_message" : "")
+        << (op->send_trailing_metadata ? " send_trailing_metadata" : "")
+        << (op->recv_initial_metadata ? " recv_initial_metadata" : "")
+        << (op->recv_message ? " recv_message" : "")
+        << (op->recv_trailing_metadata ? " recv_trailing_metadata" : "");
   }
 
   inproc_stream* other = s->other_side;
