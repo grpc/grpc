@@ -483,7 +483,7 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
 // Cronet callback
 //
 static void on_canceled(bidirectional_stream* stream) {
-  CRONET_LOG(2) <<  "on_canceled(%p)", stream);
+  CRONET_LOG(2) << "on_canceled(" << stream << ")";
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
@@ -1033,8 +1033,8 @@ static bool op_can_be_run(grpc_transport_stream_op_batch* curr_op,
       result = false;
     }
   }
-  CRONET_LOG(2) << "op_can_be_run %s : %s", op_id_string(op_id),
-      result ? "YES" : "NO";
+  CRONET_LOG(2) << "op_can_be_run " << op_id_string(op_id) << " : "
+                << (result ? "YES" : "NO");
   return result;
 }
 
