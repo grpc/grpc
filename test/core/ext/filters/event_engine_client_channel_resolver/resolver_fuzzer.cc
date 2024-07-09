@@ -96,6 +96,9 @@ class FuzzingResolverEventEngine
     } else if (msg.has_srv_response()) {
       srv_responses_.emplace();
       for (const auto& srv_record : msg.srv_response().srv_records()) {
+        if (srv_responses_->size() == 1024) {
+          break;
+        }
         EventEngine::DNSResolver::SRVRecord final_r;
         final_r.host = srv_record.host();
         final_r.port = srv_record.port();
