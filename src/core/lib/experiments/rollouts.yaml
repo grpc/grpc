@@ -42,6 +42,8 @@
 
 - name: call_status_override_on_cancellation
   default: true
+- name: call_tracer_in_transport
+  default: true
 - name: call_v3
   default: false
 - name: canary_client_privacy
