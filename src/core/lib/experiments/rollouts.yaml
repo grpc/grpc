@@ -108,6 +108,6 @@
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken
-    posix: true
+    posix: false
     # TODO(ysseung): Test flakes not fully resolved.
     windows: broken
