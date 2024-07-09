@@ -192,7 +192,7 @@ absl::optional<grpc_resolved_address> GetAddressProxyServer(
   auto address = StringToSockaddr(*address_value);
   if (!address.ok()) {
     LOG(ERROR) << "cannot parse value of '"
-               << HttpProxyMapper::kAddressProxyEnvVar
+               << std::string(HttpProxyMapper::kAddressProxyEnvVar)
                << "' env var. Error: " << address.status().ToString();
     return absl::nullopt;
   }
