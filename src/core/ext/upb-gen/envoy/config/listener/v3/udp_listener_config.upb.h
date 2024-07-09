@@ -120,7 +120,7 @@ UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_udp_packet_packet
 
 UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig *msg, struct envoy_config_core_v3_UdpSocketConfig* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_UdpSocketConfig* sub = (struct envoy_config_core_v3_UdpSocketConfig*)envoy_config_listener_v3_UdpListenerConfig_downstream_socket_config(msg);
@@ -132,7 +132,7 @@ UPB_INLINE struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3
 }
 UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_quic_options(envoy_config_listener_v3_UdpListenerConfig *msg, struct envoy_config_listener_v3_QuicProtocolOptions* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_mutable_quic_options(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_QuicProtocolOptions* sub = (struct envoy_config_listener_v3_QuicProtocolOptions*)envoy_config_listener_v3_UdpListenerConfig_quic_options(msg);
@@ -144,7 +144,7 @@ UPB_INLINE struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_lis
 }
 UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_udp_packet_packet_writer_config(envoy_config_listener_v3_UdpListenerConfig *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_udp_packet_packet_writer_config(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_listener_v3_UdpListenerConfig_udp_packet_packet_writer_config(msg);

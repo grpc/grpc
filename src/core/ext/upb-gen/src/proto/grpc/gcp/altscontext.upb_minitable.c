@@ -32,6 +32,9 @@ const upb_MiniTable grpc__gcp__AltsContext_msg_init = {
   &grpc_gcp_AltsContext_submsgs[0],
   &grpc_gcp_AltsContext__fields[0],
   UPB_SIZE(56, 96), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.AltsContext",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -53,6 +56,9 @@ const upb_MiniTable grpc__gcp__AltsContext__PeerAttributesEntry_msg_init = {
   NULL,
   &grpc_gcp_AltsContext_PeerAttributesEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.AltsContext.PeerAttributesEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

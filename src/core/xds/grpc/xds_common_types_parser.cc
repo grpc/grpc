@@ -216,11 +216,9 @@ CertificateValidationContextParse(
     ValidationErrors::ScopedField field(errors, ".verify_certificate_hash");
     errors->AddError("feature unsupported");
   }
-  auto* require_signed_certificate_timestamp =
-      envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_require_signed_certificate_timestamp(
-          certificate_validation_context_proto);
-  if (require_signed_certificate_timestamp != nullptr &&
-      google_protobuf_BoolValue_value(require_signed_certificate_timestamp)) {
+  if (ParseBoolValue(
+          envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_require_signed_certificate_timestamp(
+              certificate_validation_context_proto))) {
     ValidationErrors::ScopedField field(
         errors, ".require_signed_certificate_timestamp");
     errors->AddError("feature unsupported");
