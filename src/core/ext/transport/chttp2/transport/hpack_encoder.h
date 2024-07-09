@@ -25,12 +25,12 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
@@ -208,9 +208,7 @@ class Compressor<
   void EncodeWith(MetadataTrait, const typename MetadataTrait::ValueType& value,
                   Encoder* encoder) {
     if (value != known_value) {
-      gpr_log(GPR_ERROR, "%s",
-              absl::StrCat("Not encoding bad ", MetadataTrait::key(), " header")
-                  .c_str());
+      LOG(ERROR) << "Not encoding bad " << MetadataTrait::key() << " header";
       encoder->NoteEncodingError();
       return;
     }

@@ -17,8 +17,8 @@
 //
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -69,8 +69,8 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
   }
   *stream = s;
   if (s && GRPC_TRACE_FLAG_ENABLED(http2_stream_state)) {
-    gpr_log(GPR_INFO, "%p[%d][%s]: pop from %s", t, s->id,
-            t->is_client ? "cli" : "svr", stream_list_id_string(id));
+    LOG(INFO) << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
+              << "]: pop from " << stream_list_id_string(id);
   }
   return s != nullptr;
 }
@@ -91,8 +91,8 @@ static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     t->lists[id].tail = s->links[id].prev;
   }
   if (GRPC_TRACE_FLAG_ENABLED(http2_stream_state)) {
-    gpr_log(GPR_INFO, "%p[%d][%s]: remove from %s", t, s->id,
-            t->is_client ? "cli" : "svr", stream_list_id_string(id));
+    LOG(INFO) << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
+              << "]: remove from " << stream_list_id_string(id);
   }
 }
 
@@ -123,8 +123,8 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
   t->lists[id].tail = s;
   s->included.set(id);
   if (GRPC_TRACE_FLAG_ENABLED(http2_stream_state)) {
-    gpr_log(GPR_INFO, "%p[%d][%s]: add to %s", t, s->id,
-            t->is_client ? "cli" : "svr", stream_list_id_string(id));
+    LOG(INFO) << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
+              << "]: add to " << stream_list_id_string(id);
   }
 }
 
