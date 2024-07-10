@@ -28,7 +28,7 @@ python server.py
 1. Set up xDS configuration.
 
 After configuring your xDS server to track the gRPC server we just started,
-create a bootstrap file as desribed in [gRFC A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md):
+create a bootstrap file as described in [gRFC A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md):
 
 ```
 {

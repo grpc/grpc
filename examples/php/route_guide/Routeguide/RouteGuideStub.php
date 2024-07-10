@@ -32,7 +32,7 @@ class RouteGuideStub {
      * position.
      * @param \Routeguide\Point $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Routeguide\Feature for response data, null if if error occured
+     * @return \Routeguide\Feature for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function GetFeature(
@@ -71,7 +71,7 @@ class RouteGuideStub {
      * RouteSummary when traversal is completed.
      * @param \Grpc\ServerCallReader $reader read client request data of \Routeguide\Point
      * @param \Grpc\ServerContext $context server request context
-     * @return \Routeguide\RouteSummary for response data, null if if error occured
+     * @return \Routeguide\RouteSummary for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function RecordRoute(

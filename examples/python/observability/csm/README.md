@@ -5,7 +5,7 @@ This CSM example builds on the [Python xDS Example](https://github.com/grpc/grpc
 ## Configuration
 
 The client takes the following command-line arguments -
-* `--target` - By default, the client tries to connect to the target "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overriden to change the target.
+* `--target` - By default, the client tries to connect to the target "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overridden to change the target.
 * `--secure_mode` - Whether to use xDS to retrieve server credentials. Default value is False.
 * `--prometheus_endpoint` - Endpoint used for prometheus. Default value is localhost:9464.
 

@@ -7,7 +7,7 @@ communication security. In the example, we show how to set up a server
 authenticated SSL connection to transmit RPC.
 
 We provide `grpc::SslServerCredentials` and `grpc::SslCredentials` types
-to use SSL conections.
+to use SSL connections.
 
 In our example, we use the public/private keys created ahead: 
 * "localhost.crt" contains the server certificate (public key). 
