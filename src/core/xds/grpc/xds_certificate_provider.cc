@@ -36,7 +36,7 @@ namespace grpc_core {
 namespace {
 
 class RootCertificatesWatcher final
-    : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
+    : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
   // owned by the root certificate distributor and not by \a parent. Note that
@@ -44,7 +44,7 @@ class RootCertificatesWatcher final
   // CancelTlsCertificatesWatch() is called, but that can potentially change in
   // the future.
   explicit RootCertificatesWatcher(
-      RefCountedPtr<grpc_tls_certificate_distributor> parent)
+      std::shared_ptr<TlsCertificateDistributor> parent)
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
@@ -65,11 +65,11 @@ class RootCertificatesWatcher final
   }
 
  private:
-  RefCountedPtr<grpc_tls_certificate_distributor> parent_;
+  std::shared_ptr<TlsCertificateDistributor> parent_;
 };
 
 class IdentityCertificatesWatcher final
-    : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
+    : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
   // owned by the root certificate distributor and not by \a parent. Note that
@@ -77,7 +77,7 @@ class IdentityCertificatesWatcher final
   // CancelTlsCertificatesWatch() is called, but that can potentially change in
   // the future.
   explicit IdentityCertificatesWatcher(
-      RefCountedPtr<grpc_tls_certificate_distributor> parent)
+      std::shared_ptr<TlsCertificateDistributor> parent)
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(
@@ -97,7 +97,7 @@ class IdentityCertificatesWatcher final
   }
 
  private:
-  RefCountedPtr<grpc_tls_certificate_distributor> parent_;
+  std::shared_ptr<TlsCertificateDistributor> parent_;
 };
 
 }  // namespace
@@ -112,7 +112,7 @@ XdsCertificateProvider::XdsCertificateProvider(
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name,
     std::vector<StringMatcher> san_matchers)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+    : distributor_(std::make_shared<TlsCertificateDistributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
       identity_cert_provider_(std::move(identity_cert_provider)),
@@ -128,7 +128,7 @@ XdsCertificateProvider::XdsCertificateProvider(
     absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name, bool require_client_certificate)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+    : distributor_(std::make_shared<TlsCertificateDistributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
       identity_cert_provider_(std::move(identity_cert_provider)),

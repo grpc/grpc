@@ -107,10 +107,10 @@ class TlsChannelSecurityConnector final
 
  private:
   // A watcher that watches certificate updates from
-  // grpc_tls_certificate_distributor. It will never outlive
+  // TlsCertificateDistributor. It will never outlive
   // |security_connector_|.
-  class TlsChannelCertificateWatcher : public grpc_tls_certificate_distributor::
-                                           TlsCertificatesWatcherInterface {
+  class TlsChannelCertificateWatcher
+      : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
    public:
     explicit TlsChannelCertificateWatcher(
         TlsChannelSecurityConnector* security_connector)
@@ -158,7 +158,7 @@ class TlsChannelSecurityConnector final
   // would be deadlock errors.
   Mutex verifier_request_map_mu_;
   RefCountedPtr<grpc_tls_credentials_options> options_;
-  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+  TlsCertificateDistributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
@@ -217,10 +217,10 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
  private:
   // A watcher that watches certificate updates from
-  // grpc_tls_certificate_distributor. It will never outlive
+  // TlsCertificateDistributor. It will never outlive
   // |security_connector_|.
-  class TlsServerCertificateWatcher : public grpc_tls_certificate_distributor::
-                                          TlsCertificatesWatcherInterface {
+  class TlsServerCertificateWatcher
+      : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
    public:
     explicit TlsServerCertificateWatcher(
         TlsServerSecurityConnector* security_connector)
@@ -269,7 +269,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   // would be deadlock errors.
   Mutex verifier_request_map_mu_;
   RefCountedPtr<grpc_tls_credentials_options> options_;
-  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+  TlsCertificateDistributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;

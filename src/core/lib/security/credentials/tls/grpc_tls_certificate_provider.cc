@@ -46,7 +46,7 @@ namespace grpc_core {
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+    : distributor_(std::make_shared<TlsCertificateDistributor>()),
       root_certificate_(std::move(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
@@ -121,7 +121,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
       refresh_interval_sec_(refresh_interval_sec),
-      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+      distributor_(std::make_shared<TlsCertificateDistributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
     LOG(INFO) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
                  "value less than minimum. Overriding configured value to "

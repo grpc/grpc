@@ -107,8 +107,8 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     }
   };
 
-  class TlsCertificatesTestWatcher : public grpc_tls_certificate_distributor::
-                                         TlsCertificatesWatcherInterface {
+  class TlsCertificatesTestWatcher
+      : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
    public:
     // ctor sets state->watcher to this.
     explicit TlsCertificatesTestWatcher(WatcherState* state) : state_(state) {
@@ -211,7 +211,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     return std::move(callback_queue_);
   }
 
-  grpc_tls_certificate_distributor distributor_;
+  TlsCertificateDistributor distributor_;
   // Use a std::list<> here to avoid the address invalidation caused by internal
   // reallocation of std::vector<>.
   std::list<WatcherState> watchers_;
