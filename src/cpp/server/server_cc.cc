@@ -111,7 +111,7 @@ gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 void InitGlobalCallbacks() {
   if (!g_callbacks) {
-    g_callbacks.reset(new DefaultGlobalCallbacks());
+    g_callbacks = std::make_shared<DefaultGlobalCallbacks>();
   }
 }
 
