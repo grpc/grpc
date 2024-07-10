@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <list>
 #include <memory>
 #include <new>
@@ -48,6 +49,7 @@
 
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -742,9 +744,9 @@ class ChannelBroadcaster {
 class Server::TransportConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  TransportConnectivityWatcher(RefCountedPtr<ServerTransport> transport,
+  TransportConnectivityWatcher(uint64_t connection_id,
                                RefCountedPtr<Server> server)
-      : transport_(std::move(transport)), server_(std::move(server)) {}
+      : connection_id_(connection_id), server_(std::move(server)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -753,12 +755,12 @@ class Server::TransportConnectivityWatcher
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
     // Shut down channel.
     MutexLock lock(&server_->mu_global_);
-    server_->connections_.erase(transport_.get());
+    server_->connections_.erase(connection_id_);
     --server_->connections_open_;
     server_->MaybeFinishShutdown();
   }
 
-  RefCountedPtr<ServerTransport> transport_;
+  const uint64_t connection_id_;
   RefCountedPtr<Server> server_;
 };
 
@@ -962,6 +964,8 @@ grpc_error_handle Server::SetupTransport(
     // Take ownership
     // TODO(ctiller): post-v3-transition make this method take an
     // OrphanablePtr<ServerTransport> directly.
+    uint64_t connection_id =
+        next_connection_id_.fetch_add(1, std::memory_order_relaxed);
     OrphanablePtr<ServerTransport> t(transport->server_transport());
     auto destination = MakeCallDestination(args.SetObject(transport));
     if (!destination.ok()) {
@@ -973,10 +977,9 @@ grpc_error_handle Server::SetupTransport(
     if (ShutdownCalled()) {
       t->DisconnectWithError(GRPC_ERROR_CREATE("Server shutdown"));
     }
-    t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
-        t->RefAsSubclass<ServerTransport>(), Ref()));
-    LOG(INFO) << "Adding connection";
-    connections_.emplace(std::move(t));
+    t->StartConnectivityWatch(
+        MakeOrphanable<TransportConnectivityWatcher>(connection_id, Ref()));
+    connections_.emplace(connection_id, std::move(t));
     ++connections_open_;
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
@@ -1165,7 +1168,8 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   ChannelBroadcaster broadcaster;
-  absl::flat_hash_set<OrphanablePtr<ServerTransport>> removing_connections;
+  absl::flat_hash_map<uint64_t, OrphanablePtr<ServerTransport>>
+      removing_connections;
   {
     // Wait for startup to be finished.  Locks mu_global.
     MutexLock lock(&mu_global_);

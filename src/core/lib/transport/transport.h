@@ -558,6 +558,13 @@ class Transport : public InternallyRefCounted<Transport> {
     op->disconnect_with_error = error;
     PerformOp(op);
   }
+
+  void SendGoaway(grpc_error_handle error) {
+    CHECK(!error.ok()) << error;
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->goaway_error = error;
+    PerformOp(op);
+  }
 };
 
 class FilterStackTransport : public Transport {
