@@ -795,7 +795,7 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,

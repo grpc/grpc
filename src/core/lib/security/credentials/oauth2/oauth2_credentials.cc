@@ -467,16 +467,21 @@ grpc_core::UniqueTypeName grpc_oauth2_token_fetcher_credentials::type() const {
 namespace {
 
 class grpc_compute_engine_token_fetcher_credentials
-    : public grpc_oauth2_token_fetcher_credentials {
+    : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
   grpc_compute_engine_token_fetcher_credentials() = default;
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
- protected:
-  void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
-                    grpc_polling_entity* pollent,
-                    grpc_iomgr_cb_func response_cb,
-                    grpc_core::Timestamp deadline) override {
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "GoogleComputeEngineTokenFetcherCredentials{%s}",
+        grpc_core::Oauth2TokenFetcherCredentials::debug_string());
+  }
+
+ private:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> ConstructHttpRequest(
+        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+        grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -490,26 +495,14 @@ class grpc_compute_engine_token_fetcher_credentials
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       {} /* query params */, "" /* fragment */);
     CHECK(uri.ok());  // params are hardcoded
-    http_request_ = grpc_core::HttpRequest::Get(
-        std::move(*uri), nullptr /* channel args */, pollent, &request,
-        deadline,
-        GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
-                          grpc_schedule_on_exec_ctx),
-        &metadata_req->response,
+    auto http_request = grpc_core::HttpRequest::Get(
+        std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
+        on_complete, response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
-    http_request_->Start();
+    http_request->Start();
+    return http_request;
   }
-
-  std::string debug_string() override {
-    return absl::StrFormat(
-        "GoogleComputeEngineTokenFetcherCredentials{%s}",
-        grpc_oauth2_token_fetcher_credentials::debug_string());
-  }
-
- private:
-  grpc_closure http_get_cb_closure_;
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
 };
 
 }  // namespace
