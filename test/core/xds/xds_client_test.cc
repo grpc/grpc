@@ -637,37 +637,6 @@ class XdsClientTest : public ::testing::Test {
     }
     const ServerFailureMap& server_failures() const { return server_failures_; }
 
-    // Returns true if matchers return true before the timeout.
-    // Runs matchers once as soon as it is called and then again
-    // every time the metrics reporter sees an update.
-    bool WaitForMetricsReporterData(
-        ::testing::Matcher<ResourceUpdateMap> resource_updates_valid_matcher,
-        ::testing::Matcher<ResourceUpdateMap> resource_updates_invalid_matcher,
-        ::testing::Matcher<ServerFailureMap> server_failures_matcher,
-        absl::Duration timeout = absl::Seconds(3),
-        SourceLocation location = SourceLocation()) {
-      const absl::Time deadline =
-          absl::Now() + (timeout * grpc_test_slowdown_factor());
-      MutexLock lock(&mu_);
-      while (true) {
-        if (::testing::Matches(resource_updates_valid_matcher)(
-                resource_updates_valid_) &&
-            ::testing::Matches(resource_updates_invalid_matcher)(
-                resource_updates_invalid_) &&
-            ::testing::Matches(server_failures_matcher)(server_failures_)) {
-          return true;
-        }
-        if (cond_.WaitWithDeadline(&mu_, deadline)) break;
-      }
-      EXPECT_THAT(resource_updates_valid_, resource_updates_valid_matcher)
-          << location.file() << ":" << location.line();
-      EXPECT_THAT(resource_updates_invalid_, resource_updates_invalid_matcher)
-          << location.file() << ":" << location.line();
-      EXPECT_THAT(server_failures_, server_failures_matcher)
-          << location.file() << ":" << location.line();
-      return false;
-    }
-
    private:
     void ReportResourceUpdates(absl::string_view xds_server,
                                absl::string_view resource_type,
@@ -682,20 +651,17 @@ class XdsClientTest : public ::testing::Test {
       if (num_resources_invalid > 0) {
         resource_updates_invalid_[key] += num_resources_invalid;
       }
-      cond_.SignalAll();
     }
 
     void ReportServerFailure(absl::string_view xds_server) override {
       MutexLock lock(&mu_);
       ++server_failures_[std::string(xds_server)];
-      cond_.SignalAll();
     }
 
     mutable Mutex mu_;
     ResourceUpdateMap resource_updates_valid_ ABSL_GUARDED_BY(mu_);
     ResourceUpdateMap resource_updates_invalid_ ABSL_GUARDED_BY(mu_);
     ServerFailureMap server_failures_ ABSL_GUARDED_BY(mu_);
-    CondVar cond_;
   };
 
   using ResourceCounts =
@@ -964,12 +930,13 @@ TEST_F(XdsClientTest, BasicWatch) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -989,12 +956,13 @@ TEST_F(XdsClientTest, BasicWatch) {
   CancelFooWatch(watcher.get(), "foo1");
   EXPECT_TRUE(stream->Orphaned());
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(), ::testing::ElementsAre());
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
 }
@@ -1029,12 +997,13 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1061,12 +1030,13 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1115,12 +1085,13 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1161,12 +1132,13 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1230,12 +1202,13 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1284,12 +1257,13 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1381,12 +1355,13 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1413,12 +1388,13 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          3)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  3)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1490,13 +1466,13 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(),
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -1543,16 +1519,16 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1603,8 +1579,10 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   // Before the server responds, add a watch for another resource.
   auto watcher2 = StartFooWatch("foo2");
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -1621,8 +1599,10 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   // Add a watch for a third resource.
   auto watcher3 = StartFooWatch("foo3");
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -1639,8 +1619,10 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   // Add a watch for a fourth resource.
   auto watcher4 = StartFooWatch("foo4");
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -1706,16 +1688,16 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   EXPECT_EQ(resource->name, "foo4");
   EXPECT_EQ(resource->value, 5);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          5)),
-      ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  5)));
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(
@@ -1801,12 +1783,13 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1837,16 +1820,16 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -1918,16 +1901,18 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          1)),
+          1)));
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_invalid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          1)),
-      ::testing::_));
+          1)));
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -1986,12 +1971,14 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+          1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2016,12 +2003,14 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   // Watcher should see the does-not-exist event.
   EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(1)));
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+          1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(
@@ -2057,12 +2046,14 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+          2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2116,12 +2107,14 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+          1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2147,12 +2140,14 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   // deletion.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+          1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2191,12 +2186,14 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   EXPECT_EQ(resource->name, "wc1");
   EXPECT_EQ(resource->value, 7);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
+  EXPECT_THAT(
+      metrics_reporter_->resource_updates_valid(),
       ::testing::ElementsAre(::testing::Pair(
           ::testing::Pair(kDefaultXdsServerUrl,
                           XdsWildcardCapableResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+          2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2338,9 +2335,8 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   // Check metric data.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
@@ -2364,9 +2360,8 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   // Connection still reported as unhappy until we get a response.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // Server now sends the requested resource.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2436,9 +2431,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Connection reported as unhappy.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // We should not see a resource-does-not-exist event, because the
   // timer should not be running while the channel is disconnected.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
@@ -2522,8 +2516,10 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // not existing.
   EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(5)));
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -2551,12 +2547,13 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2623,8 +2620,10 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
             "(node ID:xds_client_test)")
       << *error;
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -2646,8 +2645,10 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
   // Client should receive a resource does-not-exist.
   ASSERT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(4)));
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
@@ -2667,12 +2668,13 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2810,12 +2812,13 @@ TEST_F(XdsClientTest,
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2892,12 +2895,13 @@ TEST_F(XdsClientTest,
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 7);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          3)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  3)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2957,12 +2961,13 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -2997,12 +3002,13 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   // resending it.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3019,12 +3025,13 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   // Watcher will not see any update, since the resource is unchanged.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3076,12 +3083,13 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3130,12 +3138,13 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3173,17 +3182,18 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
   EXPECT_EQ(resource2->name, "bar1");
   EXPECT_EQ(resource2->value, "whee");
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ::testing::Pair(kDefaultXdsServerUrl,
-                              XdsBarResourceType::Get()->type_url()),
-              1),
-          ::testing::Pair(
-              ::testing::Pair(kDefaultXdsServerUrl,
-                              XdsFooResourceType::Get()->type_url()),
-              1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(
+                      ::testing::Pair(kDefaultXdsServerUrl,
+                                      XdsBarResourceType::Get()->type_url()),
+                      1),
+                  ::testing::Pair(
+                      ::testing::Pair(kDefaultXdsServerUrl,
+                                      XdsFooResourceType::Get()->type_url()),
+                      1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::UnorderedElementsAre(
@@ -3259,12 +3269,13 @@ TEST_F(XdsClientTest, Federation) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3326,17 +3337,18 @@ TEST_F(XdsClientTest, Federation) {
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ::testing::Pair(kDefaultXdsServerUrl,
-                              XdsFooResourceType::Get()->type_url()),
-              1),
-          ::testing::Pair(
-              ::testing::Pair(authority_server.server_uri(),
-                              XdsFooResourceType::Get()->type_url()),
-              1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(
+                      ::testing::Pair(kDefaultXdsServerUrl,
+                                      XdsFooResourceType::Get()->type_url()),
+                      1),
+                  ::testing::Pair(
+                      ::testing::Pair(authority_server.server_uri(),
+                                      XdsFooResourceType::Get()->type_url()),
+                      1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(
@@ -3403,12 +3415,13 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3450,12 +3463,13 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          2)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  2)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(
@@ -3607,12 +3621,13 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3663,17 +3678,18 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_EQ(resource->name, kXdstpResourceName);
   EXPECT_EQ(resource->value, 3);
   // Check metric data.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ::testing::Pair(kDefaultXdsServerUrl,
-                              XdsFooResourceType::Get()->type_url()),
-              1),
-          ::testing::Pair(
-              ::testing::Pair(authority_server.server_uri(),
-                              XdsFooResourceType::Get()->type_url()),
-              1)),
-      ::testing::ElementsAre(), ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(
+                      ::testing::Pair(kDefaultXdsServerUrl,
+                                      XdsFooResourceType::Get()->type_url()),
+                      1),
+                  ::testing::Pair(
+                      ::testing::Pair(authority_server.server_uri(),
+                                      XdsFooResourceType::Get()->type_url()),
+                      1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates_invalid(),
+              ::testing::ElementsAre());
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(
@@ -3714,10 +3730,9 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, true),
                   ::testing::Pair(authority_server.server_uri(), false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(
-          ::testing::Pair(authority_server.server_uri(), 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(authority_server.server_uri(), 1)));
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
   EXPECT_TRUE(stream->Orphaned());
@@ -3828,8 +3843,9 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                                         XdsFooResourceType::Get()->type_url(),
                                         "requested"),
                   1)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::IsEmpty(), ::testing::_, ::testing::ElementsAre()));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::IsEmpty());
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -3853,12 +3869,11 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Result (local): Metrics show 1 resource update and 1 cached resource.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(::testing::Pair(
-          ::testing::Pair(kDefaultXdsServerUrl,
-                          XdsFooResourceType::Get()->type_url()),
-          1)),
-      ::testing::_, ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
@@ -3885,17 +3900,15 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   // Result (local): The metrics show the channel as being unhealthy.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // Input: Trigger stream failure.
   stream->MaybeSendStatusToClient(absl::UnavailableError("Stream failure"));
   // Result (local): The metrics still show the channel as being unhealthy.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // Result (remote): The client starts a new stream and sends a subscription
   //   message. Note that the server does not respond, so the channel will still
   //   have non-OK status.
@@ -3965,17 +3978,16 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 30);
   // Result (local): Metrics show an update from fallback server.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ::testing::Pair(kDefaultXdsServerUrl,
-                              XdsFooResourceType::Get()->type_url()),
-              1),
-          ::testing::Pair(
-              ::testing::Pair(fallback_server.server_uri(),
-                              XdsFooResourceType::Get()->type_url()),
-              2)),
-      ::testing::_, ::testing::_));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(
+                      ::testing::Pair(kDefaultXdsServerUrl,
+                                      XdsFooResourceType::Get()->type_url()),
+                      1),
+                  ::testing::Pair(
+                      ::testing::Pair(fallback_server.server_uri(),
+                                      XdsFooResourceType::Get()->type_url()),
+                      2)));
   EXPECT_THAT(GetServerConnections(),
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, false),
@@ -4003,20 +4015,20 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
           .Serialize());
   // Result (local): Metrics show that we've closed the channel to the fallback
   //   server and received resource updates from the primary server.
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ::testing::Pair(kDefaultXdsServerUrl,
-                              XdsFooResourceType::Get()->type_url()),
-              3),
-          ::testing::Pair(
-              ::testing::Pair(fallback_server.server_uri(),
-                              XdsFooResourceType::Get()->type_url()),
-              2)),
-      ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(
+                      ::testing::Pair(kDefaultXdsServerUrl,
+                                      XdsFooResourceType::Get()->type_url()),
+                      3),
+                  ::testing::Pair(
+                      ::testing::Pair(fallback_server.server_uri(),
+                                      XdsFooResourceType::Get()->type_url()),
+                      2)));
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // Result (remote): The stream to the fallback server has been orphaned.
   EXPECT_TRUE(stream2->Orphaned());
   // Result (local): Resources are delivered to watchers.
@@ -4072,9 +4084,8 @@ TEST_F(XdsClientTest, FallbackReportsError) {
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, false),
                   ::testing::Pair(fallback_server.server_uri(), true)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // Fallback happens now
   stream = WaitForAdsStream(fallback_server);
   ASSERT_NE(stream, nullptr);
@@ -4090,11 +4101,10 @@ TEST_F(XdsClientTest, FallbackReportsError) {
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, false),
                   ::testing::Pair(fallback_server.server_uri(), false)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(
-          ::testing::Pair(kDefaultXdsServerUrl, 1),
-          ::testing::Pair(fallback_server.server_uri(), 1))));
+  EXPECT_THAT(
+      metrics_reporter_->server_failures(),
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1),
+                             ::testing::Pair(fallback_server.server_uri(), 1)));
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_THAT(error->code(), absl::StatusCode::kUnavailable);
@@ -4144,9 +4154,8 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, false),
                   ::testing::Pair(fallback_server.server_uri(), true)));
-  EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
-      ::testing::_, ::testing::_,
-      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
