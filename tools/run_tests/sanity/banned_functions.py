@@ -123,6 +123,7 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/resolver/dns/c_ares/grpc_ares_wrapper.h",
         "./src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc",
         "./src/core/resolver/dns/native/dns_resolver.cc",
+        "./src/core/resolver/xds/xds_dependency_manager.cc",
         "./src/core/resolver/xds/xds_resolver.cc",
         "./src/core/server/server.cc",
         "./src/core/server/xds_server_config_fetcher.cc",
@@ -159,7 +160,11 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     ],
     "gpr_set_log_verbosity(": [
         "./include/grpc/support/log.h",
+        "./src/core/util/android/log.cc",
+        "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
+        "./src/core/util/posix/log.cc",
+        "./src/core/util/windows/log.cc",
         "./test/core/end2end/tests/no_logging.cc",
     ],
     "gpr_log_func_args": [
