@@ -22,10 +22,10 @@
 #include <cstdint>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
@@ -118,7 +118,8 @@ void HPackCompressor::SetMaxTableSize(uint32_t max_table_size) {
   if (table_.SetMaxSize(std::min(max_usable_size_, max_table_size))) {
     advertise_table_size_change_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(http)) {
-      LOG(INFO) << "set max table size from encoder to " << max_table_size;
+      gpr_log(GPR_INFO, "set max table size from encoder to %d",
+              max_table_size);
     }
   }
 }
