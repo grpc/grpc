@@ -1265,7 +1265,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
     auto* complete_pick =
         absl::get_if<PickResult::Complete>(&pick_result.result);
     if (complete_pick != nullptr) {
-      complete_pick->metadata_mutations.Set(kRlsHeaderKey, header_data_.Ref());
+      complete_pick->metadata_mutations.Add(kRlsHeaderKey, header_data_.Ref());
     }
   }
   return pick_result;

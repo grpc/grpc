@@ -117,7 +117,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
       auto* complete_pick =
           absl::get_if<PickResult::Complete>(&pick_result.result);
       if (complete_pick != nullptr) {
-        complete_pick->metadata_mutations.Set(kRpcBehaviorMetadataKey,
+        complete_pick->metadata_mutations.Add(kRpcBehaviorMetadataKey,
                                               rpc_behavior_);
       }
       // Return result.

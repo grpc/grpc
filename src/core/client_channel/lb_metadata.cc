@@ -75,13 +75,10 @@ LbMetadata::TestOnlyCopyToVector() const {
 void MetadataMutationHandler::Apply(
     LoadBalancingPolicy::MetadataMutations& metadata_mutations,
     grpc_metadata_batch* metadata) {
-  for (auto& p : metadata_mutations.metadata_) {
+  for (auto& p : metadata_mutations.additions_) {
     absl::string_view key = p.first;
     Slice& value =
         grpc_event_engine::experimental::internal::SliceCast<Slice>(p.second);
-    // TODO(roth): Should we prevent this from setting special keys like
-    // :authority, :path, content-type, etc?
-    metadata->Remove(key);
     // Gross, egregious hack to support legacy grpclb behavior.
     // TODO(ctiller): Use a promise context for this once that plumbing is done.
     if (key == GrpcLbClientStatsMetadata::key()) {

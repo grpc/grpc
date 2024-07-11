@@ -124,14 +124,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// A list of metadata mutations to be returned along with a PickResult.
   class MetadataMutations {
    public:
-    /// Sets a key/value pair.  If the key is already present, it will
-    /// be replaced with the new value.
-    void Set(absl::string_view key, absl::string_view value) {
-      Set(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
+    /// Adds a key/value pair.  If the key is already present, the new
+    /// value will be appended with a comma delimiter.
+    void Add(absl::string_view key, absl::string_view value) {
+      Add(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
     }
-    void Set(absl::string_view key,
+    void Add(absl::string_view key,
              grpc_event_engine::experimental::Slice value) {
-      metadata_.push_back({key, std::move(value)});
+      additions_.push_back({key, std::move(value)});
     }
 
    private:
@@ -143,7 +143,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // cases with more than 3 additions.
     absl::InlinedVector<
         std::pair<absl::string_view, grpc_event_engine::experimental::Slice>, 3>
-        metadata_;
+        additions_;
   };
 
   /// Arguments used when picking a subchannel for a call.
