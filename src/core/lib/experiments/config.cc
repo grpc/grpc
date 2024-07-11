@@ -170,7 +170,6 @@ Experiments& ExperimentsSingleton() {
 }  // namespace
 
 void TestOnlyReloadExperimentsFromConfigVariables() {
-  ExperimentFlags::TestOnlyClear();
   ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
   PrintExperimentsList();
 }
@@ -181,35 +180,8 @@ void LoadTestOnlyExperimentsFromMetadata(
       new TestExperiments(experiment_metadata, num_experiments);
 }
 
-std::atomic<uint64_t>
-    ExperimentFlags::experiment_flags_[kNumExperimentFlagsWords];
-
-bool ExperimentFlags::LoadFlagsAndCheck(size_t experiment_id) {
-  static_assert(kNumExperiments < kNumExperimentFlagsWords * kFlagsPerWord,
-                "kNumExperiments must be less than "
-                "kNumExperimentFlagsWords*kFlagsPerWord; if this fails then "
-                "make kNumExperimentFlagsWords bigger.");
-  const auto& experiments = ExperimentsSingleton();
-  uint64_t building[kNumExperimentFlagsWords];
-  for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    building[i] = kLoadedFlag;
-  }
-  for (size_t i = 0; i < kNumExperiments; i++) {
-    if (!experiments.enabled[i]) continue;
-    auto bit = i % kFlagsPerWord;
-    auto word = i / kFlagsPerWord;
-    building[word] |= 1ull << bit;
-  }
-  for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    experiment_flags_[i].store(building[i], std::memory_order_relaxed);
-  }
-  return experiments.enabled[experiment_id];
-}
-
-void ExperimentFlags::TestOnlyClear() {
-  for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    experiment_flags_[i].store(0, std::memory_order_relaxed);
-  }
+bool IsExperimentEnabled(size_t experiment_id) {
+  return ExperimentsSingleton().enabled[experiment_id];
 }
 
 bool IsExperimentEnabledInConfiguration(size_t experiment_id) {
