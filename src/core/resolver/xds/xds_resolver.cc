@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -46,6 +45,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -111,15 +111,16 @@ class XdsResolver final : public Resolver {
         data_plane_authority_(std::move(data_plane_authority)),
         channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      LOG(INFO) << "[xds_resolver " << this << "] created for URI "
-                << uri_.ToString() << "; data plane authority is "
-                << data_plane_authority_;
+      gpr_log(
+          GPR_INFO,
+          "[xds_resolver %p] created for URI %s; data plane authority is %s",
+          this, uri_.ToString().c_str(), data_plane_authority_.c_str());
     }
   }
 
   ~XdsResolver() override {
     if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      LOG(INFO) << "[xds_resolver " << this << "] destroyed";
+      gpr_log(GPR_INFO, "[xds_resolver %p] destroyed", this);
     }
   }
 
@@ -537,8 +538,8 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     XdsResolver* resolver, const XdsRouteConfigResource::Route& route,
     const Duration& default_max_stream_duration) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << resolver << "] XdsConfigSelector " << this
-              << ": route: " << route.ToString();
+    gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
+            resolver, this, route.ToString().c_str());
   }
   routes_.emplace_back(route);
   auto* route_entry = &routes_.back();
@@ -629,8 +630,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     : resolver_(std::move(resolver)),
       route_config_data_(std::move(route_config_data)) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << resolver_.get()
-              << "] creating XdsConfigSelector " << this;
+    gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
+            resolver_.get(), this);
   }
   // Populate filter list.
   const auto& http_filter_registry =
@@ -652,8 +653,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << resolver_.get()
-              << "] destroying XdsConfigSelector " << this;
+    gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
+            resolver_.get(), this);
   }
   route_config_data_.reset();
   if (!IsWorkSerializerDispatchEnabled()) {
@@ -896,9 +897,10 @@ void XdsResolver::StartLocked() {
   auto xds_client =
       GrpcXdsClient::GetOrCreate(uri_.ToString(), args_, "xds resolver");
   if (!xds_client.ok()) {
-    LOG(ERROR) << "Failed to create xds client -- channel will remain in "
-                  "TRANSIENT_FAILURE: "
-               << xds_client.status();
+    gpr_log(GPR_ERROR,
+            "Failed to create xds client -- channel will remain in "
+            "TRANSIENT_FAILURE: %s",
+            xds_client.status().ToString().c_str());
     absl::Status status = absl::UnavailableError(absl::StrCat(
         "Failed to create XdsClient: ", xds_client.status().message()));
     Result result;
@@ -954,8 +956,8 @@ void XdsResolver::StartLocked() {
         absl::StrReplaceAll(name_template, {{"%s", resource_name_fragment}});
   }
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] Started with lds_resource_name "
-              << lds_resource_name_;
+    gpr_log(GPR_INFO, "[xds_resolver %p] Started with lds_resource_name %s.",
+            this, lds_resource_name_.c_str());
   }
   // Start watch for xDS config.
   dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
@@ -966,7 +968,7 @@ void XdsResolver::StartLocked() {
 
 void XdsResolver::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] shutting down";
+    gpr_log(GPR_INFO, "[xds_resolver %p] shutting down", this);
   }
   if (xds_client_ != nullptr) {
     dependency_mgr_.reset();
@@ -979,7 +981,7 @@ void XdsResolver::ShutdownLocked() {
 void XdsResolver::OnUpdate(
     RefCountedPtr<const XdsDependencyManager::XdsConfig> config) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] received updated xDS config";
+    gpr_log(GPR_INFO, "[xds_resolver %p] received updated xDS config", this);
   }
   if (xds_client_ == nullptr) return;
   current_config_ = std::move(config);
@@ -987,9 +989,8 @@ void XdsResolver::OnUpdate(
 }
 
 void XdsResolver::OnError(absl::string_view context, absl::Status status) {
-  LOG(ERROR) << "[xds_resolver " << this
-             << "] received error from XdsClient: " << context << ": "
-             << status;
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s: %s",
+          this, std::string(context).c_str(), status.ToString().c_str());
   if (xds_client_ == nullptr) return;
   status =
       absl::UnavailableError(absl::StrCat(context, ": ", status.ToString()));
@@ -1002,9 +1003,10 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
 }
 
 void XdsResolver::OnResourceDoesNotExist(std::string context) {
-  LOG(ERROR) << "[xds_resolver " << this
-             << "] LDS/RDS resource does not exist -- clearing "
-                "update and returning empty service config";
+  gpr_log(GPR_ERROR,
+          "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
+          "update and returning empty service config",
+          this);
   if (xds_client_ == nullptr) return;
   current_config_.reset();
   Result result;
@@ -1078,10 +1080,10 @@ void XdsResolver::GenerateResult() {
   result.addresses.emplace();
   result.service_config = CreateServiceConfig();
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] generated service config: "
-              << (result.service_config.ok()
-                      ? ((*result.service_config)->json_string())
-                      : result.service_config.status().ToString());
+    gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
+            result.service_config.ok()
+                ? std::string((*result.service_config)->json_string()).c_str()
+                : result.service_config.status().ToString().c_str());
   }
   result.args =
       args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
@@ -1115,7 +1117,8 @@ class XdsResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (uri.path().empty() || uri.path().back() == '/') {
-      LOG(ERROR) << "URI path does not contain valid data plane authority";
+      gpr_log(GPR_ERROR,
+              "URI path does not contain valid data plane authority");
       return false;
     }
     return true;
