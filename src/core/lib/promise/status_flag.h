@@ -263,7 +263,7 @@ class ValueOrFailure {
   friend void AbslStringify(Sink& sink, const ValueOrFailure& value) {
     if (value.ok()) {
       sink.Append("Success(");
-      sink.Append(absl::StrCat(*value));
+      sink.Append(absl::StrCat(value));
       sink.Append(")");
     } else {
       sink.Append("Failure");
