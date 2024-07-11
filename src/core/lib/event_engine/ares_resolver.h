@@ -47,12 +47,11 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)        \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {       \
-      LOG(INFO) << "(EventEngine c-ares resolver) "      \
-                << absl::StrFormat(format, __VA_ARGS__); \
-    }                                                    \
+#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)                              \
+  do {                                                                         \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {                             \
+      gpr_log(GPR_INFO, "(EventEngine c-ares resolver) " format, __VA_ARGS__); \
+    }                                                                          \
   } while (0)
 
 class AresResolver : public RefCountedDNSResolverInterface {
