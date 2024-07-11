@@ -20,7 +20,6 @@
 #include "benchmark/benchmark.h"
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -238,11 +237,9 @@ template <class Traits>
 class FilterFixture {
  public:
   BenchmarkCall MakeCall() {
-    auto arena = arena_allocator_->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine_.get());
-    auto p =
-        MakeCallPair(traits_.MakeClientInitialMetadata(), std::move(arena));
+    auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
+                          event_engine_.get(), arena_allocator_->MakeArena());
+    p.handler.AddCallStack(stack_);
     return {std::move(p.initiator), p.handler.StartCall()};
   }
 
@@ -281,11 +278,8 @@ template <class Traits>
 class UnstartedCallDestinationFixture {
  public:
   BenchmarkCall MakeCall() {
-    auto arena = arena_allocator_->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine_.get());
-    auto p =
-        MakeCallPair(traits_->MakeClientInitialMetadata(), std::move(arena));
+    auto p = MakeCallPair(traits_->MakeClientInitialMetadata(),
+                          event_engine_.get(), arena_allocator_->MakeArena());
     top_destination_->StartCall(std::move(p.handler));
     auto handler = bottom_destination_->TakeHandler();
     absl::optional<CallHandler> started_handler;

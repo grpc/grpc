@@ -73,7 +73,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -770,12 +769,10 @@ grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, absl::optional<Slice> authority, Timestamp deadline, bool) {
-  auto arena = call_arena_allocator()->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine());
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
-                        compression_options(), std::move(arena), Ref());
+                        compression_options(), event_engine_.get(),
+                        call_arena_allocator()->MakeArena(), Ref());
 }
 
 void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
@@ -1259,9 +1256,6 @@ void ClientChannel::StartIdleTimer() {
                     }
                   });
   });
-  auto arena = SimpleArenaAllocator(0)->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine());
   idle_activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
       [self = std::move(self)](absl::Status status) mutable {
@@ -1273,14 +1267,13 @@ void ClientChannel::StartIdleTimer() {
                     GRPC_CHANNEL_IDLE, absl::OkStatus(),
                     "channel entering IDLE", nullptr);
                 // TODO(roth): In case there's a race condition, we
-                // might need to check for any calls that are
-                // queued waiting for a resolver result or an LB
-                // pick.
+                // might need to check for any calls that are queued
+                // waiting for a resolver result or an LB pick.
               },
               DEBUG_LOCATION);
         }
       },
-      std::move(arena)));
+      GetContext<EventEngine>()));
 }
 
 absl::Status ClientChannel::ApplyServiceConfigToCall(

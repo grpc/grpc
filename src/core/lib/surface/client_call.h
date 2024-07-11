@@ -64,6 +64,7 @@ class ClientCall final
              grpc_completion_queue* cq, Slice path,
              absl::optional<Slice> authority, bool registered_method,
              Timestamp deadline, grpc_compression_options compression_options,
+             grpc_event_engine::experimental::EventEngine* event_engine,
              RefCountedPtr<Arena> arena,
              RefCountedPtr<UnstartedCallDestination> destination);
 
@@ -167,13 +168,14 @@ class ClientCall final
   std::atomic<bool> saw_trailing_metadata_{false};
 };
 
-grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
-                          grpc_completion_queue* cq, Slice path,
-                          absl::optional<Slice> authority,
-                          bool registered_method, Timestamp deadline,
-                          grpc_compression_options compression_options,
-                          RefCountedPtr<Arena> arena,
-                          RefCountedPtr<UnstartedCallDestination> destination);
+grpc_call* MakeClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options,
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination);
 
 }  // namespace grpc_core
 

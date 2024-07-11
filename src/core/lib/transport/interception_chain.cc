@@ -39,7 +39,8 @@ CallInitiator HijackedCall::MakeCall() {
 
 CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
-  auto call = MakeCallPair(std::move(metadata), call_handler_.arena()->Ref());
+  auto call = MakeCallPair(std::move(metadata), call_handler_.event_engine(),
+                           call_handler_.arena()->Ref());
   destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }

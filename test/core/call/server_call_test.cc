@@ -44,11 +44,9 @@ class ServerCallTest : public YodelTest {
 
   grpc_call* InitCall(ClientMetadataHandle client_initial_metadata) {
     CHECK_EQ(call_, nullptr);
-    auto arena = SimpleArenaAllocator()->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine().get());
     auto call =
-        MakeCallPair(std::move(client_initial_metadata), std::move(arena));
+        MakeCallPair(std::move(client_initial_metadata), event_engine().get(),
+                     SimpleArenaAllocator()->MakeArena());
     call.initiator.SpawnGuarded(
         "initial_metadata",
         [this, handler = call.handler.StartCall()]() mutable {
