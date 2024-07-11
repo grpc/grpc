@@ -114,25 +114,46 @@ struct grpc_oauth2_pending_get_request_metadata
 
 namespace grpc_core {
 
+// An oauth2 token.
+class Oauth2Token : public TokenFetcherCredentials::Token {
+ public:
+  Oauth2Token(Slice token, Timestamp expiration)
+      : token_(std::move(token)), expiration_(expiration) {}
+
+  Timestamp ExpirationTime() override { return expiration_; }
+
+  void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
+    metadata.Append(
+        GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
+        [](absl::string_view, const grpc_core::Slice&) { abort(); });
+  }
+
+ private:
+  Slice token_;
+  Timestamp expiration_;
+};
+
 // A base class for oauth2 token fetching credentials.
-// Subclasses must implement ConstructHttpRequest().
+// Subclasses must implement StartHttpRequest().
 class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
  public:
   std::string debug_string() override;
 
   grpc_core::UniqueTypeName type() const override;
 
-  OrphanablePtr<HttpRequest> FetchToken(
+  OrphanablePtr<FetchRequest> FetchToken(
         grpc_polling_entity* pollent, Timestamp deadline,
         absl::AnyInvocable<void(
             absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
             on_done) final;
 
-  virtual OrphanablePtr<HttpRequest> ConstructHttpRequest(
+  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
         grpc_polling_entity* pollent, Timestamp deadline,
         grpc_http_response* response, grpc_closure* on_complete) = 0;
 
  private:
+  class HttpFetchRequest;
+
   int cmp_impl(const grpc_call_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
     return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
@@ -194,7 +215,7 @@ class grpc_google_refresh_token_credentials final
   grpc_core::UniqueTypeName type() const override;
 
  private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> ConstructHttpRequest(
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
         grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
         grpc_http_response* response, grpc_closure* on_complete) override;
 

@@ -234,6 +234,59 @@ end:
 
 namespace grpc_core {
 
+// State held for a pending HTTP request.
+class Oauth2TokenFetcherCredentials::HttpFetchRequest
+    : public TokenFetcherCredentials::FetchRequest {
+ public:
+  HttpFetchRequest(
+      Oauth2TokenFetcherCredentials* creds,
+      grpc_polling_entity* pollent, Timestamp deadline,
+      absl::AnyInvocable<void(
+          absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+          on_done)
+      : on_done_(std::move(on_done)) {
+    GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
+    Ref().release();  // Ref held by HTTP request callback.
+    http_request_ = creds->StartHttpRequest(
+        pollent, deadline, &response_, &on_http_response_);
+  }
+  ~HttpFetchRequest() { grpc_http_response_destroy(&response_); }
+
+  void Orphan() override {
+    http_request_.reset();
+    Unref();
+  }
+
+ private:
+  static void OnHttpResponse(void* arg, grpc_error_handle error) {
+    RefCountedPtr<HttpFetchRequest> self(static_cast<HttpFetchRequest*>(arg));
+    if (!error.ok()) {
+      self->on_done_(std::move(error));
+      return;
+    }
+    // Parse oauth2 token.
+    absl::optional<Slice> access_token_value;
+    Duration token_lifetime;
+    grpc_credentials_status status =
+        grpc_oauth2_token_fetcher_credentials_parse_server_response(
+            &self->response_, &access_token_value, &token_lifetime);
+    if (status != GRPC_CREDENTIALS_OK) {
+      self->on_done_(
+          absl::UnavailableError("error parsing oauth2 token"));
+      return;
+    }
+    self->on_done_(
+        MakeRefCounted<Oauth2Token>(std::move(*access_token_value),
+                                    Timestamp::Now() + token_lifetime));
+  }
+
+  OrphanablePtr<HttpRequest> http_request_;
+  grpc_closure on_http_response_;
+  grpc_http_response response_;
+  absl::AnyInvocable<void(
+      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)> on_done_;
+};
+
 std::string Oauth2TokenFetcherCredentials::debug_string() {
   return "OAuth2TokenFetcherCredentials";
 }
@@ -243,76 +296,14 @@ UniqueTypeName Oauth2TokenFetcherCredentials::type() const {
   return kFactory.Create();
 }
 
-namespace {
-
-// An oauth2 token.
-class Oauth2Token : public TokenFetcherCredentials::Token {
- public:
-  Oauth2Token(Slice token, Timestamp expiration)
-      : token_(std::move(token)), expiration_(expiration) {}
-
-  Timestamp ExpirationTime() override { return expiration_; }
-
-  void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
-    metadata.Append(
-        GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
-        [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  }
-
- private:
-  Slice token_;
-  Timestamp expiration_;
-};
-
-// State held for a pending HTTP request.
-struct HttpRequestState {
-  explicit HttpRequestState(
-      absl::AnyInvocable<void(
-          absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done)
-      : on_done(std::move(on_done)) {
-    GRPC_CLOSURE_INIT(&on_http_response, OnHttpResponse, this, nullptr);
-  }
-  ~HttpRequestState() { grpc_http_response_destroy(&response); }
-
-  static void OnHttpResponse(void* arg, grpc_error_handle error) {
-    std::unique_ptr<HttpRequestState> self(static_cast<HttpRequestState*>(arg));
-    if (!error.ok()) {
-      self->on_done(std::move(error));
-      return;
-    }
-    // Parse oauth2 token.
-    absl::optional<Slice> access_token_value;
-    Duration token_lifetime;
-    grpc_credentials_status status =
-        grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &self->response, &access_token_value, &token_lifetime);
-    if (status != GRPC_CREDENTIALS_OK) {
-      self->on_done(
-          absl::UnavailableError("error parsing oauth2 token"));
-      return;
-    }
-    self->on_done(
-        MakeRefCounted<Oauth2Token>(std::move(*access_token_value),
-                                    Timestamp::Now() + token_lifetime));
-  }
-
-  absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)> on_done;
-  grpc_closure on_http_response;
-  grpc_http_response response;
-};
-
-}  // namespace
-
-OrphanablePtr<HttpRequest> Oauth2TokenFetcherCredentials::FetchToken(
+OrphanablePtr<TokenFetcherCredentials::FetchRequest>
+Oauth2TokenFetcherCredentials::FetchToken(
     grpc_polling_entity* pollent, Timestamp deadline,
     absl::AnyInvocable<void(
         absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
-  auto* state = new HttpRequestState(std::move(on_done));
-  return ConstructHttpRequest(pollent, deadline, &state->response,
-                              &state->on_http_response);
+  return MakeOrphanable<HttpFetchRequest>(this, pollent, deadline,
+                                          std::move(on_done));
 }
 
 }  // namespace grpc_core
@@ -479,7 +470,7 @@ class grpc_compute_engine_token_fetcher_credentials
   }
 
  private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> ConstructHttpRequest(
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
         grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
         grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
@@ -531,7 +522,7 @@ grpc_google_refresh_token_credentials::
 }
 
 grpc_core::OrphanablePtr<grpc_core::HttpRequest>
-grpc_google_refresh_token_credentials::ConstructHttpRequest(
+grpc_google_refresh_token_credentials::StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) {
   grpc_http_header header = {
@@ -655,7 +646,7 @@ class StsTokenFetcherCredentials
   }
 
  private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> ConstructHttpRequest(
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
         grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
         grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_request request;

@@ -66,7 +66,7 @@ TokenFetcherCredentials::GetRequestMetadata(
     pending_call->md = std::move(initial_metadata);
     pending_calls_.insert(pending_call);
     // Start a new fetch if needed.
-    if (!absl::holds_alternative<OrphanablePtr<HttpRequest>>(token_)) {
+    if (!absl::holds_alternative<OrphanablePtr<FetchRequest>>(token_)) {
       token_ = FetchToken(
           &pollent_, /*deadline=*/Timestamp::Now() + kTokenRefreshDuration,
           [self = RefAsSubclass<TokenFetcherCredentials>()](

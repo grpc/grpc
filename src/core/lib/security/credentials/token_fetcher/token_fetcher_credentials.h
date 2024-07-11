@@ -47,8 +47,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   // Represents a token.
   class Token : public RefCounted<Token> {
    public:
-    virtual ~Token() = default;
-
     // Returns the token's expiration time.
     virtual Timestamp ExpirationTime() = 0;
 
@@ -63,7 +61,16 @@ class TokenFetcherCredentials : public grpc_call_credentials {
                      const GetRequestMetadataArgs* args) override;
 
  protected:
+  // Base class for fetch requests.
+  class FetchRequest : public InternallyRefCounted<FetchRequest> {};
+
   TokenFetcherCredentials();
+
+  // Fetches a token.  The on_done callback will be invoked when complete.
+  virtual OrphanablePtr<FetchRequest> FetchToken(
+      grpc_polling_entity* pollent, Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
+          on_done) = 0;
 
  private:
   // A call that is waiting for a token fetch request to complete.
@@ -80,19 +87,11 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
   }
 
-  // Fetches a token.  The on_done callback will be invoked when complete.
-  // The fetch may be cancelled by orphaning the returned HttpRequest.
-  // The on_done callback will be invoked even when cancelled.
-  virtual OrphanablePtr<HttpRequest> FetchToken(
-      grpc_polling_entity* pollent, Timestamp deadline,
-      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
-          on_done) = 0;
-
   void TokenFetchComplete(absl::StatusOr<RefCountedPtr<Token>> token);
 
   Mutex mu_;
   // Either the cached token or a pending request to fetch the token.
-  absl::variant<RefCountedPtr<Token>, OrphanablePtr<HttpRequest>> token_
+  absl::variant<RefCountedPtr<Token>, OrphanablePtr<FetchRequest>> token_
       ABSL_GUARDED_BY(&mu_);
   // Calls that are queued up waiting for the token.
   absl::flat_hash_set<RefCountedPtr<PendingCall>> pending_calls_
