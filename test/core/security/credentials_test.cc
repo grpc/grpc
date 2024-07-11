@@ -1157,7 +1157,10 @@ TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      GRPC_ERROR_CREATE(
+          "Failed to load file: /some/completely/random/path due to "
+          "error(fdopen): No such file or directory"),
+      {});
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1225,7 +1228,10 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      GRPC_ERROR_CREATE(
+          "Failed to load file: invalid_path due to "
+          "error(fdopen): No such file or directory"),
+      {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1258,7 +1264,7 @@ TEST(CredentialsTest, TestStsCredsHttpFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url

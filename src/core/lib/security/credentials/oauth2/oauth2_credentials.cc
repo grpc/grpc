@@ -633,7 +633,7 @@ grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
 }
 
 class StsTokenFetcherCredentials
-    : public grpc_oauth2_token_fetcher_credentials {
+    : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
   StsTokenFetcherCredentials(URI sts_url,
                              const grpc_sts_credentials_options* options)
@@ -651,20 +651,19 @@ class StsTokenFetcherCredentials
     return absl::StrFormat(
         "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_.path(),
         sts_url_.authority(),
-        grpc_oauth2_token_fetcher_credentials::debug_string());
+        grpc_core::Oauth2TokenFetcherCredentials::debug_string());
   }
 
  private:
-  void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
-                    grpc_polling_entity* pollent,
-                    grpc_iomgr_cb_func response_cb,
-                    Timestamp deadline) override {
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> ConstructHttpRequest(
+        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+        grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
     grpc_error_handle err = FillBody(&request.body, &request.body_length);
     if (!err.ok()) {
-      response_cb(metadata_req, err);
-      return;
+      ExecCtx::Run(DEBUG_LOCATION, on_complete, std::move(err));
+      return nullptr;
     }
     grpc_http_header header = {
         const_cast<char*>("Content-Type"),
@@ -681,13 +680,12 @@ class StsTokenFetcherCredentials
     } else {
       http_request_creds = CreateHttpRequestSSLCredentials();
     }
-    http_request_ = HttpRequest::Post(
-        sts_url_, nullptr /* channel args */, pollent, &request, deadline,
-        GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
-                          grpc_schedule_on_exec_ctx),
-        &metadata_req->response, std::move(http_request_creds));
-    http_request_->Start();
+    auto http_request = HttpRequest::Post(
+        sts_url_, /*args=*/nullptr, pollent, &request, deadline,
+        on_complete, response, std::move(http_request_creds));
+    http_request->Start();
     gpr_free(request.body);
+    return http_request;
   }
 
   grpc_error_handle FillBody(char** body, size_t* body_length) {
@@ -733,7 +731,6 @@ class StsTokenFetcherCredentials
   }
 
   URI sts_url_;
-  grpc_closure http_post_cb_closure_;
   UniquePtr<char> resource_;
   UniquePtr<char> audience_;
   UniquePtr<char> scope_;
