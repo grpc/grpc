@@ -323,8 +323,6 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
   EventEngine::ResolvedAddress mapped_target_addr;
 };
 
-bool SetSocketDualStack(int fd);
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
