@@ -806,6 +806,7 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
+  gpr_log(GPR_INFO, "IOMGR endpoint shutdown");
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_fd_shutdown(tcp->em_fd, absl::UnavailableError("endpoint shutdown"));
