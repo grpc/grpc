@@ -759,10 +759,8 @@ void Subchannel::OnRetryTimer() {
 
 void Subchannel::OnRetryTimerLocked() {
   if (shutdown_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-              << ": backoff delay elapsed, reporting IDLE";
-  }
+  LOG(INFO) << "subchannel " << this << " " << key_.ToString()
+            << ": backoff delay elapsed, reporting IDLE";
   SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
@@ -806,12 +804,10 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - Timestamp::Now();
-    if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-      LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-                << ": connect failed (" << StatusToString(error)
-                << "), backing off for " << time_until_next_attempt.millis()
-                << " ms";
-    }
+    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
+              << ": connect failed (" << StatusToString(error)
+              << "), backing off for " << time_until_next_attempt.millis()
+              << " ms";
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = event_engine_->RunAfter(
