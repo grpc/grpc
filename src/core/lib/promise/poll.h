@@ -44,10 +44,6 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Empty&,
                                                             const Empty&) {
   return true;
 }
-template <typename Sink>
-void AbslStringify(Sink& sink, Empty) {
-  sink.Append("{}");
-}
 
 // The result of polling a Promise once.
 //
@@ -286,36 +282,6 @@ void AbslStringify(Sink& sink, const Poll<T>& poll) {
   }
   absl::Format(&sink, "%v", poll.value());
 }
-
-template <typename Sink, typename T>
-void AbslStringify(Sink& sink, const Poll<absl::optional<T>>& poll) {
-  if (poll.pending()) {
-    absl::Format(&sink, "<<pending>>");
-    return;
-  }
-  const auto& value = poll.value();
-  if (value.has_value()) {
-    absl::Format(&sink, "%v", value);
-  } else {
-    sink.append("nullopt");
-  }
-}
-
-// Hack to get metadata printing
-template <typename Sink, typename T, typename Deleter>
-void AbslStringify(Sink& sink, const Poll<absl::optional<std::unique_ptr<T, Deleter>>>& poll) {
-  if (poll.pending()) {
-    absl::Format(&sink, "<<pending>>");
-    return;
-  }
-  const auto& value = poll.value();
-  if (value.has_value()) {
-    absl::Format(&sink, "%v", *value);
-  } else {
-    sink.Append("nullopt");
-  }
-}
-
 
 }  // namespace grpc_core
 

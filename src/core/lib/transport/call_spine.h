@@ -290,7 +290,6 @@ class CallInitiator {
   }
 
   Arena* arena() { return spine_->arena(); }
-  Party* party() { return spine_.get(); }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return spine_->event_engine();
@@ -355,7 +354,6 @@ class CallHandler {
   }
 
   Arena* arena() { return spine_->arena(); }
-  Party* party() { return spine_.get(); }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return spine_->event_engine();

@@ -558,11 +558,6 @@ class ChannelArgs {
   bool WantMinimalStack() const;
   std::string ToString() const;
 
-  template <typename Sink>
-  friend void AbslStringify(Sink& sink, const ChannelArgs& args) {
-    sink.Append(args.ToString());
-  }
-
  private:
   explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);
 

@@ -172,11 +172,6 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
   }
 };
 
-template <>
-struct StatusCastImpl<StatusFlag, Success> {
-  static StatusFlag Cast(Success) { return StatusFlag(true); }
-};
-
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
@@ -256,17 +251,6 @@ class ValueOrFailure {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(const T& other) const {
     return value_ != other;
-  }
-
-  template <typename Sink>
-  friend void AbslStringify(Sink& sink, const ValueOrFailure& value) {
-    if (value.ok()) {
-      sink.Append("Success(");
-      sink.Append(absl::StrCat(value));
-      sink.Append(")");
-    } else {
-      sink.Append("Failure");
-    }
   }
 
  private:

@@ -625,7 +625,6 @@ ClientChannel::ClientChannel(
       work_serializer_(std::make_shared<WorkSerializer>(event_engine_)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
-  CHECK(event_engine_.get() != nullptr);
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << this << ": creating client_channel";
   // Set initial keepalive time.
