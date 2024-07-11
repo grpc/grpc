@@ -235,12 +235,11 @@ end:
 namespace grpc_core {
 
 // State held for a pending HTTP request.
-class Oauth2TokenFetcherCredentials::HttpFetchRequest
+class Oauth2TokenFetcherCredentials::HttpFetchRequest final
     : public TokenFetcherCredentials::FetchRequest {
  public:
   HttpFetchRequest(
-      Oauth2TokenFetcherCredentials* creds,
-      grpc_polling_entity* pollent, Timestamp deadline,
+      Oauth2TokenFetcherCredentials* creds, Timestamp deadline,
       absl::AnyInvocable<void(
           absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done)
@@ -248,7 +247,7 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest
     GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
     Ref().release();  // Ref held by HTTP request callback.
     http_request_ = creds->StartHttpRequest(
-        pollent, deadline, &response_, &on_http_response_);
+        creds->pollent(), deadline, &response_, &on_http_response_);
   }
   ~HttpFetchRequest() { grpc_http_response_destroy(&response_); }
 
@@ -298,12 +297,11 @@ UniqueTypeName Oauth2TokenFetcherCredentials::type() const {
 
 OrphanablePtr<TokenFetcherCredentials::FetchRequest>
 Oauth2TokenFetcherCredentials::FetchToken(
-    grpc_polling_entity* pollent, Timestamp deadline,
+    Timestamp deadline,
     absl::AnyInvocable<void(
         absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
-  return MakeOrphanable<HttpFetchRequest>(this, pollent, deadline,
-                                          std::move(on_done));
+  return MakeOrphanable<HttpFetchRequest>(this, deadline, std::move(on_done));
 }
 
 }  // namespace grpc_core

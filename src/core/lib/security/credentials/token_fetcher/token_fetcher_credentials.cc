@@ -74,8 +74,8 @@ TokenFetcherCredentials::GetRequestMetadata(
     // Start a new fetch if needed.
     if (!absl::holds_alternative<OrphanablePtr<FetchRequest>>(token_)) {
       token_ = FetchToken(
-          &pollent_, /*deadline=*/Timestamp::Now() + kTokenRefreshDuration,
-          [self = RefAsSubclass<TokenFetcherCredentials>()](
+          /*deadline=*/Timestamp::Now() + kTokenRefreshDuration,
+          [self = WeakRefAsSubclass<TokenFetcherCredentials>()](
               absl::StatusOr<RefCountedPtr<Token>> token) mutable {
             self->TokenFetchComplete(std::move(token));
           });

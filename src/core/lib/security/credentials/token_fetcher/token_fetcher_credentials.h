@@ -70,9 +70,11 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   // Fetches a token.  The on_done callback will be invoked when complete.
   virtual OrphanablePtr<FetchRequest> FetchToken(
-      grpc_polling_entity* pollent, Timestamp deadline,
+      Timestamp deadline,
       absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
           on_done) = 0;
+
+  grpc_polling_entity* pollent() { return &pollent_; }
 
  private:
   // A call that is waiting for a token fetch request to complete.

@@ -142,7 +142,7 @@ class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
   grpc_core::UniqueTypeName type() const override;
 
   OrphanablePtr<FetchRequest> FetchToken(
-        grpc_polling_entity* pollent, Timestamp deadline,
+        Timestamp deadline,
         absl::AnyInvocable<void(
             absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
             on_done) final;
