@@ -1757,6 +1757,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
 
 struct fake_call_creds : public grpc_call_credentials {
  public:
+  void Orphaned() override {}
+
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
       const grpc_call_credentials::GetRequestMetadataArgs*) override {

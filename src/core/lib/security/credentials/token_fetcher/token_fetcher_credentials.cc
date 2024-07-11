@@ -42,6 +42,12 @@ TokenFetcherCredentials::~TokenFetcherCredentials() {
   grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
 }
 
+void TokenFetcherCredentials::Orphaned() {
+  MutexLock lock(&mu_);
+  auto* fetch_request = absl::get_if<OrphanablePtr<FetchRequest>>(&token_);
+  if (fetch_request != nullptr) fetch_request->reset();
+}
+
 ArenaPromise<absl::StatusOr<ClientMetadataHandle>>
 TokenFetcherCredentials::GetRequestMetadata(
     ClientMetadataHandle initial_metadata, const GetRequestMetadataArgs*) {

@@ -168,6 +168,9 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   grpc_oauth2_token_fetcher_credentials();
   ~grpc_oauth2_token_fetcher_credentials() override;
 
+// FIXME: implement if keeping
+  void Orphaned() override {}
+
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
@@ -226,6 +229,8 @@ class grpc_google_refresh_token_credentials final
 class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
+
+  void Orphaned() override {}
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
