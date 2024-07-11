@@ -34,7 +34,7 @@ CallInitiator TransportTest::CreateCall(
   call.handler.SpawnInfallible(
       "start-call", [this, handler = call.handler]() mutable {
         transport_pair_.client->client_transport()->StartCall(
-            handler.StartCall());
+            handler.StartWithEmptyFilterStack());
         return Empty{};
       });
   return std::move(call.initiator);
@@ -54,7 +54,7 @@ CallHandler TransportTest::TickUntilServerCall() {
 
 void TransportTest::ServerCallDestination::StartCall(
     UnstartedCallHandler handler) {
-  handlers_.push(handler.StartCall());
+  handlers_.push(handler.StartWithEmptyFilterStack());
 }
 
 absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {

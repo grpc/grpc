@@ -407,12 +407,14 @@ class UnstartedCallHandler {
     return spine_->UnprocessedClientInitialMetadata();
   }
 
-  void AddCallStack(RefCountedPtr<CallFilters::Stack> call_filters) {
-    spine_->call_filters().AddStack(std::move(call_filters));
+  // Helper for the very common situation in tests where we want to start a call
+  // with an empty filter stack.
+  CallHandler StartWithEmptyFilterStack() {
+    return StartCall(CallFilters::StackBuilder().Build());
   }
 
-  CallHandler StartCall() {
-    spine_->call_filters().Start();
+  CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters) {
+    spine_->call_filters().SetStack(std::move(call_filters));
     return CallHandler(std::move(spine_));
   }
 

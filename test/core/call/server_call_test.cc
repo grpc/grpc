@@ -49,7 +49,7 @@ class ServerCallTest : public YodelTest {
                      SimpleArenaAllocator()->MakeArena());
     call.initiator.SpawnGuarded(
         "initial_metadata",
-        [this, handler = call.handler.StartCall()]() mutable {
+        [this, handler = call.handler.StartWithEmptyFilterStack()]() mutable {
           return TrySeq(
               handler.PullClientInitialMetadata(),
               [this,
