@@ -1105,10 +1105,20 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_json_lib",
     },
+    "@com_google_protobuf//upb/mini_descriptor:mini_descriptor": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mini_descriptor_lib",
+    },
     "@com_google_protobuf//upb/text:text": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_textformat_lib",
+    },
+    "@com_google_protobuf//upb/wire:wire": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_wire_lib",
     },
     "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
