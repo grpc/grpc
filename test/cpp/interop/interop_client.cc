@@ -605,7 +605,7 @@ bool InteropClient::DoServerCompressedStreaming() {
         absl::StrFormat("(compression=%s; size=%d)",
                         compressions[i] ? "true" : "false", sizes[i]);
 
-    VLOG(2) << "Sending request streaming rpc " << log_suffix;
+    VLOG(2) << "Sending request streaming rpc " << log_suffix.c_str();
 
     ResponseParameters* const response_parameter =
         request.add_response_parameters();
