@@ -122,7 +122,7 @@ static bool epoll_set_init() {
     return false;
   }
 
-  GRPC_TRACE_LOG(polling, INFO) << "grpc epoll fd: " << g_epoll_set.epfd;
+  gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set.epfd);
   gpr_atm_no_barrier_store(&g_epoll_set.num_events, 0);
   gpr_atm_no_barrier_store(&g_epoll_set.cursor, 0);
   return true;
