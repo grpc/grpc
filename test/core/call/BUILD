@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
 
 grpc_package(name = "test/core/call")
 
@@ -79,9 +79,17 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_benchmark(
+grpc_cc_test(
     name = "bm_client_call",
+    size = "small",
     srcs = ["bm_client_call.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = ["benchmark"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",

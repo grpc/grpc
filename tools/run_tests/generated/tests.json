@@ -68,13 +68,13 @@
     "uses_polling": false
   },
   {
-    "args": [
-      "--benchmark_min_time=0.001s"
-    ],
+    "args": [],
     "benchmark": true,
     "ci_platforms": [
       "linux",
-      "posix"
+      "mac",
+      "posix",
+      "windows"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -85,9 +85,11 @@
     "name": "bm_experiments",
     "platforms": [
       "linux",
-      "posix"
+      "mac",
+      "posix",
+      "windows"
     ],
-    "uses_polling": false
+    "uses_polling": true
   },
   {
     "args": [
@@ -96,7 +98,9 @@
     "benchmark": true,
     "ci_platforms": [
       "linux",
-      "posix"
+      "mac",
+      "posix",
+      "windows"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -107,7 +111,9 @@
     "name": "bm_http_client_filter",
     "platforms": [
       "linux",
-      "posix"
+      "mac",
+      "posix",
+      "windows"
     ],
     "uses_polling": false
   },
@@ -202,9 +208,7 @@
     "uses_polling": true
   },
   {
-    "args": [
-      "--benchmark_min_time=0.001s"
-    ],
+    "args": [],
     "benchmark": true,
     "ci_platforms": [
       "linux",
@@ -5838,9 +5842,7 @@
     "uses_polling": false
   },
   {
-    "args": [
-      "--benchmark_min_time=0.001s"
-    ],
+    "args": [],
     "benchmark": true,
     "ci_platforms": [
       "linux",
