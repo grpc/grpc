@@ -144,18 +144,6 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
   }
 }
 
-void HealthProducer::HealthChecker::StartHealthStreamLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthProducer " << producer_.get() << " HealthChecker "
-              << this << ": creating HealthClient for \""
-              << health_check_service_name_ << "\"";
-  }
-  stream_client_ = MakeOrphanable<SubchannelStreamClient>(
-      producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
-      std::make_unique<HealthStreamEventHandler>(Ref()),
-      GRPC_TRACE_FLAG_ENABLED(health_check_client) ? "HealthClient" : nullptr);
-}
-
 void HealthProducer::HealthChecker::NotifyWatchersLocked(
     grpc_connectivity_state state, absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
@@ -310,6 +298,18 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
 
   RefCountedPtr<HealthChecker> health_checker_;
 };
+
+void HealthProducer::HealthChecker::StartHealthStreamLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
+    LOG(INFO) << "HealthProducer " << producer_.get() << " HealthChecker "
+              << this << ": creating HealthClient for \""
+              << health_check_service_name_ << "\"";
+  }
+  stream_client_ = MakeOrphanable<SubchannelStreamClient>(
+      producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
+      std::make_unique<HealthStreamEventHandler>(Ref()),
+      GRPC_TRACE_FLAG_ENABLED(health_check_client) ? "HealthClient" : nullptr);
+}
 
 //
 // HealthProducer::ConnectivityWatcher

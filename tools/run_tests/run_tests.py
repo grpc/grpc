@@ -568,7 +568,13 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", [])
+            # This is to address Apple clang defaults C++98.
+            cmake_args = (
+                ["-DCMAKE_CXX_STANDARD=14"]
+                if platform_string() == "mac"
+                else []
+            )
+            return ("debian11", cmake_args)
         elif compiler == "gcc8":
             return ("gcc_8", [])
         elif compiler == "gcc10.2":
@@ -1777,7 +1783,7 @@ argp.add_argument(
 argp.add_argument(
     "--cmake_configure_extra_args",
     default=[],
-    nargs="+",
+    action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()

@@ -88,30 +88,6 @@
 namespace grpc_core {
 
 //
-// Server::RegisteredMethod
-//
-
-struct Server::RegisteredMethod {
-  RegisteredMethod(
-      const char* method_arg, const char* host_arg,
-      grpc_server_register_method_payload_handling payload_handling_arg,
-      uint32_t flags_arg)
-      : method(method_arg == nullptr ? "" : method_arg),
-        host(host_arg == nullptr ? "" : host_arg),
-        payload_handling(payload_handling_arg),
-        flags(flags_arg) {}
-
-  ~RegisteredMethod() = default;
-
-  const std::string method;
-  const std::string host;
-  const grpc_server_register_method_payload_handling payload_handling;
-  const uint32_t flags;
-  // One request matcher per method.
-  std::unique_ptr<RequestMatcherInterface> matcher;
-};
-
-//
 // Server::RequestMatcherInterface
 //
 
@@ -200,6 +176,30 @@ class Server::RequestMatcherInterface {
 
   // Returns the server associated with this request matcher
   virtual Server* server() const = 0;
+};
+
+//
+// Server::RegisteredMethod
+//
+
+struct Server::RegisteredMethod {
+  RegisteredMethod(
+      const char* method_arg, const char* host_arg,
+      grpc_server_register_method_payload_handling payload_handling_arg,
+      uint32_t flags_arg)
+      : method(method_arg == nullptr ? "" : method_arg),
+        host(host_arg == nullptr ? "" : host_arg),
+        payload_handling(payload_handling_arg),
+        flags(flags_arg) {}
+
+  ~RegisteredMethod() = default;
+
+  const std::string method;
+  const std::string host;
+  const grpc_server_register_method_payload_handling payload_handling;
+  const uint32_t flags;
+  // One request matcher per method.
+  std::unique_ptr<RequestMatcherInterface> matcher;
 };
 
 //
