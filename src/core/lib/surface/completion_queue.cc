@@ -50,7 +50,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"

@@ -30,7 +30,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/util/useful.h"
 
 // -- Common. --

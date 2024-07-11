@@ -22,7 +22,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 
 void grpc_census_call_set_context(grpc_call* call, census_context* context) {

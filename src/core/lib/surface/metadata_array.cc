@@ -23,7 +23,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/surface/api_trace.h"
 
 void grpc_metadata_array_init(grpc_metadata_array* array) {
   GRPC_TRACE_LOG(api, INFO)

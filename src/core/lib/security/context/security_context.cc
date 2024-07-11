@@ -37,7 +37,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 
 // --- grpc_call ---

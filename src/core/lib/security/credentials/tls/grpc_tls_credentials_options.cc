@@ -29,7 +29,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 /// -- Wrapper APIs declared in grpc_security.h -- *

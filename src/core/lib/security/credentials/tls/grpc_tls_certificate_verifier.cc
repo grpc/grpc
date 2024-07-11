@@ -33,7 +33,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
 
