@@ -61,5 +61,5 @@ of extra logs.
 Log noise could consume a lot of resources. We recommend tuning settings for production systems very carefully.
 *	Avoid using GRPC_VERBOSITY flag. This has been deprecated. If this value of this flag is anything other than "ERROR" or "NONE" it will cause log noise.
 *	Always avoid setting --v and --vmodule to anything other than -1 for production systems.
-*	Avoid setting --minloglevel=0 for production systems. Anything greater than 0 should be fine.
+*	Avoid setting --minloglevel=0 for production systems. Anyting greater than 0 should be fine.
 *   If setting this does not eliminate your log noise, look for instances of functions `--v`, `--vmodule`, `absl::SetVLogLevel` and `absl::SetMinLogLevel` in your entire codebase and any libraries/components/configs that you may be using.
