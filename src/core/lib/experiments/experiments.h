@@ -66,6 +66,10 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() { return true; }
+inline bool IsKeepaliveFixEnabled() { return false; }
+inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -99,6 +103,10 @@ inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() { return true; }
+inline bool IsKeepaliveFixEnabled() { return false; }
+inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -131,6 +139,10 @@ inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() { return true; }
+inline bool IsKeepaliveFixEnabled() { return false; }
+inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -163,6 +175,9 @@ enum ExperimentIds {
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineListener,
   kExperimentIdFreeLargeAllocator,
+  kExperimentIdHttp2StatsFix,
+  kExperimentIdKeepaliveFix,
+  kExperimentIdKeepaliveServerFix,
   kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
@@ -211,6 +226,18 @@ inline bool IsEventEngineListenerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdHttp2StatsFix>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
+inline bool IsKeepaliveFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdKeepaliveFix>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
+inline bool IsKeepaliveServerFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdKeepaliveServerFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
 inline bool IsMaxPingsWoDataThrottleEnabled() {

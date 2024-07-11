@@ -73,6 +73,12 @@
     windows: true
 - name: free_large_allocator
   default: false
+- name: http2_stats_fix
+  default: true
+- name: keepalive_fix
+  default: false
+- name: keepalive_server_fix
+  default: false
 - name: max_pings_wo_data_throttle
   default: false
 - name: monitoring_experiment

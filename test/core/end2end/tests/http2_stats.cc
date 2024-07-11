@@ -192,6 +192,9 @@ class NewFakeStatsPlugin : public FakeStatsPlugin {
 
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
+  if (!IsHttp2StatsFixEnabled()) {
+    GTEST_SKIP() << "Test needs http2_stats_fix experiment to be enabled";
+  }
   g_mu = new Mutex();
   g_client_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
   g_server_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
