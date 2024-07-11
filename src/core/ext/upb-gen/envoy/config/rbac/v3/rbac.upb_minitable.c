@@ -135,7 +135,7 @@ const upb_MiniTable envoy__config__rbac__v3__Policy_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_rbac_v3_Permission_submsgs[11] = {
+static const upb_MiniTableSub envoy_config_rbac_v3_Permission_submsgs[10] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__rbac__v3__Permission__Set_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__rbac__v3__Permission__Set_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__HeaderMatcher_msg_init},
@@ -146,10 +146,9 @@ static const upb_MiniTableSub envoy_config_rbac_v3_Permission_submsgs[11] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__PathMatcher_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__Int32Range_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_rbac_v3_Permission__fields[13] = {
+static const upb_MiniTableField envoy_config_rbac_v3_Permission__fields[12] = {
   {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -162,13 +161,12 @@ static const upb_MiniTableField envoy_config_rbac_v3_Permission__fields[13] = {
   {10, UPB_SIZE(12, 16), -9, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {11, UPB_SIZE(12, 16), -9, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {12, UPB_SIZE(12, 16), -9, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(12, 16), -9, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__rbac__v3__Permission_msg_init = {
   &envoy_config_rbac_v3_Permission_submsgs[0],
   &envoy_config_rbac_v3_Permission__fields[0],
-  UPB_SIZE(16, 24), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(16, 24), 12, kUpb_ExtMode_NonExtendable, 12, UPB_FASTTABLE_MASK(120), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max64b},
@@ -183,7 +181,7 @@ const upb_MiniTable envoy__config__rbac__v3__Permission_msg_init = {
     {0x001000080a070052, &upb_pom_1bt_maxmaxb},
     {0x001000080b08005a, &upb_pom_1bt_maxmaxb},
     {0x001000080c090062, &upb_pom_1bt_maxmaxb},
-    {0x001000080d0a006a, &upb_pom_1bt_maxmaxb},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })

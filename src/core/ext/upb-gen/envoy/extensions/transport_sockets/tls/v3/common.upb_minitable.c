@@ -150,25 +150,22 @@ static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_SubjectA
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
 };
 
-static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher__fields[3] = {
+static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher__fields[2] = {
   {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher__fields[0],
-  UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00001a, &upb_pss_1bt},
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[10] = {
+static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[9] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
@@ -178,10 +175,9 @@ static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_Certific
   {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init},
   {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init},
 };
 
-static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[15] = {
+static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[14] = {
   {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -196,13 +192,12 @@ static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_Certif
   {14, UPB_SIZE(56, 16), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {15, UPB_SIZE(60, 96), 0, 7, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {16, UPB_SIZE(64, 104), 70, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {17, UPB_SIZE(68, 112), 71, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init = {
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[0],
-  UPB_SIZE(72, 120), 15, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(72, 112), 14, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -223,13 +218,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateV
   })
 };
 
-const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init = {
-  NULL,
-  NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
-};
-
-static const upb_MiniTable *messages_layout[8] = {
+static const upb_MiniTable *messages_layout[7] = {
   &envoy__extensions__transport_0sockets__tls__v3__TlsParameters_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init,
@@ -237,14 +226,13 @@ static const upb_MiniTable *messages_layout[8] = {
   &envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init,
-  &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_transport_sockets_tls_v3_common_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  8,
+  7,
   0,
   0,
 };

@@ -33,7 +33,6 @@ typedef struct envoy_config_listener_v3_QuicProtocolOptions { upb_Message UPB_PR
 struct envoy_config_core_v3_QuicProtocolOptions;
 struct envoy_config_core_v3_RuntimeFeatureFlag;
 struct envoy_config_core_v3_TypedExtensionConfig;
-struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
 
@@ -219,38 +218,6 @@ UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_has_server_preferre
   const upb_MiniTableField field = {9, UPB_SIZE(44, 80), 72, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_send_disable_active_migration(envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(48, 88), 73, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_listener_v3_QuicProtocolOptions_send_disable_active_migration(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const struct google_protobuf_BoolValue* default_val = NULL;
-  const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {10, UPB_SIZE(48, 88), 73, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_has_send_disable_active_migration(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(48, 88), 73, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_connection_debug_visitor_config(envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(52, 96), 74, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_connection_debug_visitor_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
-  const struct envoy_config_core_v3_TypedExtensionConfig* ret;
-  const upb_MiniTableField field = {11, UPB_SIZE(52, 96), 74, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_has_connection_debug_visitor_config(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(52, 96), 74, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
 
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_quic_protocol_options(envoy_config_listener_v3_QuicProtocolOptions *msg, struct envoy_config_core_v3_QuicProtocolOptions* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -357,30 +324,6 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listen
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy__config__core__v3__TypedExtensionConfig_msg_init, arena);
     if (sub) envoy_config_listener_v3_QuicProtocolOptions_set_server_preferred_address_config(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_send_disable_active_migration(envoy_config_listener_v3_QuicProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {10, UPB_SIZE(48, 88), 73, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE struct google_protobuf_BoolValue* envoy_config_listener_v3_QuicProtocolOptions_mutable_send_disable_active_migration(envoy_config_listener_v3_QuicProtocolOptions* msg, upb_Arena* arena) {
-  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_listener_v3_QuicProtocolOptions_send_disable_active_migration(msg);
-  if (sub == NULL) {
-    sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
-    if (sub) envoy_config_listener_v3_QuicProtocolOptions_set_send_disable_active_migration(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_connection_debug_visitor_config(envoy_config_listener_v3_QuicProtocolOptions *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
-  const upb_MiniTableField field = {11, UPB_SIZE(52, 96), 74, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_QuicProtocolOptions_mutable_connection_debug_visitor_config(envoy_config_listener_v3_QuicProtocolOptions* msg, upb_Arena* arena) {
-  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_listener_v3_QuicProtocolOptions_connection_debug_visitor_config(msg);
-  if (sub == NULL) {
-    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy__config__core__v3__TypedExtensionConfig_msg_init, arena);
-    if (sub) envoy_config_listener_v3_QuicProtocolOptions_set_connection_debug_visitor_config(msg, sub);
   }
   return sub;
 }

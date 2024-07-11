@@ -199,11 +199,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "1ee20b3041a4f093cc393448ab022f770e70b509c8fe8399d6e83017067b2fc3",
-            strip_prefix = "data-plane-api-091cfd044258312a56c632ae1860813b1c0c58bc",
+            sha256 = "ddd3beedda1178a79e0d988f76f362002aced09749452515853f106e22bd2249",
+            strip_prefix = "data-plane-api-78f198cf96ecdc7120ef640406770aa01af775c4",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/78f198cf96ecdc7120ef640406770aa01af775c4.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/78f198cf96ecdc7120ef640406770aa01af775c4.tar.gz",
             ],
         )
 

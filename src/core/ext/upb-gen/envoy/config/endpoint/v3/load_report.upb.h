@@ -16,7 +16,6 @@
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/struct.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "udpa/annotations/versioning.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -216,42 +215,6 @@ UPB_INLINE uint64_t envoy_config_endpoint_v3_UpstreamLocalityStats_total_issued_
                                     &default_val, &ret);
   return ret;
 }
-UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_clear_total_active_connections(envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
-  const upb_MiniTableField field = {9, UPB_SIZE(64, 72), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE uint64_t envoy_config_endpoint_v3_UpstreamLocalityStats_total_active_connections(const envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
-  uint64_t default_val = (uint64_t)0ull;
-  uint64_t ret;
-  const upb_MiniTableField field = {9, UPB_SIZE(64, 72), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_clear_total_new_connections(envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
-  const upb_MiniTableField field = {10, UPB_SIZE(72, 80), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE uint64_t envoy_config_endpoint_v3_UpstreamLocalityStats_total_new_connections(const envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
-  uint64_t default_val = (uint64_t)0ull;
-  uint64_t ret;
-  const upb_MiniTableField field = {10, UPB_SIZE(72, 80), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_clear_total_fail_connections(envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(80, 88), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE uint64_t envoy_config_endpoint_v3_UpstreamLocalityStats_total_fail_connections(const envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
-  uint64_t default_val = (uint64_t)0ull;
-  uint64_t ret;
-  const upb_MiniTableField field = {11, UPB_SIZE(80, 88), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
 
 UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_set_locality(envoy_config_endpoint_v3_UpstreamLocalityStats *msg, struct envoy_config_core_v3_Locality* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -343,18 +306,6 @@ UPB_INLINE struct envoy_config_endpoint_v3_UpstreamEndpointStats* envoy_config_e
 }
 UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_issued_requests(envoy_config_endpoint_v3_UpstreamLocalityStats *msg, uint64_t value) {
   const upb_MiniTableField field = {8, UPB_SIZE(56, 64), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_active_connections(envoy_config_endpoint_v3_UpstreamLocalityStats *msg, uint64_t value) {
-  const upb_MiniTableField field = {9, UPB_SIZE(64, 72), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_new_connections(envoy_config_endpoint_v3_UpstreamLocalityStats *msg, uint64_t value) {
-  const upb_MiniTableField field = {10, UPB_SIZE(72, 80), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE void envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_fail_connections(envoy_config_endpoint_v3_UpstreamLocalityStats *msg, uint64_t value) {
-  const upb_MiniTableField field = {11, UPB_SIZE(80, 88), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
 }
 
