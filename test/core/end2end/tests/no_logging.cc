@@ -73,6 +73,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
       // We ignore VLOG(n) if (n>0) because we dont expect (n>0) in
       // production systems.
       CheckForNoisyLogs(entry);
+    } else if (entry.log_severity() == absl::LogSeverity::kInfo &&
+               entry.verbosity() >= 1) {
+      std::cout << "\nno_logging_tracer " << entry.source_filename() << ":"
+                << entry.source_line() << "\n";
     }
   }
 
