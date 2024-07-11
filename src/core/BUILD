@@ -5298,7 +5298,6 @@ grpc_cc_library(
         "certificate_provider_factory",
         "certificate_provider_registry",
         "channel_args",
-        "channel_args_endpoint_config",
         "channel_creds_registry",
         "channel_fwd",
         "closure",

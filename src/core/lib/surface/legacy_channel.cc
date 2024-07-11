@@ -37,7 +37,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -108,10 +107,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
                                 .value_or(CoreConfiguration::Get()
                                               .resolver_registry()
                                               .GetDefaultAuthority(target));
-    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-        args);
-    experimental::StatsPluginChannelScope scope(target, authority,
-                                                endpoint_config);
+    experimental::StatsPluginChannelScope scope(target, authority);
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
     // Add per-channel stats plugins.

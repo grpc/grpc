@@ -17,7 +17,6 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
@@ -27,10 +26,9 @@ namespace experimental {
 // plugins.
 class StatsPluginChannelScope {
  public:
-  StatsPluginChannelScope(
-      absl::string_view target, absl::string_view default_authority,
-      const grpc_event_engine::experimental::EndpointConfig& args)
-      : target_(target), default_authority_(default_authority), args_(args) {}
+  StatsPluginChannelScope(absl::string_view target,
+                          absl::string_view default_authority)
+      : target_(target), default_authority_(default_authority) {}
 
   /// Returns the target used for creating the channel in the canonical form.
   /// (Canonicalized target definition -
@@ -38,21 +36,13 @@ class StatsPluginChannelScope {
   absl::string_view target() const { return target_; }
   /// Returns the default authority for the channel.
   absl::string_view default_authority() const { return default_authority_; }
-  /// Returns channel arguments.
-  // TODO(roth, ctiller, yashkt): Find a better representation for
-  // channel args before de-experimentalizing this API.
-  const grpc_event_engine::experimental::EndpointConfig& args() const {
-    return args_;
-  }
 
  private:
   // Disable copy constructor and copy-assignment operator.
   StatsPluginChannelScope(const StatsPluginChannelScope&) = delete;
   StatsPluginChannelScope& operator=(const StatsPluginChannelScope&) = delete;
-
   absl::string_view target_;
   absl::string_view default_authority_;
-  const grpc_event_engine::experimental::EndpointConfig& args_;
 };
 
 }  // namespace experimental

@@ -47,11 +47,6 @@
   expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: call_tracer_in_transport
-  description: Transport directly passes byte counts to CallTracer.
-  expiry: 2024/09/30
-  owner: roth@google.com
-  test_tags: []
 - name: canary_client_privacy
   description:
     If set, canary client privacy

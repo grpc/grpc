@@ -27,9 +27,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_tracer_in_transport =
-    "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -124,8 +121,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
-    {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -194,9 +189,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_tracer_in_transport =
-    "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -291,8 +283,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
-    {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -361,9 +351,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_tracer_in_transport =
-    "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -458,8 +445,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
-    {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
