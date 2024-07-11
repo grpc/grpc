@@ -31,6 +31,7 @@
 #include "absl/log/log.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -137,8 +138,8 @@ class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
 void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
                                                const DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::Run() " << this << " Scheduling callback ["
-              << location.file() << ":" << location.line() << "]";
+    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
+            this, location.file(), location.line());
   }
   // Increment queue size for the new callback and owner count to attempt to
   // take ownership of the WorkSerializer.
@@ -163,7 +164,7 @@ void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
     CallbackWrapper* cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
     if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-      LOG(INFO) << "  Scheduling on queue : item " << cb_wrapper;
+      gpr_log(GPR_INFO, "  Scheduling on queue : item %p", cb_wrapper);
     }
     queue_.Push(&cb_wrapper->mpscq_node);
   }
@@ -174,9 +175,9 @@ void WorkSerializer::LegacyWorkSerializer::Schedule(
   CallbackWrapper* cb_wrapper =
       new CallbackWrapper(std::move(callback), location);
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::Schedule() " << this
-              << " Scheduling callback " << cb_wrapper << " ["
-              << location.file() << ":" << location.line() << "]";
+    gpr_log(GPR_INFO,
+            "WorkSerializer::Schedule() %p Scheduling callback %p [%s:%d]",
+            this, cb_wrapper, location.file(), location.line());
   }
   refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_acq_rel);
   queue_.Push(&cb_wrapper->mpscq_node);
@@ -184,7 +185,7 @@ void WorkSerializer::LegacyWorkSerializer::Schedule(
 
 void WorkSerializer::LegacyWorkSerializer::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::Orphan() " << this;
+    gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
   const uint64_t prev_ref_pair =
       refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
@@ -198,7 +199,7 @@ void WorkSerializer::LegacyWorkSerializer::Orphan() {
 // execute all the scheduled callbacks.
 void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::DrainQueue() " << this;
+    gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
   }
   // Attempt to take ownership of the WorkSerializer. Also increment the queue
   // size as required by `DrainQueueOwned()`.
@@ -219,7 +220,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
 
 void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::DrainQueueOwned() " << this;
+    gpr_log(GPR_INFO, "WorkSerializer::DrainQueueOwned() %p", this);
   }
   while (true) {
     auto prev_ref_pair = refs_.fetch_sub(MakeRefPair(0, 1));
@@ -266,9 +267,9 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
           << "  Queue returned nullptr, trying again";
     }
     if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-      LOG(INFO) << "  Running item " << cb_wrapper
-                << " : callback scheduled at [" << cb_wrapper->location.file()
-                << ":" << cb_wrapper->location.line() << "]";
+      gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
+              cb_wrapper, cb_wrapper->location.file(),
+              cb_wrapper->location.line());
     }
     cb_wrapper->callback();
     delete cb_wrapper;
@@ -406,8 +407,8 @@ void WorkSerializer::DispatchingWorkSerializer::Orphan() {
 void WorkSerializer::DispatchingWorkSerializer::Run(
     std::function<void()> callback, const DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer[" << this << "] Scheduling callback ["
-              << location.file() << ":" << location.line() << "]";
+    gpr_log(GPR_INFO, "WorkSerializer[%p] Scheduling callback [%s:%d]", this,
+            location.file(), location.line());
   }
   global_stats().IncrementWorkSerializerItemsEnqueued();
   MutexLock lock(&mu_);
@@ -439,8 +440,8 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   // queue since processing_ is stored in reverse order.
   auto& cb = processing_.back();
   if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer[" << this << "] Executing callback ["
-              << cb.location.file() << ":" << cb.location.line() << "]";
+    gpr_log(GPR_INFO, "WorkSerializer[%p] Executing callback [%s:%d]", this,
+            cb.location.file(), cb.location.line());
   }
   // Run the work item.
   const auto start = std::chrono::steady_clock::now();
