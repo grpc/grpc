@@ -220,13 +220,12 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
     handler_done.WaitForNotification();
     initiator_done.WaitForNotification();
   }
-  call.initiator.SpawnInfallible("done",
-                                 [initiator = call.initiator]() mutable {
-                                   initiator.Cancel();
-                                   return Empty{};
-                                 });
-  call.handler.SpawnInfallible("done", [handler = call.handler]() mutable {
-    handler.PushServerTrailingMetadata(
+  call.initiator.SpawnInfallible("done", [&]() {
+    call.initiator.Cancel();
+    return Empty{};
+  });
+  call.handler.SpawnInfallible("done", [&]() {
+    call.handler.PushServerTrailingMetadata(
         CancelledServerMetadataFromStatus(absl::CancelledError()));
     return Empty{};
   });
