@@ -31,6 +31,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
@@ -268,18 +269,18 @@ void grpc_call_cancel_internal(grpc_call* call);
 // Given the top call_element, get the call object.
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 
-void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
-                         size_t nops);
+void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
+                         const grpc_op* ops, size_t nops);
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
 void* grpc_call_tracer_get(grpc_call* call);
 
-#define GRPC_CALL_LOG_BATCH(ops, nops)                    \
-  do {                                                    \
-    if (GRPC_TRACE_FLAG_ENABLED(api)) {                   \
-      grpc_call_log_batch(__FILE__, __LINE__, ops, nops); \
-    }                                                     \
+#define GRPC_CALL_LOG_BATCH(sev, ops, nops) \
+  do {                                      \
+    if (GRPC_TRACE_FLAG_ENABLED(api)) {     \
+      grpc_call_log_batch(sev, ops, nops);  \
+    }                                       \
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
