@@ -6,7 +6,7 @@
 # https://developers.google.com/open-source/licenses/bsd
 
 load(
-    "//upb/bazel:build_defs.bzl",
+    "//bazel:build_defs.bzl",
     "make_shell_script",
 )
 load(
