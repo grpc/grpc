@@ -322,24 +322,21 @@ void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
-  if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-    GRPC_TRACE_LOG(event_engine_dns, INFO)
-        << "WindowsEventEngine::" << this << " creating AresResolver";
-    auto ares_resolver = AresResolver::CreateAresResolver(
-        options.dns_server,
-        std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
-        shared_from_this());
-    if (!ares_resolver.ok()) {
-      return ares_resolver.status();
-    }
-    return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
-        std::move(*ares_resolver));
-#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
   }
+  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+      std::move(*ares_resolver));
+#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   GRPC_TRACE_LOG(event_engine_dns, INFO)
       << "WindowsEventEngine::" << this << " creating NativeWindowsDNSResolver";
   return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
