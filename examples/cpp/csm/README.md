@@ -5,7 +5,7 @@ This CSM example builds on the [Hello World Example](https://github.com/grpc/grp
 ## Configuration
 
 The client takes the following command-line arguments -
-* target - By default, the client tries to connect to the xDS "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overriden to change the target.
+* target - By default, the client tries to connect to the xDS "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overridden to change the target.
 * cookie_name - session affinity cookie name. Defaults to "GSSA"
 * delay_s - delay (in seconds) between the RPCs. Default value is 5
 
