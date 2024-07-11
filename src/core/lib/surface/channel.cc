@@ -175,8 +175,8 @@ void grpc_channel_get_info(grpc_channel* channel,
 void grpc_channel_reset_connect_backoff(grpc_channel* channel) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) << "grpc_channel_reset_connect_backoff(channel=%p)", 1,
-                 (channel));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_reset_connect_backoff(channel=" << channel << ")";
   grpc_core::Channel::FromC(channel)->ResetConnectionBackoff();
 }
 
@@ -188,9 +188,9 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) <<
-      "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
-      (channel, try_to_connect));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_check_connectivity_state(channel=" << channel
+      << ", try_to_connect=" << try_to_connect << ")";
   return grpc_core::Channel::FromC(channel)->CheckConnectivityState(
       try_to_connect);
 }
@@ -200,12 +200,13 @@ void grpc_channel_watch_connectivity_state(
     gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) <<
-      "grpc_channel_watch_connectivity_state(channel=%p, last_observed_state=%d, deadline=gpr_timespec { tv_sec: %" PRId64
-      ", tv_nsec: %d, clock_type: %d }, cq=%p, tag=%p)",
-      7,
-      (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
-       (int)deadline.clock_type, cq, tag));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_watch_connectivity_state(channel=" << channel
+      << ", last_observed_state=" << (int)last_observed_state
+      << ", deadline=gpr_timespec { tv_sec: " << deadline.tv_sec
+      << ", tv_nsec: " << deadline.tv_nsec
+      << ", clock_type: " << (int)deadline.clock_type << " }, cq=" << cq
+      << ", tag=" << tag << ")";
   return grpc_core::Channel::FromC(channel)->WatchConnectivityState(
       last_observed_state, grpc_core::Timestamp::FromTimespecRoundUp(deadline),
       cq, tag);
@@ -214,8 +215,9 @@ void grpc_channel_watch_connectivity_state(
 void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
                        void* tag, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO) << "grpc_channel_ping(channel=%p, cq=%p, tag=%p, reserved=%p)", 4,
-                 (channel, cq, tag, reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_ping(channel=" << channel << ", cq=" << cq
+      << ", tag=" << tag << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   grpc_core::Channel::FromC(channel)->Ping(cq, tag);
 }
