@@ -18,10 +18,10 @@
 #include <memory>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
@@ -77,7 +77,8 @@ class InprocServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
-    LOG(INFO) << "inproc server op: " << grpc_transport_op_string(op);
+    gpr_log(GPR_INFO, "inproc server op: %s",
+            grpc_transport_op_string(op).c_str());
     if (op->start_connectivity_watch != nullptr) {
       connected_state()->AddWatcher(op->start_connectivity_watch_state,
                                     std::move(op->start_connectivity_watch));
@@ -239,7 +240,8 @@ InprocServerTransport::MakeClientTransport() {
 
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
-  LOG(ERROR) << why << ": " << error.message();
+  gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
+          std::string(error.message()).c_str());
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {

@@ -22,7 +22,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -30,6 +29,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
@@ -281,8 +281,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
       call_handler.PullClientInitialMetadata(),
       [send_fragment](ClientMetadataHandle md) mutable {
         if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-          LOG(INFO) << "CHAOTIC_GOOD: Sending initial metadata: "
-                    << md->DebugString();
+          gpr_log(GPR_INFO, "CHAOTIC_GOOD: Sending initial metadata: %s",
+                  md->DebugString().c_str());
         }
         ClientFragmentFrame frame;
         frame.headers = std::move(md);
