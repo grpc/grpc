@@ -70,6 +70,13 @@ class UniqueTypeName {
     std::string* name_;
   };
 
+  // Copyable.
+  UniqueTypeName(const UniqueTypeName& other) : name_(other.name_) {}
+  UniqueTypeName& operator=(const UniqueTypeName& other) {
+    name_ = other.name_;
+    return *this;
+  }
+
   bool operator==(const UniqueTypeName& other) const {
     return name_.data() == other.name_.data();
   }
@@ -78,12 +85,6 @@ class UniqueTypeName {
   }
   bool operator<(const UniqueTypeName& other) const {
     return name_.data() < other.name_.data();
-  }
-
-  template <typename H>
-  friend H AbslHashValue(H h, const UniqueTypeName& name) {
-    return H::combine(std::move(h),
-                      static_cast<const void*>(name.name_.data()));
   }
 
   int Compare(const UniqueTypeName& other) const {
