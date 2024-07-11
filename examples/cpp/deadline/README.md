@@ -22,7 +22,7 @@ $ ./client
 
 To simulate the test scenario, the test server implements following functionalities:
 - Response Delay: The server intentionally delays its response for `delay` request messages to induce timeout conditions.
-- Deadline Propagation: Upon receiving a request with the `[propagate me]` prefix, the server forwards it back to itselt.
+- Deadline Propagation: Upon receiving a request with the `[propagate me]` prefix, the server forwards it back to itself.
   This simulates the propagation of deadlines within the system.
 
 If things go smoothly, you will see the client output:
