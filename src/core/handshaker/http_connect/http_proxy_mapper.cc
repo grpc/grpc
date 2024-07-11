@@ -41,6 +41,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
@@ -191,9 +192,9 @@ absl::optional<grpc_resolved_address> GetAddressProxyServer(
   }
   auto address = StringToSockaddr(*address_value);
   if (!address.ok()) {
-    LOG(ERROR) << "cannot parse value of '"
-               << std::string(HttpProxyMapper::kAddressProxyEnvVar)
-               << "' env var. Error: " << address.status().ToString();
+    gpr_log(GPR_ERROR, "cannot parse value of '%s' env var. Error: %s",
+            HttpProxyMapper::kAddressProxyEnvVar,
+            address.status().ToString().c_str());
     return absl::nullopt;
   }
   return *address;
