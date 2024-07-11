@@ -24,7 +24,6 @@
 #include <cstddef>
 
 #include "absl/log/check.h"
-#include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
@@ -37,6 +36,16 @@ T Clamp(T val, T min, T max) {
   if (val < min) return min;
   if (max < val) return max;
   return val;
+}
+
+/// rotl, rotr assume x is unsigned
+template <typename T>
+constexpr T RotateLeft(T x, T n) {
+  return ((x << n) | (x >> (sizeof(x) * 8 - n)));
+}
+template <typename T>
+constexpr T RotateRight(T x, T n) {
+  return ((x >> n) | (x << (sizeof(x) * 8 - n)));
 }
 
 // Set the n-th bit of i
@@ -188,7 +197,7 @@ inline int64_t SaturatingAdd(int64_t a, int64_t b) {
 }
 
 inline uint32_t MixHash32(uint32_t a, uint32_t b) {
-  return absl::rotl(a, 2u) ^ b;
+  return RotateLeft(a, 2u) ^ b;
 }
 
 inline uint32_t RoundUpToPowerOf2(uint32_t v) {
