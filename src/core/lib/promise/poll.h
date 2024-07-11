@@ -32,18 +32,12 @@ namespace grpc_core {
 // Allows writing 'return Pending{}' and with automatic conversions gets
 // upgraded to a Poll<> object.
 struct Pending {};
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Pending&,
-                                                            const Pending&) {
-  return true;
-}
+inline bool operator==(const Pending&, const Pending&) { return true; }
 
 // A type that contains no value. Useful for simulating 'void' in promises that
 // always need to return some kind of value.
 struct Empty {};
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Empty&,
-                                                            const Empty&) {
-  return true;
-}
+inline bool operator==(const Empty&, const Empty&) { return true; }
 
 // The result of polling a Promise once.
 //
@@ -53,17 +47,15 @@ template <typename T>
 class Poll {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Pending) : ready_(false) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll() : ready_(false) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(const Poll& other)
-      : ready_(other.ready_) {
+  Poll(Pending) : ready_(false) {}
+  Poll() : ready_(false) {}
+  Poll(const Poll& other) : ready_(other.ready_) {
     if (ready_) Construct(&value_, other.value_);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Poll&& other) noexcept
-      : ready_(other.ready_) {
+  Poll(Poll&& other) noexcept : ready_(other.ready_) {
     if (ready_) Construct(&value_, std::move(other.value_));
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll& operator=(const Poll& other) {
+  Poll& operator=(const Poll& other) {
     if (ready_) {
       if (other.ready_) {
         value_ = other.value_;
@@ -77,7 +69,7 @@ class Poll {
     }
     return *this;
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll& operator=(Poll&& other) noexcept {
+  Poll& operator=(Poll&& other) noexcept {
     if (ready_) {
       if (other.ready_) {
         value_ = std::move(other.value_);
@@ -93,36 +85,34 @@ class Poll {
   }
   template <typename U>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(U value) : ready_(true) {
+  Poll(U value) : ready_(true) {
     Construct(&value_, std::move(value));
   }
   // NOLINTNEXTLINE(google-explicit-constructor)
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(T&& value) : ready_(true) {
-    Construct(&value_, std::forward<T>(value));
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Poll() {
+  Poll(T&& value) : ready_(true) { Construct(&value_, std::forward<T>(value)); }
+  ~Poll() {
     if (ready_) Destruct(&value_);
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool pending() const { return !ready_; }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
+  bool pending() const { return !ready_; }
+  bool ready() const { return ready_; }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
+  T& value() {
     DCHECK(ready());
     return value_;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
+  const T& value() const {
     DCHECK(ready());
     return value_;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* value_if_ready() {
+  T* value_if_ready() {
     if (ready()) return &value_;
     return nullptr;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T* value_if_ready() const {
+  const T* value_if_ready() const {
     if (ready()) return &value_;
     return nullptr;
   }
@@ -153,31 +143,31 @@ template <>
 class Poll<Empty> {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Pending) : ready_(false) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll() : ready_(false) {}
+  Poll(Pending) : ready_(false) {}
+  Poll() : ready_(false) {}
   Poll(const Poll& other) = default;
   Poll(Poll&& other) noexcept = default;
   Poll& operator=(const Poll& other) = default;
   Poll& operator=(Poll&& other) = default;
   // NOLINTNEXTLINE(google-explicit-constructor)
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll(Empty) : ready_(true) {}
+  Poll(Empty) : ready_(true) {}
   ~Poll() = default;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool pending() const { return !ready_; }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
+  bool pending() const { return !ready_; }
+  bool ready() const { return ready_; }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty value() const {
+  Empty value() const {
     DCHECK(ready());
     return Empty{};
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty* value_if_ready() {
+  Empty* value_if_ready() {
     static Empty value;
     if (ready()) return &value;
     return nullptr;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const Empty* value_if_ready() const {
+  const Empty* value_if_ready() const {
     static Empty value;
     if (ready()) return &value;
     return nullptr;
@@ -205,22 +195,17 @@ class Poll<Poll<T>>;
 template <typename T>
 struct PollTraits {
   using Type = T;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static constexpr bool is_poll() {
-    return false;
-  }
+  static constexpr bool is_poll() { return false; }
 };
 
 template <typename T>
 struct PollTraits<Poll<T>> {
   using Type = T;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static constexpr bool is_poll() {
-    return true;
-  }
+  static constexpr bool is_poll() { return true; }
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(const Poll<T>& a,
-                                                     const Poll<T>& b) {
+bool operator==(const Poll<T>& a, const Poll<T>& b) {
   if (a.pending() && b.pending()) return true;
   if (a.ready() && b.ready()) return a.value() == b.value();
   return false;
@@ -231,7 +216,7 @@ struct PollCastImpl;
 
 template <typename T, typename U>
 struct PollCastImpl<T, Poll<U>> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(Poll<U>&& poll) {
+  static Poll<T> Cast(Poll<U>&& poll) {
     if (poll.pending()) return Pending{};
     return static_cast<T>(std::move(poll.value()));
   }
@@ -239,27 +224,21 @@ struct PollCastImpl<T, Poll<U>> {
 
 template <typename T, typename U>
 struct PollCastImpl<T, U, std::enable_if<!PollTraits<U>::is_poll()>> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(U&& poll) {
-    return Poll<T>(T(std::move(poll)));
-  }
+  static Poll<T> Cast(U&& poll) { return Poll<T>(T(std::move(poll))); }
 };
 
 template <typename T>
 struct PollCastImpl<T, T> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(T&& poll) {
-    return Poll<T>(std::move(poll));
-  }
+  static Poll<T> Cast(T&& poll) { return Poll<T>(std::move(poll)); }
 };
 
 template <typename T>
 struct PollCastImpl<T, Poll<T>> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<T> Cast(Poll<T>&& poll) {
-    return std::move(poll);
-  }
+  static Poll<T> Cast(Poll<T>&& poll) { return std::move(poll); }
 };
 
 template <typename T, typename U>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<T> poll_cast(U poll) {
+Poll<T> poll_cast(U poll) {
   return PollCastImpl<T, U>::Cast(std::move(poll));
 }
 

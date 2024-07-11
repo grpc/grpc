@@ -30,14 +30,12 @@ namespace promise_detail {
 
 // Convert with a move the input status to an absl::Status.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION absl::Status IntoStatus(
-    absl::StatusOr<T>* status) {
+absl::Status IntoStatus(absl::StatusOr<T>* status) {
   return std::move(status->status());
 }
 
 // Convert with a move the input status to an absl::Status.
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::Status IntoStatus(
-    absl::Status* status) {
+inline absl::Status IntoStatus(absl::Status* status) {
   return std::move(*status);
 }
 
@@ -46,14 +44,10 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::Status IntoStatus(
 // Return true if the status represented by the argument is ok, false if not.
 // By implementing this function for other, non-absl::Status types, those types
 // can participate in TrySeq as result types that affect control flow.
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(
-    const absl::Status& status) {
-  return status.ok();
-}
+inline bool IsStatusOk(const absl::Status& status) { return status.ok(); }
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool IsStatusOk(
-    const absl::StatusOr<T>& status) {
+inline bool IsStatusOk(const absl::StatusOr<T>& status) {
   return status.ok();
 }
 
@@ -62,38 +56,29 @@ struct StatusCastImpl;
 
 template <typename To>
 struct StatusCastImpl<To, To> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static To Cast(To&& t) {
-    return std::move(t);
-  }
+  static To Cast(To&& t) { return std::move(t); }
 };
 
 template <typename To>
 struct StatusCastImpl<To, const To&> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static To Cast(const To& t) { return t; }
+  static To Cast(const To& t) { return t; }
 };
 
 template <typename T>
 struct StatusCastImpl<absl::Status, absl::StatusOr<T>> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(
-      absl::StatusOr<T>&& t) {
+  static absl::Status Cast(absl::StatusOr<T>&& t) {
     return std::move(t.status());
   }
 };
 
 template <typename T>
 struct StatusCastImpl<absl::Status, absl::StatusOr<T>&> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(
-      const absl::StatusOr<T>& t) {
-    return t.status();
-  }
+  static absl::Status Cast(const absl::StatusOr<T>& t) { return t.status(); }
 };
 
 template <typename T>
 struct StatusCastImpl<absl::Status, const absl::StatusOr<T>&> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(
-      const absl::StatusOr<T>& t) {
-    return t.status();
-  }
+  static absl::Status Cast(const absl::StatusOr<T>& t) { return t.status(); }
 };
 
 // StatusCast<> allows casting from one status-bearing type to another,
@@ -103,7 +88,7 @@ struct StatusCastImpl<absl::Status, const absl::StatusOr<T>&> {
 // For cases where the status is guaranteed to be a failure (and hence not
 // needing to preserve values) see FailureStatusCast<> below.
 template <typename To, typename From>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION To StatusCast(From&& from) {
+To StatusCast(From&& from) {
   return StatusCastImpl<To, From>::Cast(std::forward<From>(from));
 }
 
@@ -112,22 +97,16 @@ struct FailureStatusCastImpl : public StatusCastImpl<To, From> {};
 
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, absl::Status> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
-      absl::Status&& t) {
-    return std::move(t);
-  }
+  static absl::StatusOr<T> Cast(absl::Status&& t) { return std::move(t); }
 };
 
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, const absl::Status&> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
-      const absl::Status& t) {
-    return t;
-  }
+  static absl::StatusOr<T> Cast(const absl::Status& t) { return t; }
 };
 
 template <typename To, typename From>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION To FailureStatusCast(From&& from) {
+To FailureStatusCast(From&& from) {
   DCHECK(!IsStatusOk(from));
   return FailureStatusCastImpl<To, From>::Cast(std::forward<From>(from));
 }

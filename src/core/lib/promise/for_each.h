@@ -47,17 +47,14 @@ struct Done;
 
 template <>
 struct Done<absl::Status> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Make(
-      bool cancelled) {
+  static absl::Status Make(bool cancelled) {
     return cancelled ? absl::CancelledError() : absl::OkStatus();
   }
 };
 
 template <>
 struct Done<StatusFlag> {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static StatusFlag Make(bool cancelled) {
-    return StatusFlag(!cancelled);
-  }
+  static StatusFlag Make(bool cancelled) { return StatusFlag(!cancelled); }
 };
 
 template <typename T, typename SfinaeVoid = void>
@@ -73,23 +70,20 @@ template <typename T>
 struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
   using Value = typename T::value_type;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(const T& t) {
+  static NextValueType Type(const T& t) {
     if (t.has_value()) return NextValueType::kValue;
     if (t.cancelled()) return NextValueType::kError;
     return NextValueType::kEndOfStream;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(T& t) {
-    return *t;
-  }
+  static Value& MutableValue(T& t) { return *t; }
 };
 
 template <typename T>
 struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
   using Value = T;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
-      const ValueOrFailure<absl::optional<T>>& t) {
+  static NextValueType Type(const ValueOrFailure<absl::optional<T>>& t) {
     if (t.ok()) {
       if (t.value().has_value()) return NextValueType::kValue;
       return NextValueType::kEndOfStream;
@@ -97,8 +91,7 @@ struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
     return NextValueType::kError;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(
-      ValueOrFailure<absl::optional<T>>& t) {
+  static Value& MutableValue(ValueOrFailure<absl::optional<T>>& t) {
     return **t;
   }
 };
@@ -117,14 +110,13 @@ class ForEach {
  public:
   using Result =
       typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
-                                               DebugLocation whence = {})
+  ForEach(Reader reader, Action action, DebugLocation whence = {})
       : reader_(std::move(reader)),
         action_factory_(std::move(action)),
         whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~ForEach() {
+  ~ForEach() {
     if (reading_next_) {
       Destruct(&reader_next_);
     } else {
@@ -171,7 +163,7 @@ class ForEach {
                         ":", whence_.line(), "]: ");
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollReaderNext() {
+  Poll<Result> PollReaderNext() {
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%s PollReaderNext", DebugTag().c_str());
     }
@@ -241,8 +233,8 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION for_each_detail::ForEach<Reader, Action>
-ForEach(Reader reader, Action action, DebugLocation whence = {}) {
+for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action,
+                                                 DebugLocation whence = {}) {
   return for_each_detail::ForEach<Reader, Action>(std::move(reader),
                                                   std::move(action), whence);
 }
