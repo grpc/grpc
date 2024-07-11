@@ -504,7 +504,6 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/strings:str_format",
-        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
@@ -523,7 +522,6 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
-        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
