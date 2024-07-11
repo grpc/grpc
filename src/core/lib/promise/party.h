@@ -42,7 +42,6 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/util/useful.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -122,11 +121,9 @@ class PartySyncUsingAtomics {
       // Now update prev_state to be what we want the CAS to see below.
       prev_state &= kRefMask | kLocked | kAllocatedMask;
       // For each wakeup bit...
-      while (wakeups != 0) {
-        uint64_t t = LowestOneBit(wakeups);
-        const int i = CountTrailingZeros(t);
-        wakeups ^= t;
+      for (size_t i = 0; wakeups != 0; i++, wakeups >>= 1) {
         // If the bit is not set, skip.
+        if ((wakeups & 1) == 0) continue;
         if (poll_one_participant(i)) {
           const uint64_t allocated_bit = (1u << i << kAllocatedShift);
           prev_state &= ~allocated_bit;
