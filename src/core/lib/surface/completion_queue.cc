@@ -507,10 +507,9 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_completion_queue_functor* shutdown_callback) {
   grpc_completion_queue* cq;
 
-  GRPC_API_TRACE(
-      "grpc_completion_queue_create_internal(completion_type=%d, "
-      "polling_type=%d)",
-      2, (completion_type, polling_type));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_completion_queue_create_internal(completion_type="
+      << completion_type << ", polling_type=" << polling_type << ")";
 
   switch (completion_type) {
     case GRPC_CQ_NEXT:
@@ -696,10 +695,10 @@ static void cq_end_op_for_next(
   if (GRPC_TRACE_FLAG_ENABLED(api) ||
       (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok())) {
     std::string errmsg = grpc_core::StatusToString(error);
-    GRPC_API_TRACE(
-        "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
-        "done=%p, done_arg=%p, storage=%p)",
-        6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
+    GRPC_TRACE_LOG(api, INFO)
+        << "cq_end_op_for_next(cq=" << cq << ", tag=" << tag
+        << ", error=" << errmsg.c_str() << ", done=" << done
+        << ", done_arg=" << done_arg << ", storage=" << storage << ")";
     if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
       LOG(INFO) << "Operation failed: tag=" << tag << ", error=" << errmsg;
     }
@@ -769,10 +768,10 @@ static void cq_end_op_for_pluck(
   if (GRPC_TRACE_FLAG_ENABLED(api) ||
       (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok())) {
     std::string errmsg = grpc_core::StatusToString(error);
-    GRPC_API_TRACE(
-        "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
-        "done=%p, done_arg=%p, storage=%p)",
-        6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
+    GRPC_TRACE_LOG(api, INFO)
+        << "cq_end_op_for_pluck(cq=" << cq << ", tag=" << tag
+        << ", error=" << errmsg.c_str() << ", done=" << done
+        << ", done_arg=" << done_arg << ", storage=" << storage << ")";
     if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
       LOG(ERROR) << "Operation failed: tag=" << tag << ", error=" << errmsg;
     }
@@ -829,10 +828,10 @@ static void cq_end_op_for_callback(
   if (GRPC_TRACE_FLAG_ENABLED(api) ||
       (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok())) {
     std::string errmsg = grpc_core::StatusToString(error);
-    GRPC_API_TRACE(
-        "cq_end_op_for_callback(cq=%p, tag=%p, error=%s, "
-        "done=%p, done_arg=%p, storage=%p)",
-        6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
+    GRPC_TRACE_LOG(api, INFO)
+        << "cq_end_op_for_callback(cq=" << cq << ", tag=" << tag
+        << ", error=" << errmsg.c_str() << ", done=" << done
+        << ", done_arg=" << done_arg << ", storage=" << storage << ")";
     if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
       LOG(ERROR) << "Operation failed: tag=" << tag << ", error=" << errmsg;
     }
@@ -928,7 +927,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
   parts.push_back("PENDING TAGS:");
   gpr_mu_lock(cq->mu);
   for (size_t i = 0; i < cq->outstanding_tag_count; i++) {
-    parts.push_back(absl::StrFormat(" %p", cq->outstanding_tags[i]));
+    parts.push_back(absl::StrFormat(" " < < < < "", cq->outstanding_tags[i]));
   }
   gpr_mu_unlock(cq->mu);
   VLOG(2) << absl::StrJoin(parts, "");
@@ -942,15 +941,8 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   grpc_event ret;
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
 
-  GRPC_API_TRACE(
-      "grpc_completion_queue_next("
-      "cq=%p, "
-      "deadline=gpr_timespec { tv_sec: %" PRId64
-      ", tv_nsec: %d, clock_type: %d }, "
-      "reserved=%p)",
-      5,
-      (cq, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-       reserved));
+  GRPC_TRACE_LOG(api, INFO) <<
+      "grpc_completion_queue_next(cq="<<cq <<", deadline=gpr_timespec { tv_sec: "<<deadline.tv_sec<<", tv_nsec: "<< deadline.tv_nsec<<", clock_type: "<< int)deadline.clock_type<<" }, reserved="<< reserved<<")";
   CHECK(!reserved);
 
   dump_pending_tags(cq);
@@ -1186,15 +1178,12 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
   if (GRPC_TRACE_FLAG_ENABLED(queue_pluck)) {
-    GRPC_API_TRACE(
-        "grpc_completion_queue_pluck("
-        "cq=%p, tag=%p, "
-        "deadline=gpr_timespec { tv_sec: %" PRId64
-        ", tv_nsec: %d, clock_type: %d }, "
-        "reserved=%p)",
-        6,
-        (cq, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-         reserved));
+    GRPC_TRACE_LOG(api, INFO)
+        << "grpc_completion_queue_pluck(cq=" << cq << ", tag=" << tag
+        << ", deadline=gpr_timespec { tv_sec: " << deadline.tv_sec
+        << ", tv_nsec: " << deadline.tv_nsec
+        << ", clock_type: " << (int)deadline.clock_type
+        << " }, reserved=" << reserved << ")";
   }
   CHECK(!reserved);
 
@@ -1382,12 +1371,13 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_completion_queue_shutdown(cq=%p)", 1, (cq));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_completion_queue_shutdown(cq=" << cq << ")";
   cq->vtable->shutdown(cq);
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
-  GRPC_API_TRACE("grpc_completion_queue_destroy(cq=%p)", 1, (cq));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_completion_queue_destroy(cq=" << cq << ")";
   grpc_completion_queue_shutdown(cq);
 
   grpc_core::ExecCtx exec_ctx;
