@@ -72,16 +72,17 @@ class MockActivity : public Activity, public Wakeable {
 namespace filters_detail {
 
 TEST(LayoutTest, Empty) {
-  Layout<ClientMetadataHandle> l;
+  Layout<FallibleOperator<ClientMetadataHandle>> l;
   ASSERT_EQ(l.ops.size(), 0u);
   EXPECT_EQ(l.promise_size, 0u);
   EXPECT_EQ(l.promise_alignment, 0u);
 }
 
 TEST(LayoutTest, Add) {
-  Layout<ClientMetadataHandle> l;
+  Layout<FallibleOperator<ClientMetadataHandle>> l;
   l.Add(1, 4,
-        Operator<ClientMetadataHandle>{&l, 120, nullptr, nullptr, nullptr});
+        FallibleOperator<ClientMetadataHandle>{&l, 120, nullptr, nullptr,
+                                               nullptr});
   ASSERT_EQ(l.ops.size(), 1u);
   EXPECT_EQ(l.promise_size, 1u);
   EXPECT_EQ(l.promise_alignment, 4u);
@@ -871,7 +872,7 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
   EXPECT_EQ(r.value().ok->flags(), 1u);
 }
 
-TEST(StackDataTest, ServerTrailingMetadataReturningVoid) {
+TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   struct Filter1 {
     struct Call {
       void OnServerTrailingMetadata(ServerMetadata& md) {
@@ -887,20 +888,27 @@ TEST(StackDataTest, ServerTrailingMetadataReturningVoid) {
   d.AddServerTrailingMetadataOp(&f1, call_offset);
   ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
-  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
-  // Check operation
+  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
+  // Instant => no poll/early destroy
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
+  // Check promise init
   auto arena = SimpleArenaAllocator()->MakeArena();
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
-  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
-      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
-  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
+  auto r = d.server_trailing_metadata.ops[0].promise_init(
+      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
+      std::move(md));
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
+            "hello");
 }
 
-TEST(StackDataTest, ServerTrailingMetadataReturningVoidTakingChannelPtr) {
+TEST(StackDataTest,
+     InstantServerTrailingMetadataReturningVoidTakingChannelPtr) {
   struct Filter1 {
     struct Call {
       void OnServerTrailingMetadata(ServerMetadata& md, Filter1* p) {
@@ -918,17 +926,23 @@ TEST(StackDataTest, ServerTrailingMetadataReturningVoidTakingChannelPtr) {
   d.AddServerTrailingMetadataOp(&f1, call_offset);
   ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
-  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
-  // Check operation
+  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
+  // Instant => no poll/early destroy
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
+  EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
+  // Check promise init
   auto arena = SimpleArenaAllocator()->MakeArena();
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
-  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
-      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
-  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
+  auto r = d.server_trailing_metadata.ops[0].promise_init(
+      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
+      std::move(md));
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
+            "hello");
   EXPECT_THAT(f1.v, ::testing::ElementsAre(42));
 }
 
@@ -950,13 +964,13 @@ TEST(StackBuilderTest, AddOnServerTrailingMetadata) {
       [x = std::make_unique<int>(42)](ServerMetadata&) { EXPECT_EQ(*x, 42); });
   auto stack = b.Build();
   const auto& data = CallFilters::StackTestSpouse().StackDataFrom(*stack);
-  ASSERT_EQ(data.server_trailing_metadata.size(), 1u);
+  ASSERT_EQ(data.server_trailing_metadata.ops.size(), 1u);
   ASSERT_EQ(data.client_initial_metadata.ops.size(), 0u);
   ASSERT_EQ(data.client_to_server_messages.ops.size(), 0u);
   ASSERT_EQ(data.server_to_client_messages.ops.size(), 0u);
   ASSERT_EQ(data.server_initial_metadata.ops.size(), 0u);
-  EXPECT_EQ(data.server_trailing_metadata[0].call_offset, 0);
-  EXPECT_NE(data.server_trailing_metadata[0].channel_data, nullptr);
+  EXPECT_EQ(data.server_trailing_metadata.ops[0].call_offset, 0);
+  EXPECT_NE(data.server_trailing_metadata.ops[0].channel_data, nullptr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1100,6 +1114,56 @@ TEST(OperationExecutorTest, PromiseTwo) {
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   gpr_free_aligned(call_data1);
+}
+
+}  // namespace filters_detail
+
+///////////////////////////////////////////////////////////////////////////////
+// InfallibleOperationExecutor
+
+namespace filters_detail {
+
+TEST(InfallibleOperationExecutor, NoOp) {
+  OperationExecutor<ServerMetadataHandle> pipe;
+  EXPECT_FALSE(pipe.IsRunning());
+}
+
+TEST(InfallibleOperationExecutor, InstantTwo) {
+  class Filter1 {
+   public:
+    class Call {
+     public:
+      void OnServerTrailingMetadata(ClientMetadata& md) {
+        if (md.get_pointer(HttpPathMetadata()) != nullptr) {
+          md.Set(HttpPathMetadata(), Slice::FromStaticString("world"));
+        } else {
+          md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
+        }
+      }
+    };
+  };
+  StackData d;
+  Filter1 f1;
+  Filter1 f2;
+  const size_t call_offset1 = d.AddFilter(&f1);
+  const size_t call_offset2 = d.AddFilter(&f2);
+  d.AddServerTrailingMetadataOp(&f1, call_offset1);
+  d.AddServerTrailingMetadataOp(&f2, call_offset2);
+  ASSERT_EQ(d.filter_constructor.size(), 0u);
+  ASSERT_EQ(d.filter_destructor.size(), 0u);
+  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 2u);
+  void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
+  InfallibleOperationExecutor<ServerMetadataHandle> transformer;
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  promise_detail::Context<Arena> ctx(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
+  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
+  auto r =
+      transformer.Start(&d.server_trailing_metadata, std::move(md), call_data);
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
+            "world");
+  gpr_free_aligned(call_data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
