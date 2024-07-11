@@ -76,10 +76,12 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:logging_sink",
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metrics",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//src/cpp/ext/gcp:observability_logging_sink",
     ],
 )

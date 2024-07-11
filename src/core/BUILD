@@ -7565,6 +7565,7 @@ grpc_cc_library(
     language = "c++",
     visibility = [
         "//src/cpp/ext/gcp:__subpackages__",
+        "//src/cpp/ext/otel:__subpackages__",
         "//test:__subpackages__",
     ],
     deps = [

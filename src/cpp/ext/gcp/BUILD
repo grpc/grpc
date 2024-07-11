@@ -126,7 +126,10 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//src/cpp/ext/otel:__subpackages__",
+        "//test:__subpackages__",
+    ],
     deps = [
         "environment_autodetect",
         "observability_config",
