@@ -927,7 +927,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
   parts.push_back("PENDING TAGS:");
   gpr_mu_lock(cq->mu);
   for (size_t i = 0; i < cq->outstanding_tag_count; i++) {
-    parts.push_back(absl::StrFormat(" " < < < < "", cq->outstanding_tags[i]));
+    parts.push_back(absl::StrFormat(" %p", cq->outstanding_tags[i]));
   }
   gpr_mu_unlock(cq->mu);
   VLOG(2) << absl::StrJoin(parts, "");
@@ -941,8 +941,12 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   grpc_event ret;
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
 
-  GRPC_TRACE_LOG(api, INFO) <<
-      "grpc_completion_queue_next(cq="<<cq <<", deadline=gpr_timespec { tv_sec: "<<deadline.tv_sec<<", tv_nsec: "<< deadline.tv_nsec<<", clock_type: "<< int)deadline.clock_type<<" }, reserved="<< reserved<<")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_completion_queue_next(cq=" << cq
+      << ", deadline=gpr_timespec { tv_sec: " << deadline.tv_sec
+      << ", tv_nsec: " << deadline.tv_nsec
+      << ", clock_type: " << (int)deadline.clock_type
+      << " }, reserved=" << reserved << ")";
   CHECK(!reserved);
 
   dump_pending_tags(cq);
