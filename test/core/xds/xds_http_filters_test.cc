@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/xds/grpc/xds_http_filters.h"
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -48,8 +50,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_http_filter.h"
-#include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
@@ -143,7 +143,7 @@ class XdsHttpFilterTest : public ::testing::Test {
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
-  GrpcXdsServer xds_server_;
+  GrpcXdsBootstrap::GrpcXdsServer xds_server_;
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;

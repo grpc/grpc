@@ -47,7 +47,6 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -197,7 +196,7 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
           upb_proto) {
     ValidationErrors errors;
     CommonTlsContext common_tls_context =
-        CommonTlsContextParse(decode_context_, upb_proto, &errors);
+        CommonTlsContext::Parse(decode_context_, upb_proto, &errors);
     if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");

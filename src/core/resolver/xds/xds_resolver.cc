@@ -86,7 +86,7 @@
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
-#include "src/core/xds/grpc/xds_http_filter.h"
+#include "src/core/xds/grpc/xds_http_filters.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_routing.h"

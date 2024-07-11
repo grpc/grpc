@@ -38,9 +38,8 @@
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
-#include "src/core/xds/grpc/xds_http_filter_registry.h"
+#include "src/core/xds/grpc/xds_http_filters.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
-#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
@@ -75,6 +74,32 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     std::string cluster_;
     Locality locality_;
     Json::Object metadata_;
+  };
+
+  class GrpcXdsServer final : public XdsServer {
+   public:
+    const std::string& server_uri() const override { return server_uri_; }
+
+    bool IgnoreResourceDeletion() const override;
+
+    bool Equals(const XdsServer& other) const override;
+
+    std::string Key() const override;
+
+    RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
+      return channel_creds_config_;
+    }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
+
+    Json ToJson() const;
+
+   private:
+    std::string server_uri_;
+    RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
+    std::set<std::string> server_features_;
   };
 
   class GrpcAuthority final : public Authority {

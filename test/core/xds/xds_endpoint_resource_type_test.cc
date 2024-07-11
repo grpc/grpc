@@ -45,7 +45,6 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
-#include "src/core/xds/grpc/xds_endpoint_parser.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
