@@ -1469,7 +1469,6 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
   } else if (stream_op->recv_message &&
              op_can_be_run(stream_op, s, &oas->state, OP_RECV_MESSAGE)) {
     result = execute_stream_op_recv_message(oas);
-
   } else if (stream_op->recv_trailing_metadata &&
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
