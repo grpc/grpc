@@ -18,7 +18,6 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -42,7 +41,8 @@ constexpr int kMaxWSABUFCount = 16;
 void DumpSliceBuffer(SliceBuffer* buffer, absl::string_view context_string) {
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto str = buffer->MutableSliceAt(i).as_string_view();
-    LOG(INFO) << context_string << ": " << str;
+    gpr_log(GPR_INFO, "%s: %.*s", context_string.data(), str.length(),
+            str.data());
   }
 }
 
@@ -160,8 +160,8 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
     for (size_t i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
-      LOG(INFO) << "WindowsEndpoint::" << this
-                << " WRITE (peer=" << peer_address_string_ << "): " << str;
+      gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
+              peer_address_string_.c_str(), str.length(), str.data());
     }
   }
   CHECK(data->Count() <= UINT_MAX);

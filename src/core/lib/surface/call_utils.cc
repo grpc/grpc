@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -45,6 +44,7 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -88,9 +88,11 @@ void CToMetadata(grpc_metadata* metadata, size_t count,
     if (key == "content-length") continue;
     b->Append(key, Slice(CSliceRef(md->value)),
               [md](absl::string_view error, const Slice& value) {
-                VLOG(2) << "Append error: key=" << StringViewFromSlice(md->key)
-                        << " error=" << error
-                        << " value=" << value.as_string_view();
+                gpr_log(GPR_DEBUG, "Append error: %s",
+                        absl::StrCat("key=", StringViewFromSlice(md->key),
+                                     " error=", error,
+                                     " value=", value.as_string_view())
+                            .c_str());
               });
   }
 }

@@ -39,7 +39,8 @@ CallInitiator HijackedCall::MakeCall() {
 
 CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
-  auto call = MakeCallPair(std::move(metadata), call_handler_.arena()->Ref());
+  auto call = MakeCallPair(std::move(metadata), call_handler_.event_engine(),
+                           call_handler_.arena()->Ref());
   destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }
@@ -57,8 +58,7 @@ class CallStarter final : public UnstartedCallDestination {
   }
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-    unstarted_call_handler.AddCallStack(stack_);
-    destination_->HandleCall(unstarted_call_handler.StartCall());
+    destination_->HandleCall(unstarted_call_handler.StartCall(stack_));
   }
 
  private:
@@ -79,8 +79,16 @@ class TerminalInterceptor final : public UnstartedCallDestination {
   }
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-    unstarted_call_handler.AddCallStack(stack_);
-    destination_->StartCall(unstarted_call_handler);
+    unstarted_call_handler.SpawnGuarded(
+        "start_call",
+        Map(interception_chain_detail::HijackCall(unstarted_call_handler,
+                                                  destination_, stack_),
+            [](ValueOrFailure<HijackedCall> hijacked_call) -> StatusFlag {
+              if (!hijacked_call.ok()) return Failure{};
+              ForwardCall(hijacked_call.value().original_call_handler(),
+                          hijacked_call.value().MakeLastCall());
+              return Success{};
+            }));
   }
 
  private:

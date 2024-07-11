@@ -46,17 +46,13 @@ struct LoopTraits;
 template <typename T>
 struct LoopTraits<LoopCtl<T>> {
   using Result = T;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static LoopCtl<T> ToLoopCtl(
-      LoopCtl<T> value) {
-    return value;
-  }
+  static LoopCtl<T> ToLoopCtl(LoopCtl<T> value) { return value; }
 };
 
 template <typename T>
 struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
   using Result = absl::StatusOr<T>;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static LoopCtl<Result> ToLoopCtl(
-      absl::StatusOr<LoopCtl<T>> value) {
+  static LoopCtl<Result> ToLoopCtl(absl::StatusOr<LoopCtl<T>> value) {
     if (!value.ok()) return value.status();
     auto& inner = *value;
     if (absl::holds_alternative<Continue>(inner)) return Continue{};
@@ -67,7 +63,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
 template <>
 struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
   using Result = absl::Status;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static LoopCtl<Result> ToLoopCtl(
+  static LoopCtl<Result> ToLoopCtl(
       absl::StatusOr<LoopCtl<absl::Status>> value) {
     if (!value.ok()) return value.status();
     const auto& inner = *value;
@@ -86,13 +82,12 @@ class Loop {
  public:
   using Result = typename LoopTraits<PromiseResult>::Result;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Loop(F f)
-      : factory_(std::move(f)) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Loop() {
+  explicit Loop(F f) : factory_(std::move(f)) {}
+  ~Loop() {
     if (started_) Destruct(&promise_);
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Loop(Loop&& loop) noexcept
+  Loop(Loop&& loop) noexcept
       : factory_(std::move(loop.factory_)), started_(loop.started_) {
     if (started_) Construct(&promise_, std::move(loop.promise_));
   }
@@ -100,7 +95,7 @@ class Loop {
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+  Poll<Result> operator()() {
     if (!started_) {
       started_ = true;
       Construct(&promise_, factory_.Make());
@@ -141,7 +136,7 @@ class Loop {
 // Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
 // otherwise yield the returned value as the result of the loop.
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Loop<F> Loop(F f) {
+promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));
 }
 

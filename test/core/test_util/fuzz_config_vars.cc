@@ -34,6 +34,9 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
   if (vars.has_verbosity()) {
     overrides.verbosity = vars.verbosity();
   }
+  if (vars.has_stacktrace_minloglevel()) {
+    overrides.stacktrace_minloglevel = vars.stacktrace_minloglevel();
+  }
   if (vars.has_experiments()) {
     overrides.experiments =
         ValidateExperimentsStringForFuzzing(vars.experiments());

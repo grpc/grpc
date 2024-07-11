@@ -148,39 +148,6 @@ static void CrashOnAppendError(absl::string_view, const grpc_core::Slice&) {
   abort();
 }
 
-namespace grpc_core {
-
-class FakeCallTracer final : public CallTracerInterface {
- public:
-  void RecordIncomingBytes(
-      const TransportByteSize& transport_byte_size) override {}
-  void RecordOutgoingBytes(
-      const TransportByteSize& transport_byte_size) override {}
-  void RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata) override {}
-  void RecordSendTrailingMetadata(
-      grpc_metadata_batch* send_trailing_metadata) override {}
-  void RecordSendMessage(const SliceBuffer& send_message) override {}
-  void RecordSendCompressedMessage(
-      const SliceBuffer& send_compressed_message) override {}
-  void RecordReceivedInitialMetadata(
-      grpc_metadata_batch* recv_initial_metadata) override {}
-  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
-  void RecordReceivedDecompressedMessage(
-      const SliceBuffer& recv_decompressed_message) override {}
-  void RecordCancel(grpc_error_handle cancel_error) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
-  void RecordAnnotation(absl::string_view annotation) override {}
-  void RecordAnnotation(const Annotation& annotation) override {}
-  std::string TraceId() override { return ""; }
-  std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
-};
-
-}  // namespace grpc_core
-
 grpc_slice EncodeHeaderIntoBytes(
     bool is_eof,
     const std::vector<std::pair<std::string, std::string>>& header_fields) {
@@ -194,13 +161,14 @@ grpc_slice EncodeHeaderIntoBytes(
              CrashOnAppendError);
   }
 
-  grpc_core::FakeCallTracer call_tracer;
+  grpc_transport_one_way_stats stats = {};
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt{
       0xdeadbeef,  // stream_id
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       16384,       // max_frame_size
-      &call_tracer};
+      &stats       // stats
+  };
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
 
@@ -338,13 +306,14 @@ static void verify_continuation_headers(const char* key, const char* value,
   b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);
   grpc_slice_buffer_init(&output);
 
-  grpc_core::FakeCallTracer call_tracer;
+  grpc_transport_one_way_stats stats;
+  stats = {};
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
       0xdeadbeef,  // stream_id
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       150,         // max_frame_size
-      &call_tracer};
+      &stats /* stats */};
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy(&output);
@@ -375,7 +344,8 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
                "Base64, a tool\nTo encode binary data into "
                "text\nSo it can be shared."),
            CrashOnAppendError);
-  grpc_core::FakeCallTracer call_tracer;
+  grpc_transport_one_way_stats stats;
+  stats = {};
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
@@ -383,7 +353,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
       true,        // is_eof
       false,       // use_true_binary_metadata
       150,         // max_frame_size
-      &call_tracer};
+      &stats};
   grpc_core::HPackCompressor compressor;
   compressor.EncodeHeaders(hopt, b, &output);
   grpc_slice_buffer_destroy(&output);
@@ -399,7 +369,8 @@ TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
                "Base64, a tool\nTo encode binary data into "
                "text\nSo it can be shared."),
            CrashOnAppendError);
-  grpc_core::FakeCallTracer call_tracer;
+  grpc_transport_one_way_stats stats;
+  stats = {};
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
   grpc_core::HPackCompressor::EncodeHeaderOptions hopt = {
@@ -407,7 +378,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
       true,        // is_eof
       true,        // use_true_binary_metadata
       150,         // max_frame_size
-      &call_tracer};
+      &stats};
   grpc_core::HPackCompressor compressor;
   compressor.EncodeHeaders(hopt, b, &output);
   grpc_slice_buffer_destroy(&output);

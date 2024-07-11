@@ -93,9 +93,6 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
   }
-  if (trusted_xds_server_) {
-    server_features.push_back("\"trusted_xds_server\"");
-  }
   std::vector<std::string> servers;
   for (absl::string_view server_uri : server_uris) {
     servers.emplace_back(absl::StrReplaceAll(
@@ -367,9 +364,6 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
                              ->mutable_socket_address();
         socket_address->set_address(grpc_core::LocalIp());
         socket_address->set_port_value(port);
-      }
-      if (!endpoint.hostname.empty()) {
-        endpoint_proto->set_hostname(endpoint.hostname);
       }
     }
   }

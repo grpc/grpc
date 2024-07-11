@@ -34,7 +34,6 @@
 #include <map>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpcpp/security/binder_security_policy.h>
 
@@ -72,7 +71,8 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 #else
     CHECK(0);
 #endif
-    LOG(INFO) << "BinderConnector " << this << " conn_id_ = " << conn_id_;
+    gpr_log(GPR_INFO, "BinderConnector %p conn_id_ = %s", this,
+            conn_id_.c_str());
 
     args_ = args;
     CHECK_EQ(notify_, nullptr);
@@ -124,7 +124,7 @@ namespace grpc_core {
 
 RefCountedPtr<Subchannel> BinderClientChannelFactory::CreateSubchannel(
     const grpc_resolved_address& address, const ChannelArgs& args) {
-  LOG(INFO) << "BinderClientChannelFactory creating subchannel " << this;
+  gpr_log(GPR_INFO, "BinderClientChannelFactory creating subchannel %p", this);
   return Subchannel::Create(
       MakeOrphanable<BinderConnector>(), address,
       args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "binder.authority"));

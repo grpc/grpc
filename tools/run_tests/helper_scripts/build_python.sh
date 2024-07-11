@@ -136,7 +136,7 @@ pip_install() {
 
 pip_install --upgrade pip
 pip_install --upgrade wheel
-pip_install --upgrade setuptools==70.1.1
+pip_install --upgrade setuptools==66.1.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -158,8 +158,8 @@ pip_install_dir_and_deps() {
 
 pip_install -U gevent
 
-pip_install --upgrade 'cython>=3.0.0'
-pip_install --upgrade six 'protobuf>=5.26.1,<6.0dev'
+pip_install --upgrade 'cython<3.0.0rc1'
+pip_install --upgrade six 'protobuf>=4.21.3rc1,!=4.22.0.*'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then

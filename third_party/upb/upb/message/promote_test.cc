@@ -390,7 +390,8 @@ TEST(GeneratedCode, PromoteUnknownMessage) {
                                  arena.ptr(), (upb_Message**)&promoted);
   EXPECT_EQ(promote_result, kUpb_DecodeStatus_Ok);
   EXPECT_NE(nullptr, promoted);
-  EXPECT_EQ(UPB_UPCAST(promoted), upb_Message_GetMessage(msg, submsg_field));
+  EXPECT_EQ(UPB_UPCAST(promoted),
+            upb_Message_GetMessage(msg, submsg_field, nullptr));
   EXPECT_EQ(upb_test_ModelWithExtensions_random_int32(promoted), 12);
 }
 
@@ -438,7 +439,8 @@ TEST(GeneratedCode, ReparseUnlinked) {
                                  arena.ptr(), (upb_Message**)&promoted);
   EXPECT_EQ(promote_result, kUpb_DecodeStatus_Ok);
   EXPECT_NE(nullptr, promoted);
-  EXPECT_EQ(UPB_UPCAST(promoted), upb_Message_GetMessage(msg, submsg_field));
+  EXPECT_EQ(UPB_UPCAST(promoted),
+            upb_Message_GetMessage(msg, submsg_field, nullptr));
 
   // The repeated field should have two entries for the two parses.
   size_t repeated_size;
@@ -487,10 +489,12 @@ TEST(GeneratedCode, PromoteInParser) {
                  kUpb_DecodeOption_ExperimentalAllowUnlinked, arena.ptr());
   EXPECT_EQ(decode_status, kUpb_DecodeStatus_Ok);
   upb_test_ModelWithExtensions* promoted =
-      (upb_test_ModelWithExtensions*)upb_Message_GetMessage(msg, submsg_field);
+      (upb_test_ModelWithExtensions*)upb_Message_GetMessage(msg, submsg_field,
+                                                            nullptr);
 
   EXPECT_NE(nullptr, promoted);
-  EXPECT_EQ(UPB_UPCAST(promoted), upb_Message_GetMessage(msg, submsg_field));
+  EXPECT_EQ(UPB_UPCAST(promoted),
+            upb_Message_GetMessage(msg, submsg_field, nullptr));
 
   // The repeated field should have two entries for the two parses.
   size_t repeated_size;
@@ -733,8 +737,8 @@ TEST(GeneratedCode, PromoteUnknownMessageOld) {
           msg, mini_table, upb_MiniTable_GetFieldByIndex(mini_table, 1),
           &upb_0test__ModelWithExtensions_msg_init, decode_options, arena);
   EXPECT_EQ(promote_result.status, kUpb_UnknownToMessage_Ok);
-  const upb_Message* promoted_message =
-      upb_Message_GetMessage(msg, upb_MiniTable_GetFieldByIndex(mini_table, 1));
+  const upb_Message* promoted_message = upb_Message_GetMessage(
+      msg, upb_MiniTable_GetFieldByIndex(mini_table, 1), nullptr);
   EXPECT_EQ(upb_test_ModelWithExtensions_random_int32(
                 (upb_test_ModelWithExtensions*)promoted_message),
             12);

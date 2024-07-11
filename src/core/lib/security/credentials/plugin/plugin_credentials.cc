@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
@@ -123,8 +124,10 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(
       static_cast<grpc_plugin_credentials::PendingRequest*>(request));
   if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-    LOG(INFO) << "plugin_credentials[" << r->creds() << "]: request " << r.get()
-              << ": plugin returned asynchronously";
+    gpr_log(GPR_INFO,
+            "plugin_credentials[%p]: request %p: plugin returned "
+            "asynchronously",
+            r->creds(), r.get());
   }
   for (size_t i = 0; i < num_md; ++i) {
     grpc_metadata p;
@@ -152,8 +155,8 @@ grpc_plugin_credentials::GetRequestMetadata(
       args);
   // Invoke the plugin.  The callback holds a ref to us.
   if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-    LOG(INFO) << "plugin_credentials[" << this << "]: request " << request.get()
-              << ": invoking plugin";
+    gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
+            this, request.get());
   }
   grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX];
   size_t num_creds_md = 0;
@@ -170,15 +173,19 @@ grpc_plugin_credentials::GetRequestMetadata(
                             &status, &error_details)) {
     child_request.release();
     if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-      LOG(INFO) << "plugin_credentials[" << this << "]: request "
-                << request.get() << ": plugin will return asynchronously";
+      gpr_log(GPR_INFO,
+              "plugin_credentials[%p]: request %p: plugin will return "
+              "asynchronously",
+              this, request.get());
     }
     return [request] { return request->PollAsyncResult(); };
   }
   // Synchronous return.
   if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
-    LOG(INFO) << "plugin_credentials[" << this << "]: request " << request.get()
-              << ": plugin returned synchronously";
+    gpr_log(GPR_INFO,
+            "plugin_credentials[%p]: request %p: plugin returned "
+            "synchronously",
+            this, request.get());
   }
   auto result = request->ProcessPluginResult(creds_md, num_creds_md, status,
                                              error_details);

@@ -24,13 +24,13 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -129,20 +129,20 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-      LOG(INFO) << "[" << this << "] No BackendMetricProvider.";
+      gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
     }
     return;
   }
   absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
   if (serialized.has_value() && !serialized->empty()) {
     if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-      LOG(INFO) << "[" << this
-                << "] Backend metrics serialized. size: " << serialized->size();
+      gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %" PRIuPTR,
+              this, serialized->size());
     }
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
   } else if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-    LOG(INFO) << "[" << this << "] No backend metrics.";
+    gpr_log(GPR_INFO, "[%p] No backend metrics.", this);
   }
 }
 

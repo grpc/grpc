@@ -35,7 +35,7 @@ class ChaoticGoodFixture : public BaseFixture {
       const FixtureConfiguration& config = FixtureConfiguration()) {
     auto address = MakeAddress(&port_);
     ServerBuilder b;
-    if (!address.empty()) {
+    if (address.length() > 0) {
       b.AddListeningPort(address, ChaoticGoodInsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -44,7 +44,7 @@ class ChaoticGoodFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (!address.empty()) {
+    if (address.length() > 0) {
       channel_ = grpc::CreateCustomChannel(
           address, ChaoticGoodInsecureChannelCredentials(), args);
     } else {

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -117,15 +116,5 @@ grpc_cc_test(
         "filter_test",
         "//:channel_arg_names",
         "//src/core:grpc_client_authority_filter",
-    ],
-)
-
-grpc_cc_benchmark(
-    name = "bm_http_client_filter",
-    srcs = ["bm_http_client_filter.cc"],
-    deps = [
-        "//:grpc",
-        "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
     ],
 )

@@ -218,9 +218,10 @@ WindowsEventEngine::~WindowsEventEngine() {
     if (!known_handles_.empty()) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         for (auto handle : known_handles_) {
-          LOG(ERROR) << "WindowsEventEngine:" << this
-                     << " uncleared TaskHandle at shutdown:"
-                     << HandleToString<EventEngine::TaskHandle>(handle);
+          gpr_log(GPR_ERROR,
+                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                  this,
+                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
         }
       }
       // Allow a small grace period for timers to be run before shutting down.
@@ -228,8 +229,8 @@ WindowsEventEngine::~WindowsEventEngine() {
           timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
       while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
         if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-          VLOG_EVERY_N_SEC(2, 1) << "Waiting for timers. "
-                                 << known_handles_.size() << " remaining";
+          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
+                               known_handles_.size());
         }
         task_mu_.Unlock();
         absl::SleepFor(absl::Milliseconds(200));
@@ -321,24 +322,21 @@ void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
-  if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-    GRPC_TRACE_LOG(event_engine_dns, INFO)
-        << "WindowsEventEngine::" << this << " creating AresResolver";
-    auto ares_resolver = AresResolver::CreateAresResolver(
-        options.dns_server,
-        std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
-        shared_from_this());
-    if (!ares_resolver.ok()) {
-      return ares_resolver.status();
-    }
-    return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
-        std::move(*ares_resolver));
-#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
   }
+  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+      std::move(*ares_resolver));
+#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   GRPC_TRACE_LOG(event_engine_dns, INFO)
       << "WindowsEventEngine::" << this << " creating NativeWindowsDNSResolver";
   return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

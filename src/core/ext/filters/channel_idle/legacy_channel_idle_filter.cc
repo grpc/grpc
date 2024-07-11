@@ -51,7 +51,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -70,6 +69,13 @@ const auto kDefaultMaxConnectionIdle = Duration::Infinity();
 const auto kMaxConnectionAgeJitter = 0.1;
 
 }  // namespace
+
+#define GRPC_IDLE_FILTER_LOG(format, ...)                               \
+  do {                                                                  \
+    if (GRPC_TRACE_FLAG_ENABLED(client_idle_filter)) {                  \
+      gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
+    }                                                                   \
+  } while (0)
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
@@ -170,9 +176,6 @@ void LegacyMaxAgeFilter::PostInit() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
-    auto arena = SimpleArenaAllocator(0)->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        channel_stack->EventEngine());
     max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
@@ -210,7 +213,7 @@ void LegacyMaxAgeFilter::PostInit() {
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
         },
-        std::move(arena)));
+        channel_stack->EventEngine()));
   }
 }
 
@@ -252,8 +255,7 @@ void LegacyChannelIdleFilter::DecreaseCallCount() {
 }
 
 void LegacyChannelIdleFilter::StartIdleTimer() {
-  GRPC_TRACE_LOG(client_idle_filter, INFO)
-      << "(client idle filter) timer has started";
+  GRPC_IDLE_FILTER_LOG("timer has started");
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
   auto channel_stack = channel_stack_->Ref();
@@ -268,15 +270,12 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      channel_stack_->EventEngine());
   activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
       [channel_stack, this](absl::Status status) {
         if (status.ok()) CloseChannel();
       },
-      std::move(arena)));
+      channel_stack->EventEngine()));
 }
 
 void LegacyChannelIdleFilter::CloseChannel() {

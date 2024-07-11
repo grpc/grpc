@@ -33,8 +33,8 @@ namespace grpc_core {
 namespace promise_detail {
 
 template <typename CallPoll, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
-    CallPoll call_poll, bool result, T* if_true, F* if_false) {
+typename CallPoll::PollResult ChooseIf(CallPoll call_poll, bool result,
+                                       T* if_true, F* if_false) {
   if (result) {
     auto promise = if_true->Make();
     return call_poll(promise);
@@ -45,8 +45,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
 }
 
 template <typename CallPoll, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION typename CallPoll::PollResult ChooseIf(
-    CallPoll call_poll, absl::StatusOr<bool> result, T* if_true, F* if_false) {
+typename CallPoll::PollResult ChooseIf(CallPoll call_poll,
+                                       absl::StatusOr<bool> result, T* if_true,
+                                       F* if_false) {
   if (!result.ok()) {
     return typename CallPoll::PollResult(result.status());
   } else if (*result) {
@@ -70,12 +71,12 @@ class If {
       typename PollTraits<decltype(std::declval<TruePromise>()())>::Type;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(C condition, T if_true, F if_false)
+  If(C condition, T if_true, F if_false)
       : state_(Evaluating{ConditionPromise(std::move(condition)),
                           TrueFactory(std::move(if_true)),
                           FalseFactory(std::move(if_false))}) {}
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+  Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);
   }
 
@@ -94,8 +95,7 @@ class If {
 
     If* const self;
 
-    GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PollResult
-    operator()(Evaluating& evaluating) const {
+    PollResult operator()(Evaluating& evaluating) const {
       static_assert(
           !kSetState,
           "shouldn't need to set state coming through the initial branch");
@@ -108,8 +108,7 @@ class If {
     }
 
     template <class Promise>
-    GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PollResult
-    operator()(Promise& promise) const {
+    PollResult operator()(Promise& promise) const {
       auto r = promise();
       if (kSetState && r.pending()) {
         self->state_.template emplace<Promise>(std::move(promise));
@@ -130,8 +129,7 @@ class If<bool, T, F> {
       typename PollTraits<decltype(std::declval<TruePromise>()())>::Type;
 
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(bool condition, T if_true, F if_false)
-      : condition_(condition) {
+  If(bool condition, T if_true, F if_false) : condition_(condition) {
     TrueFactory true_factory(std::move(if_true));
     FalseFactory false_factory(std::move(if_false));
     if (condition_) {
@@ -140,7 +138,7 @@ class If<bool, T, F> {
       Construct(&if_false_, false_factory.Make());
     }
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~If() {
+  ~If() {
     if (condition_) {
       Destruct(&if_true_);
     } else {
@@ -150,22 +148,21 @@ class If<bool, T, F> {
 
   If(const If&) = delete;
   If& operator=(const If&) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If(If&& other) noexcept
-      : condition_(other.condition_) {
+  If(If&& other) noexcept : condition_(other.condition_) {
     if (condition_) {
       Construct(&if_true_, std::move(other.if_true_));
     } else {
       Construct(&if_false_, std::move(other.if_false_));
     }
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION If& operator=(If&& other) noexcept {
+  If& operator=(If&& other) noexcept {
     if (&other == this) return *this;
     Destruct(this);
     Construct(this, std::move(other));
     return *this;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
+  Poll<Result> operator()() {
 #ifndef NDEBUG
     asan_canary_ = std::make_unique<int>(1 + *asan_canary_);
 #endif
@@ -200,8 +197,7 @@ class If<bool, T, F> {
 // This makes it safe to capture lambda arguments in the promise factory by
 // reference.
 template <typename C, typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::If<C, T, F> If(
-    C condition, T if_true, F if_false) {
+promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
   return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),
                                      std::move(if_false));
 }

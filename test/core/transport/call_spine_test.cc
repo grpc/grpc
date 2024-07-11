@@ -49,10 +49,9 @@ class CallSpineTest : public YodelTest {
 
   CallInitiatorAndHandler MakeCall(
       ClientMetadataHandle client_initial_metadata) {
-    auto arena = SimpleArenaAllocator()->MakeArena();
-    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine().get());
-    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
+    return MakeCallPair(std::move(client_initial_metadata),
+                        event_engine().get(),
+                        SimpleArenaAllocator()->MakeArena());
   }
 
   void UnaryRequest(CallInitiator initiator, CallHandler handler);
@@ -146,13 +145,13 @@ void CallSpineTest::UnaryRequest(CallInitiator initiator, CallHandler handler) {
 
 CALL_SPINE_TEST(UnaryRequest) {
   auto call = MakeCall(MakeClientInitialMetadata());
-  UnaryRequest(call.initiator, call.handler.StartCall());
+  UnaryRequest(call.initiator, call.handler.StartWithEmptyFilterStack());
   WaitForAllPendingWork();
 }
 
 CALL_SPINE_TEST(UnaryRequestThroughForwardCall) {
   auto call1 = MakeCall(MakeClientInitialMetadata());
-  auto handler = call1.handler.StartCall();
+  auto handler = call1.handler.StartWithEmptyFilterStack();
   SpawnTestSeq(
       call1.initiator, "initiator",
       [handler]() mutable { return handler.PullClientInitialMetadata(); },
@@ -161,7 +160,7 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCall) {
         EXPECT_TRUE(md.ok());
         auto call2 = MakeCall(std::move(md.value()));
         ForwardCall(handler, call2.initiator);
-        UnaryRequest(initiator, call2.handler.StartCall());
+        UnaryRequest(initiator, call2.handler.StartWithEmptyFilterStack());
         return Empty{};
       });
   WaitForAllPendingWork();
@@ -169,7 +168,7 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCall) {
 
 CALL_SPINE_TEST(UnaryRequestThroughForwardCallWithServerTrailingMetadataHook) {
   auto call1 = MakeCall(MakeClientInitialMetadata());
-  auto handler = call1.handler.StartCall();
+  auto handler = call1.handler.StartWithEmptyFilterStack();
   bool got_md = false;
   SpawnTestSeq(
       call1.initiator, "initiator",
@@ -180,7 +179,7 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCallWithServerTrailingMetadataHook) {
         auto call2 = MakeCall(std::move(md.value()));
         ForwardCall(handler, call2.initiator,
                     [&got_md](ServerMetadata&) { got_md = true; });
-        UnaryRequest(initiator, call2.handler.StartCall());
+        UnaryRequest(initiator, call2.handler.StartWithEmptyFilterStack());
         return Empty{};
       });
   WaitForAllPendingWork();

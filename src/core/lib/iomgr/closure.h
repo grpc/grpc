@@ -23,9 +23,9 @@
 #include <stdbool.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -293,16 +293,16 @@ class Closure {
     }
 #ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-      VLOG(2) << "running closure " << closure << ": created ["
-              << closure->file_created << ":" << closure->line_created
-              << "]: run [" << location.file() << ":" << location.line() << "]";
+      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
+              closure, closure->file_created, closure->line_created,
+              location.file(), location.line());
     }
     CHECK_NE(closure->cb, nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
     if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-      VLOG(2) << "closure " << closure << " finished";
+      gpr_log(GPR_DEBUG, "closure %p finished", closure);
     }
 #endif
   }

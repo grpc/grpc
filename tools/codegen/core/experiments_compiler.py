@@ -456,7 +456,7 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " Is%sExperimentEnabled<kExperimentId%s>(); }"
+                    " Is%sExperimentEnabled(kExperimentId%s); }"
                     % (
                         SnakeToPascal(exp.name),
                         "Test" if mode == "test" else "",

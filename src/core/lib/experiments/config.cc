@@ -24,12 +24,12 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
@@ -137,7 +137,8 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
     // If not found log an error, but don't take any other action.
     // Allows us an easy path to disabling experiments.
     if (!found) {
-      LOG(ERROR) << "Unknown experiment: " << experiment;
+      gpr_log(GPR_ERROR, "Unknown experiment: %s",
+              std::string(experiment).c_str());
     }
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -170,7 +171,6 @@ Experiments& ExperimentsSingleton() {
 }  // namespace
 
 void TestOnlyReloadExperimentsFromConfigVariables() {
-  ExperimentFlags::TestOnlyClear();
   ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
   PrintExperimentsList();
 }
@@ -181,35 +181,8 @@ void LoadTestOnlyExperimentsFromMetadata(
       new TestExperiments(experiment_metadata, num_experiments);
 }
 
-std::atomic<uint64_t>
-    ExperimentFlags::experiment_flags_[kNumExperimentFlagsWords];
-
-bool ExperimentFlags::LoadFlagsAndCheck(size_t experiment_id) {
-  static_assert(kNumExperiments < kNumExperimentFlagsWords * kFlagsPerWord,
-                "kNumExperiments must be less than "
-                "kNumExperimentFlagsWords*kFlagsPerWord; if this fails then "
-                "make kNumExperimentFlagsWords bigger.");
-  const auto& experiments = ExperimentsSingleton();
-  uint64_t building[kNumExperimentFlagsWords];
-  for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    building[i] = kLoadedFlag;
-  }
-  for (size_t i = 0; i < kNumExperiments; i++) {
-    if (!experiments.enabled[i]) continue;
-    auto bit = i % kFlagsPerWord;
-    auto word = i / kFlagsPerWord;
-    building[word] |= 1ull << bit;
-  }
-  for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    experiment_flags_[i].store(building[i], std::memory_order_relaxed);
-  }
-  return experiments.enabled[experiment_id];
-}
-
-void ExperimentFlags::TestOnlyClear() {
-  for (size_t i = 0; i < kNumExperimentFlagsWords; i++) {
-    experiment_flags_[i].store(0, std::memory_order_relaxed);
-  }
+bool IsExperimentEnabled(size_t experiment_id) {
+  return ExperimentsSingleton().enabled[experiment_id];
 }
 
 bool IsExperimentEnabledInConfiguration(size_t experiment_id) {
@@ -254,20 +227,19 @@ void PrintExperimentsList() {
   }
   if (experiment_status.empty()) {
     if (!defaulted_on_experiments.empty()) {
-      LOG(INFO) << "gRPC experiments enabled: "
-                << absl::StrJoin(defaulted_on_experiments, ", ");
+      gpr_log(GPR_INFO, "gRPC experiments enabled: %s",
+              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
     }
   } else {
     if (defaulted_on_experiments.empty()) {
-      LOG(INFO) << "gRPC experiments: "
-                << absl::StrJoin(experiment_status, ", ",
-                                 absl::PairFormatter(":"));
+      gpr_log(GPR_INFO, "gRPC experiments: %s",
+              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
+                  .c_str());
     } else {
-      LOG(INFO) << "gRPC experiments: "
-                << absl::StrJoin(experiment_status, ", ",
-                                 absl::PairFormatter(":"))
-                << "; default-enabled: "
-                << absl::StrJoin(defaulted_on_experiments, ", ");
+      gpr_log(GPR_INFO, "gRPC experiments: %s; default-enabled: %s",
+              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
+                  .c_str(),
+              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
     }
   }
 }
@@ -284,8 +256,8 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
     }
     return;
   }
-  LOG(INFO) << "gRPC EXPERIMENT " << experiment << " not found to force "
-            << (enable ? "enable" : "disable");
+  gpr_log(GPR_INFO, "gRPC EXPERIMENT %s not found to force %s",
+          std::string(experiment).c_str(), enable ? "enable" : "disable");
 }
 
 void RegisterExperimentConstraintsValidator(

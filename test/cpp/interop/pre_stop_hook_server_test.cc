@@ -209,8 +209,7 @@ TEST(PreStopHookService, StartDoRequestStop) {
   stub.async()->Hook(
       &infos[1].context, &infos[1].request, &infos[1].response,
       [&infos](const Status& status) { infos[1].SetStatus(status); });
-  ASSERT_TRUE(service.TestOnlyExpectRequests(
-      2, absl::Milliseconds(500) * grpc_test_slowdown_factor()));
+  ASSERT_TRUE(service.TestOnlyExpectRequests(2, absl::Milliseconds(100)));
   ClientContext ctx;
   SetReturnStatusRequest request;
   request.set_grpc_code_to_return(StatusCode::INTERNAL);
@@ -239,8 +238,7 @@ TEST(PreStopHookService, StartDoRequestStop) {
   stub.async()->Hook(
       &call_hangs.context, &call_hangs.request, &call_hangs.response,
       [&](const Status& status) { call_hangs.SetStatus(status); });
-  ASSERT_TRUE(service.TestOnlyExpectRequests(
-      1, absl::Milliseconds(500) * grpc_test_slowdown_factor()));
+  ASSERT_TRUE(service.TestOnlyExpectRequests(1, absl::Milliseconds(100)));
   status = call_hangs.WaitForStatus(absl::Milliseconds(100));
   EXPECT_FALSE(status.has_value()) << status->error_message();
   service.Stop();

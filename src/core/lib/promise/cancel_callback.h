@@ -28,28 +28,26 @@ namespace cancel_callback_detail {
 template <typename Fn>
 class Handler {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Handler(Fn fn)
-      : fn_(std::move(fn)) {}
+  explicit Handler(Fn fn) : fn_(std::move(fn)) {}
   Handler(const Handler&) = delete;
   Handler& operator=(const Handler&) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Handler() {
+  ~Handler() {
     if (!done_) {
       promise_detail::Context<Arena> ctx(arena_.get());
       fn_();
     }
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Handler(Handler&& other) noexcept
+  Handler(Handler&& other) noexcept
       : fn_(std::move(other.fn_)), done_(other.done_) {
     other.done_ = true;
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Handler& operator=(
-      Handler&& other) noexcept {
+  Handler& operator=(Handler&& other) noexcept {
     fn_ = std::move(other.fn_);
     done_ = other.done_;
     other.done_ = true;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Done() { done_ = true; }
+  void Done() { done_ = true; }
 
  private:
   Fn fn_;
@@ -69,8 +67,7 @@ class Handler {
 // completion.
 // Returns a promise with the same result type as main_fn.
 template <typename MainFn, typename CancelFn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancel(MainFn main_fn,
-                                                   CancelFn cancel_fn) {
+auto OnCancel(MainFn main_fn, CancelFn cancel_fn) {
   return [on_cancel =
               cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
           main_fn = promise_detail::PromiseLike<MainFn>(
@@ -87,8 +84,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancel(MainFn main_fn,
 // resulting promise. If the factory is dropped without being called, cancel_fn
 // is called.
 template <typename MainFn, typename CancelFn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancelFactory(MainFn main_fn,
-                                                          CancelFn cancel_fn) {
+auto OnCancelFactory(MainFn main_fn, CancelFn cancel_fn) {
   return [on_cancel =
               cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
           main_fn = std::move(main_fn)]() mutable {

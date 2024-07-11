@@ -27,9 +27,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_tracer_in_transport =
-    "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -47,6 +44,17 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
+const char* const description_keepalive_fix =
+    "Allows overriding keepalive_permit_without_calls. Refer "
+    "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const additional_constraints_keepalive_fix = "{}";
+const char* const description_keepalive_server_fix =
+    "Allows overriding keepalive_permit_without_calls for servers. Refer "
+    "https://github.com/grpc/grpc/pull/33917 for more information.";
+const char* const additional_constraints_keepalive_server_fix = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -113,8 +121,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
-    {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -127,6 +133,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
+    {"keepalive_fix", description_keepalive_fix,
+     additional_constraints_keepalive_fix, nullptr, 0, false, false},
+    {"keepalive_server_fix", description_keepalive_server_fix,
+     additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -177,9 +189,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_tracer_in_transport =
-    "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -197,6 +206,17 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
+const char* const description_keepalive_fix =
+    "Allows overriding keepalive_permit_without_calls. Refer "
+    "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const additional_constraints_keepalive_fix = "{}";
+const char* const description_keepalive_server_fix =
+    "Allows overriding keepalive_permit_without_calls for servers. Refer "
+    "https://github.com/grpc/grpc/pull/33917 for more information.";
+const char* const additional_constraints_keepalive_server_fix = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -263,8 +283,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
-    {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -277,6 +295,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
+    {"keepalive_fix", description_keepalive_fix,
+     additional_constraints_keepalive_fix, nullptr, 0, false, false},
+    {"keepalive_server_fix", description_keepalive_server_fix,
+     additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -327,9 +351,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_tracer_in_transport =
-    "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -347,6 +368,17 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
+const char* const description_keepalive_fix =
+    "Allows overriding keepalive_permit_without_calls. Refer "
+    "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const additional_constraints_keepalive_fix = "{}";
+const char* const description_keepalive_server_fix =
+    "Allows overriding keepalive_permit_without_calls for servers. Refer "
+    "https://github.com/grpc/grpc/pull/33917 for more information.";
+const char* const additional_constraints_keepalive_server_fix = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -413,8 +445,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
-    {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -427,6 +457,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
+    {"keepalive_fix", description_keepalive_fix,
+     additional_constraints_keepalive_fix, nullptr, 0, false, false},
+    {"keepalive_server_fix", description_keepalive_server_fix,
+     additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -465,7 +501,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core

@@ -30,6 +30,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
@@ -40,7 +41,7 @@ int grpc_tracer_set_enabled(const char* name, int enabled);
 namespace grpc_core {
 namespace {
 void LogAllTracers() {
-  VLOG(2) << "available tracers:";
+  gpr_log(GPR_DEBUG, "available tracers:");
   for (const auto& name : GetAllTraceFlags()) {
     LOG(INFO) << "  " << name.first;
   }

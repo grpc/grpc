@@ -22,7 +22,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -30,6 +29,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
@@ -58,6 +58,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
+  LOG(INFO) << "ChaoticGoodClientTransport::Orphan";
   AbortWithError();
   ActivityPtr writer;
   ActivityPtr reader;
@@ -281,8 +282,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
       call_handler.PullClientInitialMetadata(),
       [send_fragment](ClientMetadataHandle md) mutable {
         if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-          LOG(INFO) << "CHAOTIC_GOOD: Sending initial metadata: "
-                    << md->DebugString();
+          gpr_log(GPR_INFO, "CHAOTIC_GOOD: Sending initial metadata: %s",
+                  md->DebugString().c_str());
         }
         ClientFragmentFrame frame;
         frame.headers = std::move(md);
@@ -315,29 +316,27 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
 void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
   // At this point, the connection is set up.
   // Start sending data frames.
-  call_handler.SpawnGuarded(
-      "outbound_loop", [self = RefAsSubclass<ChaoticGoodClientTransport>(),
-                        call_handler]() mutable {
-        const uint32_t stream_id = self->MakeStream(call_handler);
-        return Map(self->CallOutboundLoop(stream_id, call_handler),
-                   [stream_id, sender = self->outgoing_frames_.MakeSender()](
-                       absl::Status result) mutable {
+  call_handler.SpawnGuarded("outbound_loop", [this, call_handler]() mutable {
+    const uint32_t stream_id = MakeStream(call_handler);
+    return Map(CallOutboundLoop(stream_id, call_handler),
+               [stream_id, sender = outgoing_frames_.MakeSender()](
+                   absl::Status result) mutable {
+                 GRPC_TRACE_LOG(chaotic_good, INFO)
+                     << "CHAOTIC_GOOD: Call " << stream_id << " finished with "
+                     << result.ToString();
+                 if (!result.ok()) {
+                   GRPC_TRACE_LOG(chaotic_good, INFO)
+                       << "CHAOTIC_GOOD: Send cancel";
+                   CancelFrame frame;
+                   frame.stream_id = stream_id;
+                   if (!sender.UnbufferedImmediateSend(std::move(frame))) {
                      GRPC_TRACE_LOG(chaotic_good, INFO)
-                         << "CHAOTIC_GOOD: Call " << stream_id
-                         << " finished with " << result.ToString();
-                     if (!result.ok()) {
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "CHAOTIC_GOOD: Send cancel";
-                       CancelFrame frame;
-                       frame.stream_id = stream_id;
-                       if (!sender.UnbufferedImmediateSend(std::move(frame))) {
-                         GRPC_TRACE_LOG(chaotic_good, INFO)
-                             << "CHAOTIC_GOOD: Send cancel failed";
-                       }
-                     }
-                     return result;
-                   });
-      });
+                         << "CHAOTIC_GOOD: Send cancel failed";
+                   }
+                 }
+                 return result;
+               });
+  });
 }
 
 void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {

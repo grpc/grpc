@@ -27,7 +27,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -40,6 +39,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
@@ -446,9 +446,11 @@ static void convert_cronet_array_to_metadata(
     }
     mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
                 [&](absl::string_view error, const grpc_core::Slice& value) {
-                  VLOG(2) << "Failed to parse metadata: key="
-                          << header_array->headers[i].key << " error=" << error
-                          << " value=" << value.as_string_view();
+                  gpr_log(GPR_DEBUG, "Failed to parse metadata: %s",
+                          absl::StrCat("key=", header_array->headers[i].key,
+                                       " error=", error,
+                                       " value=", value.as_string_view())
+                              .c_str());
                 });
   }
 }
@@ -457,7 +459,7 @@ static void convert_cronet_array_to_metadata(
 // Cronet callback
 //
 static void on_failed(bidirectional_stream* stream, int net_error) {
-  LOG(ERROR) << "on_failed(" << stream << ", " << net_error << ")";
+  gpr_log(GPR_ERROR, "on_failed(%p, %d)", stream, net_error);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
@@ -1484,8 +1486,8 @@ grpc_core::Transport* grpc_create_cronet_transport(
       if (0 ==
           strcmp(args->args[i].key, GRPC_ARG_USE_CRONET_PACKET_COALESCING)) {
         if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_INTEGER)) {
-          LOG(ERROR) << GRPC_ARG_USE_CRONET_PACKET_COALESCING
-                     << " ignored: it must be an integer";
+          gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+                  GRPC_ARG_USE_CRONET_PACKET_COALESCING);
         } else {
           ct->use_packet_coalescing = (args->args[i].value.integer != 0);
         }

@@ -55,7 +55,7 @@ class GreeterServiceImpl final : public CallbackGenericService {
       // Let the SayHello reactor handle this now on.
       return new SayHelloReactor();
     } else {
-      // Forward this to the implementation of the base class returning
+      // Forward this to the implementation of the base calss returning
       // UNIMPLEMENTED.
       return CallbackGenericService::CreateReactor(context);
     }

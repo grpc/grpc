@@ -42,8 +42,6 @@
 
 - name: call_status_override_on_cancellation
   default: true
-- name: call_tracer_in_transport
-  default: true
 - name: call_v3
   default: false
 - name: canary_client_privacy
@@ -74,6 +72,12 @@
     posix: true
     windows: true
 - name: free_large_allocator
+  default: false
+- name: http2_stats_fix
+  default: true
+- name: keepalive_fix
+  default: false
+- name: keepalive_server_fix
   default: false
 - name: max_pings_wo_data_throttle
   default: false
@@ -110,6 +114,6 @@
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken
-    posix: false
+    posix: true
     # TODO(ysseung): Test flakes not fully resolved.
     windows: broken

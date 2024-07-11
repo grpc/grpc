@@ -5,10 +5,10 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_python//python:defs.bzl", "py_binary")
-load("//bazel/private:upb_proto_library_internal/copts.bzl", "upb_proto_library_copts")
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
+load("//bazel:upb_proto_library_internal/copts.bzl", "upb_proto_library_copts")
 
 # begin:google_only
 # load("//tools/build_defs/kotlin/native:rules.bzl", "kt_native_interop_hint")
@@ -17,13 +17,13 @@ load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
 # begin:github_only
 load(
-    "//upb/bazel:amalgamation.bzl",
+    "//bazel:amalgamation.bzl",
     "upb_amalgamation",
 )
 # end:github_only
 
 # begin:google_only
-# package(default_applicable_licenses = [":license"])
+# package(default_applicable_licenses = ["//upb:license"])
 #
 # license(
 #     name = "license",
@@ -416,42 +416,6 @@ filegroup(
         "//upb/cmake:__pkg__",
     ],
 )
-
-filegroup(
-    name = "test_protos",
-    srcs = [
-        "//src/google/protobuf:test_messages_proto2.proto",
-        "//src/google/protobuf:test_messages_proto3.proto",
-        "//src/google/protobuf:well_known_type_protos",
-        "//upb/json:test_protos",
-        "//upb/message:test_protos",
-        "//upb/test:test_protos",
-        "//upb/util:test_protos",
-    ],
-    visibility = ["//pkg:__pkg__"],
-)
-
-filegroup(
-    name = "test_srcs",
-    srcs = [
-        "//upb/json:test_srcs",
-        "//upb/mem:test_srcs",
-        "//upb/message:test_srcs",
-        "//upb/test:test_srcs",
-        "//upb/util:test_srcs",
-        "//upb/wire:test_srcs",
-    ],
-    visibility = ["//pkg:__pkg__"],
-)
-
-filegroup(
-    name = "test_util",
-    srcs = [
-        "//upb/test:test_util",
-        "//upb/util:test_util",
-    ],
-    visibility = ["//pkg:__pkg__"],
-)
 # end:github_only
 
 # begin:google_only
@@ -473,11 +437,7 @@ filegroup(
 #         "**/*.hpp",
 #     ]),
 #     kotlin_package = "upb",
-#     no_string_conversion = [
-#         "_upb_MiniTable_Build",
-#         "upb_Decode",
-#         "upb_StringView_FromDataAndSize",
-#     ],
+#     no_string_conversion = ["_upb_MiniTable_Build"],
 #     strict_enums = [
 #         "upb_CType",
 #         "upb_DecodeStatus",
@@ -491,10 +451,7 @@ filegroup(
 #         "upb_UnknownToMessage_Status",
 #         "upb_WireType",
 #     ],
-#     visibility = [
-#         "//third_party/kotlin/protobuf:__subpackages__",
-#         "//upb:__subpackages__",
-#     ],
+#     visibility = ["//upb:__subpackages__"],
 # )
 #
 # end:google_only

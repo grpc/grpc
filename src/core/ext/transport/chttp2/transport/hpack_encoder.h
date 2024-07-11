@@ -25,12 +25,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
@@ -42,7 +42,6 @@
 #include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -209,7 +208,9 @@ class Compressor<
   void EncodeWith(MetadataTrait, const typename MetadataTrait::ValueType& value,
                   Encoder* encoder) {
     if (value != known_value) {
-      LOG(ERROR) << "Not encoding bad " << MetadataTrait::key() << " header";
+      gpr_log(GPR_ERROR, "%s",
+              absl::StrCat("Not encoding bad ", MetadataTrait::key(), " header")
+                  .c_str());
       encoder->NoteEncodingError();
       return;
     }
@@ -354,7 +355,7 @@ class HPackCompressor {
     bool is_end_of_stream;
     bool use_true_binary_metadata;
     size_t max_frame_size;
-    CallTracerInterface* call_tracer;
+    grpc_transport_one_way_stats* stats;
   };
 
   template <typename HeaderSet>

@@ -35,6 +35,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -281,9 +282,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this
-              << "] received update: cluster=" << new_config->cluster()
-              << " is_dynamic=" << new_config->is_dynamic();
+    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
+            this, new_config->cluster().c_str(), new_config->is_dynamic());
   }
   CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
@@ -327,9 +327,10 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // recently subscribed but another update came through before we
       // got the new cluster, in which case it will still be missing.
       if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-        LOG(INFO) << "[cdslb " << this
-                  << "] xDS config has no entry for dynamic cluster "
-                  << cluster_name_ << ", waiting for subsequent update";
+        gpr_log(GPR_INFO,
+                "[cdslb %p] xDS config has no entry for dynamic cluster %s, "
+                "waiting for subsequent update",
+                this, cluster_name_.c_str());
       }
       // Stay in CONNECTING until we get an update that has the cluster.
       return absl::OkStatus();
@@ -453,9 +454,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
     if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      LOG(INFO) << "[cdslb " << this << "] created child policy "
-                << (*child_config)->name() << " (" << child_policy_.get()
-                << ")";
+      gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)", this,
+              std::string((*child_config)->name()).c_str(),
+              child_policy_.get());
     }
   }
   // Update child policy.

@@ -46,6 +46,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
@@ -105,9 +106,11 @@ class MetadataEncoder {
     }
     uint64_t mdentry_len = key.length() + value.length();
     if (mdentry_len > log_len_) {
-      VLOG(2) << "Skipped metadata key because of max metadata logging bytes "
-              << mdentry_len << " (current) vs " << log_len_
-              << " (max less already accounted metadata)";
+      gpr_log(
+          GPR_DEBUG,
+          "Skipped metadata key because of max metadata logging bytes %" PRIu64
+          " (current) vs %" PRIu64 " (max less already accounted metadata)",
+          mdentry_len, log_len_);
       truncated_ = true;
       return;
     }

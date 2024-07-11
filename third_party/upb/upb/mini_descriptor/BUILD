@@ -1,5 +1,5 @@
 load(
-    "//upb/bazel:build_defs.bzl",
+    "//bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
     "UPB_DEFAULT_CPPOPTS",
 )

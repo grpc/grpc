@@ -35,8 +35,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
@@ -91,6 +93,15 @@ class TimerForkCallbackMethods {
   static void PostforkParent() { g_timer_fork_manager->PostforkParent(); }
   static void PostforkChild() { g_timer_fork_manager->PostforkChild(); }
 };
+
+bool ShouldUseAresDnsResolver() {
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  auto resolver_env = grpc_core::ConfigVars::Get().DnsResolver();
+  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
+#else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  return false;
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+}
 
 }  // namespace
 
@@ -450,9 +461,11 @@ PosixEventEngine::~PosixEventEngine() {
     grpc_core::MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
-        LOG(ERROR) << "(event_engine) PosixEventEngine:" << this
-                   << " uncleared TaskHandle at shutdown:"
-                   << HandleToString(handle);
+        gpr_log(GPR_ERROR,
+                "(event_engine) PosixEventEngine:%p uncleared "
+                "TaskHandle at "
+                "shutdown:%s",
+                this, HandleToString(handle).c_str());
       }
     }
     CHECK(GPR_LIKELY(known_handles_.empty()));

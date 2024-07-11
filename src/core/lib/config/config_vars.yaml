@@ -72,6 +72,12 @@
   description:
     Logging verbosity.
   fuzz: true
+- name: stacktrace_minloglevel
+  type: string
+  default:
+  description:
+    Messages logged at the same or higher level than this will print stacktrace
+  fuzz: true
 - name: enable_fork_support
   type: bool
   description: Enable fork support

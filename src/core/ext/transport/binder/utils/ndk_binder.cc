@@ -25,6 +25,8 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -34,8 +36,9 @@ void* GetNdkBinderHandle() {
   // first
   static void* handle = dlopen("libbinder_ndk.so", RTLD_LAZY);
   if (handle == nullptr) {
-    LOG(ERROR) << "Cannot open libbinder_ndk.so. Does this device support API "
-                  "level 29?";
+    gpr_log(
+        GPR_ERROR,
+        "Cannot open libbinder_ndk.so. Does this device support API level 29?");
     CHECK(0);
   }
   return handle;
@@ -98,9 +101,10 @@ namespace ndk_util {
   static func_type ptr =                                               \
       reinterpret_cast<func_type>(dlsym(GetNdkBinderHandle(), #name)); \
   if (ptr == nullptr) {                                                \
-    LOG(ERROR) << "dlsym failed. Cannot find " << #name                \
-               << " in libbinder_ndk.so. "                             \
-               << "BinderTransport requires API level >= 33";          \
+    gpr_log(GPR_ERROR,                                                 \
+            "dlsym failed. Cannot find %s in libbinder_ndk.so. "       \
+            "BinderTransport requires API level >= 33",                \
+            #name);                                                    \
     CHECK(0);                                                          \
   }                                                                    \
   return ptr

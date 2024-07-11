@@ -20,19 +20,18 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-bool upb_Message_SetMapEntry(upb_Map* map, const upb_MiniTable* m,
+bool upb_Message_SetMapEntry(upb_Map* map, const upb_MiniTable* mini_table,
                              const upb_MiniTableField* f,
                              upb_Message* map_entry_message, upb_Arena* arena) {
-  UPB_ASSERT(!upb_Message_IsFrozen(map_entry_message));
-
   // TODO: use a variant of upb_MiniTable_GetSubMessageTable() here.
   const upb_MiniTable* map_entry_mini_table = upb_MiniTableSub_Message(
-      m->UPB_PRIVATE(subs)[f->UPB_PRIVATE(submsg_index)]);
+      mini_table->UPB_PRIVATE(subs)[f->UPB_PRIVATE(submsg_index)]);
   UPB_ASSERT(map_entry_mini_table);
+  UPB_ASSERT(map_entry_mini_table->UPB_PRIVATE(field_count) == 2);
   const upb_MiniTableField* map_entry_key_field =
-      upb_MiniTable_MapKey(map_entry_mini_table);
+      &map_entry_mini_table->UPB_PRIVATE(fields)[0];
   const upb_MiniTableField* map_entry_value_field =
-      upb_MiniTable_MapValue(map_entry_mini_table);
+      &map_entry_mini_table->UPB_PRIVATE(fields)[1];
   // Map key/value cannot have explicit defaults,
   // hence assuming a zero default is valid.
   upb_MessageValue default_val;

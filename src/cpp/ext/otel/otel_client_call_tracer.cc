@@ -47,7 +47,6 @@
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -163,35 +162,22 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
         opentelemetry::context::Context{});
   }
-  uint64_t outgoing_bytes = 0;
-  uint64_t incoming_bytes = 0;
-  if (grpc_core::IsCallTracerInTransportEnabled()) {
-    outgoing_bytes = outgoing_bytes_.load();
-    incoming_bytes = incoming_bytes_.load();
-  } else if (transport_stream_stats != nullptr) {
-    outgoing_bytes = transport_stream_stats->outgoing.data_bytes;
-    incoming_bytes = transport_stream_stats->incoming.data_bytes;
-  }
   if (parent_->otel_plugin_->client_.attempt
           .sent_total_compressed_message_size != nullptr) {
     parent_->otel_plugin_->client_.attempt.sent_total_compressed_message_size
-        ->Record(outgoing_bytes, labels, opentelemetry::context::Context{});
+        ->Record(transport_stream_stats != nullptr
+                     ? transport_stream_stats->outgoing.data_bytes
+                     : 0,
+                 labels, opentelemetry::context::Context{});
   }
   if (parent_->otel_plugin_->client_.attempt
           .rcvd_total_compressed_message_size != nullptr) {
     parent_->otel_plugin_->client_.attempt.rcvd_total_compressed_message_size
-        ->Record(incoming_bytes, labels, opentelemetry::context::Context{});
+        ->Record(transport_stream_stats != nullptr
+                     ? transport_stream_stats->incoming.data_bytes
+                     : 0,
+                 labels, opentelemetry::context::Context{});
   }
-}
-
-void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordIncomingBytes(const TransportByteSize& transport_byte_size) {
-  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
-}
-
-void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
-    RecordOutgoingBytes(const TransportByteSize& transport_byte_size) {
-  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordCancel(

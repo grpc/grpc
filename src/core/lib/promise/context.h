@@ -62,7 +62,7 @@ class ThreadLocalContext : public ContextType<T> {
   ThreadLocalContext(const ThreadLocalContext&) = delete;
   ThreadLocalContext& operator=(const ThreadLocalContext&) = delete;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() { return current_; }
+  static T* get() { return current_; }
 
  private:
   T* const old_;
@@ -83,7 +83,7 @@ class Context<T, absl::void_t<typename ContextSubclass<T>::Base>>
     : public Context<typename ContextSubclass<T>::Base> {
  public:
   using Context<typename ContextSubclass<T>::Base>::Context;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() {
+  static T* get() {
     return DownCast<T*>(Context<typename ContextSubclass<T>::Base>::get());
   }
 };
@@ -107,26 +107,26 @@ class WithContext {
 
 // Return true if a context of type T is currently active.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool HasContext() {
+bool HasContext() {
   return promise_detail::Context<T>::get() != nullptr;
 }
 
 // Retrieve the current value of a context, or abort if the value is unset.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
+T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  DCHECK_NE(p, nullptr);
+  CHECK_NE(p, nullptr);
   return p;
 }
 
 // Retrieve the current value of a context, or nullptr if the value is unset.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* MaybeGetContext() {
+T* MaybeGetContext() {
   return promise_detail::Context<T>::get();
 }
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SetContext(T* p) {
+void SetContext(T* p) {
   promise_detail::Context<T>::set(p);
 }
 

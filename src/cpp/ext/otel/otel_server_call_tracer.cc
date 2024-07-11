@@ -37,7 +37,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -124,29 +123,15 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
   if (otel_plugin_->server_.call.sent_total_compressed_message_size !=
       nullptr) {
     otel_plugin_->server_.call.sent_total_compressed_message_size->Record(
-        grpc_core::IsCallTracerInTransportEnabled()
-            ? outgoing_bytes_.load()
-            : final_info->stats.transport_stream_stats.outgoing.data_bytes,
-        labels, opentelemetry::context::Context{});
+        final_info->stats.transport_stream_stats.outgoing.data_bytes, labels,
+        opentelemetry::context::Context{});
   }
   if (otel_plugin_->server_.call.rcvd_total_compressed_message_size !=
       nullptr) {
     otel_plugin_->server_.call.rcvd_total_compressed_message_size->Record(
-        grpc_core::IsCallTracerInTransportEnabled()
-            ? incoming_bytes_.load()
-            : final_info->stats.transport_stream_stats.incoming.data_bytes,
-        labels, opentelemetry::context::Context{});
+        final_info->stats.transport_stream_stats.incoming.data_bytes, labels,
+        opentelemetry::context::Context{});
   }
-}
-
-void OpenTelemetryPluginImpl::ServerCallTracer::RecordIncomingBytes(
-    const TransportByteSize& transport_byte_size) {
-  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
-}
-
-void OpenTelemetryPluginImpl::ServerCallTracer::RecordOutgoingBytes(
-    const TransportByteSize& transport_byte_size) {
-  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 }  // namespace internal

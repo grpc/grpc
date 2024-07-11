@@ -33,6 +33,9 @@
 #include "src/core/resolver/server_address.h"  // IWYU pragma: keep
 #include "src/core/service_config/service_config.h"
 
+// Name associated with individual address, if available.
+#define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
+
 namespace grpc_core {
 
 /// Interface for name resolution.

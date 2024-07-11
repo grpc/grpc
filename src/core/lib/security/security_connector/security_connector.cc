@@ -23,8 +23,8 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -105,8 +105,8 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
-               << GRPC_ARG_SECURITY_CONNECTOR;
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
+            GRPC_ARG_SECURITY_CONNECTOR);
     return nullptr;
   }
   return static_cast<grpc_security_connector*>(arg->value.pointer.p);

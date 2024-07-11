@@ -27,13 +27,11 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
@@ -51,12 +49,6 @@ using testing::StrictMock;
 namespace grpc_core {
 namespace {
 
-RefCountedPtr<Arena> ArenaWithEventEngine(EventEngine* ee) {
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(ee);
-  return arena;
-}
-
 TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
   Notification done;
@@ -69,7 +61,7 @@ TEST(Sleep, Zzzz) {
         EXPECT_EQ(r, absl::OkStatus());
         done.Notify();
       },
-      ArenaWithEventEngine(engine.get()));
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(Timestamp::Now(), done_time);
@@ -92,7 +84,7 @@ TEST(Sleep, OverlyEagerEventEngine) {
         EXPECT_EQ(r, absl::OkStatus());
         done = true;
       },
-      ArenaWithEventEngine(static_cast<EventEngine*>(&mock_event_engine)));
+      static_cast<EventEngine*>(&mock_event_engine));
   Mock::VerifyAndClearExpectations(&mock_event_engine);
   EXPECT_NE(wakeup, nullptr);
   EXPECT_FALSE(done);
@@ -114,7 +106,7 @@ TEST(Sleep, AlreadyDone) {
         EXPECT_EQ(r, absl::OkStatus());
         done.Notify();
       },
-      ArenaWithEventEngine(engine.get()));
+      engine.get());
   done.WaitForNotification();
 }
 
@@ -131,7 +123,7 @@ TEST(Sleep, Cancel) {
         EXPECT_EQ(r, absl::CancelledError());
         done.Notify();
       },
-      ArenaWithEventEngine(engine.get()));
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_LT(Timestamp::Now(), done_time);
@@ -151,7 +143,7 @@ TEST(Sleep, MoveSemantics) {
         EXPECT_EQ(r, absl::OkStatus());
         done.Notify();
       },
-      ArenaWithEventEngine(engine.get()));
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(Timestamp::Now(), done_time);
@@ -171,7 +163,7 @@ TEST(Sleep, StressTest) {
         Sleep(Timestamp::Now() + Duration::Seconds(1)),
         ExecCtxWakeupScheduler(),
         [notification](absl::Status /*r*/) { notification->Notify(); },
-        ArenaWithEventEngine(engine.get()));
+        engine.get());
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }

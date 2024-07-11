@@ -28,6 +28,7 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -156,8 +157,8 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context* ctx,
       "grpc_auth_context_set_peer_identity_property_name(ctx=%p, name=%s)", 2,
       (ctx, name));
   if (prop == nullptr) {
-    LOG(ERROR) << "Property name " << (name != nullptr ? name : "NULL")
-               << " not found in auth context.";
+    gpr_log(GPR_ERROR, "Property name %s not found in auth context.",
+            name != nullptr ? name : "NULL");
     return 0;
   }
   ctx->set_peer_identity_property_name(prop->name);
@@ -310,8 +311,8 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c) {
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
-               << GRPC_AUTH_CONTEXT_ARG;
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
+            GRPC_AUTH_CONTEXT_ARG);
     return nullptr;
   }
   return static_cast<grpc_auth_context*>(arg->value.pointer.p);

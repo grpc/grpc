@@ -41,7 +41,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -56,7 +55,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
-#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "src/core/xds/xds_client/xds_api.h"
@@ -284,10 +283,8 @@ GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
   if (key == GrpcXdsClient::kServerKey) {
     return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
   }
-  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-      ChannelArgs{});
   // TODO(roth): How do we set the authority here?
-  experimental::StatsPluginChannelScope scope(key, "", endpoint_config);
+  experimental::StatsPluginChannelScope scope(key, "");
   return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 

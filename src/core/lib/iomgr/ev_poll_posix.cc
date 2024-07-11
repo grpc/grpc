@@ -39,6 +39,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -333,10 +334,10 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
 static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                    int line) {
   if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd->fd << " " << fd << "   ref " << n << " "
-            << gpr_atm_no_barrier_load(&fd->refst) << " -> "
-            << gpr_atm_no_barrier_load(&fd->refst) + n << " [" << reason << "; "
-            << file << ":" << line << "]";
+    gpr_log(GPR_DEBUG,
+            "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
 #define REF_BY(fd, n, reason) \
@@ -358,10 +359,10 @@ static void ref_by(grpc_fd* fd, int n) {
 static void unref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                      int line) {
   if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd->fd << " " << fd << " unref " << n << " "
-            << gpr_atm_no_barrier_load(&fd->refst) << " -> "
-            << gpr_atm_no_barrier_load(&fd->refst) - n << " [" << reason << "; "
-            << file << ":" << line << "]";
+    gpr_log(GPR_DEBUG,
+            "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
+            fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
+            gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
   }
 #else
 static void unref_by(grpc_fd* fd, int n) {
@@ -1029,7 +1030,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
       if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-        LOG(INFO) << pollset << " poll=" << r;
+        gpr_log(GPR_INFO, "%p poll=%d", pollset, r);
       }
 
       if (r < 0) {
@@ -1053,7 +1054,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
           if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-            LOG(INFO) << pollset << ": got_wakeup";
+            gpr_log(GPR_INFO, "%p: got_wakeup", pollset);
           }
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
@@ -1067,10 +1068,9 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-              LOG(INFO) << pollset << " got_event: " << pfds[i].fd
-                        << " r:" << ((pfds[i].revents & POLLIN_CHECK) != 0)
-                        << " w:" << ((pfds[i].revents & POLLOUT_CHECK) != 0)
-                        << " [" << pfds[i].revents << "]";
+              gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
+                      pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
+                      (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
             }
             // This is a mitigation to prevent poll() from spinning on a
             //* POLLHUP https://github.com/grpc/grpc/pull/13665

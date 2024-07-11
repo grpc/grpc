@@ -93,6 +93,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -310,17 +311,14 @@ class GrpcLb final : public LoadBalancingPolicy {
   class SubchannelWrapper final : public DelegatingSubchannel {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
-                      RefCountedPtr<GrpcLb> lb_policy,
-                      grpc_event_engine::experimental::Slice lb_token,
+                      RefCountedPtr<GrpcLb> lb_policy, std::string lb_token,
                       RefCountedPtr<GrpcLbClientStats> client_stats)
         : DelegatingSubchannel(std::move(subchannel)),
           lb_policy_(std::move(lb_policy)),
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    const grpc_event_engine::experimental::Slice& lb_token() const {
-      return lb_token_;
-    }
+    const std::string& lb_token() const { return lb_token_; }
     GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
 
    private:
@@ -342,14 +340,14 @@ class GrpcLb final : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<GrpcLb> lb_policy_;
-    grpc_event_engine::experimental::Slice lb_token_;
+    std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
   class TokenAndClientStatsArg final
       : public RefCounted<TokenAndClientStatsArg> {
    public:
-    TokenAndClientStatsArg(grpc_event_engine::experimental::Slice lb_token,
+    TokenAndClientStatsArg(std::string lb_token,
                            RefCountedPtr<GrpcLbClientStats> client_stats)
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
@@ -360,21 +358,18 @@ class GrpcLb final : public LoadBalancingPolicy {
 
     static int ChannelArgsCompare(const TokenAndClientStatsArg* a,
                                   const TokenAndClientStatsArg* b) {
-      int r =
-          a->lb_token_.as_string_view().compare(b->lb_token_.as_string_view());
+      int r = a->lb_token_.compare(b->lb_token_);
       if (r != 0) return r;
       return QsortCompare(a->client_stats_.get(), b->client_stats_.get());
     }
 
-    const grpc_event_engine::experimental::Slice& lb_token() const {
-      return lb_token_;
-    }
+    const std::string& lb_token() const { return lb_token_; }
     RefCountedPtr<GrpcLbClientStats> client_stats() const {
       return client_stats_;
     }
 
    private:
-    grpc_event_engine::experimental::Slice lb_token_;
+    std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
@@ -496,9 +491,10 @@ class GrpcLb final : public LoadBalancingPolicy {
           new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
         // fallback mode immediately.
-        LOG(INFO) << "[grpclb " << parent_.get()
-                  << "] balancer channel in state:TRANSIENT_FAILURE ("
-                  << status.ToString() << "); entering fallback mode";
+        gpr_log(GPR_INFO,
+                "[grpclb %p] balancer channel in state:TRANSIENT_FAILURE (%s); "
+                "entering fallback mode",
+                parent_.get(), status.ToString().c_str());
         parent_->fallback_at_startup_checks_pending_ = false;
         parent_->channel_control_helper()->GetEventEngine()->Cancel(
             *parent_->lb_fallback_timer_handle_);
@@ -669,8 +665,7 @@ class GrpcLb::Serverlist::AddressIterator final
       // LB token processing.
       const size_t lb_token_length = strnlen(
           server.load_balance_token, GPR_ARRAY_SIZE(server.load_balance_token));
-      auto lb_token = grpc_event_engine::experimental::Slice::FromCopiedBuffer(
-          server.load_balance_token, lb_token_length);
+      std::string lb_token(server.load_balance_token, lb_token_length);
       if (lb_token.empty()) {
         auto addr_uri = grpc_sockaddr_to_uri(&addr);
         LOG(INFO) << "Missing LB token for backend address '"
@@ -778,10 +773,9 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
       // NOLINTBEGIN(bugprone-string-constructor)
-      complete_pick->metadata_mutations.Set(
+      args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
-          grpc_event_engine::experimental::Slice(grpc_slice_from_static_buffer(
-              reinterpret_cast<const char*>(client_stats), 0)));
+          absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
       // NOLINTEND(bugprone-string-constructor)
       // Update calls-started.
       client_stats->AddCallStarted();
@@ -791,8 +785,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     // may get refreshed between when we return this pick and when the
     // initial metadata goes out on the wire.
     if (!subchannel_wrapper->lb_token().empty()) {
-      complete_pick->metadata_mutations.Set(
-          LbTokenMetadata::key(), subchannel_wrapper->lb_token().Ref());
+      char* lb_token = static_cast<char*>(
+          args.call_state->Alloc(subchannel_wrapper->lb_token().size() + 1));
+      strcpy(lb_token, subchannel_wrapper->lb_token().c_str());
+      args.initial_metadata->Add(LbTokenMetadata::key(), lb_token);
     }
     // Unwrap subchannel to pass up to the channel.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
@@ -815,11 +811,13 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
         absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %s",
                         parent(), addr_str.value_or("N/A").c_str()));
   }
+  std::string lb_token = arg->lb_token();
+  RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
       parent()->RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "SubchannelWrapper"),
-      arg->lb_token().Ref(), arg->client_stats());
+      std::move(lb_token), std::move(client_stats));
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -850,11 +848,12 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent()->lb_calld_->client_stats()->Ref();
   }
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    LOG(INFO) << "[grpclb " << parent() << " helper " << this
-              << "] state=" << ConnectivityStateName(state) << " ("
-              << status.ToString() << ") wrapping child picker " << picker.get()
-              << " (serverlist=" << serverlist.get()
-              << ", client_stats=" << client_stats.get() << ")";
+    gpr_log(GPR_INFO,
+            "[grpclb %p helper %p] state=%s (%s) wrapping child "
+            "picker %p (serverlist=%p, client_stats=%p)",
+            parent(), this, ConnectivityStateName(state),
+            status.ToString().c_str(), picker.get(), serverlist.get(),
+            client_stats.get());
   }
   parent()->channel_control_helper()->UpdateState(
       state, status,
@@ -946,8 +945,8 @@ void GrpcLb::BalancerCallState::Orphan() {
 void GrpcLb::BalancerCallState::StartQuery() {
   CHECK_NE(lb_call_, nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    LOG(INFO) << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this
-              << ": Starting LB call " << lb_call_;
+    gpr_log(GPR_INFO, "[grpclb %p] lb_calld=%p: Starting LB call %p",
+            grpclb_policy_.get(), this, lb_call_);
   }
   // Create the ops.
   grpc_call_error call_error;
@@ -1173,16 +1172,18 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
           client_stats_report_interval_ = std::max(
               Duration::Seconds(1), response.client_stats_report_interval);
           if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-            LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                      << ": Received initial LB response message; client load "
-                         "reporting interval = "
-                      << client_stats_report_interval_.millis()
-                      << " milliseconds";
+            gpr_log(GPR_INFO,
+                    "[grpclb %p] lb_calld=%p: Received initial LB response "
+                    "message; client load reporting interval = %" PRId64
+                    " milliseconds",
+                    grpclb_policy(), this,
+                    client_stats_report_interval_.millis());
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-          LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                    << ": Received initial LB response message; client load "
-                       "reporting NOT enabled";
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] lb_calld=%p: Received initial LB response "
+                  "message; client load reporting NOT enabled",
+                  grpclb_policy(), this);
         }
         seen_initial_response_ = true;
         break;
@@ -1192,11 +1193,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         auto serverlist_wrapper =
             MakeRefCounted<Serverlist>(std::move(response.serverlist));
         if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-          LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                    << ": Serverlist with "
-                    << serverlist_wrapper->serverlist().size()
-                    << " servers received:\n"
-                    << serverlist_wrapper->AsText();
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
+                  " servers received:\n%s",
+                  grpclb_policy(), this,
+                  serverlist_wrapper->serverlist().size(),
+                  serverlist_wrapper->AsText().c_str());
         }
         seen_serverlist_ = true;
         // Start sending client load report only after we start using the
@@ -1212,9 +1214,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         if (grpclb_policy()->serverlist_ != nullptr &&
             *grpclb_policy()->serverlist_ == *serverlist_wrapper) {
           if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-            LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                      << ": Incoming server list identical to current, "
-                         "ignoring.";
+            gpr_log(GPR_INFO,
+                    "[grpclb %p] lb_calld=%p: Incoming server list identical "
+                    "to current, ignoring.",
+                    grpclb_policy(), this);
           }
         } else {  // New serverlist.
           // Dispose of the fallback.
@@ -1237,9 +1240,10 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
           // it in favor of the xds policy.  We will implement this the
           // right way in the xds policy instead.
           if (grpclb_policy()->fallback_mode_) {
-            LOG(INFO) << "[grpclb " << grpclb_policy()
-                      << "] Received response from balancer; exiting fallback "
-                         "mode";
+            gpr_log(GPR_INFO,
+                    "[grpclb %p] Received response from balancer; exiting "
+                    "fallback mode",
+                    grpclb_policy());
             grpclb_policy()->fallback_mode_ = false;
           }
           if (grpclb_policy()->fallback_at_startup_checks_pending_) {
@@ -1258,8 +1262,9 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
       }
       case response.FALLBACK: {
         if (!grpclb_policy()->fallback_mode_) {
-          LOG(INFO) << "[grpclb " << grpclb_policy()
-                    << "] Entering fallback mode as requested by balancer";
+          gpr_log(GPR_INFO,
+                  "[grpclb %p] Entering fallback mode as requested by balancer",
+                  grpclb_policy());
           if (grpclb_policy()->fallback_at_startup_checks_pending_) {
             grpclb_policy()->fallback_at_startup_checks_pending_ = false;
             grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
@@ -1308,11 +1313,11 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
   CHECK_NE(lb_call_, nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     char* status_details = grpc_slice_to_c_string(lb_call_status_details_);
-    LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-              << ": Status from LB server received. Status = "
-              << lb_call_status_ << ", details = '" << status_details
-              << "', (lb_call: " << lb_call_ << "), error '"
-              << StatusToString(error) << "'";
+    gpr_log(GPR_INFO,
+            "[grpclb %p] lb_calld=%p: Status from LB server received. "
+            "Status = %d, details = '%s', (lb_call: %p), error '%s'",
+            grpclb_policy(), this, lb_call_status_, status_details, lb_call_,
+            StatusToString(error).c_str());
     gpr_free(status_details);
   }
   // If this lb_calld is still in use, this call ended because of a failure so
@@ -1325,9 +1330,10 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     grpclb_policy()->lb_calld_.reset();
     if (grpclb_policy()->fallback_at_startup_checks_pending_) {
       CHECK(!seen_serverlist_);
-      LOG(INFO) << "[grpclb " << grpclb_policy()
-                << "] Balancer call finished without receiving serverlist; "
-                   "entering fallback mode";
+      gpr_log(GPR_INFO,
+              "[grpclb %p] Balancer call finished without receiving "
+              "serverlist; entering fallback mode",
+              grpclb_policy());
       grpclb_policy()->fallback_at_startup_checks_pending_ = false;
       grpclb_policy()->channel_control_helper()->GetEventEngine()->Cancel(
           *grpclb_policy()->lb_fallback_timer_handle_);
@@ -1536,8 +1542,7 @@ class GrpcLb::NullLbTokenEndpointIterator final
  private:
   std::shared_ptr<EndpointAddressesIterator> parent_it_;
   RefCountedPtr<TokenAndClientStatsArg> empty_token_ =
-      MakeRefCounted<TokenAndClientStatsArg>(
-          grpc_event_engine::experimental::Slice(), nullptr);
+      MakeRefCounted<TokenAndClientStatsArg>("", nullptr);
 };
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
@@ -1656,9 +1661,9 @@ void GrpcLb::StartBalancerCallLocked() {
   CHECK(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    LOG(INFO) << "[grpclb " << this
-              << "] Query for backends (lb_channel: " << lb_channel_.get()
-              << ", lb_calld: " << lb_calld_.get() << ")";
+    gpr_log(GPR_INFO,
+            "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
+            this, lb_channel_.get(), lb_calld_.get());
   }
   lb_calld_->StartQuery();
 }
@@ -1668,8 +1673,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     LOG(INFO) << "[grpclb " << this << "] Connection to LB server lost...";
     if (timeout > Duration::Zero()) {
-      LOG(INFO) << "[grpclb " << this << "] ... retry_timer_active in "
-                << timeout.millis() << "ms.";
+      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
+              this, timeout.millis());
     } else {
       LOG(INFO) << "[grpclb " << this
                 << "] ... retry_timer_active immediately.";
@@ -1714,9 +1719,10 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
   if (!fallback_mode_ && !fallback_at_startup_checks_pending_ &&
       (lb_calld_ == nullptr || !lb_calld_->seen_serverlist()) &&
       !child_policy_ready_) {
-    LOG(INFO) << "[grpclb " << this
-              << "] lost contact with balancer and backends from most recent "
-                 "serverlist; entering fallback mode";
+    gpr_log(GPR_INFO,
+            "[grpclb %p] lost contact with balancer and backends from "
+            "most recent serverlist; entering fallback mode",
+            this);
     fallback_mode_ = true;
     CreateOrUpdateChildPolicyLocked();
   }
@@ -1862,8 +1868,9 @@ void GrpcLb::OnSubchannelCacheTimerLocked() {
     auto it = cached_subchannels_.begin();
     if (it != cached_subchannels_.end()) {
       if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-        LOG(INFO) << "[grpclb " << this << "] removing " << it->second.size()
-                  << " subchannels from cache";
+        gpr_log(GPR_INFO,
+                "[grpclb %p] removing %" PRIuPTR " subchannels from cache",
+                this, it->second.size());
       }
       cached_subchannels_.erase(it);
     }

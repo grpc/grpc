@@ -150,6 +150,16 @@ class ChannelFilter {
   virtual bool GetChannelInfo(const grpc_channel_info*) { return false; }
 
   virtual ~ChannelFilter() = default;
+
+  grpc_event_engine::experimental::EventEngine*
+  hack_until_per_channel_stack_event_engines_land_get_event_engine() {
+    return event_engine_.get();
+  }
+
+ private:
+  // TODO(ctiller): remove once per-channel-stack EventEngines land
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 namespace promise_filter_detail {
@@ -943,8 +953,9 @@ class BaseCallData : public Activity, private Wakeable {
         : promise_detail::Context<Arena>(call_data->arena_),
           promise_detail::Context<grpc_polling_entity>(
               call_data->pollent_.load(std::memory_order_acquire)),
-          promise_detail::Context<CallFinalization>(&call_data->finalization_) {
-    }
+          promise_detail::Context<CallFinalization>(&call_data->finalization_),
+          promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
+              call_data->event_engine_) {}
   };
 
   class Flusher {
@@ -1294,6 +1305,7 @@ class BaseCallData : public Activity, private Wakeable {
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;
+  grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
 class ClientCallData : public BaseCallData {

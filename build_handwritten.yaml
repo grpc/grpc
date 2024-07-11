@@ -15,7 +15,7 @@ settings:
   core_version: 42.0.0
   csharp_major_version: 2
   g_stands_for: gladiator
-  protobuf_version: 3.27.2
+  protobuf_version: 3.26.1
   version: 1.66.0-dev
 configs:
   asan:

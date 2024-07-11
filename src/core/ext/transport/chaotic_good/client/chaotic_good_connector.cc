@@ -19,7 +19,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -37,7 +36,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -78,10 +76,7 @@ const int32_t kTimeoutSecs = 120;
 ChaoticGoodConnector::ChaoticGoodConnector(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : event_engine_(std::move(event_engine)),
-      handshake_mgr_(MakeRefCounted<HandshakeManager>()) {
-  arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine_.get());
-}
+      handshake_mgr_(std::make_shared<HandshakeManager>()) {}
 
 ChaoticGoodConnector::~ChaoticGoodConnector() {
   CHECK_EQ(notify_, nullptr);
@@ -320,7 +315,8 @@ void ChaoticGoodConnector::OnHandshakeDone(
         EventEngineWakeupScheduler(event_engine_),
         [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
           if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-            LOG(INFO) << "ChaoticGoodConnector::OnHandshakeDone: " << status;
+            gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
+                    status.ToString().c_str());
           }
           if (status.ok()) {
             MutexLock lock(&self->mu_);
@@ -337,7 +333,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
                          status);
           }
         },
-        arena_);
+        arena_, event_engine_.get());
     MutexLock lock(&mu_);
     if (!is_shutdown_) {
       connect_activity_ = std::move(activity);
