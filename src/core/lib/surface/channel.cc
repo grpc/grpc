@@ -120,9 +120,9 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
 
 void* grpc_channel_register_call(grpc_channel* channel, const char* method,
                                  const char* host, void* reserved) {
-  GRPC_TRACE_LOG(api, INFO) << "grpc_channel_register_call(channel=" < < < <
-      ", method=" < < < < ", host=" < < < < ", reserved=" < < < < ")",
-      channel, method, host, reserved;
+  GRPC_TRACE_LOG(api, INFO) << "grpc_channel_register_call(channel=" << channel
+                            << ", method=" << method << ", host=" << host
+                            << ", reserved=" << reserved << ")";
   CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
