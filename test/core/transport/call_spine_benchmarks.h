@@ -359,11 +359,9 @@ class UnstartedCallDestinationFixture {
 
 }  // namespace grpc_core
 
-// Declare all relevant benchmarks for a given fixture
-// Must be called within the grpc_core namespace
-#define GRPC_CALL_SPINE_BENCHMARK(Fixture)     \
-  BENCHMARK(BM_UnaryWithSpawnPerEnd<Fixture>); \
-  BENCHMARK(BM_UnaryWithSpawnPerOp<Fixture>);  \
-  BENCHMARK(BM_ClientToServerStreaming<Fixture>)
+#define GRPC_CALL_SPINE_BENCHMARK(Fixture)                \
+  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerEnd<Fixture>); \
+  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>);  \
+  BENCHMARK(grpc_core::BM_ClientToServerStreaming<Fixture>)
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
