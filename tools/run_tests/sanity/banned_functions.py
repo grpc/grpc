@@ -235,6 +235,18 @@ BANNED_EXCEPT = {
         "./src/core/util/windows/log.cc",
         "./test/core/end2end/tests/no_logging.cc",
     ],
+    "gpr_log_verbosity_init(": [
+        "./include/grpc/support/log.h",
+        "./src/core/lib/surface/init.cc",
+        "./src/core/util/log.cc",
+        "./test/core/promise/mpsc_test.cc",
+        "./test/core/promise/observable_test.cc",
+        "./test/core/resource_quota/memory_quota_fuzzer.cc",
+        "./test/core/resource_quota/memory_quota_test.cc",
+        "./test/core/resource_quota/periodic_update_test.cc",
+        "./test/core/test_util/test_config.cc",
+        "./test/core/transport/interception_chain_test.cc",
+    ],
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",
