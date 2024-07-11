@@ -49,6 +49,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -373,35 +374,38 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       // if it is available.
       if (g_socket_supports_tcp_user_timeout.load() == 0) {
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-          LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-                       "won't be used thereafter";
+          gpr_log(GPR_INFO,
+                  "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT won't "
+                  "be used thereafter");
           g_socket_supports_tcp_user_timeout.store(-1);
         } else {
-          LOG(INFO) << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will "
-                       "be used thereafter";
+          gpr_log(GPR_INFO,
+                  "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+                  "used thereafter");
           g_socket_supports_tcp_user_timeout.store(1);
         }
       }
       if (g_socket_supports_tcp_user_timeout.load() > 0) {
         if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-          LOG(INFO) << "Enabling TCP_USER_TIMEOUT with a timeout of " << timeout
-                    << " ms";
+          gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
+                  timeout);
         }
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
-          LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
-                     << grpc_core::StrError(errno);
+          gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
+                  grpc_core::StrError(errno).c_str());
           return absl::OkStatus();
         }
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-          LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
-                     << grpc_core::StrError(errno);
+          gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
+                  grpc_core::StrError(errno).c_str());
           return absl::OkStatus();
         }
         if (newval != timeout) {
-          LOG(INFO) << "Setting TCP_USER_TIMEOUT to value " << timeout
-                    << " ms. Actual TCP_USER_TIMEOUT value is " << newval
-                    << " ms";
+          gpr_log(GPR_INFO,
+                  "Setting TCP_USER_TIMEOUT to value %d ms. Actual "
+                  "TCP_USER_TIMEOUT value is %d ms",
+                  timeout, newval);
           return absl::OkStatus();
         }
       }
@@ -447,7 +451,8 @@ static void probe_ipv6_once(void) {
     if (bind(fd, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      LOG(INFO) << "Disabling AF_INET6 sockets because ::1 is not available.";
+      gpr_log(GPR_INFO,
+              "Disabling AF_INET6 sockets because ::1 is not available.");
     }
     close(fd);
   }

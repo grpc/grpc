@@ -19,9 +19,9 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
@@ -33,10 +33,10 @@ static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-    VLOG(2) << "running closure " << closure << ": created ["
-            << closure->file_created << ":" << closure->line_created
-            << "]: " << (closure->run ? "run" : "scheduled") << " ["
-            << closure->file_initiated << ":" << closure->line_initiated << "]";
+    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
+            closure, closure->file_created, closure->line_created,
+            closure->run ? "run" : "scheduled", closure->file_initiated,
+            closure->line_initiated);
   }
 #endif
   grpc_error_handle error =
@@ -45,7 +45,7 @@ static void exec_ctx_run(grpc_closure* closure) {
   closure->cb(closure->cb_arg, std::move(error));
 #ifndef NDEBUG
   if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-    VLOG(2) << "closure " << closure << " finished";
+    gpr_log(GPR_DEBUG, "closure %p finished", closure);
   }
 #endif
 }

@@ -28,6 +28,7 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -119,7 +120,8 @@ class EventEngineEndpointWrapper {
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      LOG(INFO) << "TCP: " << eeep_->wrapper << " READ error=" << status;
+      gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
+              status.ToString().c_str());
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
@@ -149,7 +151,8 @@ class EventEngineEndpointWrapper {
     Ref();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress() << ")";
+      gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", this,
+              std::string(PeerAddress()).c_str());
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < slices->count; i++) {
           char* dump =
@@ -174,8 +177,8 @@ class EventEngineEndpointWrapper {
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress()
-                << ") error=" << status;
+      gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s) error=%s", this,
+              std::string(PeerAddress()).c_str(), status.ToString().c_str());
     }
     grpc_closure* cb = pending_write_cb_;
     pending_write_cb_ = nullptr;

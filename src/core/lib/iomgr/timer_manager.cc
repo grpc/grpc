@@ -24,6 +24,7 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -181,7 +182,8 @@ static bool wait_until(grpc_core::Timestamp next) {
 
         if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
           grpc_core::Duration wait_time = next - grpc_core::Timestamp::Now();
-          LOG(INFO) << "sleep for a " << wait_time.millis() << " milliseconds";
+          gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds",
+                  wait_time.millis());
         }
       } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
         next = grpc_core::Timestamp::InfFuture();
@@ -196,9 +198,9 @@ static bool wait_until(grpc_core::Timestamp next) {
     gpr_cv_wait(&g_cv_wait, &g_mu, next.as_timespec(GPR_CLOCK_MONOTONIC));
 
     if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-      LOG(INFO) << "wait ended: was_timed:"
-                << (my_timed_waiter_generation == g_timed_waiter_generation)
-                << " kicked:" << g_kicked;
+      gpr_log(GPR_INFO, "wait ended: was_timed:%d kicked:%d",
+              my_timed_waiter_generation == g_timed_waiter_generation,
+              g_kicked);
     }
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if
