@@ -25,10 +25,10 @@
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -226,9 +226,9 @@ class PartySyncUsingAtomics {
   void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
                       DebugLocation loc = {}) {
     if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
-      LOG(INFO).AtLocation(loc.file(), loc.line())
-          << absl::StrFormat("Party %p %30s: %016" PRIx64 " -> %016" PRIx64,
-                             this, op, prev_state, new_state);
+      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
+              "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
+              prev_state, new_state);
     }
   }
 

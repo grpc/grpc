@@ -21,10 +21,10 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -173,14 +173,15 @@ class ForEach {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollReaderNext() {
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      LOG(INFO) << DebugTag() << " PollReaderNext";
+      gpr_log(GPR_INFO, "%s PollReaderNext", DebugTag().c_str());
     }
     auto r = reader_next_();
     if (auto* p = r.value_if_ready()) {
       switch (NextValueTraits<ReaderResult>::Type(*p)) {
         case NextValueType::kValue: {
           if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            LOG(INFO) << DebugTag() << " PollReaderNext: got value";
+            gpr_log(GPR_INFO, "%s PollReaderNext: got value",
+                    DebugTag().c_str());
           }
           Destruct(&reader_next_);
           auto action = action_factory_.Make(
@@ -191,13 +192,15 @@ class ForEach {
         }
         case NextValueType::kEndOfStream: {
           if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            LOG(INFO) << DebugTag() << " PollReaderNext: got end of stream";
+            gpr_log(GPR_INFO, "%s PollReaderNext: got end of stream",
+                    DebugTag().c_str());
           }
           return Done<Result>::Make(false);
         }
         case NextValueType::kError: {
           if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            LOG(INFO) << DebugTag() << " PollReaderNext: got error";
+            gpr_log(GPR_INFO, "%s PollReaderNext: got error",
+                    DebugTag().c_str());
           }
           return Done<Result>::Make(true);
         }
@@ -208,7 +211,7 @@ class ForEach {
 
   Poll<Result> PollAction() {
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      LOG(INFO) << DebugTag() << " PollAction";
+      gpr_log(GPR_INFO, "%s PollAction", DebugTag().c_str());
     }
     auto r = in_action_.promise();
     if (auto* p = r.value_if_ready()) {
