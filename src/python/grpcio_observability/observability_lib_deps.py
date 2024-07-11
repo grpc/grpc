@@ -21,8 +21,6 @@ CC_FILES=[
     'grpc_root/src/core/lib/debug/trace.cc',
     'grpc_root/src/core/lib/debug/trace_flags.cc',
     'grpc_root/src/core/lib/event_engine/thread_local.cc',
-    'grpc_root/src/core/lib/experiments/config.cc',
-    'grpc_root/src/core/lib/experiments/experiments.cc',
     'grpc_root/src/core/lib/gprpp/crash.cc',
     'grpc_root/src/core/lib/gprpp/examine_stack.cc',
     'grpc_root/src/core/lib/gprpp/fork.cc',

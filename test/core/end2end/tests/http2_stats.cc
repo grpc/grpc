@@ -63,11 +63,6 @@ class FakeCallTracer : public ClientCallTracer {
  public:
   class FakeCallAttemptTracer : public CallAttemptTracer {
    public:
-    FakeCallAttemptTracer() {
-      MutexLock lock(g_mu);
-      incoming_bytes_ = TransportByteSize();
-      outgoing_bytes_ = TransportByteSize();
-    }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
@@ -88,30 +83,8 @@ class FakeCallTracer : public ClientCallTracer {
         absl::Status /*status*/,
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) override {
-      if (IsCallTracerInTransportEnabled()) return;
-      TransportByteSize incoming_bytes = {
-          transport_stream_stats->incoming.framing_bytes,
-          transport_stream_stats->incoming.data_bytes,
-          transport_stream_stats->incoming.header_bytes};
-      TransportByteSize outgoing_bytes = {
-          transport_stream_stats->outgoing.framing_bytes,
-          transport_stream_stats->outgoing.data_bytes,
-          transport_stream_stats->outgoing.header_bytes};
       MutexLock lock(g_mu);
-      incoming_bytes_ = incoming_bytes;
-      outgoing_bytes_ = outgoing_bytes;
-    }
-
-    void RecordIncomingBytes(
-        const TransportByteSize& transport_byte_size) override {
-      MutexLock lock(g_mu);
-      incoming_bytes_ += transport_byte_size;
-    }
-
-    void RecordOutgoingBytes(
-        const TransportByteSize& transport_byte_size) override {
-      MutexLock lock(g_mu);
-      outgoing_bytes_ += transport_byte_size;
+      transport_stream_stats_ = *transport_stream_stats;
     }
 
     void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
@@ -128,19 +101,14 @@ class FakeCallTracer : public ClientCallTracer {
     void SetOptionalLabel(OptionalLabelKey /*key*/,
                           RefCountedStringValue /*value*/) override {}
 
-    static TransportByteSize incoming_bytes() {
+    static grpc_transport_stream_stats transport_stream_stats() {
       MutexLock lock(g_mu);
-      return incoming_bytes_;
-    }
-
-    static TransportByteSize outgoing_bytes() {
-      MutexLock lock(g_mu);
-      return outgoing_bytes_;
+      return transport_stream_stats_;
     }
 
    private:
-    static TransportByteSize incoming_bytes_ ABSL_GUARDED_BY(g_mu);
-    static TransportByteSize outgoing_bytes_ ABSL_GUARDED_BY(g_mu);
+    static grpc_transport_stream_stats transport_stream_stats_
+        ABSL_GUARDED_BY(g_mu);
   };
 
   explicit FakeCallTracer() {}
@@ -158,18 +126,11 @@ class FakeCallTracer : public ClientCallTracer {
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
 };
 
-CallTracerInterface::TransportByteSize
-    FakeCallTracer::FakeCallAttemptTracer::incoming_bytes_;
-CallTracerInterface::TransportByteSize
-    FakeCallTracer::FakeCallAttemptTracer::outgoing_bytes_;
+grpc_transport_stream_stats
+    FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats_;
 
 class FakeServerCallTracer : public ServerCallTracer {
  public:
-  FakeServerCallTracer() {
-    MutexLock lock(g_mu);
-    incoming_bytes_ = TransportByteSize();
-    outgoing_bytes_ = TransportByteSize();
-  }
   ~FakeServerCallTracer() override {}
   void RecordSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
@@ -191,32 +152,9 @@ class FakeServerCallTracer : public ServerCallTracer {
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
 
   void RecordEnd(const grpc_call_final_info* final_info) override {
-    if (!IsCallTracerInTransportEnabled()) {
-      TransportByteSize incoming_bytes = {
-          final_info->stats.transport_stream_stats.incoming.framing_bytes,
-          final_info->stats.transport_stream_stats.incoming.data_bytes,
-          final_info->stats.transport_stream_stats.incoming.header_bytes};
-      TransportByteSize outgoing_bytes = {
-          final_info->stats.transport_stream_stats.outgoing.framing_bytes,
-          final_info->stats.transport_stream_stats.outgoing.data_bytes,
-          final_info->stats.transport_stream_stats.outgoing.header_bytes};
-      MutexLock lock(g_mu);
-      incoming_bytes_ = incoming_bytes;
-      outgoing_bytes_ = outgoing_bytes;
-    }
+    MutexLock lock(g_mu);
+    transport_stream_stats_ = final_info->stats.transport_stream_stats;
     g_server_call_ended_notify->Notify();
-  }
-
-  void RecordIncomingBytes(
-      const TransportByteSize& transport_byte_size) override {
-    MutexLock lock(g_mu);
-    incoming_bytes_ += transport_byte_size;
-  }
-
-  void RecordOutgoingBytes(
-      const TransportByteSize& transport_byte_size) override {
-    MutexLock lock(g_mu);
-    outgoing_bytes_ += transport_byte_size;
   }
 
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
@@ -225,23 +163,17 @@ class FakeServerCallTracer : public ServerCallTracer {
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }
 
-  static TransportByteSize incoming_bytes() {
+  static grpc_transport_stream_stats transport_stream_stats() {
     MutexLock lock(g_mu);
-    return incoming_bytes_;
-  }
-
-  static TransportByteSize outgoing_bytes() {
-    MutexLock lock(g_mu);
-    return outgoing_bytes_;
+    return transport_stream_stats_;
   }
 
  private:
-  static TransportByteSize incoming_bytes_ ABSL_GUARDED_BY(g_mu);
-  static TransportByteSize outgoing_bytes_ ABSL_GUARDED_BY(g_mu);
+  static grpc_transport_stream_stats transport_stream_stats_
+      ABSL_GUARDED_BY(g_mu);
 };
 
-CallTracerInterface::TransportByteSize FakeServerCallTracer::incoming_bytes_;
-CallTracerInterface::TransportByteSize FakeServerCallTracer::outgoing_bytes_;
+grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
 // TODO(yijiem): figure out how to reuse FakeStatsPlugin instead of
 // inheriting and overriding it here.
@@ -306,32 +238,29 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_client_call_ended_notify->WaitForNotificationWithTimeout(absl::Seconds(5));
   g_server_call_ended_notify->WaitForNotificationWithTimeout(absl::Seconds(5));
 
-  auto client_outgoing_transport_stats =
-      FakeCallTracer::FakeCallAttemptTracer::outgoing_bytes();
-  auto client_incoming_transport_stats =
-      FakeCallTracer::FakeCallAttemptTracer::incoming_bytes();
-  auto server_outgoing_transport_stats = FakeServerCallTracer::outgoing_bytes();
-  auto server_incoming_transport_stats = FakeServerCallTracer::incoming_bytes();
-  EXPECT_EQ(client_outgoing_transport_stats.data_bytes,
+  auto client_transport_stats =
+      FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats();
+  auto server_transport_stats = FakeServerCallTracer::transport_stream_stats();
+  EXPECT_EQ(client_transport_stats.outgoing.data_bytes,
             send_from_client.size());
-  EXPECT_EQ(client_incoming_transport_stats.data_bytes,
+  EXPECT_EQ(client_transport_stats.incoming.data_bytes,
             send_from_server.size());
-  EXPECT_EQ(server_outgoing_transport_stats.data_bytes,
+  EXPECT_EQ(server_transport_stats.outgoing.data_bytes,
             send_from_server.size());
-  EXPECT_EQ(server_incoming_transport_stats.data_bytes,
+  EXPECT_EQ(server_transport_stats.incoming.data_bytes,
             send_from_client.size());
   // At the very minimum, we should have 9 bytes from initial header frame, 9
   // bytes from data header frame, 5 bytes from the grpc header on data and 9
   // bytes from the trailing header frame. The actual number might be more due
   // to RST_STREAM (13 bytes) and WINDOW_UPDATE (13 bytes) frames.
-  EXPECT_GE(client_outgoing_transport_stats.framing_bytes, 32);
-  EXPECT_LE(client_outgoing_transport_stats.framing_bytes, 58);
-  EXPECT_GE(client_incoming_transport_stats.framing_bytes, 32);
-  EXPECT_LE(client_incoming_transport_stats.framing_bytes, 58);
-  EXPECT_GE(server_outgoing_transport_stats.framing_bytes, 32);
-  EXPECT_LE(server_outgoing_transport_stats.framing_bytes, 58);
-  EXPECT_GE(server_incoming_transport_stats.framing_bytes, 32);
-  EXPECT_LE(server_incoming_transport_stats.framing_bytes, 58);
+  EXPECT_GE(client_transport_stats.outgoing.framing_bytes, 32);
+  EXPECT_LE(client_transport_stats.outgoing.framing_bytes, 58);
+  EXPECT_GE(client_transport_stats.incoming.framing_bytes, 32);
+  EXPECT_LE(client_transport_stats.incoming.framing_bytes, 58);
+  EXPECT_GE(server_transport_stats.outgoing.framing_bytes, 32);
+  EXPECT_LE(server_transport_stats.outgoing.framing_bytes, 58);
+  EXPECT_GE(server_transport_stats.incoming.framing_bytes, 32);
+  EXPECT_LE(server_transport_stats.incoming.framing_bytes, 58);
 
   delete g_client_call_ended_notify;
   g_client_call_ended_notify = nullptr;

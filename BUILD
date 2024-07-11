@@ -2916,7 +2916,6 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:logging_filter",
         "//src/core:metadata_batch",
         "//src/core:slice",
@@ -4687,7 +4686,6 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "call_tracer",
         "chttp2_bin_encoder",
         "chttp2_legacy_frame",
         "chttp2_varint",

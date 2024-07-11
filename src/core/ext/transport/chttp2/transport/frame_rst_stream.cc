@@ -39,13 +39,11 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-grpc_slice grpc_chttp2_rst_stream_create(
-    uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {
+grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
+                                         grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
-  if (call_tracer != nullptr) {
-    call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
-  }
+  if (stats != nullptr) stats->framing_bytes += frame_size;
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
@@ -72,10 +70,10 @@ grpc_slice grpc_chttp2_rst_stream_create(
 
 void grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
-    grpc_core::CallTracerInterface* call_tracer) {
+    grpc_transport_one_way_stats* stats) {
   t->num_pending_induced_frames++;
   grpc_slice_buffer_add(&t->qbuf,
-                        grpc_chttp2_rst_stream_create(id, code, call_tracer));
+                        grpc_chttp2_rst_stream_create(id, code, stats));
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
@@ -104,8 +102,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
     cur++;
     p->byte++;
   }
-  uint64_t framing_bytes = static_cast<uint64_t>(end - cur);
-  s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
+  s->stats.incoming.framing_bytes += static_cast<uint64_t>(end - cur);
 
   if (p->byte == 4) {
     CHECK(is_last);
