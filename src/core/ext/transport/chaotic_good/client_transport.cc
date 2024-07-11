@@ -58,6 +58,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
+  LOG(INFO) << "ChaoticGoodClientTransport::Orphan";
   AbortWithError();
   ActivityPtr writer;
   ActivityPtr reader;

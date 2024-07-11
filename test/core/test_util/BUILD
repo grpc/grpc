@@ -535,15 +535,3 @@ grpc_cc_library(
         "//src/core:metrics",
     ],
 )
-
-grpc_cc_library(
-    name = "passthrough_endpoint",
-    testonly = True,
-    srcs = ["passthrough_endpoint.cc"],
-    hdrs = ["passthrough_endpoint.h"],
-    external_deps = [
-    ],
-    deps = [
-        "//:grpc",
-    ],
-)

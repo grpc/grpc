@@ -38,28 +38,6 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "bm_chaotic_good",
-    "platforms": [
-      "linux",
-      "posix"
-    ],
-    "uses_polling": false
-  },
-  {
-    "args": [
-      "--benchmark_min_time=0.001s"
-    ],
-    "benchmark": true,
-    "ci_platforms": [
-      "linux",
-      "posix"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": false,
-    "language": "c",
     "name": "bm_client_call",
     "platforms": [
       "linux",
@@ -127,28 +105,6 @@
     "gtest": false,
     "language": "c",
     "name": "bm_http_client_filter",
-    "platforms": [
-      "linux",
-      "posix"
-    ],
-    "uses_polling": false
-  },
-  {
-    "args": [
-      "--benchmark_min_time=0.001s"
-    ],
-    "benchmark": true,
-    "ci_platforms": [
-      "linux",
-      "posix"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": false,
-    "language": "c",
-    "name": "bm_inproc",
     "platforms": [
       "linux",
       "posix"
