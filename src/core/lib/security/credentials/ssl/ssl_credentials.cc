@@ -228,8 +228,8 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
       << "grpc_ssl_credentials_create(pem_root_certs=" << pem_root_certs
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
-      << ")",
-      CHECK_EQ(reserved, nullptr);
+      << ")";
+  CHECK_EQ(reserved, nullptr);
 
   return new grpc_ssl_credentials(
       pem_root_certs, pem_key_cert_pair,
@@ -243,8 +243,8 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
       << "grpc_ssl_credentials_create(pem_root_certs=" << pem_root_certs
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
-      << ")",
-      CHECK_EQ(reserved, nullptr);
+      << ")";
+  CHECK_EQ(reserved, nullptr);
 
   return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
                                   verify_options);
