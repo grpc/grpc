@@ -43,6 +43,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -108,6 +109,25 @@ struct grpc_oauth2_pending_get_request_metadata
 //
 //  This object is a base for credentials that need to acquire an oauth2 token
 //  from an http service.
+
+namespace grpc_core {
+
+// A base class for oauth2 token fetching.
+// Subclasses must implement ConstructHttpRequest().
+class Oauth2TokenFetcher : public TokenFetcherCredentials::TokenFetcher {
+ public:
+  OrphanablePtr<HttpRequest> FetchToken(
+        grpc_polling_entity* pollent, Timestamp deadline,
+        absl::AnyInvocable<void(
+            absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+            on_done) final;
+
+  virtual OrphanablePtr<HttpRequest> ConstructHttpRequest(
+        grpc_polling_entity* pollent, Timestamp deadline,
+        grpc_http_response* response, grpc_closure* on_complete) = 0;
+};
+
+}  // namespace grpc_core
 
 class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
  public:

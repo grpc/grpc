@@ -41,6 +41,7 @@
 namespace grpc_core {
 
 // A base class for credentials that fetch tokens via an HTTP request.
+// Subclasses must implement TokenFetcher.
 class TokenFetcherCredentials : public grpc_call_credentials {
  public:
   // Represents a token.
@@ -62,6 +63,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
     // Fetches a token.  The on_done callback will be invoked when complete.
     // The fetch may be cancelled by orphaning the returned HttpRequest.
+    // The on_done callback will be invoked even when cancelled.
     virtual OrphanablePtr<HttpRequest> FetchToken(
         grpc_polling_entity* pollent, Timestamp deadline,
         absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
@@ -97,8 +99,10 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   const std::unique_ptr<TokenFetcher> token_fetcher_;
 
   Mutex mu_;
+  // Either the cached token or a pending request to fetch the token.
   absl::variant<RefCountedPtr<Token>, OrphanablePtr<HttpRequest>> token_
       ABSL_GUARDED_BY(&mu_);
+  // Calls that are queued up waiting for the token.
   absl::flat_hash_set<RefCountedPtr<PendingCall>> pending_calls_
       ABSL_GUARDED_BY(&mu_);
   grpc_polling_entity pollent_ ABSL_GUARDED_BY(&mu_);
