@@ -83,6 +83,11 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_use_xds_credentials() {
+    use_xds_credentials_ = true;
+    return *this;
+  }
+
   XdsTestType& set_use_csds_streaming() {
     use_csds_streaming_ = true;
     return *this;
@@ -110,8 +115,14 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_xds_server_uses_tls_creds(bool value) {
+    xds_server_uses_tls_creds_ = value;
+    return *this;
+  }
+
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
+  bool use_xds_credentials() const { return use_xds_credentials_; }
   bool use_csds_streaming() const { return use_csds_streaming_; }
   HttpFilterConfigLocation filter_config_setup() const {
     return filter_config_setup_;
@@ -124,11 +135,13 @@ class XdsTestType {
   rbac_audit_condition() const {
     return rbac_audit_condition_;
   }
+  bool xds_server_uses_tls_creds() const { return xds_server_uses_tls_creds_; }
 
   std::string AsString() const {
     std::string retval = "V3";
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
+    if (use_xds_credentials_) retval += "XdsCreds";
     if (use_csds_streaming_) retval += "CsdsStreaming";
     if (filter_config_setup_ == kHttpFilterConfigInRoute) {
       retval += "FilterPerRouteOverride";
@@ -151,6 +164,9 @@ class XdsTestType {
                                  RBAC_AuditLoggingOptions_AuditCondition_Name(
                                      rbac_audit_condition_));
     }
+    if (xds_server_uses_tls_creds_) {
+      retval += "XdsServerUsesTlsCreds";
+    }
     return retval;
   }
 
@@ -162,6 +178,7 @@ class XdsTestType {
  private:
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;
+  bool use_xds_credentials_ = false;
   bool use_csds_streaming_ = false;
   HttpFilterConfigLocation filter_config_setup_ = kHttpFilterConfigInListener;
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
@@ -170,6 +187,7 @@ class XdsTestType {
   ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
       rbac_audit_condition_ = ::envoy::config::rbac::v3::
           RBAC_AuditLoggingOptions_AuditCondition_NONE;
+  bool xds_server_uses_tls_creds_ = false;
 };
 
 // A base class for xDS end-to-end tests.
@@ -227,10 +245,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
-    // If credentials is null, fake credentials will be used.
-    explicit ServerThread(
-        XdsEnd2endTest* test_obj, bool use_xds_enabled_server = false,
-        std::shared_ptr<ServerCredentials> credentials = nullptr);
+    explicit ServerThread(XdsEnd2endTest* test_obj,
+                          bool use_xds_enabled_server = false)
+        : test_obj_(test_obj),
+          port_(grpc_pick_unused_port_or_die()),
+          use_xds_enabled_server_(use_xds_enabled_server) {}
 
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
@@ -241,9 +260,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Start();
     void Shutdown();
 
+    virtual std::shared_ptr<ServerCredentials> Credentials() {
+      return std::make_shared<SecureServerCredentials>(
+          grpc_fake_transport_security_server_credentials_create());
+    }
+
     std::string target() const { return absl::StrCat("localhost:", port_); }
 
     int port() const { return port_; }
+
+    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
@@ -266,13 +292,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond);
 
     XdsEnd2endTest* test_obj_;
-    const bool use_xds_enabled_server_;
-    const std::shared_ptr<ServerCredentials> credentials_;
     const int port_;
     std::unique_ptr<Server> server_;
     XdsServingStatusNotifier notifier_;
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
+    const bool use_xds_enabled_server_;
     bool allow_put_requests_ = false;
   };
 
@@ -348,8 +373,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
-    BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server,
-                        std::shared_ptr<ServerCredentials> credentials);
+    BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server);
 
     BackendServiceImpl<grpc::testing::EchoTestService::Service>*
     backend_service() {
@@ -366,6 +390,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc::experimental::ServerMetricRecorder* server_metric_recorder() const {
       return server_metric_recorder_.get();
     }
+
+    // If XdsTestType::use_xds_credentials() and use_xds_enabled_server()
+    // are both true, returns XdsServerCredentials.
+    // Otherwise, if XdsTestType::use_xds_credentials() is true and
+    // use_xds_enabled_server() is false, returns TlsServerCredentials.
+    // Otherwise, returns fake credentials.
+    std::shared_ptr<ServerCredentials> Credentials() override;
 
    private:
     const char* Type() override { return "Backend"; }
@@ -385,12 +416,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // A server thread for the xDS server.
   class BalancerServerThread : public ServerThread {
    public:
-    explicit BalancerServerThread(
-        XdsEnd2endTest* test_obj, absl::string_view debug_label,
-        std::shared_ptr<ServerCredentials> credentials);
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj,
+                                  absl::string_view debug_label);
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+
+    // If XdsTestType::xds_server_uses_tls_creds() is true,
+    // returns TlsServerCredentials.
+    // Otherwise, returns fake credentials.
+    std::shared_ptr<ServerCredentials> Credentials() override;
 
    private:
     const char* Type() override { return "Balancer"; }
@@ -416,9 +451,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     METHOD_ECHO2,
   };
 
-  // If balancer_credentials is null, it defaults to fake credentials.
-  explicit XdsEnd2endTest(
-      std::shared_ptr<ServerCredentials> balancer_credentials = nullptr);
+  XdsEnd2endTest();
 
   void SetUp() override { InitClient(); }
   void TearDown() override;
@@ -430,10 +463,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Creates and starts a new balancer, running in its own thread.
   // Most tests will not need to call this; instead, they can use
   // balancer_, which is already populated with default resources.
-  // If credentials is null, it defaults to fake credentials.
   std::unique_ptr<BalancerServerThread> CreateAndStartBalancer(
-      absl::string_view debug_label = "",
-      std::shared_ptr<ServerCredentials> credentials = nullptr);
+      absl::string_view debug_label = "");
 
   // Sets the Listener and RouteConfiguration resource on the specified
   // balancer.  If RDS is in use, they will be set as separate resources;
@@ -504,15 +535,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Backend management
   //
 
-  // Creates num_backends backends and stores them in backends_, but does
-  // not actually start them.  If xds_enabled is true, the backends are
-  // xDS-enabled.  If credentials is null, it defaults to fake credentials.
-  void CreateBackends(
-      size_t num_backends, bool xds_enabled = false,
-      std::shared_ptr<ServerCredentials> credentials = nullptr) {
+  // Creates num_backends backends and stores them in backends_, but
+  // does not actually start them.  If xds_enabled is true, the backends
+  // are xDS-enabled.
+  void CreateBackends(size_t num_backends, bool xds_enabled = false) {
     for (size_t i = 0; i < num_backends; ++i) {
-      backends_.emplace_back(
-          new BackendServerThread(this, xds_enabled, credentials));
+      backends_.emplace_back(new BackendServerThread(this, xds_enabled));
     }
   }
 
@@ -522,10 +550,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Same as CreateBackends(), but also starts the backends.
-  void CreateAndStartBackends(
-      size_t num_backends, bool xds_enabled = false,
-      std::shared_ptr<ServerCredentials> credentials = nullptr) {
-    CreateBackends(num_backends, xds_enabled, std::move(credentials));
+  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false) {
+    CreateBackends(num_backends, xds_enabled);
     StartAllBackends();
   }
 
@@ -565,12 +591,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Initializes global state for the client, such as the bootstrap file
   // and channel args for the XdsClient.  Then calls ResetStub().
   // All tests must call this exactly once at the start of the test.
-  // If credentials is null, fake credentials will be used.
   void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
                   std::string lb_expected_authority = "",
                   int xds_resource_does_not_exist_timeout_ms = 0,
-                  std::string balancer_authority_override = "",
-                  std::shared_ptr<ChannelCredentials> credentials = nullptr);
+                  std::string balancer_authority_override = "");
 
   XdsBootstrapBuilder MakeBootstrapBuilder() {
     return XdsBootstrapBuilder().SetServers(
@@ -578,17 +602,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sets channel_, stub_, stub1_, and stub2_.
-  // If credentials is null, fake credentials will be used.
-  void ResetStub(int failover_timeout_ms = 0, ChannelArguments* args = nullptr,
-                 std::shared_ptr<ChannelCredentials> credentials = nullptr);
+  void ResetStub(int failover_timeout_ms = 0, ChannelArguments* args = nullptr);
 
   // Creates a new client channel.  Requires that InitClient() has
   // already been called.
-  // If credentials is null, fake credentials will be used.
-  std::shared_ptr<Channel> CreateChannel(
-      int failover_timeout_ms = 0, const char* server_name = kServerName,
-      const char* xds_authority = "", ChannelArguments* args = nullptr,
-      std::shared_ptr<ChannelCredentials> credentials = nullptr);
+  std::shared_ptr<Channel> CreateChannel(int failover_timeout_ms = 0,
+                                         const char* server_name = kServerName,
+                                         const char* xds_authority = "",
+                                         ChannelArguments* args = nullptr);
 
   //
   // Sending RPCs
@@ -955,18 +976,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(
       const char* key_path, const char* cert_path);
 
-  // Internal helper function for creating TLS and mTLS creds.
-  // Not intended to be used by tests.
-  static std::vector<experimental::IdentityKeyCertPair>
-  MakeIdentityKeyCertPairForTlsCreds();
-
-  // Returns XdsCredentials with mTLS fallback creds.
-  static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
-
-  // Creates various types of server credentials.
-  static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();
-  static std::shared_ptr<ServerCredentials> CreateMtlsServerCredentials();
-  static std::shared_ptr<ServerCredentials> CreateTlsServerCredentials();
+  // Returns client credentials suitable for using as fallback
+  // credentials for XdsCredentials.
+  static std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials();
 
   std::unique_ptr<BalancerServerThread> balancer_;
 
