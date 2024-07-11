@@ -114,24 +114,24 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
 }
 
 #if GRPC_HAS_BUILTIN(__builtin_ctz)
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
-    uint32_t i) {
-  DCHECK_NE(i, 0u);  // __builtin_ctz returns undefined behavior for 0
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint32_t i) {
+  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
   return __builtin_ctz(i);
 }
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
-    uint64_t i) {
-  DCHECK_NE(i, 0u);  // __builtin_ctz returns undefined behavior for 0
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint64_t i) {
+  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
   return __builtin_ctzll(i);
 }
 #else
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
-    uint32_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint32_t i) {
   DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
   return BitCount((i & -i) - 1);
 }
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
-    uint64_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint64_t i) {
   DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
   return BitCount((i & -i) - 1);
 }
