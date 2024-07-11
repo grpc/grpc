@@ -99,22 +99,4 @@ void MetadataMutationHandler::Apply(
   }
 }
 
-//
-// MaybeOverrideAuthority()
-//
-
-void MaybeOverrideAuthority(
-    grpc_event_engine::experimental::Slice authority_override,
-    grpc_metadata_batch* metadata) {
-  // Skip if no override requested.
-  if (authority_override.empty()) return;
-  // Skip if authority already set by the application on this RPC.
-  if (metadata->get_pointer(HttpAuthorityMetadata()) != nullptr) return;
-  // Otherwise, apply override.
-  Slice& authority =
-      grpc_event_engine::experimental::internal::SliceCast<Slice>(
-          authority_override);
-  metadata->Set(HttpAuthorityMetadata(), std::move(authority));
-}
-
 }  // namespace grpc_core

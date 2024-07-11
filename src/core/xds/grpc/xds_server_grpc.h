@@ -36,8 +36,6 @@ class GrpcXdsServer final : public XdsBootstrap::XdsServer {
 
   bool IgnoreResourceDeletion() const override;
 
-  bool TrustedXdsServer() const;
-
   bool Equals(const XdsServer& other) const override;
 
   std::string Key() const override;

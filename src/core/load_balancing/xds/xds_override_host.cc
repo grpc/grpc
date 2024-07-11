@@ -564,8 +564,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto* override_host_attr =
-      call_state->GetCallAttribute<XdsOverrideHostAttribute>();
+  auto* override_host_attr = static_cast<XdsOverrideHostAttribute*>(
+      call_state->GetCallAttribute(XdsOverrideHostAttribute::TypeName()));
   if (override_host_attr != nullptr) {
     auto overridden_host_pick = PickOverridenHost(override_host_attr);
     if (overridden_host_pick.has_value()) {

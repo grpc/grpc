@@ -90,15 +90,6 @@ bool XdsRlsEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(roth): Remove this once the feature passes interop tests.
-bool XdsAuthorityRewriteEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsRouteConfigResourceParse()
 //
@@ -185,9 +176,12 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
 
 absl::optional<StringMatcher> RoutePathMatchParse(
     const envoy_config_route_v3_RouteMatch* match, ValidationErrors* errors) {
-  bool case_sensitive =
-      ParseBoolValue(envoy_config_route_v3_RouteMatch_case_sensitive(match),
-                     /*default_value=*/true);
+  bool case_sensitive = true;
+  auto* case_sensitive_ptr =
+      envoy_config_route_v3_RouteMatch_case_sensitive(match);
+  if (case_sensitive_ptr != nullptr) {
+    case_sensitive = google_protobuf_BoolValue_value(case_sensitive_ptr);
+  }
   StringMatcher::Type type;
   std::string match_string;
   if (envoy_config_route_v3_RouteMatch_has_prefix(match)) {
@@ -632,13 +626,6 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
   if (retry_policy != nullptr) {
     ValidationErrors::ScopedField field(errors, ".retry_policy");
     route_action.retry_policy = RetryPolicyParse(context, retry_policy, errors);
-  }
-  // Host rewrite field.
-  if (XdsAuthorityRewriteEnabled() &&
-      DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
-    route_action.auto_host_rewrite =
-        ParseBoolValue(envoy_config_route_v3_RouteAction_auto_host_rewrite(
-            route_action_proto));
   }
   // Parse cluster specifier, which is one of several options.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action_proto)) {

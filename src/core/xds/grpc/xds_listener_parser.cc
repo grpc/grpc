@@ -438,9 +438,10 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
           "provider instance specified for validation");
     }
   }
-  if (ParseBoolValue(
-          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
-              downstream_tls_context_proto))) {
+  auto* require_sni =
+      envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
+          downstream_tls_context_proto);
+  if (require_sni != nullptr && google_protobuf_BoolValue_value(require_sni)) {
     ValidationErrors::ScopedField field(errors, ".require_sni");
     errors->AddError("field unsupported");
   }
@@ -859,10 +860,14 @@ LdsResourceParseServer(const XdsResourceType::DecodeContext& context,
     if (address.has_value()) tcp_listener.address = std::move(*address);
   }
   // use_original_dst
-  if (ParseBoolValue(
-          envoy_config_listener_v3_Listener_use_original_dst(listener))) {
+  {
     ValidationErrors::ScopedField field(&errors, "use_original_dst");
-    errors.AddError("field not supported");
+    const auto* use_original_dst =
+        envoy_config_listener_v3_Listener_use_original_dst(listener);
+    if (use_original_dst != nullptr &&
+        google_protobuf_BoolValue_value(use_original_dst)) {
+      errors.AddError("field not supported");
+    }
   }
   // filter_chains
   size_t num_filter_chains = 0;

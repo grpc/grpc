@@ -2647,8 +2647,6 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         // Handle metadata mutations.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
                                        send_initial_metadata());
-        MaybeOverrideAuthority(std::move(complete_pick->authority_override),
-                               send_initial_metadata());
         return true;
       },
       // QueuePick
