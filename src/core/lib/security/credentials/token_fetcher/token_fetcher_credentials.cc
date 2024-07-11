@@ -34,10 +34,8 @@ constexpr Duration kTokenRefreshDuration = Duration::Seconds(60);
 
 }  // namespace
 
-TokenFetcherCredentials::TokenFetcherCredentials(
-    std::unique_ptr<TokenFetcher> token_fetcher)
-    : token_fetcher_(std::move(token_fetcher)),
-      pollent_(grpc_polling_entity_create_from_pollset_set(
+TokenFetcherCredentials::TokenFetcherCredentials()
+    : pollent_(grpc_polling_entity_create_from_pollset_set(
           grpc_pollset_set_create())) {}
 
 TokenFetcherCredentials::~TokenFetcherCredentials() {
@@ -52,9 +50,9 @@ TokenFetcherCredentials::GetRequestMetadata(
     MutexLock lock(&mu_);
     // Check if we can use the cached token.
     auto* cached_token = absl::get_if<RefCountedPtr<Token>>(&token_);
-    if (cached_token != nullptr &&
-        (*cached_token)->ExpirationTime() <
-            (Timestamp::Now() - kTokenRefreshDuration)) {
+    if (cached_token != nullptr && *cached_token != nullptr &&
+        ((*cached_token)->ExpirationTime() - Timestamp::Now()) >
+            kTokenRefreshDuration) {
       (*cached_token)->AddTokenToClientInitialMetadata(*initial_metadata);
       return Immediate(std::move(initial_metadata));
     }
@@ -69,7 +67,7 @@ TokenFetcherCredentials::GetRequestMetadata(
     pending_calls_.insert(pending_call);
     // Start a new fetch if needed.
     if (!absl::holds_alternative<OrphanablePtr<HttpRequest>>(token_)) {
-      token_ = token_fetcher_->FetchToken(
+      token_ = FetchToken(
           &pollent_, /*deadline=*/Timestamp::Now() + kTokenRefreshDuration,
           [self = RefAsSubclass<TokenFetcherCredentials>()](
               absl::StatusOr<RefCountedPtr<Token>> token) mutable {

@@ -505,7 +505,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
       std::string actual_error;
       CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
                                &actual_error));
-      CHECK(expected_error == actual_error);
+      EXPECT_EQ(expected_error, actual_error);
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());
@@ -893,7 +893,7 @@ TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,

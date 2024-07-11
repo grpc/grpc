@@ -142,7 +142,7 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
 }
 
 //
-// Oauth2 Token Fetcher credentials.
+// Oauth2 Token parsing.
 //
 
 grpc_credentials_status
@@ -228,7 +228,20 @@ end:
   return status;
 }
 
+//
+// Oauth2TokenFetcherCredentials
+//
+
 namespace grpc_core {
+
+std::string Oauth2TokenFetcherCredentials::debug_string() {
+  return "OAuth2TokenFetcherCredentials";
+}
+
+UniqueTypeName Oauth2TokenFetcherCredentials::type() const {
+  static UniqueTypeName::Factory kFactory("Oauth2");
+  return kFactory.Create();
+}
 
 namespace {
 
@@ -292,19 +305,21 @@ struct HttpRequestState {
 
 }  // namespace
 
-OrphanablePtr<HttpRequest> Oauth2TokenFetcher::FetchToken(
+OrphanablePtr<HttpRequest> Oauth2TokenFetcherCredentials::FetchToken(
     grpc_polling_entity* pollent, Timestamp deadline,
     absl::AnyInvocable<void(
         absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
   auto* state = new HttpRequestState(std::move(on_done));
-  OrphanablePtr<HttpRequest> http_request = ConstructHttpRequest(
-      pollent, deadline, &state->response, &state->on_http_response);
-  http_request->Start();
-  return http_request;
+  return ConstructHttpRequest(pollent, deadline, &state->response,
+                              &state->on_http_response);
 }
 
 }  // namespace grpc_core
+
+//
+// grpc_oauth2_token_fetcher_credentials
+//
 
 grpc_oauth2_token_fetcher_credentials::
     ~grpc_oauth2_token_fetcher_credentials() {
@@ -513,22 +528,26 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
 // Google Refresh Token credentials.
 //
 
+grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
+    grpc_auth_refresh_token refresh_token)
+    : refresh_token_(refresh_token) {}
+
 grpc_google_refresh_token_credentials::
     ~grpc_google_refresh_token_credentials() {
   grpc_auth_refresh_token_destruct(&refresh_token_);
 }
 
-void grpc_google_refresh_token_credentials::fetch_oauth2(
-    grpc_credentials_metadata_request* metadata_req,
-    grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
-    grpc_core::Timestamp deadline) {
+grpc_core::OrphanablePtr<grpc_core::HttpRequest>
+grpc_google_refresh_token_credentials::ConstructHttpRequest(
+      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) {
   grpc_http_header header = {
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
-  grpc_http_request request;
   std::string body = absl::StrFormat(
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
       refresh_token_.client_secret, refresh_token_.refresh_token);
+  grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
   request.hdr_count = 1;
   request.hdrs = &header;
@@ -541,17 +560,12 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());  // params are hardcoded
-  http_request_ = grpc_core::HttpRequest::Post(
-      std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
-      GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
-                        grpc_schedule_on_exec_ctx),
-      &metadata_req->response, grpc_core::CreateHttpRequestSSLCredentials());
-  http_request_->Start();
+  auto http_request = grpc_core::HttpRequest::Post(
+      std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
+      on_complete, response, grpc_core::CreateHttpRequestSSLCredentials());
+  http_request->Start();
+  return http_request;
 }
-
-grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
-    grpc_auth_refresh_token refresh_token)
-    : refresh_token_(refresh_token) {}
 
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_refresh_token_credentials_create_from_auth_refresh_token(
@@ -565,9 +579,9 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 }
 
 std::string grpc_google_refresh_token_credentials::debug_string() {
-  return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}",
-                         refresh_token_.client_id,
-                         grpc_oauth2_token_fetcher_credentials::debug_string());
+  return absl::StrFormat(
+      "GoogleRefreshToken{ClientID:%s,%s}", refresh_token_.client_id,
+      grpc_core::Oauth2TokenFetcherCredentials::debug_string());
 }
 
 grpc_core::UniqueTypeName grpc_google_refresh_token_credentials::type() const {

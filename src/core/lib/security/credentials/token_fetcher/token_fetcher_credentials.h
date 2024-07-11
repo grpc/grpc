@@ -41,7 +41,7 @@
 namespace grpc_core {
 
 // A base class for credentials that fetch tokens via an HTTP request.
-// Subclasses must implement TokenFetcher.
+// Subclasses must implement FetchToken().
 class TokenFetcherCredentials : public grpc_call_credentials {
  public:
   // Represents a token.
@@ -56,20 +56,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata) = 0;
   };
 
-  // A token fetcher interface.
-  class TokenFetcher {
-   public:
-    virtual ~TokenFetcher() = default;
-
-    // Fetches a token.  The on_done callback will be invoked when complete.
-    // The fetch may be cancelled by orphaning the returned HttpRequest.
-    // The on_done callback will be invoked even when cancelled.
-    virtual OrphanablePtr<HttpRequest> FetchToken(
-        grpc_polling_entity* pollent, Timestamp deadline,
-        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
-            on_done) = 0;
-  };
-
   ~TokenFetcherCredentials() override;
 
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>>
@@ -77,7 +63,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
                      const GetRequestMetadataArgs* args) override;
 
  protected:
-  explicit TokenFetcherCredentials(std::unique_ptr<TokenFetcher> token_fetcher);
+  TokenFetcherCredentials();
 
  private:
   // A call that is waiting for a token fetch request to complete.
@@ -94,9 +80,15 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
   }
 
-  void TokenFetchComplete(absl::StatusOr<RefCountedPtr<Token>> token);
+  // Fetches a token.  The on_done callback will be invoked when complete.
+  // The fetch may be cancelled by orphaning the returned HttpRequest.
+  // The on_done callback will be invoked even when cancelled.
+  virtual OrphanablePtr<HttpRequest> FetchToken(
+      grpc_polling_entity* pollent, Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
+          on_done) = 0;
 
-  const std::unique_ptr<TokenFetcher> token_fetcher_;
+  void TokenFetchComplete(absl::StatusOr<RefCountedPtr<Token>> token);
 
   Mutex mu_;
   // Either the cached token or a pending request to fetch the token.

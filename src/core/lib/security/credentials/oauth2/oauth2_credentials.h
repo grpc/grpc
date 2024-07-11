@@ -83,6 +83,7 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 
 // -- Credentials Metadata Request. --
 
+// FIXME: remove
 struct grpc_credentials_metadata_request {
   explicit grpc_credentials_metadata_request(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds)
@@ -95,6 +96,7 @@ struct grpc_credentials_metadata_request {
   grpc_http_response response;
 };
 
+// FIXME: remove
 struct grpc_oauth2_pending_get_request_metadata
     : public grpc_core::RefCounted<grpc_oauth2_pending_get_request_metadata> {
   std::atomic<bool> done{false};
@@ -112,10 +114,14 @@ struct grpc_oauth2_pending_get_request_metadata
 
 namespace grpc_core {
 
-// A base class for oauth2 token fetching.
+// A base class for oauth2 token fetching credentials.
 // Subclasses must implement ConstructHttpRequest().
-class Oauth2TokenFetcher : public TokenFetcherCredentials::TokenFetcher {
+class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
  public:
+  std::string debug_string() override;
+
+  grpc_core::UniqueTypeName type() const override;
+
   OrphanablePtr<HttpRequest> FetchToken(
         grpc_polling_entity* pollent, Timestamp deadline,
         absl::AnyInvocable<void(
@@ -125,10 +131,17 @@ class Oauth2TokenFetcher : public TokenFetcherCredentials::TokenFetcher {
   virtual OrphanablePtr<HttpRequest> ConstructHttpRequest(
         grpc_polling_entity* pollent, Timestamp deadline,
         grpc_http_response* response, grpc_closure* on_complete) = 0;
+
+ private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
+  }
 };
 
 }  // namespace grpc_core
 
+// FIXME: remove
 class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
  public:
   grpc_oauth2_token_fetcher_credentials();
@@ -166,7 +179,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
 // Google refresh token credentials.
 class grpc_google_refresh_token_credentials final
-    : public grpc_oauth2_token_fetcher_credentials {
+    : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
   explicit grpc_google_refresh_token_credentials(
       grpc_auth_refresh_token refresh_token);
@@ -180,15 +193,12 @@ class grpc_google_refresh_token_credentials final
 
   grpc_core::UniqueTypeName type() const override;
 
- protected:
-  void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    grpc_core::Timestamp deadline) override;
-
  private:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> ConstructHttpRequest(
+        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+        grpc_http_response* response, grpc_closure* on_complete) override;
+
   grpc_auth_refresh_token refresh_token_;
-  grpc_closure http_post_cb_closure_;
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
 };
 
 // Access token credentials.
