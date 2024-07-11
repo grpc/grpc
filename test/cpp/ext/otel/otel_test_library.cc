@@ -19,7 +19,6 @@
 #include "test/cpp/ext/otel/otel_test_library.h"
 
 #include <atomic>
-#include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
@@ -290,7 +289,7 @@ OpenTelemetryPluginEnd2EndTest::ConfigureOTBuilder(
   if (options.use_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-    reader = std::make_shared<grpc::testing::MockMetricReader>();
+    reader.reset(new grpc::testing::MockMetricReader);
     meter_provider->AddMetricReader(reader);
     ot_builder->SetMeterProvider(std::move(meter_provider));
   }

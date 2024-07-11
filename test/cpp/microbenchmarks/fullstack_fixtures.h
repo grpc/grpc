@@ -77,7 +77,7 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const std::string& address) {
     ServerBuilder b;
-    if (!address.empty()) {
+    if (address.length() > 0) {
       b.AddListeningPort(address, InsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -86,7 +86,7 @@ class FullstackFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (!address.empty()) {
+    if (address.length() > 0) {
       channel_ = grpc::CreateCustomChannel(address,
                                            InsecureChannelCredentials(), args);
     } else {
