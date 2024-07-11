@@ -38,11 +38,10 @@ class StatsPluginChannelScope {
   absl::string_view target() const { return target_; }
   /// Returns the default authority for the channel.
   absl::string_view default_authority() const { return default_authority_; }
-  /// Returns channel arguments.  THIS METHOD IS EXPERIMENTAL.
+  /// Returns channel arguments.
   // TODO(roth, ctiller, yashkt): Find a better representation for
   // channel args before de-experimentalizing this API.
-  const grpc_event_engine::experimental::EndpointConfig& experimental_args()
-      const {
+  const grpc_event_engine::experimental::EndpointConfig& args() const {
     return args_;
   }
 
