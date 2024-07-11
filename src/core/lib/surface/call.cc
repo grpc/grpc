@@ -429,10 +429,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
                                              const char* description,
                                              void* reserved) {
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_call_cancel_with_status("
-         "c="
-      << c << ", status=" << (int)status << ", description=" << description
-      << ", reserved=" << reserved << ")";
+      << "grpc_call_cancel_with_status(c=" << c << ", status=" << (int)status
+      << ", description=" << description << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
