@@ -27,7 +27,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/util/latent_see.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
@@ -215,7 +214,6 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 }
 
 void Party::RunLocked() {
-  GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
   // If there is a party running, then we don't run it immediately
   // but instead add it to the end of the list of parties to run.
   // This enables a fairly straightforward batching of work from a
@@ -271,7 +269,6 @@ bool Party::RunParty() {
 }
 
 bool Party::RunOneParticipant(int i) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Party::RunOneParticipant");
   // If the participant is null, skip.
   // This allows participants to complete whilst wakers still exist
   // somewhere.

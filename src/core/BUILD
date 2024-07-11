@@ -131,25 +131,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "latent_see",
-    srcs = [
-        "util/latent_see.cc",
-    ],
-    hdrs = [
-        "util/latent_see.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/strings",
-        "absl/types:optional",
-    ],
-    deps = [
-        "per_cpu",
-        "//:gpr",
-    ],
-)
-
-grpc_cc_library(
     name = "transport_fwd",
     hdrs = [
         "lib/transport/transport_fwd.h",
@@ -600,7 +581,6 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "event_engine_context",
-        "latent_see",
         "poll",
         "promise_factory",
         "ref_counted",
@@ -981,7 +961,6 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "dump_args",
-        "latent_see",
         "no_destruct",
         "poll",
         "promise_factory",

@@ -35,8 +35,6 @@ build --define=use_fast_cpp_protos=true
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
 
-build:latent_see --copt=-DGRPC_ENABLE_LATENT_SEE
-
 build:dbg --compilation_mode=dbg
 
 # Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
