@@ -33,7 +33,7 @@ opentelemetry-resourcedetector-gcp==1.6.0a0
 opentelemetry-exporter-prometheus==0.46b0
 prometheus_client==0.20.0
 Deprecated==1.2.14
-opentelemetry-semantic-conventions==0.46b0
+opentelemetry-semantic-conventions==0.42b0
 typing-extensions==4.9.0
 pyasn1-modules==0.3.0
 zipp==3.17.0
