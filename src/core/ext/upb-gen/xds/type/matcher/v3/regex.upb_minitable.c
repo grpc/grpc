@@ -26,6 +26,9 @@ const upb_MiniTable xds__type__matcher__v3__RegexMatcher_msg_init = {
   &xds_type_matcher_v3_RegexMatcher_submsgs[0],
   &xds_type_matcher_v3_RegexMatcher__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.RegexMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000080100000a, &upb_pom_1bt_max64b},
@@ -38,6 +41,9 @@ const upb_MiniTable xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.RegexMatcher.GoogleRE2",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

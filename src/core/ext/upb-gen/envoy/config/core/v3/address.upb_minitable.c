@@ -28,6 +28,9 @@ const upb_MiniTable envoy__config__core__v3__Pipe_msg_init = {
   NULL,
   &envoy_config_core_v3_Pipe__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.Pipe",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -45,6 +48,9 @@ const upb_MiniTable envoy__config__core__v3__EnvoyInternalAddress_msg_init = {
   NULL,
   &envoy_config_core_v3_EnvoyInternalAddress__fields[0],
   UPB_SIZE(32, 48), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.EnvoyInternalAddress",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},
@@ -66,6 +72,9 @@ const upb_MiniTable envoy__config__core__v3__SocketAddress_msg_init = {
   NULL,
   &envoy_config_core_v3_SocketAddress__fields[0],
   UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.SocketAddress",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -94,6 +103,9 @@ const upb_MiniTable envoy__config__core__v3__TcpKeepalive_msg_init = {
   &envoy_config_core_v3_TcpKeepalive_submsgs[0],
   &envoy_config_core_v3_TcpKeepalive__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.TcpKeepalive",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_core_v3_ExtraSourceAddress_submsgs[2] = {
@@ -110,6 +122,9 @@ const upb_MiniTable envoy__config__core__v3__ExtraSourceAddress_msg_init = {
   &envoy_config_core_v3_ExtraSourceAddress_submsgs[0],
   &envoy_config_core_v3_ExtraSourceAddress__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.ExtraSourceAddress",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_core_v3_BindConfig_submsgs[6] = {
@@ -134,6 +149,9 @@ const upb_MiniTable envoy__config__core__v3__BindConfig_msg_init = {
   &envoy_config_core_v3_BindConfig_submsgs[0],
   &envoy_config_core_v3_BindConfig__fields[0],
   UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.BindConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -162,6 +180,9 @@ const upb_MiniTable envoy__config__core__v3__Address_msg_init = {
   &envoy_config_core_v3_Address_submsgs[0],
   &envoy_config_core_v3_Address__fields[0],
   UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.Address",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max128b},
@@ -183,6 +204,9 @@ const upb_MiniTable envoy__config__core__v3__CidrRange_msg_init = {
   &envoy_config_core_v3_CidrRange_submsgs[0],
   &envoy_config_core_v3_CidrRange__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.CidrRange",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

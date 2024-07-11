@@ -26,6 +26,9 @@ const upb_MiniTable envoy__config__core__v3__JsonFormatOptions_msg_init = {
   NULL,
   &envoy_config_core_v3_JsonFormatOptions__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.JsonFormatOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -53,6 +56,9 @@ const upb_MiniTable envoy__config__core__v3__SubstitutionFormatString_msg_init =
   &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
   UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.SubstitutionFormatString",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0010000c0100000a, &upb_pos_1bt},

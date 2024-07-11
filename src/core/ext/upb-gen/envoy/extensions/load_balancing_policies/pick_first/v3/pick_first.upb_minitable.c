@@ -21,6 +21,9 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__pick_0first__v
   NULL,
   &envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.pick_first.v3.PickFirst",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
