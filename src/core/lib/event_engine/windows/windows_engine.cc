@@ -218,9 +218,10 @@ WindowsEventEngine::~WindowsEventEngine() {
     if (!known_handles_.empty()) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         for (auto handle : known_handles_) {
-          LOG(ERROR) << "WindowsEventEngine:" << this
-                     << " uncleared TaskHandle at shutdown:"
-                     << HandleToString<EventEngine::TaskHandle>(handle);
+          gpr_log(GPR_ERROR,
+                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                  this,
+                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
         }
       }
       // Allow a small grace period for timers to be run before shutting down.
