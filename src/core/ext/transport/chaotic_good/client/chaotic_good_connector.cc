@@ -76,7 +76,7 @@ const int32_t kTimeoutSecs = 120;
 ChaoticGoodConnector::ChaoticGoodConnector(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : event_engine_(std::move(event_engine)),
-      handshake_mgr_(MakeRefCounted<HandshakeManager>()) {}
+      handshake_mgr_(std::make_shared<HandshakeManager>()) {}
 
 ChaoticGoodConnector::~ChaoticGoodConnector() {
   CHECK_EQ(notify_, nullptr);
