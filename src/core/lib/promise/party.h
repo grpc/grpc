@@ -108,19 +108,19 @@ class PartySyncUsingAtomics {
   // participant completed and should be removed from the allocated set.
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
-    // Grab the current state, and clear the wakeup bits & add flag.
-    uint64_t prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
-                                           std::memory_order_acquire);
-    LogStateChange("Run", prev_state,
-                   prev_state & (kRefMask | kLocked | kAllocatedMask));
-    CHECK(prev_state & kLocked);
-    if (prev_state & kDestroying) return true;
-    // From the previous state, extract which participants we're to wakeup.
-    uint64_t wakeups = prev_state & kWakeupMask;
-    // Now update prev_state to be what we want the CAS to see below.
-    prev_state &= kRefMask | kLocked | kAllocatedMask;
+    uint64_t prev_state;
     for (;;) {
-      uint64_t keep_allocated_mask = kAllocatedMask;
+      // Grab the current state, and clear the wakeup bits & add flag.
+      prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
+                                    std::memory_order_acquire);
+      LogStateChange("Run", prev_state,
+                     prev_state & (kRefMask | kLocked | kAllocatedMask));
+      CHECK(prev_state & kLocked);
+      if (prev_state & kDestroying) return true;
+      // From the previous state, extract which participants we're to wakeup.
+      uint64_t wakeups = prev_state & kWakeupMask;
+      // Now update prev_state to be what we want the CAS to see below.
+      prev_state &= kRefMask | kLocked | kAllocatedMask;
       // For each wakeup bit...
       while (wakeups != 0) {
         uint64_t t = LowestOneBit(wakeups);
@@ -129,7 +129,11 @@ class PartySyncUsingAtomics {
         // If the bit is not set, skip.
         if (poll_one_participant(i)) {
           const uint64_t allocated_bit = (1u << i << kAllocatedShift);
-          keep_allocated_mask &= ~allocated_bit;
+          prev_state &= ~allocated_bit;
+          uint64_t finished_prev_state =
+              state_.fetch_and(~allocated_bit, std::memory_order_release);
+          LogStateChange("Run:ParticipantComplete", finished_prev_state,
+                         finished_prev_state & ~allocated_bit);
         }
       }
       // Try to CAS the state we expected to have (with no wakeups or adds)
@@ -144,26 +148,12 @@ class PartySyncUsingAtomics {
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
       if (state_.compare_exchange_weak(
-              prev_state, (prev_state & (kRefMask | keep_allocated_mask)),
+              prev_state, (prev_state & (kRefMask | kAllocatedMask)),
               std::memory_order_acq_rel, std::memory_order_acquire)) {
         LogStateChange("Run:End", prev_state,
                        prev_state & (kRefMask | kAllocatedMask));
         return false;
       }
-      while (!state_.compare_exchange_weak(
-          prev_state,
-          prev_state & (kRefMask | kLocked | keep_allocated_mask))) {
-        // Nothing to do here.
-      }
-      LogStateChange("Run:Continue", prev_state,
-                     prev_state & (kRefMask | kLocked | keep_allocated_mask));
-      CHECK(prev_state & kLocked);
-      if (prev_state & kDestroying) return true;
-      // From the previous state, extract which participants we're to wakeup.
-      wakeups = prev_state & kWakeupMask;
-      // Now update prev_state to be what we want the CAS to see once wakeups
-      // complete next iteration.
-      prev_state &= kRefMask | kLocked | keep_allocated_mask;
     }
     return false;
   }
