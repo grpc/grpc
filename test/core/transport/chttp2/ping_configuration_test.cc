@@ -55,9 +55,11 @@ class ConfigurationTest : public ::testing::Test {
 
 TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   ExecCtx exec_ctx;
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(
-          args_, mock_endpoint_controller_->TakeCEndpoint(),
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
           /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Infinity());
   EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
@@ -72,9 +74,11 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
   args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000);
   args_ = args_.Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true);
   args_ = args_.Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 3);
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(
-          args_, mock_endpoint_controller_->TakeCEndpoint(),
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
           /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
@@ -85,9 +89,11 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
 
 TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   ExecCtx exec_ctx;
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(
-          args_, mock_endpoint_controller_->TakeCEndpoint(),
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
           /*is_client=*/false));
   EXPECT_EQ(t->keepalive_time, Duration::Hours(2));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
@@ -109,9 +115,11 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
   args_ =
       args_.Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 20000);
   args_ = args_.Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 0);
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(
-          args_, mock_endpoint_controller_->TakeCEndpoint(),
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
           /*is_client=*/false));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
@@ -138,9 +146,11 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
   grpc_chttp2_config_default_keepalive_args(args, /*is_client=*/true);
   // Note that we are using the original args_ object for creating the transport
   // which does not override the defaults.
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(
-          args_, mock_endpoint_controller_->TakeCEndpoint(),
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
           /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
@@ -165,9 +175,11 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   grpc_chttp2_config_default_keepalive_args(args, /*is_client=*/false);
   // Note that we are using the original args_ object for creating the transport
   // which does not override the defaults.
-  grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(
-          args_, mock_endpoint_controller_->TakeCEndpoint(),
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(grpc_create_chttp2_transport(
+          args_,
+          OrphanablePtr<grpc_endpoint>(
+              mock_endpoint_controller_->TakeCEndpoint()),
           /*is_client=*/false));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
