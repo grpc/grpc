@@ -1075,7 +1075,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -2597,7 +2596,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -4691,7 +4689,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -6669,7 +6666,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -7176,7 +7172,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
