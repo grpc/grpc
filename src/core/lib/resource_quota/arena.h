@@ -87,14 +87,14 @@ class BaseArenaContextTraits {
 template <typename T>
 class ArenaContextTraits : public BaseArenaContextTraits {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() { return id_; }
+  static uint16_t id() { return id_; }
 
  private:
   static const uint16_t id_;
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void DestroyArenaContext(void* p) {
+void DestroyArenaContext(void* p) {
   ArenaContextType<T>::Destroy(static_cast<T*>(p));
 }
 
@@ -278,7 +278,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // for modern promise-based code -- however legacy filter stack based code
   // often needs to access these directly.
   template <typename T>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
+  T* GetContext() {
     return static_cast<T*>(
         contexts()[arena_detail::ArenaContextTraits<T>::id()]);
   }
@@ -339,9 +339,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   void* AllocZone(size_t size);
   void Destroy() const;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void** contexts() {
-    return reinterpret_cast<void**>(this + 1);
-  }
+  void** contexts() { return reinterpret_cast<void**>(this + 1); }
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
@@ -373,12 +371,8 @@ namespace promise_detail {
 template <typename T>
 class Context<T, absl::void_t<decltype(ArenaContextType<T>::Destroy)>> {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() {
-    return GetContext<Arena>()->GetContext<T>();
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static void set(T* value) {
-    GetContext<Arena>()->SetContext(value);
-  }
+  static T* get() { return GetContext<Arena>()->GetContext<T>(); }
+  static void set(T* value) { GetContext<Arena>()->SetContext(value); }
 };
 
 }  // namespace promise_detail
