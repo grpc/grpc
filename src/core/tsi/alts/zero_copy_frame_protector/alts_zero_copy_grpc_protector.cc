@@ -27,6 +27,7 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
@@ -179,7 +180,8 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
     grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    LOG(ERROR) << "Invalid nullptr arguments to zero-copy grpc unprotect.";
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr arguments to zero-copy grpc unprotect.");
     return TSI_INVALID_ARGUMENT;
   }
   alts_zero_copy_grpc_protector* protector =
@@ -264,8 +266,9 @@ tsi_result alts_zero_copy_grpc_protector_create(
     size_t* max_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   if (protector == nullptr) {
-    LOG(ERROR)
-        << "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.";
+    gpr_log(
+        GPR_ERROR,
+        "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.");
     return TSI_INVALID_ARGUMENT;
   }
   // Creates alts_zero_copy_protector.

@@ -109,8 +109,9 @@ tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
         *unprotected_bytes_size = 0;
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
-        LOG(ERROR)
-            << "Peer tried to renegotiate SSL connection. This is unsupported.";
+        gpr_log(
+            GPR_ERROR,
+            "Peer tried to renegotiate SSL connection. This is unsupported.");
         return TSI_UNIMPLEMENTED;
       case SSL_ERROR_SSL:
         LOG(ERROR) << "Corruption detected.";
