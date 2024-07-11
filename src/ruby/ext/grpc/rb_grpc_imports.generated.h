@@ -735,6 +735,9 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
 typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import

@@ -48,7 +48,10 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
         "./test/core/end2end/tests/no_logging.cc",
     ],
-    "gpr_log_severity_string": [],
+    "gpr_log_severity_string(": [
+        "./include/grpc/support/log.h",
+        "./src/core/util/log.cc",
+    ],
     "gpr_log(": [
         "./include/grpc/support/log.h",
         "./src/core/ext/filters/backend_metrics/backend_metric_filter.cc",

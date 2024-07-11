@@ -44,6 +44,18 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
+const char* gpr_log_severity_string(gpr_log_severity severity) {
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      return "D";
+    case GPR_LOG_SEVERITY_INFO:
+      return "I";
+    case GPR_LOG_SEVERITY_ERROR:
+      return "E";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
