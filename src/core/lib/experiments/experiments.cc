@@ -16,6 +16,8 @@
 
 #include "src/core/lib/experiments/experiments.h"
 
+#include <stdint.h>
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
@@ -112,6 +114,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 }  // namespace
 
 namespace grpc_core {
@@ -177,7 +181,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -274,6 +279,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 }  // namespace
 
 namespace grpc_core {
@@ -339,7 +346,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -436,6 +444,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 }  // namespace
 
 namespace grpc_core {
@@ -501,7 +511,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, true, true},
 };
 
 }  // namespace grpc_core
