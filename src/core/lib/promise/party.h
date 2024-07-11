@@ -581,7 +581,7 @@ class Party : public Activity, private Wakeable {
   void CancelRemainingParticipants();
 
   // Run the locked part of the party until it is unlocked.
-  static void RunLocked(Party* party);
+  void RunLocked();
   // Called in response to Unref() hitting zero - ultimately calls PartyOver,
   // but needs to set some stuff up.
   // Here so it gets compiled out of line.
