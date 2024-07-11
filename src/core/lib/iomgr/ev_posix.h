@@ -33,9 +33,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-#define GRPC_FD_TRACE(format, ...)                                      \
-  if (GRPC_TRACE_FLAG_ENABLED(fd_trace)) {                              \
-    LOG(INFO) << "(fd-trace) " << absl::StrFormat(format, __VA_ARGS__); \
+#define GRPC_FD_TRACE(format, ...)                        \
+  if (GRPC_TRACE_FLAG_ENABLED(fd_trace)) {                \
+    gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
   }
 
 typedef struct grpc_fd grpc_fd;
