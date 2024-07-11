@@ -412,9 +412,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::~Lifeguard() {
   lifeguard_should_shut_down_->Notify();
   while (lifeguard_running_.load(std::memory_order_relaxed)) {
-    GRPC_LOG_EVERY_N_SEC_DELAYED_DEBUG(
-        kBlockingQuiesceLogRateSeconds, "%s",
-        "Waiting for lifeguard thread to shut down");
+    GRPC_LOG_EVERY_N_SEC_DELAYED(kBlockingQuiesceLogRateSeconds, GPR_DEBUG,
+                                 "%s",
+                                 "Waiting for lifeguard thread to shut down");
     lifeguard_is_shut_down_->WaitForNotification();
   }
   // Do an additional wait in case this method races with LifeguardMain's

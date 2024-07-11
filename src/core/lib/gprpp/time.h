@@ -31,7 +31,19 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
-#define GRPC_LOG_EVERY_N_SEC_DELAYED_DEBUG(n, format, ...)      \
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
+  do {                                                          \
+    static std::atomic<uint64_t> prev{0};                       \
+    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                       gpr_now(GPR_CLOCK_MONOTONIC))            \
+                       .milliseconds_after_process_epoch();     \
+    if (prev == 0 || now - prev > (n) * 1000) {                 \
+      prev = now;                                               \
+      gpr_log(severity, format, __VA_ARGS__);                   \
+    }                                                           \
+  } while (0)
+
+#define GRPC_LOG_EVERY_N_SEC_DELAYED(n, severity, format, ...)  \
   do {                                                          \
     static std::atomic<uint64_t> prev{0};                       \
     uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
@@ -40,7 +52,7 @@
     if (prev == 0) prev = now;                                  \
     if (now - prev > (n) * 1000) {                              \
       prev = now;                                               \
-      VLOG(2) << absl::StrFormat(format, __VA_ARGS__);          \
+      gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
   } while (0)
 

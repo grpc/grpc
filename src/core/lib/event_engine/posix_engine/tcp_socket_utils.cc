@@ -106,15 +106,14 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
                                       : socket(family, type, protocol);
   if (res < 0 && errno == EMFILE) {
     int saved_errno = errno;
-    LOG_EVERY_N_SEC(ERROR, 10)
-        << "socket(" << family << ", " << type << ", " << protocol
-        << ") returned " << res << " with error: |"
-        << grpc_core::StrError(errno)
-        << "|. This process might not have a sufficient file descriptor limit "
-           "for the number of connections grpc wants to open (which is "
-           "generally a function of the number of grpc channels, the lb policy "
-           "of each channel, and the number of backends each channel is load "
-           "balancing across).";
+    GRPC_LOG_EVERY_N_SEC(
+        10, GPR_ERROR,
+        "socket(%d, %d, %d) returned %d with error: |%s|. This process "
+        "might not have a sufficient file descriptor limit for the number "
+        "of connections grpc wants to open (which is generally a function of "
+        "the number of grpc channels, the lb policy of each channel, and the "
+        "number of backends each channel is load balancing across).",
+        family, type, protocol, res, grpc_core::StrError(errno).c_str());
     errno = saved_errno;
   }
   return res;

@@ -17,7 +17,6 @@
 
 #include <cstddef>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
@@ -53,8 +52,8 @@ absl::Status LivingThreadCount::BlockUntilThreadCount(
       prev_thread_count = curr_threads;
       timeout_baseline = grpc_core::Timestamp::Now();
     }
-    GRPC_LOG_EVERY_N_SEC_DELAYED_DEBUG(
-        log_rate.seconds(),
+    GRPC_LOG_EVERY_N_SEC_DELAYED(
+        log_rate.seconds(), GPR_DEBUG,
         "Waiting for thread pool to idle before %s. (%" PRIdPTR " to %" PRIdPTR
         "). Timing out in %0.f seconds.",
         why, curr_threads, desired_threads,
