@@ -473,9 +473,7 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_call_start_batch(call=" << call << ", ops=" << ops
       << ", nops=" << (unsigned long)nops << ", tag=" << tag
-      << ", "
-         "reserved="
-      << reserved << ")";
+      << ", reserved=" << reserved << ")";
 
   if (reserved != nullptr || call == nullptr) {
     return GRPC_CALL_ERROR;
