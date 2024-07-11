@@ -346,5 +346,6 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
   return RUN_ALL_TESTS();
 }
