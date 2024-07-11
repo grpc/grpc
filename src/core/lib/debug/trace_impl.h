@@ -25,10 +25,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef _WIN32
-#undef ERROR
-#endif
-
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
