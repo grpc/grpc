@@ -3456,7 +3456,6 @@ grpc_cc_library(
     hdrs = ["load_balancing/lb_policy.h"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3523,21 +3522,6 @@ grpc_cc_library(
         "//:gpr",
         "//:orphanable",
         "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "lb_metadata",
-    srcs = ["client_channel/lb_metadata.cc"],
-    hdrs = ["client_channel/lb_metadata.h"],
-    external_deps = [
-        "absl/log:log",
-        "absl/strings",
-        "absl/types:optional",
-    ],
-    deps = [
-        "lb_policy",
-        "metadata_batch",
     ],
 )
 
@@ -5025,7 +5009,6 @@ grpc_cc_library(
         "slice_refcount",
         "status_helper",
         "time",
-        "upb_utils",
         "uuid_v4",
         "validation_errors",
         "//:backoff",
@@ -5056,13 +5039,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "upb_utils",
     hdrs = [
-        "util/upb_utils.h",
+        "xds/grpc/upb_utils.h",
     ],
     external_deps = [
         "absl/strings",
         "@com_google_protobuf//upb:base",
     ],
     language = "c++",
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(

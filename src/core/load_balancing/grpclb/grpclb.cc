@@ -311,17 +311,14 @@ class GrpcLb final : public LoadBalancingPolicy {
   class SubchannelWrapper final : public DelegatingSubchannel {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
-                      RefCountedPtr<GrpcLb> lb_policy,
-                      grpc_event_engine::experimental::Slice lb_token,
+                      RefCountedPtr<GrpcLb> lb_policy, std::string lb_token,
                       RefCountedPtr<GrpcLbClientStats> client_stats)
         : DelegatingSubchannel(std::move(subchannel)),
           lb_policy_(std::move(lb_policy)),
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    const grpc_event_engine::experimental::Slice& lb_token() const {
-      return lb_token_;
-    }
+    const std::string& lb_token() const { return lb_token_; }
     GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
 
    private:
@@ -343,14 +340,14 @@ class GrpcLb final : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<GrpcLb> lb_policy_;
-    grpc_event_engine::experimental::Slice lb_token_;
+    std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
   class TokenAndClientStatsArg final
       : public RefCounted<TokenAndClientStatsArg> {
    public:
-    TokenAndClientStatsArg(grpc_event_engine::experimental::Slice lb_token,
+    TokenAndClientStatsArg(std::string lb_token,
                            RefCountedPtr<GrpcLbClientStats> client_stats)
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
@@ -361,21 +358,18 @@ class GrpcLb final : public LoadBalancingPolicy {
 
     static int ChannelArgsCompare(const TokenAndClientStatsArg* a,
                                   const TokenAndClientStatsArg* b) {
-      int r =
-          a->lb_token_.as_string_view().compare(b->lb_token_.as_string_view());
+      int r = a->lb_token_.compare(b->lb_token_);
       if (r != 0) return r;
       return QsortCompare(a->client_stats_.get(), b->client_stats_.get());
     }
 
-    const grpc_event_engine::experimental::Slice& lb_token() const {
-      return lb_token_;
-    }
+    const std::string& lb_token() const { return lb_token_; }
     RefCountedPtr<GrpcLbClientStats> client_stats() const {
       return client_stats_;
     }
 
    private:
-    grpc_event_engine::experimental::Slice lb_token_;
+    std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
@@ -671,8 +665,7 @@ class GrpcLb::Serverlist::AddressIterator final
       // LB token processing.
       const size_t lb_token_length = strnlen(
           server.load_balance_token, GPR_ARRAY_SIZE(server.load_balance_token));
-      auto lb_token = grpc_event_engine::experimental::Slice::FromCopiedBuffer(
-          server.load_balance_token, lb_token_length);
+      std::string lb_token(server.load_balance_token, lb_token_length);
       if (lb_token.empty()) {
         auto addr_uri = grpc_sockaddr_to_uri(&addr);
         LOG(INFO) << "Missing LB token for backend address '"
@@ -780,10 +773,9 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
       // NOLINTBEGIN(bugprone-string-constructor)
-      complete_pick->metadata_mutations.Add(
+      args.initial_metadata->Add(
           GrpcLbClientStatsMetadata::key(),
-          grpc_event_engine::experimental::Slice(grpc_slice_from_static_buffer(
-              reinterpret_cast<const char*>(client_stats), 0)));
+          absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
       // NOLINTEND(bugprone-string-constructor)
       // Update calls-started.
       client_stats->AddCallStarted();
@@ -793,8 +785,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     // may get refreshed between when we return this pick and when the
     // initial metadata goes out on the wire.
     if (!subchannel_wrapper->lb_token().empty()) {
-      complete_pick->metadata_mutations.Add(
-          LbTokenMetadata::key(), subchannel_wrapper->lb_token().Ref());
+      char* lb_token = static_cast<char*>(
+          args.call_state->Alloc(subchannel_wrapper->lb_token().size() + 1));
+      strcpy(lb_token, subchannel_wrapper->lb_token().c_str());
+      args.initial_metadata->Add(LbTokenMetadata::key(), lb_token);
     }
     // Unwrap subchannel to pass up to the channel.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
@@ -817,11 +811,13 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
         absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %s",
                         parent(), addr_str.value_or("N/A").c_str()));
   }
+  std::string lb_token = arg->lb_token();
+  RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
       parent()->RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "SubchannelWrapper"),
-      arg->lb_token().Ref(), arg->client_stats());
+      std::move(lb_token), std::move(client_stats));
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -1546,8 +1542,7 @@ class GrpcLb::NullLbTokenEndpointIterator final
  private:
   std::shared_ptr<EndpointAddressesIterator> parent_it_;
   RefCountedPtr<TokenAndClientStatsArg> empty_token_ =
-      MakeRefCounted<TokenAndClientStatsArg>(
-          grpc_event_engine::experimental::Slice(), nullptr);
+      MakeRefCounted<TokenAndClientStatsArg>("", nullptr);
 };
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {

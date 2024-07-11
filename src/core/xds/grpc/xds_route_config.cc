@@ -70,7 +70,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
-#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filters.h"

@@ -66,7 +66,7 @@
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"

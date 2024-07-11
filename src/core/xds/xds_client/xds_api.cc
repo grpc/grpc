@@ -48,7 +48,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/util/json/json.h"
-#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/xds_client/xds_client.h"
 
 // IWYU pragma: no_include "upb/msg_internal.h"

@@ -3818,7 +3818,6 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:json",
         "//src/core:latch",
-        "//src/core:lb_metadata",
         "//src/core:lb_policy",
         "//src/core:lb_policy_registry",
         "//src/core:loop",

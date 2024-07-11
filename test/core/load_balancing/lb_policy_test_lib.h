@@ -620,7 +620,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     explicit FakeMetadata(std::map<std::string, std::string> metadata)
         : metadata_(std::move(metadata)) {}
 
+    const std::map<std::string, std::string>& metadata() const {
+      return metadata_;
+    }
+
    private:
+    void Add(absl::string_view key, absl::string_view value) override {
+      metadata_[std::string(key)] = std::string(value);
+    }
+
+    std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
+        override {
+      return {};  // Not used.
+    }
+
     absl::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* /*buffer*/) const override {
       auto it = metadata_.find(std::string(key));

@@ -30,11 +30,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 
-#include "src/core/client_channel/lb_metadata.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -131,8 +129,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
       // Report args seen.
       PickArgsSeen args_seen;
       args_seen.path = std::string(args.path);
-      args_seen.metadata =
-          DownCast<LbMetadata*>(args.initial_metadata)->TestOnlyCopyToVector();
+      args_seen.metadata = args.initial_metadata->TestOnlyCopyToVector();
       cb_(args_seen);
       // Do pick.
       return delegate_picker_->Pick(args);
@@ -272,8 +269,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       args_seen.status = args.status;
       args_seen.backend_metric_data =
           args.backend_metric_accessor->GetBackendMetricData();
-      args_seen.metadata =
-          DownCast<LbMetadata*>(args.trailing_metadata)->TestOnlyCopyToVector();
+      args_seen.metadata = args.trailing_metadata->TestOnlyCopyToVector();
       cb_(args_seen);
     }
 
