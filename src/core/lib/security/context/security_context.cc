@@ -251,9 +251,11 @@ void grpc_auth_context::add_property(const char* name, const char* value,
 
 void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
                                     const char* value, size_t value_length) {
-  GRPC_TRACE_LOG(api, INFO) <<
-      "grpc_auth_context_add_property(ctx="<< ctx<<", name="<< name<<", value="<<value <<", "
-      "value_length="<< (unsigned long)value_length)<<")";
+  GRPC_TRACE_LOG(api, INFO) << absl::StrFormat(
+      "grpc_auth_context_add_property(ctx=%p, name=%s, value=%*.*s, "
+      "value_length=%lu)",
+      ctx, name, (int)value_length, (int)value_length, value,
+      (unsigned long)value_length);
   ctx->add_property(name, value, value_length);
 }
 

@@ -1815,7 +1815,7 @@ void* grpc_server_register_method(
 
 void grpc_server_start(grpc_server* server) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_server_start(server=" << server << ")";
   grpc_core::Server::FromC(server)->Start();
 }
 
@@ -1831,14 +1831,15 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 void grpc_server_cancel_all_calls(grpc_server* server) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_server_cancel_all_calls(server=%p)", 1, (server));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_cancel_all_calls(server=" << server << ")";
   grpc_core::Server::FromC(server)->CancelAllCalls();
 }
 
 void grpc_server_destroy(grpc_server* server) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_server_destroy(server=%p)", 1, (server));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_server_destroy(server=" << server << ")";
   grpc_core::Server::FromC(server)->Orphan();
 }
 
