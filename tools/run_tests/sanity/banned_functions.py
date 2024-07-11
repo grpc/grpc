@@ -95,6 +95,8 @@ BANNED_EXCEPT = {
         "./src/core/handshaker/http_connect/http_proxy_mapper.cc",
         "./src/core/handshaker/security/secure_endpoint.cc",
         "./src/core/lib/channel/channel_stack.cc",
+        "./src/core/lib/channel/promise_based_filter.cc",
+        "./src/core/lib/debug/trace.cc",
         "./src/core/lib/event_engine/ares_resolver.h",
         "./src/core/lib/event_engine/cf_engine/cf_engine.cc",
         "./src/core/lib/event_engine/posix_engine/posix_engine.cc",
