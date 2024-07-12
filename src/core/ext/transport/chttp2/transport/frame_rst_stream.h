@@ -27,20 +27,22 @@
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 struct grpc_chttp2_rst_stream_parser {
   uint8_t byte;
   uint8_t reason_bytes[4];
 };
-grpc_slice grpc_chttp2_rst_stream_create(uint32_t stream_id, uint32_t code,
-                                         grpc_transport_one_way_stats* stats);
+grpc_slice grpc_chttp2_rst_stream_create(
+    uint32_t stream_id, uint32_t code,
+    grpc_core::CallTracerInterface* call_tracer);
 
 // Adds RST_STREAM frame to t->qbuf (buffer for the next write). Should be
 // called when we want to add RST_STREAM and we are not in
 // write_action_begin_locked.
 void grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
-    grpc_transport_one_way_stats* stats);
+    grpc_core::CallTracerInterface* call_tracer);
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags);

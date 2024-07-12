@@ -394,8 +394,7 @@ static void on_read(void* arg, grpc_error_handle err) {
       // This is not a performant code path, but if an fd limit has been
       // reached, the system is likely in an unhappy state regardless.
       if (errno == EMFILE) {
-        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s",
-                             "File descriptor limit reached. Retrying.");
+        LOG_EVERY_N_SEC(ERROR, 1) << "File descriptor limit reached. Retrying.";
         grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
         if (gpr_atm_full_xchg(&sp->retry_timer_armed, true)) return;
         grpc_timer_init(&sp->retry_timer,

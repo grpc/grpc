@@ -92,7 +92,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
                    absl::AnyInvocable<void(absl::Status)>&& on_complete)
         : bytes_to_write_(ExtractSliceBufferIntoString(buffer)),
           on_complete_(std::move(on_complete)) {}
-    bool IsValid() { return bytes_to_write_.length() > 0; }
+    bool IsValid() { return !bytes_to_write_.empty(); }
     std::string GetBytesToWrite() const { return bytes_to_write_; }
     void operator()(absl::Status status) {
       if (on_complete_ != nullptr) {

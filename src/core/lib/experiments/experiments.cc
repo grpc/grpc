@@ -114,7 +114,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -264,7 +264,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -414,7 +414,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -465,7 +465,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
 };
 
 }  // namespace grpc_core

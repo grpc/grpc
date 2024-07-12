@@ -36,6 +36,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init 
   &envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.ClusterLoadAssignment",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -61,6 +64,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_m
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[0],
   UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -86,6 +92,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy.DropOverload",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -105,6 +114,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEnd
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.ClusterLoadAssignment.NamedEndpointsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
