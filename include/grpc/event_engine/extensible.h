@@ -61,7 +61,7 @@ class Extensible {
   ///
   virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
 
-  protected:
+ protected:
   ~Extensible() = default;
 };
 
