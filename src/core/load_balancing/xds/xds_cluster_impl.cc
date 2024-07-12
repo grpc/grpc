@@ -680,7 +680,10 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   absl::Status status = Match(
       cluster_resource.common_tls_context.certificate_validation_context
           .ca_certs,
-      [](const absl::monostate&) { return absl::OkStatus(); },
+      [](const absl::monostate&) {
+        // No root cert configured.
+        return absl::OkStatus();
+      },
       [&](const CommonTlsContext::CertificateProviderPluginInstance&
               cert_provider) {
         root_cert_name = cert_provider.certificate_name;
