@@ -44,12 +44,16 @@ struct CommonTlsContext {
   };
 
   struct CertificateValidationContext {
-    CertificateProviderPluginInstance ca_certificate_provider_instance;
+    struct SystemRootCerts {
+      bool operator==(const SystemRootCerts&) const { return true; }
+    };
+    absl::variant<absl::monostate, CertificateProviderPluginInstance,
+                  SystemRootCerts>
+        ca_certs;
     std::vector<StringMatcher> match_subject_alt_names;
 
     bool operator==(const CertificateValidationContext& other) const {
-      return ca_certificate_provider_instance ==
-                 other.ca_certificate_provider_instance &&
+      return ca_certs == other.ca_certs &&
              match_subject_alt_names == other.match_subject_alt_names;
     }
 

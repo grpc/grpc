@@ -101,9 +101,9 @@ CommonTlsContext UpstreamTlsContextParse(
     common_tls_context =
         CommonTlsContextParse(context, common_tls_context_proto, errors);
   }
-  if (common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.instance_name.empty()) {
-    errors->AddError("no CA certificate provider instance configured");
+  if (absl::holds_alternative<absl::monostate>(
+          common_tls_context.certificate_validation_context.ca_certs)) {
+    errors->AddError("no CA certs configured");
   }
   return common_tls_context;
 }

@@ -488,6 +488,24 @@ TEST_P(XdsSecurityTest,
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
+TEST_P(XdsSecurityTest, UseSystemRootCerts) {
+  grpc_core::testing::ScopedExperimentalEnvVar env1(
+      "GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  grpc_core::testing::ScopedEnvVar env2("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH",
+                                        kCaCertPath);
+  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_system_root_certs();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
+}
+
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
