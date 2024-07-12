@@ -5252,6 +5252,7 @@ grpc_cc_library(
     deps = [
         "grpc_matchers",
         "json",
+        "match",
         "validation_errors",
     ],
 )
