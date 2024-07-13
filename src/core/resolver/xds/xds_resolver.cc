@@ -127,8 +127,13 @@ class XdsResolver final : public Resolver {
 
   void ShutdownLocked() override;
 
+  void RequestReresolutionLocked() override {
+    if (dependency_mgr_ != nullptr) dependency_mgr_->RequestReresolution();
+  }
+
   void ResetBackoffLocked() override {
     if (xds_client_ != nullptr) xds_client_->ResetBackoff();
+    if (dependency_mgr_ != nullptr) dependency_mgr_->ResetBackoff();
   }
 
  private:
