@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <limits> // Added for std::numeric_limits
 
 #include "upb/base/internal/log2.h"
 #include "upb/mem/arena.h"
@@ -19,7 +20,7 @@
 
 const float kUpb_FltInfinity = INFINITY;
 const double kUpb_Infinity = INFINITY;
-const double kUpb_NaN = NAN;
+const double kUpb_NaN = std::numeric_limits<double>::quiet_NaN(); // Updated to use std::numeric_limits
 
 bool UPB_PRIVATE(_upb_Message_Realloc)(struct upb_Message* msg, size_t need,
                                        upb_Arena* a) {
