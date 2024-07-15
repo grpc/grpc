@@ -63,7 +63,6 @@
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
@@ -385,8 +384,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_google_default_credentials_create(%p)", 1,
-                 (call_credentials));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_google_default_credentials_create(" << call_credentials << ")";
 
   if (call_creds == nullptr) {
     call_creds = make_default_call_creds(&error);

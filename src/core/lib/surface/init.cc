@@ -45,7 +45,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 
@@ -128,7 +127,7 @@ void grpc_init(void) {
     grpc_iomgr_start();
   }
 
-  GRPC_API_TRACE("grpc_init(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_init(void)";
 }
 
 void grpc_shutdown_internal_locked(void)
@@ -149,7 +148,7 @@ void grpc_shutdown_internal_locked(void)
 }
 
 void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
-  GRPC_API_TRACE("grpc_shutdown_from_cleanup_thread", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_from_cleanup_thread";
   grpc_core::MutexLock lock(g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
@@ -161,7 +160,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
 }
 
 void grpc_shutdown(void) {
-  GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown(void)";
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
@@ -194,7 +193,7 @@ void grpc_shutdown(void) {
 }
 
 void grpc_shutdown_blocking(void) {
-  GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_blocking(void)";
   grpc_core::MutexLock lock(g_init_mu);
   if (--g_initializations == 0) {
     g_shutting_down = true;
