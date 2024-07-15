@@ -149,6 +149,10 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
   RefCountedPtr<ClusterSubscription> GetClusterSubscription(
       absl::string_view cluster_name);
 
+  void RequestReresolution();
+
+  void ResetBackoff();
+
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_dependency_manager";
   }

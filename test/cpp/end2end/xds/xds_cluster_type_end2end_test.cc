@@ -124,6 +124,57 @@ TEST_P(LogicalDNSClusterTest, Basic) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
+TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
+  LogicalDnsInitClient();
+  CreateAndStartBackends(2);
+  // Create Logical DNS Cluster
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result to backend 0.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(0, 1));
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // RPCs should succeed.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now shut down backend 0.
+  ShutdownBackend(0);
+  // Wait for logical DNS resolver to see a re-resolution request.
+  // Then return a DNS result pointing to backend 1.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_TRUE(logical_dns_cluster_resolver_response_generator_
+                    ->WaitForReresolutionRequest(absl::Seconds(10) *
+                                                 grpc_test_slowdown_factor()));
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+        std::move(result));
+  }
+  // Wait for traffic to switch to backend 1.
+  // RPCs may fail until the client sees the resolver result.
+  WaitForBackend(DEBUG_LOCATION, 1, [](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+      EXPECT_THAT(result.status.error_message(),
+                  MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: "));
+    }
+  });
+}
+
 TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");

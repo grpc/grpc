@@ -406,6 +406,18 @@ void XdsDependencyManager::Orphan() {
   Unref();
 }
 
+void XdsDependencyManager::RequestReresolution() {
+  for (const auto& p : dns_resolvers_) {
+    p.second.resolver->RequestReresolutionLocked();
+  }
+}
+
+void XdsDependencyManager::ResetBackoff() {
+  for (const auto& p : dns_resolvers_) {
+    p.second.resolver->ResetBackoffLocked();
+  }
+}
+
 void XdsDependencyManager::OnListenerUpdate(
     std::shared_ptr<const XdsListenerResource> listener) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
