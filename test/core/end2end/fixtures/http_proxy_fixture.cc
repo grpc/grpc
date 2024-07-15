@@ -682,7 +682,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
-  LOG(INFO) << "Proxy address: " << proxy->proxy_name;
+  VLOG(2) << "Proxy address: " << proxy->proxy_name;
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()

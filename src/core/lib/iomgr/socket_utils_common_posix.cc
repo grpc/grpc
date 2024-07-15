@@ -373,20 +373,21 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       // if it is available.
       if (g_socket_supports_tcp_user_timeout.load() == 0) {
         if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-          LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-                       "won't be used thereafter";
+          GRPC_TRACE_LOG(tcp, INFO)
+              << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT won't be "
+                 "used thereafter";
           g_socket_supports_tcp_user_timeout.store(-1);
         } else {
-          LOG(INFO) << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will "
-                       "be used thereafter";
+          GRPC_TRACE_LOG(tcp, INFO)
+              << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be used "
+                 "thereafter";
           g_socket_supports_tcp_user_timeout.store(1);
         }
       }
       if (g_socket_supports_tcp_user_timeout.load() > 0) {
-        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-          LOG(INFO) << "Enabling TCP_USER_TIMEOUT with a timeout of " << timeout
-                    << " ms";
-        }
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "Enabling TCP_USER_TIMEOUT with a timeout of " << timeout
+            << " ms";
         if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                             sizeof(timeout))) {
           LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
@@ -399,9 +400,9 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
           return absl::OkStatus();
         }
         if (newval != timeout) {
-          LOG(INFO) << "Setting TCP_USER_TIMEOUT to value " << timeout
-                    << " ms. Actual TCP_USER_TIMEOUT value is " << newval
-                    << " ms";
+          GRPC_TRACE_LOG(tcp, INFO)
+              << "Setting TCP_USER_TIMEOUT to value " << timeout
+              << " ms. Actual TCP_USER_TIMEOUT value is " << newval << " ms";
           return absl::OkStatus();
         }
       }
@@ -438,7 +439,8 @@ static void probe_ipv6_once(void) {
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (fd < 0) {
-    LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
@@ -447,7 +449,8 @@ static void probe_ipv6_once(void) {
     if (bind(fd, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      LOG(INFO) << "Disabling AF_INET6 sockets because ::1 is not available.";
+      GRPC_TRACE_LOG(tcp, INFO)
+          << "Disabling AF_INET6 sockets because ::1 is not available.";
     }
     close(fd);
   }

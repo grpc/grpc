@@ -397,8 +397,8 @@ void TlsChannelSecurityConnector::cancel_check_peer(
       if (it != pending_verifier_requests_.end()) {
         pending_verifier_request = it->second->request();
       } else {
-        LOG(INFO) << "TlsChannelSecurityConnector::cancel_check_peer: no "
-                     "corresponding pending request found";
+        VLOG(2) << "TlsChannelSecurityConnector::cancel_check_peer: no "
+                   "corresponding pending request found";
       }
     }
     if (pending_verifier_request != nullptr) {
