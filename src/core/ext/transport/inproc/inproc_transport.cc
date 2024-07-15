@@ -70,16 +70,14 @@ class InprocServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
-    gpr_log(GPR_INFO, "inproc server op: %s",
-            grpc_transport_op_string(op).c_str());
+    GRPC_TRACE_LOG(inproc, INFO)
+        << "inproc server op: " << grpc_transport_op_string(op);
     if (op->start_connectivity_watch != nullptr) {
-      MutexLock lock(&state_tracker_mu_);
-      state_tracker_.AddWatcher(op->start_connectivity_watch_state,
-                                std::move(op->start_connectivity_watch));
+      connected_state()->AddWatcher(op->start_connectivity_watch_state,
+                                    std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
-      MutexLock lock(&state_tracker_mu_);
-      state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+      connected_state()->RemoveWatcher(op->stop_connectivity_watch);
     }
     if (op->set_accept_stream) {
       Crash("set_accept_stream not supported on inproc transport");
