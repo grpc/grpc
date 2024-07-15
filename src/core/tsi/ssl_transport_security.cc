@@ -228,7 +228,7 @@ static void init_openssl(void) {
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
   if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi)) {
-    LOG(INFO) << absl::StrFormat("%20.20s - %30.30s  - %5.10s", msg,
+    LOG(INFO) << absl::StrFormat("%20.20s - %s  - %s", msg,
                                  SSL_state_string_long(ssl),
                                  SSL_state_string(ssl));
   }
@@ -1830,6 +1830,17 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
+      // Output Cipher information
+      if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
+        tsi_ssl_handshaker_result* result =
+            reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
+        auto cipher = SSL_get_current_cipher(result->ssl);
+        if (cipher != nullptr) {
+          LOG(INFO) << absl::StrFormat("SSL Cipher Version: %s Name: %s",
+                                       SSL_CIPHER_get_version(cipher),
+                                       SSL_CIPHER_get_name(cipher));
+        }
+      }
     }
   }
   return status;

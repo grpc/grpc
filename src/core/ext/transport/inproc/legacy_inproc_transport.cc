@@ -59,7 +59,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -1238,8 +1237,8 @@ void inproc_transports_create(grpc_core::Transport** server_transport,
 grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
                                                 const grpc_channel_args* args,
                                                 void* /*reserved*/) {
-  GRPC_API_TRACE("grpc_inproc_channel_create(server=%p, args=%p)", 2,
-                 (server, args));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_inproc_channel_create(server=" << server
+                            << ", args=" << args << ")";
 
   grpc_core::ExecCtx exec_ctx;
 
