@@ -34,7 +34,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
@@ -70,10 +69,9 @@ grpc_core::UniqueTypeName grpc_google_iam_credentials::Type() {
 grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* token, const char* authority_selector, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_iam_credentials_create(token=%s, authority_selector=%s, "
-      "reserved=%p)",
-      3, (token, authority_selector, reserved));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_iam_credentials_create(token=" << token
+                            << ", authority_selector=" << authority_selector
+                            << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   CHECK_NE(token, nullptr);
   CHECK_NE(authority_selector, nullptr);

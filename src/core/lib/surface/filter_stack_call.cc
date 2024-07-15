@@ -59,7 +59,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -269,7 +268,7 @@ void FilterStackCall::ExternalUnref() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c=" << this << ")";
 
   MaybeUnpublishFromParent();
 

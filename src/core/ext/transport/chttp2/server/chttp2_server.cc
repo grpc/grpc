@@ -84,7 +84,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -1078,8 +1077,8 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
   int port_num = 0;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   grpc_core::ChannelArgs args = core_server->channel_args();
-  GRPC_API_TRACE("grpc_server_add_http2_port(server=%p, addr=%s, creds=%p)", 3,
-                 (server, addr, creds));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_server_add_http2_port(server=" << server
+                            << ", addr=" << addr << ", creds=" << creds << ")";
   // Create security context.
   if (creds == nullptr) {
     err = GRPC_ERROR_CREATE(
@@ -1174,8 +1173,9 @@ absl::Status grpc_server_add_passive_listener(
     std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
         passive_listener) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_server_add_passive_listener(server=%p, credentials=%p)",
-                 2, (server, credentials));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_add_passive_listener(server=" << server
+      << ", credentials=" << credentials << ")";
   // Create security context.
   if (credentials == nullptr) {
     return absl::UnavailableError(

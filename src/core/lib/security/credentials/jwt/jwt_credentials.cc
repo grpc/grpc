@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/json/json.h"
