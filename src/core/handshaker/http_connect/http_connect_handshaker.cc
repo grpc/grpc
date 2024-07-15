@@ -326,9 +326,9 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // Save state in the handshaker object.
   MutexLock lock(&mu_);
   args_ = args;
-  on_handshake_done_ = std::move(on_handshake_done);
+  on_handshake_done_ = on_handshake_done;
   // Log connection via proxy.
-  std::string proxy_name(grpc_endpoint_get_peer(args->endpoint.get()));
+  std::string proxy_name(grpc_endpoint_get_peer(args->endpoint));
   std::string server_name_string(*server_name);
   VLOG(2) << "Connecting to server " << server_name_string << " via HTTP proxy "
           << proxy_name;

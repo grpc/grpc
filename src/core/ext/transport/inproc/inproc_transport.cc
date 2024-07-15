@@ -73,11 +73,13 @@ class InprocServerTransport final : public ServerTransport {
     GRPC_TRACE_LOG(inproc, INFO)
         << "inproc server op: " << grpc_transport_op_string(op);
     if (op->start_connectivity_watch != nullptr) {
-      connected_state()->AddWatcher(op->start_connectivity_watch_state,
-                                    std::move(op->start_connectivity_watch));
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.AddWatcher(op->start_connectivity_watch_state,
+                                std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
-      connected_state()->RemoveWatcher(op->stop_connectivity_watch);
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
     }
     if (op->set_accept_stream) {
       Crash("set_accept_stream not supported on inproc transport");
