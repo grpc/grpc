@@ -36,6 +36,7 @@
 #include "opentelemetry/sdk/logs/logger_provider_factory.h"
 #include "opentelemetry/sdk/logs/processor.h"
 #include "opentelemetry/sdk/logs/simple_log_record_processor_factory.h"
+#include "opentelemetry/sdk/resource/resource.h"
 
 #include <grpcpp/ext/otel_plugin.h>
 
@@ -50,6 +51,8 @@ ABSL_FLAG(std::string, otlp_endpoint, "localhost:4317",
           "OTLP ingestion endpoint");
 
 int main(int argc, char** argv) {
+  auto resource = opentelemetry::sdk::resource::Resource::Create(
+      {{"service.name", "/pkg.service"}});
   // Register a global gRPC OpenTelemetry plugin configured with an
   // OTLP-over-gRPC log record exporter.
   opentelemetry::exporter::otlp::OtlpGrpcLogRecordExporterOptions log_opts;
@@ -63,7 +66,7 @@ int main(int argc, char** argv) {
           std::move(exporter));
   std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider =
       opentelemetry::sdk::logs::LoggerProviderFactory::Create(
-          std::move(processor));
+          std::move(processor), std::move(resource));
   auto status = grpc::OpenTelemetryPluginBuilder()
                     .SetLoggerProvider(std::move(logger_provider))
                     .BuildAndRegisterGlobal();
