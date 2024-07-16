@@ -95,8 +95,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         new std::map<absl::string_view, std::regex>(
             {{"no_logging.cc",
               std::regex("If the test fails here, the test is broken.*")},
-             {"src/core/resolver/dns/dns_resolver_plugin.cc",
-              std::regex("Using .* dns resolver")},
+             {"dns_resolver_plugin.cc", std::regex("Using .* dns resolver")},
              {"lb_policy_registry.cc",
               std::regex("registering LB policy factory for.*")},
              {"dual_ref_counted.h", std::regex(".*")}});
