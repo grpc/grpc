@@ -35,7 +35,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/crash.h"
