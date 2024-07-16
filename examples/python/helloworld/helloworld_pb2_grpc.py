@@ -5,10 +5,10 @@ import warnings
 
 import helloworld_pb2 as helloworld__pb2
 
-GRPC_GENERATED_VERSION = '1.64.0.dev0'
+GRPC_GENERATED_VERSION = '1.66.0.dev0'
 GRPC_VERSION = grpc.__version__
-EXPECTED_ERROR_RELEASE = '1.65.0'
-SCHEDULED_RELEASE_DATE = 'June 25, 2024'
+EXPECTED_ERROR_RELEASE = '1.66.0'
+SCHEDULED_RELEASE_DATE = 'August 6, 2024'
 _version_not_supported = False
 
 try:
