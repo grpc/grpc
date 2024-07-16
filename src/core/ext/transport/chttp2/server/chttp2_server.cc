@@ -616,9 +616,6 @@ void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener,
     OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args) {
   listener_ = std::move(listener);
-  if (listener_->tcp_server_ != nullptr) {
-    grpc_tcp_server_ref(listener_->tcp_server_);
-  }
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   {
     MutexLock lock(&mu_);
@@ -872,13 +869,15 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       // This ref needs to be taken in the critical region after having made
       // sure that the listener has not been Orphaned, so as to avoid
       // heap-use-after-free issues where `Ref()` is invoked when the ref of
-      // tcp_server_ has already reached 0. (Ref() implementation of
-      // Chttp2ServerListener is grpc_tcp_server_ref().)
+      // tcp_server_ has already reached 0.
+      if (self->tcp_server_ != nullptr) {
+        grpc_tcp_server_ref(self->tcp_server_);
+      }
       listener_ref = self->RefAsSubclass<Chttp2ServerListener>();
       self->connections_.emplace(connection.get(), std::move(connection));
     }
   }
-  if (connection == nullptr) {
+  if (connection == nullptr && listener_ref != nullptr) {
     connection_ref->Start(std::move(listener_ref), std::move(endpoint), args);
   }
 }
