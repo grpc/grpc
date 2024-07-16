@@ -45,7 +45,8 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 

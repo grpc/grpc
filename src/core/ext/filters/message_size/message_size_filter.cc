@@ -23,11 +23,11 @@
 #include <functional>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -160,9 +160,9 @@ ServerMetadataHandle CheckPayload(const Message& msg,
                                   bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
   if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
-            GetContext<Activity>()->DebugTag().c_str(),
-            is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
+    LOG(INFO) << GetContext<Activity>()->DebugTag() << "[message_size] "
+              << (is_send ? "send" : "recv")
+              << " len:" << msg.payload()->Length() << " max:" << *max_length;
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
   auto r = Arena::MakePooled<ServerMetadata>();

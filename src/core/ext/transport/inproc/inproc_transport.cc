@@ -77,7 +77,8 @@ class InprocServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
-    LOG(INFO) << "inproc server op: " << grpc_transport_op_string(op);
+    GRPC_TRACE_LOG(inproc, INFO)
+        << "inproc server op: " << grpc_transport_op_string(op);
     if (op->start_connectivity_watch != nullptr) {
       connected_state()->AddWatcher(op->start_connectivity_watch_state,
                                     std::move(op->start_connectivity_watch));

@@ -67,6 +67,7 @@ typedef struct envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntr
 typedef struct envoy_config_cluster_v3_LoadBalancingPolicy { upb_Message UPB_PRIVATE(base); } envoy_config_cluster_v3_LoadBalancingPolicy;
 typedef struct envoy_config_cluster_v3_LoadBalancingPolicy_Policy { upb_Message UPB_PRIVATE(base); } envoy_config_cluster_v3_LoadBalancingPolicy_Policy;
 typedef struct envoy_config_cluster_v3_UpstreamConnectionOptions { upb_Message UPB_PRIVATE(base); } envoy_config_cluster_v3_UpstreamConnectionOptions;
+typedef struct envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig { upb_Message UPB_PRIVATE(base); } envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig;
 typedef struct envoy_config_cluster_v3_TrackClusterStats { upb_Message UPB_PRIVATE(base); } envoy_config_cluster_v3_TrackClusterStats;
 struct envoy_config_cluster_v3_CircuitBreakers;
 struct envoy_config_cluster_v3_Filter;
@@ -152,6 +153,12 @@ typedef enum {
   envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH = 0,
   envoy_config_cluster_v3_Cluster_RingHashLbConfig_MURMUR_HASH_2 = 1
 } envoy_config_cluster_v3_Cluster_RingHashLbConfig_HashFunction;
+
+typedef enum {
+  envoy_config_cluster_v3_UpstreamConnectionOptions_DEFAULT = 0,
+  envoy_config_cluster_v3_UpstreamConnectionOptions_V4 = 1,
+  envoy_config_cluster_v3_UpstreamConnectionOptions_V6 = 2
+} envoy_config_cluster_v3_UpstreamConnectionOptions_FirstAddressFamilyVersion;
 
 
 
@@ -3949,6 +3956,22 @@ UPB_INLINE bool envoy_config_cluster_v3_UpstreamConnectionOptions_set_local_inte
                                     &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_clear_happy_eyeballs_config(envoy_config_cluster_v3_UpstreamConnectionOptions* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* envoy_config_cluster_v3_UpstreamConnectionOptions_happy_eyeballs_config(const envoy_config_cluster_v3_UpstreamConnectionOptions* msg) {
+  const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* default_val = NULL;
+  const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_cluster_v3_UpstreamConnectionOptions_has_happy_eyeballs_config(const envoy_config_cluster_v3_UpstreamConnectionOptions* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
 
 UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_set_tcp_keepalive(envoy_config_cluster_v3_UpstreamConnectionOptions *msg, struct envoy_config_core_v3_TcpKeepalive* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -3965,6 +3988,100 @@ UPB_INLINE struct envoy_config_core_v3_TcpKeepalive* envoy_config_cluster_v3_Ups
 UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_set_set_local_interface_name_on_upstream_connections(envoy_config_cluster_v3_UpstreamConnectionOptions *msg, bool value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_set_happy_eyeballs_config(envoy_config_cluster_v3_UpstreamConnectionOptions *msg, envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* envoy_config_cluster_v3_UpstreamConnectionOptions_mutable_happy_eyeballs_config(envoy_config_cluster_v3_UpstreamConnectionOptions* msg, upb_Arena* arena) {
+  struct envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* sub = (struct envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig*)envoy_config_cluster_v3_UpstreamConnectionOptions_happy_eyeballs_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig*)_upb_Message_New(&envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init, arena);
+    if (sub) envoy_config_cluster_v3_UpstreamConnectionOptions_set_happy_eyeballs_config(msg, sub);
+  }
+  return sub;
+}
+
+/* envoy.config.cluster.v3.UpstreamConnectionOptions.HappyEyeballsConfig */
+
+UPB_INLINE envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_new(upb_Arena* arena) {
+  return (envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig*)_upb_Message_New(&envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init, arena);
+}
+UPB_INLINE envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* ret = envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init, NULL, 0, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* ret = envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init, extreg, options,
+                 arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_serialize(const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_serialize_ex(const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_clear_first_address_family_version(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg) {
+  const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE int32_t envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_first_address_family_version(const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg) {
+  int32_t default_val = 0;
+  int32_t ret;
+  const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_clear_first_address_family_count(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg) {
+  const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_first_address_family_count(const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg) {
+  const struct google_protobuf_UInt32Value* default_val = NULL;
+  const struct google_protobuf_UInt32Value* ret;
+  const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_has_first_address_family_count(const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg) {
+  const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+
+UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_set_first_address_family_version(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig *msg, int32_t value) {
+  const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_set_first_address_family_count(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig *msg, struct google_protobuf_UInt32Value* value) {
+  const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_mutable_first_address_family_count(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg, upb_Arena* arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_first_address_family_count(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google__protobuf__UInt32Value_msg_init, arena);
+    if (sub) envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_set_first_address_family_count(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.cluster.v3.TrackClusterStats */

@@ -12,6 +12,7 @@
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/struct.upb_minitable.h"
+#include "xds/annotations/v3/status.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "udpa/annotations/versioning.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -25,7 +26,7 @@ static const upb_MiniTableSub envoy_config_endpoint_v3_UpstreamLocalityStats_sub
   {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamLocalityStats__fields[8] = {
+static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamLocalityStats__fields[11] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -34,12 +35,15 @@ static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamLocalityStats__
   {6, UPB_SIZE(20, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(24, 56), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(56, 64), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(64, 72), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(72, 80), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(80, 88), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init = {
   &envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[0],
   &envoy_config_endpoint_v3_UpstreamLocalityStats__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(88, 96), 11, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.UpstreamLocalityStats",
 #endif
@@ -53,9 +57,9 @@ const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init 
     {0x000c00003f000030, &upb_psv4_1bt},
     {0x003800003f02003a, &upb_prm_1bt_max128b},
     {0x004000003f000040, &upb_psv8_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x004800003f000048, &upb_psv8_1bt},
+    {0x005000003f000050, &upb_psv8_1bt},
+    {0x005800003f000058, &upb_psv8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

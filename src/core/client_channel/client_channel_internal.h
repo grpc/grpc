@@ -26,6 +26,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_destination.h"
@@ -49,6 +50,11 @@ namespace grpc_core {
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
+  template <typename A>
+  A* GetCallAttribute() const {
+    return DownCast<A*>(GetCallAttribute(A::TypeName()));
+  }
+
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const = 0;
   virtual ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const = 0;

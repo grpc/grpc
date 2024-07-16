@@ -257,6 +257,7 @@ grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 namespace grpc_core {
 
 namespace {
+
 // Initialize a grpc_closure \a c to call \a Fn with \a t and \a error. Holds
 // the passed in reference to \a t until it's moved into Fn.
 template <void (*Fn)(RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle)>
@@ -272,13 +273,12 @@ grpc_closure* InitTransportClosure(RefCountedPtr<grpc_chttp2_transport> t,
       t.release(), nullptr);
   return c;
 }
-}  // namespace
 
-namespace {
 TestOnlyGlobalHttp2TransportInitCallback test_only_init_callback = nullptr;
 TestOnlyGlobalHttp2TransportDestructCallback test_only_destruct_callback =
     nullptr;
 bool test_only_disable_transient_failure_state_notification = false;
+
 }  // namespace
 
 void TestOnlySetGlobalHttp2TransportInitCallback(
@@ -359,6 +359,34 @@ std::string HttpAnnotation::ToString() const {
     absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
   }
   return s;
+}
+
+void Chttp2CallTracerWrapper::RecordIncomingBytes(
+    const CallTracerInterface::TransportByteSize& transport_byte_size) {
+  // Update legacy API.
+  stream_->stats.incoming.framing_bytes += transport_byte_size.framing_bytes;
+  stream_->stats.incoming.data_bytes += transport_byte_size.data_bytes;
+  stream_->stats.incoming.header_bytes += transport_byte_size.header_bytes;
+  // Update new API.
+  if (!IsCallTracerInTransportEnabled()) return;
+  auto* call_tracer = stream_->arena->GetContext<CallTracerInterface>();
+  if (call_tracer != nullptr) {
+    call_tracer->RecordIncomingBytes(transport_byte_size);
+  }
+}
+
+void Chttp2CallTracerWrapper::RecordOutgoingBytes(
+    const CallTracerInterface::TransportByteSize& transport_byte_size) {
+  // Update legacy API.
+  stream_->stats.outgoing.framing_bytes += transport_byte_size.framing_bytes;
+  stream_->stats.outgoing.data_bytes += transport_byte_size.data_bytes;
+  stream_->stats.outgoing.header_bytes +=
+      transport_byte_size.header_bytes;  // Update new API.
+  if (!IsCallTracerInTransportEnabled()) return;
+  auto* call_tracer = stream_->arena->GetContext<CallTracerInterface>();
+  if (call_tracer != nullptr) {
+    call_tracer->RecordOutgoingBytes(transport_byte_size);
+  }
 }
 
 }  // namespace grpc_core
@@ -456,15 +484,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
   if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(grpc_core::IsKeepaliveFixEnabled()
-                          ? g_default_client_keepalive_permit_without_calls
-                          : false);
+            .value_or(g_default_client_keepalive_permit_without_calls);
   } else {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(grpc_core::IsKeepaliveServerFixEnabled()
-                          ? g_default_server_keepalive_permit_without_calls
-                          : false);
+            .value_or(g_default_server_keepalive_permit_without_calls);
   }
 
   t->settings_timeout =
@@ -818,7 +842,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
         return refcount;
       }()),
       arena(arena),
-      flow_control(&t->flow_control) {
+      flow_control(&t->flow_control),
+      call_tracer_wrapper(this) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
@@ -1348,7 +1373,9 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  s->call_tracer = CallTracerIfSampled(s);
+  if (!grpc_core::IsCallTracerInTransportEnabled()) {
+    s->call_tracer = CallTracerIfSampled(s);
+  }
   s->tcp_tracer = TcpTracerIfSampled(s);
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
@@ -1379,12 +1406,24 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (s->call_tracer != nullptr) {
-      s->call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s->t->flow_control.stats())
-              .Add(s->flow_control.stats()));
+    if (!grpc_core::IsCallTracerInTransportEnabled()) {
+      if (s->call_tracer != nullptr) {
+        s->call_tracer->RecordAnnotation(
+            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                      gpr_now(GPR_CLOCK_REALTIME))
+                .Add(s->t->flow_control.stats())
+                .Add(s->flow_control.stats()));
+      }
+    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+      auto* call_tracer =
+          s->arena->GetContext<grpc_core::CallTracerInterface>();
+      if (call_tracer != nullptr && call_tracer->IsSampled()) {
+        call_tracer->RecordAnnotation(
+            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                      gpr_now(GPR_CLOCK_REALTIME))
+                .Add(s->t->flow_control.stats())
+                .Add(s->flow_control.stats()));
+      }
     }
     if (t->is_client && t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromLocal();
@@ -1468,11 +1507,8 @@ static void perform_stream_op_locked(void* stream_op,
       frame_hdr[3] = static_cast<uint8_t>(len >> 8);
       frame_hdr[4] = static_cast<uint8_t>(len);
 
-      if (grpc_core::IsHttp2StatsFixEnabled()) {
-        s->stats.outgoing.framing_bytes += GRPC_HEADER_SIZE_IN_BYTES;
-        s->stats.outgoing.data_bytes +=
-            op_payload->send_message.send_message->Length();
-      }
+      s->call_tracer_wrapper.RecordOutgoingBytes(
+          {GRPC_HEADER_SIZE_IN_BYTES, len, 0});
       s->next_message_end_offset =
           s->flow_controlled_bytes_written +
           static_cast<int64_t>(s->flow_controlled_buffer.length) +

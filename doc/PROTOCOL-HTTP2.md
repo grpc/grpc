@@ -24,10 +24,10 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  ":method POST"
 * **Scheme** → ":scheme "  ("http" / "https")
-* **Path** → ":path" "/" Service-Name "/" {_method name_}  # But see note below.
+* **Path** → ":path" "/" Service-Name "/" {_method name_}  ; But see note below.
 * **Service-Name** → {_IDL-specific service name_}
 * **Authority** → ":authority" {_virtual host name of authority_}
-* **TE** → "te" "trailers"  # Used to detect incompatible proxies
+* **TE** → "te" "trailers"  ; Used to detect incompatible proxies
 * **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
 * **TimeoutValue** → {_positive integer as ASCII string of at most 8 digits_}
 * **TimeoutUnit** → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
@@ -93,8 +93,8 @@ binary values' lengths being post-Base64.
 The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA frames
 
 * **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
-* <a name="compressed-flag"></a>**Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
-* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer (big endian)
+* <a name="compressed-flag"></a>**Compressed-Flag** → 0 / 1   ; encoded as 1 byte unsigned integer
+* **Message-Length** → {_length of Message_}  ; encoded as 4 byte unsigned integer (big endian)
 * **Message** → \*{binary octet}
 
 A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **Message** is compressed using the mechanism declared by the **Message-Encoding** header. A value of 0 indicates that no encoding of **Message** bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the **Message-Encoding** header is omitted then the **Compressed-Flag** must be 0.
@@ -106,10 +106,11 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 * **Response** → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
 * **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
-* **Trailers** → Status [Status-Message] \*Custom-Metadata
+* **Trailers** → Status [Status-Message] [Status-Details] \*Custom-Metadata
 * **HTTP-Status** → ":status 200"
 * **Status** → "grpc-status" 1\*DIGIT ; 0-9
 * **Status-Message** → "grpc-message" Percent-Encoded
+* **Status-Details** → "grpc-status-details-bin" {base64 encoded value} ; See notes below.
 * **Percent-Encoded** → 1\*(Percent-Byte-Unencoded / Percent-Byte-Encoded)
 * **Percent-Byte-Unencoded** → 1\*( %x20-%x24 / %x26-%x7E ) ; space and VCHAR, except %
 * **Percent-Byte-Encoded** → "%" 2HEXDIGIT ; 0-9 A-F
@@ -137,6 +138,11 @@ user would received the raw percent-encoded form. Alternatively, the
 implementation can decode valid portions while leaving broken %-encodings as-is
 or replacing them with a replacement character (e.g., '?' or the Unicode
 replacement character).
+
+**Status-Details** is allowed only if **Status** is not OK. If it is set, it
+contains additional information about the RPC error. If it contains a status
+code field, it MUST NOT contradict the **Status** header. The consumer MUST
+verify this requirement.
 
 #### Example
 
@@ -257,3 +263,4 @@ to be used.
 * **Service-Name** → ?( {_proto package name_} "." ) {_service name_}
 * **Message-Type** → {_fully qualified proto message name_}
 * **Content-Type** → "application/grpc+proto"
+* **Status-Details** → {_google.rpc.Status proto message_}
