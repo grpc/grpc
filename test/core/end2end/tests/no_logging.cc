@@ -70,6 +70,16 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
  private:
   void CheckForNoisyLogs(const absl::LogEntry& entry) {
+    // TODO(tjagtap) : Add a hard upper limit on number of times each log should
+    // appear. We can keep this number slightly higher to avoid our tests
+    // becoming flaky. Right now all entries in this list get a free pass to log
+    // infinitely - That may create log noise issues in the future.
+    //
+    // This list is an allow list of all LOG(INFO), LOG(WARNING), and LOG(ERROR)
+    // logs which will appear. For now we have decided to allow these instances.
+    // We should be very conservative while adding new entries to this list,
+    // because this has potential to cause massive log noise. Several users are
+    // using INFO log level setting for production.
     static const auto* const allowed_logs_by_module =
         new std::map<absl::string_view, std::regex>(
             {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
@@ -83,7 +93,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
                          "message in a debug environmenmt or test environmenmt "
                          "it is safe to ignore this message.")}});
 
-    // Separate allow list for VLOGs
+    // This list is an allow list of all VLOG(n) and DVLOG(n) statements. Right
+    // now we dont have a way to differentiate between VLOG and DVLOG using
+    // LogEntry. We can allow this list to grow because we dont expect VLOG to
+    // be on in production systems.
     static const auto* const allowed_vlogs_by_module =
         new std::map<absl::string_view, std::regex>(
             {{"no_logging.cc",
