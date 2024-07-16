@@ -63,15 +63,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   // This function is called each time LOG or VLOG is called.
-  void Send(const absl::LogEntry& entry) override {
-    // For LOG(INFO) severity is INFO and verbosity is 0.
-    // For VLOG(n) severity is INFO and verbosity is n.
-    // LOG(INFO) and VLOG(0) have identical severity and verbosity.
-    // We check log noise for LOG(INFO), LOG(WARNING) and LOG(ERROR).
-    // We ignore VLOG(n) if (n>0) because we dont expect (n>0) in
-    // production systems.
-    CheckForNoisyLogs(entry);
-  }
+  void Send(const absl::LogEntry& entry) override { CheckForNoisyLogs(entry); }
 
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
   VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
@@ -91,6 +83,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
                          "message in a debug environmenmt or test environmenmt "
                          "it is safe to ignore this message.")}});
 
+    // Separate allow list for VLOGs
     static const auto* const allowed_vlogs_by_module =
         new std::map<absl::string_view, std::regex>(
             {{"no_logging.cc",
@@ -116,6 +109,9 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     }
     if (entry.log_severity() > absl::LogSeverity::kInfo ||
         entry.verbosity() < 1) {
+      // For LOG(INFO) severity is INFO and verbosity is 0.
+      // For VLOG(n) severity is INFO and verbosity is n.
+      // LOG(INFO) and VLOG(0) have identical severity and verbosity.
       auto it = allowed_vlogs_by_module->find(filename);
       if (it != allowed_vlogs_by_module->end() &&
           std::regex_search(std::string(entry.text_message()), it->second)) {
