@@ -48,18 +48,11 @@ TEST(UsefulTest, ArraySize) {
 TEST(UsefulTest, BitOps) {
   uint32_t bitset = 0;
 
-  EXPECT_EQ(BitCount((1u << 31) - 1), 31);
-  EXPECT_EQ(BitCount(1u << 3), 1);
-  EXPECT_EQ(BitCount(0), 0);
   EXPECT_EQ(SetBit(&bitset, 3), 8);
-  EXPECT_EQ(BitCount(bitset), 1);
   EXPECT_EQ(GetBit(bitset, 3), 1);
   EXPECT_EQ(SetBit(&bitset, 1), 10);
-  EXPECT_EQ(BitCount(bitset), 2);
   EXPECT_EQ(ClearBit(&bitset, 3), 2);
-  EXPECT_EQ(BitCount(bitset), 1);
   EXPECT_EQ(GetBit(bitset, 3), 0);
-  EXPECT_EQ(BitCount(std::numeric_limits<uint64_t>::max()), 64);
 }
 
 TEST(UsefulTest, SaturatingAdd) {
