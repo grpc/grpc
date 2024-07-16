@@ -836,6 +836,7 @@ libs:
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_handle_pool.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
@@ -2391,6 +2392,7 @@ libs:
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_handle_pool.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
@@ -4483,6 +4485,7 @@ libs:
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_handle_pool.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
@@ -6963,6 +6966,7 @@ targets:
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_handle_pool.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h

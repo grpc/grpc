@@ -1162,6 +1162,7 @@ let package = Package(
         "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h",
         "src/core/lib/event_engine/posix_engine/ev_poll_posix.cc",
         "src/core/lib/event_engine/posix_engine/ev_poll_posix.h",
+        "src/core/lib/event_engine/posix_engine/event_handle_pool.h",
         "src/core/lib/event_engine/posix_engine/event_poller.h",
         "src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc",
         "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h",

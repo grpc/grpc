@@ -114,7 +114,7 @@ std::list<Connection> CreateConnectedEndpoints(
   // Create client socket and connect to the target address.
   for (int i = 0; i < num_connections; ++i) {
     int client_fd = ConnectToServerOrDie(*resolved_addr);
-    EventHandle* handle =
+    EventHandleRef handle =
         poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
     server_signal->WaitForNotification();
@@ -123,7 +123,7 @@ std::list<Connection> CreateConnectedEndpoints(
     PosixTcpOptions options = TcpOptionsFromEndpointConfig(config);
     connections.push_back(Connection{
         CreatePosixEndpoint(
-            handle,
+            std::move(handle),
             PosixEngineClosure::TestOnlyToClosure(
                 [&poller](absl::Status /*status*/) {
                   if (--g_num_active_connections == 0) {
