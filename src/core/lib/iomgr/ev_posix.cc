@@ -104,7 +104,8 @@ static void try_engine(absl::string_view engine) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
         g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
-      VLOG(2) << "Using polling engine: " << g_event_engine->name;
+      GRPC_TRACE_VLOG(2, polling_api)
+          << "Using polling engine: " << g_event_engine->name;
       return;
     }
   }

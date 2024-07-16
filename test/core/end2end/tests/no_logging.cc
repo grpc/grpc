@@ -64,16 +64,13 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
   // This function is called each time LOG or VLOG is called.
   void Send(const absl::LogEntry& entry) override {
-    if (entry.log_severity() > absl::LogSeverity::kInfo ||
-        entry.verbosity() < 1) {
-      // For LOG(INFO) severity is INFO and verbosity is 0.
-      // For VLOG(n) severity is INFO and verbosity is n.
-      // LOG(INFO) and VLOG(0) have identical severity and verbosity.
-      // We check log noise for LOG(INFO), LOG(WARNING) and LOG(ERROR).
-      // We ignore VLOG(n) if (n>0) because we dont expect (n>0) in
-      // production systems.
-      CheckForNoisyLogs(entry);
-    }
+    // For LOG(INFO) severity is INFO and verbosity is 0.
+    // For VLOG(n) severity is INFO and verbosity is n.
+    // LOG(INFO) and VLOG(0) have identical severity and verbosity.
+    // We check log noise for LOG(INFO), LOG(WARNING) and LOG(ERROR).
+    // We ignore VLOG(n) if (n>0) because we dont expect (n>0) in
+    // production systems.
+    CheckForNoisyLogs(entry);
   }
 
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
@@ -94,6 +91,16 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
                          "message in a debug environmenmt or test environmenmt "
                          "it is safe to ignore this message.")}});
 
+    static const auto* const allowed_vlogs_by_module =
+        new std::map<absl::string_view, std::regex>(
+            {{"no_logging.cc",
+              std::regex("If the test fails here, the test is broken.*")},
+             {"src/core/resolver/dns/dns_resolver_plugin.cc",
+              std::regex("Using .* dns resolver")},
+             {"lb_policy_registry.cc",
+              std::regex("registering LB policy factory for.*")},
+             {"dual_ref_counted.h", std::regex(".*")}});
+
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
     if (slash != absl::string_view::npos) {
@@ -108,8 +115,17 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
-    CHECK(false) << "Unwanted log: Either change to VLOG(2) or add it to "
-                    "allowed_logs_by_module "
+    if (entry.log_severity() > absl::LogSeverity::kInfo ||
+        entry.verbosity() < 1) {
+      auto it = allowed_vlogs_by_module->find(filename);
+      if (it != allowed_vlogs_by_module->end() &&
+          std::regex_search(std::string(entry.text_message()), it->second)) {
+        return;
+      }
+    }
+    CHECK(false) << "Unwanted log: Either user a tracer (example "
+                    "GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or add it to "
+                    "allowed_logs_by_module or allowed_vlogs_by_module"
                  << entry.source_filename() << ":" << entry.source_line() << " "
                  << entry.text_message();
   }
