@@ -107,8 +107,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
-    if (entry.log_severity() > absl::LogSeverity::kInfo ||
-        entry.verbosity() < 1) {
+    if (entry.log_severity() == absl::LogSeverity::kInfo &&
+        entry.verbosity() >= 1) {
       // For LOG(INFO) severity is INFO and verbosity is 0.
       // For VLOG(n) severity is INFO and verbosity is n.
       // LOG(INFO) and VLOG(0) have identical severity and verbosity.
