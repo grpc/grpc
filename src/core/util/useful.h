@@ -57,53 +57,6 @@ bool GetBit(T i, size_t n) {
   return (i & (T(1) << n)) != 0;
 }
 
-namespace useful_detail {
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t HexdigitBitcount(
-    uint32_t x) {
-  return (x - ((x >> 1) & 0x77777777) - ((x >> 2) & 0x33333333) -
-          ((x >> 3) & 0x11111111));
-}
-}  // namespace useful_detail
-
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    uint32_t i) {
-  return (((useful_detail::HexdigitBitcount(i) +
-            (useful_detail::HexdigitBitcount(i) >> 4)) &
-           0x0f0f0f0f) %
-          255);
-}
-
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    uint64_t i) {
-  return BitCount(static_cast<uint32_t>(i)) +
-         BitCount(static_cast<uint32_t>(i >> 32));
-}
-
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    uint16_t i) {
-  return BitCount(static_cast<uint32_t>(i));
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    uint8_t i) {
-  return BitCount(static_cast<uint32_t>(i));
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    int64_t i) {
-  return BitCount(static_cast<uint64_t>(i));
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    int32_t i) {
-  return BitCount(static_cast<uint32_t>(i));
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    int16_t i) {
-  return BitCount(static_cast<uint16_t>(i));
-}
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
-    int8_t i) {
-  return BitCount(static_cast<uint8_t>(i));
-}
-
 #if GRPC_HAS_BUILTIN(__builtin_ctz)
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
     uint32_t i) {
@@ -119,12 +72,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
     uint32_t i) {
   DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
-  return BitCount((i & -i) - 1);
+  return absl::popcount((i & -i) - 1);
 }
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
     uint64_t i) {
   DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
-  return BitCount((i & -i) - 1);
+  return absl::popcount((i & -i) - 1);
 }
 #endif
 
