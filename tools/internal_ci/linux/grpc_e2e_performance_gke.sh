@@ -113,7 +113,7 @@ buildConfigs() {
     -a ci_gitCommit_java="${GRPC_JAVA_COMMIT}" \
     -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
     --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
-    -a pool="${pool}" --category=scalable \
+    -a pool="${pool}" \
     --allow_client_language=c++ --allow_server_language=c++ \
     --allow_server_language=node \
     -o "loadtest_with_prebuilt_workers_${pool}.yaml"
@@ -139,8 +139,8 @@ for language in "${disabledLanguages[@]}"; do
 done
 
 # Add arguments for languages.
-declare -a configLangArgs8core=()
-declare -a configLangArgs32core=()
+declare -a configLangArgs8core=("--category=scalable_unrestricted")
+declare -a configLangArgs32core=("--category=scalable")
 declare -a runnerLangArgs=()
 
 # c++

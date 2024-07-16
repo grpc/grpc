@@ -23,13 +23,17 @@ BENCHMARK_SECONDS = 30
 
 SMOKETEST = "smoketest"
 SCALABLE = "scalable"
+# The category below is for C++ benchmarks that can run on 8 cores.
+# TODO research why this particular benchmark hangs on 8 cores but not on 30:
+# cpp-protobuf-async-client-unary-1channel-64wide-128breq-8mbresp-insecure.
+SCALABLE_UNRESTRICTED = "scalable_unrestricted"
 INPROC = "inproc"
 SWEEP = "sweep"
 PSM = "psm"
 # A small superset of the benchmarks required to produce
 # https://grafana-dot-grpc-testing.appspot.com/
 DASHBOARD = "dashboard"
-DEFAULT_CATEGORIES = (SCALABLE, SMOKETEST)
+DEFAULT_CATEGORIES = (SCALABLE, SCALABLE_UNRESTRICTED, SMOKETEST)
 
 SECURE_SECARGS = {
     "use_test_ca": True,
@@ -321,7 +325,7 @@ class CXXLanguage(Language):
         )
 
         # Scenario was added in https://github.com/grpc/grpc/pull/12987, but its purpose is unclear
-        # (beyond excercising some params that other scenarios don't)
+        # (beyond exercising some params that other scenarios don't)
         yield _ping_pong_scenario(
             "cpp_protobuf_async_unary_75Kqps_600channel_60Krpcs_300Breq_50Bresp",
             rpc_type="UNARY",
@@ -336,7 +340,7 @@ class CXXLanguage(Language):
             secure=False,
             async_server_threads=16,
             server_threads_per_cq=1,
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             warmup_seconds=CXX_WARMUP_SECONDS,
         )
 
@@ -355,7 +359,7 @@ class CXXLanguage(Language):
                 secure=secure,
                 categories=smoketest_categories
                 + inproc_categories
-                + [SCALABLE],
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -372,7 +376,7 @@ class CXXLanguage(Language):
                 minimal_stack=not secure,
                 categories=smoketest_categories
                 + inproc_categories
-                + [SCALABLE],
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -390,7 +394,7 @@ class CXXLanguage(Language):
                     minimal_stack=not secure,
                     categories=smoketest_categories
                     + inproc_categories
-                    + [SCALABLE],
+                    + [SCALABLE, SCALABLE_UNRESTRICTED],
                     warmup_seconds=CXX_WARMUP_SECONDS,
                 )
 
@@ -421,7 +425,8 @@ class CXXLanguage(Language):
                 use_generic_payload=True,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=inproc_categories + [SCALABLE],
+                categories=inproc_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 channels=1,
                 outstanding=100,
                 warmup_seconds=CXX_WARMUP_SECONDS,
@@ -439,7 +444,8 @@ class CXXLanguage(Language):
                 use_generic_payload=True,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=inproc_categories + [SCALABLE],
+                categories=inproc_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -467,7 +473,8 @@ class CXXLanguage(Language):
                 secure=secure,
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
-                categories=inproc_categories + [SCALABLE],
+                categories=inproc_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -480,7 +487,8 @@ class CXXLanguage(Language):
                 secure=secure,
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
-                categories=inproc_categories + [SCALABLE],
+                categories=inproc_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -509,10 +517,11 @@ class CXXLanguage(Language):
                 minimal_stack=not secure,
                 categories=smoketest_categories
                 + inproc_categories
-                + [SCALABLE],
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
+            # Insecure test hangs on 8 cores: excluded from SCALABLE_UNRESTRICTED.
             yield _ping_pong_scenario(
                 "cpp_protobuf_async_client_unary_1channel_64wide_128Breq_8MBresp_%s"
                 % (secstr),
@@ -525,7 +534,8 @@ class CXXLanguage(Language):
                 resp_size=8 * 1024 * 1024,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=inproc_categories + [SCALABLE],
+                categories=inproc_categories
+                + ([SCALABLE, SCALABLE_UNRESTRICTED] if secure else [SCALABLE]),
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -553,7 +563,7 @@ class CXXLanguage(Language):
                 minimal_stack=not secure,
                 categories=smoketest_categories
                 + inproc_categories
-                + [SCALABLE, DASHBOARD],
+                + [SCALABLE, SCALABLE_UNRESTRICTED, DASHBOARD],
                 warmup_seconds=CXX_WARMUP_SECONDS,
             )
 
@@ -604,7 +614,7 @@ class CXXLanguage(Language):
                             warmup_seconds=CXX_WARMUP_SECONDS,
                         )
 
-                    maybe_scalable = [SCALABLE]
+                    maybe_scalable = [SCALABLE, SCALABLE_UNRESTRICTED]
                     if (
                         rpc_type == "streaming_from_server"
                         and synchronicity == "async"
@@ -647,7 +657,7 @@ class CXXLanguage(Language):
                     #     server_type='%s_SERVER' % synchronicity.upper(),
                     #     unconstrained_client=synchronicity,
                     #     secure=secure,
-                    #     categories=smoketest_categories+[SCALABLE],
+                    #     categories=smoketest_categories+[SCALABLE, SCALABLE_UNRESTRICTED],
                     #     warmup_seconds=CXX_WARMUP_SECONDS,
                     #     resource_quota_size=500*1024)
 
@@ -663,7 +673,8 @@ class CXXLanguage(Language):
                                 secure=secure,
                                 messages_per_stream=mps,
                                 minimal_stack=not secure,
-                                categories=inproc_categories + [SCALABLE],
+                                categories=inproc_categories
+                                + [SCALABLE, SCALABLE_UNRESTRICTED],
                                 warmup_seconds=CXX_WARMUP_SECONDS,
                             )
 
@@ -733,7 +744,7 @@ class CSharpLanguage(Language):
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_GENERIC_SERVER",
             use_generic_payload=True,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -745,7 +756,7 @@ class CSharpLanguage(Language):
             resp_size=1024 * 1024,
             use_generic_payload=True,
             secure=False,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -756,7 +767,7 @@ class CSharpLanguage(Language):
             unconstrained_client="async",
             use_generic_payload=True,
             secure=False,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -771,7 +782,7 @@ class CSharpLanguage(Language):
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -787,7 +798,7 @@ class CSharpLanguage(Language):
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -796,7 +807,7 @@ class CSharpLanguage(Language):
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -806,7 +817,7 @@ class CSharpLanguage(Language):
             server_type="SYNC_SERVER",
             server_language="c++",
             async_server_threads=1,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -825,7 +836,7 @@ class CSharpLanguage(Language):
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
             server_language="c++",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -835,7 +846,7 @@ class CSharpLanguage(Language):
             server_type="ASYNC_SERVER",
             unconstrained_client="sync",
             server_language="c++",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -845,7 +856,7 @@ class CSharpLanguage(Language):
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
             client_language="c++",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -855,7 +866,7 @@ class CSharpLanguage(Language):
             server_type="ASYNC_SERVER",
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
     def __str__(self):
@@ -880,7 +891,7 @@ class DotnetLanguage(Language):
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_GENERIC_SERVER",
             use_generic_payload=True,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -892,7 +903,7 @@ class DotnetLanguage(Language):
             resp_size=1024 * 1024,
             use_generic_payload=True,
             secure=False,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -903,7 +914,7 @@ class DotnetLanguage(Language):
             unconstrained_client="async",
             use_generic_payload=True,
             secure=False,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -918,7 +929,7 @@ class DotnetLanguage(Language):
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -934,7 +945,7 @@ class DotnetLanguage(Language):
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -943,7 +954,7 @@ class DotnetLanguage(Language):
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -953,7 +964,7 @@ class DotnetLanguage(Language):
             server_type="SYNC_SERVER",
             server_language="c++",
             async_server_threads=1,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -972,7 +983,7 @@ class DotnetLanguage(Language):
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
             server_language="c++",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -982,7 +993,7 @@ class DotnetLanguage(Language):
             server_type="ASYNC_SERVER",
             unconstrained_client="sync",
             server_language="c++",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -992,7 +1003,7 @@ class DotnetLanguage(Language):
             server_type="ASYNC_SERVER",
             unconstrained_client="async",
             client_language="c++",
-            categories=[SCALABLE],
+            categories=[SCALABLE, SCALABLE_UNRESTRICTED],
         )
 
         yield _ping_pong_scenario(
@@ -1002,7 +1013,7 @@ class DotnetLanguage(Language):
             server_type="ASYNC_SERVER",
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
     def __str__(self):
@@ -1038,7 +1049,7 @@ class PythonLanguage(Language):
             client_type="SYNC_CLIENT",
             server_type="ASYNC_GENERIC_SERVER",
             use_generic_payload=True,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1060,7 +1071,7 @@ class PythonLanguage(Language):
             rpc_type="UNARY",
             client_type="SYNC_CLIENT",
             server_type="ASYNC_SERVER",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1086,7 +1097,7 @@ class PythonLanguage(Language):
             server_type="ASYNC_SERVER",
             server_language="c++",
             async_server_threads=0,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1105,7 +1116,7 @@ class PythonLanguage(Language):
             server_type="ASYNC_SERVER",
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
     def __str__(self):
@@ -1151,7 +1162,7 @@ class PythonAsyncIOLanguage(Language):
                     client_processes=0,
                     server_processes=0,
                     unconstrained_client="async",
-                    categories=[SCALABLE],
+                    categories=[SCALABLE, SCALABLE_UNRESTRICTED],
                 )
 
             yield _ping_pong_scenario(
@@ -1165,7 +1176,7 @@ class PythonAsyncIOLanguage(Language):
                 client_processes=1,
                 server_processes=1,
                 unconstrained_client="async",
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
         yield _ping_pong_scenario(
@@ -1177,7 +1188,7 @@ class PythonAsyncIOLanguage(Language):
             client_processes=1,
             server_processes=1,
             use_generic_payload=True,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1188,7 +1199,7 @@ class PythonAsyncIOLanguage(Language):
             channels=1,
             client_processes=1,
             server_processes=1,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1198,7 +1209,7 @@ class PythonAsyncIOLanguage(Language):
             server_type="ASYNC_SERVER",
             client_processes=1,
             server_processes=1,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1209,7 +1220,7 @@ class PythonAsyncIOLanguage(Language):
             channels=1,
             client_processes=1,
             server_processes=1,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1239,7 +1250,7 @@ class PythonAsyncIOLanguage(Language):
             channels=1,
             client_processes=1,
             unconstrained_client="async",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1251,7 +1262,7 @@ class PythonAsyncIOLanguage(Language):
             channels=1,
             client_processes=0,
             server_language="c++",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1276,7 +1287,7 @@ class PythonAsyncIOLanguage(Language):
             channels=1,
             client_processes=1,
             server_processes=1,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
     def __str__(self):
@@ -1296,7 +1307,7 @@ class RubyLanguage(Language):
             rpc_type="STREAMING",
             client_type="SYNC_CLIENT",
             server_type="SYNC_SERVER",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1304,7 +1315,7 @@ class RubyLanguage(Language):
             rpc_type="UNARY",
             client_type="SYNC_CLIENT",
             server_type="SYNC_SERVER",
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
         yield _ping_pong_scenario(
@@ -1348,7 +1359,7 @@ class RubyLanguage(Language):
             server_type="SYNC_SERVER",
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
-            categories=[SMOKETEST, SCALABLE],
+            categories=list(DEFAULT_CATEGORIES),
         )
 
     def __str__(self):
@@ -1471,7 +1482,10 @@ class JavaLanguage(Language):
 
         for secure in [True, False]:
             secstr = "secure" if secure else "insecure"
-            smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
+            smoketest_categories = ([SMOKETEST] if secure else []) + [
+                SCALABLE,
+                SCALABLE_UNRESTRICTED,
+            ]
 
             yield _ping_pong_scenario(
                 "java_generic_async_streaming_ping_pong_%s" % secstr,
@@ -1524,7 +1538,8 @@ class JavaLanguage(Language):
                 unconstrained_client="async",
                 secure=secure,
                 warmup_seconds=JAVA_WARMUP_SECONDS,
-                categories=smoketest_categories + [SCALABLE],
+                categories=smoketest_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             yield _ping_pong_scenario(
@@ -1535,7 +1550,7 @@ class JavaLanguage(Language):
                 unconstrained_client="async",
                 secure=secure,
                 warmup_seconds=JAVA_WARMUP_SECONDS,
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             yield _ping_pong_scenario(
@@ -1547,7 +1562,7 @@ class JavaLanguage(Language):
                 use_generic_payload=True,
                 secure=secure,
                 warmup_seconds=JAVA_WARMUP_SECONDS,
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             yield _ping_pong_scenario(
@@ -1593,7 +1608,10 @@ class GoLanguage(Language):
 
         for secure in [True, False]:
             secstr = "secure" if secure else "insecure"
-            smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
+            smoketest_categories = ([SMOKETEST] if secure else []) + [
+                SCALABLE,
+                SCALABLE_UNRESTRICTED,
+            ]
 
             # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
             # but that's mostly because of lack of better name of the enum value.
@@ -1635,7 +1653,8 @@ class GoLanguage(Language):
                 server_type="SYNC_SERVER",
                 unconstrained_client="async",
                 secure=secure,
-                categories=smoketest_categories + [SCALABLE],
+                categories=smoketest_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             # unconstrained_client='async' is intended (client uses goroutines)
@@ -1646,7 +1665,7 @@ class GoLanguage(Language):
                 server_type="SYNC_SERVER",
                 unconstrained_client="async",
                 secure=secure,
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             # unconstrained_client='async' is intended (client uses goroutines)
@@ -1660,7 +1679,7 @@ class GoLanguage(Language):
                 unconstrained_client="async",
                 use_generic_payload=True,
                 secure=secure,
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             # TODO(jtattermusch): add scenarios go vs C++
@@ -1699,7 +1718,10 @@ class NodeLanguage(Language):
 
         for secure in [True, False]:
             secstr = "secure" if secure else "insecure"
-            smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
+            smoketest_categories = ([SMOKETEST] if secure else []) + [
+                SCALABLE,
+                SCALABLE_UNRESTRICTED,
+            ]
 
             yield _ping_pong_scenario(
                 "node_to_node_generic_async_streaming_ping_pong_%s" % secstr,
@@ -1739,7 +1761,8 @@ class NodeLanguage(Language):
                 server_type="ASYNC_SERVER",
                 unconstrained_client="async",
                 secure=secure,
-                categories=smoketest_categories + [SCALABLE],
+                categories=smoketest_categories
+                + [SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             yield _ping_pong_scenario(
@@ -1750,7 +1773,7 @@ class NodeLanguage(Language):
                 server_type="ASYNC_SERVER",
                 unconstrained_client="async",
                 secure=secure,
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             yield _ping_pong_scenario(
@@ -1762,7 +1785,7 @@ class NodeLanguage(Language):
                 unconstrained_client="async",
                 use_generic_payload=True,
                 secure=secure,
-                categories=[SCALABLE],
+                categories=[SCALABLE, SCALABLE_UNRESTRICTED],
             )
 
             # TODO(murgatroid99): add scenarios node vs C++
