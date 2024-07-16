@@ -866,10 +866,12 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     // connection manager has changed.
     if (!self->shutdown_ && self->is_serving_ &&
         connection_manager == self->connection_manager_) {
-      // This ref needs to be taken in the critical region after having made
-      // sure that the listener has not been Orphaned, so as to avoid
-      // heap-use-after-free issues where `Ref()` is invoked when the ref of
-      // tcp_server_ has already reached 0.
+      // The ref for both the listener and tcp_server need to be taken in the
+      // critical region after having made sure that the listener has not been
+      // Orphaned, so as to avoid heap-use-after-free issues where `Ref()` is
+      // invoked when the listener is already shutdown. Note that the listener
+      // holds a ref to the tcp_server but this ref is given away when the
+      // listener is orphaned (shutdown).
       if (self->tcp_server_ != nullptr) {
         grpc_tcp_server_ref(self->tcp_server_);
       }
