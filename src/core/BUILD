@@ -4412,6 +4412,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "closure",
+        "default_event_engine",
         "env",
         "error",
         "error_utils",
@@ -4425,6 +4426,7 @@ grpc_cc_library(
         "slice_refcount",
         "status_helper",
         "time",
+        "token_fetcher_credentials",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_core_credentials_header",

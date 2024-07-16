@@ -18,7 +18,6 @@
 
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -30,6 +29,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -146,86 +146,69 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
 //
 
 grpc_credentials_status
+grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
+    absl::string_view body, absl::optional<grpc_core::Slice>* token_value,
+    grpc_core::Duration* token_lifetime) {
+  auto json = grpc_core::JsonParse(body);
+  if (!json.ok()) {
+    LOG(ERROR) << "Could not parse JSON from " << body << ": "
+               << json.status();
+    return GRPC_CREDENTIALS_ERROR;
+  }
+  if (json->type() != Json::Type::kObject) {
+    LOG(ERROR) << "Response should be a JSON object";
+    return GRPC_CREDENTIALS_ERROR;
+  }
+  auto it = json->object().find("access_token");
+  if (it == json->object().end() ||
+      it->second.type() != Json::Type::kString) {
+    LOG(ERROR) << "Missing or invalid access_token in JSON.";
+    return GRPC_CREDENTIALS_ERROR;
+  }
+  absl::string_view access_token = it->second.string();
+  it = json->object().find("token_type");
+  if (it == json->object().end() ||
+      it->second.type() != Json::Type::kString) {
+    LOG(ERROR) << "Missing or invalid token_type in JSON.";
+    return GRPC_CREDENTIALS_ERROR;
+  }
+  absl::string_view token_type = it->second.string();
+  it = json->object().find("expires_in");
+  if (it == json->object().end() ||
+      it->second.type() != Json::Type::kNumber) {
+    LOG(ERROR) << "Missing or invalid expires_in in JSON.";
+    return GRPC_CREDENTIALS_ERROR;
+  }
+  absl::string_view expires_in = it->second.string();
+  long seconds;
+  if (!absl::SimpleAtoi(expires_in, &seconds)) {
+    LOG(ERROR) << "Invalid expires_in in JSON.";
+    return GRPC_CREDENTIALS_ERROR;
+  }
+  *token_lifetime = grpc_core::Duration::Seconds(seconds);
+  *token_value = grpc_core::Slice::FromCopiedString(
+      absl::StrCat(token_type, " ", access_token));
+  return GRPC_CREDENTIALS_OK;
+}
+
+grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const grpc_http_response* response,
     absl::optional<grpc_core::Slice>* token_value,
     grpc_core::Duration* token_lifetime) {
-  char* null_terminated_body = nullptr;
-  grpc_credentials_status status = GRPC_CREDENTIALS_OK;
-
+  *token_value = absl::nullopt;
   if (response == nullptr) {
     LOG(ERROR) << "Received NULL response.";
-    status = GRPC_CREDENTIALS_ERROR;
-    goto end;
+    return GRPC_CREDENTIALS_ERROR;
   }
-
-  if (response->body_length > 0) {
-    null_terminated_body =
-        static_cast<char*>(gpr_malloc(response->body_length + 1));
-    null_terminated_body[response->body_length] = '\0';
-    memcpy(null_terminated_body, response->body, response->body_length);
-  }
-
+  absl::string_view body(response->body, response->body_length);
   if (response->status != 200) {
     LOG(ERROR) << "Call to http server ended with error " << response->status
-               << " ["
-               << (null_terminated_body != nullptr ? null_terminated_body : "")
-               << "]";
-    status = GRPC_CREDENTIALS_ERROR;
-    goto end;
-  } else {
-    const char* access_token = nullptr;
-    const char* token_type = nullptr;
-    const char* expires_in = nullptr;
-    Json::Object::const_iterator it;
-    auto json = grpc_core::JsonParse(
-        null_terminated_body != nullptr ? null_terminated_body : "");
-    if (!json.ok()) {
-      LOG(ERROR) << "Could not parse JSON from " << null_terminated_body << ": "
-                 << json.status();
-      status = GRPC_CREDENTIALS_ERROR;
-      goto end;
-    }
-    if (json->type() != Json::Type::kObject) {
-      LOG(ERROR) << "Response should be a JSON object";
-      status = GRPC_CREDENTIALS_ERROR;
-      goto end;
-    }
-    it = json->object().find("access_token");
-    if (it == json->object().end() ||
-        it->second.type() != Json::Type::kString) {
-      LOG(ERROR) << "Missing or invalid access_token in JSON.";
-      status = GRPC_CREDENTIALS_ERROR;
-      goto end;
-    }
-    access_token = it->second.string().c_str();
-    it = json->object().find("token_type");
-    if (it == json->object().end() ||
-        it->second.type() != Json::Type::kString) {
-      LOG(ERROR) << "Missing or invalid token_type in JSON.";
-      status = GRPC_CREDENTIALS_ERROR;
-      goto end;
-    }
-    token_type = it->second.string().c_str();
-    it = json->object().find("expires_in");
-    if (it == json->object().end() ||
-        it->second.type() != Json::Type::kNumber) {
-      LOG(ERROR) << "Missing or invalid expires_in in JSON.";
-      status = GRPC_CREDENTIALS_ERROR;
-      goto end;
-    }
-    expires_in = it->second.string().c_str();
-    *token_lifetime =
-        grpc_core::Duration::Seconds(strtol(expires_in, nullptr, 10));
-    *token_value = grpc_core::Slice::FromCopiedString(
-        absl::StrCat(token_type, " ", access_token));
-    status = GRPC_CREDENTIALS_OK;
+               << " [" << body << "]";
+    return GRPC_CREDENTIALS_ERROR;
   }
-
-end:
-  if (status != GRPC_CREDENTIALS_OK) *token_value = absl::nullopt;
-  gpr_free(null_terminated_body);
-  return status;
+  return grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
+      body, token_value, token_lifetime);
 }
 
 //

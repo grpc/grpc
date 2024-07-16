@@ -2404,11 +2404,21 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
 
   std::string GetMetricsValue() { return MetricsHeaderValue(); }
 
- protected:
-  void RetrieveSubjectToken(
-      HTTPRequestContext* /*ctx*/, const Options& /*options*/,
-      std::function<void(std::string, grpc_error_handle)> cb) override {
-    cb("test_subject_token", absl::OkStatus());
+  std::string debug_string() override {
+    return "TestExternalAccountCredentials";
+  }
+
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("TestExternalAccountCredentials");
+    return kFactory.Create();
+  }
+
+ private:
+  OrphanablePtr<FetchBody> RetrieveSubjectToken(
+      Timestamp /*deadline*/,
+      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) override {
+    return MakeOrphanable<NoOpFetchBody>(std::move(on_done),
+                                         "test_subject_token");
   }
 };
 

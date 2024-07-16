@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/credentials.h>
@@ -257,6 +258,11 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_refresh_token_credentials_create_from_auth_refresh_token(
     grpc_auth_refresh_token token);
+
+grpc_credentials_status
+grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
+    absl::string_view body, absl::optional<grpc_core::Slice>* token_value,
+    grpc_core::Duration* token_lifetime);
 
 // Exposed for testing only.
 grpc_credentials_status
