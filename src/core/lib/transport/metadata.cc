@@ -22,7 +22,7 @@
 namespace grpc_core {
 
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
-  auto hdl = Arena::MakePooled<ServerMetadata>();
+  auto hdl = Arena::MakePooledForOverwrite<ServerMetadata>();
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,
@@ -37,6 +37,23 @@ ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
 ServerMetadataHandle CancelledServerMetadataFromStatus(
     const absl::Status& status) {
   auto hdl = ServerMetadataFromStatus(status);
+  hdl->Set(GrpcCallWasCancelled(), true);
+  return hdl;
+}
+
+ServerMetadataHandle ServerMetadataFromStatus(grpc_status_code code,
+                                              absl::string_view message) {
+  auto hdl = Arena::MakePooledForOverwrite<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
+  return hdl;
+}
+
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    grpc_status_code code, absl::string_view message) {
+  auto hdl = Arena::MakePooledForOverwrite<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
   hdl->Set(GrpcCallWasCancelled(), true);
   return hdl;
 }

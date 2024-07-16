@@ -165,14 +165,12 @@ ServerMetadataHandle CheckPayload(const Message& msg,
               << " len:" << msg.payload()->Length() << " max:" << *max_length;
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  auto r = Arena::MakePooled<ServerMetadata>();
-  r->Set(GrpcStatusMetadata(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  r->Set(GrpcMessageMetadata(),
-         Slice::FromCopiedString(absl::StrFormat(
-             "%s: %s message larger than max (%u vs. %d)",
-             is_client ? "CLIENT" : "SERVER", is_send ? "Sent" : "Received",
-             msg.payload()->Length(), *max_length)));
-  return r;
+  return ServerMetadataFromStatus(
+      GRPC_STATUS_RESOURCE_EXHAUSTED,
+      absl::StrFormat("%s: %s message larger than max (%u vs. %d)",
+                      is_client ? "CLIENT" : "SERVER",
+                      is_send ? "Sent" : "Received", msg.payload()->Length(),
+                      *max_length));
 }
 }  // namespace
 

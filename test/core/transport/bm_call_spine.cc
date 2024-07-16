@@ -28,19 +28,19 @@ class CallSpineFixture {
     auto arena = arena_allocator_->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
-    auto p =
-        MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena));
+    auto p = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                          std::move(arena));
     return {std::move(p.initiator), p.handler.StartCall()};
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
   MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
  private:
@@ -63,10 +63,10 @@ class ForwardCallFixture {
         event_engine_.get());
     arena2->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
-    auto p1 =
-        MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena1));
-    auto p2 =
-        MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena2));
+    auto p1 = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena1));
+    auto p2 = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena2));
     p1.handler.SpawnInfallible("initial_metadata", [&]() {
       auto p1_handler = p1.handler.StartCall();
       return Map(
@@ -86,13 +86,13 @@ class ForwardCallFixture {
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
   MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
  private:

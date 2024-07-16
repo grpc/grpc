@@ -150,7 +150,7 @@ class ClientCall final
   };
   std::atomic<uintptr_t> call_state_{kUnstarted};
   ClientMetadataHandle send_initial_metadata_{
-      Arena::MakePooled<ClientMetadata>()};
+      Arena::MakePooledForOverwrite<ClientMetadata>()};
   CallInitiator started_call_initiator_;
   // Status passed to CancelWithError;
   // if call_state_ == kCancelled then this is the authoritative status,

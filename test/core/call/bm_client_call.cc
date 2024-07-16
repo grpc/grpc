@@ -140,7 +140,8 @@ void BM_Unary(benchmark::State& state) {
     auto unstarted_handler = helper.TakeHandler();
     unstarted_handler.SpawnInfallible("run_handler", [&]() mutable {
       auto handler = unstarted_handler.StartCall();
-      handler.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
+      handler.PushServerInitialMetadata(
+          Arena::MakePooledForOverwrite<ServerMetadata>());
       auto response =
           Arena::MakePooled<Message>(SliceBuffer(response_payload.Copy()), 0);
       return Map(
@@ -156,7 +157,8 @@ void BM_Unary(benchmark::State& state) {
               handler.PushMessage(std::move(response))),
           [handler](StatusFlag status) mutable {
             CHECK(status.ok());
-            auto trailing_metadata = Arena::MakePooled<ServerMetadata>();
+            auto trailing_metadata =
+                Arena::MakePooledForOverwrite<ServerMetadata>();
             trailing_metadata->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
             handler.PushServerTrailingMetadata(std::move(trailing_metadata));
             return Empty{};

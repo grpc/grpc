@@ -32,7 +32,7 @@ std::atomic<size_t> InterceptionChainBuilder::next_filter_id_{0};
 // HijackedCall
 
 CallInitiator HijackedCall::MakeCall() {
-  auto metadata = Arena::MakePooled<ClientMetadata>();
+  auto metadata = Arena::MakePooledForOverwrite<ClientMetadata>();
   *metadata = metadata_->Copy();
   return MakeCallWithMetadata(std::move(metadata));
 }

@@ -123,7 +123,7 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
 }
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/test"));
   return md;
 }
