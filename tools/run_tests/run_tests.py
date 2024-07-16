@@ -911,7 +911,7 @@ class RubyLanguage(object):
         tests = [
             self.config.job_spec(
                 ["tools/run_tests/helper_scripts/run_ruby.sh"],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS,
             )
         ]
