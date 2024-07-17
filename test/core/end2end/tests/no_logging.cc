@@ -132,11 +132,12 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         return;
       }
     }
-    CHECK(false) << "Unwanted log: Either user a tracer (example "
-                    "GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or add it to "
-                    "allowed_logs_by_module or allowed_vlogs_by_module"
-                 << entry.source_filename() << ":" << entry.source_line() << " "
-                 << entry.text_message();
+    CHECK(false)
+        << "Unwanted log: Either user a tracer (example GRPC_TRACE_LOG or "
+           "GRPC_TRACE_VLOG) or add it to allowed_logs_by_module or "
+           "allowed_vlogs_by_module. Location : "
+        << entry.source_filename() << ":" << entry.source_line() << " "
+        << entry.text_message();
   }
   absl::LogSeverityAtLeast saved_absl_severity_;
   int saved_absl_verbosity_;
