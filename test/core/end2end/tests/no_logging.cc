@@ -45,8 +45,7 @@ namespace grpc_core {
 class VerifyLogNoiseLogSink : public absl::LogSink {
  public:
   explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
-                                 const int verbosity)
-      : validate_vlogs_(false) {
+                                 const int verbosity) {
     saved_absl_severity_ = absl::MinLogLevel();
     absl::SetMinLogLevel(severity);
     // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
@@ -65,12 +64,16 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
   // This function is called each time LOG or VLOG is called.
   void Send(const absl::LogEntry& entry) override { CheckForNoisyLogs(entry); }
-  void EnableVlogVerification() { validate_vlogs_ = true; }
 
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
   VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
 
  private:
+  bool IsVlogWithVerbosityMoreThan1(const absl::LogEntry& entry) const {
+    return entry.log_severity() == absl::LogSeverity::kInfo &&
+           entry.verbosity() >= 1;
+  }
+
   void CheckForNoisyLogs(const absl::LogEntry& entry) {
     // TODO(tjagtap) : Add a hard upper limit on number of times each log should
     // appear. We can keep this number slightly higher to avoid our tests
@@ -105,13 +108,11 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
               std::regex("If the test fails here, the test is broken.*")},
              {"dns_resolver_plugin.cc", std::regex("Using .* dns resolver")},
              {"lb_policy_registry.cc",
-              std::regex("registering LB policy factory for.*")},
+              std::regex("registering LB policy factory for \".*\"")},
              {"dual_ref_counted.h", std::regex(".*")},
              {"tcp_posix.cc", std::regex(".*")},
              {"ssl_security_connector.cc", std::regex(".*")},
-             {"posix_engine_listener_utils.cc", std::regex(".*")},
-             {"lb_policy_registry.cc",
-              std::regex("registering LB policy factory for.*")}});
+             {"posix_engine_listener_utils.cc", std::regex(".*")}});
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
@@ -127,8 +128,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
-    if (validate_vlogs_ && entry.log_severity() == absl::LogSeverity::kInfo &&
-        entry.verbosity() >= 1) {
+    if (IsVlogWithVerbosityMoreThan1(entry)) {
       // For LOG(INFO) severity is INFO and verbosity is 0.
       // For VLOG(n) severity is INFO and verbosity is n.
       // LOG(INFO) and VLOG(0) have identical severity and verbosity.
@@ -148,7 +148,6 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   absl::LogSeverityAtLeast saved_absl_severity_;
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
-  bool validate_vlogs_;
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
@@ -194,7 +193,5 @@ CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }
-  nolog_verifier.EnableVlogVerification();
-  SimpleRequest(*this);
 }
 }  // namespace grpc_core
