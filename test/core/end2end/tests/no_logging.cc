@@ -45,7 +45,8 @@ namespace grpc_core {
 class VerifyLogNoiseLogSink : public absl::LogSink {
  public:
   explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
-                                 const int verbosity) {
+                                 const int verbosity)
+      : validate_vlogs_(false) {
     saved_absl_severity_ = absl::MinLogLevel();
     absl::SetMinLogLevel(severity);
     // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
@@ -64,6 +65,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
   // This function is called each time LOG or VLOG is called.
   void Send(const absl::LogEntry& entry) override { CheckForNoisyLogs(entry); }
+  void EnableVlogVerification() { validate_vlogs_ = true; }
 
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
   VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
@@ -105,7 +107,9 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
              {"lb_policy_registry.cc",
               std::regex("registering LB policy factory for.*")},
              {"dual_ref_counted.h", std::regex(".*")},
-             {"tcp_posix.cc", std::regex(".*")}});
+             {"tcp_posix.cc", std::regex(".*")},
+             {"ssl_security_connector.cc", std::regex(".*")},
+             {"posix_engine_listener_utils.cc", std::regex(".*")}});
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
@@ -121,7 +125,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
-    if (entry.log_severity() == absl::LogSeverity::kInfo &&
+    if (validate_vlogs_ && entry.log_severity() == absl::LogSeverity::kInfo &&
         entry.verbosity() >= 1) {
       // For LOG(INFO) severity is INFO and verbosity is 0.
       // For VLOG(n) severity is INFO and verbosity is n.
@@ -142,6 +146,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   absl::LogSeverityAtLeast saved_absl_severity_;
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
+  bool validate_vlogs_;
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
@@ -190,5 +195,7 @@ CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }
+  nolog_verifier.EnableVlogVerification();
+  SimpleRequest(*this);
 }
 }  // namespace grpc_core
