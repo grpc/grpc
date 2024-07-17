@@ -150,9 +150,6 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
-  VLOG(1) << "If the test fails here, the test is broken because it is not "
-             "able to differentiate between LOG(INFO) and VLOG(1)";
-
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMetadata server_initial_metadata;
