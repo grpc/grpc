@@ -82,11 +82,7 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
     ],
-    "gpr_set_log_verbosity(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-        "./test/core/end2end/tests/no_logging.cc",
-    ],
+    "gpr_set_log_verbosity(": [],
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
