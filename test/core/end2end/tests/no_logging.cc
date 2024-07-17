@@ -112,7 +112,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
              {"dual_ref_counted.h", std::regex(".*")},
              {"tcp_posix.cc", std::regex(".*")},
              {"ssl_security_connector.cc", std::regex(".*")},
-             {"posix_engine_listener_utils.cc", std::regex(".*")}});
+             {"posix_engine_listener_utils.cc", std::regex(".*")},
+             {"http_proxy_fixture.cc",
+              std::regex("Proxy address: .*"),
+              {"posix_endpoint.cc", std::regex("cannot set inq fd=.*")}}});
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
