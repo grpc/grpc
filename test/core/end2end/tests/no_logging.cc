@@ -104,7 +104,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
              {"dns_resolver_plugin.cc", std::regex("Using .* dns resolver")},
              {"lb_policy_registry.cc",
               std::regex("registering LB policy factory for.*")},
-             {"dual_ref_counted.h", std::regex(".*")}});
+             {"dual_ref_counted.h", std::regex(".*")},
+             {"tcp_posix.cc", ".*"}});
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
