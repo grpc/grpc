@@ -17,6 +17,9 @@ pyx_library(
     name = "native_debug",
     srcs = ["native_debug.pyx"],
     deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
+    visibility = [
+        "//src/python/grpcio_tests/tests_py3_only/interop:__subpackages__",
+    ],
 )
 
 py_test(
