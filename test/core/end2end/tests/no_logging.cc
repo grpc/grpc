@@ -110,7 +110,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
              {"tcp_posix.cc", std::regex(".*")},
              {"ssl_security_connector.cc", std::regex(".*")},
              {"posix_engine_listener_utils.cc", std::regex(".*")},
-             {"lb_policy_registry.cc", std::regex(".*")}});
+             {"lb_policy_registry.cc",
+              std::regex("registering LB policy factory for.*")}});
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
