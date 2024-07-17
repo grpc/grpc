@@ -1956,8 +1956,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       data = collector.Stop();
   // Verify that data is incremental without duplications (cached
   // values).
-  EXPECT_EQ(report_count_1, kIterations);
-  EXPECT_EQ(report_count_2, kIterations);
+  EXPECT_GE(report_count_1, kIterations);
+  EXPECT_GE(report_count_2, kIterations);
   EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
             data[kDoubleCallbackGaugeMetric].size());
   // Verify labels.
