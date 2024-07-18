@@ -43,10 +43,6 @@ from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 
-from src.python.grpcio_tests.tests.fork import native_debug
-
-native_debug.install_failure_signal_handler()
-
 from tests.observability import _test_server
 
 logger = logging.getLogger(__name__)
