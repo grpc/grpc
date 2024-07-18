@@ -294,6 +294,7 @@ cdef void _call(
           with nogil:
             grpc_call_unref(call_state.c_call)
           call_state.c_call = NULL
+          call_state.maybe_delete_call_tracer()
           _raise_call_error_no_metadata(c_call_error)
       started_tags = set()
       for operations, user_tag in operationses_and_user_tags:
@@ -306,6 +307,7 @@ cdef void _call(
           with nogil:
             grpc_call_unref(call_state.c_call)
           call_state.c_call = NULL
+          call_state.maybe_delete_call_tracer()
           _raise_call_error(c_call_error, metadata)
       else:
         call_state.due.update(started_tags)
@@ -395,6 +397,7 @@ cdef class SegregatedCall:
       with nogil:
         grpc_call_unref(self._call_state.c_call)
       self._call_state.c_call = NULL
+      call_state.maybe_delete_call_tracer()
       self._channel_state.segregated_call_states.remove(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(
