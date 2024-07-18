@@ -16,6 +16,10 @@ load("//bazel:cython_library.bzl", "pyx_library")
 pyx_library(
     name = "native_debug",
     srcs = ["native_debug.pyx"],
+    visibility = [
+        "//src/python/grpcio_tests/tests/observability:__subpackages__",
+        "//src/python/grpcio_tests/tests_py3_only/interop:__subpackages__",
+    ],
     deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
 )
 

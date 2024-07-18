@@ -28,6 +28,7 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_admin/grpc_admin",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//src/python/grpcio_tests/tests/fork:native_debug",
         requirement("opentelemetry-exporter-prometheus"),
     ],
 )
@@ -46,6 +47,7 @@ py_binary(
         "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         "//src/python/grpcio_health_checking/grpc_health/v1:grpc_health",
         "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
+        "//src/python/grpcio_tests/tests/fork:native_debug",
         requirement("opentelemetry-exporter-prometheus"),
     ],
 )
