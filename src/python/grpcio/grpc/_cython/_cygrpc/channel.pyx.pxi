@@ -397,7 +397,7 @@ cdef class SegregatedCall:
       with nogil:
         grpc_call_unref(self._call_state.c_call)
       self._call_state.c_call = NULL
-      call_state.maybe_delete_call_tracer()
+      self._call_state.maybe_delete_call_tracer()
       self._channel_state.segregated_call_states.remove(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(
