@@ -120,8 +120,8 @@ int InitMaxAcceptQueueSize() {
   max_accept_queue_size = n;
 
   if (max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    LOG(INFO) << "Suspiciously small accept queue (" << max_accept_queue_size
-              << ") will probably lead to connection drops";
+    LOG(WARNING) << "Suspiciously small accept queue (" << max_accept_queue_size
+                 << ") will probably lead to connection drops";
   }
   return max_accept_queue_size;
 }
@@ -345,14 +345,14 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   if (assigned_port > 0) {
     if (!v6_sock.ok()) {
-      LOG(INFO) << "Failed to add :: listener, the environment may not support "
-                   "IPv6: "
-                << v6_sock.status();
+      VLOG(2) << "Failed to add :: listener, the environment may not support "
+                 "IPv6: "
+              << v6_sock.status();
     }
     if (!v4_sock.ok()) {
-      LOG(INFO) << "Failed to add 0.0.0.0 listener, "
-                   "the environment may not support IPv4: "
-                << v4_sock.status();
+      VLOG(2) << "Failed to add 0.0.0.0 listener, "
+                 "the environment may not support IPv4: "
+              << v4_sock.status();
     }
     return assigned_port;
   } else {

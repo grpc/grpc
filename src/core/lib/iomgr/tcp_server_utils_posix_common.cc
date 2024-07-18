@@ -72,8 +72,9 @@ static void init_max_accept_queue_size(void) {
   s_max_accept_queue_size = n;
 
   if (s_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    LOG(INFO) << "Suspiciously small accept queue (" << s_max_accept_queue_size
-              << ") will probably lead to connection drops";
+    LOG(WARNING) << "Suspiciously small accept queue ("
+                 << s_max_accept_queue_size
+                 << ") will probably lead to connection drops";
   }
 }
 
