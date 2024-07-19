@@ -84,8 +84,9 @@ namespace experimental {
 
 namespace {
 
-// A rough limit on the number of records (A/AAAA or SRV) we may get from a
-// single response.
+// A hard limit on the number of records (A/AAAA or SRV) we may get from a
+// single response. This is to be defensive to prevent a bad DNS response from
+// OOMing the process.
 constexpr int kMaxRecordSize = 65536;
 
 absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
