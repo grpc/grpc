@@ -46,5 +46,10 @@ else
 cmake -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ../..
 fi
 
+if [[ "$@" =~ "-DgRPC_BUILD_TESTS=OFF" ]]; then
+# Just build grpc++ target when gRPC_BUILD_TESTS is OFF (This is a temporary mitigation for gcc 7. Remove this once gcc 7 is removed from the supported compilers)
+make -j"${GRPC_RUN_TESTS_JOBS}" "grpc++"
+else
 # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
 make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+fi
