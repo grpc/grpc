@@ -43,6 +43,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/latent_see_impl.h"
 
 namespace grpc_core {
 

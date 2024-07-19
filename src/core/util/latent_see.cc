@@ -15,97 +15,87 @@
 #include "src/core/util/latent_see.h"
 
 #ifdef GRPC_ENABLE_LATENT_SEE
-#include <chrono>
-#include <cstdint>
-
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
+#include "src/core/util/latent_see_impl.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace latent_see {
 
-thread_local std::vector<Log::Event> Log::thread_events_;
-thread_local uint64_t Log::thread_id_ = Log::Get().next_thread_id_.fetch_add(1);
-std::atomic<uint64_t> Flow::next_flow_id_{1};
+namespace {
+LogFn g_logger = nullptr;
+}  // namespace
 
-std::string Log::GenerateJson() {
-  std::vector<RecordedEvent> events;
-  for (auto& fragment : fragments_) {
-    MutexLock lock(&fragment.mu);
-    events.insert(events.end(), fragment.events.begin(), fragment.events.end());
-  }
-  absl::optional<std::chrono::steady_clock::time_point> start_time;
-  for (auto& event : events) {
-    if (!start_time.has_value() || *start_time > event.event.timestamp) {
-      start_time = event.event.timestamp;
-    }
-  }
-  if (!start_time.has_value()) return "[]";
-  std::string json = "[\n";
-  bool first = true;
-  for (const auto& event : events) {
-    absl::string_view phase;
-    bool has_id;
-    switch (event.event.type) {
-      case EventType::kBegin:
-        phase = "B";
-        has_id = false;
-        break;
-      case EventType::kEnd:
-        phase = "E";
-        has_id = false;
-        break;
-      case EventType::kFlowStart:
-        phase = "s";
-        has_id = true;
-        break;
-      case EventType::kFlowEnd:
-        phase = "f";
-        has_id = true;
-        break;
-      case EventType::kMark:
-        phase = "i";
-        has_id = false;
-        break;
-    }
-    if (!first) absl::StrAppend(&json, ",\n");
-    first = false;
-    absl::StrAppend(&json, "{\"name\": ", event.event.metadata->name,
-                    ", \"ph\": \"", phase, "\", \"ts\": ",
-                    std::chrono::duration<double, std::micro>(
-                        event.event.timestamp - *start_time)
-                        .count(),
-                    ", \"pid\": 0, \"tid\": ", event.thread_id);
-    if (has_id) {
-      absl::StrAppend(&json, ", \"id\": ", event.event.id);
-    }
-    if (event.event.type == EventType::kFlowEnd) {
-      absl::StrAppend(&json, ", \"bp\": \"e\"");
-    }
-    absl::StrAppend(&json, ", \"args\": {\"file\": \"",
-                    event.event.metadata->file,
-                    "\", \"line\": ", event.event.metadata->line,
-                    ", \"batch\": ", event.batch_id, "}}");
-  }
-  absl::StrAppend(&json, "\n]");
-  return json;
+MarkerStorage::Ops MarkerStorage::ops_ = {
+    .construct =
+        [](MarkerStorage* marker, const char* name, MarkerType /*type*/,
+           const char* file, int line, const char* /*function*/) {
+          static_assert(sizeof(MarkerStorage) >= sizeof(Metadata));
+          new (marker->GetStorageAs<Metadata>()) Metadata(file, line, name);
+        },
+    .destruct = [](MarkerStorage* /*marker*/) {}};
+
+template <>
+ParentScopeTimerStorage::Ops ParentScopeTimerStorage::ops_ = {
+    .construct =
+        [](ParentScopeTimerStorage* timer, MarkerStorage* marker) {
+          static_assert(sizeof(ParentScopeTimerStorage) >= sizeof(ParentScope));
+          new (timer->GetStorageAs<ParentScope>())
+              ParentScope(marker->GetStorageAs<Metadata>());
+        },
+    .destruct =
+        [](ParentScopeTimerStorage* timer) {
+          timer->GetStorageAs<ParentScope>()->~ParentScope();
+        }};
+
+template <>
+InnerScopeTimerStorage::Ops ScopedTimerStorage<false>::ops_ = {
+    .construct =
+        [](InnerScopeTimerStorage* timer, MarkerStorage* marker) {
+          static_assert(sizeof(InnerScopeTimerStorage) >= sizeof(InnerScope));
+          new (timer->GetStorageAs<InnerScope>())
+              InnerScope(marker->GetStorageAs<Metadata>());
+        },
+    .destruct =
+        [](InnerScopeTimerStorage* timer) {
+          timer->GetStorageAs<InnerScope>()->~InnerScope();
+        }};
+
+GroupThreadScopeStorage::Ops GroupThreadScopeStorage::ops_ = {
+    .construct =
+        [](GroupThreadScopeStorage* timer, MarkerStorage* marker,
+           absl::string_view name) {
+          static_assert(sizeof(GroupThreadScopeStorage) >= sizeof(Flow));
+          new (timer->GetStorageAs<Flow>())
+              Flow(marker->GetStorageAs<Metadata>());
+        },
+    .destruct =
+        [](GroupThreadScopeStorage* timer) {
+          timer->GetStorageAs<Flow>()->~Flow();
+        }};
+
+void MarkerStorage::OverrideOps(MarkerStorage::Ops ops) { ops_ = ops; }
+
+void GroupThreadScopeStorage::OverrideOps(GroupThreadScopeStorage::Ops ops) {
+  ops_ = ops;
 }
 
-void Log::FlushThreadLog() {
-  auto& thread_events = thread_events_;
-  if (thread_events.empty()) return;
-  auto& log = Get();
-  const auto batch_id =
-      log.next_batch_id_.fetch_add(1, std::memory_order_relaxed);
-  auto& fragment = log.fragments_.this_cpu();
-  const auto thread_id = thread_id_;
-  {
-    MutexLock lock(&fragment.mu);
-    for (auto event : thread_events) {
-      fragment.events.push_back(RecordedEvent{thread_id, batch_id, event});
-    }
+template <>
+void ParentScopeTimerStorage::OverrideOps(ParentScopeTimerStorage::Ops ops) {
+  ops_ = ops;
+}
+
+template <>
+void InnerScopeTimerStorage::OverrideOps(InnerScopeTimerStorage::Ops ops) {
+  ops_ = ops;
+}
+
+void SetEventLogger(LogFn logger) { g_logger = logger; }
+
+void LogEvent(MarkerStorage* marker) {
+  if (g_logger != nullptr) {
+    return g_logger(marker);
   }
-  thread_events.clear();
+  Mark(marker->GetStorageAs<Metadata>());
 }
 
 }  // namespace latent_see

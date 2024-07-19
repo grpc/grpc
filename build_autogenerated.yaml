@@ -1218,6 +1218,7 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -2032,6 +2033,7 @@ libs:
   - src/core/util/json/json_util.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - src/core/xds/grpc/certificate_provider_store.cc
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   - src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -2705,6 +2707,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
@@ -3103,6 +3106,7 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
@@ -4755,6 +4759,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -5023,6 +5028,7 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
@@ -5447,6 +5453,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -5456,10 +5463,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/activity_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -6677,6 +6686,7 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
@@ -6725,6 +6735,7 @@ targets:
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/transport/call_filters_test.cc
   deps:
   - gtest
@@ -6864,6 +6875,7 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/transport/call_state.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6874,10 +6886,12 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/transport/call_state.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/transport/call_state_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7208,6 +7222,7 @@ targets:
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7445,6 +7460,7 @@ targets:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/call/call_utils_test.cc
   deps:
   - gtest
@@ -7861,6 +7877,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7892,12 +7909,14 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/cancel_callback_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -8656,6 +8675,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -8687,12 +8707,14 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -10204,6 +10226,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10229,12 +10252,14 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10754,6 +10779,7 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10789,12 +10815,14 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -10870,6 +10898,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -10902,12 +10931,14 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/for_each_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -12454,6 +12485,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -12463,10 +12495,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12544,6 +12578,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
@@ -12576,12 +12611,14 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/interceptor_list_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -13016,6 +13053,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13025,10 +13063,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/latch_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13249,6 +13289,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -13281,12 +13322,14 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/map_pipe_test.cc
   deps:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -13803,6 +13846,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13812,10 +13856,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -14116,6 +14162,7 @@ targets:
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14125,10 +14172,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/observable_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -15031,6 +15080,7 @@ targets:
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -15040,10 +15090,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -20820,6 +20872,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/latent_see.h
+  - src/core/util/latent_see_impl.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -20829,10 +20882,12 @@ targets:
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/latent_see_impl.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits

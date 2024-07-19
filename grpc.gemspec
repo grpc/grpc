@@ -1934,6 +1934,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/json/json_writer.h )
   s.files += %w( src/core/util/latent_see.cc )
   s.files += %w( src/core/util/latent_see.h )
+  s.files += %w( src/core/util/latent_see_impl.cc )
+  s.files += %w( src/core/util/latent_see_impl.h )
   s.files += %w( src/core/util/linux/cpu.cc )
   s.files += %w( src/core/util/linux/log.cc )
   s.files += %w( src/core/util/log.cc )
