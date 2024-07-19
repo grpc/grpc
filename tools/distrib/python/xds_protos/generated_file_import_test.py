@@ -463,6 +463,7 @@ from envoy.extensions.stat_sinks.wasm.v3 import wasm_pb2
 from envoy.extensions.string_matcher.lua.v3 import lua_pb2
 from envoy.extensions.tracers.opentelemetry.resource_detectors.v3 import dynatrace_resource_detector_pb2
 from envoy.extensions.tracers.opentelemetry.resource_detectors.v3 import environment_resource_detector_pb2
+from envoy.extensions.tracers.opentelemetry.resource_detectors.v3 import static_config_resource_detector_pb2
 from envoy.extensions.tracers.opentelemetry.samplers.v3 import always_on_sampler_pb2
 from envoy.extensions.tracers.opentelemetry.samplers.v3 import dynatrace_sampler_pb2
 from envoy.extensions.transport_sockets.alts.v3 import alts_pb2
