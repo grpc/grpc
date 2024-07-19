@@ -33,6 +33,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_EndpointLoadMetricStat
   return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.EndpointLoadMetricStats");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.UnnamedEndpointLoadMetricStats");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterStats_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.ClusterStats");
