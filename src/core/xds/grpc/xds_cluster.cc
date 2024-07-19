@@ -53,6 +53,7 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
   }
+// FIXME: include lrs_backend_metric_propagation
   if (!common_tls_context.Empty()) {
     contents.push_back(
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));

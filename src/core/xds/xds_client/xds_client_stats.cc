@@ -90,6 +90,15 @@ void XdsClusterDropStats::AddCallDropped(const std::string& category) {
 // XdsClusterLocalityStats
 //
 
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsOrcaLrsPropagationChangesEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 XdsClusterLocalityStats::XdsClusterLocalityStats(
     RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name,
@@ -138,9 +147,13 @@ XdsClusterLocalityStats::GetSnapshotAndReset() {
         percpu_stats.total_requests_in_progress.load(std::memory_order_relaxed),
         GetAndResetCounter(&percpu_stats.total_error_requests),
         GetAndResetCounter(&percpu_stats.total_issued_requests),
-        {}};
+        {}, {}, {}, {}};
     {
       MutexLock lock(&percpu_stats.backend_metrics_mu);
+      percpu_snapshot.cpu_utilization = std::move(percpu_stats.cpu_utilization);
+      permem_snapshot.mem_utilization = std::move(permem_stats.mem_utilization);
+      perapplication_snapshot.application_utilization =
+          std::move(perapplication_stats.application_utilization);
       percpu_snapshot.backend_metrics = std::move(percpu_stats.backend_metrics);
     }
     snapshot += percpu_snapshot;
@@ -155,16 +168,45 @@ void XdsClusterLocalityStats::AddCallStarted() {
 }
 
 void XdsClusterLocalityStats::AddCallFinished(
-    const std::map<absl::string_view, double>* named_metrics, bool fail) {
+    const BackendMetricPropagation& propagation,
+    const BackendMetricData* backend_metrics, bool fail) {
   Stats& stats = stats_.this_cpu();
   std::atomic<uint64_t>& to_increment =
       fail ? stats.total_error_requests : stats.total_successful_requests;
   to_increment.fetch_add(1, std::memory_order_relaxed);
   stats.total_requests_in_progress.fetch_add(-1, std::memory_order_acq_rel);
-  if (named_metrics == nullptr) return;
+  if (backend_metrics == nullptr) return;
   MutexLock lock(&stats.backend_metrics_mu);
-  for (const auto& m : *named_metrics) {
-    stats.backend_metrics[std::string(m.first)] += BackendMetric{1, m.second};
+  if (!XdsOrcaLrsPropagationChangesEnabled()) {
+    for (const auto& m : backend_metrics->named_metrics) {
+      stats.backend_metrics[std::string(m.first)] += BackendMetric{1, m.second};
+    }
+    return;
+  }
+  if (propagation.propagation_bits &
+      BackendMetricPropagation::kCpuUtilization) {
+    stats.cpu_utilization += BackendMetric{1, backend_metrics->cpu_utilization};
+  }
+  if (propagation.propagation_bits &
+      BackendMetricPropagation::kMemUtilization) {
+    stats.mem_utilization += BackendMetric{1, backend_metrics->mem_utilization};
+  }
+  if (propagation.propagation_bits &
+      BackendMetricPropagation::kApplicationUtilization) {
+    stats.application_utilization +=
+        BackendMetric{1, backend_metrics->application_utilization};
+  }
+  if (propagation.propagation_bits &
+          BackendMetricPropagation::kNamedMetricsAll ||
+      !propagation.named_metric_keys.empty()) {
+    for (const auto& m : backend_metrics->named_metrics) {
+      if (propagation.propagation_bits & 
+              BackendMetricPropagation::kNamedMetricsAll ||
+          propagation.named_metric_keys.contains(m.first)) {
+        stats.backend_metrics[absl::StrCat("named_metrics.", m.first)] +=
+            BackendMetric{1, m.second};
+      }
+    }
   }
 }
 

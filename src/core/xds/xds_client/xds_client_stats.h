@@ -164,6 +164,8 @@ class XdsClusterDropStats final : public RefCounted<XdsClusterDropStats> {
   CategorizedDropsMap categorized_drops_ ABSL_GUARDED_BY(mu_);
 };
 
+bool XdsOrcaLrsPropagationChangesEnabled();
+
 // Locality stats for an xds cluster.
 class XdsClusterLocalityStats final
     : public RefCounted<XdsClusterLocalityStats> {
@@ -171,6 +173,11 @@ class XdsClusterLocalityStats final
   struct BackendMetric {
     uint64_t num_requests_finished_with_metric = 0;
     double total_metric_value = 0;
+
+    BackendMetric(BackendMetric&& other)
+        : num_requests_finished_with_metric(
+              std::exchange(other.num_requests_finished_with_metric, 0)),
+          total_metric_value(std::exchange(other.total_metric_value, 0)) {}
 
     BackendMetric& operator+=(const BackendMetric& other) {
       num_requests_finished_with_metric +=
@@ -189,6 +196,9 @@ class XdsClusterLocalityStats final
     uint64_t total_requests_in_progress = 0;
     uint64_t total_error_requests = 0;
     uint64_t total_issued_requests = 0;
+    BackendMetric cpu_utilization;
+    BackendMetric mem_utilization;
+    BackendMetric application_utilization;
     std::map<std::string, BackendMetric> backend_metrics;
 
     Snapshot& operator+=(const Snapshot& other) {
@@ -196,6 +206,9 @@ class XdsClusterLocalityStats final
       total_requests_in_progress += other.total_requests_in_progress;
       total_error_requests += other.total_error_requests;
       total_issued_requests += other.total_issued_requests;
+      cpu_utilization += other.cpu_utilization;
+      mem_utilization += other.mem_utilization;
+      application_utilization += other.application_utilization;
       for (const auto& p : other.backend_metrics) {
         backend_metrics[p.first] += p.second;
       }
@@ -204,7 +217,9 @@ class XdsClusterLocalityStats final
 
     bool IsZero() const {
       if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
-          total_error_requests != 0 || total_issued_requests != 0) {
+          total_error_requests != 0 || total_issued_requests != 0 ||
+          !cpu_utilization.IsZero() || !mem_utilization.IsZero() ||
+          !application_utilization.IsZero()) {
         return false;
       }
       for (const auto& p : backend_metrics) {
@@ -212,6 +227,17 @@ class XdsClusterLocalityStats final
       }
       return true;
     }
+  };
+
+  struct BackendMetricPropagation
+      : public RefCountedPtr<BackendMetricPropagation> {
+    static constexpr uint8_t kCpuUtilization = 1;
+    static constexpr uint8_t kMemUtilization = 2;
+    static constexpr uint8_t kApplicationUtilization = 4;
+    static constexpr uint8_t kNamedMetricsAll = 8;
+
+    uint8_t propagation_bits = 0;
+    absl::flat_hash_set<std::string> named_metric_keys;
   };
 
   XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
@@ -225,7 +251,8 @@ class XdsClusterLocalityStats final
   Snapshot GetSnapshotAndReset();
 
   void AddCallStarted();
-  void AddCallFinished(const std::map<absl::string_view, double>* named_metrics,
+  void AddCallFinished(const BackendMetricPropagation& propagation,
+                       const BackendMetricData* backend_metrics,
                        bool fail = false);
 
   XdsLocalityName* locality_name() const { return name_.get(); }
@@ -237,10 +264,10 @@ class XdsClusterLocalityStats final
     std::atomic<uint64_t> total_error_requests{0};
     std::atomic<uint64_t> total_issued_requests{0};
 
-    // Protects backend_metrics. A mutex is necessary because the length of
-    // backend_metrics_ can be accessed by both the callback intercepting the
-    // call's recv_trailing_metadata and the load reporting thread.
     Mutex backend_metrics_mu;
+    BackendMetric cpu_utilization ABSL_GUARDED_BY(backend_metrics_mu);
+    BackendMetric mem_utilization ABSL_GUARDED_BY(backend_metrics_mu);
+    BackendMetric application_utilization ABSL_GUARDED_BY(backend_metrics_mu);
     std::map<std::string, BackendMetric> backend_metrics
         ABSL_GUARDED_BY(backend_metrics_mu);
   };
