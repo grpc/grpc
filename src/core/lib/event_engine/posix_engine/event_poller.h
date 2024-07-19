@@ -42,6 +42,8 @@ class PosixEventPoller;
 class EventHandle {
  public:
   virtual int WrappedFd() = 0;
+  // Initializes the event handle with a given handle
+  virtual void InitWithFd(int fd) = 0;
   // Delete the handle and optionally close the underlying file descriptor if
   // release_fd != nullptr. The on_done closure is scheduled to be invoked
   // after the operation is complete. After this operation, NotifyXXX and SetXXX
@@ -86,12 +88,51 @@ class EventHandle {
   virtual ~EventHandle() = default;
 };
 
+// "Owning" event handle. Like a unique_ptr, except it will return the handle
+// into the free object pool instead of deleting it.
+class EventHandleRef {
+ public:
+  explicit EventHandleRef(EventHandle* handle = nullptr) : handle_(handle) {
+    LOG(INFO) << "New handle: " << handle_;
+  }
+  EventHandleRef(const EventHandleRef& /* other */) = delete;
+  EventHandleRef(EventHandleRef&& other) noexcept : handle_(other.handle_) {
+    LOG(INFO) << "New handle (move): " << handle_;
+    other.handle_ = nullptr;
+  }
+  ~EventHandleRef() { LOG(INFO) << "Handle ref dtor: " << handle_; }
+  EventHandle* get() const { return handle_; }
+  EventHandle* operator->() const { return handle_; }
+  EventHandleRef& operator=(EventHandleRef&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+  EventHandleRef& operator=(const std::nullptr_t /* nullptr */) {
+    reset();
+    return *this;
+  }
+  bool operator==(const std::nullptr_t /* nullptr */) const {
+    return handle_ == nullptr;
+  }
+  bool operator!=(const std::nullptr_t /* nullptr */) const {
+    return handle_ != nullptr;
+  }
+  void reset() {
+    LOG(INFO) << "Resetting: " << handle_;
+    handle_ = nullptr;
+  }
+
+ private:
+  EventHandle* handle_;
+};
+
 class PosixEventPoller : public grpc_event_engine::experimental::Poller,
                          public Forkable {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
-  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
-                                    bool track_err) = 0;
+  virtual EventHandleRef CreateHandle(int fd, absl::string_view name,
+                                      bool track_err) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function

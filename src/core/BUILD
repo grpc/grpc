@@ -2009,6 +2009,7 @@ grpc_cc_library(
     name = "posix_event_engine_event_poller",
     srcs = [],
     hdrs = [
+        "lib/event_engine/posix_engine/event_handle_pool.h",
         "lib/event_engine/posix_engine/event_poller.h",
     ],
     external_deps = [

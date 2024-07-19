@@ -120,7 +120,7 @@ class PosixEngineListenerImpl
     std::shared_ptr<EventEngine> engine_;
     std::shared_ptr<PosixEngineListenerImpl> listener_;
     ListenerSocketsContainer::ListenerSocket socket_;
-    EventHandle* handle_;
+    EventHandleRef handle_;
     PosixEngineClosure* notify_on_accept_;
     // Tracks the status of a backup timer to retry accept4 calls after file
     // descriptor exhaustion.
