@@ -143,9 +143,13 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   }
   if (peer.properties != nullptr) gpr_free(peer.properties);
   peer.properties = new_properties;
-  // TODO(yihuazhang): Set security level of local TCP to TSI_SECURITY_NONE.
-  const char* security_level =
-      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+  // Set security level to NONE for TCP type, privacy&integrity otherwise.
+  const char* security_level;
+  if (type == LOCAL_TCP) {
+    security_level = tsi_security_level_to_string(TSI_SECURITY_NONE);
+  } else {
+    security_level = tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+  }
   tsi_result result = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
       &peer.properties[peer.property_count]);
@@ -261,6 +265,8 @@ class grpc_local_server_security_connector final
   }
 };
 }  // namespace
+
+// just pass local and uds in the format of Chttp2FullstackLocalIpv4, Chttp2FullstackLocalIpv6, Chttp2FullstackLocalUds, check for results
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
