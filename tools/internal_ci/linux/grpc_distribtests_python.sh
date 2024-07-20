@@ -15,61 +15,11 @@
 
 set -ex
 
-# avoid slow finalization after the script has exited.
-source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
-
-# change to grpc repo root
+# Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# some distribtests use a pre-registered binfmt_misc hook
-# to automatically execute foreign binaries (such as aarch64)
-# under qemu emulator.
-source tools/internal_ci/helper_scripts/prepare_qemu_rc
-
-# configure ccache
-source tools/internal_ci/helper_scripts/prepare_ccache_rc
-
-# unit-tests setup starts from here
-
-function maybe_run_command () {
-  if python3 setup.py --help-commands | grep "$1" &>/dev/null; then
-    python3 setup.py "$1";
-  fi
-}
-
-BASEDIR=$(dirname "$0")
-
-PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
-
-cd "$BASEDIR";
-pip install --upgrade "cython<3.0.0rc1";
-python3 setup.py install;
-pushd tools/distrib/python/grpcio_tools;
-  ../make_grpcio_tools.py
-  GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
-popd;
-pushd src/python/grpcio_observability;
-  ./make_grpcio_observability.py
-  GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
-popd;
-pushd tools/distrib/python/xds_protos;
-  GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
-popd;
-pushd src/python;
-  for PACKAGE in ${PACKAGES}; do
-    pushd "${PACKAGE}";
-      python3 setup.py clean;
-      maybe_run_command preprocess
-      maybe_run_command build_package_protos
-      python3 -m pip install .;
-    popd;
-  done
-popd;
-pushd src/python/grpcio_tests;
-  python3 setup.py test_lite
-#  python setup.py test_aio
-  python3 setup.py test_py3_only
-popd;
-
+export DOCKERFILE_DIR=tools/dockerfile/distribtest/python_dev_ubuntu2204_x64
+export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_distribtests_python_in_docker.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh
