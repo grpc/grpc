@@ -66,9 +66,6 @@ class SubchannelCall;
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   const ChannelArgs& args() const { return args_; }
-  channelz::SubchannelNode* channelz_subchannel() const {
-    return channelz_subchannel_.get();
-  }
 
   virtual void StartWatch(
       grpc_pollset_set* interested_parties,
@@ -85,16 +82,13 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
  protected:
-  ConnectedSubchannel(
-      const ChannelArgs& args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
+  explicit ConnectedSubchannel(const ChannelArgs& args);
 
  private:
   ChannelArgs args_;
-  // ref counted pointer to the channelz node in this connected subchannel's
-  // owning subchannel.
-  RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
 };
+
+class LegacyConnectedSubchannel;
 
 // Implements the interface of RefCounted<>.
 class SubchannelCall final {
@@ -150,7 +144,7 @@ class SubchannelCall final {
 
   static void Destroy(void* arg, grpc_error_handle error);
 
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  RefCountedPtr<LegacyConnectedSubchannel> connected_subchannel_;
   grpc_closure* after_call_stack_destroy_ = nullptr;
   // State needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready_;

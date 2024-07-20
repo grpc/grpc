@@ -21,6 +21,9 @@ const upb_MiniTable xds__annotations__v3__VersioningAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_VersioningAnnotation__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.annotations.v3.VersioningAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},

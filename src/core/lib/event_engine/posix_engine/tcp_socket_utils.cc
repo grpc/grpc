@@ -106,14 +106,15 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
                                       : socket(family, type, protocol);
   if (res < 0 && errno == EMFILE) {
     int saved_errno = errno;
-    GRPC_LOG_EVERY_N_SEC(
-        10, GPR_ERROR,
-        "socket(%d, %d, %d) returned %d with error: |%s|. This process "
-        "might not have a sufficient file descriptor limit for the number "
-        "of connections grpc wants to open (which is generally a function of "
-        "the number of grpc channels, the lb policy of each channel, and the "
-        "number of backends each channel is load balancing across).",
-        family, type, protocol, res, grpc_core::StrError(errno).c_str());
+    LOG_EVERY_N_SEC(ERROR, 10)
+        << "socket(" << family << ", " << type << ", " << protocol
+        << ") returned " << res << " with error: |"
+        << grpc_core::StrError(errno)
+        << "|. This process might not have a sufficient file descriptor limit "
+           "for the number of connections grpc wants to open (which is "
+           "generally a function of the number of grpc channels, the lb policy "
+           "of each channel, and the number of backends each channel is load "
+           "balancing across).";
     errno = saved_errno;
   }
   return res;
@@ -148,14 +149,20 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   return absl::OkStatus();
 }
 
+#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
+
+}  // namespace
+
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
+
 bool SetSocketDualStack(int fd) {
   const int off = 0;
   return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
 }
 
+#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 #endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
-}  // namespace
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   void* value;
@@ -627,12 +634,15 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     // if it is available.
     if (g_socket_supports_tcp_user_timeout.load() == 0) {
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+        // This log is intentionally not protected behind a flag, so that users
+        // know that TCP_USER_TIMEOUT is not being used.
         LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
                      "won't be used thereafter";
         g_socket_supports_tcp_user_timeout.store(-1);
       } else {
-        LOG(INFO) << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-                     "used thereafter";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+               "used thereafter";
         g_socket_supports_tcp_user_timeout.store(1);
       }
     }

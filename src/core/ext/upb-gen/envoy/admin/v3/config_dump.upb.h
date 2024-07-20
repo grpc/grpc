@@ -209,7 +209,7 @@ UPB_INLINE bool envoy_admin_v3_BootstrapConfigDump_has_last_updated(const envoy_
 
 UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_set_bootstrap(envoy_admin_v3_BootstrapConfigDump *msg, struct envoy_config_bootstrap_v3_Bootstrap* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_bootstrap_v3_Bootstrap* envoy_admin_v3_BootstrapConfigDump_mutable_bootstrap(envoy_admin_v3_BootstrapConfigDump* msg, upb_Arena* arena) {
   struct envoy_config_bootstrap_v3_Bootstrap* sub = (struct envoy_config_bootstrap_v3_Bootstrap*)envoy_admin_v3_BootstrapConfigDump_bootstrap(msg);
@@ -221,7 +221,7 @@ UPB_INLINE struct envoy_config_bootstrap_v3_Bootstrap* envoy_admin_v3_BootstrapC
 }
 UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_set_last_updated(envoy_admin_v3_BootstrapConfigDump *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_BootstrapConfigDump_mutable_last_updated(envoy_admin_v3_BootstrapConfigDump* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_BootstrapConfigDump_last_updated(msg);
@@ -579,15 +579,15 @@ UPB_INLINE int32_t envoy_admin_v3_SecretsConfigDump_DynamicSecret_client_status(
 
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_name(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_version_info(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(36, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_last_updated(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 48), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_last_updated(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_SecretsConfigDump_DynamicSecret_last_updated(msg);
@@ -599,7 +599,7 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_Dy
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_secret(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(16, 56), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_secret(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_SecretsConfigDump_DynamicSecret_secret(msg);
@@ -611,7 +611,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_DynamicS
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_error_state(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, struct envoy_admin_v3_UpdateFailureState* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 64), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_error_state(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_SecretsConfigDump_DynamicSecret_error_state(msg);
@@ -623,7 +623,7 @@ UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_SecretsConfi
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_client_status(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, int32_t value) {
   const upb_MiniTableField field = {6, UPB_SIZE(24, 12), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.admin.v3.SecretsConfigDump.StaticSecret */
@@ -709,11 +709,11 @@ UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_StaticSecret_has_secret(const e
 
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_set_name(envoy_admin_v3_SecretsConfigDump_StaticSecret *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_set_last_updated(envoy_admin_v3_SecretsConfigDump_StaticSecret *msg, struct google_protobuf_Timestamp* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_StaticSecret_mutable_last_updated(envoy_admin_v3_SecretsConfigDump_StaticSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_SecretsConfigDump_StaticSecret_last_updated(msg);
@@ -725,7 +725,7 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_St
 }
 UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_set_secret(envoy_admin_v3_SecretsConfigDump_StaticSecret *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_StaticSecret_mutable_secret(envoy_admin_v3_SecretsConfigDump_StaticSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_SecretsConfigDump_StaticSecret_secret(msg);

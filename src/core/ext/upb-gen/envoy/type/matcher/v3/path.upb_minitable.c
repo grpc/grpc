@@ -28,6 +28,9 @@ const upb_MiniTable envoy__type__matcher__v3__PathMatcher_msg_init = {
   &envoy_type_matcher_v3_PathMatcher_submsgs[0],
   &envoy_type_matcher_v3_PathMatcher__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.PathMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_maxmaxb},

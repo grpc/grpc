@@ -21,6 +21,8 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -28,6 +30,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -36,11 +39,11 @@
 
 #define MAX_DEPTH 2
 
-#define EXECUTOR_TRACE(format, ...)                       \
-  do {                                                    \
-    if (GRPC_TRACE_FLAG_ENABLED(executor)) {              \
-      gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
-    }                                                     \
+#define EXECUTOR_TRACE(format, ...)                                     \
+  do {                                                                  \
+    if (GRPC_TRACE_FLAG_ENABLED(executor)) {                            \
+      LOG(INFO) << "EXECUTOR " << absl::StrFormat(format, __VA_ARGS__); \
+    }                                                                   \
   } while (0)
 
 namespace grpc_core {

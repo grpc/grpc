@@ -218,10 +218,9 @@ WindowsEventEngine::~WindowsEventEngine() {
     if (!known_handles_.empty()) {
       if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
         for (auto handle : known_handles_) {
-          gpr_log(GPR_ERROR,
-                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
-                  this,
-                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
+          LOG(ERROR) << "WindowsEventEngine:" << this
+                     << " uncleared TaskHandle at shutdown:"
+                     << HandleToString<EventEngine::TaskHandle>(handle);
         }
       }
       // Allow a small grace period for timers to be run before shutting down.
@@ -229,8 +228,8 @@ WindowsEventEngine::~WindowsEventEngine() {
           timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
       while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
         if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
-                               known_handles_.size());
+          VLOG_EVERY_N_SEC(2, 1) << "Waiting for timers. "
+                                 << known_handles_.size() << " remaining";
         }
         task_mu_.Unlock();
         absl::SleepFor(absl::Milliseconds(200));

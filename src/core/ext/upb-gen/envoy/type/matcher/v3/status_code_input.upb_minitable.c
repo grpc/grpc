@@ -17,12 +17,18 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_m
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.HttpResponseStatusCodeMatchInput",
+#endif
 };
 
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.HttpResponseStatusCodeClassMatchInput",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

@@ -23,6 +23,9 @@ const upb_MiniTable envoy__type__v3__Percent_msg_init = {
   NULL,
   &envoy_type_v3_Percent__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.v3.Percent",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000009, &upb_psf8_1bt},
@@ -38,6 +41,9 @@ const upb_MiniTable envoy__type__v3__FractionalPercent_msg_init = {
   NULL,
   &envoy_type_v3_FractionalPercent__fields[0],
   16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.v3.FractionalPercent",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},

@@ -21,7 +21,6 @@ set -ex
 test "$(bazel query 'somepath("//:grpc_unsecure", "//third_party:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
 test "$(bazel query 'somepath("//:grpc++_unsecure", "//third_party:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
 test "$(bazel query 'somepath("//:grpc++_codegen_proto", "//third_party:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
-test "$(bazel query 'somepath("//test/cpp/microbenchmarks:helpers", "//third_party:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
 
 # Make sure that core doesn't depend on anything in C++ library
 

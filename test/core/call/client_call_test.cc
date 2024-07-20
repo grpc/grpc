@@ -196,7 +196,7 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterCancellation) {
         EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
                   kDefaultPath);
         handler().PushServerTrailingMetadata(
-            ServerMetadataFromStatus(absl::InternalError("test error")));
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "test error"));
         return Immediate(Empty{});
       });
   Expect(1, true);
@@ -217,7 +217,9 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   ExecCtx::Get()->InvalidateNow();
   auto now = Timestamp::Now();
   EXPECT_GE(now - start, Duration::Seconds(1)) << GRPC_DUMP_ARGS(now, start);
-  EXPECT_LE(now - start, Duration::Seconds(5)) << GRPC_DUMP_ARGS(now, start);
+  EXPECT_LE(now - start,
+            g_yodel_fuzzing ? Duration::Minutes(10) : Duration::Seconds(5))
+      << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
 }
 

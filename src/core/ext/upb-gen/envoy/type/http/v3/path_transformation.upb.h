@@ -210,7 +210,7 @@ UPB_INLINE bool envoy_type_http_v3_PathTransformation_Operation_has_merge_slashe
 
 UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_set_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation *msg, envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* envoy_type_http_v3_PathTransformation_Operation_mutable_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation* msg, upb_Arena* arena) {
   struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* sub = (struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*)envoy_type_http_v3_PathTransformation_Operation_normalize_path_rfc_3986(msg);
@@ -222,7 +222,7 @@ UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathR
 }
 UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_set_merge_slashes(envoy_type_http_v3_PathTransformation_Operation *msg, envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_type_http_v3_PathTransformation_Operation_mutable_merge_slashes(envoy_type_http_v3_PathTransformation_Operation* msg, upb_Arena* arena) {
   struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* sub = (struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*)envoy_type_http_v3_PathTransformation_Operation_merge_slashes(msg);
