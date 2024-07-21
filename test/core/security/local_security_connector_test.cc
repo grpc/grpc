@@ -109,7 +109,7 @@ static const grpc_endpoint_vtable vtable_local = {me_read,
 
 static void check_tsi_security_level(grpc_local_connect_type connect_type,
                                  tsi_security_level level, grpc_endpoint ep) {
-  auto server_creds = grpc_local_server_credentials_create(connect_type);
+  grpc_server_credentials* server_creds = grpc_local_server_credentials_create(connect_type);
   ChannelArgs args;
   EXPECT_NE(server_creds, nullptr);
   RefCountedPtr<grpc_server_security_connector> connector = server_creds->
@@ -126,6 +126,9 @@ static void check_tsi_security_level(grpc_local_connect_type connect_type,
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   ASSERT_NE(prop, nullptr);
   EXPECT_STREQ(prop->value, tsi_security_level_to_string(level));
+  connector.reset();
+  auth_context.reset();
+  grpc_server_credentials_release(server_creds);
 }
 
 //
