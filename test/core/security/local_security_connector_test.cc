@@ -107,22 +107,6 @@ static const grpc_endpoint_vtable vtable_local = {me_read,
                                             me_get_fd,
                                             me_can_track_err};
 
-static void PrintAuthContext(const grpc_auth_context* ctx) {
-  const grpc_auth_property* p;
-  grpc_auth_property_iterator it;
-  LOG(INFO) << "\tauthenticated: "
-            << (grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
-  it = grpc_auth_context_peer_identity(ctx);
-  while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
-  }
-  LOG(INFO) << "\tall properties:";
-  it = grpc_auth_context_property_iterator(ctx);
-  while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
-  }
-}
-
 static void check_tsi_security_level(grpc_local_connect_type connect_type,
                                  tsi_security_level level, grpc_endpoint ep) {
   auto server_creds = grpc_local_server_credentials_create(connect_type);
@@ -136,7 +120,7 @@ static void check_tsi_security_level(grpc_local_connect_type connect_type,
 
   RefCountedPtr<grpc_auth_context> auth_context;
   connector->check_peer(peer, &ep, args, &auth_context, nullptr);
-  PrintAuthContext(auth_context.get());
+  tsi_peer_destruct(&peer);
   auto it = grpc_auth_context_find_properties_by_name(
       auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
