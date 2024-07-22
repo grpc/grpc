@@ -121,6 +121,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
             {"posix_engine_listener_utils.cc", std::regex(".*")},
             {"proxy.cc", std::regex("")},
             {"ssl_security_connector.cc", std::regex(".*")},
+            {"tls_security_connector.cc",
+             std::regex("TlsChannelSecurityConnector::cancel_check_peer.*")},
             {"tcp_posix.cc", std::regex(".*")},
             {"tcp_server_utils_posix_common.cc",
              std::regex("Node does not support.*")},
