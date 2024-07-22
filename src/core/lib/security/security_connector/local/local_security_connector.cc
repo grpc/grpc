@@ -266,8 +266,6 @@ class grpc_local_server_security_connector final
 };
 }  // namespace
 
-// just pass local and uds in the format of Chttp2FullstackLocalIpv4, Chttp2FullstackLocalIpv6, Chttp2FullstackLocalUds, check for results
-
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,

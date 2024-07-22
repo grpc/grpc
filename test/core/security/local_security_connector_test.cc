@@ -16,33 +16,11 @@
 //
 //
 
-#include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
-
-#include <stdlib.h>
-#include <string.h>
-
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/log/check.h"
-
-#include <grpc/credentials.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/test_util/test_config.h"
-#include "test/core/test_util/tls_utils.h"
-#include "googletest/include/gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -52,66 +30,40 @@ class LocalSecurityConnectorTest : public ::testing::Test {
   LocalSecurityConnectorTest() {}
 };
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool urgent, int min_progress_size) {}
-
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg, int max_frame_size) {}
-
-static void me_add_to_pollset(grpc_endpoint* /*ep*/,
-                              grpc_pollset* /*pollset*/) {}
-
-static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
-                                  grpc_pollset_set* /*pollset*/) {}
-
-static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
-                                       grpc_pollset_set* /*pollset*/) {}
-
-static void me_destroy(grpc_endpoint* ep) {}
-
-static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
-  return "";
-}
-
 static absl::string_view me_get_local_address_unix(grpc_endpoint* /*ep*/) {
   return "unix:";
 }
 
-static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
-
-static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
-
-static const grpc_endpoint_vtable vtable_unix = {me_read,
-                                            me_write,
-                                            me_add_to_pollset,
-                                            me_add_to_pollset_set,
-                                            me_delete_from_pollset_set,
-                                            me_destroy,
-                                            me_get_peer,
+static const grpc_endpoint_vtable vtable_unix = {nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
                                             me_get_local_address_unix,
-                                            me_get_fd,
-                                            me_can_track_err};
+                                            nullptr,
+                                            nullptr};
 
 static absl::string_view me_get_local_address_local(grpc_endpoint* /*ep*/) {
   return "ipv4:127.0.0.1:12667";
 }
 
-static const grpc_endpoint_vtable vtable_local = {me_read,
-                                            me_write,
-                                            me_add_to_pollset,
-                                            me_add_to_pollset_set,
-                                            me_delete_from_pollset_set,
-                                            me_destroy,
-                                            me_get_peer,
+static const grpc_endpoint_vtable vtable_local = {nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
                                             me_get_local_address_local,
-                                            me_get_fd,
-                                            me_can_track_err};
+                                            nullptr,
+                                            nullptr};
 
 static void check_tsi_security_level(grpc_local_connect_type connect_type,
                                  tsi_security_level level, grpc_endpoint ep) {
   grpc_server_credentials* server_creds = grpc_local_server_credentials_create(connect_type);
   ChannelArgs args;
-  EXPECT_NE(server_creds, nullptr);
   RefCountedPtr<grpc_server_security_connector> connector = server_creds->
       create_security_connector(args);
   EXPECT_NE(connector, nullptr);
@@ -132,11 +84,10 @@ static void check_tsi_security_level(grpc_local_connect_type connect_type,
 }
 
 //
-// Tests for Certificate Providers in ChannelSecurityConnector.
+// Tests for grpc_local_channel_security_connector.
 //
 
 TEST_F(LocalSecurityConnectorTest, CheckUDSType) {
-//  auto server_creds = grpc_local_server_credentials_create(LOCAL_TCP);
   grpc_endpoint ep = {
         .vtable = &vtable_unix,
     };
@@ -155,8 +106,6 @@ TEST_F(LocalSecurityConnectorTest, CheckLocalType) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::ConfigVars::Overrides overrides;
-  grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
