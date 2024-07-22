@@ -120,8 +120,8 @@ int InitMaxAcceptQueueSize() {
   max_accept_queue_size = n;
 
   if (max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    LOG(WARNING) << "Suspiciously small accept queue (" << max_accept_queue_size
-                 << ") will probably lead to connection drops";
+    LOG(INFO) << "Suspiciously small accept queue (" << max_accept_queue_size
+              << ") will probably lead to connection drops";
   }
   return max_accept_queue_size;
 }
