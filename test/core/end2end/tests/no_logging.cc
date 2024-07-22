@@ -122,6 +122,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
             {"proxy.cc", std::regex("")},
             {"ssl_security_connector.cc", std::regex(".*")},
             {"tcp_posix.cc", std::regex(".*")},
+            {"tcp_server_utils_posix_common.cc",
+             std::regex("Node does not support.*")},
         });
 
     absl::string_view filename = entry.source_filename();
