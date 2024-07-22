@@ -46,7 +46,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
  public:
   explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
                                  const int verbosity)
-      : no_unwanted_logs_(false) {
+      : no_unwanted_logs_(true) {
     saved_absl_severity_ = absl::MinLogLevel();
     absl::SetMinLogLevel(severity);
     // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
@@ -142,7 +142,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         return;
       }
     }
-    no_unwanted_logs_ = true;
+    no_unwanted_logs_ = false;
     LOG(ERROR)
         << "Unwanted log: Either user a tracer (example GRPC_TRACE_LOG or "
            "GRPC_TRACE_VLOG) or add it to allowed_logs_by_module or "
