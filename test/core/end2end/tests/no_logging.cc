@@ -62,7 +62,6 @@ class Verifier {
     // This is broken. Replace with an absl log sink.
     gpr_set_log_function(gpr_default_log);
     saved_trace_flags_.Restore();
-    gpr_set_log_verbosity(saved_severity_);
   }
   Verifier(const Verifier&) = delete;
   Verifier& operator=(const Verifier&) = delete;
