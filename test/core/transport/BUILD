@@ -250,3 +250,13 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
     ],
 )
+
+grpc_cc_benchmark(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
+    deps = [
+        ":call_spine_benchmarks",
+        "//:grpc",
+        "//src/core:default_event_engine",
+    ],
+)
