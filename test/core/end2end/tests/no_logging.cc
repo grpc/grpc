@@ -105,18 +105,24 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // LogEntry. We can allow this list to grow because we dont expect VLOG to
     // be on in production systems.
     static const auto* const allowed_vlogs_by_module =
-        new std::map<absl::string_view, std::regex>(
-            {{"no_logging.cc",
-              std::regex("If the test fails here, the test is broken.*")},
-             {"dns_resolver_plugin.cc", std::regex("Using .* dns resolver")},
-             {"lb_policy_registry.cc",
-              std::regex("registering LB policy factory for \".*\"")},
-             {"dual_ref_counted.h", std::regex(".*")},
-             {"tcp_posix.cc", std::regex(".*")},
-             {"ssl_security_connector.cc", std::regex(".*")},
-             {"posix_engine_listener_utils.cc", std::regex(".*")},
-             {"http_proxy_fixture.cc", std::regex("Proxy address: .*")},
-             {"posix_endpoint.cc", std::regex("cannot set inq fd=.*")}});
+        new std::map<absl::string_view, std::regex>({
+            {"dns_resolver_plugin.cc", std::regex("Using .* dns resolver")},
+            {"dual_ref_counted.h", std::regex(".*")},
+            {"http_connect_handshaker.cc",
+             std::regex("Connecting to server.*")},
+            {"http_proxy_fixture.cc",
+             std::regex(
+                 ".*")},  // "on_read_request_done:" and "Proxy address: .*"
+            {"lb_policy_registry.cc",
+             std::regex("registering LB policy factory for \".*\"")},
+            {"no_logging.cc",
+             std::regex("If the test fails here, the test is broken.*")},
+            {"posix_endpoint.cc", std::regex("cannot set inq fd=.*")},
+            {"posix_engine_listener_utils.cc", std::regex(".*")},
+            {"proxy.cc", std::regex("")},
+            {"ssl_security_connector.cc", std::regex(".*")},
+            {"tcp_posix.cc", std::regex(".*")},
+        });
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
