@@ -45,7 +45,8 @@ namespace grpc_core {
 class VerifyLogNoiseLogSink : public absl::LogSink {
  public:
   explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
-                                 const int verbosity) {
+                                 const int verbosity)
+      : no_unwanted_logs_(false) {
     saved_absl_severity_ = absl::MinLogLevel();
     absl::SetMinLogLevel(severity);
     // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
@@ -55,6 +56,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
+    CHECK(no_unwanted_logs_);
     //  Reverse everything done in the constructor.
     absl::RemoveLogSink(this);
     saved_trace_flags_.Restore();
@@ -140,7 +142,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         return;
       }
     }
-    CHECK(false)
+    no_unwanted_logs_ = true;
+    LOG(ERROR)
         << "Unwanted log: Either user a tracer (example GRPC_TRACE_LOG or "
            "GRPC_TRACE_VLOG) or add it to allowed_logs_by_module or "
            "allowed_vlogs_by_module. Location : "
@@ -150,6 +153,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   absl::LogSeverityAtLeast saved_absl_severity_;
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
+  bool no_unwanted_logs_;
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
