@@ -110,6 +110,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base_internal
   absl_bind_front
   absl_bits
+  absl_bounded_utf8_length_sequence
   absl_charset
   absl_check
   absl_city
@@ -117,6 +118,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_cleanup
   absl_cleanup_internal
   absl_common_policy_traits
+  absl_compare
   absl_compressed_tuple
   absl_config
   absl_container_common
@@ -135,7 +137,9 @@ set(gRPC_ABSL_USED_TARGETS
   absl_crc_cpu_detect
   absl_crc_internal
   absl_debugging_internal
+  absl_decode_rust_punycode
   absl_demangle_internal
+  absl_demangle_rust
   absl_dynamic_annotations
   absl_endian
   absl_errno_saver
@@ -159,6 +163,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_graphcycles_internal
   absl_has_ostream_operator
   absl_hash
+  absl_hash_container_defaults
   absl_hash_function_defaults
   absl_hash_policy_traits
   absl_hashtable_debug_hooks
@@ -245,6 +250,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_time
   absl_time_zone
   absl_type_traits
+  absl_utf8_for_code_point
   absl_utility
   absl_variant
   absl_vlog_config_internal
