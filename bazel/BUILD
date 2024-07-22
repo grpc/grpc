@@ -24,3 +24,8 @@ filegroup(
     name = "_gevent_test_main",
     srcs = ["_gevent_test_main.py"],
 )
+
+filegroup(
+    name = "_logging_threshold_test_main",
+    srcs = ["_logging_threshold_test_main.py"],
+)
