@@ -97,12 +97,6 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
   reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
 }
 
-void gpr_set_log_verbosity(
-    [[maybe_unused]] gpr_log_severity deprecated_setting) {
-  LOG(ERROR)
-      << "This will not be set. Please set this via absl log level settings.";
-}
-
 void gpr_log_verbosity_init(void) {
 // This is enabled in Github only.
 // This ifndef is converted to ifdef internally by copybara.
