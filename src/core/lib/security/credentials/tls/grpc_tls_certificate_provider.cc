@@ -122,9 +122,9 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
-    VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
-               "value less than minimum. Overriding configured value to "
-               "minimum.";
+    LOG(INFO) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
+                 "value less than minimum. Overriding configured value to "
+                 "minimum.";
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.

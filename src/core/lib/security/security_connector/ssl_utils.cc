@@ -232,18 +232,16 @@ static bool IsSpiffeId(absl::string_view uri) {
     return false;
   };
   if (uri.size() > 2048) {
-    GRPC_TRACE_LOG(tsi, INFO)
-        << "Invalid SPIFFE ID: ID longer than 2048 bytes.";
+    LOG(INFO) << "Invalid SPIFFE ID: ID longer than 2048 bytes.";
     return false;
   }
   std::vector<absl::string_view> splits = absl::StrSplit(uri, '/');
   if (splits.size() < 4 || splits[3].empty()) {
-    GRPC_TRACE_LOG(tsi, INFO) << "Invalid SPIFFE ID: workload id is empty.";
+    LOG(INFO) << "Invalid SPIFFE ID: workload id is empty.";
     return false;
   }
   if (splits[2].size() > 255) {
-    GRPC_TRACE_LOG(tsi, INFO)
-        << "Invalid SPIFFE ID: domain longer than 255 characters.";
+    LOG(INFO) << "Invalid SPIFFE ID: domain longer than 255 characters.";
     return false;
   }
   return true;
@@ -334,7 +332,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                      spiffe_data, spiffe_length);
     } else {
-      GRPC_TRACE_LOG(tsi, INFO) << "Invalid SPIFFE ID: multiple URI SANs.";
+      LOG(INFO) << "Invalid SPIFFE ID: multiple URI SANs.";
     }
   }
   return ctx;
@@ -421,9 +419,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
   if (pem_root_certs == nullptr && !skip_server_certificate_verification) {
-    GRPC_TRACE_LOG(tsi, INFO)
-        << "No root certificates specified; use ones stored in system "
-           "default locations instead";
+    LOG(INFO) << "No root certificates specified; use ones stored in system "
+                 "default locations instead";
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (root_certs == nullptr) {
