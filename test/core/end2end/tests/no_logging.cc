@@ -35,8 +35,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
-void gpr_default_log(gpr_log_func_args* args);
-
 namespace grpc_core {
 // This test is currently broken.
 // The whole test will be re-written as a part of gpr to absl log conversion.
@@ -60,7 +58,6 @@ class Verifier {
   }
   ~Verifier() {
     // This is broken. Replace with an absl log sink.
-    gpr_set_log_function(gpr_default_log);
     saved_trace_flags_.Restore();
   }
   Verifier(const Verifier&) = delete;
@@ -90,12 +87,10 @@ class Verifier {
     auto it = allowed_logs_by_module->find(filename);
     if (it != allowed_logs_by_module->end() &&
         std::regex_search(args->message, it->second)) {
-      gpr_default_log(args);
       return;
     }
     std::string message = absl::StrCat("Unwanted log: ", args->message);
     args->message = message.c_str();
-    gpr_default_log(args);
     GTEST_FAIL();
   }
 
@@ -110,7 +105,7 @@ class Verifier {
   static std::atomic<gpr_log_func> g_log_func_;
 };
 
-std::atomic<gpr_log_func> Verifier::g_log_func_(gpr_default_log);
+std::atomic<gpr_log_func> Verifier::g_log_func_(NoErrorLog);
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
