@@ -424,10 +424,9 @@ static void on_read(void* arg, grpc_error_handle err) {
       int64_t dropped_connections_count =
           num_dropped_connections.fetch_add(1, std::memory_order_relaxed) + 1;
       if (dropped_connections_count % 1000 == 1) {
-        gpr_log(GPR_INFO,
-                "Dropped >= %" PRId64
-                " new connection attempts due to high memory pressure",
-                dropped_connections_count);
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "Dropped >= " << dropped_connections_count
+            << " new connection attempts due to high memory pressure";
       }
       close(fd);
       continue;
@@ -549,16 +548,14 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   }
   if (*out_port > 0) {
     if (!v6_err.ok()) {
-      gpr_log(GPR_INFO,
-              "Failed to add :: listener, "
-              "the environment may not support IPv6: %s",
-              grpc_core::StatusToString(v6_err).c_str());
+      GRPC_TRACE_LOG(tcp, INFO) << "Failed to add :: listener, "
+                                << "the environment may not support IPv6: "
+                                << grpc_core::StatusToString(v6_err);
     }
     if (!v4_err.ok()) {
-      gpr_log(GPR_INFO,
-              "Failed to add 0.0.0.0 listener, "
-              "the environment may not support IPv4: %s",
-              grpc_core::StatusToString(v4_err).c_str());
+      GRPC_TRACE_LOG(tcp, INFO) << "Failed to add 0.0.0.0 listener, "
+                                << "the environment may not support IPv4: "
+                                << grpc_core::StatusToString(v4_err);
     }
     return absl::OkStatus();
   } else {
