@@ -18,6 +18,11 @@ extern "C" {
 
 extern _upb_DefPool_Init envoy_config_trace_v3_datadog_proto_upbdefinit;
 
+UPB_INLINE const upb_MessageDef *envoy_config_trace_v3_DatadogRemoteConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_trace_v3_datadog_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.trace.v3.DatadogRemoteConfig");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_trace_v3_DatadogConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_trace_v3_datadog_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.trace.v3.DatadogConfig");

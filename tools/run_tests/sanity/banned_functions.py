@@ -51,10 +51,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_severity_string": [],
     "gpr_log(": [
         "./include/grpc/support/log.h",
-        "./src/core/ext/transport/cronet/transport/cronet_transport.cc",
-        "./src/core/ext/transport/inproc/legacy_inproc_transport.cc",
-        "./src/core/handshaker/http_connect/http_proxy_mapper.cc",
-        "./src/core/lib/surface/api_trace.h",
         "./src/core/util/android/log.cc",
         "./src/core/util/linux/log.cc",
         "./src/core/util/posix/log.cc",

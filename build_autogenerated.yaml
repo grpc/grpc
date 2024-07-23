@@ -5279,6 +5279,24 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_metadata
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/transport/bm_metadata.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_party
   build: test
   language: c
@@ -22643,12 +22661,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 1ee20b3041a4f093cc393448ab022f770e70b509c8fe8399d6e83017067b2fc3
+  hash: e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-091cfd044258312a56c632ae1860813b1c0c58bc
+  strip_prefix: data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

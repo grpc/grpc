@@ -73,7 +73,8 @@ class ServerCallTest : public YodelTest {
   ClientMetadataHandle MakeClientInitialMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           md) {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kDefaultPath));
     for (const auto& pair : md) {
