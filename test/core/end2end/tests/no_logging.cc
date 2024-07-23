@@ -210,4 +210,5 @@ CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
     SimpleRequest(*this);
   }
 }
+
 }  // namespace grpc_core
