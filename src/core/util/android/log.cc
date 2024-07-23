@@ -30,6 +30,9 @@
 
 #include "src/core/lib/gprpp/crash.h"
 
+extern void gpr_log_message(const char* file, int line,
+                            gpr_log_severity severity, const char* message);
+
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
   // Avoid message construction if gpr_log_message won't log
