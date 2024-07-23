@@ -23,7 +23,6 @@
 #include "test/core/test_util/test_config.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "include/grpc/impl/grpc_types.h"
-#include "googletest/include/gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -59,7 +58,7 @@ const grpc_endpoint_vtable vtable_local = {nullptr,
                                                   nullptr,
                                                   nullptr};
 
-void check_tsi_security_level_server(grpc_local_connect_type connect_type,
+void CheckSecurityLevelForServer(grpc_local_connect_type connect_type,
                                             tsi_security_level level,
                                             grpc_endpoint ep) {
   grpc_server_credentials
@@ -84,26 +83,18 @@ void check_tsi_security_level_server(grpc_local_connect_type connect_type,
   grpc_server_credentials_release(server_creds);
 }
 
-static void check_tsi_security_level_channel(grpc_local_connect_type connect_type,
+static void CheckSecurityLevelForChannel(grpc_local_connect_type connect_type,
                                              tsi_security_level level,
                                              grpc_endpoint ep) {
   grpc_channel_credentials
       * channel_creds = grpc_local_credentials_create(connect_type);
   ChannelArgs args;
   args = args.Set((char*) GRPC_ARG_SERVER_URI, (char*) "unix:");
-  const char* target_name;
-  if (connect_type == UDS) {
-    target_name = "unix:";
-  } else {
-    target_name = "localhost";
-  }
   RefCountedPtr<grpc_channel_security_connector> connector = channel_creds->
       create_security_connector(nullptr, "unix:", &args);
-
   ASSERT_NE(connector, nullptr);
   tsi_peer peer;
   CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
-
   RefCountedPtr<grpc_auth_context> auth_context;
   connector->check_peer(peer, &ep, args, &auth_context, nullptr);
   tsi_peer_destruct(&peer);
@@ -119,40 +110,32 @@ static void check_tsi_security_level_channel(grpc_local_connect_type connect_typ
   grpc_channel_credentials_release(channel_creds);
 }
 
-//
-// Tests for grpc_local_channel_security_connector.
-//
-
-TEST(LocalSecurityConnectorTest, CheckUDSType) {
-grpc_endpoint ep = {
-    .vtable = &vtable_unix,
-};
-check_tsi_security_level_server(UDS, TSI_PRIVACY_AND_INTEGRITY, ep
-);
+TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionServer) {
+  grpc_endpoint ep = {
+      .vtable = &vtable_unix,
+  };
+  CheckSecurityLevelForServer(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
 }
 
-TEST(LocalSecurityConnectorTest, CheckLocalType) {
-grpc_endpoint ep = {
-    .vtable = &vtable_local,
-};
-check_tsi_security_level_server(LOCAL_TCP, TSI_SECURITY_NONE, ep
-);
+TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionServer) {
+  grpc_endpoint ep = {
+      .vtable = &vtable_local,
+  };
+  CheckSecurityLevelForServer(LOCAL_TCP, TSI_SECURITY_NONE, ep);
 }
 
-TEST(LocalSecurityConnectorTest, CheckUDSTypeChannel) {
-grpc_endpoint ep = {
-    .vtable = &vtable_unix,
-};
-check_tsi_security_level_channel(UDS, TSI_PRIVACY_AND_INTEGRITY, ep
-);
+TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionChannel) {
+  grpc_endpoint ep = {
+      .vtable = &vtable_unix,
+  };
+  CheckSecurityLevelForChannel(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
 }
 
-TEST(LocalSecurityConnectorTest, CheckLocalTypeChannel) {
-grpc_endpoint ep = {
-    .vtable = &vtable_local,
-};
-check_tsi_security_level_channel(LOCAL_TCP, TSI_SECURITY_NONE, ep
-);
+TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionChannel) {
+  grpc_endpoint ep = {
+      .vtable = &vtable_local,
+  };
+  CheckSecurityLevelForChannel(LOCAL_TCP, TSI_SECURITY_NONE, ep);
 }
 
 }  // namespace
