@@ -21,52 +21,53 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/test_util/test_config.h"
+#include "src/core/client_channel/client_channel_filter.h"
+#include "include/grpc/impl/grpc_types.h"
+#include "googletest/include/gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
+namespace {
 
-class LocalSecurityConnectorTest : public ::testing::Test {
- protected:
-  LocalSecurityConnectorTest() {}
-};
-
-static absl::string_view me_get_local_address_unix(grpc_endpoint* /*ep*/) {
+absl::string_view me_get_local_address_unix(grpc_endpoint* /*ep*/) {
   return "unix:";
 }
 
-static const grpc_endpoint_vtable vtable_unix = {nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            me_get_local_address_unix,
-                                            nullptr,
-                                            nullptr};
+const grpc_endpoint_vtable vtable_unix = {nullptr,
+                                                 nullptr,
+                                                 nullptr,
+                                                 nullptr,
+                                                 nullptr,
+                                                 nullptr,
+                                                 nullptr,
+                                                 me_get_local_address_unix,
+                                                 nullptr,
+                                                 nullptr};
 
-static absl::string_view me_get_local_address_local(grpc_endpoint* /*ep*/) {
+absl::string_view me_get_local_address_local(grpc_endpoint* /*ep*/) {
   return "ipv4:127.0.0.1:12667";
 }
 
-static const grpc_endpoint_vtable vtable_local = {nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            me_get_local_address_local,
-                                            nullptr,
-                                            nullptr};
+const grpc_endpoint_vtable vtable_local = {nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  me_get_local_address_local,
+                                                  nullptr,
+                                                  nullptr};
 
-static void check_tsi_security_level(grpc_local_connect_type connect_type,
-                                 tsi_security_level level, grpc_endpoint ep) {
-  grpc_server_credentials* server_creds = grpc_local_server_credentials_create(connect_type);
+void check_tsi_security_level_server(grpc_local_connect_type connect_type,
+                                            tsi_security_level level,
+                                            grpc_endpoint ep) {
+  grpc_server_credentials
+      * server_creds = grpc_local_server_credentials_create(connect_type);
   ChannelArgs args;
   RefCountedPtr<grpc_server_security_connector> connector = server_creds->
       create_security_connector(args);
-  EXPECT_NE(connector, nullptr);
+  ASSERT_NE(connector, nullptr);
   tsi_peer peer;
   CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
 
@@ -83,24 +84,78 @@ static void check_tsi_security_level(grpc_local_connect_type connect_type,
   grpc_server_credentials_release(server_creds);
 }
 
+static void check_tsi_security_level_channel(grpc_local_connect_type connect_type,
+                                             tsi_security_level level,
+                                             grpc_endpoint ep) {
+  grpc_channel_credentials
+      * channel_creds = grpc_local_credentials_create(connect_type);
+  ChannelArgs args;
+  args = args.Set((char*) GRPC_ARG_SERVER_URI, (char*) "unix:");
+  const char* target_name;
+  if (connect_type == UDS) {
+    target_name = "unix:";
+  } else {
+    target_name = "localhost";
+  }
+  RefCountedPtr<grpc_channel_security_connector> connector = channel_creds->
+      create_security_connector(nullptr, "unix:", &args);
+
+  ASSERT_NE(connector, nullptr);
+  tsi_peer peer;
+  CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
+
+  RefCountedPtr<grpc_auth_context> auth_context;
+  connector->check_peer(peer, &ep, args, &auth_context, nullptr);
+  tsi_peer_destruct(&peer);
+
+  auto it = grpc_auth_context_find_properties_by_name(
+      auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  ASSERT_NE(prop, nullptr);
+  EXPECT_STREQ(prop->value, tsi_security_level_to_string(level));
+
+  connector.reset();
+  auth_context.reset();
+  grpc_channel_credentials_release(channel_creds);
+}
+
 //
 // Tests for grpc_local_channel_security_connector.
 //
 
-TEST_F(LocalSecurityConnectorTest, CheckUDSType) {
-  grpc_endpoint ep = {
-        .vtable = &vtable_unix,
-    };
-  check_tsi_security_level(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
+TEST(LocalSecurityConnectorTest, CheckUDSType) {
+grpc_endpoint ep = {
+    .vtable = &vtable_unix,
+};
+check_tsi_security_level_server(UDS, TSI_PRIVACY_AND_INTEGRITY, ep
+);
 }
 
-TEST_F(LocalSecurityConnectorTest, CheckLocalType) {
-  grpc_endpoint ep = {
-        .vtable = &vtable_local,
-    };
-  check_tsi_security_level(LOCAL_TCP, TSI_SECURITY_NONE, ep);
+TEST(LocalSecurityConnectorTest, CheckLocalType) {
+grpc_endpoint ep = {
+    .vtable = &vtable_local,
+};
+check_tsi_security_level_server(LOCAL_TCP, TSI_SECURITY_NONE, ep
+);
 }
 
+TEST(LocalSecurityConnectorTest, CheckUDSTypeChannel) {
+grpc_endpoint ep = {
+    .vtable = &vtable_unix,
+};
+check_tsi_security_level_channel(UDS, TSI_PRIVACY_AND_INTEGRITY, ep
+);
+}
+
+TEST(LocalSecurityConnectorTest, CheckLocalTypeChannel) {
+grpc_endpoint ep = {
+    .vtable = &vtable_local,
+};
+check_tsi_security_level_channel(LOCAL_TCP, TSI_SECURITY_NONE, ep
+);
+}
+
+}  // namespace
 }  // namespace testing
 }  // namespace grpc_core
 
