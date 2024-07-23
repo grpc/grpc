@@ -761,6 +761,7 @@ void Subchannel::OnRetryTimerLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
     LOG(INFO) << "subchannel " << this << " " << key_.ToString()
               << ": backoff delay elapsed, reporting IDLE";
+  }
   SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
