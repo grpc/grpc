@@ -98,7 +98,6 @@ void gpr_log_verbosity_init(void) {
   // This setting will change things for other libraries/code that is unrelated
   // to grpc.
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
-  DVLOG(2) << "Log verbosity: " << verbosity;
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
     LOG_FIRST_N(WARNING, 1)
         << "Log level INFO is not suitable for production. Prefer WARNING or "
