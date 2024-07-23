@@ -56,7 +56,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
-    CHECK(log_noise_absent_);
+    CHECK(log_noise_absent_)
+        << "Unwanted logs present. This will cause log noise. Either user a "
+           "tracer (example GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or convert the "
+           "statement to VLOG(2).";
     //  Reverse everything done in the constructor.
     absl::RemoveLogSink(this);
     saved_trace_flags_.Restore();
@@ -118,13 +121,12 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
+
+    // If we reach here means we have log noise. log_noise_absent_ will make the
+    // test fail.
     log_noise_absent_ = false;
-    LOG(ERROR)
-        << "Unwanted log: Either user a tracer (example GRPC_TRACE_LOG or "
-           "GRPC_TRACE_VLOG) or add it to allowed_logs_by_module or "
-           "allowed_vlogs_by_module. Location : "
-        << entry.source_filename() << ":" << entry.source_line() << " "
-        << entry.text_message();
+    LOG(ERROR) << "Unwanted log at location : " << entry.source_filename()
+               << ":" << entry.source_line() << " " << entry.text_message();
   }
 
   absl::LogSeverityAtLeast saved_absl_severity_;
