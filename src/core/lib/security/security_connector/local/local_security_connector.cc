@@ -43,6 +43,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -145,14 +146,19 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   peer.properties = new_properties;
   // Set security level to NONE for TCP type, privacy&integrity otherwise.
   const char* security_level;
-  switch (type) {
-  case UDS:
+  if (grpc_core::IsLocalConnectorSecureEnabled()) {
+    switch (type) {
+      case UDS:
+        security_level = tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+        break;
+      default:
+        security_level = tsi_security_level_to_string(TSI_SECURITY_NONE);
+        break;
+    }
+  } else {
     security_level = tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
-    break;
-  default:
-    security_level = tsi_security_level_to_string(TSI_SECURITY_NONE);
-    break;
-}
+  }
+
   tsi_result result = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
       &peer.properties[peer.property_count]);
