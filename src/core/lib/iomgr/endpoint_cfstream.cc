@@ -76,8 +76,8 @@ static void CFStreamUnref(CFStreamEndpoint* ep, const char* reason,
                           const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->refcount.count);
-    VLOG(2) << "CFStream endpoint unref " << ep << " : " << reason << " " << val
-            << " -> " << val - 1;
+    VLOG(2).AtLocation(file, line) << "CFStream endpoint unref " << ep << " : "
+                                   << reason << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&ep->refcount)) {
     CFStreamFree(ep);
@@ -87,8 +87,8 @@ static void CFStreamRef(CFStreamEndpoint* ep, const char* reason,
                         const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->refcount.count);
-    VLOG(2) << "CFStream endpoint ref " << ep << " : " << reason << " " << val
-            << " -> " << val + 1;
+    VLOG(2).AtLocation(file, line) << "CFStream endpoint ref " << ep << " : "
+                                   << reason << " " << val << " -> " << val + 1;
   }
   gpr_ref(&ep->refcount);
 }
