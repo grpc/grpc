@@ -386,8 +386,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
   // this is necessary in the read/write case, it's useless for the accept
   // case. We only need to adjust the pending callback count
   if (!error.ok()) {
-    LOG(INFO) << "Skipping on_accept due to error: "
-              << grpc_core::StatusToString(error);
+    VLOG(2) << "Skipping on_accept due to error: "
+            << grpc_core::StatusToString(error);
 
     gpr_mu_unlock(&sp->server->mu);
     return;

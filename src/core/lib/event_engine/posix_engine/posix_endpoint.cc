@@ -1297,9 +1297,9 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     }
 
     if (zerocopy_enabled) {
-      LOG(INFO) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
-                << "=" << GetRLimitMemLockMax()
-                << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
+      VLOG(2) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
+              << "=" << GetRLimitMemLockMax()
+              << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE
