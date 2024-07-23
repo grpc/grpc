@@ -38,7 +38,7 @@ const auto kCounterHandle =
         kMetricName, "A simple test counter", "{count}", true)
         .Build();
 
-static void BM_AddCounterWithFakeStatsPlugin(benchmark::State& state) {
+void BM_AddCounterWithFakeStatsPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
   grpc_core::FakeStatsPluginBuilder().BuildAndRegister();
@@ -53,7 +53,7 @@ static void BM_AddCounterWithFakeStatsPlugin(benchmark::State& state) {
 }
 BENCHMARK(BM_AddCounterWithFakeStatsPlugin);
 
-static void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
+void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
   auto meter_provider =
