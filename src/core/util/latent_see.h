@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_ENABLE_LATENT_SEE
-#define GRPC_ENABLE_LATENT_SEE
+// #define GRPC_ENABLE_LATENT_SEE
 #endif
 
 #ifdef GRPC_ENABLE_LATENT_SEE
