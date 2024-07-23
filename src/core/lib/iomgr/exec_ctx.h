@@ -41,6 +41,7 @@
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/time_precise.h"
 
 #if !defined(_WIN32) || !defined(_DLL)
@@ -109,17 +110,21 @@ class Combiner;
 ///               since that implies a core re-entry outside of application
 ///               callbacks.
 ///
-class GRPC_DLL ExecCtx {
+class GRPC_DLL ExecCtx : public latent_see::ParentScope {
  public:
   /// Default Constructor
 
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+  ExecCtx()
+      : latent_see::ParentScope(GRPC_LATENT_SEE_METADATA("ExecCtx")),
+        flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
     Fork::IncExecCtxCount();
     Set(this);
   }
 
   /// Parameterised Constructor
-  explicit ExecCtx(uintptr_t fl) : flags_(fl) {
+  explicit ExecCtx(uintptr_t fl)
+      : latent_see::ParentScope(GRPC_LATENT_SEE_METADATA("ExecCtx")),
+        flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::IncExecCtxCount();
     }
