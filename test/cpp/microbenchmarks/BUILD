@@ -400,6 +400,7 @@ grpc_cc_benchmark(
     srcs = ["bm_stats_plugin.cc"],
     external_deps = [
         "absl/strings",
+        "otel/sdk/src/metrics",
     ],
     deps = [
         ":helpers",
@@ -407,6 +408,5 @@ grpc_cc_benchmark(
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
-        "@io_opentelemetry_cpp//sdk/src/metrics",
     ],
 )
