@@ -46,7 +46,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
  public:
   explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
                                  const int verbosity)
-      : no_unwanted_logs_(true) {
+      : log_noise_absent_(true) {
     saved_absl_severity_ = absl::MinLogLevel();
     absl::SetMinLogLevel(severity);
     // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
@@ -56,7 +56,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
-    CHECK(no_unwanted_logs_);
+    CHECK(log_noise_absent_);
     //  Reverse everything done in the constructor.
     absl::RemoveLogSink(this);
     saved_trace_flags_.Restore();
@@ -100,33 +100,9 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
                          "message in a debug environmenmt or test environmenmt "
                          "it is safe to ignore this message.")}});
 
-    // This list is an allow list of all VLOG(n) and DVLOG(n) statements. Right
-    // now we dont have a way to differentiate between VLOG and DVLOG using
-    // LogEntry. We can allow this list to grow because we dont expect VLOG to
-    // be on in production systems.
-    static const auto* const allowed_vlogs_by_module =
-        new std::map<absl::string_view, std::regex>({
-            {"dns_resolver_plugin.cc", std::regex("Using .* dns resolver")},
-            {"dual_ref_counted.h", std::regex(".*")},
-            {"http_connect_handshaker.cc",
-             std::regex("Connecting to server.*")},
-            {"http_proxy_fixture.cc",
-             std::regex(
-                 ".*")},  // "on_read_request_done:" and "Proxy address: .*"
-            {"lb_policy_registry.cc",
-             std::regex("registering LB policy factory for \".*\"")},
-            {"no_logging.cc",
-             std::regex("If the test fails here, the test is broken.*")},
-            {"posix_endpoint.cc", std::regex("cannot set inq fd=.*")},
-            {"posix_engine_listener_utils.cc", std::regex(".*")},
-            {"proxy.cc", std::regex("")},
-            {"ssl_security_connector.cc", std::regex(".*")},
-            {"tls_security_connector.cc",
-             std::regex("TlsChannelSecurityConnector::cancel_check_peer.*")},
-            {"tcp_posix.cc", std::regex(".*")},
-            {"tcp_server_utils_posix_common.cc",
-             std::regex("Node does not support.*")},
-        });
+    if (IsVlogWithVerbosityMoreThan1(entry)) {
+      return;
+    }
 
     absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
@@ -142,17 +118,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
-    if (IsVlogWithVerbosityMoreThan1(entry)) {
-      // For LOG(INFO) severity is INFO and verbosity is 0.
-      // For VLOG(n) severity is INFO and verbosity is n.
-      // LOG(INFO) and VLOG(0) have identical severity and verbosity.
-      auto it = allowed_vlogs_by_module->find(filename);
-      if (it != allowed_vlogs_by_module->end() &&
-          std::regex_search(std::string(entry.text_message()), it->second)) {
-        return;
-      }
-    }
-    no_unwanted_logs_ = false;
+    log_noise_absent_ = false;
     LOG(ERROR)
         << "Unwanted log: Either user a tracer (example GRPC_TRACE_LOG or "
            "GRPC_TRACE_VLOG) or add it to allowed_logs_by_module or "
@@ -160,10 +126,11 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
         << entry.source_filename() << ":" << entry.source_line() << " "
         << entry.text_message();
   }
+
   absl::LogSeverityAtLeast saved_absl_severity_;
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
-  bool no_unwanted_logs_;
+  bool log_noise_absent_;
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
