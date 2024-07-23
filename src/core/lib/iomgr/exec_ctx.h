@@ -123,8 +123,10 @@ class GRPC_DLL ExecCtx : public latent_see::ParentScope {
 
   /// Parameterised Constructor
   explicit ExecCtx(uintptr_t fl)
-      : latent_see::ParentScope(GRPC_LATENT_SEE_METADATA("ExecCtx")),
-        flags_(fl) {
+      : ExecCtx(fl, GRPC_LATENT_SEE_METADATA("ExecCtx")) {}
+
+  explicit ExecCtx(uintptr_t fl, latent_see::Metadata* latent_see_metadata)
+      : latent_see::ParentScope(latent_see_metadata), flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::IncExecCtxCount();
     }

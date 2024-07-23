@@ -335,7 +335,7 @@ auto MapResult(const NoInterceptor*, Promise x, void*) {
 }
 
 template <typename Promise, typename Derived>
-auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
+auto MapResult(absl::Status (Derived::Call::* fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
@@ -356,7 +356,7 @@ auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
 }
 
 template <typename Promise, typename Derived>
-auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
+auto MapResult(void (Derived::Call::* fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
@@ -373,7 +373,7 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
 }
 
 template <typename Promise, typename Derived>
-auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
+auto MapResult(void (Derived::Call::* fn)(ServerMetadata&, Derived*), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(
@@ -503,7 +503,7 @@ auto RunCall(Interceptor interceptor, CallArgs call_args,
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    void (Derived::Call::*fn)(const Message&),
+    void (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -514,7 +514,7 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -528,7 +528,7 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -543,7 +543,7 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    MessageHandle (Derived::Call::* fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -554,7 +554,8 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    absl::StatusOr<MessageHandle> (Derived::Call::* fn)(MessageHandle,
+                                                        Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -598,7 +599,7 @@ inline void InterceptServerInitialMetadata(const NoInterceptor*, void*,
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    void (Derived::Call::*fn)(ServerMetadata&),
+    void (Derived::Call::* fn)(ServerMetadata&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -610,7 +611,7 @@ inline void InterceptServerInitialMetadata(
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    absl::Status (Derived::Call::*fn)(ServerMetadata&),
+    absl::Status (Derived::Call::* fn)(ServerMetadata&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -627,7 +628,7 @@ inline void InterceptServerInitialMetadata(
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    void (Derived::Call::* fn)(ServerMetadata&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -639,7 +640,7 @@ inline void InterceptServerInitialMetadata(
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    absl::Status (Derived::Call::* fn)(ServerMetadata&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -660,7 +661,7 @@ inline void InterceptServerToClientMessage(const NoInterceptor*, void*,
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    void (Derived::Call::*fn)(const Message&),
+    void (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -672,7 +673,7 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -687,7 +688,7 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -703,7 +704,7 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    MessageHandle (Derived::Call::* fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -715,7 +716,8 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    absl::StatusOr<MessageHandle> (Derived::Call::* fn)(MessageHandle,
+                                                        Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -732,7 +734,7 @@ inline void InterceptServerToClientMessage(
 inline void InterceptFinalize(const NoInterceptor*, void*, void*) {}
 
 template <class Call>
-inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
+inline void InterceptFinalize(void (Call::* fn)(const grpc_call_final_info*),
                               void*, Call* call) {
   DCHECK(fn == &Call::OnFinalize);
   GetContext<CallFinalization>()->Add(
@@ -743,7 +745,7 @@ inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
 
 template <class Derived>
 inline void InterceptFinalize(
-    void (Derived::Call::*fn)(const grpc_call_final_info*, Derived*),
+    void (Derived::Call::* fn)(const grpc_call_final_info*, Derived*),
     Derived* channel, typename Derived::Call* call) {
   DCHECK(fn == &Derived::Call::OnFinalize);
   GetContext<CallFinalization>()->Add(
@@ -947,7 +949,7 @@ class BaseCallData : public Activity, private Wakeable {
     }
   };
 
-  class Flusher {
+  class Flusher : public latent_see::InnerScope {
    public:
     explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.
