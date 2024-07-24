@@ -25,6 +25,8 @@
 
 #include <poll.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -33,8 +35,8 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-#define GRPC_FD_TRACE(severity) \
-  LOG(severity, GRPC_TRACE_FLAG_ENABLED(fd_trace)) << "(fd-trace) "
+#define GRPC_FD_TRACE() \
+  LOG(INFO, GRPC_TRACE_FLAG_ENABLED(fd_trace)) << "(fd-trace) "
 
 typedef struct grpc_fd grpc_fd;
 

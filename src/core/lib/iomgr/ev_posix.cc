@@ -166,8 +166,8 @@ bool grpc_event_engine_run_in_background(void) {
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  GRPC_FD_TRACE(INFO) << "fd_create(" << fd << ", " << name << ", " << track_err
-                      << ")";
+  GRPC_FD_TRACE() << "fd_create(" << fd << ", " << name << ", " << track_err
+                  << ")";
   return g_event_engine->fd_create(
       fd, name, track_err && grpc_event_engine_can_track_errors());
 }
@@ -180,22 +180,21 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                     const char* reason) {
   GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %s)", grpc_fd_wrapped_fd(fd),
                          on_done, release_fd, reason);
-  GRPC_FD_TRACE(INFO) << "grpc_fd_orphan, fd:" << grpc_fd_wrapped_fd(fd)
-                      << " closed";
+  GRPC_FD_TRACE() << "grpc_fd_orphan, fd:" << grpc_fd_wrapped_fd(fd)
+                  << " closed";
 
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
 }
 
 void grpc_fd_set_pre_allocated(grpc_fd* fd) {
   GRPC_POLLING_API_TRACE("fd_set_pre_allocated(%d)", grpc_fd_wrapped_fd(fd));
-  GRPC_FD_TRACE(INFO) << "fd_set_pre_allocated(" << grpc_fd_wrapped_fd(fd)
-                      << ")";
+  GRPC_FD_TRACE() << "fd_set_pre_allocated(" << grpc_fd_wrapped_fd(fd) << ")";
   g_event_engine->fd_set_pre_allocated(fd);
 }
 
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
   GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
-  GRPC_FD_TRACE(INFO) << "fd_shutdown(" << grpc_fd_wrapped_fd(fd) << ")";
+  GRPC_FD_TRACE() << "fd_shutdown(" << grpc_fd_wrapped_fd(fd) << ")";
   g_event_engine->fd_shutdown(fd, why);
 }
 
