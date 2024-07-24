@@ -209,7 +209,8 @@ class TcpZerocopySendCtx {
     if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
-      LOG(INFO) << "Disabling TCP TX zerocopy due to memory pressure.\n";
+      GRPC_TRACE_LOG(tcp, INFO)
+          << "Disabling TCP TX zerocopy due to memory pressure.\n";
       memory_limited_ = true;
     } else {
       for (int idx = 0; idx < max_sends_; ++idx) {

@@ -1760,62 +1760,65 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 
 void grpc_chttp2_keepalive_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
-  t->combiner->Run(grpc_core::NewClosure([t](grpc_error_handle) {
-                     LOG(INFO) << t->peer_string.as_string_view()
-                               << ": Keepalive timeout. Closing transport.";
-                     send_goaway(t.get(),
-                                 grpc_error_set_int(
-                                     GRPC_ERROR_CREATE("keepalive_timeout"),
-                                     grpc_core::StatusIntProperty::kHttp2Error,
-                                     GRPC_HTTP2_ENHANCE_YOUR_CALM),
-                                 /*immediate_disconnect_hint=*/true);
-                     close_transport_locked(
-                         t.get(), grpc_error_set_int(
-                                      GRPC_ERROR_CREATE("keepalive timeout"),
-                                      grpc_core::StatusIntProperty::kRpcStatus,
-                                      GRPC_STATUS_UNAVAILABLE));
-                   }),
-                   absl::OkStatus());
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view()
+                                   << ": Keepalive timeout. Closing transport.";
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            /*immediate_disconnect_hint=*/true);
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("keepalive timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_ping_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
-  t->combiner->Run(grpc_core::NewClosure([t](grpc_error_handle) {
-                     LOG(INFO) << t->peer_string.as_string_view()
-                               << ": Ping timeout. Closing transport.";
-                     send_goaway(t.get(),
-                                 grpc_error_set_int(
-                                     GRPC_ERROR_CREATE("ping_timeout"),
-                                     grpc_core::StatusIntProperty::kHttp2Error,
-                                     GRPC_HTTP2_ENHANCE_YOUR_CALM),
-                                 /*immediate_disconnect_hint=*/true);
-                     close_transport_locked(
-                         t.get(), grpc_error_set_int(
-                                      GRPC_ERROR_CREATE("ping timeout"),
-                                      grpc_core::StatusIntProperty::kRpcStatus,
-                                      GRPC_STATUS_UNAVAILABLE));
-                   }),
-                   absl::OkStatus());
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view()
+                                   << ": Ping timeout. Closing transport.";
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("ping_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_ENHANCE_YOUR_CALM),
+            /*immediate_disconnect_hint=*/true);
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("ping timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_settings_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
-  t->combiner->Run(grpc_core::NewClosure([t](grpc_error_handle) {
-                     LOG(INFO) << t->peer_string.as_string_view()
-                               << ": Settings timeout. Closing transport.";
-                     send_goaway(t.get(),
-                                 grpc_error_set_int(
-                                     GRPC_ERROR_CREATE("settings_timeout"),
-                                     grpc_core::StatusIntProperty::kHttp2Error,
-                                     GRPC_HTTP2_SETTINGS_TIMEOUT),
-                                 /*immediate_disconnect_hint=*/true);
-                     close_transport_locked(
-                         t.get(), grpc_error_set_int(
-                                      GRPC_ERROR_CREATE("settings timeout"),
-                                      grpc_core::StatusIntProperty::kRpcStatus,
-                                      GRPC_STATUS_UNAVAILABLE));
-                   }),
-                   absl::OkStatus());
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view()
+                                   << ": Settings timeout. Closing transport.";
+        send_goaway(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("settings_timeout"),
+                               grpc_core::StatusIntProperty::kHttp2Error,
+                               GRPC_HTTP2_SETTINGS_TIMEOUT),
+            /*immediate_disconnect_hint=*/true);
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("settings timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
 }
 
 namespace {

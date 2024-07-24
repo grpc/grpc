@@ -35,10 +35,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
-void gpr_default_log(gpr_log_func_args* args);
-void gpr_platform_log(gpr_log_func_args* args);
-static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
-
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
                    grpc_core::SourceLocation(file, line));
@@ -63,38 +59,27 @@ int gpr_should_log(gpr_log_severity severity) {
   }
 }
 
-void gpr_default_log(gpr_log_func_args* args) {
-  switch (args->severity) {
-    case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
-      VLOG(2).AtLocation(args->file, args->line) << args->message;
-      return;
-    case GPR_LOG_SEVERITY_INFO:
-      LOG(INFO).AtLocation(args->file, args->line) << args->message;
-      return;
-    case GPR_LOG_SEVERITY_ERROR:
-      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
-      return;
-    default:
-      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << args->severity
-                 << "), using ERROR";
-      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
-  }
-}
-
 void gpr_log_message(const char* file, int line, gpr_log_severity severity,
                      const char* message) {
   if (gpr_should_log(severity) == 0) {
     return;
   }
-
-  gpr_log_func_args lfargs;
-  memset(&lfargs, 0, sizeof(lfargs));
-  lfargs.file = file;
-  lfargs.line = line;
-  lfargs.severity = severity;
-  lfargs.message = message;
-  reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(file, line) << message;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      LOG(INFO).AtLocation(file, line) << message;
+      return;
+    case GPR_LOG_SEVERITY_ERROR:
+      LOG(ERROR).AtLocation(file, line) << message;
+      return;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
+                 << "), using ERROR";
+      LOG(ERROR).AtLocation(file, line) << message;
+  }
 }
 
 void gpr_set_log_verbosity(
