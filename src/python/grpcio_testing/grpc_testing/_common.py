@@ -24,12 +24,14 @@ from grpc._typing import TuplifiedMetadataType
 
 
 def _fuss(
-        tuplified_metadata: Union[TuplifiedMetadataType,
-                                  Tuple]) -> MetadataType:
-    return tuplified_metadata + ((
-        'grpc.metadata_added_by_runtime',
-        'gRPC is allowed to add metadata in transmission and does so.',
-    ),)
+    tuplified_metadata: Union[TuplifiedMetadataType, Tuple]
+) -> MetadataType:
+    return tuplified_metadata + (
+        (
+            "grpc.metadata_added_by_runtime",
+            "gRPC is allowed to add metadata in transmission and does so.",
+        ),
+    )
 
 
 FUSSED_EMPTY_METADATA = _fuss(())
@@ -43,7 +45,7 @@ def fuss_with_metadata(metadata: Optional[MetadataType]) -> MetadataType:
 
 
 def rpc_names(
-    service_descriptors: descriptor.ServiceDescriptor
+    service_descriptors: descriptor.ServiceDescriptor,
 ) -> Mapping[str, descriptor.ServiceDescriptor]:
     rpc_names_to_descriptors = {}
     for service_descriptor in service_descriptors:
@@ -109,10 +111,14 @@ class ChannelRpcHandler(abc.ABC):
 
 class ChannelHandler(abc.ABC):
     @abc.abstractmethod
-    def invoke_rpc(self, method_full_rpc_name: str,
-                   invocation_metadata: MetadataType, requests: List,
-                   requests_closed: bool,
-                   timeout: Optional[float]) -> ChannelRpcHandler:
+    def invoke_rpc(
+        self,
+        method_full_rpc_name: str,
+        invocation_metadata: MetadataType,
+        requests: List,
+        requests_closed: bool,
+        timeout: Optional[float],
+    ) -> ChannelRpcHandler:
         raise NotImplementedError()
 
 
@@ -147,8 +153,12 @@ class ServerRpcHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_termination(self, trailing_metadata: Optional[MetadataType],
-                         code: grpc.StatusCode, details: str) -> None:
+    def send_termination(
+        self,
+        trailing_metadata: Optional[MetadataType],
+        code: grpc.StatusCode,
+        details: str,
+    ) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod

@@ -53,8 +53,9 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     _name: str
     _method_handlers: Mapping[str, grpc.RpcMethodHandler]
 
-    def __init__(self, service: str,
-                 method_handlers: Mapping[str, grpc.RpcMethodHandler]):
+    def __init__(
+        self, service: str, method_handlers: Mapping[str, grpc.RpcMethodHandler]
+    ):
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler

@@ -148,8 +148,10 @@ class InvalidMetadataTest(unittest.TestCase):
             self._stream_stream(request_iterator, metadata=metadata)
         self.assertIn(expected_error_details, str(exception_context.exception))
 
-    @unittest.skipIf(test_common.running_under_run_time_type_check(),
-                     "This test case used unsupported types")
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInvalidMetadata(self):
         self.assertRaises(TypeError, self._unary_unary, b"", metadata=42)
 

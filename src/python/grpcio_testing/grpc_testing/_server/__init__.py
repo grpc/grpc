@@ -20,7 +20,10 @@ from grpc_testing import Time
 from grpc_testing._server import _server  # pytype: disable=pyi-error
 
 
-def server_from_dictionary(descriptors_to_servicers: Mapping[
-    descriptor.ServiceDescriptor, Any], time: Time) -> Server:
-    return _server.server_from_descriptor_to_servicers(descriptors_to_servicers,
-                                                       time)
+def server_from_dictionary(
+    descriptors_to_servicers: Mapping[descriptor.ServiceDescriptor, Any],
+    time: Time,
+) -> Server:
+    return _server.server_from_descriptor_to_servicers(
+        descriptors_to_servicers, time
+    )

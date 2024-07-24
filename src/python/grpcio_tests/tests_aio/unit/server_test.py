@@ -586,7 +586,8 @@ class TestServer(AioTestBase):
         for _ in range(3 * _MAXIMUM_CONCURRENT_RPCS):
             rpcs.append(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
         task = self.loop.create_task(
-            asyncio.wait(rpcs, return_when=asyncio.FIRST_EXCEPTION))  # pytype: disable=wrong-arg-types
+            asyncio.wait(rpcs, return_when=asyncio.FIRST_EXCEPTION)
+        )  # pytype: disable=wrong-arg-types
         # Each batch took test_constants.SHORT_TIMEOUT /2
         start_time = time.time()
         await task

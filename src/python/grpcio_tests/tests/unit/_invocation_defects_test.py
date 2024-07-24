@@ -288,8 +288,10 @@ class InvocationDefectsTest(unittest.TestCase):
         self._server.stop(0)
         self._channel.close()
 
-    @unittest.skipIf(test_common.running_under_run_time_type_check(),
-                     "This test case used unsupported types")
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testIterableStreamRequestBlockingUnaryResponse(self):
         requests = object()
         multi_callable = _stream_unary_multi_callable(self._channel)
@@ -306,8 +308,10 @@ class InvocationDefectsTest(unittest.TestCase):
             grpc.StatusCode.UNKNOWN, exception_context.exception.code()
         )
 
-    @unittest.skipIf(test_common.running_under_run_time_type_check(),
-                     "This test case used unsupported types")
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testIterableStreamRequestFutureUnaryResponse(self):
         requests = object()
         multi_callable = _stream_unary_multi_callable(self._channel)
@@ -323,8 +327,10 @@ class InvocationDefectsTest(unittest.TestCase):
             grpc.StatusCode.UNKNOWN, exception_context.exception.code()
         )
 
-    @unittest.skipIf(test_common.running_under_run_time_type_check(),
-                     "This test case used unsupported types")
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testIterableStreamRequestStreamResponse(self):
         requests = object()
         multi_callable = _stream_stream_multi_callable(self._channel)

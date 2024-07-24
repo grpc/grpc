@@ -42,7 +42,8 @@ def _collect_transitive_dependencies(descriptor, seen_files):
 
 
 def _file_descriptor_response(
-        descriptor: Any) -> _reflection_pb2.ServerReflectionResponse:
+    descriptor: Any,
+) -> _reflection_pb2.ServerReflectionResponse:
     proto = descriptor_pb2.FileDescriptorProto()
     descriptor.CopyToProto(proto)
     serialized_proto = proto.SerializeToString()
@@ -55,12 +56,15 @@ def _file_descriptor_response(
 
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     """Base class for reflection servicer."""
+
     _service_names: Sequence[str]
     _pool: descriptor_pool.DescriptorPool
 
-    def __init__(self,
-                 service_names: Iterable[str],
-                 pool: Optional[descriptor_pool.DescriptorPool] = None):
+    def __init__(
+        self,
+        service_names: Iterable[str],
+        pool: Optional[descriptor_pool.DescriptorPool] = None,
+    ):
         """Constructor.
 
         Args:
@@ -71,7 +75,8 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         self._pool = _POOL if pool is None else pool
 
     def _file_by_filename(
-            self, filename: str) -> _reflection_pb2.ServerReflectionResponse:
+        self, filename: str
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             descriptor = self._pool.FindFileByName(filename)
         except KeyError:
@@ -80,7 +85,7 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
             return _file_descriptor_response(descriptor)
 
     def _file_containing_symbol(
-            self, fully_qualified_name: str
+        self, fully_qualified_name: str
     ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             descriptor = self._pool.FindFileContainingSymbol(
@@ -92,8 +97,8 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
             return _file_descriptor_response(descriptor)
 
     def _file_containing_extension(
-            self, containing_type: str,
-            extension_number: int) -> _reflection_pb2.ServerReflectionResponse:
+        self, containing_type: str, extension_number: int
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type
@@ -110,8 +115,8 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
             return _file_descriptor_response(descriptor)
 
     def _all_extension_numbers_of_type(
-            self,
-            containing_type: str) -> _reflection_pb2.ServerReflectionResponse:
+        self, containing_type: str
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type

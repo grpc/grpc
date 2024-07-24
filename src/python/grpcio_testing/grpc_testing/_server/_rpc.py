@@ -37,8 +37,9 @@ class Rpc(object):
     _active: bool
     _rpc_errors: List[grpc.RpcError]
 
-    def __init__(self, handler: _handler.Handler,
-                 invocation_metadata: MetadataType):
+    def __init__(
+        self, handler: _handler.Handler, invocation_metadata: MetadataType
+    ):
         self._condition = threading.Condition()
         self._handler = handler
         self._invocation_metadata = invocation_metadata
@@ -69,8 +70,12 @@ class Rpc(object):
         callback_calling_thread = threading.Thread(target=call_back)
         callback_calling_thread.start()
 
-    def _terminate(self, trailing_metadata: MetadataType, code: grpc.StatusCode,
-                   details: str) -> None:
+    def _terminate(
+        self,
+        trailing_metadata: MetadataType,
+        code: grpc.StatusCode,
+        details: str,
+    ) -> None:
         if self._active:
             self._active = False
             self._handler.send_termination(trailing_metadata, code, details)
@@ -163,7 +168,8 @@ class Rpc(object):
             return self._invocation_metadata
 
     def set_trailing_metadata(
-            self, trailing_metadata: Optional[MetadataType]) -> None:
+        self, trailing_metadata: Optional[MetadataType]
+    ) -> None:
         with self._condition:
             self._pending_trailing_metadata = trailing_metadata
 

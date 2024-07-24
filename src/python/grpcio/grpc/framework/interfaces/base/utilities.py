@@ -48,34 +48,38 @@ class _Subscription(
     """A trivial implementation of base.Subscription."""
 
 
-_NONE_SUBSCRIPTION = _Subscription(base.Subscription.Kind.NONE, None, None,
-                                   None, None)  # pytype: disable=wrong-arg-count
+_NONE_SUBSCRIPTION = _Subscription(
+    base.Subscription.Kind.NONE, None, None, None, None
+)  # pytype: disable=wrong-arg-count
 
 
 def completion(terminal_metadata, code, message):
     """Creates a base.Completion aggregating the given operation values.
 
-    Args:
-      terminal_metadata: A terminal metadata value for an operaton.
-      code: A code value for an operation.
-      message: A message value for an operation.
+      Args:
+        terminal_metadata: A terminal metadata value for an operaton.
+        code: A code value for an operation.
+        message: A message value for an operation.
 
-  Returns:
-    A base.Completion aggregating the given operation values.
-  """
-    return _Completion(terminal_metadata, code, message)  # pytype: disable=wrong-arg-count
+    Returns:
+      A base.Completion aggregating the given operation values.
+    """
+    return _Completion(
+        terminal_metadata, code, message
+    )  # pytype: disable=wrong-arg-count
 
 
 def full_subscription(operator, protocol_receiver):
     """Creates a "full" base.Subscription for the given base.Operator.
 
-    Args:
-      operator: A base.Operator to be used in an operation.
-      protocol_receiver: A base.ProtocolReceiver to be used in an operation.
+      Args:
+        operator: A base.Operator to be used in an operation.
+        protocol_receiver: A base.ProtocolReceiver to be used in an operation.
 
-  Returns:
-    A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given
-      base.Operator and base.ProtocolReceiver.
-  """
-    return _Subscription(base.Subscription.Kind.FULL, None, None, operator,
-                         protocol_receiver)  # pytype: disable=wrong-arg-count
+    Returns:
+      A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given
+        base.Operator and base.ProtocolReceiver.
+    """
+    return _Subscription(
+        base.Subscription.Kind.FULL, None, None, operator, protocol_receiver
+    )  # pytype: disable=wrong-arg-count

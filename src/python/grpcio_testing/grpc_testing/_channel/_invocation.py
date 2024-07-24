@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _cancel(handler: _common.ChannelRpcHandler) -> bool:
-    return handler.cancel(grpc.StatusCode.CANCELLED, 'Locally cancelled!')
+    return handler.cancel(grpc.StatusCode.CANCELLED, "Locally cancelled!")
 
 
 def _is_active(handler: _common.ChannelRpcHandler) -> bool:
@@ -38,18 +38,21 @@ def _time_remaining(unused_handler: _common.ChannelRpcHandler) -> float:
     raise NotImplementedError()
 
 
-def _add_callback(handler: _common.ChannelRpcHandler,
-                  callback: Callable) -> None:
+def _add_callback(
+    handler: _common.ChannelRpcHandler, callback: Callable
+) -> None:
     return handler.add_callback(callback)
 
 
 def _initial_metadata(
-        handler: _common.ChannelRpcHandler) -> Optional[MetadataType]:
+    handler: _common.ChannelRpcHandler,
+) -> Optional[MetadataType]:
     return handler.initial_metadata()
 
 
 def _trailing_metadata(
-        handler: _common.ChannelRpcHandler) -> Optional[MetadataType]:
+    handler: _common.ChannelRpcHandler,
+) -> Optional[MetadataType]:
     trailing_metadata, unused_code, unused_details = handler.termination()
     return trailing_metadata
 
@@ -96,7 +99,6 @@ class _Call(grpc.Call):
 
 
 class _RpcErrorCall(grpc.RpcError, grpc.Call):
-
     def __init__(self, handler: _common.ChannelRpcHandler):
         self._handler = handler
 
@@ -142,8 +144,9 @@ class _HandlerExtras(object):
         self.cancelled = False
 
 
-def _with_extras_cancel(handler: _common.ChannelRpcHandler,
-                        extras: _HandlerExtras) -> bool:
+def _with_extras_cancel(
+    handler: _common.ChannelRpcHandler, extras: _HandlerExtras
+) -> bool:
     with extras.condition:
         if handler.cancel(grpc.StatusCode.CANCELLED, "Locally cancelled!"):
             extras.cancelled = True
@@ -165,8 +168,9 @@ def _done(handler) -> bool:
     return not handler.is_active()
 
 
-def _with_extras_unary_response(handler: _common.ChannelRpcHandler,
-                                extras: _HandlerExtras) -> Any:
+def _with_extras_unary_response(
+    handler: _common.ChannelRpcHandler, extras: _HandlerExtras
+) -> Any:
     with extras.condition:
         if extras.unary_response is _NOT_YET_OBSERVED:
             read = handler.take_response()
@@ -180,18 +184,20 @@ def _with_extras_unary_response(handler: _common.ChannelRpcHandler,
 
 
 def _exception(
-        unused_handler: _common.ChannelRpcHandler) -> Optional[Exception]:
-    raise NotImplementedError('TODO!')
+    unused_handler: _common.ChannelRpcHandler,
+) -> Optional[Exception]:
+    raise NotImplementedError("TODO!")
 
 
 def _traceback(
-        unused_handler: _common.ChannelRpcHandler
+    unused_handler: _common.ChannelRpcHandler,
 ) -> Optional[types.TracebackType]:
-    raise NotImplementedError('TODO!')
+    raise NotImplementedError("TODO!")
 
 
-def _add_done_callback(handler: _common.ChannelRpcHandler, callback: Callable,
-                       future) -> None:
+def _add_done_callback(
+    handler: _common.ChannelRpcHandler, callback: Callable, future
+) -> None:
     adapted_callback = lambda: callback(future)
     if not handler.add_callback(adapted_callback):
         callback(future)
@@ -201,8 +207,9 @@ class _FutureCall(grpc.Future, grpc.Call):
     _handler: _common.ChannelRpcHandler
     _extras: _HandlerExtras
 
-    def __init__(self, handler: _common.ChannelRpcHandler,
-                 extras: _HandlerExtras):
+    def __init__(
+        self, handler: _common.ChannelRpcHandler, extras: _HandlerExtras
+    ):
         self._handler = handler
         self._extras = extras
 
@@ -252,9 +259,9 @@ class _FutureCall(grpc.Future, grpc.Call):
         return _details(self._handler)
 
 
-def consume_requests(request_iterator: Iterator,
-                     handler: _common.ChannelRpcHandler) -> None:
-
+def consume_requests(
+    request_iterator: Iterator, handler: _common.ChannelRpcHandler
+) -> None:
     def _consume():
         while True:
             try:
@@ -287,7 +294,8 @@ def blocking_unary_response(handler: _common.ChannelRpcHandler) -> Any:
 
 
 def blocking_unary_response_with_call(
-        handler: _common.ChannelRpcHandler) -> Tuple[Any, _Call]:
+    handler: _common.ChannelRpcHandler,
+) -> Tuple[Any, _Call]:
     read = handler.take_response()
     if read.code is None:
         unused_trailing_metadata, code, unused_details = handler.termination()
