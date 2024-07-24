@@ -636,8 +636,9 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
         // This log is intentionally not protected behind a flag, so that users
         // know that TCP_USER_TIMEOUT is not being used.
-        LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-                     "won't be used thereafter";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+               "won't be used thereafter";
         g_socket_supports_tcp_user_timeout.store(-1);
       } else {
         GRPC_TRACE_LOG(tcp, INFO)
@@ -691,7 +692,8 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;
     if (fd < 0) {
-      LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
+      GRPC_TRACE_LOG(tcp, INFO)
+          << "Disabling AF_INET6 sockets because socket() failed.";
     } else {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));
@@ -700,7 +702,8 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {
-        LOG(INFO) << "Disabling AF_INET6 sockets because ::1 is not available.";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "Disabling AF_INET6 sockets because ::1 is not available.";
       }
       close(fd);
     }

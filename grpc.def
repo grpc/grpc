@@ -232,7 +232,6 @@ EXPORTS
     gpr_cpu_current_cpu
     gpr_log
     gpr_should_log
-    gpr_log_message
     gpr_log_verbosity_init
     gpr_set_log_function
     gpr_format_message
