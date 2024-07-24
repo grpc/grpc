@@ -217,12 +217,11 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     return absl::nullopt;
   }
   if (uri->scheme() == "unix") {
-    LOG(INFO) << "not using proxy for Unix domain socket '" << server_uri
-              << "'";
+    VLOG(2) << "not using proxy for Unix domain socket '" << server_uri << "'";
     return absl::nullopt;
   }
   if (uri->scheme() == "vsock") {
-    LOG(INFO) << "not using proxy for VSock '" << server_uri << "'";
+    VLOG(2) << "not using proxy for VSock '" << server_uri << "'";
     return absl::nullopt;
   }
   // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
@@ -235,17 +234,17 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     std::string server_port;
     if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host,
                        &server_port)) {
-      LOG(INFO) << "unable to split host and port, not checking no_proxy list "
-                   "for host '"
-                << server_uri << "'";
+      VLOG(2) << "unable to split host and port, not checking no_proxy list "
+                 "for host '"
+              << server_uri << "'";
     } else {
       auto address = StringToSockaddr(server_host, 0);
       if (AddressIncluded(address.ok()
                               ? absl::optional<grpc_resolved_address>(*address)
                               : absl::nullopt,
                           server_host, *no_proxy_str)) {
-        LOG(INFO) << "not using proxy for host in no_proxy list '" << server_uri
-                  << "'";
+        VLOG(2) << "not using proxy for host in no_proxy list '" << server_uri
+                << "'";
         return absl::nullopt;
       }
     }

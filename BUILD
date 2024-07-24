@@ -227,11 +227,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gladiator"  # @unused
+g_stands_for = "gesundheit"  # @unused
 
-core_version = "42.0.0"  # @unused
+core_version = "43.0.0"  # @unused
 
-version = "1.66.0-dev"  # @unused
+version = "1.67.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
