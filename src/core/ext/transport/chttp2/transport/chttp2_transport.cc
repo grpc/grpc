@@ -1735,8 +1735,8 @@ void grpc_chttp2_keepalive_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
       grpc_core::NewClosure([t](grpc_error_handle) {
-        gpr_log(GPR_INFO, "%s: Keepalive timeout. Closing transport.",
-                std::string(t->peer_string.as_string_view()).c_str());
+        GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view()
+                                   << ": Keepalive timeout. Closing transport.";
         send_goaway(
             t.get(),
             grpc_error_set_int(GRPC_ERROR_CREATE("keepalive_timeout"),
@@ -1756,8 +1756,8 @@ void grpc_chttp2_ping_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
       grpc_core::NewClosure([t](grpc_error_handle) {
-        gpr_log(GPR_INFO, "%s: Ping timeout. Closing transport.",
-                std::string(t->peer_string.as_string_view()).c_str());
+        GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view()
+                                   << ": Ping timeout. Closing transport.";
         send_goaway(
             t.get(),
             grpc_error_set_int(GRPC_ERROR_CREATE("ping_timeout"),
@@ -1777,8 +1777,8 @@ void grpc_chttp2_settings_timeout(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
       grpc_core::NewClosure([t](grpc_error_handle) {
-        gpr_log(GPR_INFO, "%s: Settings timeout. Closing transport.",
-                std::string(t->peer_string.as_string_view()).c_str());
+        GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view()
+                                   << ": Settings timeout. Closing transport.";
         send_goaway(
             t.get(),
             grpc_error_set_int(GRPC_ERROR_CREATE("settings_timeout"),
