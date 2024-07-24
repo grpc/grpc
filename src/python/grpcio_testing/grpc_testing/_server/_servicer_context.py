@@ -67,8 +67,9 @@ class ServicerContext(grpc.ServicerContext):
     def set_compression(self) -> None:
         raise NotImplementedError()
 
-    def send_initial_metadata(self,
-                              initial_metadata: Optional[MetadataType]) -> None:
+    def send_initial_metadata(
+        self, initial_metadata: Optional[MetadataType]
+    ) -> None:
         initial_metadata_sent = self._rpc.send_initial_metadata(
             _common.fuss_with_metadata(initial_metadata)
         )
@@ -81,7 +82,8 @@ class ServicerContext(grpc.ServicerContext):
         raise NotImplementedError()
 
     def set_trailing_metadata(
-            self, trailing_metadata: Optional[MetadataType]) -> None:
+        self, trailing_metadata: Optional[MetadataType]
+    ) -> None:
         self._rpc.set_trailing_metadata(
             _common.fuss_with_metadata(trailing_metadata)
         )

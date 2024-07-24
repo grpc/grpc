@@ -30,21 +30,26 @@ class State(_common.ChannelHandler):
         self._condition = threading.Condition()
         self._rpc_states = collections.defaultdict(list)
 
-    def invoke_rpc(self, method_full_rpc_name: str,
-                   invocation_metadata: Optional[MetadataType], requests: List,
-                   requests_closed: bool,
-                   timeout: Optional[float]) -> _rpc_state.State:
-        rpc_state = _rpc_state.State(invocation_metadata, requests,
-                                     requests_closed)
+    def invoke_rpc(
+        self,
+        method_full_rpc_name: str,
+        invocation_metadata: Optional[MetadataType],
+        requests: List,
+        requests_closed: bool,
+        timeout: Optional[float],
+    ) -> _rpc_state.State:
+        rpc_state = _rpc_state.State(
+            invocation_metadata, requests, requests_closed
+        )
         with self._condition:
             self._rpc_states[method_full_rpc_name].append(rpc_state)
             self._condition.notify_all()
         return rpc_state
 
     def take_rpc_state(
-            self,
-            method_descriptor: descriptor.MethodDescriptor) -> _rpc_state.State:
-        method_full_rpc_name = '/{}/{}'.format(
+        self, method_descriptor: descriptor.MethodDescriptor
+    ) -> _rpc_state.State:
+        method_full_rpc_name = "/{}/{}".format(
             method_descriptor.containing_service.full_name,
             method_descriptor.name,
         )

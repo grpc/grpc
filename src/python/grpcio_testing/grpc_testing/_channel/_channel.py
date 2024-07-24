@@ -36,20 +36,23 @@ class TestingChannel(grpc_testing.Channel):
         self._time = time
         self._state = state
 
-    def subscribe(self,
-                  callback: Callable[[grpc.ChannelConnectivity], None],
-                  try_to_connect: bool = False) -> None:
+    def subscribe(
+        self,
+        callback: Callable[[grpc.ChannelConnectivity], None],
+        try_to_connect: bool = False,
+    ) -> None:
         raise NotImplementedError()
 
     def unsubscribe(
-            self, callback: Callable[[grpc.ChannelConnectivity], None]) -> None:
+        self, callback: Callable[[grpc.ChannelConnectivity], None]
+    ) -> None:
         raise NotImplementedError()
 
     def unary_unary(
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
     ) -> grpc.UnaryUnaryMultiCallable:
         return _multi_callable.UnaryUnary(method, self._state)
 
@@ -57,7 +60,7 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
     ) -> grpc.UnaryStreamMultiCallable:
         return _multi_callable.UnaryStream(method, self._state)
 
@@ -65,7 +68,7 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
     ) -> grpc.StreamUnaryMultiCallable:
         return _multi_callable.StreamUnary(method, self._state)
 
@@ -73,7 +76,7 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
     ) -> grpc.StreamStreamMultiCallable:
         return _multi_callable.StreamStream(method, self._state)
 

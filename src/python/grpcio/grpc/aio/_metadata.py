@@ -119,8 +119,8 @@ class Metadata(abc.Collection):
         self._metadata[key] = values
 
     def __contains__(
-            self,
-            key: object) -> bool:  # supertype defines 1rd arg type as "object"
+        self, key: object
+    ) -> bool:  # supertype defines 1rd arg type as "object"
         return key in self._metadata
 
     def __eq__(self, other: Any) -> bool:

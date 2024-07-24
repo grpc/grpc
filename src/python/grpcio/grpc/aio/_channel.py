@@ -115,8 +115,9 @@ class _BaseMultiCallable:
 
     @staticmethod
     def _init_metadata(
-            metadata: Optional[MetadataType] = None,
-            compression: Optional[grpc.Compression] = None) -> MetadataType:
+        metadata: Optional[MetadataType] = None,
+        compression: Optional[grpc.Compression] = None,
+    ) -> MetadataType:
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
@@ -130,8 +131,9 @@ class _BaseMultiCallable:
         return metadata
 
 
-class UnaryUnaryMultiCallable(_BaseMultiCallable,
-                              _base_channel.UnaryUnaryMultiCallable):
+class UnaryUnaryMultiCallable(
+    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable
+):
     _interceptors: Sequence[UnaryUnaryClientInterceptor]
 
     def __call__(
@@ -142,7 +144,7 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
-        compression: Optional[grpc.Compression] = None
+        compression: Optional[grpc.Compression] = None,
     ) -> _base_call.UnaryUnaryCall:
         call: _base_call.UnaryUnaryCall
 
@@ -178,8 +180,9 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable,
         return call
 
 
-class UnaryStreamMultiCallable(_BaseMultiCallable,
-                               _base_channel.UnaryStreamMultiCallable):
+class UnaryStreamMultiCallable(
+    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable
+):
     _interceptors: Sequence[UnaryStreamClientInterceptor]
 
     def __call__(
@@ -190,7 +193,7 @@ class UnaryStreamMultiCallable(_BaseMultiCallable,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
-        compression: Optional[grpc.Compression] = None
+        compression: Optional[grpc.Compression] = None,
     ) -> _base_call.UnaryStreamCall:
         call: _base_call.UnaryStreamCall
 
@@ -227,8 +230,9 @@ class UnaryStreamMultiCallable(_BaseMultiCallable,
         return call
 
 
-class StreamUnaryMultiCallable(_BaseMultiCallable,
-                               _base_channel.StreamUnaryMultiCallable):
+class StreamUnaryMultiCallable(
+    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable
+):
     _interceptors: Sequence[StreamUnaryClientInterceptor]
 
     def __call__(
@@ -275,8 +279,9 @@ class StreamUnaryMultiCallable(_BaseMultiCallable,
         return call
 
 
-class StreamStreamMultiCallable(_BaseMultiCallable,
-                                _base_channel.StreamStreamMultiCallable):
+class StreamStreamMultiCallable(
+    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable
+):
     _interceptors: Sequence[StreamStreamClientInterceptor]
 
     def __call__(

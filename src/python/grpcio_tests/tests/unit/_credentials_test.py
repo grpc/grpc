@@ -60,8 +60,10 @@ class CredentialsTest(unittest.TestCase):
             channel_first_second_and_third, grpc.ChannelCredentials
         )
 
-    @unittest.skipIf(test_common.running_under_run_time_type_check(),
-                     "This test case used unsupported types")
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def test_invalid_string_certificate(self):
         self.assertRaises(
             TypeError,
