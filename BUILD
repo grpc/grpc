@@ -3279,9 +3279,9 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_spinlock",
+        "//src/core:latent_see",
         "//src/core:time",
         "//src/core:useful",
-        "//src/core:latent_see",
     ],
 )
 
