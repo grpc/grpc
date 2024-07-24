@@ -254,20 +254,20 @@ void PrintExperimentsList() {
   }
   if (experiment_status.empty()) {
     if (!defaulted_on_experiments.empty()) {
-      VLOG(2) << "gRPC experiments enabled: "
-              << absl::StrJoin(defaulted_on_experiments, ", ");
+      LOG(INFO) << "gRPC experiments enabled: "
+                << absl::StrJoin(defaulted_on_experiments, ", ");
     }
   } else {
     if (defaulted_on_experiments.empty()) {
-      VLOG(2) << "gRPC experiments: "
+      LOG(INFO) << "gRPC experiments: "
               << absl::StrJoin(experiment_status, ", ",
                                absl::PairFormatter(":"));
     } else {
-      VLOG(2) << "gRPC experiments: "
-              << absl::StrJoin(experiment_status, ", ",
-                               absl::PairFormatter(":"))
-              << "; default-enabled: "
-              << absl::StrJoin(defaulted_on_experiments, ", ");
+      LOG(INFO) << "gRPC experiments: "
+                << absl::StrJoin(experiment_status, ", ",
+                                 absl::PairFormatter(":"))
+                << "; default-enabled: "
+                << absl::StrJoin(defaulted_on_experiments, ", ");
     }
   }
 }
