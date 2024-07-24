@@ -17,10 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifndef GRPC_ENABLE_LATENT_SEE
-// #define GRPC_ENABLE_LATENT_SEE
-#endif
-
 #ifdef GRPC_ENABLE_LATENT_SEE
 #include <chrono>
 #include <cstdint>
@@ -244,10 +240,10 @@ struct Flow {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(Metadata*) {}
 };
 struct ParentScope {
-  ParentScope(Metadata*) {}
+  explicit ParentScope(Metadata*) {}
 };
 struct InnerScope {
-  InnerScope(Metadata*) {}
+  explicit InnerScope(Metadata*) {}
 };
 }  // namespace latent_see
 }  // namespace grpc_core
