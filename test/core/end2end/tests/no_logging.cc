@@ -78,19 +78,9 @@ class Verifier {
         new std::map<absl::string_view, std::regex>(
             {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
              {"chttp2_transport.cc",
-              std::regex("Sending goaway.*Channel Destroyed")},
-             {"chaotic_good_server.cc",
-              std::regex("Failed to bind some addresses for.*")},
-             {"log.cc",
-              std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environmenmt or test environmenmt "
-                         "it is safe to ignore this message.")}});
+              std::regex("Sending goaway.*Channel Destroyed")}});
 
-    if (IsVlogWithVerbosityMoreThan1(entry)) {
-      return;
-    }
-
-    absl::string_view filename = entry.source_filename();
+    absl::string_view filename = args->file;
     auto slash = filename.rfind('/');
     if (slash != absl::string_view::npos) {
       filename = filename.substr(slash + 1);
