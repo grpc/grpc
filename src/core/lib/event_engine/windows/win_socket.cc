@@ -71,7 +71,8 @@ void WinSocket::Shutdown() {
                         &ioctl_num_bytes, NULL, NULL);
   if (status != 0) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    LOG(INFO) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
   } else if (DisconnectEx(socket_, NULL, 0, 0) == FALSE) {
     auto last_error = WSAGetLastError();
@@ -79,7 +80,8 @@ void WinSocket::Shutdown() {
     // error, and log all others.
     if (last_error != WSAENOTCONN) {
       char* utf8_message = gpr_format_message(last_error);
-      LOG(INFO) << "DisconnectEx failed: " << utf8_message;
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "DisconnectEx failed: " << utf8_message;
       gpr_free(utf8_message);
     }
   }
