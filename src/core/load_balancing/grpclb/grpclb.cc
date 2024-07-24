@@ -489,10 +489,10 @@ class GrpcLb final : public LoadBalancingPolicy {
           new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
         // fallback mode immediately.
-        gpr_log(GPR_INFO,
-                "[grpclb %p] balancer channel in state:TRANSIENT_FAILURE (%s); "
-                "entering fallback mode",
-                parent_.get(), status.ToString().c_str());
+        GRPC_TRACE_LOG(glb, INFO)
+            << "[grpclb " << parent_.get()
+            << "] balancer channel in state:TRANSIENT_FAILURE ("
+            << status.ToString() << "); entering fallback mode";
         parent_->fallback_at_startup_checks_pending_ = false;
         parent_->channel_control_helper()->GetEventEngine()->Cancel(
             *parent_->lb_fallback_timer_handle_);
@@ -670,11 +670,10 @@ class GrpcLb::Serverlist::AddressIterator final
       std::string lb_token(server.load_balance_token, lb_token_length);
       if (lb_token.empty()) {
         auto addr_uri = grpc_sockaddr_to_uri(&addr);
-        gpr_log(GPR_INFO,
-                "Missing LB token for backend address '%s'. The empty token "
-                "will be used instead",
-                addr_uri.ok() ? addr_uri->c_str()
-                              : addr_uri.status().ToString().c_str());
+        GRPC_TRACE_LOG(glb, INFO)
+            << "Missing LB token for backend address '"
+            << (addr_uri.ok() ? *addr_uri : addr_uri.status().ToString())
+            << "'. The empty token will be used instead";
       }
       // Return address with a channel arg containing LB token and stats object.
       callback(EndpointAddresses(
@@ -852,12 +851,12 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     client_stats = parent()->lb_calld_->client_stats()->Ref();
   }
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p helper %p] state=%s (%s) wrapping child "
-            "picker %p (serverlist=%p, client_stats=%p)",
-            parent(), this, ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get(), serverlist.get(),
-            client_stats.get());
+    GRPC_TRACE_LOG(glb, INFO)
+        << "[grpclb " << parent() << " helper " << this
+        << "] state=" << ConnectivityStateName(state) << " ("
+        << status.ToString() << ") wrapping child picker " << picker.get()
+        << " (serverlist=" << serverlist.get()
+        << ", client_stats=" << client_stats.get() << ")";
   }
   parent()->channel_control_helper()->UpdateState(
       state, status,

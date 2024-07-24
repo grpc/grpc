@@ -288,13 +288,13 @@ bool Party::RunOneParticipant(int i) {
   currently_polling_ = kNotPolling;
   if (done) {
     if (!name.empty()) {
-      gpr_log(GPR_INFO, "%s[%s] end poll and finish job %d", DebugTag().c_str(),
-              std::string(name).c_str(), i);
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "[" << name << "] end poll and finish job " << i;
     }
     participants_[i].store(nullptr, std::memory_order_relaxed);
   } else if (!name.empty()) {
-    gpr_log(GPR_INFO, "%s[%s] end poll", DebugTag().c_str(),
-            std::string(name).c_str());
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "[" << name << "] end poll";
   }
   return done;
 }
