@@ -36,6 +36,7 @@
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -317,7 +318,7 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
-  GRPC_TRACE_LOG(event_engine, INFO)
+  LOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(event_engine))
       << "WorkStealingThreadPoolImpl::PrepareFork";
   SetForking(true);
   work_signal_.SignalAll();
