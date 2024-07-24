@@ -390,8 +390,8 @@ static void on_handshaker_service_resp_recv(void* arg,
   }
   bool success = true;
   if (!error.ok()) {
-    LOG(INFO) << "ALTS handshaker on_handshaker_service_resp_recv error: "
-              << grpc_core::StatusToString(error);
+    VLOG(2) << "ALTS handshaker on_handshaker_service_resp_recv error: "
+            << grpc_core::StatusToString(error);
     success = false;
   }
   alts_handshaker_client_handle_response(client, success);
@@ -445,7 +445,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       CHECK_EQ(handshaker->client, nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
-        LOG(INFO) << "TSI handshake shutdown";
+        VLOG(2) << "TSI handshake shutdown";
         if (error != nullptr) *error = "TSI handshaker shutdown";
         return TSI_HANDSHAKE_SHUTDOWN;
       }
