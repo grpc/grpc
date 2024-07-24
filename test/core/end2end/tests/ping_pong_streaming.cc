@@ -16,7 +16,12 @@
 //
 //
 
+#include <atomic>
+#include <map>
 #include <memory>
+#include <regex>
+#include <string>
+#include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/globals.h"
@@ -24,6 +29,10 @@
 #include "absl/log/log_entry.h"
 #include "absl/log/log_sink.h"
 #include "absl/log/log_sink_registry.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 #include <grpc/status.h>
 
