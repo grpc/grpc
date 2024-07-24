@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 #define GRPC_FD_TRACE() \
-  LOG(INFO, GRPC_TRACE_FLAG_ENABLED(fd_trace)) << "(fd-trace) "
+  LOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(fd_trace)) << "(fd-trace) "
 
 typedef struct grpc_fd grpc_fd;
 
