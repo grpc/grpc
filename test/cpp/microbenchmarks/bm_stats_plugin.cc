@@ -32,10 +32,20 @@
 namespace {
 
 constexpr const absl::string_view kMetricName = "test.counter";
+constexpr const absl::string_view kMetricNameWithLabels =
+    "test.counter_with_labels";
 
 const auto kCounterHandle =
     grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
         kMetricName, "A simple test counter", "{count}", true)
+        .Build();
+
+const auto kCounterWithLabelsHandle =
+    grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        kMetricNameWithLabels, "A simple test counter with labels", "{count}",
+        true)
+        .Labels("key1", "key2", "key3")
+        .OptionalLabels("opt_key1", "opt_key2", "opt_key3")
         .Build();
 
 void BM_AddCounterWithFakeStatsPlugin(benchmark::State& state) {
@@ -52,6 +62,23 @@ void BM_AddCounterWithFakeStatsPlugin(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_AddCounterWithFakeStatsPlugin);
+
+void BM_AddCounterWithLabelsWithFakeStatsPlugin(benchmark::State& state) {
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
+  grpc_core::FakeStatsPluginBuilder().BuildAndRegister();
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
+  auto stats_plugin_group =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope("", "",
+                                                           endpoint_config));
+  for (auto _ : state) {
+    stats_plugin_group.AddCounter(kCounterWithLabelsHandle, 1,
+                                  {"val1", "val2", "val3"},
+                                  {"opt_val1", "opt_val2", "opt_val3"});
+  }
+}
+BENCHMARK(BM_AddCounterWithLabelsWithFakeStatsPlugin);
 
 void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
   grpc_core::GlobalStatsPluginRegistryTestPeer::
@@ -73,6 +100,59 @@ void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_AddCounterWithOTelPlugin);
+
+void BM_AddCounterWithLabelsWithOTelPlugin(benchmark::State& state) {
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
+  auto meter_provider =
+      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  auto status = grpc::OpenTelemetryPluginBuilder()
+                    .EnableMetrics({kMetricName})
+                    .SetMeterProvider(std::move(meter_provider))
+                    .BuildAndRegisterGlobal();
+  CHECK(status.ok());
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
+  auto stats_plugin_group =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope("", "",
+                                                           endpoint_config));
+  for (auto _ : state) {
+    stats_plugin_group.AddCounter(kCounterWithLabelsHandle, 1,
+                                  {"val1", "val2", "val3"},
+                                  {"opt_val1", "opt_val2", "opt_val3"});
+  }
+}
+BENCHMARK(BM_AddCounterWithLabelsWithOTelPlugin);
+
+void BM_AddCounterWithNoPlugin(benchmark::State& state) {
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
+  auto stats_plugin_group =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope("", "",
+                                                           endpoint_config));
+  for (auto _ : state) {
+    stats_plugin_group.AddCounter(kCounterHandle, 1, {}, {});
+  }
+}
+BENCHMARK(BM_AddCounterWithNoPlugin);
+
+void BM_AddCounterWithLabelsWithNoPlugin(benchmark::State& state) {
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
+  grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config;
+  auto stats_plugin_group =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope("", "",
+                                                           endpoint_config));
+  for (auto _ : state) {
+    stats_plugin_group.AddCounter(kCounterWithLabelsHandle, 1,
+                                  {"val1", "val2", "val3"},
+                                  {"opt_val1", "opt_val2", "opt_val3"});
+  }
+}
+BENCHMARK(BM_AddCounterWithLabelsWithNoPlugin);
 
 }  // namespace
 
