@@ -168,10 +168,12 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
           &self->on_receive_settings_, self->args_.interested_parties, nullptr);
       self->timer_handle_ = self->event_engine_->RunAfter(
           self->args_.deadline - Timestamp::Now(),
-          [self = self->RefAsSubclass<Chttp2Connector>()] {
+          [self = self->RefAsSubclass<Chttp2Connector>()]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
           });
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
