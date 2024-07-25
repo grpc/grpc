@@ -87,7 +87,7 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
-inline bool IsLocalConnectorSecure() { return true; }
+inline bool IsLocalConnectorSecure() { return false; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -123,7 +123,7 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
-inline bool IsLocalConnectorSecure() { return true; }
+inline bool IsLocalConnectorSecure() { return false; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -158,7 +158,7 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
-inline bool IsLocalConnectorSecure() { return true; }
+inline bool IsLocalConnectorSecure() { return false; }
 #endif
 
 #else

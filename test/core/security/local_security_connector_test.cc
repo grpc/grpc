@@ -28,41 +28,40 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-absl::string_view me_get_local_address_unix(grpc_endpoint* /*ep*/) {
+absl::string_view GetLocalUnixAddress(grpc_endpoint* /*ep*/) {
   return "unix:";
 }
 
-const grpc_endpoint_vtable vtable_unix = {nullptr,
+const grpc_endpoint_vtable kUnixEndpointVtable = {nullptr,
                                                  nullptr,
                                                  nullptr,
                                                  nullptr,
                                                  nullptr,
                                                  nullptr,
                                                  nullptr,
-                                                 me_get_local_address_unix,
+                                                 GetLocalUnixAddress,
                                                  nullptr,
                                                  nullptr};
 
-absl::string_view me_get_local_address_local(grpc_endpoint* /*ep*/) {
+absl::string_view GetLocalTcpAddress(grpc_endpoint* /*ep*/) {
   return "ipv4:127.0.0.1:12667";
 }
 
-const grpc_endpoint_vtable vtable_local = {nullptr,
+const grpc_endpoint_vtable kTcpEndpointVtable = {nullptr,
                                                   nullptr,
                                                   nullptr,
                                                   nullptr,
                                                   nullptr,
                                                   nullptr,
                                                   nullptr,
-                                                  me_get_local_address_local,
+                                                  GetLocalTcpAddress,
                                                   nullptr,
                                                   nullptr};
 
 void CheckSecurityLevelForServer(grpc_local_connect_type connect_type,
                                             tsi_security_level level,
                                             grpc_endpoint ep) {
-  grpc_server_credentials
-      * server_creds = grpc_local_server_credentials_create(connect_type);
+  grpc_server_credentials* server_creds = grpc_local_server_credentials_create(connect_type);
   ChannelArgs args;
   RefCountedPtr<grpc_server_security_connector> connector = server_creds->
       create_security_connector(args);
@@ -86,8 +85,7 @@ void CheckSecurityLevelForServer(grpc_local_connect_type connect_type,
 static void CheckSecurityLevelForChannel(grpc_local_connect_type connect_type,
                                              tsi_security_level level,
                                              grpc_endpoint ep) {
-  grpc_channel_credentials
-      * channel_creds = grpc_local_credentials_create(connect_type);
+  grpc_channel_credentials* channel_creds = grpc_local_credentials_create(connect_type);
   ChannelArgs args;
   args = args.Set((char*) GRPC_ARG_SERVER_URI, (char*) "unix:");
   RefCountedPtr<grpc_channel_security_connector> connector = channel_creds->
@@ -112,28 +110,30 @@ static void CheckSecurityLevelForChannel(grpc_local_connect_type connect_type,
 
 TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionServer) {
   grpc_endpoint ep = {
-      .vtable = &vtable_unix,
+      .vtable = &kUnixEndpointVtable,
   };
   CheckSecurityLevelForServer(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
 }
 
 TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionServer) {
+  if (!grpc_core::IsLocalConnectorSecureEnabled()) {return;}
   grpc_endpoint ep = {
-      .vtable = &vtable_local,
+      .vtable = &kTcpEndpointVtable,
   };
   CheckSecurityLevelForServer(LOCAL_TCP, TSI_SECURITY_NONE, ep);
 }
 
 TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionChannel) {
   grpc_endpoint ep = {
-      .vtable = &vtable_unix,
+      .vtable = &kUnixEndpointVtable,
   };
   CheckSecurityLevelForChannel(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
 }
 
 TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionChannel) {
+  if (!grpc_core::IsLocalConnectorSecureEnabled()) {return;}
   grpc_endpoint ep = {
-      .vtable = &vtable_local,
+      .vtable = &kTcpEndpointVtable,
   };
   CheckSecurityLevelForChannel(LOCAL_TCP, TSI_SECURITY_NONE, ep);
 }
