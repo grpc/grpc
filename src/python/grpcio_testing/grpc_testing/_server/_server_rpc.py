@@ -33,7 +33,7 @@ class UnaryUnaryServerRpc(grpc_testing.UnaryUnaryServerRpc):
         self._handler.cancel()
 
     def termination(
-        self
+        self,
     ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         return self._handler.unary_response_termination()
 
@@ -54,7 +54,7 @@ class UnaryStreamServerRpc(grpc_testing.UnaryStreamServerRpc):
         self._handler.cancel()
 
     def termination(
-            self
+        self,
     ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         return self._handler.stream_response_termination()
 
@@ -78,7 +78,7 @@ class StreamUnaryServerRpc(grpc_testing.StreamUnaryServerRpc):
         self._handler.cancel()
 
     def termination(
-        self
+        self,
     ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         return self._handler.unary_response_termination()
 
@@ -105,6 +105,6 @@ class StreamStreamServerRpc(grpc_testing.StreamStreamServerRpc):
         self._handler.cancel()
 
     def termination(
-            self
+        self,
     ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         return self._handler.stream_response_termination()

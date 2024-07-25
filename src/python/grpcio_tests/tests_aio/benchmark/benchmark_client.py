@@ -33,16 +33,19 @@ from tests.unit import resources
 class GenericStub(object):
     def __init__(self, channel: aio.Channel):
         self.UnaryCall = channel.unary_unary(
-            '/grpc.testing.BenchmarkService/UnaryCall')  # type: ignore
+            "/grpc.testing.BenchmarkService/UnaryCall"
+        )  # type: ignore
         self.StreamingFromServer = channel.unary_stream(
-            '/grpc.testing.BenchmarkService/StreamingFromServer'
+            "/grpc.testing.BenchmarkService/StreamingFromServer"
         )  # type: ignore
         self.StreamingCall = channel.stream_stream(
-            '/grpc.testing.BenchmarkService/StreamingCall')  # type: ignore
+            "/grpc.testing.BenchmarkService/StreamingCall"
+        )  # type: ignore
 
 
 class BenchmarkClient(abc.ABC):
     """Benchmark client interface that exposes a non-blocking send_request()."""
+
     _response_callbacks: List[Callable]
 
     def __init__(
@@ -120,8 +123,12 @@ class BenchmarkClient(abc.ABC):
 class UnaryAsyncBenchmarkClient(BenchmarkClient):
     _running: Optional[bool]
 
-    def __init__(self, address: str, config: control_pb2.ClientConfig,
-                 hist: histogram.Histogram):
+    def __init__(
+        self,
+        address: str,
+        config: control_pb2.ClientConfig,
+        hist: histogram.Histogram,
+    ):
         super().__init__(address, config, hist)
         self._running = None
         self._stopped = asyncio.Event()

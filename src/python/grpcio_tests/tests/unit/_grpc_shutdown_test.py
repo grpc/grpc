@@ -26,9 +26,10 @@ _TIMEOUT_FOR_SEGFAULT = datetime.timedelta(seconds=10)
 
 
 class GrpcShutdownTest(unittest.TestCase):
-
-    @unittest.skipIf(test_common.running_under_run_time_type_check(),
-                     "This test case will timeout using typeguard")
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case will timeout using typeguard",
+    )
     def test_channel_close_with_connectivity_watcher(self):
         """Originated by https://github.com/grpc/grpc/issues/20299.
 

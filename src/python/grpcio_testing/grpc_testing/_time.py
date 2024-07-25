@@ -132,8 +132,8 @@ class _Future(grpc.Future):
         raise NotImplementedError()
 
     def traceback(
-            self,
-            timeout: Optional[float] = None) -> Optional[types.TracebackType]:
+        self, timeout: Optional[float] = None
+    ) -> Optional[types.TracebackType]:
         raise NotImplementedError()
 
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:

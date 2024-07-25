@@ -36,13 +36,16 @@ class TestingChannel(grpc_testing.Channel):
         self._time = time
         self._state = state
 
-    def subscribe(self,
-                  callback: Callable[[grpc.ChannelConnectivity], None],
-                  try_to_connect: bool = False) -> None:
+    def subscribe(
+        self,
+        callback: Callable[[grpc.ChannelConnectivity], None],
+        try_to_connect: bool = False,
+    ) -> None:
         raise NotImplementedError()
 
     def unsubscribe(
-            self, callback: Callable[[grpc.ChannelConnectivity], None]) -> None:
+        self, callback: Callable[[grpc.ChannelConnectivity], None]
+    ) -> None:
         raise NotImplementedError()
 
     def unary_unary(

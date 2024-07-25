@@ -22,8 +22,9 @@ from grpc_testing._channel import _channel_state  # pytype: disable=pyi-error
 
 # descriptors is reserved for later use.
 # pylint: disable=unused-argument
-def testing_channel(descriptors: Iterator[descriptor.ServiceDescriptor],
-                    time: float) -> Channel:
+def testing_channel(
+    descriptors: Iterator[descriptor.ServiceDescriptor], time: float
+) -> Channel:
     return _channel.TestingChannel(time, _channel_state.State())
 
 

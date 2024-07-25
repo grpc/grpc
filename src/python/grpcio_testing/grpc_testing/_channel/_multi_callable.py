@@ -26,16 +26,19 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
     _method_full_rpc_name: str
     _channel_handler: _common.ChannelHandler
 
-    def __init__(self, method_full_rpc_name: str,
-                 channel_handler: _common.ChannelHandler):
+    def __init__(
+        self, method_full_rpc_name: str, channel_handler: _common.ChannelHandler
+    ):
         self._method_full_rpc_name = method_full_rpc_name
         self._channel_handler = channel_handler
 
-    def __call__(self,
-                 request: Any,
-                 timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
-                 credentials: Optional[grpc.CallCredentials] = None) -> Any:
+    def __call__(
+        self,
+        request: Any,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[grpc.CallCredentials] = None,
+    ) -> Any:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
@@ -50,7 +53,7 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
         request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
-        credentials: Optional[grpc.CallCredentials] = None
+        credentials: Optional[grpc.CallCredentials] = None,
     ) -> Tuple[Any, _invocation._Call]:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -66,7 +69,7 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
         request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
-        credentials: Optional[grpc.CallCredentials] = None
+        credentials: Optional[grpc.CallCredentials] = None,
     ) -> _invocation._FutureCall:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -82,8 +85,9 @@ class UnaryStream(grpc.UnaryStreamMultiCallable):
     _method_full_rpc_name: str
     _channel_handler: _common.ChannelHandler
 
-    def __init__(self, method_full_rpc_name: str,
-                 channel_handler: _common.ChannelHandler):
+    def __init__(
+        self, method_full_rpc_name: str, channel_handler: _common.ChannelHandler
+    ):
         self._method_full_rpc_name = method_full_rpc_name
         self._channel_handler = channel_handler
 
@@ -92,7 +96,7 @@ class UnaryStream(grpc.UnaryStreamMultiCallable):
         request: Any,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
-        credentials: Optional[grpc.CallCredentials] = None
+        credentials: Optional[grpc.CallCredentials] = None,
     ) -> _invocation.ResponseIteratorCall:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -108,16 +112,19 @@ class StreamUnary(grpc.StreamUnaryMultiCallable):
     _method_full_rpc_name: str
     _channel_handler: _common.ChannelHandler
 
-    def __init__(self, method_full_rpc_name: str,
-                 channel_handler: _common.ChannelHandler):
+    def __init__(
+        self, method_full_rpc_name: str, channel_handler: _common.ChannelHandler
+    ):
         self._method_full_rpc_name = method_full_rpc_name
         self._channel_handler = channel_handler
 
-    def __call__(self,
-                 request_iterator: Iterator,
-                 timeout: Optional[float] = None,
-                 metadata: Optional[MetadataType] = None,
-                 credentials: Optional[grpc.CallCredentials] = None) -> Any:
+    def __call__(
+        self,
+        request_iterator: Iterator,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[grpc.CallCredentials] = None,
+    ) -> Any:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
@@ -133,7 +140,7 @@ class StreamUnary(grpc.StreamUnaryMultiCallable):
         request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
-        credentials: Optional[grpc.CallCredentials] = None
+        credentials: Optional[grpc.CallCredentials] = None,
     ) -> Tuple[Any, _invocation._Call]:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -150,7 +157,7 @@ class StreamUnary(grpc.StreamUnaryMultiCallable):
         request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
-        credentials: Optional[grpc.CallCredentials] = None
+        credentials: Optional[grpc.CallCredentials] = None,
     ) -> _invocation._FutureCall:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -167,8 +174,9 @@ class StreamStream(grpc.StreamStreamMultiCallable):
     _method_full_rpc_name: str
     _channel_handler: _common.ChannelHandler
 
-    def __init__(self, method_full_rpc_name: str,
-                 channel_handler: _common.ChannelHandler):
+    def __init__(
+        self, method_full_rpc_name: str, channel_handler: _common.ChannelHandler
+    ):
         self._method_full_rpc_name = method_full_rpc_name
         self._channel_handler = channel_handler
 
@@ -177,7 +185,7 @@ class StreamStream(grpc.StreamStreamMultiCallable):
         request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
-        credentials: Optional[grpc.CallCredentials] = None
+        credentials: Optional[grpc.CallCredentials] = None,
     ) -> _invocation.ResponseIteratorCall:
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,

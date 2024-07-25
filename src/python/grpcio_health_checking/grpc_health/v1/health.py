@@ -33,7 +33,7 @@ SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name["Health"].full_name
 OVERALL_HEALTH = ""
 
 
-class _Watcher():
+class _Watcher:
     _condition: threading.Condition
     _responses: collections.deque
     _open: bool
@@ -73,9 +73,8 @@ class _Watcher():
 
 
 def _watcher_to_send_response_callback_adapter(
-    watcher: _Watcher
+    watcher: _Watcher,
 ) -> Callable[[Optional[_health_pb2.HealthCheckResponse]], None]:
-
     def send_response_callback(response):
         if response is None:
             watcher.close()
@@ -87,16 +86,19 @@ def _watcher_to_send_response_callback_adapter(
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
+
     _lock: threading.RLock
     _server_status: Dict[str, int]
-    _send_response_callbacks: Dict[str, Set[Callable[
-        [_health_pb2.HealthCheckResponse], None]]]
+    _send_response_callbacks: Dict[
+        str, Set[Callable[[_health_pb2.HealthCheckResponse], None]]
+    ]
     _gracefully_shutting_down: bool
 
-    def __init__(self,
-                 experimental_non_blocking: bool = True,
-                 experimental_thread_pool: Optional[
-                     futures.ThreadPoolExecutor] = None):
+    def __init__(
+        self,
+        experimental_non_blocking: bool = True,
+        experimental_thread_pool: Optional[futures.ThreadPoolExecutor] = None,
+    ):
         self._lock = threading.RLock()
         self._server_status = {"": _health_pb2.HealthCheckResponse.SERVING}
         self._send_response_callbacks = {}
@@ -104,10 +106,13 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self.Watch.__func__.experimental_thread_pool = experimental_thread_pool  # type: ignore
         self._gracefully_shutting_down = False
 
-    def _on_close_callback(self, send_response_callback: Callable[
-        [_health_pb2.HealthCheckResponse], None],
-                           service: str) -> Callable[[], None]:
-
+    def _on_close_callback(
+        self,
+        send_response_callback: Callable[
+            [_health_pb2.HealthCheckResponse], None
+        ],
+        service: str,
+    ) -> Callable[[], None]:
         def callback():
             with self._lock:
                 self._send_response_callbacks[service].remove(
@@ -117,8 +122,11 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
 
         return callback
 
-    def Check(self, request: _health_pb2.HealthCheckRequest,
-              context: grpc.ServicerContext) -> _health_pb2.HealthCheckResponse:
+    def Check(
+        self,
+        request: _health_pb2.HealthCheckRequest,
+        context: grpc.ServicerContext,
+    ) -> _health_pb2.HealthCheckResponse:
         with self._lock:
             status = self._server_status.get(request.service)
             if status is None:
@@ -132,8 +140,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self,
         request: _health_pb2.HealthCheckRequest,
         context: grpc.ServicerContext,
-        send_response_callback: Optional[Callable[
-            [_health_pb2.HealthCheckResponse], None]] = None
+        send_response_callback: Optional[
+            Callable[[_health_pb2.HealthCheckResponse], None]
+        ] = None,
     ) -> Optional[_Watcher]:
         blocking_watcher = None
         if send_response_callback is None:

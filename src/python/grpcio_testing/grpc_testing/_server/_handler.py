@@ -47,13 +47,13 @@ class Handler(_common.ServerRpcHandler):
 
     @abc.abstractmethod
     def unary_response_termination(
-        self
+        self,
     ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def stream_response_termination(
-            self
+        self,
     ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         raise NotImplementedError()
 
@@ -84,8 +84,9 @@ class _Handler(Handler):
         self._expiration_future = None
         self._termination_callbacks = []
 
-    def send_initial_metadata(self,
-                              initial_metadata: Optional[MetadataType]) -> None:
+    def send_initial_metadata(
+        self, initial_metadata: Optional[MetadataType]
+    ) -> None:
         with self._condition:
             self._initial_metadata = initial_metadata
             self._condition.notify_all()
@@ -114,8 +115,12 @@ class _Handler(Handler):
             self._responses.append(response)
             self._condition.notify_all()
 
-    def send_termination(self, trailing_metadata: Optional[MetadataType],
-                         code: grpc.StatusCode, details: str) -> None:
+    def send_termination(
+        self,
+        trailing_metadata: Optional[MetadataType],
+        code: grpc.StatusCode,
+        details: str,
+    ) -> None:
         with self._condition:
             self._trailing_metadata = trailing_metadata
             self._code = code
@@ -182,7 +187,7 @@ class _Handler(Handler):
             termination_callback()
 
     def unary_response_termination(
-        self
+        self,
     ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
@@ -202,7 +207,7 @@ class _Handler(Handler):
                     )
 
     def stream_response_termination(
-            self
+        self,
     ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
@@ -236,8 +241,9 @@ def handler_without_deadline(requests_closed: bool) -> _Handler:
     return _Handler(requests_closed)
 
 
-def handler_with_deadline(requests_closed: bool, time: Time,
-                          deadline: float) -> _Handler:
+def handler_with_deadline(
+    requests_closed: bool, time: Time, deadline: float
+) -> _Handler:
     handler = _Handler(requests_closed)
     expiration_future = time.call_at(handler.expire, deadline)
     handler.set_expiration_future(expiration_future)

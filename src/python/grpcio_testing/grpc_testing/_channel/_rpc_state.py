@@ -31,8 +31,12 @@ class State(_common.ChannelRpcHandler):
     _code: Optional[grpc.statusCode]
     _details: Optional[str]
 
-    def __init__(self, invocation_metadata: Optional[MetadataType],
-                 requests: List, requests_closed: bool):
+    def __init__(
+        self,
+        invocation_metadata: Optional[MetadataType],
+        requests: List,
+        requests_closed: bool,
+    ):
         self._condition = threading.Condition()
         self._invocation_metadata = invocation_metadata
         self._requests = requests
@@ -99,7 +103,7 @@ class State(_common.ChannelRpcHandler):
                     )
 
     def termination(
-            self
+        self,
     ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
         with self._condition:
             while True:
@@ -141,8 +145,9 @@ class State(_common.ChannelRpcHandler):
                 self._invocation_metadata = None
                 return invocation_metadata, self._requests.pop(0)
 
-    def send_initial_metadata(self,
-                              initial_metadata: Optional[MetadataType]) -> None:
+    def send_initial_metadata(
+        self, initial_metadata: Optional[MetadataType]
+    ) -> None:
         with self._condition:
             self._initial_metadata = _common.fuss_with_metadata(
                 initial_metadata
@@ -171,9 +176,13 @@ class State(_common.ChannelRpcHandler):
                 self._responses.append(response)
                 self._condition.notify_all()
 
-    def terminate_with_response(self, response: Any,
-                                trailing_metadata: Optional[MetadataType],
-                                code: grpc.StatusCode, details: str) -> None:
+    def terminate_with_response(
+        self,
+        response: Any,
+        trailing_metadata: Optional[MetadataType],
+        code: grpc.StatusCode,
+        details: str,
+    ) -> None:
         with self._condition:
             if self._initial_metadata is None:
                 self._initial_metadata = _common.FUSSED_EMPTY_METADATA
@@ -185,8 +194,12 @@ class State(_common.ChannelRpcHandler):
             self._details = details
             self._condition.notify_all()
 
-    def terminate(self, trailing_metadata: Optional[MetadataType],
-                  code: grpc.StatusCode, details: str) -> None:
+    def terminate(
+        self,
+        trailing_metadata: Optional[MetadataType],
+        code: grpc.StatusCode,
+        details: str,
+    ) -> None:
         with self._condition:
             if self._initial_metadata is None:
                 self._initial_metadata = _common.FUSSED_EMPTY_METADATA
