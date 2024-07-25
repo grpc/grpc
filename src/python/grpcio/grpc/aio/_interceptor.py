@@ -17,18 +17,8 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
-from typing import (
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Generic,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import (AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable,
+                    Callable, Iterator, Generic, List, Optional, Sequence, Union)
 
 import grpc
 from grpc._cython import cygrpc
@@ -45,6 +35,7 @@ from ._call import _RPC_HALF_CLOSED_DETAILS
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
+from ._typing import EOFType
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
@@ -503,8 +494,10 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
-        return await self._response_aiter.asend(None)  # type: ignore
-
+        try:
+            return await self._response_aiter.asend(None)
+        except StopAsyncIteration:
+            return cygrpc.EOF
 
 class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]

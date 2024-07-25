@@ -55,15 +55,14 @@ _SERVER_TRAILING_METADATA = (
 _NON_OK_CODE = grpc.StatusCode.NOT_FOUND
 _DETAILS = "Test details!"
 
-# calling abort should always fail an RPC
-_ABORT_CODES = (_NON_OK_CODE, grpc.StatusCode.OK)
-_EXPECTED_CLIENT_CODES = (_NON_OK_CODE, grpc.StatusCode.UNKNOWN)
-_EXPECTED_DETAILS = (_DETAILS, "")
-
-# calling abort with "invalid" codes should also fail an RPC
-_INVALID_ABORT_CODES = [3]
-_EXPECTED_CLIENT_CODES_WITH_INVALID_ABORT_CODES = [grpc.StatusCode.UNKNOWN]
-_EXPECTED_DETAILS_WITH_INVALID_ABORT_CODES = [_DETAILS]
+# calling abort should always fail an RPC, even for "invalid" codes
+_ABORT_CODES = (_NON_OK_CODE, 3, grpc.StatusCode.OK)
+_EXPECTED_CLIENT_CODES = (
+    _NON_OK_CODE,
+    grpc.StatusCode.UNKNOWN,
+    grpc.StatusCode.UNKNOWN,
+)
+_EXPECTED_DETAILS = (_DETAILS, _DETAILS, "")
 
 
 class _Servicer(object):
