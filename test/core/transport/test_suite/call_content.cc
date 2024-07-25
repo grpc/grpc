@@ -68,7 +68,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
   const auto server_trailing_metadata = RandomMetadata();
   const auto client_payload = RandomMessage();
   const auto server_payload = RandomMessage();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   FillMetadata(client_initial_metadata, *md);
   auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
@@ -126,7 +126,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_FALSE(msg.value().has_value());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         FillMetadata(server_initial_metadata, *md);
         return handler.PushServerInitialMetadata(std::move(md));
       },
@@ -137,7 +137,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>();
+        auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
         FillMetadata(server_trailing_metadata, *md);
         handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};

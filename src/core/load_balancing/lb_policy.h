@@ -124,14 +124,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// A list of metadata mutations to be returned along with a PickResult.
   class MetadataMutations {
    public:
-    /// Adds a key/value pair.  If the key is already present, the new
-    /// value will be appended with a comma delimiter.
-    void Add(absl::string_view key, absl::string_view value) {
-      Add(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
+    /// Sets a key/value pair.  If the key is already present, it will
+    /// be replaced with the new value.
+    void Set(absl::string_view key, absl::string_view value) {
+      Set(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
     }
-    void Add(absl::string_view key,
+    void Set(absl::string_view key,
              grpc_event_engine::experimental::Slice value) {
-      additions_.push_back({key, std::move(value)});
+      metadata_.push_back({key, std::move(value)});
     }
 
    private:
@@ -143,7 +143,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // cases with more than 3 additions.
     absl::InlinedVector<
         std::pair<absl::string_view, grpc_event_engine::experimental::Slice>, 3>
-        additions_;
+        metadata_;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -220,13 +220,21 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       /// Metadata mutations to be applied to the call.
       MetadataMutations metadata_mutations;
 
+      /// Authority override for the RPC.
+      /// Will be used only if the application has not explicitly set
+      /// the authority for the RPC.
+      grpc_event_engine::experimental::Slice authority_override;
+
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
           std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr,
-          MetadataMutations md = MetadataMutations())
+          MetadataMutations md = MetadataMutations(),
+          grpc_event_engine::experimental::Slice authority =
+              grpc_event_engine::experimental::Slice())
           : subchannel(std::move(sc)),
             subchannel_call_tracker(std::move(tracker)),
-            metadata_mutations(std::move(md)) {}
+            metadata_mutations(std::move(md)),
+            authority_override(std::move(authority)) {}
     };
 
     /// Pick cannot be completed until something changes on the control

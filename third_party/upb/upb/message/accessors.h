@@ -40,30 +40,27 @@ extern "C" {
 // Functions ending in Extension() take a (upb_MiniTableExtension*) argument
 // and work only on extensions.
 
-UPB_API_INLINE void upb_Message_Clear(upb_Message* msg,
-                                      const upb_MiniTable* m) {
-  UPB_PRIVATE(_upb_Message_Clear)(msg, m);
-}
+UPB_API_INLINE void upb_Message_Clear(upb_Message* msg, const upb_MiniTable* m);
 
 UPB_API_INLINE void upb_Message_ClearBaseField(upb_Message* msg,
-                                               const upb_MiniTableField* f) {
-  UPB_PRIVATE(_upb_Message_ClearBaseField)(msg, f);
-}
+                                               const upb_MiniTableField* f);
 
-UPB_API_INLINE void upb_Message_ClearExtension(
-    upb_Message* msg, const upb_MiniTableExtension* e) {
-  UPB_PRIVATE(_upb_Message_ClearExtension)(msg, e);
-}
+UPB_API_INLINE void upb_Message_ClearExtension(upb_Message* msg,
+                                               const upb_MiniTableExtension* e);
 
 UPB_API_INLINE bool upb_Message_HasBaseField(const upb_Message* msg,
-                                             const upb_MiniTableField* f) {
-  return UPB_PRIVATE(_upb_Message_HasBaseField)(msg, f);
-}
+                                             const upb_MiniTableField* f);
 
 UPB_API_INLINE bool upb_Message_HasExtension(const upb_Message* msg,
-                                             const upb_MiniTableExtension* e) {
-  return UPB_PRIVATE(_upb_Message_HasExtension)(msg, e);
-}
+                                             const upb_MiniTableExtension* e);
+
+UPB_API_INLINE void upb_Message_SetBaseField(upb_Message* msg,
+                                             const upb_MiniTableField* f,
+                                             const void* val);
+
+UPB_API_INLINE bool upb_Message_SetExtension(upb_Message* msg,
+                                             const upb_MiniTableExtension* e,
+                                             const void* val, upb_Arena* a);
 
 UPB_API_INLINE uint32_t upb_Message_WhichOneofFieldNumber(
     const upb_Message* message, const upb_MiniTableField* oneof_field) {
@@ -89,14 +86,17 @@ upb_Message_GetField(const upb_Message* msg, const upb_MiniTableField* field,
   return ret;
 }
 
-UPB_INLINE bool upb_Message_SetField(upb_Message* msg,
-                                     const upb_MiniTableField* field,
-                                     upb_MessageValue val, upb_Arena* a) {
+// Sets the value of the given field in the given msg. The return value is true
+// if the operation completed successfully, or false if memory allocation
+// failed.
+UPB_INLINE bool UPB_PRIVATE(_upb_Message_SetField)(
+    upb_Message* msg, const upb_MiniTableField* field, upb_MessageValue val,
+    upb_Arena* a) {
   if (upb_MiniTableField_IsExtension(field)) {
     const upb_MiniTableExtension* ext = (const upb_MiniTableExtension*)field;
-    return _upb_Message_SetExtensionField(msg, ext, &val, a);
+    return upb_Message_SetExtension(msg, ext, &val, a);
   } else {
-    _upb_Message_SetNonExtensionField(msg, field, &val);
+    upb_Message_SetBaseField(msg, field, &val);
     return true;
   }
 }
@@ -122,7 +122,7 @@ UPB_API_INLINE bool upb_Message_SetBool(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.bool_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE int32_t upb_Message_GetInt32(const upb_Message* msg,
@@ -149,7 +149,7 @@ UPB_API_INLINE bool upb_Message_SetInt32(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.int32_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE uint32_t upb_Message_GetUInt32(const upb_Message* msg,
@@ -174,7 +174,7 @@ UPB_API_INLINE bool upb_Message_SetUInt32(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.uint32_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE void upb_Message_SetClosedEnum(
@@ -186,7 +186,7 @@ UPB_API_INLINE void upb_Message_SetClosedEnum(
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   UPB_ASSERT(upb_MiniTableEnum_CheckValue(
       upb_MiniTable_GetSubEnumTable(msg_mini_table, field), value));
-  _upb_Message_SetNonExtensionField(msg, field, &value);
+  upb_Message_SetBaseField(msg, field, &value);
 }
 
 UPB_API_INLINE int64_t upb_Message_GetInt64(const upb_Message* msg,
@@ -211,7 +211,7 @@ UPB_API_INLINE bool upb_Message_SetInt64(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.int64_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE uint64_t upb_Message_GetUInt64(const upb_Message* msg,
@@ -236,7 +236,7 @@ UPB_API_INLINE bool upb_Message_SetUInt64(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.uint64_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE float upb_Message_GetFloat(const upb_Message* msg,
@@ -261,7 +261,7 @@ UPB_API_INLINE bool upb_Message_SetFloat(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.float_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE double upb_Message_GetDouble(const upb_Message* msg,
@@ -286,7 +286,7 @@ UPB_API_INLINE bool upb_Message_SetDouble(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.double_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE upb_StringView
@@ -303,6 +303,10 @@ upb_Message_GetString(const upb_Message* msg, const upb_MiniTableField* field,
   return upb_Message_GetField(msg, field, def).str_val;
 }
 
+// Sets the value of a `string` or `bytes` field. The bytes of the value are not
+// copied, so it is the caller's responsibility to ensure that they remain valid
+// for the lifetime of `msg`. That might be done by copying them into the given
+// arena, or by fusing that arena with the arena the bytes live in, for example.
 UPB_API_INLINE bool upb_Message_SetString(upb_Message* msg,
                                           const upb_MiniTableField* field,
                                           upb_StringView value, upb_Arena* a) {
@@ -313,7 +317,7 @@ UPB_API_INLINE bool upb_Message_SetString(upb_Message* msg,
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   upb_MessageValue val;
   val.str_val = value;
-  return upb_Message_SetField(msg, field, val, a);
+  return UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, a);
 }
 
 UPB_API_INLINE upb_TaggedMessagePtr upb_Message_GetTaggedMessagePtr(
@@ -329,11 +333,15 @@ UPB_API_INLINE upb_TaggedMessagePtr upb_Message_GetTaggedMessagePtr(
 }
 
 UPB_API_INLINE const upb_Message* upb_Message_GetMessage(
-    const upb_Message* msg, const upb_MiniTableField* field,
-    upb_Message* default_val) {
+    const upb_Message* msg, const upb_MiniTableField* field) {
   upb_TaggedMessagePtr tagged =
-      upb_Message_GetTaggedMessagePtr(msg, field, default_val);
+      upb_Message_GetTaggedMessagePtr(msg, field, NULL);
   return upb_TaggedMessagePtr_GetNonEmptyMessage(tagged);
+}
+
+UPB_API_INLINE upb_Message* upb_Message_GetMutableMessage(
+    upb_Message* msg, const upb_MiniTableField* field) {
+  return (upb_Message*)upb_Message_GetMessage(msg, field);
 }
 
 // For internal use only; users cannot set tagged messages because only the
@@ -348,9 +356,12 @@ UPB_API_INLINE void _upb_Message_SetTaggedMessagePtr(
   UPB_ASSUME(upb_MiniTableField_IsScalar(field));
   UPB_ASSERT(upb_MiniTableSub_Message(
       mini_table->UPB_PRIVATE(subs)[field->UPB_PRIVATE(submsg_index)]));
-  _upb_Message_SetNonExtensionField(msg, field, &sub_message);
+  upb_Message_SetBaseField(msg, field, &sub_message);
 }
 
+// Sets the value of a message-typed field. The `mini_table` and `field`
+// parameters belong to `msg`, not `sub_message`. The mini_tables of `msg` and
+// `sub_message` must have been linked for this to work correctly.
 UPB_API_INLINE void upb_Message_SetMessage(upb_Message* msg,
                                            const upb_MiniTable* mini_table,
                                            const upb_MiniTableField* field,
@@ -405,7 +416,7 @@ UPB_API_INLINE upb_Array* upb_Message_GetOrCreateMutableArray(
     UPB_PRIVATE(_upb_MiniTableField_CheckIsArray)(field);
     upb_MessageValue val;
     val.array_val = array;
-    upb_Message_SetField(msg, field, val, arena);
+    UPB_PRIVATE(_upb_Message_SetField)(msg, field, val, arena);
   }
   return array;
 }
@@ -441,9 +452,9 @@ UPB_API_INLINE upb_Map* upb_Message_GetOrCreateMutableMap(
     const upb_MiniTableField* field, upb_Arena* arena) {
   UPB_ASSUME(upb_MiniTableField_CType(field) == kUpb_CType_Message);
   const upb_MiniTableField* map_entry_key_field =
-      &map_entry_mini_table->UPB_PRIVATE(fields)[0];
+      &map_entry_mini_table->UPB_ONLYBITS(fields)[0];
   const upb_MiniTableField* map_entry_value_field =
-      &map_entry_mini_table->UPB_PRIVATE(fields)[1];
+      &map_entry_mini_table->UPB_ONLYBITS(fields)[1];
   return _upb_Message_GetOrCreateMutableMap(
       msg, field,
       _upb_Map_CTypeSize(upb_MiniTableField_CType(map_entry_key_field)),

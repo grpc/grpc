@@ -22,10 +22,10 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -102,10 +102,9 @@ void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
   if (GRPC_TRACE_FLAG_ENABLED(timer)) {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) {
-      gpr_log(GPR_ERROR,
-              "WARNING: TimerManager::%p: scheduling Closure::%p after "
-              "TimerManager has been shut down.",
-              this, closure);
+      LOG(ERROR) << "WARNING: TimerManager::" << this
+                 << ": scheduling Closure::" << closure
+                 << " after TimerManager has been shut down.";
     }
   }
   timer_list_->TimerInit(timer, deadline, closure);
@@ -120,7 +119,7 @@ void TimerManager::Shutdown() {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) return;
     if (GRPC_TRACE_FLAG_ENABLED(timer)) {
-      gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
+      VLOG(2) << "TimerManager::" << this << " shutting down";
     }
     shutdown_ = true;
     // Wait on the main loop to exit.
@@ -128,7 +127,7 @@ void TimerManager::Shutdown() {
   }
   main_loop_exit_signal_->WaitForNotification();
   if (GRPC_TRACE_FLAG_ENABLED(timer)) {
-    gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
+    VLOG(2) << "TimerManager::" << this << " shutdown complete";
   }
 }
 
@@ -146,7 +145,7 @@ void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
   CHECK(GPR_LIKELY(shutdown_));
   if (GRPC_TRACE_FLAG_ENABLED(timer)) {
-    gpr_log(GPR_DEBUG, "TimerManager::%p restarting after shutdown", this);
+    VLOG(2) << "TimerManager::" << this << " restarting after shutdown";
   }
   shutdown_ = false;
   main_loop_exit_signal_.emplace();

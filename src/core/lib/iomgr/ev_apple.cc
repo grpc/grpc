@@ -40,9 +40,9 @@
 #include "src/core/lib/iomgr/ev_apple.h"
 
 #ifndef NDEBUG
-#define GRPC_POLLING_TRACE(format, ...)                   \
-  if (GRPC_TRACE_FLAG_ENABLED(apple_polling)) {           \
-    gpr_log(GPR_DEBUG, "(polling) " format, __VA_ARGS__); \
+#define GRPC_POLLING_TRACE(format, ...)                              \
+  if (GRPC_TRACE_FLAG_ENABLED(apple_polling)) {                      \
+    VLOG(2) << "(polling) " << absl::StrFormat(format, __VA_ARGS__); \
   }
 #else
 #define GRPC_POLLING_TRACE(...)

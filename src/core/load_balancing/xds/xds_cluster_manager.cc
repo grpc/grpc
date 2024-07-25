@@ -35,7 +35,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -228,8 +227,8 @@ class XdsClusterManagerLb final : public LoadBalancingPolicy {
 XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
     PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto* cluster_name_attribute = static_cast<XdsClusterAttribute*>(
-      call_state->GetCallAttribute(XdsClusterAttribute::TypeName()));
+  auto* cluster_name_attribute =
+      call_state->GetCallAttribute<XdsClusterAttribute>();
   absl::string_view cluster_name;
   if (cluster_name_attribute != nullptr) {
     cluster_name = cluster_name_attribute->cluster();
@@ -251,10 +250,8 @@ XdsClusterManagerLb::XdsClusterManagerLb(Args args)
 
 XdsClusterManagerLb::~XdsClusterManagerLb() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_cluster_manager_lb %p] destroying xds_cluster_manager LB policy",
-        this);
+    LOG(INFO) << "[xds_cluster_manager_lb " << this
+              << "] destroying xds_cluster_manager LB policy";
   }
 }
 

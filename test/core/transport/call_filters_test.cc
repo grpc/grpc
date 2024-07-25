@@ -27,9 +27,6 @@ using testing::StrictMock;
 namespace grpc_core {
 
 namespace {
-// Offset a void pointer by a given amount
-void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
-
 // A mock activity that can be activated and deactivated.
 class MockActivity : public Activity, public Wakeable {
  public:
@@ -72,17 +69,16 @@ class MockActivity : public Activity, public Wakeable {
 namespace filters_detail {
 
 TEST(LayoutTest, Empty) {
-  Layout<FallibleOperator<ClientMetadataHandle>> l;
+  Layout<ClientMetadataHandle> l;
   ASSERT_EQ(l.ops.size(), 0u);
   EXPECT_EQ(l.promise_size, 0u);
   EXPECT_EQ(l.promise_alignment, 0u);
 }
 
 TEST(LayoutTest, Add) {
-  Layout<FallibleOperator<ClientMetadataHandle>> l;
+  Layout<ClientMetadataHandle> l;
   l.Add(1, 4,
-        FallibleOperator<ClientMetadataHandle>{&l, 120, nullptr, nullptr,
-                                               nullptr});
+        Operator<ClientMetadataHandle>{&l, 120, nullptr, nullptr, nullptr});
   ASSERT_EQ(l.ops.size(), 1u);
   EXPECT_EQ(l.promise_size, 1u);
   EXPECT_EQ(l.promise_alignment, 4u);
@@ -333,7 +329,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoid) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
@@ -368,7 +364,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoidTakingChannelPtr) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
@@ -413,7 +409,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -424,7 +420,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -471,7 +467,7 @@ TEST(StackDataTest,
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -482,7 +478,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -502,7 +498,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
         md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
         bool first = std::exchange(first_, false);
         return first ? nullptr
-                     : ServerMetadataFromStatus(absl::CancelledError());
+                     : ServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
       }
 
      private:
@@ -528,7 +524,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -539,7 +535,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -561,7 +557,7 @@ TEST(StackDataTest,
         const bool first = std::exchange(first_, false);
         p->v.push_back(first ? 11 : 22);
         return first ? nullptr
-                     : ServerMetadataFromStatus(absl::CancelledError());
+                     : ServerMetadataFromStatus(GRPC_STATUS_CANCELLED);
       }
 
      private:
@@ -588,7 +584,7 @@ TEST(StackDataTest,
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -599,7 +595,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -646,7 +642,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -664,7 +660,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -677,7 +673,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   // A cancelled call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -727,7 +723,7 @@ TEST(StackDataTest,
   void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
   d.filter_constructor[0].call_init(call_data, &f1);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -745,7 +741,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -758,7 +754,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   // A cancelled call
-  md = Arena::MakePooled<ClientMetadata>();
+  md = Arena::MakePooledForOverwrite<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -795,7 +791,7 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   EXPECT_EQ(d.server_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_initial_metadata.ops[0].promise_init(
@@ -872,7 +868,7 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
   EXPECT_EQ(r.value().ok->flags(), 1u);
 }
 
-TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
+TEST(StackDataTest, ServerTrailingMetadataReturningVoid) {
   struct Filter1 {
     struct Call {
       void OnServerTrailingMetadata(ServerMetadata& md) {
@@ -888,27 +884,20 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   d.AddServerTrailingMetadataOp(&f1, call_offset);
   ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
-  // Instant => no poll/early destroy
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
-  // Check promise init
+  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
+  // Check operation
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
-  auto r = d.server_trailing_metadata.ops[0].promise_init(
-      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
-      std::move(md));
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-            "hello");
+  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
+      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
+  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
 }
 
-TEST(StackDataTest,
-     InstantServerTrailingMetadataReturningVoidTakingChannelPtr) {
+TEST(StackDataTest, ServerTrailingMetadataReturningVoidTakingChannelPtr) {
   struct Filter1 {
     struct Call {
       void OnServerTrailingMetadata(ServerMetadata& md, Filter1* p) {
@@ -926,23 +915,17 @@ TEST(StackDataTest,
   d.AddServerTrailingMetadataOp(&f1, call_offset);
   ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
-  // Instant => no poll/early destroy
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
-  // Check promise init
+  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
+  // Check operation
   auto arena = SimpleArenaAllocator()->MakeArena();
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
-  auto r = d.server_trailing_metadata.ops[0].promise_init(
-      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
-      std::move(md));
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-            "hello");
+  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
+      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
+  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
   EXPECT_THAT(f1.v, ::testing::ElementsAre(42));
 }
 
@@ -964,13 +947,13 @@ TEST(StackBuilderTest, AddOnServerTrailingMetadata) {
       [x = std::make_unique<int>(42)](ServerMetadata&) { EXPECT_EQ(*x, 42); });
   auto stack = b.Build();
   const auto& data = CallFilters::StackTestSpouse().StackDataFrom(*stack);
-  ASSERT_EQ(data.server_trailing_metadata.ops.size(), 1u);
+  ASSERT_EQ(data.server_trailing_metadata.size(), 1u);
   ASSERT_EQ(data.client_initial_metadata.ops.size(), 0u);
   ASSERT_EQ(data.client_to_server_messages.ops.size(), 0u);
   ASSERT_EQ(data.server_to_client_messages.ops.size(), 0u);
   ASSERT_EQ(data.server_initial_metadata.ops.size(), 0u);
-  EXPECT_EQ(data.server_trailing_metadata.ops[0].call_offset, 0);
-  EXPECT_NE(data.server_trailing_metadata.ops[0].channel_data, nullptr);
+  EXPECT_EQ(data.server_trailing_metadata[0].call_offset, 0);
+  EXPECT_NE(data.server_trailing_metadata[0].channel_data, nullptr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1024,7 +1007,7 @@ TEST(OperationExecutorTest, InstantTwo) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
@@ -1032,7 +1015,7 @@ TEST(OperationExecutorTest, InstantTwo) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
   // Second fails
-  md = Arena::MakePooled<ServerMetadata>();
+  md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
   EXPECT_TRUE(r.ready());
@@ -1087,7 +1070,7 @@ TEST(OperationExecutorTest, PromiseTwo) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds after two sets of two step delays.
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
@@ -1103,7 +1086,7 @@ TEST(OperationExecutorTest, PromiseTwo) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
   // Second fails after one set of two step delays.
-  md = Arena::MakePooled<ServerMetadata>();
+  md = Arena::MakePooledForOverwrite<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
   EXPECT_FALSE(r.ready());
@@ -1114,296 +1097,6 @@ TEST(OperationExecutorTest, PromiseTwo) {
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   gpr_free_aligned(call_data1);
-}
-
-}  // namespace filters_detail
-
-///////////////////////////////////////////////////////////////////////////////
-// InfallibleOperationExecutor
-
-namespace filters_detail {
-
-TEST(InfallibleOperationExecutor, NoOp) {
-  OperationExecutor<ServerMetadataHandle> pipe;
-  EXPECT_FALSE(pipe.IsRunning());
-}
-
-TEST(InfallibleOperationExecutor, InstantTwo) {
-  class Filter1 {
-   public:
-    class Call {
-     public:
-      void OnServerTrailingMetadata(ClientMetadata& md) {
-        if (md.get_pointer(HttpPathMetadata()) != nullptr) {
-          md.Set(HttpPathMetadata(), Slice::FromStaticString("world"));
-        } else {
-          md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
-        }
-      }
-    };
-  };
-  StackData d;
-  Filter1 f1;
-  Filter1 f2;
-  const size_t call_offset1 = d.AddFilter(&f1);
-  const size_t call_offset2 = d.AddFilter(&f2);
-  d.AddServerTrailingMetadataOp(&f1, call_offset1);
-  d.AddServerTrailingMetadataOp(&f2, call_offset2);
-  ASSERT_EQ(d.filter_constructor.size(), 0u);
-  ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 2u);
-  void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  InfallibleOperationExecutor<ServerMetadataHandle> transformer;
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  promise_detail::Context<Arena> ctx(arena.get());
-  auto md = Arena::MakePooled<ServerMetadata>();
-  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
-  auto r =
-      transformer.Start(&d.server_trailing_metadata, std::move(md), call_data);
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-            "world");
-  gpr_free_aligned(call_data);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// CallState
-
-TEST(CallStateTest, NoOp) { CallState state; }
-
-TEST(CallStateTest, StartTwiceCrashes) {
-  CallState state;
-  state.Start();
-  EXPECT_DEATH(state.Start(), "");
-}
-
-TEST(CallStateTest, PullServerInitialMetadataBlocksUntilStart) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.PushServerInitialMetadata());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.Start());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
-}
-
-TEST(CallStateTest, PullClientInitialMetadata) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_DEATH(state.FinishPullClientInitialMetadata(), "");
-  state.BeginPullClientInitialMetadata();
-  state.FinishPullClientInitialMetadata();
-}
-
-TEST(CallStateTest, ClientToServerMessagesWaitForInitialMetadata) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  state.BeginPushClientToServerMessage();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  state.BeginPullClientInitialMetadata();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientInitialMetadata());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-}
-
-TEST(CallStateTest, RepeatedClientToServerMessagesWithHalfClose) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.BeginPullClientInitialMetadata();
-  state.FinishPullClientInitialMetadata();
-
-  // Message 0
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // Message 1
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // Message 2: push before polling
-  state.BeginPushClientToServerMessage();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // Message 3: push before polling and half close
-  state.BeginPushClientToServerMessage();
-  state.ClientToServerHalfClose();
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
-  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
-
-  // ... and now we should see the half close
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(false));
-}
-
-TEST(CallStateTest, ImmediateClientToServerHalfClose) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.BeginPullClientInitialMetadata();
-  state.FinishPullClientInitialMetadata();
-  state.ClientToServerHalfClose();
-  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady(false));
-}
-
-TEST(CallStateTest, ServerToClientMessagesWaitForInitialMetadata) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.Start());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.PushServerInitialMetadata());
-  state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity,
-                EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(),
-                            IsReady(true)));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerInitialMetadata());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-}
-
-TEST(CallStateTest, RepeatedServerToClientMessages) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.PushServerInitialMetadata();
-  state.Start();
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(true));
-  state.FinishPullServerInitialMetadata();
-
-  // Message 0
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-
-  // Message 1
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-
-  // Message 2: push before polling
-  state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-
-  // Message 3: push before polling
-  state.BeginPushServerToClientMessage();
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(true));
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
-  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
-}
-
-TEST(CallStateTest, ReceiveTrailersOnly) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerTrailingMetadata(false);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
-}
-
-TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.PushServerTrailingMetadata(false);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
-}
-
-TEST(CallStateTest, RecallNoCancellation) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerTrailingMetadata(false);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
-  EXPECT_THAT(state.PollWasCancelled(), IsReady(false));
-}
-
-TEST(CallStateTest, RecallCancellation) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerTrailingMetadata(true);
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
-  EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
-}
-
-TEST(CallStateTest, ReceiveTrailingMetadataAfterMessageRead) {
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  CallState state;
-  state.Start();
-  state.PushServerInitialMetadata();
-  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(true));
-  state.FinishPullServerInitialMetadata();
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
-  EXPECT_WAKEUP(activity, state.PushServerTrailingMetadata(false));
-  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(false));
-  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
 }
 
 }  // namespace filters_detail
@@ -1468,8 +1161,9 @@ TEST(CallFiltersTest, UnaryCall) {
   builder.Add(&f1);
   builder.Add(&f2);
   auto arena = SimpleArenaAllocator()->MakeArena();
-  CallFilters filters(Arena::MakePooled<ClientMetadata>());
-  filters.SetStack(builder.Build());
+  CallFilters filters(Arena::MakePooledForOverwrite<ClientMetadata>());
+  filters.AddStack(builder.Build());
+  filters.Start();
   promise_detail::Context<Arena> ctx(arena.get());
   StrictMock<MockActivity> activity;
   activity.Activate();
@@ -1488,7 +1182,8 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
   // Push server initial metadata
-  filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
+  filters.PushServerInitialMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
   // Pull server initial metadata
   EXPECT_THAT(pull_server_initial_metadata(), IsReady());
@@ -1504,7 +1199,103 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
   // Push server trailing metadata
-  filters.PushServerTrailingMetadata(Arena::MakePooled<ServerMetadata>());
+  filters.PushServerTrailingMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
+  // Pull server trailing metadata
+  auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
+  // Should be done
+  EXPECT_THAT(pull_server_trailing_metadata(), IsReady());
+  filters.Finalize(nullptr);
+  EXPECT_THAT(steps,
+              ::testing::ElementsAre(
+                  "f1:OnClientInitialMetadata", "f2:OnClientInitialMetadata",
+                  "f1:OnClientToServerMessage", "f2:OnClientToServerMessage",
+                  "f2:OnServerInitialMetadata", "f1:OnServerInitialMetadata",
+                  "f2:OnServerToClientMessage", "f1:OnServerToClientMessage",
+                  "f2:OnServerTrailingMetadata", "f1:OnServerTrailingMetadata",
+                  "f1:OnFinalize", "f2:OnFinalize"));
+}
+
+TEST(CallFiltersTest, UnaryCallWithMultiStack) {
+  struct Filter {
+    struct Call {
+      void OnClientInitialMetadata(ClientMetadata&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnClientInitialMetadata"));
+      }
+      void OnServerInitialMetadata(ServerMetadata&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerInitialMetadata"));
+      }
+      void OnClientToServerMessage(Message&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
+      }
+      void OnClientToServerHalfClose(Filter* f) {
+        f->steps.push_back(
+            absl::StrCat(f->label, ":OnClientToServerHalfClose"));
+      }
+      void OnServerToClientMessage(Message&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));
+      }
+      void OnServerTrailingMetadata(ServerMetadata&, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnServerTrailingMetadata"));
+      }
+      void OnFinalize(const grpc_call_final_info*, Filter* f) {
+        f->steps.push_back(absl::StrCat(f->label, ":OnFinalize"));
+      }
+      std::unique_ptr<int> i = std::make_unique<int>(3);
+    };
+
+    const std::string label;
+    std::vector<std::string>& steps;
+  };
+  std::vector<std::string> steps;
+  Filter f1{"f1", steps};
+  Filter f2{"f2", steps};
+  CallFilters::StackBuilder builder1;
+  CallFilters::StackBuilder builder2;
+  builder1.Add(&f1);
+  builder2.Add(&f2);
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  CallFilters filters(Arena::MakePooledForOverwrite<ClientMetadata>());
+  filters.AddStack(builder1.Build());
+  filters.AddStack(builder2.Build());
+  filters.Start();
+  promise_detail::Context<Arena> ctx(arena.get());
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  // Pull client initial metadata
+  auto pull_client_initial_metadata = filters.PullClientInitialMetadata();
+  EXPECT_THAT(pull_client_initial_metadata(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push client to server message
+  auto push_client_to_server_message = filters.PushClientToServerMessage(
+      Arena::MakePooled<Message>(SliceBuffer(), 0));
+  EXPECT_THAT(push_client_to_server_message(), IsPending());
+  auto pull_client_to_server_message = filters.PullClientToServerMessage();
+  // Pull client to server message, expect a wakeup
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_client_to_server_message(), IsReady()));
+  // Push should be done
+  EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
+  // Push server initial metadata
+  filters.PushServerInitialMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
+  auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
+  // Pull server initial metadata
+  EXPECT_THAT(pull_server_initial_metadata(), IsReady());
+  Mock::VerifyAndClearExpectations(&activity);
+  // Push server to client message
+  auto push_server_to_client_message = filters.PushServerToClientMessage(
+      Arena::MakePooled<Message>(SliceBuffer(), 0));
+  EXPECT_THAT(push_server_to_client_message(), IsPending());
+  auto pull_server_to_client_message = filters.PullServerToClientMessage();
+  // Pull server to client message, expect a wakeup
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_server_to_client_message(), IsReady()));
+  // Push should be done
+  EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
+  // Push server trailing metadata
+  filters.PushServerTrailingMetadata(
+      Arena::MakePooledForOverwrite<ServerMetadata>());
   // Pull server trailing metadata
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done

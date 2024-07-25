@@ -479,7 +479,7 @@ UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_has_metadata(const envo
 
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_name(envoy_config_route_v3_RouteConfiguration *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(72, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_route_v3_VirtualHost** envoy_config_route_v3_RouteConfiguration_mutable_virtual_hosts(envoy_config_route_v3_RouteConfiguration* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -629,7 +629,7 @@ UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_route_v3_
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_validate_clusters(envoy_config_route_v3_RouteConfiguration *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(32, 72), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_route_v3_RouteConfiguration_mutable_validate_clusters(envoy_config_route_v3_RouteConfiguration* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_route_v3_RouteConfiguration_validate_clusters(msg);
@@ -669,7 +669,7 @@ UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_add_request_headers_to_
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_vhds(envoy_config_route_v3_RouteConfiguration *msg, envoy_config_route_v3_Vhds* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(40, 88), 65, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_route_v3_Vhds* envoy_config_route_v3_RouteConfiguration_mutable_vhds(envoy_config_route_v3_RouteConfiguration* msg, upb_Arena* arena) {
   struct envoy_config_route_v3_Vhds* sub = (struct envoy_config_route_v3_Vhds*)envoy_config_route_v3_RouteConfiguration_vhds(msg);
@@ -681,11 +681,11 @@ UPB_INLINE struct envoy_config_route_v3_Vhds* envoy_config_route_v3_RouteConfigu
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_most_specific_header_mutations_wins(envoy_config_route_v3_RouteConfiguration *msg, bool value) {
   const upb_MiniTableField field = {10, UPB_SIZE(44, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_max_direct_response_body_size_bytes(envoy_config_route_v3_RouteConfiguration *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {11, UPB_SIZE(48, 96), 66, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_route_v3_RouteConfiguration_mutable_max_direct_response_body_size_bytes(envoy_config_route_v3_RouteConfiguration* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_route_v3_RouteConfiguration_max_direct_response_body_size_bytes(msg);
@@ -757,11 +757,11 @@ UPB_INLINE struct envoy_config_route_v3_RouteAction_RequestMirrorPolicy* envoy_c
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_ignore_port_in_host_matching(envoy_config_route_v3_RouteConfiguration *msg, bool value) {
   const upb_MiniTableField field = {14, UPB_SIZE(60, 10), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_ignore_path_parameters_in_path_matching(envoy_config_route_v3_RouteConfiguration *msg, bool value) {
   const upb_MiniTableField field = {15, UPB_SIZE(61, 11), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_typed_per_filter_config_clear(envoy_config_route_v3_RouteConfiguration* msg) {
   const upb_MiniTableField field = {16, UPB_SIZE(64, 120), 0, 8, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -790,7 +790,7 @@ UPB_INLINE envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* e
 }
 UPB_INLINE void envoy_config_route_v3_RouteConfiguration_set_metadata(envoy_config_route_v3_RouteConfiguration *msg, struct envoy_config_core_v3_Metadata* value) {
   const upb_MiniTableField field = {17, UPB_SIZE(68, 128), 67, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Metadata* envoy_config_route_v3_RouteConfiguration_mutable_metadata(envoy_config_route_v3_RouteConfiguration* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Metadata* sub = (struct envoy_config_core_v3_Metadata*)envoy_config_route_v3_RouteConfiguration_metadata(msg);
@@ -877,7 +877,7 @@ UPB_INLINE bool envoy_config_route_v3_Vhds_has_config_source(const envoy_config_
 
 UPB_INLINE void envoy_config_route_v3_Vhds_set_config_source(envoy_config_route_v3_Vhds *msg, struct envoy_config_core_v3_ConfigSource* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_route_v3_Vhds_mutable_config_source(envoy_config_route_v3_Vhds* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_ConfigSource* sub = (struct envoy_config_core_v3_ConfigSource*)envoy_config_route_v3_Vhds_config_source(msg);

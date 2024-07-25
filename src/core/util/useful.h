@@ -23,6 +23,8 @@
 
 #include <cstddef>
 
+#include "absl/log/check.h"
+#include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
@@ -35,16 +37,6 @@ T Clamp(T val, T min, T max) {
   if (val < min) return min;
   if (max < val) return max;
   return val;
-}
-
-/// rotl, rotr assume x is unsigned
-template <typename T>
-constexpr T RotateLeft(T x, T n) {
-  return ((x << n) | (x >> (sizeof(x) * 8 - n)));
-}
-template <typename T>
-constexpr T RotateRight(T x, T n) {
-  return ((x >> n) | (x << (sizeof(x) * 8 - n)));
 }
 
 // Set the n-th bit of i
@@ -65,43 +57,29 @@ bool GetBit(T i, size_t n) {
   return (i & (T(1) << n)) != 0;
 }
 
-namespace useful_detail {
-inline constexpr uint32_t HexdigitBitcount(uint32_t x) {
-  return (x - ((x >> 1) & 0x77777777) - ((x >> 2) & 0x33333333) -
-          ((x >> 3) & 0x11111111));
+#if GRPC_HAS_BUILTIN(__builtin_ctz)
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
+    uint32_t i) {
+  DCHECK_NE(i, 0u);  // __builtin_ctz returns undefined behavior for 0
+  return __builtin_ctz(i);
 }
-}  // namespace useful_detail
-
-inline constexpr uint32_t BitCount(uint32_t i) {
-  return (((useful_detail::HexdigitBitcount(i) +
-            (useful_detail::HexdigitBitcount(i) >> 4)) &
-           0x0f0f0f0f) %
-          255);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
+    uint64_t i) {
+  DCHECK_NE(i, 0u);  // __builtin_ctz returns undefined behavior for 0
+  return __builtin_ctzll(i);
 }
-
-inline constexpr uint32_t BitCount(uint64_t i) {
-  return BitCount(static_cast<uint32_t>(i)) +
-         BitCount(static_cast<uint32_t>(i >> 32));
+#else
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
+    uint32_t i) {
+  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
+  return absl::popcount((i & -i) - 1);
 }
-
-inline constexpr uint32_t BitCount(uint16_t i) {
-  return BitCount(static_cast<uint32_t>(i));
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t CountTrailingZeros(
+    uint64_t i) {
+  DCHECK_NE(i, 0);  // __builtin_ctz returns undefined behavior for 0
+  return absl::popcount((i & -i) - 1);
 }
-inline constexpr uint32_t BitCount(uint8_t i) {
-  return BitCount(static_cast<uint32_t>(i));
-}
-inline constexpr uint32_t BitCount(int64_t i) {
-  return BitCount(static_cast<uint64_t>(i));
-}
-inline constexpr uint32_t BitCount(int32_t i) {
-  return BitCount(static_cast<uint32_t>(i));
-}
-inline constexpr uint32_t BitCount(int16_t i) {
-  return BitCount(static_cast<uint16_t>(i));
-}
-inline constexpr uint32_t BitCount(int8_t i) {
-  return BitCount(static_cast<uint8_t>(i));
-}
+#endif
 
 // This function uses operator< to implement a qsort-style comparison, whereby:
 // if a is smaller than b, a number smaller than 0 is returned.
@@ -163,7 +141,7 @@ inline int64_t SaturatingAdd(int64_t a, int64_t b) {
 }
 
 inline uint32_t MixHash32(uint32_t a, uint32_t b) {
-  return RotateLeft(a, 2u) ^ b;
+  return absl::rotl(a, 2u) ^ b;
 }
 
 inline uint32_t RoundUpToPowerOf2(uint32_t v) {
@@ -175,6 +153,23 @@ inline uint32_t RoundUpToPowerOf2(uint32_t v) {
   v |= v >> 16;
   v++;
   return v;
+}
+
+// Return a value with only the lowest bit left on.
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint8_t LowestOneBit(uint8_t x) {
+  return x & -x;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint16_t LowestOneBit(uint16_t x) {
+  return x & -x;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t LowestOneBit(uint32_t x) {
+  return x & -x;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint64_t LowestOneBit(uint64_t x) {
+  return x & -x;
 }
 
 }  // namespace grpc_core

@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 
 namespace grpc_core {
 

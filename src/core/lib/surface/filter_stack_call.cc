@@ -46,6 +46,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -58,7 +59,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -82,7 +82,7 @@ using GrpcClosure = Closure;
 FilterStackCall::FilterStackCall(RefCountedPtr<Arena> arena,
                                  const grpc_call_create_args& args)
     : Call(args.server_transport_data == nullptr, args.send_deadline,
-           std::move(arena), args.channel->event_engine()),
+           std::move(arena)),
       channel_(args.channel->RefAsSubclass<Channel>()),
       cq_(args.cq),
       stream_op_payload_{} {}
@@ -108,6 +108,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       channel_stack->call_stack_size;
 
   RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      args->channel->event_engine());
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   DCHECK(FromC(call->c_ptr()) == call);
   DCHECK(FromCallStack(call->call_stack()) == call);
@@ -266,7 +268,7 @@ void FilterStackCall::ExternalUnref() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c=" << this << ")";
 
   MaybeUnpublishFromParent();
 

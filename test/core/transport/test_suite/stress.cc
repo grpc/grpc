@@ -30,7 +30,7 @@ TRANSPORT_TEST(ManyUnaryRequests) {
   std::map<int, std::string> client_messages;
   std::map<int, std::string> server_messages;
   for (int i = 0; i < kNumRequests; i++) {
-    auto md = Arena::MakePooled<ClientMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
     md->Set(HttpPathMetadata(), Slice::FromCopiedString(std::to_string(i)));
     auto initiator = CreateCall(std::move(md));
     client_messages[i] = RandomMessage();
@@ -99,7 +99,7 @@ TRANSPORT_TEST(ManyUnaryRequests) {
         [handler](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
           EXPECT_TRUE(msg.ok());
           EXPECT_FALSE(msg.value().has_value());
-          auto md = Arena::MakePooled<ServerMetadata>();
+          auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
           md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
           return handler.PushServerInitialMetadata(std::move(md));
         },
@@ -113,7 +113,7 @@ TRANSPORT_TEST(ManyUnaryRequests) {
         },
         [handler](StatusFlag result) mutable {
           EXPECT_TRUE(result.ok());
-          auto md = Arena::MakePooled<ServerMetadata>();
+          auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
           md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
           handler.PushServerTrailingMetadata(std::move(md));
           return Empty{};

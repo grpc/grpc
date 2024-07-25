@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/try_seq.h"
 
@@ -119,12 +120,12 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
 }
 
 CallInitiatorAndHandler MakeCallPair(
-    ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena) {
-  CHECK_NE(arena.get(), nullptr);
-  auto spine = CallSpine::Create(std::move(client_initial_metadata),
-                                 event_engine, std::move(arena));
+    ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena) {
+  DCHECK_NE(arena.get(), nullptr);
+  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
+  auto spine =
+      CallSpine::Create(std::move(client_initial_metadata), std::move(arena));
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 

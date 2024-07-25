@@ -77,7 +77,7 @@ class ServerImpl final {
   }
 
  private:
-  // Class encompasing the state and logic needed to serve a request.
+  // Class encompassing the state and logic needed to serve a request.
   class CallData {
    public:
     // Take in the "service" instance (in this case representing an asynchronous

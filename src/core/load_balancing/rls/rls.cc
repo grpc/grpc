@@ -64,7 +64,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
@@ -807,8 +806,9 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
 
 void RlsLb::ChildPolicyWrapper::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] ChildPolicyWrapper=%p [%s]: shutdown",
-            lb_policy_.get(), this, target_.c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get()
+              << "] ChildPolicyWrapper=" << this << " [" << target_
+              << "]: shutdown";
   }
   is_shutdown_ = true;
   lb_policy_->child_policy_map_.erase(target_);
@@ -866,11 +866,10 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
       lb_policy_->config_->child_policy_config(), &errors);
   CHECK(child_policy_config.has_value());
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(
-        GPR_INFO,
-        "[rlslb %p] ChildPolicyWrapper=%p [%s]: validating update, config: %s",
-        lb_policy_.get(), this, target_.c_str(),
-        JsonDump(*child_policy_config).c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get()
+              << "] ChildPolicyWrapper=" << this << " [" << target_
+              << "]: validating update, config: "
+              << JsonDump(*child_policy_config);
   }
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -878,11 +877,9 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   // Returned RLS target fails the validation.
   if (!config.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO,
-              "[rlslb %p] ChildPolicyWrapper=%p [%s]: config failed to parse: "
-              "%s",
-              lb_policy_.get(), this, target_.c_str(),
-              config.status().ToString().c_str());
+      LOG(INFO) << "[rlslb " << lb_policy_.get()
+                << "] ChildPolicyWrapper=" << this << " [" << target_
+                << "]: config failed to parse: " << config.status();
     }
     pending_config_.reset();
     picker_ = MakeRefCounted<TransientFailurePicker>(
@@ -907,20 +904,19 @@ absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
     child_policy_ = MakeOrphanable<ChildPolicyHandler>(std::move(create_args),
                                                        &rls_lb_trace);
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO,
-              "[rlslb %p] ChildPolicyWrapper=%p [%s], created new child policy "
-              "handler %p",
-              lb_policy_.get(), this, target_.c_str(), child_policy_.get());
+      LOG(INFO) << "[rlslb " << lb_policy_.get()
+                << "] ChildPolicyWrapper=" << this << " [" << target_
+                << "], created new child policy handler "
+                << child_policy_.get();
     }
     grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                      lb_policy_->interested_parties());
   }
   // Send the child the updated config.
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] ChildPolicyWrapper=%p [%s], updating child policy "
-            "handler %p",
-            lb_policy_.get(), this, target_.c_str(), child_policy_.get());
+    LOG(INFO) << "[rlslb " << lb_policy_.get()
+              << "] ChildPolicyWrapper=" << this << " [" << target_
+              << "], updating child policy handler " << child_policy_.get();
   }
   UpdateArgs update_args;
   update_args.config = std::move(pending_config_);
@@ -937,12 +933,11 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "
-            "UpdateState(state=%s, status=%s, picker=%p)",
-            wrapper_->lb_policy_.get(), wrapper_.get(),
-            wrapper_->target_.c_str(), this, ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
+    LOG(INFO) << "[rlslb " << wrapper_->lb_policy_.get()
+              << "] ChildPolicyWrapper=" << wrapper_.get() << " ["
+              << wrapper_->target_ << "] ChildPolicyHelper=" << this
+              << ": UpdateState(state=" << ConnectivityStateName(state)
+              << ", status=" << status << ", picker=" << picker.get() << ")";
   }
   {
     MutexLock lock(&wrapper_->lb_policy_->mu_);
@@ -1045,8 +1040,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                   lb_policy_->channel_control_helper()->GetAuthority(),
                   args.initial_metadata)};
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
-            lb_policy_.get(), this, key.ToString().c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] picker=" << this
+              << ": request keys: " << key.ToString();
   }
   Timestamp now = Timestamp::Now();
   MutexLock lock(&lb_policy_->mu_);
@@ -1083,8 +1078,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     // If the entry has non-expired data, use it.
     if (entry->data_expiration_time() >= now) {
       if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-        gpr_log(GPR_INFO, "[rlslb %p] picker=%p: using cache entry %p",
-                lb_policy_.get(), this, entry);
+        LOG(INFO) << "[rlslb " << lb_policy_.get() << "] picker=" << this
+                  << ": using cache entry " << entry;
       }
       return entry->Pick(args);
     }
@@ -1099,8 +1094,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   }
   // RLS call pending.  Queue the pick.
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: RLS request pending; queuing pick",
-            lb_policy_.get(), this);
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] picker=" << this
+              << ": RLS request pending; queuing pick";
   }
   return PickResult::Queue();
 }
@@ -1109,8 +1104,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     const char* reason, PickArgs args, absl::Status status) {
   if (default_child_policy_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] picker=%p: %s; using default target",
-              lb_policy_.get(), this, reason);
+      LOG(INFO) << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
+                << reason << "; using default target";
     }
     auto pick_result = default_child_policy_->Pick(args);
     lb_policy_->MaybeExportPickCount(kMetricDefaultTargetPicks,
@@ -1118,8 +1113,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
     return pick_result;
   }
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: %s; failing pick",
-            lb_policy_.get(), this, reason);
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] picker=" << this << ": "
+              << reason << "; failing pick";
   }
   auto& stats_plugins =
       lb_policy_->channel_control_helper()->GetStatsPluginGroup();
@@ -1155,10 +1150,11 @@ void RlsLb::Cache::Entry::BackoffTimer::Orphan() {
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->Cancel(
           *backoff_timer_task_handle_)) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p %s, backoff timer canceled",
-              entry_->lb_policy_.get(), entry_.get(),
-              entry_->is_shutdown_ ? "(shut down)"
-                                   : entry_->lru_iterator_->ToString().c_str());
+      LOG(INFO) << "[rlslb " << entry_->lb_policy_.get()
+                << "] cache entry=" << entry_.get() << " "
+                << (entry_->is_shutdown_ ? "(shut down)"
+                                         : entry_->lru_iterator_->ToString())
+                << ", backoff timer canceled";
     }
   }
   backoff_timer_task_handle_.reset();
@@ -1169,10 +1165,11 @@ void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimerLocked() {
   {
     MutexLock lock(&entry_->lb_policy_->mu_);
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p %s, backoff timer fired",
-              entry_->lb_policy_.get(), entry_.get(),
-              entry_->is_shutdown_ ? "(shut down)"
-                                   : entry_->lru_iterator_->ToString().c_str());
+      LOG(INFO) << "[rlslb " << entry_->lb_policy_.get()
+                << "] cache entry=" << entry_.get() << " "
+                << (entry_->is_shutdown_ ? "(shut down)"
+                                         : entry_->lru_iterator_->ToString())
+                << ", backoff timer fired";
     }
     // Skip the update if Orphaned
     if (!backoff_timer_task_handle_.has_value()) return;
@@ -1208,8 +1205,8 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
 
 void RlsLb::Cache::Entry::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] cache entry=%p %s: cache entry evicted",
-            lb_policy_.get(), this, lru_iterator_->ToString().c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] cache entry=" << this
+              << " " << lru_iterator_->ToString() << ": cache entry evicted";
   }
   is_shutdown_ = true;
   lb_policy_->cache_.lru_list_.erase(lru_iterator_);
@@ -1239,12 +1236,11 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
             GRPC_CHANNEL_TRANSIENT_FAILURE &&
         i < child_policy_wrappers_.size() - 1) {
       if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-        gpr_log(GPR_INFO,
-                "[rlslb %p] cache entry=%p %s: target %s (%" PRIuPTR
-                " of %" PRIuPTR ") in state TRANSIENT_FAILURE; skipping",
-                lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
-                child_policy_wrapper->target().c_str(), i,
-                child_policy_wrappers_.size());
+        LOG(INFO) << "[rlslb " << lb_policy_.get() << "] cache entry=" << this
+                  << " " << lru_iterator_->ToString() << ": target "
+                  << child_policy_wrapper->target() << " (" << i << " of "
+                  << child_policy_wrappers_.size()
+                  << ") in state TRANSIENT_FAILURE; skipping";
       }
       continue;
     }
@@ -1253,13 +1249,13 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
   // Child policy not in TRANSIENT_FAILURE or is the last target in
   // the list, so delegate.
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] cache entry=%p %s: target %s (%" PRIuPTR " of %" PRIuPTR
-            ") in state %s; delegating",
-            lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
-            child_policy_wrapper->target().c_str(), i,
-            child_policy_wrappers_.size(),
-            ConnectivityStateName(child_policy_wrapper->connectivity_state()));
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] cache entry=" << this
+              << " " << lru_iterator_->ToString() << ": target "
+              << child_policy_wrapper->target() << " (" << i << " of "
+              << child_policy_wrappers_.size() << ") in state "
+              << ConnectivityStateName(
+                     child_policy_wrapper->connectivity_state())
+              << "; delegating";
   }
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
@@ -1269,7 +1265,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
     auto* complete_pick =
         absl::get_if<PickResult::Complete>(&pick_result.result);
     if (complete_pick != nullptr) {
-      complete_pick->metadata_mutations.Add(kRlsHeaderKey, header_data_.Ref());
+      complete_pick->metadata_mutations.Set(kRlsHeaderKey, header_data_.Ref());
     }
   }
   return pick_result;
@@ -1408,15 +1404,15 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
     map_.emplace(key, OrphanablePtr<Entry>(entry));
     size_ += entry_size;
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] key=%s: cache entry added, entry=%p",
-              lb_policy_, key.ToString().c_str(), entry);
+      LOG(INFO) << "[rlslb " << lb_policy_ << "] key=" << key.ToString()
+                << ": cache entry added, entry=" << entry;
     }
     return entry;
   }
   // Entry found, so use it.
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] key=%s: found cache entry %p", lb_policy_,
-            key.ToString().c_str(), it->second.get());
+    LOG(INFO) << "[rlslb " << lb_policy_ << "] key=" << key.ToString()
+              << ": found cache entry " << it->second.get();
   }
   it->second->MarkUsed();
   return it->second.get();
@@ -1424,8 +1420,8 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
 
 void RlsLb::Cache::Resize(size_t bytes) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] resizing cache to %" PRIuPTR " bytes",
-            lb_policy_, bytes);
+    LOG(INFO) << "[rlslb " << lb_policy_ << "] resizing cache to " << bytes
+              << " bytes";
   }
   size_limit_ = bytes;
   MaybeShrinkSize(size_limit_);
@@ -1445,7 +1441,7 @@ void RlsLb::Cache::Shutdown() {
       lb_policy_->channel_control_helper()->GetEventEngine()->Cancel(
           *cleanup_timer_handle_)) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer canceled", lb_policy_);
+      LOG(INFO) << "[rlslb " << lb_policy_ << "] cache cleanup timer canceled";
     }
   }
   cleanup_timer_handle_.reset();
@@ -1483,7 +1479,7 @@ void RlsLb::Cache::StartCleanupTimer() {
 
 void RlsLb::Cache::OnCleanupTimer() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired", lb_policy_);
+    LOG(INFO) << "[rlslb " << lb_policy_ << "] cache cleanup timer fired";
   }
   MutexLock lock(&lb_policy_->mu_);
   if (!cleanup_timer_handle_.has_value()) return;
@@ -1512,17 +1508,16 @@ void RlsLb::Cache::MaybeShrinkSize(size_t bytes) {
     CHECK(map_it != map_.end());
     if (!map_it->second->CanEvict()) break;
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] LRU eviction: removing entry %p %s",
-              lb_policy_, map_it->second.get(), lru_it->ToString().c_str());
+      LOG(INFO) << "[rlslb " << lb_policy_ << "] LRU eviction: removing entry "
+                << map_it->second.get() << " " << lru_it->ToString();
     }
     size_ -= map_it->second->Size();
     map_.erase(map_it);
   }
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] LRU pass complete: desired size=%" PRIuPTR
-            " size=%" PRIuPTR,
-            lb_policy_, bytes, size_);
+    LOG(INFO) << "[rlslb " << lb_policy_
+              << "] LRU pass complete: desired size=" << bytes
+              << " size=" << size_;
   }
 }
 
@@ -1534,11 +1529,9 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* lb_policy = rls_channel_->lb_policy_.get();
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] RlsChannel=%p StateWatcher=%p: "
-            "state changed to %s (%s)",
-            lb_policy, rls_channel_.get(), this,
-            ConnectivityStateName(new_state), status.ToString().c_str());
+    LOG(INFO) << "[rlslb " << lb_policy << "] RlsChannel=" << rls_channel_.get()
+              << " StateWatcher=" << this << ": state changed to "
+              << ConnectivityStateName(new_state) << " (" << status << ")";
   }
   if (rls_channel_->is_shutdown_) return;
   MutexLock lock(&lb_policy->mu_);
@@ -1633,9 +1626,9 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
                           creds.get(), args.ToC().get())));
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
-            lb_policy_.get(), this, channel_.get(),
-            lb_policy_->config_->lookup_service().c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] RlsChannel=" << this
+              << ": created channel " << channel_.get() << " for "
+              << lb_policy_->config_->lookup_service();
   }
   if (channel_ != nullptr) {
     // Set up channelz linkage.
@@ -1656,8 +1649,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
 
 void RlsLb::RlsChannel::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p, channel=%p: shutdown",
-            lb_policy_.get(), this, channel_.get());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] RlsChannel=" << this
+              << ", channel=" << channel_.get() << ": shutdown";
   }
   is_shutdown_ = true;
   if (channel_ != nullptr) {
@@ -1723,9 +1716,8 @@ RlsLb::RlsRequest::RlsRequest(
       reason_(reason),
       stale_header_data_(std::move(stale_header_data)) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO,
-            "[rlslb %p] rls_request=%p: RLS request created for key %s",
-            lb_policy_.get(), this, key_.ToString().c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
+              << ": RLS request created for key " << key_.ToString();
   }
   GRPC_CLOSURE_INIT(&call_complete_cb_, OnRlsCallComplete, this, nullptr);
   ExecCtx::Run(
@@ -1740,8 +1732,8 @@ RlsLb::RlsRequest::~RlsRequest() { CHECK_EQ(call_, nullptr); }
 void RlsLb::RlsRequest::Orphan() {
   if (call_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] rls_request=%p %s: cancelling RLS call",
-              lb_policy_.get(), this, key_.ToString().c_str());
+      LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
+                << " " << key_.ToString() << ": cancelling RLS call";
     }
     grpc_call_cancel_internal(call_);
   }
@@ -1814,12 +1806,10 @@ void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
 void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
     std::string status_message(StringViewFromSlice(status_details_recv_));
-    gpr_log(GPR_INFO,
-            "[rlslb %p] rls_request=%p %s, error=%s, status={%d, %s} RLS call "
-            "response received",
-            lb_policy_.get(), this, key_.ToString().c_str(),
-            StatusToString(error).c_str(), status_recv_,
-            status_message.c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
+              << " " << key_.ToString() << ", error=" << StatusToString(error)
+              << ", status={" << status_recv_ << ", " << status_message << "}"
+              << " RLS call response received";
   }
   // Parse response.
   ResponseInfo response;
@@ -1846,9 +1836,9 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   call_ = nullptr;
   // Return result to cache.
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] rls_request=%p %s: response info: %s",
-            lb_policy_.get(), this, key_.ToString().c_str(),
-            response.ToString().c_str());
+    LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
+              << " " << key_.ToString()
+              << ": response info: " << response.ToString();
   }
   std::vector<ChildPolicyWrapper*> child_policies_to_finish_update;
   {
@@ -2042,8 +2032,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
         created_default_child = true;
       } else {
         if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-          gpr_log(GPR_INFO,
-                  "[rlslb %p] using existing child for default target", this);
+          LOG(INFO) << "[rlslb " << this
+                    << "] using existing child for default target";
         }
         default_child_policy_ =
             it->second->Ref(DEBUG_LOCATION, "DefaultChildPolicy");
@@ -2197,9 +2187,8 @@ void RlsLb::UpdatePickerLocked() {
       for (auto& p : child_policy_map_) {
         grpc_connectivity_state child_state = p.second->connectivity_state();
         if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-          gpr_log(GPR_INFO, "[rlslb %p] target %s in state %s", this,
-                  p.second->target().c_str(),
-                  ConnectivityStateName(child_state));
+          LOG(INFO) << "[rlslb " << this << "] target " << p.second->target()
+                    << " in state " << ConnectivityStateName(child_state);
         }
         if (child_state == GRPC_CHANNEL_READY) {
           state = GRPC_CHANNEL_READY;

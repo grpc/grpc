@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -32,7 +33,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -132,11 +132,10 @@ ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
   if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_ERROR,
-            "%s[server-auth]: Delegate to application: filter=%p this=%p "
-            "auth_ctx=%p",
-            GetContext<Activity>()->DebugTag().c_str(), filter, this,
-            filter->auth_context_.get());
+    LOG(ERROR) << GetContext<Activity>()->DebugTag()
+               << "[server-auth]: Delegate to application: filter=" << filter
+               << " this=" << this
+               << " auth_ctx=" << filter->auth_context_.get();
   }
   filter->server_credentials_->auth_metadata_processor().process(
       filter->server_credentials_->auth_metadata_processor().state,
@@ -162,9 +161,8 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
 
   // TODO(ZhenLian): Implement support for response_md.
   if (response_md != nullptr && num_response_md > 0) {
-    gpr_log(GPR_ERROR,
-            "response_md in auth metadata processing not supported for now. "
-            "Ignoring...");
+    LOG(ERROR) << "response_md in auth metadata processing not supported for "
+                  "now. Ignoring...";
   }
 
   if (status == GRPC_STATUS_OK) {
