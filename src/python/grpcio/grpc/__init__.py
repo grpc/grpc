@@ -1032,7 +1032,8 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
     ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1056,7 +1057,8 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
     ) -> UnaryStreamMultiCallable:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1080,7 +1082,8 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
     ) -> StreamUnaryMultiCallable:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1104,7 +1107,8 @@ class Channel(abc.ABC):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
     ) -> StreamStreamMultiCallable:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 

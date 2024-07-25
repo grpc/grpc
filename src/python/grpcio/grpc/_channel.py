@@ -223,8 +223,9 @@ def _handle_event(
                     state.code = code
                     state.details = batch_operation.details()
                     state.debug_error_string = batch_operation.error_string()
-            if state.callbacks:
-                callbacks.extend(state.callbacks)
+            state.rpc_end_time = time.perf_counter()
+            _observability.maybe_record_rpc_latency(state)
+            callbacks.extend(state.callbacks)
             state.callbacks = None
     return callbacks
 
@@ -675,8 +676,6 @@ class _SingleThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
-                if not self._state.callbacks:
-                    self._state.callbacks = []
                 self._state.callbacks.append(functools.partial(fn, self))
                 return
 
@@ -925,8 +924,6 @@ class _MultiThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
-                if not self._state.callbacks:
-                    self._state.callbacks = []
                 self._state.callbacks.append(functools.partial(
                     fn, self))  # type: ignore
                 return
@@ -1246,9 +1243,9 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     ]
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel, method: bytes,
+    def __init__(self, channel: cygrpc.Channel, method: bytes, target: bytes,
                  request_serializer: Optional[SerializingFunction],
-                 response_deserializer: Optional[DeserializingFunction]):
+                 response_deserializer: Optional[DeserializingFunction], _registered_call_handle: Optional[int]):
         self._channel = channel
         self._method = method
         self._target = target

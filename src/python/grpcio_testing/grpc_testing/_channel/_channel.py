@@ -49,7 +49,8 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method=False,
     ) -> grpc.UnaryUnaryMultiCallable:
         return _multi_callable.UnaryUnary(method, self._state)
 
@@ -57,7 +58,8 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method=False,
     ) -> grpc.UnaryStreamMultiCallable:
         return _multi_callable.UnaryStream(method, self._state)
 
@@ -65,7 +67,8 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method=False,
     ) -> grpc.StreamUnaryMultiCallable:
         return _multi_callable.StreamUnary(method, self._state)
 
@@ -73,7 +76,8 @@ class TestingChannel(grpc_testing.Channel):
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method=False,
     ) -> grpc.StreamStreamMultiCallable:
         return _multi_callable.StreamStream(method, self._state)
 

@@ -239,7 +239,9 @@ def unary_unary(
         wait_for_ready: Optional[bool] = None,
         timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str,
-                                                     bytes]]]] = None) -> Any:
+                                                     bytes]]]] = None,    
+        _registered_method: Optional[bool] = False,) -> Any:
+                                                     
     """Invokes a unary-unary RPC without an explicitly specified channel.
 
     THIS IS AN EXPERIMENTAL API.
@@ -329,7 +331,8 @@ def unary_stream(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,    
+    _registered_method: Optional[bool] = False,
 ) -> Iterator[Any]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
 
@@ -420,7 +423,8 @@ def stream_unary(
         wait_for_ready: Optional[bool] = None,
         timeout: Optional[float] = _DEFAULT_TIMEOUT,
         metadata: Optional[Sequence[Tuple[str, Union[str,
-                                                     bytes]]]] = None) -> Any:
+                                                     bytes]]]] = None,    
+        _registered_method: Optional[bool] = False,) -> Any:
     """Invokes a stream-unary RPC without an explicitly specified channel.
 
     THIS IS AN EXPERIMENTAL API.
@@ -509,7 +513,8 @@ def stream_stream(
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None
+    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,    
+    _registered_method: Optional[bool] = False,
 ) -> Iterator[Any]:
     """Invokes a stream-stream RPC without an explicitly specified channel.
 
