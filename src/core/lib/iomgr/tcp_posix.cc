@@ -915,6 +915,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
 #define MAX_READ_IOVEC 64
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  GRPC_LATENT_SEE_INNER_SCOPE("tcp_do_read");
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     LOG(INFO) << "TCP:" << tcp << " do_read";
   }
@@ -1211,6 +1212,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
 // of bytes sent.
 ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
                  int additional_flags = 0) {
+  GRPC_LATENT_SEE_INNER_SCOPE("tcp_send");
   ssize_t sent_length;
   do {
     // TODO(klempner): Cork if this is a partial write
@@ -1408,6 +1410,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
 /// messages from the queue.
 ///
 static bool process_errors(grpc_tcp* tcp) {
+  GRPC_LATENT_SEE_INNER_SCOPE("process_errors");
   bool processed_err = false;
   struct iovec iov;
   iov.iov_base = nullptr;
