@@ -21,10 +21,10 @@ import pkgutil
 
 from typeguard import install_import_hook
 
-install_import_hook('grpc')
-install_import_hook('grpc_channelz')
-install_import_hook('grpc_health')
-install_import_hook('grpc_reflection')
+# install_import_hook('grpc')
+# install_import_hook('grpc_channelz')
+# install_import_hook('grpc_health')
+# install_import_hook('grpc_reflection')
 
 
 class SingleLoader(object):

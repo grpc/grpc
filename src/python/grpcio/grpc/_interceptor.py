@@ -809,11 +809,13 @@ class _Channel(grpc.Channel):
 def intercept_channel(
     channel: grpc.Channel,
     *interceptors: Optional[
-        Union[
-            grpc.UnaryUnaryClientInterceptor,
-            grpc.UnaryStreamClientInterceptor,
-            grpc.StreamUnaryClientInterceptor,
-            grpc.StreamStreamClientInterceptor,
+        Sequence[
+            Union[
+                grpc.UnaryUnaryClientInterceptor,
+                grpc.UnaryStreamClientInterceptor,
+                grpc.StreamStreamClientInterceptor,
+                grpc.StreamUnaryClientInterceptor,
+            ]
         ]
     ],
 ) -> grpc.Channel:
