@@ -137,11 +137,14 @@ grpc_cc_library(
     name = "latent_see",
     srcs = [
         "util/latent_see.cc",
+        "util/latent_see_impl.cc",
     ],
     hdrs = [
         "util/latent_see.h",
+        "util/latent_see_impl.h",
     ],
     external_deps = [
+        "absl/base:no_destructor",
         "absl/log",
         "absl/strings",
         "absl/types:optional",

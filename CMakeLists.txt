@@ -2653,6 +2653,7 @@ add_library(grpc
   src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3376,6 +3377,7 @@ add_library(grpc_unsecure
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -5544,6 +5546,7 @@ add_library(grpc_authorization_provider
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -6511,6 +6514,7 @@ add_executable(activity_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6545,6 +6549,7 @@ target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -9107,6 +9112,7 @@ add_executable(call_filters_test
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/transport/call_filters_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9325,6 +9331,7 @@ add_executable(call_state_test
   src/core/lib/promise/activity.cc
   src/core/lib/transport/call_state.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/transport/call_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9359,6 +9366,7 @@ target_link_libraries(call_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -9648,6 +9656,7 @@ add_executable(call_utils_test
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/call/call_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10095,6 +10104,7 @@ add_executable(cancel_callback_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/cancel_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10131,6 +10141,7 @@ target_link_libraries(cancel_callback_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -11195,6 +11206,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/gprpp/chunked_vector_test.cc
 )
 if(WIN32 AND MSVC)
@@ -11231,6 +11243,7 @@ target_link_libraries(chunked_vector_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -14491,6 +14504,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14527,6 +14541,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -15291,6 +15306,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/transport/chttp2/flow_control_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15327,6 +15343,7 @@ target_link_libraries(flow_control_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -15369,6 +15386,7 @@ add_executable(for_each_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/for_each_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15405,6 +15423,7 @@ target_link_libraries(for_each_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -18792,6 +18811,7 @@ add_executable(inter_activity_pipe_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18826,6 +18846,7 @@ target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -18908,6 +18929,7 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/interceptor_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18944,6 +18966,7 @@ target_link_libraries(interceptor_list_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -19676,6 +19699,7 @@ add_executable(latch_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19710,6 +19734,7 @@ target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -20156,6 +20181,7 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/map_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20192,6 +20218,7 @@ target_link_libraries(map_pipe_test
   upb_mini_descriptor_lib
   upb_wire_lib
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -21118,6 +21145,7 @@ add_executable(mpsc_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21152,6 +21180,7 @@ target_link_libraries(mpsc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -21621,6 +21650,7 @@ add_executable(observable_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21655,6 +21685,7 @@ target_link_libraries(observable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -23496,6 +23527,7 @@ add_executable(promise_mutex_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23530,6 +23562,7 @@ target_link_libraries(promise_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits
@@ -33269,6 +33302,7 @@ add_executable(wait_for_callback_test
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/latent_see_impl.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33303,6 +33337,7 @@ target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::no_destructor
   absl::flat_hash_map
   absl::hash
   absl::type_traits

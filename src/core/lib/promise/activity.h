@@ -43,6 +43,7 @@
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/latent_see_impl.h"
 
 namespace grpc_core {
 

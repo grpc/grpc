@@ -17,189 +17,175 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstring>
+
 #ifdef GRPC_ENABLE_LATENT_SEE
-#include <chrono>
 #include <cstdint>
-#include <utility>
-#include <vector>
 
-#include "absl/log/log.h"
+#include "absl/base/no_destructor.h"
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/sync.h"
+#define GRPC_LATENT_SEE_INTERNAL_PASTE2(str, line) str##line
+#define GRPC_LATENT_SEE_INTERNAL_PASTE1(str, line) \
+  GRPC_LATENT_SEE_INTERNAL_PASTE2(str, line)
+#define GRPC_LATENT_SEE_INTERNAL_UNIQUE(str) \
+  GRPC_LATENT_SEE_INTERNAL_PASTE1(str, __LINE__)
 
 namespace grpc_core {
 namespace latent_see {
 
-struct Metadata {
-  const char* file;
-  int line;
-  const char* name;
-};
+constexpr int kInvalid = -1;
+constexpr int StorageSize = 128;
 
-enum class EventType : uint8_t { kBegin, kEnd, kFlowStart, kFlowEnd, kMark };
+class Marker;
 
-class Log {
+class MarkerStorage {
  public:
-  static void FlushThreadLog();
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static void Append(
-      const Metadata* metadata, EventType type, uint64_t id) {
-    thread_events_.push_back(
-        Event{metadata, std::chrono::steady_clock::now(), id, type});
+  enum MarkerType : uint8_t {
+    INVALID = 0,
+    INNER_SCOPE = 1,
+    PARENT_SCOPE = 2,
+    EVENT = 3,
+    ERROR = 4,
+  };
+  struct Ops {
+    void (*construct)(MarkerStorage*, const char* name, MarkerType type,
+                      const char* file, int line, const char* function);
+    void (*destruct)(MarkerStorage*);
+  };
+  MarkerStorage(const char* name, MarkerType type, const char* file, int line,
+                const char* function) {
+    ops_.construct(this, name, type, file, line, function);
   }
+  ~MarkerStorage() { ops_.destruct(this); }
+  // This type is neither copyable nor movable.
+  MarkerStorage(const MarkerStorage&) = delete;
+  MarkerStorage& operator=(const MarkerStorage&) = delete;
+
+  template <typename T>
+  T* GetStorageAs() {
+    return reinterpret_cast<T*>(&storage_);
+  }
+
+  static void OverrideOps(Ops ops);
 
  private:
-  Log() = default;
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Log& Get() {
-    static Log* log = []() {
-      atexit([] {
-        LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
-        FILE* f = fopen("latent_see.json", "w");
-        if (f == nullptr) return;
-        fprintf(f, "%s", log->GenerateJson().c_str());
-        fclose(f);
-      });
-      return new Log();
-    }();
-    return *log;
-  }
-
-  std::string GenerateJson();
-
-  struct Event {
-    const Metadata* metadata;
-    std::chrono::steady_clock::time_point timestamp;
-    uint64_t id;
-    EventType type;
-  };
-  struct RecordedEvent {
-    uint64_t thread_id;
-    uint64_t batch_id;
-    Event event;
-  };
-  std::atomic<uint64_t> next_thread_id_{1};
-  std::atomic<uint64_t> next_batch_id_{1};
-  static thread_local std::vector<Event> thread_events_;
-  static thread_local uint64_t thread_id_;
-  struct Fragment {
-    Mutex mu;
-    std::vector<RecordedEvent> events ABSL_GUARDED_BY(mu);
-  };
-  PerCpu<Fragment> fragments_{PerCpuOptions()};
+  static Ops ops_;
+  alignas(StorageSize) char storage_[StorageSize];
 };
 
-template <bool kFlush>
-class Scope {
+template <bool is_parent>
+class ScopedTimerStorage {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Scope(const Metadata* metadata)
-      : metadata_(metadata) {
-    Log::Append(metadata_, EventType::kBegin, 0);
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Scope() {
-    Log::Append(metadata_, EventType::kEnd, 0);
-    if (kFlush) Log::FlushThreadLog();
+  struct Ops {
+    void (*construct)(ScopedTimerStorage<is_parent>*, MarkerStorage*);
+    void (*destruct)(ScopedTimerStorage<is_parent>*);
+  };
+  ScopedTimerStorage() = default;
+  void Init(MarkerStorage* marker) { ops_.construct(this, marker); }
+  ~ScopedTimerStorage() { ops_.destruct(this); }
+  // This type is neither copyable nor movable.
+  ScopedTimerStorage(const ScopedTimerStorage<is_parent>&) = delete;
+  ScopedTimerStorage& operator=(const ScopedTimerStorage<is_parent>&) = delete;
+
+  template <typename T>
+  T* GetStorageAs() {
+    return reinterpret_cast<T*>(&storage_);
   }
 
-  Scope(const Scope&) = delete;
-  Scope& operator=(const Scope&) = delete;
+  static void OverrideOps(Ops ops);
 
  private:
-  const Metadata* const metadata_;
+  static Ops ops_;
+  alignas(StorageSize) char storage_[StorageSize];
 };
 
-using ParentScope = Scope<true>;
-using InnerScope = Scope<false>;
-
-class Flow {
+class GroupThreadScopeStorage {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Flow() : metadata_(nullptr) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata)
-      : metadata_(metadata),
-        id_(next_flow_id_.fetch_add(1, std::memory_order_relaxed)) {
-    Log::Append(metadata_, EventType::kFlowStart, id_);
+  struct Ops {
+    void (*construct)(GroupThreadScopeStorage*, MarkerStorage*,
+                      absl::string_view name);
+    void (*destruct)(GroupThreadScopeStorage*);
+  };
+  GroupThreadScopeStorage(MarkerStorage* marker, absl::string_view name) {
+    ops_.construct(this, marker, name);
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Flow() {
-    if (metadata_ != nullptr) {
-      Log::Append(metadata_, EventType::kFlowEnd, id_);
-    }
+  ~GroupThreadScopeStorage() { ops_.destruct(this); }
+  // This type is neither copyable nor movable.
+  GroupThreadScopeStorage(const GroupThreadScopeStorage&) = delete;
+  GroupThreadScopeStorage& operator=(const GroupThreadScopeStorage&) = delete;
+
+  template <typename T>
+  T* GetStorageAs() {
+    return reinterpret_cast<T*>(&storage_);
   }
 
-  Flow(const Flow&) = delete;
-  Flow& operator=(const Flow&) = delete;
-  Flow(Flow&& other) noexcept
-      : metadata_(std::exchange(other.metadata_, nullptr)), id_(other.id_) {}
-  Flow& operator=(Flow&& other) noexcept {
-    if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
-    metadata_ = std::exchange(other.metadata_, nullptr);
-    id_ = other.id_;
-    return *this;
-  }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool is_active() const {
-    return metadata_ != nullptr;
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void End() {
-    if (metadata_ == nullptr) return;
-    Log::Append(metadata_, EventType::kFlowEnd, id_);
-    metadata_ = nullptr;
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(const Metadata* metadata) {
-    if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
-    metadata_ = metadata;
-    if (metadata_ == nullptr) return;
-    id_ = next_flow_id_.fetch_add(1, std::memory_order_relaxed);
-    Log::Append(metadata_, EventType::kFlowStart, id_);
-  }
+  static void OverrideOps(Ops ops);
 
  private:
-  const Metadata* metadata_;
-  uint64_t id_;
-  static std::atomic<uint64_t> next_flow_id_;
+  static Ops ops_;
+  alignas(StorageSize) char storage_[StorageSize];
 };
 
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
-  Log::Append(md, EventType::kMark, 0);
-}
+using ParentScopeTimerStorage = ScopedTimerStorage<true>;
+using InnerScopeTimerStorage = ScopedTimerStorage<false>;
+
+typedef void (*LogFn)(MarkerStorage*);
+
+void SetEventLogger(LogFn logger);
+
+void LogEvent(MarkerStorage* marker);
 
 }  // namespace latent_see
 }  // namespace grpc_core
-#define GRPC_LATENT_SEE_METADATA(name)                                     \
-  []() {                                                                   \
-    static grpc_core::latent_see::Metadata metadata = {__FILE__, __LINE__, \
-                                                       #name};             \
-    return &metadata;                                                      \
-  }()
+
 // Parent scope: logs a begin and end event, and flushes the thread log on scope
 // exit. Because the flush takes some time it's better to place one parent scope
 // at the top of the stack, and use lighter weight scopes within it.
-#define GRPC_LATENT_SEE_PARENT_SCOPE(name)                       \
-  grpc_core::latent_see::ParentScope latent_see_scope##__LINE__( \
-      GRPC_LATENT_SEE_METADATA(name))
+#define GRPC_LATENT_SEE_PARENT_SCOPE(name)                                     \
+  static absl::NoDestructor<grpc_core::latent_see::MarkerStorage>              \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker)(                                 \
+          #name, grpc_core::latent_see::MarkerStorage::PARENT_SCOPE, __FILE__, \
+          __LINE__, __PRETTY_FUNCTION__);                                      \
+  grpc_core::latent_see::ParentScopeTimerStorage                               \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(timer);                                  \
+  GRPC_LATENT_SEE_INTERNAL_UNIQUE(timer).Init(                                 \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker).get())
+
 // Inner scope: logs a begin and end event. Lighter weight than parent scope,
 // but does not flush the thread state - so should only be enclosed by a parent
 // scope.
-#define GRPC_LATENT_SEE_INNER_SCOPE(name)                       \
-  grpc_core::latent_see::InnerScope latent_see_scope##__LINE__( \
-      GRPC_LATENT_SEE_METADATA(name))
+#define GRPC_LATENT_SEE_INNER_SCOPE(name)                                     \
+  static absl::NoDestructor<grpc_core::latent_see::MarkerStorage>             \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker)(                                \
+          #name, grpc_core::latent_see::MarkerStorage::INNER_SCOPE, __FILE__, \
+          __LINE__, __PRETTY_FUNCTION__);                                     \
+  grpc_core::latent_see::InnerScopeTimerStorage                               \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(timer);                                 \
+  GRPC_LATENT_SEE_INTERNAL_UNIQUE(timer).Init(                                \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker).get())
+
 // Mark: logs a single event.
 // This is not flushed automatically, and so should only be used within a parent
 // scope.
-#define GRPC_LATENT_SEE_MARK(name) \
-  grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
+#define GRPC_LATENT_SEE_MARK(name)                                      \
+  static absl::NoDestructor<grpc_core::latent_see::MarkerStorage>       \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker)(                          \
+          #name, grpc_core::latent_see::MarkerStorage::EVENT, __FILE__, \
+          __LINE__, __PRETTY_FUNCTION__);                               \
+  grpc_core::latent_see::LogEvent(GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker).get())
+
+// Denotes that all work done in the current thread will be grouped together
+// by name until we leave the current scope.
+#define GRPC_LATENT_SEE_GROUP(name)                                         \
+  static absl::NoDestructor<grpc_core::latent_see::MarkerStorage>           \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker)(                              \
+          "<group>", grpc_core::latent_see::MarkerStorage::SCOPE, __FILE__, \
+          __LINE__, __PRETTY_FUNCTION__);                                   \
+  grpc_core::latent_see::GroupThreadScopeStorage                            \
+  GRPC_LATENT_SEE_INTERNAL_UNIQUE(timer)(                                   \
+      GRPC_LATENT_SEE_INTERNAL_UNIQUE(marker).get(), #name)
 #else  // !def(GRPC_ENABLE_LATENT_SEE)
-namespace grpc_core {
-namespace latent_see {
-struct Metadata {};
-struct Flow {
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool is_active() const { return false; }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void End() {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(Metadata*) {}
-};
-}  // namespace latent_see
-}  // namespace grpc_core
-#define GRPC_LATENT_SEE_METADATA(name) nullptr
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)
@@ -208,6 +194,9 @@ struct Flow {
   } while (0)
 #define GRPC_LATENT_SEE_MARK(name) \
   do {                             \
+  } while (0)
+#define GRPC_LATENT_SEE_GROUP(name) \
+  do {                              \
   } while (0)
 #endif  // GRPC_ENABLE_LATENT_SEE
 
