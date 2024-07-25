@@ -1027,10 +1027,10 @@ def _find_method_handler(
 
 def _reject_rpc(
     rpc_event: cygrpc.BaseEvent,
+    rpc_state: _RPCState,
     status: Union[cygrpc.StatusCode, int],
     details: bytes,
 ) -> _RPCState:
-    rpc_state = _RPCState()
     operations = (
         _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
@@ -1049,10 +1049,10 @@ def _reject_rpc(
 
 def _handle_with_method_handler(
     rpc_event: cygrpc.BaseEvent,
+    state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
 ) -> Tuple[_RPCState, Optional[futures.Future]]:
-    state = _RPCState()
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
