@@ -19,8 +19,8 @@
 #include "src/core/lib/iomgr/lockfree_event.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -96,9 +96,8 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
     // referencing it.
     gpr_atm curr = gpr_atm_acq_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-      gpr_log(GPR_DEBUG,
-              "LockfreeEvent::NotifyOn: %p curr=%" PRIxPTR " closure=%p", this,
-              curr, closure);
+      VLOG(2) << "LockfreeEvent::NotifyOn: " << this << " curr=" << curr
+              << " closure=" << closure;
     }
     switch (curr) {
       case kClosureNotReady: {
@@ -165,9 +164,8 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-      gpr_log(GPR_DEBUG,
-              "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
-              &state_, curr, StatusToString(shutdown_error).c_str());
+      VLOG(2) << "LockfreeEvent::SetShutdown: " << &state_ << " curr=" << curr
+              << " err=" << StatusToString(shutdown_error);
     }
     switch (curr) {
       case kClosureReady:
@@ -215,8 +213,7 @@ void LockfreeEvent::SetReady() {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
     if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-      gpr_log(GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%" PRIxPTR, &state_,
-              curr);
+      VLOG(2) << "LockfreeEvent::SetReady: " << &state_ << " curr=" << curr;
     }
 
     switch (curr) {

@@ -23,11 +23,11 @@
 #include <string>
 
 #include "absl/base/attributes.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -172,9 +172,9 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               parser->incoming_settings->initial_window_size();
           if (GRPC_TRACE_FLAG_ENABLED(http) ||
               GRPC_TRACE_FLAG_ENABLED(flowctl)) {
-            gpr_log(GPR_INFO, "%p[%s] adding %d for initial_window change", t,
-                    t->is_client ? "cli" : "svr",
-                    static_cast<int>(t->initial_window_update));
+            LOG(INFO) << t << "[" << (t->is_client ? "cli" : "svr")
+                      << "] adding " << t->initial_window_update
+                      << " for initial_window change";
           }
         }
         auto error =
@@ -188,11 +188,10 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
         if (GRPC_TRACE_FLAG_ENABLED(http)) {
-          gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
-                  t->is_client ? "CLI" : "SVR",
-                  std::string(t->peer_string.as_string_view()).c_str(),
-                  grpc_core::Http2Settings::WireIdToName(parser->id).c_str(),
-                  parser->value);
+          LOG(INFO) << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
+                    << t->peer_string.as_string_view() << ": got setting "
+                    << grpc_core::Http2Settings::WireIdToName(parser->id)
+                    << " = " << parser->value;
         }
       } break;
     }

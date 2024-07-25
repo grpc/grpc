@@ -5,6 +5,8 @@ labels: kind/bug, priority/P2, lang/Python
 assignees:
   - gnossen
   - XuanWang-Amos
+  - sreenithi
+  - sourabhsinghs
 
 ---
 

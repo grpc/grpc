@@ -84,8 +84,8 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     // If no verifier is specified on the client side, use the hostname verifier
     // as default. Users who want to bypass all the verifier check should
     // implement an external verifier instead.
-    LOG(INFO) << "No verifier specified on the client side. Using default "
-                 "hostname verifier";
+    VLOG(2) << "No verifier specified on the client side. Using default "
+               "hostname verifier";
     options->set_certificate_verifier(
         grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
   }

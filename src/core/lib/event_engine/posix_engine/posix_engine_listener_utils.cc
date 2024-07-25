@@ -345,14 +345,14 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   if (assigned_port > 0) {
     if (!v6_sock.ok()) {
-      LOG(INFO) << "Failed to add :: listener, the environment may not support "
-                   "IPv6: "
-                << v6_sock.status();
+      VLOG(2) << "Failed to add :: listener, the environment may not support "
+                 "IPv6: "
+              << v6_sock.status();
     }
     if (!v4_sock.ok()) {
-      LOG(INFO) << "Failed to add 0.0.0.0 listener, "
-                   "the environment may not support IPv4: "
-                << v4_sock.status();
+      VLOG(2) << "Failed to add 0.0.0.0 listener, "
+                 "the environment may not support IPv4: "
+              << v4_sock.status();
     }
     return assigned_port;
   } else {

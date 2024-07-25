@@ -20,9 +20,9 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -46,8 +46,7 @@ class InterActivityLatch {
     return [this]() -> Poll<T> {
       MutexLock lock(&mu_);
       if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
-                StateString().c_str());
+        LOG(INFO) << DebugTag() << "PollWait " << StateString();
       }
       if (is_set_) {
         return std::move(value_);
@@ -62,7 +61,7 @@ class InterActivityLatch {
   void Set(T value) {
     MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
+      LOG(INFO) << DebugTag() << "Set " << StateString();
     }
     is_set_ = true;
     value_ = std::move(value);
@@ -104,8 +103,7 @@ class InterActivityLatch<void> {
     return [this]() -> Poll<Empty> {
       MutexLock lock(&mu_);
       if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
-                StateString().c_str());
+        LOG(INFO) << DebugTag() << "PollWait " << StateString();
       }
       if (is_set_) {
         return Empty{};
@@ -120,7 +118,7 @@ class InterActivityLatch<void> {
   void Set() {
     MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
+      LOG(INFO) << DebugTag() << "Set " << StateString();
     }
     is_set_ = true;
     waiters_.WakeupAsync();

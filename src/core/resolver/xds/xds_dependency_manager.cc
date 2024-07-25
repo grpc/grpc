@@ -28,6 +28,10 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/xds/grpc/xds_cluster_parser.h"
+#include "src/core/xds/grpc/xds_endpoint_parser.h"
+#include "src/core/xds/grpc/xds_listener_parser.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/grpc/xds_routing.h"
 
 namespace grpc_core {
@@ -402,6 +406,18 @@ void XdsDependencyManager::Orphan() {
   Unref();
 }
 
+void XdsDependencyManager::RequestReresolution() {
+  for (const auto& p : dns_resolvers_) {
+    p.second.resolver->RequestReresolutionLocked();
+  }
+}
+
+void XdsDependencyManager::ResetBackoff() {
+  for (const auto& p : dns_resolvers_) {
+    p.second.resolver->ResetBackoffLocked();
+  }
+}
+
 void XdsDependencyManager::OnListenerUpdate(
     std::shared_ptr<const XdsListenerResource> listener) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
@@ -705,7 +721,11 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   if (result.addresses.ok()) {
-    locality.endpoints = std::move(*result.addresses);
+    for (const auto& address : *result.addresses) {
+      locality.endpoints.emplace_back(
+          address.addresses(),
+          address.args().Set(GRPC_ARG_ADDRESS_NAME, dns_name));
+    }
     dns_state->update.resolution_note = std::move(result.resolution_note);
   } else if (result.resolution_note.empty()) {
     dns_state->update.resolution_note =
