@@ -393,7 +393,7 @@ class Party : public Activity, private Wakeable {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
       const char* op, uint64_t prev_state, uint64_t new_state,
       DebugLocation loc = {}) {
-    GRPC_TRACE_LOG(party_state, INFO)
+    GRPC_TRACE_LOG(party_state, INFO).AtLocation(loc.file(), loc.line())
         << DebugTag() << " " << op << " "
         << absl::StrFormat("%016" PRIx64 " -> %016" PRIx64, prev_state,
                            new_state);
