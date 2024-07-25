@@ -83,7 +83,7 @@ std::string ChannelzRegistry::InternalGetTopChannels(
   std::vector<RefCountedPtr<BaseNode>> top_level_channels;
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
-    MutexLock lock(&mu_);
+    const MutexLock lock(&mu_);
     for (auto it = node_map_.lower_bound(start_channel_id);
          it != node_map_.end(); ++it) {
       BaseNode* node = it->second;
@@ -109,6 +109,7 @@ std::string ChannelzRegistry::InternalGetTopChannels(
     // Create list of channels.
     Json::Array array;
     for (size_t i = 0; i < top_level_channels.size(); ++i) {
+      const MutexLock lock(&mu_);
       array.emplace_back(top_level_channels[i]->RenderJson());
     }
     object["channel"] = Json::FromArray(std::move(array));
