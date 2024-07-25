@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -36,11 +36,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -164,8 +164,7 @@ static void session_read_cb(void* arg,  // session
       // before notify_on_read is called.
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
-      grpc_core::Crash(absl::StrFormat("Unhandled read error %s",
-                                       grpc_core::StrError(errno).c_str()));
+      LOG(FATAL) << "Unhandled read error " << grpc_core::StrError(errno);
     }
   }
 }
@@ -330,8 +329,7 @@ static void client_session_write(void* arg,  // client
     }
     gpr_mu_unlock(g_mu);
   } else {
-    grpc_core::Crash(absl::StrFormat("unknown errno %s",
-                                     grpc_core::StrError(errno).c_str()));
+    LOG(FATAL) << "unknown errno " << grpc_core::StrError(errno).c_str();
   }
 }
 
@@ -348,12 +346,10 @@ static void client_start(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
-        abort();
+        LOG(FATAL) << "poll() failed during connect; errno=" << errno;
       }
     } else {
-      grpc_core::Crash(
-          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
+      LOG(FATAL) << "Failed to connect to the server (errno=" << errno << ")";
     }
   }
 
@@ -396,7 +392,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   ASSERT_EQ(sv.read_bytes_total, cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
+  LOG(INFO) << "Total read bytes " << sv.read_bytes_total;
 }
 
 typedef struct fd_change_data {

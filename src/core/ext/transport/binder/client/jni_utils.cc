@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
-#ifndef GRPC_NO_BINDER
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+
+#ifndef GRPC_NO_BINDER
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -41,7 +42,7 @@ jclass FindNativeConnectionHelper(
     }
     jclass global_cl = static_cast<jclass>(env->NewGlobalRef(cl));
     env->DeleteLocalRef(cl);
-    GPR_ASSERT(global_cl != nullptr);
+    CHECK_NE(global_cl, nullptr);
     return global_cl;
   };
   static jclass connection_helper_class = do_find();
@@ -53,13 +54,13 @@ jclass FindNativeConnectionHelper(
   //   from JNI_OnLoad
   //   * The APK does not correctly depends on the helper class, or the
   //   class get shrinked
-  gpr_log(GPR_ERROR,
-          "Cannot find binder transport Java helper class. Did you invoke "
-          "grpc::experimental::InitializeBinderChannelJavaClass correctly "
-          "beforehand? Did the APK correctly include the connection helper "
-          "class (i.e depends on build target "
-          "src/core/ext/transport/binder/java/io/grpc/binder/"
-          "cpp:connection_helper) ?");
+  LOG(ERROR)
+      << "Cannot find binder transport Java helper class. Did you invoke "
+         "grpc::experimental::InitializeBinderChannelJavaClass correctly "
+         "beforehand? Did the APK correctly include the connection helper "
+         "class (i.e depends on build target "
+         "src/core/ext/transport/binder/java/io/grpc/binder/"
+         "cpp:connection_helper) ?";
   // TODO(mingcl): Maybe it is worth to try again so the failure can be fixed
   // by invoking this function again at a different thread.
   return nullptr;
@@ -81,7 +82,7 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+    LOG(ERROR) << "No method id " << method;
   }
 
   env->CallStaticVoidMethod(cl, mid, application,
@@ -105,7 +106,7 @@ void TryEstablishConnectionWithUri(JNIEnv* env, jobject application,
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+    LOG(ERROR) << "No method id " << method;
   }
 
   env->CallStaticVoidMethod(cl, mid, application,
@@ -124,7 +125,7 @@ bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2) {
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+    LOG(ERROR) << "No method id " << method;
   }
 
   jboolean result = env->CallStaticBooleanMethod(cl, mid, context, uid1, uid2);

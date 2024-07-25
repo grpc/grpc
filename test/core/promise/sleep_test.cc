@@ -20,18 +20,20 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
@@ -49,6 +51,12 @@ using testing::StrictMock;
 namespace grpc_core {
 namespace {
 
+RefCountedPtr<Arena> ArenaWithEventEngine(EventEngine* ee) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(ee);
+  return arena;
+}
+
 TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
   Notification done;
@@ -61,7 +69,7 @@ TEST(Sleep, Zzzz) {
         EXPECT_EQ(r, absl::OkStatus());
         done.Notify();
       },
-      engine.get());
+      ArenaWithEventEngine(engine.get()));
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(Timestamp::Now(), done_time);
@@ -84,7 +92,7 @@ TEST(Sleep, OverlyEagerEventEngine) {
         EXPECT_EQ(r, absl::OkStatus());
         done = true;
       },
-      static_cast<EventEngine*>(&mock_event_engine));
+      ArenaWithEventEngine(static_cast<EventEngine*>(&mock_event_engine)));
   Mock::VerifyAndClearExpectations(&mock_event_engine);
   EXPECT_NE(wakeup, nullptr);
   EXPECT_FALSE(done);
@@ -106,7 +114,7 @@ TEST(Sleep, AlreadyDone) {
         EXPECT_EQ(r, absl::OkStatus());
         done.Notify();
       },
-      engine.get());
+      ArenaWithEventEngine(engine.get()));
   done.WaitForNotification();
 }
 
@@ -123,7 +131,7 @@ TEST(Sleep, Cancel) {
         EXPECT_EQ(r, absl::CancelledError());
         done.Notify();
       },
-      engine.get());
+      ArenaWithEventEngine(engine.get()));
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_LT(Timestamp::Now(), done_time);
@@ -143,7 +151,7 @@ TEST(Sleep, MoveSemantics) {
         EXPECT_EQ(r, absl::OkStatus());
         done.Notify();
       },
-      engine.get());
+      ArenaWithEventEngine(engine.get()));
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(Timestamp::Now(), done_time);
@@ -156,20 +164,19 @@ TEST(Sleep, StressTest) {
   std::vector<std::shared_ptr<Notification>> notifications;
   std::vector<ActivityPtr> activities;
   auto engine = GetDefaultEventEngine();
-  gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
+  LOG(INFO) << "Starting " << kNumActivities << " sleeps for 1sec";
   for (int i = 0; i < kNumActivities; i++) {
     auto notification = std::make_shared<Notification>();
     auto activity = MakeActivity(
         Sleep(Timestamp::Now() + Duration::Seconds(1)),
         ExecCtxWakeupScheduler(),
         [notification](absl::Status /*r*/) { notification->Notify(); },
-        engine.get());
+        ArenaWithEventEngine(engine.get()));
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
-  gpr_log(GPR_INFO,
-          "Waiting for the first %d sleeps, whilst cancelling the other half",
-          kNumActivities / 2);
+  LOG(INFO) << "Waiting for the first " << (kNumActivities / 2)
+            << " sleeps, whilst cancelling the other half";
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();
     activities[i].reset();

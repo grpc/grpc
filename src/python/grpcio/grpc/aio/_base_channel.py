@@ -209,10 +209,11 @@ class Channel(abc.ABC):
         This method immediately stops the channel from executing new RPCs in
         all cases.
 
-        If a grace period is specified, this method wait until all active
-        RPCs are finshed, once the grace period is reached the ones that haven't
-        been terminated are cancelled. If a grace period is not specified
-        (by passing None for grace), all existing RPCs are cancelled immediately.
+        If a grace period is specified, this method waits until all active
+        RPCs are finished or until the grace period is reached. RPCs that haven't
+        been terminated within the grace period are aborted.
+        If a grace period is not specified (by passing None for grace),
+        all existing RPCs are cancelled immediately.
 
         This method is idempotent.
         """

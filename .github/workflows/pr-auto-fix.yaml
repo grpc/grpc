@@ -22,14 +22,14 @@ jobs:
         with:
           format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         env:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
           # formattedTime here is like 2021323 - the year concatenated with the week then
           # the day of that week.
-          # As this changes every day, we cycle to a new cache once per day, with lookup 
+          # As this changes every day, we cycle to a new cache once per day, with lookup
           # across the week (and then the year).
           key: ${{ runner.os }}-${{ steps.current-time-with-day.outputs.formattedTime }}
           restore-keys: |
@@ -48,13 +48,13 @@ jobs:
         with:
           script: |
             // If you'd like not to run this code on your commits, add your github user id here:
-            NO_AUTOFIX_USERS = ["copybara-service[bot]"]
-            const { owner, repo } = context.repo
+            const NO_AUTOFIX_USERS = ["copybara-service[bot]"];
+            const { owner, repo } = context.repo;
             console.log("Actor: " + context.actor);
             if (NO_AUTOFIX_USERS.includes(context.actor)) {
               console.log('Cancelling');
               const run_id = "${{ github.run_id }}";
-              await github.actions.cancelWorkflowRun({ owner, repo, run_id });
+              await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id });
               return 'go';
             } else {
               return 'stay';
@@ -66,16 +66,16 @@ jobs:
         run: test "${{ steps.check.outputs.result }}" = "stay"
       # Setup to run sanity suite
       - name: Install Python Interpreter
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: 3.8
       - name: Install Python Packages
         run: |
-          pip install pyyaml mako virtualenv
+          pip install pyyaml mako virtualenv absl-py
           sudo apt-get update
           sudo apt-get install python3-dev
       - name: Check out repository code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: True
       - name: Get the upstream code
@@ -90,7 +90,7 @@ jobs:
         run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
       # Report back with a PR if things are broken
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@b1ddad2c994a25fbc81a28b3ec0e368bb2021c50 # v6.0.0
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6.1.0
         with:
           delete-branch: true
           branch-suffix: short-commit-hash

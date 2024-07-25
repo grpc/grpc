@@ -19,10 +19,11 @@
 #include <signal.h>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 #include <grpcpp/ext/gcp_observability.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
@@ -44,7 +45,7 @@ int main(int argc, char** argv) {
     // TODO(someone): remove deprecated usage
     // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
-    gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
+    VLOG(2) << "GcpObservabilityInit() status_code: " << status.code();
     if (!status.ok()) {
       return 1;
     }

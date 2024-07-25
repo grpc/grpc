@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
@@ -41,18 +41,18 @@
 #endif  // GRPC_HAVE_UNIX_SOCKET
 #include <string>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/string.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -61,14 +61,13 @@
 bool grpc_parse_unix(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
   if (uri.scheme() != "unix") {
-    gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'",
-            uri.scheme().c_str());
+    LOG(ERROR) << "Expected 'unix' scheme, got '" << uri.scheme() << "'";
     return false;
   }
   grpc_error_handle error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "" << grpc_core::StatusToString(error);
     return false;
   }
   return true;
@@ -77,14 +76,14 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
 bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr) {
   if (uri.scheme() != "unix-abstract") {
-    gpr_log(GPR_ERROR, "Expected 'unix-abstract' scheme, got '%s'",
-            uri.scheme().c_str());
+    LOG(ERROR) << "Expected 'unix-abstract' scheme, got '" << uri.scheme()
+               << "'";
     return false;
   }
   grpc_error_handle error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "" << grpc_core::StatusToString(error);
     return false;
   }
   return true;
@@ -161,14 +160,13 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 bool grpc_parse_vsock(const grpc_core::URI& uri,
                       grpc_resolved_address* resolved_addr) {
   if (uri.scheme() != "vsock") {
-    gpr_log(GPR_ERROR, "Expected 'vsock' scheme, got '%s'",
-            uri.scheme().c_str());
+    LOG(ERROR) << "Expected 'vsock' scheme, got '" << uri.scheme() << "'";
     return false;
   }
   grpc_error_handle error =
       grpc_core::VSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "" << grpc_core::StatusToString(error);
     return false;
   }
   return true;
@@ -218,8 +216,7 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
   std::string port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
-      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)",
-              std::string(hostport).c_str());
+      LOG(ERROR) << "Failed gpr_split_host_port(" << hostport << ", ...)";
     }
     return false;
   }
@@ -230,19 +227,19 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
   in->sin_family = GRPC_AF_INET;
   if (grpc_inet_pton(GRPC_AF_INET, host.c_str(), &in->sin_addr) == 0) {
     if (log_errors) {
-      gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host.c_str());
+      LOG(ERROR) << "invalid ipv4 address: '" << host << "'";
     }
     goto done;
   }
   // Parse port.
   if (port.empty()) {
-    if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
+    if (log_errors) LOG(ERROR) << "no port given for ipv4 scheme";
     goto done;
   }
   int port_num;
   if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
       port_num > 65535) {
-    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port.c_str());
+    if (log_errors) LOG(ERROR) << "invalid ipv4 port: '" << port << "'";
     goto done;
   }
   in->sin_port = grpc_htons(static_cast<uint16_t>(port_num));
@@ -254,8 +251,7 @@ done:
 bool grpc_parse_ipv4(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
   if (uri.scheme() != "ipv4") {
-    gpr_log(GPR_ERROR, "Expected 'ipv4' scheme, got '%s'",
-            uri.scheme().c_str());
+    LOG(ERROR) << "Expected 'ipv4' scheme, got '" << uri.scheme() << "'";
     return false;
   }
   return grpc_parse_ipv4_hostport(absl::StripPrefix(uri.path(), "/"),
@@ -270,8 +266,7 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   std::string port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
-      gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)",
-              std::string(hostport).c_str());
+      LOG(ERROR) << "Failed gpr_split_host_port(" << hostport << ", ...)";
     }
     return false;
   }
@@ -284,18 +279,16 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   char* host_end =
       static_cast<char*>(gpr_memrchr(host.c_str(), '%', host.size()));
   if (host_end != nullptr) {
-    GPR_ASSERT(host_end >= host.c_str());
+    CHECK(host_end >= host.c_str());
     char host_without_scope[GRPC_INET6_ADDRSTRLEN + 1];
     size_t host_without_scope_len =
         static_cast<size_t>(host_end - host.c_str());
     uint32_t sin6_scope_id = 0;
     if (host_without_scope_len > GRPC_INET6_ADDRSTRLEN) {
       if (log_errors) {
-        gpr_log(
-            GPR_ERROR,
-            "invalid ipv6 address length %zu. Length cannot be greater than "
-            "GRPC_INET6_ADDRSTRLEN i.e %d)",
-            host_without_scope_len, GRPC_INET6_ADDRSTRLEN);
+        LOG(ERROR) << "invalid ipv6 address length " << host_without_scope_len
+                   << ". Length cannot be greater than "
+                   << "GRPC_INET6_ADDRSTRLEN i.e " << GRPC_INET6_ADDRSTRLEN;
       }
       goto done;
     }
@@ -304,7 +297,7 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
     if (grpc_inet_pton(GRPC_AF_INET6, host_without_scope, &in6->sin6_addr) ==
         0) {
       if (log_errors) {
-        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host_without_scope);
+        LOG(ERROR) << "invalid ipv6 address: '" << host_without_scope << "'";
       }
       goto done;
     }
@@ -312,10 +305,8 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
                                   host.size() - host_without_scope_len - 1,
                                   &sin6_scope_id) == 0) {
       if ((sin6_scope_id = grpc_if_nametoindex(host_end + 1)) == 0) {
-        gpr_log(GPR_ERROR,
-                "Invalid interface name: '%s'. "
-                "Non-numeric and failed if_nametoindex.",
-                host_end + 1);
+        LOG(ERROR) << "Invalid interface name: '" << host_end + 1
+                   << "'. Non-numeric and failed if_nametoindex.";
         goto done;
       }
     }
@@ -324,20 +315,20 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   } else {
     if (grpc_inet_pton(GRPC_AF_INET6, host.c_str(), &in6->sin6_addr) == 0) {
       if (log_errors) {
-        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host.c_str());
+        LOG(ERROR) << "invalid ipv6 address: '" << host << "'";
       }
       goto done;
     }
   }
   // Parse port.
   if (port.empty()) {
-    if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
+    if (log_errors) LOG(ERROR) << "no port given for ipv6 scheme";
     goto done;
   }
   int port_num;
   if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
       port_num > 65535) {
-    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port.c_str());
+    if (log_errors) LOG(ERROR) << "invalid ipv6 port: '" << port << "'";
     goto done;
   }
   in6->sin6_port = grpc_htons(static_cast<uint16_t>(port_num));
@@ -349,8 +340,7 @@ done:
 bool grpc_parse_ipv6(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {
   if (uri.scheme() != "ipv6") {
-    gpr_log(GPR_ERROR, "Expected 'ipv6' scheme, got '%s'",
-            uri.scheme().c_str());
+    LOG(ERROR) << "Expected 'ipv6' scheme, got '" << uri.scheme() << "'";
     return false;
   }
   return grpc_parse_ipv6_hostport(absl::StripPrefix(uri.path(), "/"),
@@ -374,7 +364,7 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
   if (uri.scheme() == "ipv6") {
     return grpc_parse_ipv6(uri, resolved_addr);
   }
-  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri.scheme().c_str());
+  LOG(ERROR) << "Can't parse scheme '" << uri.scheme() << "'";
   return false;
 }
 

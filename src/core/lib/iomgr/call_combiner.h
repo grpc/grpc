@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -44,8 +44,6 @@
 // callback.
 
 namespace grpc_core {
-
-extern DebugOnlyTraceFlag grpc_call_combiner_trace;
 
 class CallCombiner {
  public:
@@ -168,12 +166,13 @@ class CallCombinerClosureList {
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-      gpr_log(GPR_INFO,
-              "CallCombinerClosureList executing closure while already "
-              "holding call_combiner %p: closure=%s error=%s reason=%s",
-              call_combiner, closures_[0].closure->DebugString().c_str(),
-              StatusToString(closures_[0].error).c_str(), closures_[0].reason);
+    if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
+      LOG(INFO) << "CallCombinerClosureList executing closure while already "
+                   "holding call_combiner "
+                << call_combiner
+                << ": closure=" << closures_[0].closure->DebugString()
+                << " error=" << StatusToString(closures_[0].error)
+                << " reason=" << closures_[0].reason;
     }
     // This will release the call combiner.
     ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);

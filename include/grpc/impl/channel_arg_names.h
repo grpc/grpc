@@ -67,9 +67,6 @@
    application will see the compressed message in the byte buffer. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
   "grpc.per_message_decompression"
-/** Enable/disable support for deadline checking. Defaults to 1, unless
-    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
-#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial stream ID for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -114,9 +111,11 @@
   "grpc.server_max_unrequested_time_in_server"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can the client send before needing to send a
-   data/header frame? (0 indicates that an infinite number of
-   pings can be sent without sending a data frame or header frame) */
+/** How many pings can the client send before needing to send a data/header
+   frame? (0 indicates that an infinite number of pings can be sent without
+   sending a data frame or header frame).
+   If experiment "max_pings_wo_data_throttle" is enabled, instead of pings being
+   completely blocked, they are throttled. */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
@@ -399,6 +398,8 @@
  * If unspecified, it is unlimited */
 #define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \
   "grpc.max_allowed_incoming_connections"
+/** Configure per-channel or per-server stats plugins. */
+#define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

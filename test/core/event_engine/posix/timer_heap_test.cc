@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -169,7 +170,7 @@ TEST(TimerHeapTest, RandomMutations) {
         pq.Pop();
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
-            GPR_ASSERT(elems[i].inserted);
+            CHECK(elems[i].inserted);
             elems[i].inserted = false;
           }
         }
@@ -191,7 +192,7 @@ TEST(TimerHeapTest, RandomMutations) {
           }
         }
       }
-      GPR_ASSERT(pq.Top()->deadline == *min_deadline);
+      CHECK(pq.Top()->deadline == *min_deadline);
     }
   }
 }

@@ -20,7 +20,6 @@
 #define GRPC_SUPPORT_SYNC_CUSTOM_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/sync_generic.h>
 
 /* Users defining GPR_CUSTOM_SYNC need to define the following macros. */

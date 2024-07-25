@@ -574,6 +574,9 @@ bool PrivateGenerator::PrintAddServicerToServer(
                  "'$PackageQualifiedServiceName$', rpc_method_handlers)\n");
     }
     out->Print("server.add_generic_rpc_handlers((generic_handler,))\n");
+    out->Print(method_dict,
+               "server.add_registered_method_handlers('$"
+               "PackageQualifiedServiceName$', rpc_method_handlers)\n");
   }
   return true;
 }
@@ -741,8 +744,8 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       var["ToolsVersion"] = config.grpc_tools_version;
       out->Print(var, "\nGRPC_GENERATED_VERSION = '$ToolsVersion$'\n");
       out->Print("GRPC_VERSION = grpc.__version__\n");
-      out->Print("EXPECTED_ERROR_RELEASE = '1.65.0'\n");
-      out->Print("SCHEDULED_RELEASE_DATE = 'June 25, 2024'\n");
+      out->Print("EXPECTED_ERROR_RELEASE = '1.66.0'\n");
+      out->Print("SCHEDULED_RELEASE_DATE = 'August 6, 2024'\n");
       out->Print("_version_not_supported = False\n\n");
       out->Print("try:\n");
       {

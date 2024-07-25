@@ -72,10 +72,21 @@ cdef class _CallState:
   def __cinit__(self):
     self.due = set()
 
+  cdef void delete_call(self) except *:
+    with nogil:
+      grpc_call_unref(self.c_call)
+    self.c_call = NULL
+    self.maybe_delete_call_tracer()
+
   cdef void maybe_delete_call_tracer(self) except *:
     if not self.call_tracer_capsule:
       return
     _observability.delete_call_tracer(self.call_tracer_capsule)
+
+  cdef void maybe_save_registered_method(self, bytes method_name) except *:
+    with _observability.get_plugin() as plugin:
+      if plugin and plugin.observability_enabled:
+        plugin.save_registered_method(method_name)
 
   cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name, bytes target) except *:
     # TODO(xuanwn): use channel args to exclude those metrics.
@@ -83,12 +94,11 @@ cdef class _CallState:
       if exclude_prefix in method_name:
         return
     with _observability.get_plugin() as plugin:
-      if not (plugin and plugin.observability_enabled):
-        return
-      capsule = plugin.create_client_call_tracer(method_name, target)
-      capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
-      _set_call_tracer(self.c_call, capsule_ptr)
-      self.call_tracer_capsule = capsule
+      if plugin and plugin.observability_enabled:
+        capsule = plugin.create_client_call_tracer(method_name, target)
+        capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+        _set_call_tracer(self.c_call, capsule_ptr)
+        self.call_tracer_capsule = capsule
 
 cdef class _ChannelState:
 
@@ -268,6 +278,7 @@ cdef void _call(
             channel_state.c_channel, NULL, flags,
             c_completion_queue, cpython.PyLong_AsVoidPtr(registered_call_handle),
             _timespec_from_time(deadline), NULL)
+        call_state.maybe_save_registered_method(method)
       else:
         call_state.c_call = grpc_channel_create_call(
             channel_state.c_channel, NULL, flags,
@@ -286,9 +297,7 @@ cdef void _call(
         grpc_call_credentials_release(c_call_credentials)
         if c_call_error != GRPC_CALL_OK:
           #TODO(xuanwn): Expand the scope of nogil
-          with nogil:
-            grpc_call_unref(call_state.c_call)
-          call_state.c_call = NULL
+          call_state.delete_call()
           _raise_call_error_no_metadata(c_call_error)
       started_tags = set()
       for operations, user_tag in operationses_and_user_tags:
@@ -298,9 +307,7 @@ cdef void _call(
         else:
           grpc_call_cancel(call_state.c_call, NULL)
           #TODO(xuanwn): Expand the scope of nogil
-          with nogil:
-            grpc_call_unref(call_state.c_call)
-          call_state.c_call = NULL
+          call_state.delete_call()
           _raise_call_error(c_call_error, metadata)
       else:
         call_state.due.update(started_tags)
@@ -314,10 +321,7 @@ cdef void _process_integrated_call_tag(
   cdef _CallState call_state = state.integrated_call_states.pop(tag)
   call_state.due.remove(tag)
   if not call_state.due:
-    with nogil:
-      grpc_call_unref(call_state.c_call)
-    call_state.c_call = NULL
-    call_state.maybe_delete_call_tracer()
+    call_state.delete_call()
 
 cdef class IntegratedCall:
 
@@ -357,10 +361,7 @@ cdef object _process_segregated_call_tag(
   call_state.due.remove(tag)
   if not call_state.due:
     #TODO(xuanwn): Expand the scope of nogil
-    with nogil:
-      grpc_call_unref(call_state.c_call)
-    call_state.c_call = NULL
-    call_state.maybe_delete_call_tracer()
+    call_state.delete_call()
     state.segregated_call_states.remove(call_state)
     _destroy_c_completion_queue(c_completion_queue)
     return True
@@ -387,9 +388,7 @@ cdef class SegregatedCall:
         self._channel_state, self._call_state, self._c_completion_queue, tag)
     def on_failure():
       self._call_state.due.clear()
-      with nogil:
-        grpc_call_unref(self._call_state.c_call)
-      self._call_state.c_call = NULL
+      self._call_state.delete_call()
       self._channel_state.segregated_call_states.remove(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(

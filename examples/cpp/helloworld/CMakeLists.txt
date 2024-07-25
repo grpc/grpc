@@ -52,6 +52,7 @@ add_library(hw_grpc_proto
   ${hw_proto_srcs}
   ${hw_proto_hdrs})
 target_link_libraries(hw_grpc_proto
+  absl::check
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -64,8 +65,10 @@ foreach(_target
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
+    absl::check
     absl::flags
     absl::flags_parse
+    absl::log
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

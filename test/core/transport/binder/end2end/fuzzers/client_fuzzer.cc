@@ -15,6 +15,7 @@
 #include <thread>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -26,6 +27,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
@@ -34,10 +36,10 @@ bool leak_check = true;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void dont_log(gpr_log_func_args*) {}
-
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_init();
   {
     // Copied and modified from grpc/test/core/end2end/fuzzers/client_fuzzer.cc
@@ -110,7 +112,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_call_error error = grpc_call_start_batch(
         call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
     int requested_calls = 1;
-    GPR_ASSERT(GRPC_CALL_OK == error);
+    CHECK_EQ(error, GRPC_CALL_OK);
     grpc_event ev;
     while (true) {
       grpc_core::ExecCtx::Get()->Flush();
@@ -135,13 +137,13 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      CHECK(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+      CHECK(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_call_unref(call);
     grpc_completion_queue_destroy(cq);

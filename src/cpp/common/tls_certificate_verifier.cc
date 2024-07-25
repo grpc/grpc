@@ -22,6 +22,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -38,7 +41,7 @@ namespace experimental {
 TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
     grpc_tls_custom_verification_check_request* request)
     : c_request_(request) {
-  GPR_ASSERT(c_request_ != nullptr);
+  CHECK_NE(c_request_, nullptr);
 }
 
 grpc::string_ref TlsCustomVerificationCheckRequest::target_name() const {
@@ -118,8 +121,8 @@ CertificateVerifier::~CertificateVerifier() {
 bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
                                  std::function<void(grpc::Status)> callback,
                                  grpc::Status* sync_status) {
-  GPR_ASSERT(request != nullptr);
-  GPR_ASSERT(request->c_request() != nullptr);
+  CHECK_NE(request, nullptr);
+  CHECK_NE(request->c_request(), nullptr);
   {
     internal::MutexLock lock(&mu_);
     request_map_.emplace(request->c_request(), std::move(callback));
@@ -142,8 +145,8 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
 }
 
 void CertificateVerifier::Cancel(TlsCustomVerificationCheckRequest* request) {
-  GPR_ASSERT(request != nullptr);
-  GPR_ASSERT(request->c_request() != nullptr);
+  CHECK_NE(request, nullptr);
+  CHECK_NE(request->c_request(), nullptr);
   grpc_tls_certificate_verifier_cancel(verifier_, request->c_request());
 }
 
@@ -190,7 +193,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     internal::MutexLock lock(&self->mu_);
     auto pair = self->request_map_.emplace(
         request, AsyncRequestState(callback, callback_arg, request));
-    GPR_ASSERT(pair.second);
+    CHECK(pair.second);
     cpp_request = &pair.first->second.cpp_request;
   }
   grpc::Status sync_current_verifier_status;

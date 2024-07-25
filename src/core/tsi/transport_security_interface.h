@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 #define GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 
@@ -95,10 +95,6 @@ typedef enum {
 
 const char* tsi_result_to_string(tsi_result result);
 const char* tsi_security_level_to_string(tsi_security_level security_level);
-
-// --- tsi tracing ---
-
-extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 // -- tsi_zero_copy_grpc_protector object --
 

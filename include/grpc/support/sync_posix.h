@@ -19,10 +19,9 @@
 #ifndef GRPC_SUPPORT_SYNC_POSIX_H
 #define GRPC_SUPPORT_SYNC_POSIX_H
 
-#include <grpc/support/port_platform.h>
-
 #include <pthread.h>
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync_generic.h>
 
 #ifdef GRPC_ASAN_ENABLED

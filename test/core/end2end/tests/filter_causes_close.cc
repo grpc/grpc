@@ -28,6 +28,7 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -48,90 +49,48 @@ namespace {
 // Test filter - always closes incoming requests
 //
 
-typedef struct {
-  grpc_closure* recv_im_ready;
-} call_data;
-
-typedef struct {
-  uint8_t unused;
-} channel_data;
-
-void recv_im_ready(void* arg, grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  Closure::Run(
-      DEBUG_LOCATION, calld->recv_im_ready,
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
-                             "Failure that's not preventable.", &error, 1),
-                         StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_PERMISSION_DENIED));
-}
-
-void start_transport_stream_op_batch(grpc_call_element* elem,
-                                     grpc_transport_stream_op_batch* op) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (op->recv_initial_metadata) {
-    calld->recv_im_ready =
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        GRPC_CLOSURE_CREATE(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
+class TestFilter : public ImplementChannelFilter<TestFilter> {
+ public:
+  static const grpc_channel_filter kFilter;
+  static absl::string_view TypeName() { return "filter_causes_close"; }
+  static absl::StatusOr<std::unique_ptr<TestFilter>> Create(
+      const ChannelArgs&, ChannelFilter::Args) {
+    return std::make_unique<TestFilter>();
   }
-  grpc_call_next_op(elem, op);
-}
 
-grpc_error_handle init_call_elem(grpc_call_element* /*elem*/,
-                                 const grpc_call_element_args* /*args*/) {
-  return absl::OkStatus();
-}
+  class Call {
+   public:
+    absl::Status OnClientInitialMetadata(ClientMetadata&) {
+      return grpc_error_set_int(
+          absl::PermissionDeniedError("Failure that's not preventable."),
+          StatusIntProperty::kRpcStatus, GRPC_STATUS_PERMISSION_DENIED);
+    }
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
+};
 
-void destroy_call_elem(grpc_call_element* /*elem*/,
-                       const grpc_call_final_info* /*final_info*/,
-                       grpc_closure* /*ignored*/) {}
+const NoInterceptor TestFilter::Call::OnServerInitialMetadata;
+const NoInterceptor TestFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor TestFilter::Call::OnClientToServerMessage;
+const NoInterceptor TestFilter::Call::OnClientToServerHalfClose;
+const NoInterceptor TestFilter::Call::OnServerToClientMessage;
+const NoInterceptor TestFilter::Call::OnFinalize;
 
-grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
-                                    grpc_channel_element_args* /*args*/) {
-  return absl::OkStatus();
-}
-
-void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
-
-const grpc_channel_filter test_filter = {
-    start_transport_stream_op_batch,
-    [](grpc_channel_element*, CallArgs,
-       NextPromiseFactory) -> ArenaPromise<ServerMetadataHandle> {
-      return Immediate(ServerMetadataFromStatus(
-          absl::PermissionDeniedError("Failure that's not preventable.")));
-    },
-    [](grpc_channel_element*, CallSpineInterface* args) {
-      args->client_initial_metadata().receiver.InterceptAndMap(
-          [args](ClientMetadataHandle) {
-            return args->Cancel(
-                ServerMetadataFromStatus(absl::PermissionDeniedError(
-                    "Failure that's not preventable.")));
-          });
-    },
-    grpc_channel_next_op,
-    sizeof(call_data),
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    grpc_channel_stack_no_post_init,
-    destroy_channel_elem,
-    grpc_channel_next_get_info,
-    "filter_causes_close"};
+const grpc_channel_filter TestFilter::kFilter =
+    MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
 CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
-  if (IsPromiseBasedClientCallEnabled()) {
-    GTEST_SKIP() << "disabled for promises until callv3 is further along";
-  }
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL, &test_filter);
+    builder->channel_init()->RegisterFilter<TestFilter>(GRPC_SERVER_CHANNEL);
   });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")

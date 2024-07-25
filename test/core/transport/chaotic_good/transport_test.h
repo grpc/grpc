@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -36,7 +37,20 @@ class TransportTest : public ::testing::Test {
     return event_engine_;
   }
 
-  MemoryAllocator* memory_allocator() { return &allocator_; }
+  RefCountedPtr<Arena> MakeArena() {
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return arena;
+  }
+
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator() {
+    return call_arena_allocator_;
+  }
+
+  auto MakeCall(ClientMetadataHandle client_initial_metadata) {
+    return MakeCallPair(std::move(client_initial_metadata), MakeArena());
+  }
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -49,9 +63,12 @@ class TransportTest : public ::testing::Test {
                 return options;
               }(),
               fuzzing_event_engine::Actions())};
-  MemoryAllocator allocator_ = MakeResourceQuota("test-quota")
-                                   ->memory_quota()
-                                   ->CreateMemoryAllocator("test-allocator");
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_{
+      MakeRefCounted<CallArenaAllocator>(
+          MakeResourceQuota("test-quota")
+              ->memory_quota()
+              ->CreateMemoryAllocator("test-allocator"),
+          1024)};
 };
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(

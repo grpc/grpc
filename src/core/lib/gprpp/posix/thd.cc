@@ -18,12 +18,12 @@
 
 // Posix implementation for gpr threads.
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 
 #include <csignal>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SYNC
 
@@ -32,16 +32,18 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace {
@@ -88,7 +90,7 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     // don't use gpr_malloc as we may cause an infinite recursion with
     // the profiling code
     thd_arg* info = static_cast<thd_arg*>(malloc(sizeof(*info)));
-    GPR_ASSERT(info != nullptr);
+    CHECK_NE(info, nullptr);
     info->thread = this;
     info->body = thd_body;
     info->arg = arg;
@@ -99,18 +101,16 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
       Fork::IncThreadCount();
     }
 
-    GPR_ASSERT(pthread_attr_init(&attr) == 0);
+    CHECK_EQ(pthread_attr_init(&attr), 0);
     if (options.joinable()) {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
-                 0);
+      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) == 0);
     } else {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
-                 0);
+      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
     }
 
     if (options.stack_size() != 0) {
       size_t stack_size = MinValidStackSize(options.stack_size());
-      GPR_ASSERT(pthread_attr_setstacksize(&attr, stack_size) == 0);
+      CHECK_EQ(pthread_attr_setstacksize(&attr, stack_size), 0);
     }
 
     int pthread_create_err = pthread_create(
@@ -154,11 +154,10 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
         info);
     *success = (pthread_create_err == 0);
 
-    GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
+    CHECK_EQ(pthread_attr_destroy(&attr), 0);
 
     if (!(*success)) {
-      gpr_log(GPR_ERROR, "pthread_create failed: %s",
-              StrError(pthread_create_err).c_str());
+      LOG(ERROR) << "pthread_create failed: " << StrError(pthread_create_err);
       // don't use gpr_free, as this was allocated using malloc (see above)
       free(info);
       if (options.tracked()) {
@@ -198,8 +197,8 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 void Thread::Signal(gpr_thd_id tid, int sig) {
   auto kill_err = pthread_kill((pthread_t)tid, sig);
   if (kill_err != 0) {
-    gpr_log(GPR_ERROR, "pthread_kill for tid %" PRIdPTR " failed: %s", tid,
-            StrError(kill_err).c_str());
+    LOG(ERROR) << "pthread_kill for tid " << tid
+               << " failed: " << StrError(kill_err);
   }
 }
 
@@ -207,13 +206,13 @@ void Thread::Signal(gpr_thd_id tid, int sig) {
 void Thread::Kill(gpr_thd_id tid) {
   auto cancel_err = pthread_cancel((pthread_t)tid);
   if (cancel_err != 0) {
-    gpr_log(GPR_ERROR, "pthread_cancel for tid %" PRIdPTR " failed: %s", tid,
-            StrError(cancel_err).c_str());
+    LOG(ERROR) << "pthread_cancel for tid " << tid
+               << " failed: " << StrError(cancel_err);
   }
 }
 #else  // GPR_ANDROID
 void Thread::Kill(gpr_thd_id /* tid */) {
-  gpr_log(GPR_DEBUG, "Thread::Kill is not supported on Android.");
+  VLOG(2) << "Thread::Kill is not supported on Android.";
 }
 #endif
 

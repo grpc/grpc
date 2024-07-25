@@ -91,7 +91,9 @@ BAZEL_DEPS = os.path.join(
 
 # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
+    "//src/core:experiments",
     "//src/core:slice",
+    "//src/core:ref_counted_string",
 ]
 
 

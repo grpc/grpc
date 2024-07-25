@@ -24,8 +24,8 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace {

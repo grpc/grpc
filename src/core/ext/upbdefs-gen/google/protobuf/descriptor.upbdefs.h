@@ -10,14 +10,11 @@
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
@@ -109,6 +106,11 @@ UPB_INLINE const upb_MessageDef *google_protobuf_FieldOptions_getmsgdef(upb_DefP
 UPB_INLINE const upb_MessageDef *google_protobuf_FieldOptions_EditionDefault_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "google.protobuf.FieldOptions.EditionDefault");
+}
+
+UPB_INLINE const upb_MessageDef *google_protobuf_FieldOptions_FeatureSupport_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.FieldOptions.FeatureSupport");
 }
 
 UPB_INLINE const upb_MessageDef *google_protobuf_OneofOptions_getmsgdef(upb_DefPool *s) {

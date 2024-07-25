@@ -13,8 +13,6 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -33,6 +31,7 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -173,6 +172,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) override;
+  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
+      int fd, const EndpointConfig& config) override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,

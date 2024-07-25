@@ -70,7 +70,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.33'
+    version = '0.0.36'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -114,6 +114,7 @@
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
 
     name = 'openssl_grpc'
 
@@ -136,7 +137,7 @@
 
     # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
     # want that for some reason.
-    s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w', '-DBORINGSSL_PREFIX=GRPC'
+    s.compiler_flags = '-DOPENSSL_NO_ASM', '-w', '-DBORINGSSL_PREFIX=GRPC'
     s.requires_arc = false
 
     # Like many other C libraries, BoringSSL has its public headers under `include/<libname>/` and its
@@ -149,7 +150,8 @@
     s.subspec 'Interface' do |ss|
       ss.header_mappings_dir = 'src/include/openssl'
       ss.private_header_files = 'src/include/openssl/time.h'
-      ss.source_files = 'src/include/openssl/*.h'
+      ss.source_files = 'src/include/openssl/*.h',
+                        'src/include/openssl/**/*.h'
     end
     s.subspec 'Implementation' do |ss|
       ss.header_mappings_dir = 'src'
@@ -165,7 +167,7 @@
                         # We have to include fiat because spake25519 depends on it
                         'src/third_party/fiat/*.{h,c,cc}',
                         # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
-                        'err_data.c'
+                        'src/gen/crypto/err_data.c'
 
       ss.private_header_files = 'src/ssl/*.h',
                                 'src/ssl/**/*.h',

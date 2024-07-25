@@ -31,6 +31,19 @@ using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
 using ClientMetadata = grpc_metadata_batch;
 using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
 
+// TODO(ctiller): separate when we have different types for client/server
+// metadata.
+template <typename Sink>
+void AbslStringify(Sink& sink, const Arena::PoolPtr<grpc_metadata_batch>& md) {
+  if (md == nullptr) {
+    sink.Append("nullptr");
+    return;
+  }
+  sink.Append("ServerMetadata{");
+  sink.Append(md->DebugString());
+  sink.Append("}");
+}
+
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
 inline bool IsStatusOk(const ServerMetadataHandle& m) {
@@ -38,8 +51,30 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
-ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
+// Convert absl::Status to ServerMetadata
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+// Convert absl::Status to ServerMetadata, and set GrpcCallWasCancelled() to
+// true
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    const absl::Status& status);
+// Server metadata with status code set
+inline ServerMetadataHandle ServerMetadataFromStatus(grpc_status_code code) {
+  auto hdl = Arena::MakePooledForOverwrite<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  return hdl;
+}
+inline ServerMetadataHandle CancelledServerMetadataFromStatus(
+    grpc_status_code code) {
+  auto hdl = Arena::MakePooledForOverwrite<ServerMetadata>();
+  hdl->Set(GrpcStatusMetadata(), code);
+  hdl->Set(GrpcCallWasCancelled(), true);
+  return hdl;
+}
+// The same, but with an error string
+ServerMetadataHandle ServerMetadataFromStatus(grpc_status_code code,
+                                              absl::string_view message);
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    grpc_status_code code, absl::string_view message);
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {

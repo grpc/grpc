@@ -27,19 +27,19 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -53,10 +53,10 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 const NoInterceptor FaultInjectionFilter::Call::OnServerInitialMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnClientToServerMessage;
+const NoInterceptor FaultInjectionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor FaultInjectionFilter::Call::OnServerToClientMessage;
 const NoInterceptor FaultInjectionFilter::Call::OnFinalize;
 
@@ -135,26 +135,24 @@ class FaultInjectionFilter::InjectionDecision {
   FaultHandle active_fault_{false};
 };
 
-absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args filter_args) {
-  return FaultInjectionFilter(filter_args);
+absl::StatusOr<std::unique_ptr<FaultInjectionFilter>>
+FaultInjectionFilter::Create(const ChannelArgs&,
+                             ChannelFilter::Args filter_args) {
+  return std::make_unique<FaultInjectionFilter>(filter_args);
 }
 
 FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
-    : index_(grpc_channel_stack_filter_instance_number(
-          filter_args.channel_stack(),
-          filter_args.uninitialized_channel_element())),
+    : index_(filter_args.instance_id()),
       service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()),
-      mu_(new Mutex) {}
+          FaultInjectionServiceConfigParser::ParserIndex()) {}
 
 // Construct a promise for one call.
 ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, FaultInjectionFilter* filter) {
   auto decision = filter->MakeInjectionDecision(md);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-    gpr_log(GPR_INFO, "chand=%p: Fault injection triggered %s", this,
-            decision.ToString().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(fault_injection_filter)) {
+    LOG(INFO) << "chand=" << this << ": Fault injection triggered "
+              << decision.ToString();
   }
   auto delay = decision.DelayUntil();
   return TrySeq(Sleep(delay), [decision = std::move(decision)]() {
@@ -167,10 +165,7 @@ FaultInjectionFilter::MakeInjectionDecision(
     const ClientMetadata& initial_metadata) {
   // Fetch the fault injection policy from the service config, based on the
   // relative index for which policy should this CallData use.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      GetContext<
-          grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-          .value);
+  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           service_config_parser_index_));
@@ -228,7 +223,7 @@ FaultInjectionFilter::MakeInjectionDecision(
   bool delay_request = delay != Duration::Zero();
   bool abort_request = abort_code != GRPC_STATUS_OK;
   if (delay_request || abort_request) {
-    MutexLock lock(mu_.get());
+    MutexLock lock(&mu_);
     if (delay_request) {
       delay_request =
           UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
@@ -275,8 +270,7 @@ std::string FaultInjectionFilter::InjectionDecision::ToString() const {
 }
 
 const grpc_channel_filter FaultInjectionFilter::kFilter =
-    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>(
-        "fault_injection_filter");
+    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>();
 
 void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
   FaultInjectionServiceConfigParser::Register(builder);

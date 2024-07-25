@@ -20,10 +20,10 @@
 
 #include <map>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -63,8 +63,8 @@ ndk_util::binder_status_t f_onTransact(ndk_util::AIBinder* binder,
                                        transaction_code_t code,
                                        const ndk_util::AParcel* in,
                                        ndk_util::AParcel* /*out*/) {
-  gpr_log(GPR_INFO, __func__);
-  gpr_log(GPR_INFO, "tx code = %u", code);
+  LOG(INFO) << __func__;
+  LOG(INFO) << "tx code = " << code;
 
   auto* user_data =
       static_cast<BinderUserData*>(ndk_util::AIBinder_getUserData(binder));
@@ -78,7 +78,7 @@ ndk_util::binder_status_t f_onTransact(ndk_util::AIBinder* binder,
   if (status.ok()) {
     return ndk_util::STATUS_OK;
   } else {
-    gpr_log(GPR_ERROR, "Callback failed: %s", status.ToString().c_str());
+    LOG(ERROR) << "Callback failed: " << status.ToString();
     return ndk_util::STATUS_UNKNOWN_ERROR;
   }
 }
@@ -152,10 +152,9 @@ TransactionReceiverAndroid::TransactionReceiverAndroid(
   args.wire_reader_ref = wire_reader_ref;
   args.callback = &transact_cb_;
   binder_ = ndk_util::AIBinder_new(aibinder_class, &args);
-  GPR_ASSERT(binder_);
-  gpr_log(GPR_INFO, "ndk_util::AIBinder_associateClass = %d",
-          static_cast<int>(
-              ndk_util::AIBinder_associateClass(binder_, aibinder_class)));
+  CHECK(binder_);
+  LOG(INFO) << "ndk_util::AIBinder_associateClass = "
+            << ndk_util::AIBinder_associateClass(binder_, aibinder_class);
 }
 
 TransactionReceiverAndroid::~TransactionReceiverAndroid() {
@@ -179,9 +178,8 @@ void AssociateWithNoopClass(ndk_util::AIBinder* binder) {
 
   ndk_util::AIBinder_Class_disableInterfaceTokenHeader(aibinder_class);
 
-  gpr_log(GPR_INFO, "ndk_util::AIBinder_associateClass = %d",
-          static_cast<int>(
-              ndk_util::AIBinder_associateClass(binder, aibinder_class)));
+  LOG(INFO) << "ndk_util::AIBinder_associateClass = "
+            << ndk_util::AIBinder_associateClass(binder, aibinder_class);
 }
 
 }  // namespace

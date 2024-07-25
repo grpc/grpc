@@ -22,6 +22,12 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
+#include "absl/log/log_entry.h"
+#include "absl/log/log_sink.h"
+#include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -29,54 +35,78 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
-void gpr_default_log(gpr_log_func_args* args);
-
 namespace grpc_core {
 
-class Verifier {
+class VerifyLogNoiseLogSink : public absl::LogSink {
  public:
-  Verifier() {
-    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-      saved_severity_ = GPR_LOG_SEVERITY_DEBUG;
-    } else if (gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
-      saved_severity_ = GPR_LOG_SEVERITY_INFO;
-    } else if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
-      saved_severity_ = GPR_LOG_SEVERITY_ERROR;
-    } else {
-      saved_severity_ =
-          static_cast<gpr_log_severity>(GPR_LOG_SEVERITY_ERROR + 1);
-    }
-    grpc_tracer_set_enabled("all", 0);
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-    gpr_set_log_function(DispatchLog);
+  explicit VerifyLogNoiseLogSink(const absl::LogSeverityAtLeast severity,
+                                 const int verbosity)
+      : log_noise_absent_(true) {
+    saved_absl_severity_ = absl::MinLogLevel();
+    absl::SetMinLogLevel(severity);
+    // SetGlobalVLogLevel sets verbosity and returns previous verbosity.
+    saved_absl_verbosity_ = absl::SetGlobalVLogLevel(verbosity);
+    grpc_tracer_set_enabled("all", false);
+    absl::AddLogSink(this);
   }
-  ~Verifier() {
-    gpr_set_log_function(gpr_default_log);
-    saved_trace_flags_.Restore();
-    gpr_set_log_verbosity(saved_severity_);
-  }
-  Verifier(const Verifier&) = delete;
-  Verifier& operator=(const Verifier&) = delete;
 
-  void FailOnAnyLog() { g_log_func_.store(NoLog); }
-  void FailOnNonErrorLog() { g_log_func_.store(NoErrorLog); }
+  ~VerifyLogNoiseLogSink() override {
+    CHECK(log_noise_absent_)
+        << "Unwanted logs present. This will cause log noise. Either user a "
+           "tracer (example GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or convert the "
+           "statement to VLOG(2).";
+    //  Reverse everything done in the constructor.
+    absl::RemoveLogSink(this);
+    saved_trace_flags_.Restore();
+    absl::SetGlobalVLogLevel(saved_absl_verbosity_);
+    absl::SetMinLogLevel(saved_absl_severity_);
+  }
+
+  // This function is called each time LOG or VLOG is called.
+  void Send(const absl::LogEntry& entry) override { CheckForNoisyLogs(entry); }
+
+  VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
+  VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
 
  private:
-  static void DispatchLog(gpr_log_func_args* args) { g_log_func_.load()(args); }
+  bool IsVlogWithVerbosityMoreThan1(const absl::LogEntry& entry) const {
+    return entry.log_severity() == absl::LogSeverity::kInfo &&
+           entry.verbosity() >= 1;
+  }
 
-  static void NoLog(gpr_log_func_args* args) {
+  void CheckForNoisyLogs(const absl::LogEntry& entry) {
+    // TODO(tjagtap) : Add a hard upper limit on number of times each log should
+    // appear. We can keep this number slightly higher to avoid our tests
+    // becoming flaky. Right now all entries in this list get a free pass to log
+    // infinitely - That may create log noise issues in the future.
+    //
+    // This list is an allow list of all LOG(INFO), LOG(WARNING), and LOG(ERROR)
+    // logs which will appear. For now we have decided to allow these instances.
+    // We should be very conservative while adding new entries to this list,
+    // because this has potential to cause massive log noise. Several users are
+    // using INFO log level setting for production.
     static const auto* const allowed_logs_by_module =
         new std::map<absl::string_view, std::regex>(
             {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
              {"chttp2_transport.cc",
-              std::regex("Sending goaway.*Channel Destroyed")}});
-    absl::string_view filename = args->file;
+              std::regex("Sending goaway.*Channel Destroyed")},
+             {"chaotic_good_server.cc",
+              std::regex("Failed to bind some addresses for.*")},
+             {"log.cc",
+              std::regex("Prefer WARNING or ERROR. However if you see this "
+                         "message in a debug environmenmt or test environmenmt "
+                         "it is safe to ignore this message.")}});
+
+    if (IsVlogWithVerbosityMoreThan1(entry)) {
+      return;
+    }
+
+    absl::string_view filename = entry.source_filename();
     auto slash = filename.rfind('/');
     if (slash != absl::string_view::npos) {
       filename = filename.substr(slash + 1);
@@ -87,34 +117,28 @@ class Verifier {
     }
     auto it = allowed_logs_by_module->find(filename);
     if (it != allowed_logs_by_module->end() &&
-        std::regex_search(args->message, it->second)) {
-      gpr_default_log(args);
+        std::regex_search(std::string(entry.text_message()), it->second)) {
       return;
     }
-    std::string message = absl::StrCat("Unwanted log: ", args->message);
-    args->message = message.c_str();
-    gpr_default_log(args);
-    GTEST_FAIL();
+
+    // If we reach here means we have log noise. log_noise_absent_ will make the
+    // test fail.
+    log_noise_absent_ = false;
+    LOG(ERROR) << "Unwanted log at location : " << entry.source_filename()
+               << ":" << entry.source_line() << " " << entry.text_message();
   }
 
-  static void NoErrorLog(gpr_log_func_args* args) {
-    if (args->severity == GPR_LOG_SEVERITY_ERROR) {
-      NoLog(args);
-    }
-  }
-
-  gpr_log_severity saved_severity_;
+  absl::LogSeverityAtLeast saved_absl_severity_;
+  int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
-  static std::atomic<gpr_log_func> g_log_func_;
+  bool log_noise_absent_;
 };
-
-std::atomic<gpr_log_func> Verifier::g_log_func_(gpr_default_log);
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -125,7 +149,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   test.Step();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   EXPECT_NE(s.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -140,19 +164,19 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+// This test makes sure that we don't get log noise when making an rpc
+// especially when rpcs are successful.
+
 // TODO(hork): remove when the listener flake is identified
 #ifdef GPR_WINDOWS
   if (IsEventEngineListenerEnabled()) {
     GTEST_SKIP() << "not for windows + event engine listener";
   }
 #endif
-  Verifier verifier;
-  verifier.FailOnNonErrorLog();
+  VerifyLogNoiseLogSink nolog_verifier(absl::LogSeverityAtLeast::kInfo, 2);
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }
-  verifier.FailOnAnyLog();
-  SimpleRequest(*this);
 }
 
 }  // namespace grpc_core

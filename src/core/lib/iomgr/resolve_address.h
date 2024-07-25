@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 #define GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/gprpp/orphanable.h"

@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -26,19 +24,21 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/json/json.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -90,7 +90,7 @@ class ServiceConfigImpl final : public ServiceConfig {
   /// ServiceConfig object.
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
       size_t index) override {
-    GPR_DEBUG_ASSERT(index < parsed_global_configs_.size());
+    DCHECK(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 

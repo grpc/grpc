@@ -35,7 +35,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -56,25 +56,12 @@ struct StreamNetworkStateMetadataMap
                     GrpcStreamNetworkState>::MetadataMap;
 };
 
-class MetadataMapTest : public ::testing::Test {
- protected:
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-};
+TEST(MetadataMapTest, Noop) { EmptyMetadataMap(); }
 
-TEST_F(MetadataMapTest, Noop) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  EmptyMetadataMap(arena.get());
-}
+TEST(MetadataMapTest, NoopWithDeadline) { TimeoutOnlyMetadataMap(); }
 
-TEST_F(MetadataMapTest, NoopWithDeadline) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap(arena.get());
-}
-
-TEST_F(MetadataMapTest, SimpleOps) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+TEST(MetadataMapTest, SimpleOps) {
+  TimeoutOnlyMetadataMap map;
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
   map.Set(GrpcTimeoutMetadata(),
@@ -94,7 +81,7 @@ TEST_F(MetadataMapTest, SimpleOps) {
 // EXPECT_EQ it later.
 class FakeEncoder {
  public:
-  std::string output() { return output_; }
+  const std::string& output() { return output_; }
 
   void Encode(const Slice& key, const Slice& value) {
     output_ += absl::StrCat("UNKNOWN METADATUM: key=", key.as_string_view(),
@@ -110,38 +97,55 @@ class FakeEncoder {
   std::string output_;
 };
 
-TEST_F(MetadataMapTest, EmptyEncodeTest) {
+TEST(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
 }
 
-TEST_F(MetadataMapTest, TimeoutEncodeTest) {
+TEST(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   map.Set(GrpcTimeoutMetadata(),
           Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "grpc-timeout: deadline=1234\n");
 }
 
-TEST_F(MetadataMapTest, NonEncodableTrait) {
+TEST(MetadataMapTest, NonEncodableTrait) {
   struct EncoderWithNoTraitEncodeFunctions {
     void Encode(const Slice&, const Slice&) {
       abort();  // should not be called
     }
   };
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
-  StreamNetworkStateMetadataMap map(arena.get());
+  StreamNetworkStateMetadataMap map;
   map.Set(GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
   EXPECT_EQ(map.get(GrpcStreamNetworkState()),
             GrpcStreamNetworkState::kNotSentOnWire);
   EncoderWithNoTraitEncodeFunctions encoder;
   map.Encode(&encoder);
   EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
+}
+
+TEST(MetadataMapTest, NonTraitKeyWithMultipleValues) {
+  FakeEncoder encoder;
+  TimeoutOnlyMetadataMap map;
+  const absl::string_view kKey = "key";
+  map.Append(kKey, Slice::FromStaticString("value1"),
+             [](absl::string_view error, const Slice& value) {
+               LOG(ERROR) << error << " value:" << value.as_string_view();
+             });
+  map.Append(kKey, Slice::FromStaticString("value2"),
+             [](absl::string_view error, const Slice& value) {
+               LOG(ERROR) << error << " value:" << value.as_string_view();
+             });
+  map.Encode(&encoder);
+  EXPECT_EQ(encoder.output(),
+            "UNKNOWN METADATUM: key=key value=value1\n"
+            "UNKNOWN METADATUM: key=key value=value2\n");
+  std::string buffer;
+  EXPECT_EQ(map.GetStringValue(kKey, &buffer), "value1,value2");
 }
 
 TEST(DebugStringBuilderTest, OneAddAfterRedaction) {

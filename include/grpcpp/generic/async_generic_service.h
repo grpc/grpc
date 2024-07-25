@@ -20,11 +20,9 @@
 #define GRPCPP_GENERIC_ASYNC_GENERIC_SERVICE_H
 
 #include <grpc/support/port_platform.h>
-
-#include <grpcpp/impl/server_callback_handlers.h>
+#include <grpcpp/generic/callback_generic_service.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/server_callback.h>
 
 struct grpc_server;
 
@@ -77,57 +75,6 @@ class AsyncGenericService final {
  private:
   friend class grpc::Server;
   grpc::Server* server_;
-};
-
-/// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
-/// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
-/// ByteBuffer arguments.
-using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
-
-class GenericCallbackServerContext final : public grpc::CallbackServerContext {
- public:
-  const std::string& method() const { return method_; }
-  const std::string& host() const { return host_; }
-
- private:
-  friend class grpc::Server;
-
-  std::string method_;
-  std::string host_;
-};
-
-/// \a CallbackGenericService is the base class for generic services implemented
-/// using the callback API and registered through the ServerBuilder using
-/// RegisterCallbackGenericService.
-class CallbackGenericService {
- public:
-  CallbackGenericService() {}
-  virtual ~CallbackGenericService() {}
-
-  /// The "method handler" for the generic API. This function should be
-  /// overridden to provide a ServerGenericBidiReactor that implements the
-  /// application-level interface for this RPC. Unimplemented by default.
-  virtual ServerGenericBidiReactor* CreateReactor(
-      GenericCallbackServerContext* /*ctx*/) {
-    class Reactor : public ServerGenericBidiReactor {
-     public:
-      Reactor() { this->Finish(Status(StatusCode::UNIMPLEMENTED, "")); }
-      void OnDone() override { delete this; }
-    };
-    return new Reactor;
-  }
-
- private:
-  friend class grpc::Server;
-
-  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
-    return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
-        [this](grpc::CallbackServerContext* ctx) {
-          return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
-        });
-  }
-
-  grpc::Server* server_{nullptr};
 };
 
 }  // namespace grpc

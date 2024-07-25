@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -50,7 +50,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      gpr_log(GPR_ERROR, "uname: %s", grpc_core::StrError(errno).c_str());
+      LOG(ERROR) << "uname: " << grpc_core::StrError(errno);
       return false;
     }
     char* release = buffer.release;
@@ -61,7 +61,7 @@ bool KernelSupportsErrqueue() {
     if (strtol(release, nullptr, 10) >= 4) {
       return true;
     } else {
-      gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
+      VLOG(2) << "ERRQUEUE support not enabled";
     }
 #endif  // GRPC_LINUX_ERRQUEUE
     return false;

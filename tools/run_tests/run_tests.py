@@ -284,6 +284,7 @@ class CLanguage(object):
                     "default",
                     "cmake",
                     "cmake_ninja_vs2019",
+                    "cmake_ninja_vs2022",
                     "cmake_vs2019",
                     "cmake_vs2022",
                 ],
@@ -300,6 +301,9 @@ class CLanguage(object):
                 # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = "Ninja"
                 activate_vs_tools = "2019"
+            elif self.args.compiler == "cmake_ninja_vs2022":
+                cmake_generator = "Ninja"
+                activate_vs_tools = "2022"
             elif self.args.compiler == "cmake_vs2019":
                 cmake_generator = "Visual Studio 16 2019"
             elif self.args.compiler == "cmake_vs2022":
@@ -534,6 +538,8 @@ class CLanguage(object):
             environ[
                 "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
             ] = self._vs_tools_architecture_windows
+        elif self.platform == "linux":
+            environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
 
     def post_tests_steps(self):
@@ -562,7 +568,13 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", [])
+            # This is to address Apple clang defaults C++98.
+            cmake_args = (
+                ["-DCMAKE_CXX_STANDARD=14"]
+                if platform_string() == "mac"
+                else []
+            )
+            return ("debian11", cmake_args)
         elif compiler == "gcc8":
             return ("gcc_8", [])
         elif compiler == "gcc10.2":
@@ -797,13 +809,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python37_config = _python_config_generator(
-            name="py37",
-            major="3",
-            minor="7",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python38_config = _python_config_generator(
             name="py38",
             major="3",
@@ -862,11 +867,9 @@ class PythonLanguage(object):
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python37_config,
+                    python38_config,
                     python312_config,
                 )
-        elif args.compiler == "python3.7":
-            return (python37_config,)
         elif args.compiler == "python3.8":
             return (python38_config,)
         elif args.compiler == "python3.9":
@@ -885,7 +888,6 @@ class PythonLanguage(object):
             return (python39_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python37_config,
                 python38_config,
                 python39_config,
                 python310_config,
@@ -1686,6 +1688,7 @@ argp.add_argument(
         "coreclr",
         "cmake",
         "cmake_ninja_vs2019",
+        "cmake_ninja_vs2022",
         "cmake_vs2019",
         "cmake_vs2022",
         "mono",
@@ -1780,7 +1783,7 @@ argp.add_argument(
 argp.add_argument(
     "--cmake_configure_extra_args",
     default=[],
-    nargs="+",
+    action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()

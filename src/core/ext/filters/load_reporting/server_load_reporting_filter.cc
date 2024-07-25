@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
@@ -41,7 +42,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
@@ -74,12 +74,14 @@ constexpr char kEmptyAddressLengthString[] = "00";
 
 const NoInterceptor ServerLoadReportingFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerLoadReportingFilter::Call::OnServerToClientMessage;
 
-absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
-    const ChannelArgs& channel_args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>>
+ServerLoadReportingFilter::Create(const ChannelArgs& channel_args,
+                                  ChannelFilter::Args) {
   // Find and record the peer_identity.
-  ServerLoadReportingFilter filter;
+  auto filter = std::make_unique<ServerLoadReportingFilter>();
   const auto* auth_context = channel_args.GetObject<grpc_auth_context>();
   if (auth_context != nullptr &&
       grpc_auth_context_peer_is_authenticated(auth_context)) {
@@ -88,7 +90,7 @@ absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
     const grpc_auth_property* auth_property =
         grpc_auth_property_iterator_next(&auth_it);
     if (auth_property != nullptr) {
-      filter.peer_identity_ =
+      filter->peer_identity_ =
           std::string(auth_property->value, auth_property->value_length);
     }
   }
@@ -101,26 +103,23 @@ std::string GetCensusSafeClientIpString(
   // Find the client URI string.
   const Slice* client_uri_slice = initial_metadata.get_pointer(PeerString());
   if (client_uri_slice == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Unable to extract client URI string (peer string) from gRPC "
-            "metadata.");
+    LOG(ERROR) << "Unable to extract client URI string (peer string) from gRPC "
+                  "metadata.";
     return "";
   }
   absl::StatusOr<URI> client_uri =
       URI::Parse(client_uri_slice->as_string_view());
   if (!client_uri.ok()) {
-    gpr_log(GPR_ERROR,
-            "Unable to parse the client URI string (peer string) to a client "
-            "URI. Error: %s",
-            client_uri.status().ToString().c_str());
+    LOG(ERROR) << "Unable to parse the client URI string (peer string) to a "
+                  "client URI. Error: "
+               << client_uri.status();
     return "";
   }
   // Parse the client URI into grpc_resolved_address.
   grpc_resolved_address resolved_address;
   bool success = grpc_parse_uri(*client_uri, &resolved_address);
   if (!success) {
-    gpr_log(GPR_ERROR,
-            "Unable to parse client URI into a grpc_resolved_address.");
+    LOG(ERROR) << "Unable to parse client URI into a grpc_resolved_address.";
     return "";
   }
   // Convert the socket address in the grpc_resolved_address into a hex string
@@ -245,8 +244,8 @@ void ServerLoadReportingFilter::Call::OnFinalize(
 }
 
 const grpc_channel_filter ServerLoadReportingFilter::kFilter =
-    MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
-        "server_load_reporting");
+    MakePromiseBasedFilter<ServerLoadReportingFilter,
+                           FilterEndpoint::kServer>();
 
 // TODO(juanlishen): We should register the filter during grpc initialization
 // time once OpenCensus is compatible with our build system. For now, we force

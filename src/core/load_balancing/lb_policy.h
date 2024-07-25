@@ -17,17 +17,15 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -35,12 +33,12 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -51,12 +49,12 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
 
 namespace grpc_core {
-
-extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 
 /// Interface for load balancing policies.
 ///
@@ -119,27 +117,33 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~MetadataInterface() = default;
 
-    //////////////////////////////////////////////////////////////////////////
-    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
-    // This needs some API design to ensure we can add/remove/replace metadata
-    // keys... we're deliberately not doing so to save some time whilst
-    // cleaning up the internal metadata representation, but we should add
-    // something back before making this a public API.
-    //////////////////////////////////////////////////////////////////////////
-
-    /// Adds a key/value pair.
-    /// Does NOT take ownership of \a key or \a value.
-    /// Implementations must ensure that the key and value remain alive
-    /// until the call ends.  If desired, they may be allocated via
-    /// CallState::Alloc().
-    virtual void Add(absl::string_view key, absl::string_view value) = 0;
-
-    /// Produce a vector of metadata key/value strings for tests.
-    virtual std::vector<std::pair<std::string, std::string>>
-    TestOnlyCopyToVector() = 0;
-
     virtual absl::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* buffer) const = 0;
+  };
+
+  /// A list of metadata mutations to be returned along with a PickResult.
+  class MetadataMutations {
+   public:
+    /// Sets a key/value pair.  If the key is already present, it will
+    /// be replaced with the new value.
+    void Set(absl::string_view key, absl::string_view value) {
+      Set(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
+    }
+    void Set(absl::string_view key,
+             grpc_event_engine::experimental::Slice value) {
+      metadata_.push_back({key, std::move(value)});
+    }
+
+   private:
+    friend class MetadataMutationHandler;
+
+    // Avoid allocation if up to 3 additions per LB pick.  Most expected
+    // use cases should be no more than 2, so this gives us a bit of slack.
+    // But it should be cheap to increase this value if we start seeing use
+    // cases with more than 3 additions.
+    absl::InlinedVector<
+        std::pair<absl::string_view, grpc_event_engine::experimental::Slice>, 3>
+        metadata_;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -213,11 +217,24 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       /// be used.
       std::unique_ptr<SubchannelCallTrackerInterface> subchannel_call_tracker;
 
+      /// Metadata mutations to be applied to the call.
+      MetadataMutations metadata_mutations;
+
+      /// Authority override for the RPC.
+      /// Will be used only if the application has not explicitly set
+      /// the authority for the RPC.
+      grpc_event_engine::experimental::Slice authority_override;
+
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
-          std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr)
+          std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr,
+          MetadataMutations md = MetadataMutations(),
+          grpc_event_engine::experimental::Slice authority =
+              grpc_event_engine::experimental::Slice())
           : subchannel(std::move(sc)),
-            subchannel_call_tracker(std::move(tracker)) {}
+            subchannel_call_tracker(std::move(tracker)),
+            metadata_mutations(std::move(md)),
+            authority_override(std::move(authority)) {}
     };
 
     /// Pick cannot be completed until something changes on the control
@@ -275,7 +292,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     virtual PickResult Pick(PickArgs args) = 0;
 
-    void Orphan() override {}
+   protected:
+    void Orphaned() override {}
   };
 
   /// A proxy object implemented by the client channel and used by the
@@ -429,7 +447,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
-  class QueuePicker : public SubchannelPicker {
+  class QueuePicker final : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
@@ -444,12 +462,25 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   // A picker that returns PickResult::Fail for all picks.
-  class TransientFailurePicker : public SubchannelPicker {
+  class TransientFailurePicker final : public SubchannelPicker {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
     PickResult Pick(PickArgs /*args*/) override {
       return PickResult::Fail(status_);
+    }
+
+   private:
+    absl::Status status_;
+  };
+
+  // A picker that returns PickResult::Drop for all picks.
+  class DropPicker final : public SubchannelPicker {
+   public:
+    explicit DropPicker(absl::Status status) : status_(status) {}
+
+    PickResult Pick(PickArgs /*args*/) override {
+      return PickResult::Drop(status_);
     }
 
    private:
@@ -482,6 +513,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Channel args passed in.
   // TODO(roth): Rework Args so that we don't need to capture channel args here.
   ChannelArgs channel_args_;
+};
+
+template <>
+struct ArenaContextType<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
+  static void Destroy(LoadBalancingPolicy::SubchannelCallTrackerInterface*) {}
 };
 
 }  // namespace grpc_core

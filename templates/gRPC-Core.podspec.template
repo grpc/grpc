@@ -118,11 +118,12 @@
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
 
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20240116.1'
+    abseil_version = '~> 1.20240116.2'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -157,7 +158,7 @@
           ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
-      # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # `src/core/util/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
@@ -198,7 +199,7 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Privacy", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.33'
+      ss.dependency 'BoringSSL-GRPC', '0.0.36'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

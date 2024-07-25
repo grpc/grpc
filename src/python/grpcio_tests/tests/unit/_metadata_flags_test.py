@@ -28,10 +28,11 @@ import tests.unit.framework.common
 from tests.unit.framework.common import get_socket
 from tests.unit.framework.common import test_constants
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
@@ -85,21 +86,13 @@ class _MethodHandler(grpc.RpcMethodHandler):
             )
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self, test):
-        self._test = test
-
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(self._test, False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(self._test, False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(self._test, True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(self._test, True, True)
-        else:
-            return None
+def get_method_handlers(test):
+    return {
+        _UNARY_UNARY: _MethodHandler(test, False, False),
+        _UNARY_STREAM: _MethodHandler(test, False, True),
+        _STREAM_UNARY: _MethodHandler(test, True, False),
+        _STREAM_STREAM: _MethodHandler(test, True, True),
+    }
 
 
 def create_phony_channel():
@@ -111,7 +104,7 @@ def create_phony_channel():
 
 def perform_unary_unary_call(channel, wait_for_ready=None):
     channel.unary_unary(
-        _UNARY_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
         _registered_method=True,
     ).__call__(
         _REQUEST,
@@ -122,7 +115,7 @@ def perform_unary_unary_call(channel, wait_for_ready=None):
 
 def perform_unary_unary_with_call(channel, wait_for_ready=None):
     channel.unary_unary(
-        _UNARY_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
         _registered_method=True,
     ).with_call(
         _REQUEST,
@@ -133,18 +126,20 @@ def perform_unary_unary_with_call(channel, wait_for_ready=None):
 
 def perform_unary_unary_future(channel, wait_for_ready=None):
     channel.unary_unary(
-        _UNARY_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
         _registered_method=True,
     ).future(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
-    ).result(timeout=test_constants.LONG_TIMEOUT)
+    ).result(
+        timeout=test_constants.LONG_TIMEOUT
+    )
 
 
 def perform_unary_stream_call(channel, wait_for_ready=None):
     response_iterator = channel.unary_stream(
-        _UNARY_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         _registered_method=True,
     ).__call__(
         _REQUEST,
@@ -157,7 +152,7 @@ def perform_unary_stream_call(channel, wait_for_ready=None):
 
 def perform_stream_unary_call(channel, wait_for_ready=None):
     channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         _registered_method=True,
     ).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
@@ -168,7 +163,7 @@ def perform_stream_unary_call(channel, wait_for_ready=None):
 
 def perform_stream_unary_with_call(channel, wait_for_ready=None):
     channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         _registered_method=True,
     ).with_call(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
@@ -179,18 +174,21 @@ def perform_stream_unary_with_call(channel, wait_for_ready=None):
 
 def perform_stream_unary_future(channel, wait_for_ready=None):
     channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         _registered_method=True,
     ).future(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
-    ).result(timeout=test_constants.LONG_TIMEOUT)
+    ).result(
+        timeout=test_constants.LONG_TIMEOUT
+    )
 
 
 def perform_stream_stream_call(channel, wait_for_ready=None):
     response_iterator = channel.stream_stream(
-        _STREAM_STREAM, _registered_method=True
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+        _registered_method=True,
     ).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
@@ -279,7 +277,9 @@ class MetadataFlagsTest(unittest.TestCase):
         # Start the server after the connections are waiting
         wg.wait()
         server = test_common.test_server(reuse_port=True)
-        server.add_generic_rpc_handlers((_GenericHandler(weakref.proxy(self)),))
+        server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(weakref.proxy(self))
+        )
         server.add_insecure_port(addr)
         server.start()
 

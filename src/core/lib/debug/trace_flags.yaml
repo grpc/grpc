@@ -1,0 +1,367 @@
+# Copyright 2024 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# File format:
+# Each config var must have a name, a default, and a description.
+# Optionally:
+#  *  a `debug_only: true` flag can be added to ensure that this flag is only
+#     enabled in debug builds.
+#  *  an `internal: true` flag can be added to ensure that this flag does not
+#     show up in the environment_variables.md documentations.
+
+api:
+  default: false
+  description: API calls to the C core.
+apple_polling:
+  default: false
+  description: (legacy) Apple polling trace.
+  internal: true
+auth_context_refcount:
+  debug_only: true
+  default: false
+  description: Auth context refcounting.
+backend_metric:
+  default: false
+  description: C++ backend metric recorder APIs.
+backend_metric_filter:
+  default: false
+  description: Filter that populates backend metric data in server trailing metadata.
+bdp_estimator:
+  default: false
+  description: Behavior of bdp estimation logic.
+call:
+  default: false
+  description: Traces operations on a call through the gRPC stack.
+call_combiner:
+  debug_only: true
+  default: false
+  description: Call combiner state.
+call_error:
+  default: false
+  description: Possible errors contributing to final call statuses.
+call_refcount:
+  debug_only: true
+  default: false
+  description: Refcount on call.
+call_state:
+  debug_only: true
+  default: false
+  description: Traces transitions through the call spine state machine.
+cares_address_sorting:
+  default: false
+  description: Operations of the c-ares based DNS resolver's address sorter.
+cares_resolver:
+  default: false
+  description: Operations of the c-ares based DNS resolver.
+cds_lb:
+  default: false
+  description: CDS LB policy.
+channel:
+  default: false
+  description: Operations on the C core channel stack.
+channel_stack:
+  default: false
+  description: Construction of the set of filters in a channel stack.
+chaotic_good:
+  default: false
+  description: Chaotic good transport.
+chttp2_hpack_parser:
+  default: false
+  description: HTTP/2 HPACK parser.
+chttp2_new_stream:
+  default: false
+  description: HTTP/2 incoming stream creation.
+client_channel:
+  default: false
+  description: Client channel control plane activity, including resolver and load balancing policy interaction.
+client_channel_call:
+  default: false
+  description: Client channel call activity related to name resolution.
+client_channel_lb_call:
+  default: false
+  description: Client channel call activity related to load balancing picking.
+client_idle_filter:
+  default: false
+  description: Client idleness filter.
+closure:
+  debug_only: true
+  default: false
+  description: Legacy closure creation, scheduling, and completion.
+combiner:
+  debug_only: true
+  default: false
+  description: Combiner lock state.
+compression:
+  default: false
+  description: Compression operations.
+connectivity_state:
+  default: false
+  description: Connectivity state changes to channels.
+cq_refcount:
+  debug_only: true
+  default: false
+  description: Completion queue refcounting.
+cronet:
+  default: false
+  description: Cronet transport engine.
+dns_resolver:
+  default: false
+  description: The active DNS resolver.
+environment_autodetect:
+  default: false
+  description: GCP environment auto-detection.
+error_refcount:
+  debug_only: true
+  default: false
+  description: Error refcounting.
+event_engine:
+  default: false
+  description: High-level EventEngine operations.
+event_engine_client_channel_resolver:
+  default: false
+  description: EventEngine-based client channel resolver state and events.
+event_engine_dns:
+  default: false
+  description: EventEngine DNS resolver.
+event_engine_endpoint:
+  default: false
+  description: EventEngine Endpoint operations.
+event_engine_endpoint_data:
+  default: false
+  description: Detailed dump of EventEngine endpoint TCP data.
+event_engine_poller:
+  default: false
+  description: EventEngine Poller events.
+executor:
+  default: false
+  description: gRPC's legacy thread pool ('the executor').
+fault_injection_filter:
+  default: false
+  description: Fault injection.
+fd_refcount:
+  debug_only: true
+  default: false
+  description: File descriptor refcounting.
+fd_trace:
+  debug_only: true
+  default: false
+  description: Legacy file descriptor create(), shutdown() and close() calls for channel fds.
+flowctl:
+  default: false
+  description: Http2 flow control.
+fork:
+  default: false
+  description: Fork support.
+fuzzing_ee_timers:
+  default: false
+  description: Fuzzing EventEngine timers.
+  internal: true
+fuzzing_ee_writes:
+  default: false
+  description: Fuzzing EventEngine writes.
+  internal: true
+glb:
+  default: false
+  description: gRPClb load balancer.
+grpc_authz_api:
+  default: false
+  description: gRPC authorization.
+handshaker:
+  default: false
+  description: Handshaking state.
+health_check_client:
+  default: false
+  description: Health checking client code.
+http:
+  default: false
+  description: Http2 transport engine.
+http1:
+  default: false
+  description: HTTP/1.x operations performed by gRPC.
+http2_ping:
+  default: false
+  description: Pings/ping acks/antagonist writes in http2 stack.
+http2_stream_state:
+  default: false
+  description: Http2 stream state mutations.
+http_keepalive:
+  default: false
+  description: gRPC keepalive pings.
+inproc:
+  default: false
+  description: In-process transport.
+lb_policy_refcount:
+  debug_only: true
+  default: false
+  description: LB policy refcounting.
+metadata_query:
+  default: false
+  description: GCP metadata queries.
+op_failure:
+  default: false
+  description: Error information when failure is pushed onto a completion queue. The `api` tracer must be enabled for this flag to have any effect.
+orca_client:
+  default: false
+  description: Out-of-band backend metric reporting client.
+outlier_detection_lb:
+  default: false
+  description: Outlier detection.
+party_state:
+  debug_only: true
+  default: false
+  description: Coordination of activities related to a call.
+pending_tags:
+  debug_only: true
+  default: false
+  description: Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
+pick_first:
+  default: false
+  description: Pick first load balancing policy.
+plugin_credentials:
+  default: false
+  description: Plugin credentials.
+polling:
+  debug_only: true
+  default: false
+  description: The active polling engine.
+polling_api:
+  debug_only: true
+  default: false
+  description: API calls to polling engine.
+priority_lb:
+  default: false
+  description: Priority LB policy.
+promise_primitives:
+  debug_only: true
+  default: false
+  description: Low-level primitives in the promise library.
+queue_pluck:
+  default: false
+  description: Completion queue plucking. The `api` tracer must be enabled for this flag to have any effect.
+resolver_refcount:
+  debug_only: true
+  default: false
+  description: Resolver refcouting.
+resource_quota:
+  default: false
+  description: Resource quota objects internals.
+retry:
+  default: false
+  description: Call retries.
+ring_hash_lb:
+  default: false
+  description: Ring hash load balancing policy.
+rls_lb:
+  default: false
+  description: RLS load balancing policy.
+round_robin:
+  default: false
+  description: Round robin load balancing policy.
+secure_endpoint:
+  default: false
+  description: Bytes flowing through encrypted channels.
+security_connector_refcount:
+  debug_only: true
+  default: false
+  description: Refcounting for security connectors (part of channel credentials).
+server_channel:
+  default: false
+  description: Lightweight trace of significant server channel events.
+slice_refcount:
+  debug_only: true
+  default: false
+  description: Slice refcounting.
+stateful_session_filter:
+  default: false
+  description: Stateful session affinity.
+stream_refcount:
+  debug_only: true
+  default: false
+  description: Stream refcounting.
+subchannel:
+  default: false
+  description: Connectivity state of subchannels.
+subchannel_pool:
+  default: false
+  description: Subchannel pool.
+subchannel_refcount:
+  debug_only: true
+  default: false
+  description: Subchannel refcounting.
+tcp:
+  default: false
+  description: Bytes in and out of a channel.
+timer:
+  default: false
+  description: Timers (alarms) in the grpc internals.
+timer_check:
+  default: false
+  description: more detailed trace of timer logic in grpc internals.
+tsi:
+  default: false
+  description: TSI transport security.
+weighted_round_robin_lb:
+  default: false
+  description: Weighted round robin load balancing policy.
+weighted_target_lb:
+  default: false
+  description: Weighted target LB policy.
+work_serializer:
+  debug_only: true
+  default: false
+  description: A synchronization mechanism used to ensure that only one thread is executing at a given time.
+xds_client:
+  default: false
+  description: XDS client.
+xds_client_refcount:
+  default: false
+  description: Refcount of XDS client.
+xds_cluster_impl_lb:
+  default: false
+  description: XDS Cluster impl LB policy.
+xds_cluster_manager_lb:
+  default: false
+  description: XDS Cluster manager LB policy.
+xds_cluster_resource_type_test:
+  default: true
+  description: XDS Cluster resource type.
+  internal: true
+xds_common_types_test:
+  default: true
+  description: XDS Common types.
+  internal: true
+xds_endpoint_resource_type_test:
+  default: true
+  description: XDS Endpoint resource type.
+  internal: true
+xds_listener_resource_type_test:
+  default: true
+  description: XDS Listener resource type.
+  internal: true
+xds_override_host_lb:
+  default: false
+  description: XDS Override host LB.
+xds_resolver:
+  default: false
+  description: XDS Resolver.
+xds_route_config_resource_type_test:
+  default: true
+  description: XDS Route config resource type.
+  internal: true
+xds_server_config_fetcher:
+  default: false
+  description: XDS Server config fetcher.
+xds_wrr_locality_lb:
+  default: false
+  description: XDS WRR locality LB policy.

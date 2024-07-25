@@ -21,7 +21,7 @@
 // good can run without custom experiment configuration.
 
 #include "src/cpp/ext/chaotic_good.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
 #include "test/cpp/util/test_config.h"
 
@@ -35,7 +35,7 @@ class ChaoticGoodFixture : public BaseFixture {
       const FixtureConfiguration& config = FixtureConfiguration()) {
     auto address = MakeAddress(&port_);
     ServerBuilder b;
-    if (address.length() > 0) {
+    if (!address.empty()) {
       b.AddListeningPort(address, ChaoticGoodInsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -44,7 +44,7 @@ class ChaoticGoodFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (address.length() > 0) {
+    if (!address.empty()) {
       channel_ = grpc::CreateCustomChannel(
           address, ChaoticGoodInsecureChannelCredentials(), args);
     } else {
@@ -111,7 +111,6 @@ int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("event_engine_client", true);
   grpc_core::ForceEnableExperiment("event_engine_listener", true);
   grpc_core::ForceEnableExperiment("promise_based_client_call", true);
-  grpc_core::ForceEnableExperiment("promise_based_server_call", true);
   grpc_core::ForceEnableExperiment("chaotic_good", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;

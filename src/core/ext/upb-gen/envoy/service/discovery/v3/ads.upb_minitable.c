@@ -18,7 +18,10 @@
 const upb_MiniTable envoy__service__discovery__v3__AdsDummy_msg_init = {
   NULL,
   NULL,
-  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.discovery.v3.AdsDummy",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
 #include <array>
@@ -35,21 +33,24 @@
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
@@ -80,7 +81,7 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
   }
 }
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordSendInitialMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
   scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -96,14 +97,14 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordSendInitialMetadata(
       otel_plugin_);
 }
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordSendTrailingMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
   elapsed_time_ = absl::Now() - start_time_;
 }
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   std::array<std::pair<absl::string_view, absl::string_view>, 2>
       additional_labels = {
@@ -113,7 +114,7 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
   // Currently we do not have any optional labels on the server side.
   KeyValueIterable labels(
       injected_labels_from_plugin_options_, additional_labels,
-      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
+      /*active_plugin_options_view=*/nullptr, /*optional_labels=*/{},
       /*is_client=*/false, otel_plugin_);
   if (otel_plugin_->server_.call.duration != nullptr) {
     otel_plugin_->server_.call.duration->Record(
@@ -123,15 +124,29 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
   if (otel_plugin_->server_.call.sent_total_compressed_message_size !=
       nullptr) {
     otel_plugin_->server_.call.sent_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.outgoing.data_bytes, labels,
-        opentelemetry::context::Context{});
+        grpc_core::IsCallTracerInTransportEnabled()
+            ? outgoing_bytes_.load()
+            : final_info->stats.transport_stream_stats.outgoing.data_bytes,
+        labels, opentelemetry::context::Context{});
   }
   if (otel_plugin_->server_.call.rcvd_total_compressed_message_size !=
       nullptr) {
     otel_plugin_->server_.call.rcvd_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.incoming.data_bytes, labels,
-        opentelemetry::context::Context{});
+        grpc_core::IsCallTracerInTransportEnabled()
+            ? incoming_bytes_.load()
+            : final_info->stats.transport_stream_stats.incoming.data_bytes,
+        labels, opentelemetry::context::Context{});
   }
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 }  // namespace internal

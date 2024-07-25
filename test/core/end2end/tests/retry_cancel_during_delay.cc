@@ -27,7 +27,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -60,9 +60,9 @@ void TestRetryCancelDuringDelay(
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch with all 6 ops.
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
@@ -75,7 +75,7 @@ void TestRetryCancelDuringDelay(
   test.Step();
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})

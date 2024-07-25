@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
@@ -28,10 +31,10 @@ bool leak_check = true;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_init();
   {
     // Copied and modified from grpc/test/core/end2end/fuzzers/server_fuzzer.cc
@@ -62,9 +65,9 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_metadata_array_init(&request_metadata1);
     int requested_calls = 0;
 
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_call(server, &call1, &call_details1,
-                                        &request_metadata1, cq, cq, tag(1)));
+    CHECK(GRPC_CALL_OK ==
+          grpc_server_request_call(server, &call1, &call_details1,
+                                   &request_metadata1, cq, cq, tag(1)));
     requested_calls++;
 
     grpc_event ev;
@@ -111,7 +114,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_OP_COMPLETE &&
                grpc_core::Timestamp::Now() < deadline);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      CHECK(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i <= requested_calls; i++) {
@@ -121,7 +124,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
                grpc_core::Timestamp::Now() < deadline);
-      GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+      CHECK(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -77,6 +77,7 @@ grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -93,6 +94,8 @@ grpc_proto_fuzzer(
     srcs = ["frame_fuzzer.cc"],
     corpus = "frame_fuzzer_corpus",
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/random:bit_gen_ref",
         "absl/status:statusor",
     ],
@@ -221,6 +224,8 @@ grpc_cc_test(
     name = "chaotic_good_server_test",
     srcs = ["chaotic_good_server_test.cc"],
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/time",
         "gtest",
@@ -244,6 +249,6 @@ grpc_cc_test(
         "//src/core:resource_quota",
         "//src/core:time",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

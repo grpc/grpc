@@ -14,9 +14,11 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
+
+#include "absl/status/status.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 
@@ -29,7 +31,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -46,13 +47,12 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-extern grpc_core::TraceFlag grpc_trace_ares_resolver;
-
-#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)                              \
-  do {                                                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {                   \
-      gpr_log(GPR_INFO, "(EventEngine c-ares resolver) " format, __VA_ARGS__); \
-    }                                                                          \
+#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)        \
+  do {                                                   \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {       \
+      LOG(INFO) << "(EventEngine c-ares resolver) "      \
+                << absl::StrFormat(format, __VA_ARGS__); \
+    }                                                    \
   } while (0)
 
 class AresResolver : public RefCountedDNSResolverInterface {
@@ -148,4 +148,9 @@ extern void (*event_engine_grpc_ares_test_only_inject_config)(
 extern bool g_event_engine_grpc_ares_test_only_force_tcp;
 
 #endif  // GRPC_ARES == 1
+
+bool ShouldUseAresDnsResolver();
+absl::Status AresInit();
+void AresShutdown();
+
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H

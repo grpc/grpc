@@ -22,15 +22,17 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/telemetry/call_tracer.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -48,20 +50,24 @@ namespace grpc_core {
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
+  template <typename A>
+  A* GetCallAttribute() const {
+    return DownCast<A*>(GetCallAttribute(A::TypeName()));
+  }
+
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const = 0;
   virtual ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.
-class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
+class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
  public:
-  ClientChannelServiceConfigCallData(Arena* arena,
-                                     grpc_call_context_element* call_context)
-      : ServiceConfigCallData(arena, call_context) {}
+  explicit ClientChannelServiceConfigCallData(Arena* arena)
+      : ServiceConfigCallData(arena) {}
 
   void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
-    GPR_ASSERT(on_commit_ == nullptr);
+    CHECK(on_commit_ == nullptr);
     on_commit_ = std::move(on_commit);
   }
 
@@ -72,6 +78,18 @@ class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
 
  private:
   absl::AnyInvocable<void()> on_commit_;
+};
+
+template <>
+struct ContextSubclass<ClientChannelServiceConfigCallData> {
+  using Base = ServiceConfigCallData;
+};
+
+class SubchannelInterfaceWithCallDestination : public SubchannelInterface {
+ public:
+  using SubchannelInterface::SubchannelInterface;
+  // Obtain the call destination for this subchannel.
+  virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
 };
 
 }  // namespace grpc_core

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/server/binder_server.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
@@ -22,6 +22,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -30,8 +32,8 @@
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/server/server.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
@@ -53,8 +55,8 @@ Java_io_grpc_binder_cpp_GrpcCppServerBuilder_GetEndpointBinderInternal__Ljava_la
     ai_binder = static_cast<grpc_binder::ndk_util::AIBinder*>(
         grpc_get_endpoint_binder(std::string(conn_id)));
     if (ai_binder == nullptr) {
-      gpr_log(GPR_ERROR, "Cannot find endpoint binder with connection id = %s",
-              conn_id);
+      LOG(ERROR) << "Cannot find endpoint binder with connection id = "
+                 << conn_id;
     }
     if (isCopy == JNI_TRUE) {
       jni_env->ReleaseStringUTFChars(conn_id_jstring, conn_id);
@@ -159,7 +161,7 @@ class BinderServerListener : public Server::ListenerInterface {
     on_destroy_done_ = on_destroy_done;
   }
 
-  void Orphan() override { delete this; }
+  void Orphan() override { Unref(); }
 
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
@@ -179,7 +181,7 @@ class BinderServerListener : public Server::ListenerInterface {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
 
-    gpr_log(GPR_INFO, "BinderServerListener calling uid = %d", uid);
+    LOG(INFO) << "BinderServerListener calling uid = " << uid;
     if (!security_policy_->IsAuthorized(uid)) {
       // TODO(mingcl): For now we just ignore this unauthorized
       // SETUP_TRANSPORT transaction and ghost the client. Check if we should
@@ -195,7 +197,7 @@ class BinderServerListener : public Server::ListenerInterface {
     if (!status.ok()) {
       return status;
     }
-    gpr_log(GPR_INFO, "BinderTransport client protocol version = %d", version);
+    LOG(INFO) << "BinderTransport client protocol version = " << version;
     // TODO(mingcl): Make sure we only give client a version that is not newer
     // than the version they specify. For now, we always tell client that we
     // only support version=1.
@@ -212,7 +214,7 @@ class BinderServerListener : public Server::ListenerInterface {
     // grpc_create_binder_transport_server().
     Transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
-    GPR_ASSERT(server_transport);
+    CHECK(server_transport);
     grpc_error_handle error = server_->SetupTransport(
         server_transport, nullptr, server_->channel_args(), nullptr);
     return grpc_error_to_absl_status(error);
@@ -239,9 +241,8 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   }
   std::string conn_id = addr.substr(kBinderUriScheme.size());
   Server* core_server = Server::FromC(server);
-  core_server->AddListener(
-      OrphanablePtr<Server::ListenerInterface>(new BinderServerListener(
-          core_server, conn_id, std::move(factory), security_policy)));
+  core_server->AddListener(MakeOrphanable<BinderServerListener>(
+      core_server, conn_id, std::move(factory), security_policy));
   return true;
 }
 

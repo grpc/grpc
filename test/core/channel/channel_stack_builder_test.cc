@@ -19,6 +19,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 
 #include <map>
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -31,7 +32,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -53,20 +54,24 @@ void CallDestroyFunc(grpc_call_element* /*elem*/,
                      const grpc_call_final_info* /*final_info*/,
                      grpc_closure* /*ignored*/) {}
 
-const grpc_channel_filter* FilterNamed(const char* name) {
+const grpc_channel_filter* FilterNamed(absl::string_view name) {
   static auto* filters =
       new std::map<absl::string_view, const grpc_channel_filter*>;
   auto it = filters->find(name);
   if (it != filters->end()) return it->second;
+  static auto* name_factories =
+      new std::vector<std::unique_ptr<UniqueTypeName::Factory>>();
+  name_factories->emplace_back(std::make_unique<UniqueTypeName::Factory>(name));
+  auto unique_type_name = name_factories->back()->Create();
   return filters
       ->emplace(
           name,
           new grpc_channel_filter{
-              grpc_call_next_op, nullptr, nullptr, grpc_channel_next_op, 0,
-              CallInitFunc, grpc_call_stack_ignore_set_pollset_or_pollset_set,
+              grpc_call_next_op, grpc_channel_next_op, 0, CallInitFunc,
+              grpc_call_stack_ignore_set_pollset_or_pollset_set,
               CallDestroyFunc, 0, ChannelInitFunc,
               [](grpc_channel_stack*, grpc_channel_element*) {},
-              ChannelDestroyFunc, grpc_channel_next_get_info, name})
+              ChannelDestroyFunc, grpc_channel_next_get_info, unique_type_name})
       .first->second;
 }
 

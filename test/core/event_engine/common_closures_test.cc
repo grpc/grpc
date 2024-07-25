@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "gtest/gtest.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/notification.h"
 

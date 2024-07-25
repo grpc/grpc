@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <atomic>
@@ -32,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 #include "src/core/lib/gprpp/sync.h"

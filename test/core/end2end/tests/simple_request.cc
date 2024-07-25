@@ -22,17 +22,17 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::HasSubstr;
@@ -51,8 +51,8 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -65,7 +65,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   CheckPeer(*s.GetPeer());
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   CheckPeer(*c.GetPeer());
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -91,7 +91,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
     expected_calls *= 2;
   }
   auto after = global_stats().Collect();
-  gpr_log(GPR_DEBUG, "%s", StatsAsJson(after.get()).c_str());
+  VLOG(2) << StatsAsJson(after.get());
   EXPECT_EQ(after->client_calls_created - before->client_calls_created,
             expected_calls);
   EXPECT_EQ(after->server_calls_created - before->server_calls_created,

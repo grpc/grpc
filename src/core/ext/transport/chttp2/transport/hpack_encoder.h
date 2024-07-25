@@ -19,20 +19,19 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <cstdint>
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -83,10 +83,14 @@ class Encoder {
                                  const Slice& slice, uint32_t* index,
                                  size_t max_compression_size);
 
+  void NoteEncodingError() { saw_encoding_errors_ = true; }
+  bool saw_encoding_errors() const { return saw_encoding_errors_; }
+
   HPackEncoderTable& hpack_table();
 
  private:
   const bool use_true_binary_metadata_;
+  bool saw_encoding_errors_ = false;
   HPackCompressor* const compressor_;
   SliceBuffer& output_;
 };
@@ -205,9 +209,8 @@ class Compressor<
   void EncodeWith(MetadataTrait, const typename MetadataTrait::ValueType& value,
                   Encoder* encoder) {
     if (value != known_value) {
-      gpr_log(GPR_ERROR, "%s",
-              absl::StrCat("Not encoding bad ", MetadataTrait::key(), " header")
-                  .c_str());
+      LOG(ERROR) << "Not encoding bad " << MetadataTrait::key() << " header";
+      encoder->NoteEncodingError();
       return;
     }
     Slice encoded(MetadataTrait::Encode(known_value));
@@ -351,23 +354,25 @@ class HPackCompressor {
     bool is_end_of_stream;
     bool use_true_binary_metadata;
     size_t max_frame_size;
-    grpc_transport_one_way_stats* stats;
+    CallTracerInterface* call_tracer;
   };
 
   template <typename HeaderSet>
-  void EncodeHeaders(const EncodeHeaderOptions& options,
+  bool EncodeHeaders(const EncodeHeaderOptions& options,
                      const HeaderSet& headers, grpc_slice_buffer* output) {
     SliceBuffer raw;
     hpack_encoder_detail::Encoder encoder(
         this, options.use_true_binary_metadata, raw);
     headers.Encode(&encoder);
     Frame(options, raw, output);
+    return !encoder.saw_encoding_errors();
   }
 
   template <typename HeaderSet>
-  void EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
+  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
     hpack_encoder_detail::Encoder encoder(this, true, output);
     headers.Encode(&encoder);
+    return !encoder.saw_encoding_errors();
   }
 
  private:

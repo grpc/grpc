@@ -220,6 +220,7 @@ class RubyDistribTest(object):
         ruby_version=None,
         source=False,
         presubmit=False,
+        protobuf_version="",
     ):
         self.package_type = "binary"
         if source:
@@ -231,10 +232,13 @@ class RubyDistribTest(object):
             ruby_version or "unspecified",
             self.package_type,
         )
+        if not protobuf_version == "":
+            self.name += "_protobuf_%s" % protobuf_version
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
+        self.protobuf_version = protobuf_version
         self.labels = ["distribtest", "ruby", platform, arch, docker_suffix]
         if presubmit:
             self.labels.append("presubmit")
@@ -261,8 +265,13 @@ class RubyDistribTest(object):
         return create_docker_jobspec(
             self.name,
             dockerfile_name,
-            "test/distrib/ruby/run_distrib_test.sh %s %s %s"
-            % (arch_to_gem_arch[self.arch], self.platform, self.package_type),
+            "test/distrib/ruby/run_distrib_test.sh %s %s %s %s"
+            % (
+                arch_to_gem_arch[self.arch],
+                self.platform,
+                self.package_type,
+                self.protobuf_version,
+            ),
             copy_rel_path="test/distrib",
         )
 
@@ -443,9 +452,9 @@ def targets():
         CSharpDistribTest("windows", "x86", presubmit=True),
         CSharpDistribTest("windows", "x64", presubmit=True),
         # Python
-        PythonDistribTest("linux", "x64", "buster", presubmit=True),
-        PythonDistribTest("linux", "x86", "buster", presubmit=True),
-        PythonDistribTest("linux", "x64", "fedora36"),
+        PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x64", "fedora39"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2204"),
@@ -456,12 +465,12 @@ def targets():
             "linux", "x64", "alpine3.7", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x64", "buster", source=True, presubmit=True
+            "linux", "x64", "bullseye", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x86", "buster", source=True, presubmit=True
+            "linux", "x86", "bullseye", source=True, presubmit=True
         ),
-        PythonDistribTest("linux", "x64", "fedora36", source=True),
+        PythonDistribTest("linux", "x64", "fedora39", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
         PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
         # Ruby
@@ -484,6 +493,14 @@ def targets():
         ),
         RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_3", presubmit=True
+        ),
+        RubyDistribTest(
+            "linux",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_3",
+            protobuf_version="3.25",
+            presubmit=True,
         ),
         RubyDistribTest("linux", "x64", "centos7"),
         RubyDistribTest("linux", "x64", "ubuntu2004"),

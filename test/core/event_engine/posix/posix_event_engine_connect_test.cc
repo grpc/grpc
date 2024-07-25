@@ -26,6 +26,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -36,7 +38,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -47,8 +48,8 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -120,7 +121,7 @@ std::vector<int> CreateConnectedSockets(
         pfd.revents = 0;
         int ret = poll(&pfd, 1, 1000);
         if (ret == -1) {
-          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+          LOG(ERROR) << "poll() failed during connect; errno=" << errno;
           abort();
         } else if (ret == 0) {
           // current connection attempt timed out. It indicates that the
@@ -145,7 +146,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
@@ -174,7 +175,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();

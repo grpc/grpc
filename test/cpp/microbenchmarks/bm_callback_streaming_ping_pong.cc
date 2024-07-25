@@ -16,7 +16,8 @@
 //
 //
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
 #include "test/cpp/util/test_config.h"
 
@@ -27,43 +28,43 @@ namespace testing {
 // CONFIGURATIONS
 //
 
-// Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
-// internal microbenchmarking tooling
-static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark* b) {
-  // base case: 0 byte ping-pong msgs
-  b->Args({0, 1});
-  b->Args({0, 2});
+static const int kMaxMessageSize = [] {
+  if (BuiltUnderMsan() || BuiltUnderTsan() || BuiltUnderUbsan()) {
+    // Scale down sizes for intensive benchmarks to avoid timeouts.
+    return 8 * 1024 * 1024;
+  }
+  return 128 * 1024 * 1024;
+}();
 
-  for (int msg_size = 1; msg_size <= 128 * 1024 * 1024; msg_size *= 8) {
+// Generate Args for StreamingPingPong benchmarks. Currently generates args for
+// only "small streams" (i.e streams with 0, 1 or 2 messages)
+static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
+  int msg_size = 0;
+
+  b->Args({0, 0});  // spl case: 0 ping-pong msgs (msg_size doesn't matter here)
+
+  for (msg_size = 0; msg_size <= kMaxMessageSize;
+       msg_size == 0 ? msg_size++ : msg_size *= 8) {
     b->Args({msg_size, 1});
     b->Args({msg_size, 2});
-  }
-}
-
-// Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
-// internal microbenchmarking tooling
-static void StreamingPingPongMsgsNumberArgs(benchmark::internal::Benchmark* b) {
-  for (int msg_number = 1; msg_number <= 256 * 1024; msg_number *= 8) {
-    b->Args({0, msg_number});
-    b->Args({1024, msg_number});
   }
 }
 
 // Streaming with different message size
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
                    NoOpMutator)
-    ->Apply(StreamingPingPongMsgSizeArgs);
+    ->Apply(StreamingPingPongArgs);
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
                    NoOpMutator)
-    ->Apply(StreamingPingPongMsgSizeArgs);
+    ->Apply(StreamingPingPongArgs);
 
 // Streaming with different message number
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
                    NoOpMutator)
-    ->Apply(StreamingPingPongMsgsNumberArgs);
+    ->Apply(StreamingPingPongArgs);
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
                    NoOpMutator)
-    ->Apply(StreamingPingPongMsgsNumberArgs);
+    ->Apply(StreamingPingPongArgs);
 
 // Client context with different metadata
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,

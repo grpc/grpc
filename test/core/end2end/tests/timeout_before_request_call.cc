@@ -16,6 +16,7 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -31,10 +32,10 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -74,12 +75,12 @@ CORE_END2END_TEST(CoreDeadlineTest, TimeoutBeforeRequestCall) {
 
 CORE_END2END_TEST(CoreDeadlineTest,
                   TimeoutBeforeRequestCallWithRegisteredMethod) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto method = RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_NONE);
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -119,7 +120,7 @@ CORE_END2END_TEST(CoreDeadlineTest,
 
 CORE_END2END_TEST(CoreDeadlineSingleHopTest,
                   TimeoutBeforeRequestCallWithRegisteredMethodWithPayload) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto method =
       RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER);
 
@@ -131,8 +132,8 @@ CORE_END2END_TEST(CoreDeadlineSingleHopTest,
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -147,7 +148,7 @@ CORE_END2END_TEST(CoreDeadlineSingleHopTest,
   bool got_call = false;
   std::unique_ptr<IncomingCloseOnServer> client_close;
   Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
-           gpr_log(GPR_INFO, "\n***\n*** got call: %d\n***", ok);
+           LOG(INFO) << "\n***\n*** got call: " << ok << "\n***";
            got_call = true;
            if (ok) {
              // If we successfully get a call, then we should additionally get a

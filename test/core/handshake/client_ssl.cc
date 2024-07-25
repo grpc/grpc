@@ -24,6 +24,7 @@
 #include <openssl/evp.h>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -32,7 +33,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -49,23 +50,22 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
-
-grpc_core::TraceFlag client_ssl_tsi_tracing_enabled(false, "tsi");
 
 class SslLibraryInfo {
  public:
@@ -118,7 +118,7 @@ static int create_socket(int* out_port) {
 
   if (bind(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
     perror("Unable to bind");
-    gpr_log(GPR_ERROR, "%s", "Unable to bind to any port");
+    LOG(ERROR) << "Unable to bind to any port";
     close(s);
     return -1;
   }
@@ -134,7 +134,7 @@ static int create_socket(int* out_port) {
           0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
-    gpr_log(GPR_ERROR, "%s", "Unable to get socket local address");
+    LOG(ERROR) << "Unable to get socket local address";
     close(s);
     return -1;
   }
@@ -173,16 +173,16 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
 
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag) &&
-      GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
-    gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
-            SSL_state_string_long(ssl), SSL_state_string(ssl));
+  if ((where & flag) != 0) {
+    GRPC_TRACE_LOG(tsi, INFO)
+        << absl::StrFormat("%20.20s - %30.30s  - %5.10s", msg,
+                           SSL_state_string_long(ssl), SSL_state_string(ssl));
   }
 }
 
 static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    gpr_log(GPR_ERROR, "ssl_server_info_callback: error occurred.\n");
+    LOG(ERROR) << "ssl_server_info_callback: error occurred.\n";
     return;
   }
 
@@ -250,7 +250,7 @@ static void server_thread(void* arg) {
 
   // bind/listen/accept at TCP layer.
   const int sock = args->socket;
-  gpr_log(GPR_INFO, "Server listening");
+  LOG(INFO) << "Server listening";
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   const int client =
@@ -267,9 +267,9 @@ static void server_thread(void* arg) {
   SSL_set_fd(ssl, client);
   if (SSL_accept(ssl) <= 0) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Handshake failed.");
+    LOG(ERROR) << "Handshake failed.";
   } else {
-    gpr_log(GPR_INFO, "Handshake successful.");
+    LOG(INFO) << "Handshake successful.";
   }
 
   // Send out the settings frame.

@@ -21,6 +21,8 @@
 
 #include <type_traits>
 
+#include "absl/log/absl_check.h"
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
@@ -51,7 +53,7 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
   if (static_cast<size_t>(byte_size) <= GRPC_SLICE_INLINED_SIZE) {
     Slice slice(byte_size);
     // We serialize directly into the allocated slices memory
-    GPR_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
+    ABSL_CHECK(slice.end() == msg.SerializeWithCachedSizesToArray(
                                   const_cast<uint8_t*>(slice.begin())));
     ByteBuffer tmp(&slice, 1);
     bb->Swap(&tmp);

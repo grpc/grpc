@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -26,7 +28,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -70,7 +72,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   bool got = false;
   cqv.Expect(grpc_core::CqVerifier::tag(101),
              grpc_core::CqVerifier::Maybe{&got});
@@ -84,8 +86,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
     return;
   }
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo/bar"), 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -101,7 +103,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102),
              grpc_core::CqVerifier::AnyStatus());
@@ -124,7 +126,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();

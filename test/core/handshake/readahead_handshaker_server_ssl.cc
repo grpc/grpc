@@ -18,23 +18,26 @@
 
 #include <memory>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/handshaker_factory.h"
+#include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/transport/handshaker.h"
-#include "src/core/lib/transport/handshaker_factory.h"
-#include "src/core/lib/transport/handshaker_registry.h"
 #include "test/core/handshake/server_ssl_common.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // The purpose of this test is to exercise the case when a
 // grpc *security_handshaker* begins its handshake with data already
@@ -49,15 +52,52 @@ namespace grpc_core {
 
 class ReadAheadHandshaker : public Handshaker {
  public:
-  ~ReadAheadHandshaker() override {}
-  const char* name() const override { return "read_ahead"; }
-  void Shutdown(grpc_error_handle /*why*/) override {}
-  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                   grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override {
-    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
-                       /*urgent=*/false, /*min_progress_size=*/1);
+  absl::string_view name() const override { return "read_ahead"; }
+
+  void DoHandshake(
+      HandshakerArgs* args,
+      absl::AnyInvocable<void(absl::Status)> on_handshake_done) override {
+    MutexLock lock(&mu_);
+    args_ = args;
+    on_handshake_done_ = std::move(on_handshake_done);
+    Ref().release();  // Held by callback.
+    GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
+    grpc_endpoint_read(args->endpoint.get(), args->read_buffer.c_slice_buffer(),
+                       &on_read_done_, /*urgent=*/false,
+                       /*min_progress_size=*/1);
   }
+
+  void Shutdown(absl::Status /*error*/) override {
+    MutexLock lock(&mu_);
+    if (on_handshake_done_ != nullptr) args_->endpoint.reset();
+  }
+
+ private:
+  static void OnReadDone(void* arg, grpc_error_handle error) {
+    auto* self = static_cast<ReadAheadHandshaker*>(arg);
+    // Need an async hop here, because grpc_endpoint_read() may invoke
+    // the callback synchronously, leading to deadlock.
+    // TODO(roth): This async hop will no longer be necessary once we
+    // switch to the EventEngine endpoint API.
+    self->args_->event_engine->Run(
+        [self = RefCountedPtr<ReadAheadHandshaker>(self),
+         error = std::move(error)]() mutable {
+          absl::AnyInvocable<void(absl::Status)> on_handshake_done;
+          {
+            MutexLock lock(&self->mu_);
+            on_handshake_done = std::move(self->on_handshake_done_);
+          }
+          on_handshake_done(std::move(error));
+        });
+  }
+
+  grpc_closure on_read_done_;
+
+  Mutex mu_;
+  // Mutex guards args_->endpoint but not the rest of the struct.
+  HandshakerArgs* args_ = nullptr;
+  absl::AnyInvocable<void(absl::Status)> on_handshake_done_
+      ABSL_GUARDED_BY(&mu_);
 };
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {

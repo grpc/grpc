@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/lame_client.h"
 
 #include <memory>
@@ -30,6 +28,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
@@ -37,19 +36,18 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 
 // Avoid some IWYU confusion:
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
@@ -58,19 +56,17 @@ namespace grpc_core {
 
 const grpc_channel_filter LameClientFilter::kFilter =
     MakePromiseBasedFilter<LameClientFilter, FilterEndpoint::kClient,
-                           kFilterIsLast>("lame-client");
+                           kFilterIsLast>();
 
-absl::StatusOr<LameClientFilter> LameClientFilter::Create(
+absl::StatusOr<std::unique_ptr<LameClientFilter>> LameClientFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
-  return LameClientFilter(
+  return std::make_unique<LameClientFilter>(
       *args.GetPointer<absl::Status>(GRPC_ARG_LAME_FILTER_ERROR));
 }
 
 LameClientFilter::LameClientFilter(absl::Status error)
-    : error_(std::move(error)), state_(std::make_unique<State>()) {}
-
-LameClientFilter::State::State()
-    : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
+    : error_(std::move(error)),
+      state_tracker_("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
 
 ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
     CallArgs args, NextPromiseFactory) {
@@ -93,13 +89,13 @@ bool LameClientFilter::GetChannelInfo(const grpc_channel_info*) { return true; }
 
 bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
   {
-    MutexLock lock(&state_->mu);
+    MutexLock lock(&mu_);
     if (op->start_connectivity_watch != nullptr) {
-      state_->state_tracker.AddWatcher(op->start_connectivity_watch_state,
-                                       std::move(op->start_connectivity_watch));
+      state_tracker_.AddWatcher(op->start_connectivity_watch_state,
+                                std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
-      state_->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
+      state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
     }
   }
   if (op->send_ping.on_initiate != nullptr) {

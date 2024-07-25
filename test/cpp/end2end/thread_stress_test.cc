@@ -22,6 +22,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -34,11 +36,10 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 const int kNumThreads = 10;  // Number of threads
 const int kNumAsyncSendThreads = 2;
@@ -285,8 +286,8 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
     if (!s.ok()) {
       if (!(allow_exhaustion &&
             s.error_code() == StatusCode::RESOURCE_EXHAUSTED)) {
-        gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
-                s.error_message().c_str());
+        LOG(ERROR) << "RPC error: " << s.error_code() << ": "
+                   << s.error_message();
       }
       gpr_atm_no_barrier_fetch_add(errors, gpr_atm{1});
     } else {
@@ -316,7 +317,7 @@ TYPED_TEST(End2endTest, ThreadStress) {
   }
   uint64_t error_cnt = static_cast<uint64_t>(gpr_atm_no_barrier_load(&errors));
   if (error_cnt != 0) {
-    gpr_log(GPR_INFO, "RPC error count: %" PRIu64, error_cnt);
+    LOG(INFO) << "RPC error count: " << error_cnt;
   }
   // If this test allows resource exhaustion, expect that it actually sees some
   if (this->common_.AllowExhaustion()) {
@@ -375,7 +376,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       if (!cq_.Next(&got_tag, &ok)) break;
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!ok) {
-        gpr_log(GPR_DEBUG, "Error: %d", call->status.error_code());
+        VLOG(2) << "Error: " << call->status.error_code();
       }
       delete call;
 

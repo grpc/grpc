@@ -21,7 +21,7 @@
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {

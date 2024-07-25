@@ -16,12 +16,13 @@
 //
 //
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
 
-#include "src/core/lib/surface/server.h"
+#include <grpc/grpc.h>
+
+#include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -30,9 +31,9 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    CHECK(grpc_completion_queue_next(
+              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

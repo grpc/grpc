@@ -29,6 +29,8 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -130,7 +132,7 @@ class TcpZerocopySendRecord {
   //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
     const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
-    GPR_DEBUG_ASSERT(prior > 0);
+    DCHECK_GT(prior, 0);
     if (prior == 1) {
       AllSendsComplete();
       return true;
@@ -145,9 +147,9 @@ class TcpZerocopySendRecord {
   };
 
   void DebugAssertEmpty() {
-    GPR_DEBUG_ASSERT(buf_.Count() == 0);
-    GPR_DEBUG_ASSERT(buf_.Length() == 0);
-    GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
+    DCHECK_EQ(buf_.Count(), 0u);
+    DCHECK_EQ(buf_.Length(), 0u);
+    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
   }
 
   // When all sendmsg() calls associated with this tcp_write() have been
@@ -155,7 +157,7 @@ class TcpZerocopySendRecord {
   // for each sendmsg()) and all reference counts have been dropped, drop our
   // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
-    GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
+    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
     buf_.Clear();
   }
 
@@ -182,7 +184,7 @@ class TcpZerocopySendCtx {
     if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
-      gpr_log(GPR_INFO, "Disabling TCP TX zerocopy due to memory pressure.\n");
+      VLOG(2) << "Disabling TCP TX zerocopy due to memory pressure.\n";
       memory_limited_ = true;
       enabled_ = false;
     } else {
@@ -236,7 +238,7 @@ class TcpZerocopySendCtx {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
       // We should still be holding the ref taken by tcp_write().
-      GPR_DEBUG_ASSERT(0);
+      DCHECK(0);
     }
   }
 
@@ -274,8 +276,7 @@ class TcpZerocopySendCtx {
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
     grpc_core::MutexLock lock(&mu_);
-    GPR_DEBUG_ASSERT(record >= send_records_ &&
-                     record < send_records_ + max_sends_);
+    DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
     PutSendRecordLocked(record);
   }
 
@@ -332,7 +333,7 @@ class TcpZerocopySendCtx {
       zcopy_enobuf_state_ = OptMemState::kCheck;
       return false;
     }
-    GPR_DEBUG_ASSERT(zcopy_enobuf_state_ != OptMemState::kCheck);
+    DCHECK(zcopy_enobuf_state_ != OptMemState::kCheck);
     if (zcopy_enobuf_state_ == OptMemState::kFull) {
       // A previous sendmsg attempt was blocked by ENOBUFS. Return true to
       // mark the fd as writable so the next write attempt could be made.
@@ -423,7 +424,7 @@ class TcpZerocopySendCtx {
   TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     auto iter = ctx_lookup_.find(seq);
-    GPR_DEBUG_ASSERT(iter != ctx_lookup_.end());
+    DCHECK(iter != ctx_lookup_.end());
     TcpZerocopySendRecord* record = iter->second;
     ctx_lookup_.erase(iter);
     return record;
@@ -443,7 +444,7 @@ class TcpZerocopySendCtx {
 
   void PutSendRecordLocked(TcpZerocopySendRecord* record)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    GPR_DEBUG_ASSERT(free_send_records_size_ < max_sends_);
+    DCHECK(free_send_records_size_ < max_sends_);
     free_send_records_[free_send_records_size_] = record;
     free_send_records_size_++;
   }
@@ -524,7 +525,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
-  absl::Status TcpAnnotateError(absl::Status src_error);
+  absl::Status TcpAnnotateError(absl::Status src_error) const;
 #ifdef GRPC_LINUX_ERRQUEUE
   bool ProcessErrors();
   // Reads a cmsg to process zerocopy control messages.

@@ -31,8 +31,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/transport_security_test_lib.h"
-#include "test/core/util/test_config.h"
 
 typedef struct fake_tsi_test_fixture {
   tsi_test_fixture base;

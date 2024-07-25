@@ -33,7 +33,7 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/ext/filters/census/library.h"
 
 namespace grpc {

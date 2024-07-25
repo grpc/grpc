@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
 #define GRPC_SRC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/status.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/closure.h"

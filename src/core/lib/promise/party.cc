@@ -12,35 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/trace.h"
+#include "src/core/util/latent_see.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");
-
 namespace grpc_core {
-
-namespace {
-// TODO(ctiller): Once all activities are parties we can remove this.
-thread_local Party** g_current_party_run_next = nullptr;
-}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // PartySyncUsingAtomics
@@ -103,7 +97,7 @@ class Party::Handle final : public Wakeable {
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
-    GPR_ASSERT(party_ != nullptr);
+    CHECK_NE(party_, nullptr);
     party_ = nullptr;
     mu_.Unlock();
     Unref();
@@ -181,8 +175,9 @@ Party::Participant::~Participant() {
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
+  if (!sync_.has_participants()) return;
   ScopedActivity activity(this);
-  promise_detail::Context<Arena> arena_ctx(arena_);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (auto* p =
             participants_[i].exchange(nullptr, std::memory_order_acquire)) {
@@ -196,13 +191,13 @@ std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
 }
 
 Waker Party::MakeOwningWaker() {
-  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+  DCHECK(currently_polling_ != kNotPolling);
   IncrementRefCount();
   return Waker(this, 1u << currently_polling_);
 }
 
 Waker Party::MakeNonOwningWaker() {
-  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+  DCHECK(currently_polling_ != kNotPolling);
   return Waker(participants_[currently_polling_]
                    .load(std::memory_order_relaxed)
                    ->MakeNonOwningWakeable(this),
@@ -210,82 +205,96 @@ Waker Party::MakeNonOwningWaker() {
 }
 
 void Party::ForceImmediateRepoll(WakeupMask mask) {
-  GPR_DEBUG_ASSERT(is_current());
+  DCHECK(is_current());
   sync_.ForceImmediateRepoll(mask);
 }
 
-void Party::RunLocked() {
-  // If there is a party running, then we don't run it immediately
-  // but instead add it to the end of the list of parties to run.
-  // This enables a fairly straightforward batching of work from a
-  // call to a transport (or back again).
-  if (g_current_party_run_next != nullptr) {
-    if (*g_current_party_run_next == nullptr) {
-      *g_current_party_run_next = this;
-    } else {
-      // But if there's already a party queued, we're better off asking event
-      // engine to run it so we can spread load.
-      event_engine()->Run([this]() {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
-        RunLocked();
-      });
-    }
-    return;
-  }
-  auto body = [this]() {
-    GPR_DEBUG_ASSERT(g_current_party_run_next == nullptr);
-    Party* run_next = nullptr;
-    g_current_party_run_next = &run_next;
-    const bool done = RunParty();
-    GPR_DEBUG_ASSERT(g_current_party_run_next == &run_next);
-    g_current_party_run_next = nullptr;
-    if (done) {
-      ScopedActivity activity(this);
-      PartyOver();
-    }
-    if (run_next != nullptr) {
-      run_next->RunLocked();
-    }
-  };
+void Party::RunLocked(Party* party) {
+  GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
-      [body]() {
+      [party]() {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
-        body();
+        if (party->RunParty()) party->PartyIsOver();
       },
       nullptr, Thread::Options().set_joinable(false));
   thd.Start();
 #else
-  body();
+  struct RunState;
+  static thread_local RunState* g_run_state = nullptr;
+  struct RunState {
+    explicit RunState(Party* party) : running(party), next(nullptr) {}
+    Party* running;
+    Party* next;
+    void Run() {
+      g_run_state = this;
+      do {
+        GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
+        if (running->RunParty()) {
+          running->PartyIsOver();
+        }
+        running = std::exchange(next, nullptr);
+      } while (running != nullptr);
+      DCHECK(g_run_state == this);
+      g_run_state = nullptr;
+    }
+  };
+  // If there is a party running, then we don't run it immediately
+  // but instead add it to the end of the list of parties to run.
+  // This enables a fairly straightforward batching of work from a
+  // call to a transport (or back again).
+  if (g_run_state != nullptr) {
+    if (g_run_state->running == party || g_run_state->next == party) {
+      // Already running or already queued.
+      return;
+    }
+    if (g_run_state->next != nullptr) {
+      // If there's already a different party queued, we're better off asking
+      // event engine to run it so we can spread load.
+      // We swap the oldest party to run on the event engine so that we don't
+      // accidentally end up with a tail latency problem whereby one party
+      // gets held for a really long time.
+      std::swap(g_run_state->next, party);
+      party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
+          ->Run([party]() {
+            GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
+            ApplicationCallbackExecCtx app_exec_ctx;
+            ExecCtx exec_ctx;
+            RunState{party}.Run();
+          });
+      return;
+    }
+    g_run_state->next = party;
+    return;
+  }
+  RunState{party}.Run();
 #endif
 }
 
 bool Party::RunParty() {
   ScopedActivity activity(this);
-  promise_detail::Context<Arena> arena_ctx(arena_);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
 }
 
 bool Party::RunOneParticipant(int i) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Party::RunOneParticipant");
   // If the participant is null, skip.
   // This allows participants to complete whilst wakers still exist
   // somewhere.
   auto* participant = participants_[i].load(std::memory_order_acquire);
   if (participant == nullptr) {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
-              DebugTag().c_str(), i);
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+      LOG(INFO) << DebugTag() << "[party] wakeup " << i << " already complete";
     }
     return false;
   }
   absl::string_view name;
-  if (grpc_trace_promise_primitives.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     name = participant->name();
-    gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
-            std::string(name).c_str(), i);
+    LOG(INFO) << DebugTag() << "[" << name << "] begin job " << i;
   }
   // Poll the participant.
   currently_polling_ = i;
@@ -293,13 +302,13 @@ bool Party::RunOneParticipant(int i) {
   currently_polling_ = kNotPolling;
   if (done) {
     if (!name.empty()) {
-      gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
-              DebugTag().c_str(), std::string(name).c_str(), i);
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "[" << name << "] end poll and finish job " << i;
     }
     participants_[i].store(nullptr, std::memory_order_relaxed);
   } else if (!name.empty()) {
-    gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
-            std::string(name).c_str());
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "[" << name << "] end poll";
   }
   return done;
 }
@@ -308,31 +317,32 @@ void Party::AddParticipants(Participant** participants, size_t count) {
   bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
-      if (grpc_trace_party_state.enabled()) {
-        gpr_log(GPR_DEBUG,
-                "Party %p                 AddParticipant: %s @ %" PRIdPTR,
-                &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
+      if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
+        LOG(INFO) << "Party " << &sync_ << "                 AddParticipant: "
+                  << participants[i]->name() << " @ " << slots[i]
+                  << " [participant=" << participants[i] << "]";
       }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }
   });
-  if (run_party) RunLocked();
+  if (run_party) RunLocked(this);
   Unref();
 }
 
 void Party::Wakeup(WakeupMask wakeup_mask) {
-  if (sync_.ScheduleWakeup(wakeup_mask)) RunLocked();
+  if (sync_.ScheduleWakeup(wakeup_mask)) RunLocked(this);
   Unref();
 }
 
 void Party::WakeupAsync(WakeupMask wakeup_mask) {
   if (sync_.ScheduleWakeup(wakeup_mask)) {
-    event_engine()->Run([this]() {
-      ApplicationCallbackExecCtx app_exec_ctx;
-      ExecCtx exec_ctx;
-      RunLocked();
-      Unref();
-    });
+    arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+        [this]() {
+          ApplicationCallbackExecCtx app_exec_ctx;
+          ExecCtx exec_ctx;
+          RunLocked(this);
+          Unref();
+        });
   } else {
     Unref();
   }
@@ -341,8 +351,14 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
 void Party::Drop(WakeupMask) { Unref(); }
 
 void Party::PartyIsOver() {
-  ScopedActivity activity(this);
-  PartyOver();
+  auto arena = arena_;
+  {
+    ScopedActivity activity(this);
+    promise_detail::Context<Arena> arena_ctx(arena_.get());
+    CancelRemainingParticipants();
+    arena->DestroyManagedNewObjects();
+  }
+  this->~Party();
 }
 
 }  // namespace grpc_core

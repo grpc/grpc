@@ -30,10 +30,11 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -114,7 +115,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     } else if (requested_port <= 0) {
       return GRPC_ERROR_CREATE("Bad get_unused_port()");
     }
-    gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
+    VLOG(2) << "Picked unused port " << requested_port;
   }
 
   static bool v4_available = grpc_is_ipv4_availabile();
@@ -149,14 +150,14 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     if (!addr_str.ok()) {
       return GRPC_ERROR_CREATE(addr_str.status().ToString());
     }
-    gpr_log(GPR_DEBUG,
-            "Adding local addr from interface %s flags 0x%x to server: %s",
-            ifa_name, ifa_it->ifa_flags, addr_str->c_str());
+    VLOG(2) << absl::StrFormat(
+        "Adding local addr from interface %s flags 0x%x to server: %s",
+        ifa_name, ifa_it->ifa_flags, addr_str->c_str());
     // We could have multiple interfaces with the same address (e.g., bonding),
     // so look for duplicates.
     if (find_listener_with_addr(s, &addr) != nullptr) {
-      gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
-              addr_str->c_str(), ifa_name);
+      VLOG(2) << "Skipping duplicate addr " << *addr_str << " on interface "
+              << ifa_name;
       continue;
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
@@ -166,7 +167,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
       err = grpc_error_add_child(root_err, err);
       break;
     } else {
-      GPR_ASSERT(requested_port == new_sp->port);
+      CHECK(requested_port == new_sp->port);
       ++fd_index;
       if (sp != nullptr) {
         new_sp->is_sibling = 1;

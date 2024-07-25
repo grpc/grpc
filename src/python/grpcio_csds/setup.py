@@ -39,7 +39,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    "protobuf>=4.21.6",
+    "protobuf>=5.26.1,<6.0dev",
     f"xds-protos=={grpc_version.VERSION}",
     f"grpcio>={grpc_version.VERSION}",
 )
@@ -57,7 +57,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
 )

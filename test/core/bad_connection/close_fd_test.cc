@@ -23,6 +23,8 @@
 //
 #include <stdint.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -32,8 +34,9 @@
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -52,15 +55,14 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
-#include "test/core/util/test_config.h"
+#include "src/core/server/server.h"
+#include "test/core/test_util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -92,7 +94,7 @@ static void server_setup_transport(grpc_core::Transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
   grpc_core::Server* core_server = grpc_core::Server::FromC(g_ctx.server);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  CHECK(GRPC_LOG_IF_ERROR(
       "SetupTransport",
       core_server->SetupTransport(transport, nullptr,
                                   core_server->channel_args(), nullptr)));
@@ -120,24 +122,28 @@ static void client_setup_transport(grpc_core::Transport* transport) {
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Transport* transport;
-  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
-                                           g_ctx.ep->client, true);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::ChannelArgs(),
+      grpc_core::OrphanablePtr<grpc_endpoint>(g_ctx.ep->client), true);
   client_setup_transport(transport);
-  GPR_ASSERT(g_ctx.client);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  CHECK(g_ctx.client);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                      nullptr);
 }
 
 static void init_server() {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Transport* transport;
-  GPR_ASSERT(!g_ctx.server);
+  CHECK(!g_ctx.server);
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
-  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
-                                           g_ctx.ep->server, false);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::ChannelArgs(),
+      grpc_core::OrphanablePtr<grpc_endpoint>(g_ctx.ep->server), false);
   server_setup_transport(transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                      nullptr);
 }
 
 static void test_init() {
@@ -174,10 +180,10 @@ static void drain_and_destroy_cq(grpc_completion_queue* cq) {
 static void shutdown_server() {
   if (!g_ctx.server) return;
   grpc_server_shutdown_and_notify(g_ctx.server, g_ctx.shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(g_ctx.shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(1),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  CHECK(grpc_completion_queue_pluck(g_ctx.shutdown_cq, tag(1000),
+                                    grpc_timeout_seconds_to_deadline(1),
+                                    nullptr)
+            .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(g_ctx.server);
   g_ctx.server = nullptr;
 }
@@ -224,8 +230,8 @@ static void _test_close_before_server_recv(fd_type fdtype) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_log(GPR_INFO, "Running test: test_close_%s_before_server_recv",
-          fd_type_str(fdtype));
+  LOG(INFO) << "Running test: test_close_" << fd_type_str(fdtype)
+            << "_before_server_recv";
   test_init();
 
   grpc_op ops[6];
@@ -244,7 +250,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   call = grpc_channel_create_call(
       g_ctx.client, nullptr, GRPC_PROPAGATE_DEFAULTS, g_ctx.client_cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  GPR_ASSERT(call);
+  CHECK(call);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -286,17 +292,17 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
                                 tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   error = grpc_server_request_call(g_ctx.server, &server_call, &call_details,
                                    &request_metadata_recv, g_ctx.bound_cq,
                                    g_ctx.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(101));
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
+  CHECK_EQ(event.success, 1);
+  CHECK(event.tag == tag(101));
+  CHECK(event.type == GRPC_OP_COMPLETE);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -316,7 +322,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
   } else {
-    GPR_ASSERT(fdtype == CLIENT_FD);
+    CHECK(fdtype == CLIENT_FD);
     fd = sfd->client->vtable->get_fd(sfd->client);
   }
   // Connection is closed before the server receives the client's message.
@@ -324,7 +330,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
 
   error = grpc_call_start_batch(server_call, ops, static_cast<size_t>(op - ops),
                                 tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   event = grpc_completion_queue_next(
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
@@ -335,8 +341,8 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   // happen due to a race with closing the fd resulting in pending writes
   // failing due to stream closure.
   //
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.tag == tag(102));
+  CHECK(event.type == GRPC_OP_COMPLETE);
+  CHECK(event.tag == tag(102));
 
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
@@ -350,14 +356,14 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   // 2. client receives GRPC_STATUS_UNAVAILABLE from server
   //
   if (event.type == GRPC_QUEUE_TIMEOUT) {
-    GPR_ASSERT(event.success == 0);
+    CHECK_EQ(event.success, 0);
     // status is not initialized
-    GPR_ASSERT(status == GRPC_STATUS__DO_NOT_USE);
+    CHECK_EQ(status, GRPC_STATUS__DO_NOT_USE);
   } else {
-    GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(event.success == 1);
-    GPR_ASSERT(event.tag == tag(1));
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK(event.type == GRPC_OP_COMPLETE);
+    CHECK_EQ(event.success, 1);
+    CHECK(event.tag == tag(1));
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -398,8 +404,8 @@ static void _test_close_before_server_send(fd_type fdtype) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_log(GPR_INFO, "Running test: test_close_%s_before_server_send",
-          fd_type_str(fdtype));
+  LOG(INFO) << "Running test: test_close_" << fd_type_str(fdtype)
+            << "_before_server_send";
   test_init();
 
   grpc_op ops[6];
@@ -419,7 +425,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   call = grpc_channel_create_call(
       g_ctx.client, nullptr, GRPC_PROPAGATE_DEFAULTS, g_ctx.client_cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  GPR_ASSERT(call);
+  CHECK(call);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -461,17 +467,17 @@ static void _test_close_before_server_send(fd_type fdtype) {
   op++;
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
                                 tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   error = grpc_server_request_call(g_ctx.server, &server_call, &call_details,
                                    &request_metadata_recv, g_ctx.bound_cq,
                                    g_ctx.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(101));
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
+  CHECK_EQ(event.success, 1);
+  CHECK(event.tag == tag(101));
+  CHECK(event.type == GRPC_OP_COMPLETE);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -487,13 +493,13 @@ static void _test_close_before_server_send(fd_type fdtype) {
   op++;
   error = grpc_call_start_batch(server_call, ops, static_cast<size_t>(op - ops),
                                 tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   event = grpc_completion_queue_next(
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(102));
+  CHECK(event.type == GRPC_OP_COMPLETE);
+  CHECK_EQ(event.success, 1);
+  CHECK(event.tag == tag(102));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -521,7 +527,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
   } else {
-    GPR_ASSERT(fdtype == CLIENT_FD);
+    CHECK(fdtype == CLIENT_FD);
     fd = sfd->client->vtable->get_fd(sfd->client);
   }
 
@@ -530,14 +536,14 @@ static void _test_close_before_server_send(fd_type fdtype) {
   close(fd);
   error = grpc_call_start_batch(server_call, ops, static_cast<size_t>(op - ops),
                                 tag(103), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   // Batch operation succeeds on the server side
   event = grpc_completion_queue_next(
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.tag == tag(103));
+  CHECK(event.type == GRPC_OP_COMPLETE);
+  CHECK_EQ(event.success, 1);
+  CHECK(event.tag == tag(103));
 
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
@@ -547,16 +553,16 @@ static void _test_close_before_server_send(fd_type fdtype) {
   // waiting on the completion queue
   //
   if (event.type == GRPC_OP_COMPLETE) {
-    GPR_ASSERT(event.success == 1);
-    GPR_ASSERT(event.tag == tag(1));
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(event.success, 1);
+    CHECK(event.tag == tag(1));
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   } else {
-    GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
-    GPR_ASSERT(event.success == 0);
+    CHECK(event.type == GRPC_QUEUE_TIMEOUT);
+    CHECK_EQ(event.success, 0);
     // status is not initialized
-    GPR_ASSERT(status == GRPC_STATUS__DO_NOT_USE);
+    CHECK_EQ(status, GRPC_STATUS__DO_NOT_USE);
   }
-  GPR_ASSERT(was_cancelled == 0);
+  CHECK_EQ(was_cancelled, 0);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -595,8 +601,8 @@ static void _test_close_before_client_send(fd_type fdtype) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_log(GPR_INFO, "Running test: test_close_%s_before_client_send",
-          fd_type_str(fdtype));
+  LOG(INFO) << "Running test: test_close_" << fd_type_str(fdtype)
+            << "_before_client_send";
   test_init();
 
   grpc_op ops[6];
@@ -615,7 +621,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   call = grpc_channel_create_call(
       g_ctx.client, nullptr, GRPC_PROPAGATE_DEFAULTS, g_ctx.client_cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  GPR_ASSERT(call);
+  CHECK(call);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -661,7 +667,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
   } else {
-    GPR_ASSERT(fdtype == CLIENT_FD);
+    CHECK(fdtype == CLIENT_FD);
     fd = sfd->client->vtable->get_fd(sfd->client);
   }
   // Connection is closed before the client sends a batch to the server
@@ -669,22 +675,22 @@ static void _test_close_before_client_send(fd_type fdtype) {
 
   error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
                                 tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   // Status unavailable is returned to the client when client or server fd is
   // closed
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.success == 1);
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.tag == tag(1));
-  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+  CHECK_EQ(event.success, 1);
+  CHECK(event.type == GRPC_OP_COMPLETE);
+  CHECK(event.tag == tag(1));
+  CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
 
   // No event is received on the server
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.success == 0);
-  GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
+  CHECK_EQ(event.success, 0);
+  CHECK(event.type == GRPC_QUEUE_TIMEOUT);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -723,7 +729,7 @@ static void _test_close_before_call_create(fd_type fdtype) {
   if (fdtype == SERVER_FD) {
     fd = sfd->server->vtable->get_fd(sfd->server);
   } else {
-    GPR_ASSERT(fdtype == CLIENT_FD);
+    CHECK(fdtype == CLIENT_FD);
     fd = sfd->client->vtable->get_fd(sfd->client);
   }
   // Connection is closed before the client creates a call
@@ -732,19 +738,19 @@ static void _test_close_before_call_create(fd_type fdtype) {
   call = grpc_channel_create_call(
       g_ctx.client, nullptr, GRPC_PROPAGATE_DEFAULTS, g_ctx.client_cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  GPR_ASSERT(call);
+  CHECK(call);
 
   // Client and server time out waiting on their completion queues and nothing
   // is sent or received
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
-  GPR_ASSERT(event.success == 0);
+  CHECK(event.type == GRPC_QUEUE_TIMEOUT);
+  CHECK_EQ(event.success, 0);
 
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
-  GPR_ASSERT(event.success == 0);
+  CHECK(event.type == GRPC_QUEUE_TIMEOUT);
+  CHECK_EQ(event.success, 0);
 
   grpc_call_unref(call);
   end_test();

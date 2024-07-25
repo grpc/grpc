@@ -34,7 +34,8 @@ SERVER_RAISES_EXCEPTION = "server_raises_exception"
 SERVER_DEALLOCATED = "server_deallocated"
 SERVER_FORK_CAN_EXIT = "server_fork_can_exit"
 
-FORK_EXIT = "/test/ForkExit"
+_SERVICE_NAME = "test"
+FORK_EXIT = "ForkExit"
 
 
 def fork_and_exit(request, servicer_context):
@@ -52,11 +53,16 @@ class GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+_METHOD_HANDLERS = {
+    FORK_EXIT: grpc.unary_unary_rpc_method_handler(fork_and_exit)
+}
+
+
 def run_server(port_queue):
     server = test_common.test_server()
     port = server.add_insecure_port("[::]:0")
     port_queue.put(port)
-    server.add_generic_rpc_handlers((GenericHandler(),))
+    server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
     server.start()
     # threading.Event.wait() does not exhibit the bug identified in
     # https://github.com/grpc/grpc/issues/17093, sleep instead
@@ -82,7 +88,7 @@ def run_test(args):
         port = port_queue.get()
         channel = grpc.insecure_channel("localhost:%d" % port)
         multi_callable = channel.unary_unary(
-            FORK_EXIT,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, FORK_EXIT),
             _registered_method=True,
         )
         result, call = multi_callable.with_call(REQUEST, wait_for_ready=True)

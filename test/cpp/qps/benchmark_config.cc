@@ -19,6 +19,7 @@
 #include "test/cpp/qps/benchmark_config.h"
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
@@ -72,7 +73,7 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
     std::shared_ptr<ChannelCredentials> channel_creds =
         testing::GetCredentialsProvider()->GetChannelCredentials(
             absl::GetFlag(FLAGS_rpc_reporter_credential_type), &channel_args);
-    GPR_ASSERT(!absl::GetFlag(FLAGS_rpc_reporter_server_address).empty());
+    CHECK(!absl::GetFlag(FLAGS_rpc_reporter_server_address).empty());
     composite_reporter->add(std::unique_ptr<Reporter>(new RpcReporter(
         "RpcReporter",
         grpc::CreateChannel(absl::GetFlag(FLAGS_rpc_reporter_server_address),

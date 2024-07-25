@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {

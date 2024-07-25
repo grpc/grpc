@@ -16,11 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
@@ -66,7 +68,7 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
       : LoadBalancingPolicy(std::move(args), /*initial_refcount=*/2) {
     load_report_tracker_ =
         channel_args().GetPointer<LoadReportTracker>(kMetricsTrackerArgument);
-    GPR_ASSERT(load_report_tracker_ != nullptr);
+    CHECK_NE(load_report_tracker_, nullptr);
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.args = channel_args();
@@ -263,7 +265,7 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
-      gpr_log(GPR_DEBUG, "Report #%" PRIuPTR " matched", i + 1);
+      VLOG(2) << "Report #" << (i + 1) << " matched";
       return report;
     }
   }

@@ -10,14 +10,11 @@
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
 
@@ -34,6 +31,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_UpstreamEndpointStats_
 UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_EndpointLoadMetricStats_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.EndpointLoadMetricStats");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_load_report_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.UnnamedEndpointLoadMetricStats");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_ClusterStats_getmsgdef(upb_DefPool *s) {

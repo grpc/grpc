@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 
 #include <memory>
 #include <string>
@@ -38,24 +38,26 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
 
 using CommonTlsContextProto =
@@ -65,8 +67,6 @@ using xds::type::v3::TypedStruct;
 namespace grpc_core {
 namespace testing {
 namespace {
-
-TraceFlag xds_common_types_test_trace(true, "xds_common_types_test");
 
 class XdsCommonTypesTest : public ::testing::Test {
  protected:
@@ -198,7 +198,7 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
           upb_proto) {
     ValidationErrors errors;
     CommonTlsContext common_tls_context =
-        CommonTlsContext::Parse(decode_context_, upb_proto, &errors);
+        CommonTlsContextParse(decode_context_, upb_proto, &errors);
     if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
@@ -206,6 +206,24 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
     return common_tls_context;
   }
 };
+
+TEST_F(CommonTlsConfigTest, NoCaCerts) {
+  // Construct proto.
+  CommonTlsContextProto common_tls_context_proto;
+  // Convert to upb.
+  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
+  ASSERT_NE(upb_proto, nullptr);
+  // Run test.
+  auto common_tls_context = Parse(upb_proto);
+  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
+  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+      common_tls_context->certificate_validation_context.ca_certs));
+  EXPECT_THAT(common_tls_context->certificate_validation_context
+                  .match_subject_alt_names,
+              ::testing::ElementsAre());
+  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
+      << common_tls_context->tls_certificate_provider_instance.ToString();
+}
 
 TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
   // Construct proto.
@@ -222,12 +240,12 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_EQ(common_tls_context->certificate_validation_context
-                .ca_certificate_provider_instance.instance_name,
-            "provider1");
-  EXPECT_EQ(common_tls_context->certificate_validation_context
-                .ca_certificate_provider_instance.certificate_name,
-            "cert_name");
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &common_tls_context->certificate_validation_context.ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
               ::testing::ElementsAre());
@@ -248,12 +266,83 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_EQ(common_tls_context->certificate_validation_context
-                .ca_certificate_provider_instance.instance_name,
-            "provider1");
-  EXPECT_EQ(common_tls_context->certificate_validation_context
-                .ca_certificate_provider_instance.certificate_name,
-            "cert_name");
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &common_tls_context->certificate_validation_context.ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
+  EXPECT_THAT(common_tls_context->certificate_validation_context
+                  .match_subject_alt_names,
+              ::testing::ElementsAre());
+  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
+      << common_tls_context->tls_certificate_provider_instance.ToString();
+}
+
+TEST_F(CommonTlsConfigTest, SystemRootCerts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  // Construct proto.
+  CommonTlsContextProto common_tls_context_proto;
+  common_tls_context_proto.mutable_validation_context()
+      ->mutable_system_root_certs();
+  // Convert to upb.
+  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
+  ASSERT_NE(upb_proto, nullptr);
+  // Run test.
+  auto common_tls_context = Parse(upb_proto);
+  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
+  EXPECT_TRUE(absl::holds_alternative<
+              CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
+      common_tls_context->certificate_validation_context.ca_certs));
+  EXPECT_THAT(common_tls_context->certificate_validation_context
+                  .match_subject_alt_names,
+              ::testing::ElementsAre());
+  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
+      << common_tls_context->tls_certificate_provider_instance.ToString();
+}
+
+TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  // Construct proto.
+  CommonTlsContextProto common_tls_context_proto;
+  auto* cert_provider = common_tls_context_proto.mutable_validation_context()
+                            ->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  common_tls_context_proto.mutable_validation_context()
+      ->mutable_system_root_certs();
+  // Convert to upb.
+  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
+  ASSERT_NE(upb_proto, nullptr);
+  // Run test.
+  auto common_tls_context = Parse(upb_proto);
+  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &common_tls_context->certificate_validation_context.ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
+  EXPECT_THAT(common_tls_context->certificate_validation_context
+                  .match_subject_alt_names,
+              ::testing::ElementsAre());
+  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
+      << common_tls_context->tls_certificate_provider_instance.ToString();
+}
+
+TEST_F(CommonTlsConfigTest, SystemRootCertsIgnoredWithoutEnvVar) {
+  // Construct proto.
+  CommonTlsContextProto common_tls_context_proto;
+  common_tls_context_proto.mutable_validation_context()
+      ->mutable_system_root_certs();
+  // Convert to upb.
+  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
+  ASSERT_NE(upb_proto, nullptr);
+  // Run test.
+  auto common_tls_context = Parse(upb_proto);
+  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
+  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+      common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
               ::testing::ElementsAre());
@@ -426,10 +515,8 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNames) {
   EXPECT_EQ(match_subject_alt_names[4].type(), StringMatcher::Type::kSafeRegex);
   EXPECT_EQ(match_subject_alt_names[4].regex_matcher()->pattern(), "regex");
   EXPECT_TRUE(match_subject_alt_names[4].case_sensitive());
-  EXPECT_TRUE(common_tls_context->certificate_validation_context
-                  .ca_certificate_provider_instance.Empty())
-      << common_tls_context->certificate_validation_context
-             .ca_certificate_provider_instance.ToString();
+  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+      common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
 }
@@ -473,10 +560,8 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNamesCaseInsensitive) {
   EXPECT_EQ(match_subject_alt_names[3].type(), StringMatcher::Type::kContains);
   EXPECT_EQ(match_subject_alt_names[3].string_matcher(), "contains");
   EXPECT_FALSE(match_subject_alt_names[3].case_sensitive());
-  EXPECT_TRUE(common_tls_context->certificate_validation_context
-                  .ca_certificate_provider_instance.Empty())
-      << common_tls_context->certificate_validation_context
-             .ca_certificate_provider_instance.ToString();
+  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+      common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
 }

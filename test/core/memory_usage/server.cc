@@ -33,30 +33,34 @@
 #include "absl/base/attributes.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/xds/xds_enabled_server.h"
+#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use security");
 ABSL_FLAG(bool, minstack, false, "Use minimal stack");
 ABSL_FLAG(bool, use_xds, false, "Use xDS");
+ABSL_FLAG(bool, chaotic_good, false, "Use chaotic good");
 
 static grpc_completion_queue* cq;
 static grpc_server* server;
@@ -91,7 +95,7 @@ static fling_call calls[1000006];
 
 static void request_call_unary(int call_idx) {
   if (call_idx == static_cast<int>(sizeof(calls) / sizeof(fling_call))) {
-    gpr_log(GPR_INFO, "Used all call slots (10000) on server. Server exit.");
+    LOG(INFO) << "Used all call slots (10000) on server. Server exit.";
     _exit(0);
   }
   grpc_metadata_array_init(&calls[call_idx].request_metadata_recv);
@@ -106,9 +110,8 @@ static void send_initial_metadata_unary(void* tag) {
   metadata_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                                   metadata_ops, 1, tag,
-                                                   nullptr));
+  CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
+                                              metadata_ops, 1, tag, nullptr));
 }
 
 static void send_status(void* tag) {
@@ -118,9 +121,8 @@ static void send_status(void* tag) {
   grpc_slice details = grpc_slice_from_static_string("");
   status_op.data.send_status_from_server.status_details = &details;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                                   &status_op, 1, tag,
-                                                   nullptr));
+  CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
+                                              &status_op, 1, tag, nullptr));
 }
 
 static void send_snapshot(void* tag, MemStats* snapshot) {
@@ -138,7 +140,7 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == nullptr) {
-    gpr_log(GPR_INFO, "NULL payload buffer !!!");
+    LOG(INFO) << "NULL payload buffer !!!";
   }
   op->data.send_message.send_message = payload_buffer;
   op++;
@@ -152,9 +154,9 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
-                                   (size_t)(op - snapshot_ops), tag, nullptr));
+  CHECK(GRPC_CALL_OK ==
+        grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
+                              (size_t)(op - snapshot_ops), tag, nullptr));
 }
 // We have some sort of deadlock, so let's not exit gracefully for now.
 // When that is resolved, please remove the #include <unistd.h> above.
@@ -164,8 +166,8 @@ static void OnServingStatusUpdate(void* /*user_data*/, const char* uri,
                                   grpc_serving_status_update update) {
   absl::Status status(static_cast<absl::StatusCode>(update.code),
                       update.error_message);
-  gpr_log(GPR_INFO, "xDS serving status notification: uri=\"%s\", status=%s",
-          uri, status.ToString().c_str());
+  LOG(INFO) << "xDS serving status notification: uri=\"" << uri
+            << "\", status=" << status;
 }
 
 int main(int argc, char** argv) {
@@ -178,7 +180,7 @@ int main(int argc, char** argv) {
 
   char* fake_argv[1];
 
-  GPR_ASSERT(argc >= 1);
+  CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 
@@ -189,7 +191,7 @@ int main(int argc, char** argv) {
   if (addr.empty()) {
     addr = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
   }
-  gpr_log(GPR_INFO, "creating server on: %s", addr.c_str());
+  LOG(INFO) << "creating server on: " << addr;
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
@@ -220,15 +222,17 @@ int main(int argc, char** argv) {
   }
 
   MemStats before_server_create = MemStats::Snapshot();
-  if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    grpc_server_add_chaotic_good_port(server, addr.c_str());
+  } else if (absl::GetFlag(FLAGS_secure)) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
+    CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    GPR_ASSERT(grpc_server_add_http2_port(
+    CHECK(grpc_server_add_http2_port(
         server, addr.c_str(), grpc_insecure_server_credentials_create()));
   }
 
@@ -253,14 +257,14 @@ int main(int argc, char** argv) {
 
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
-      gpr_log(GPR_INFO, "Shutting down due to SIGINT");
+      LOG(INFO) << "Shutting down due to SIGINT";
 
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     shutdown_cq, tag(1000),
-                     grpc_timeout_seconds_to_deadline(5), nullptr)
-                     .type == GRPC_OP_COMPLETE);
+      CHECK(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                        grpc_timeout_seconds_to_deadline(5),
+                                        nullptr)
+                .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -301,7 +305,7 @@ int main(int argc, char** argv) {
               current_snapshot = MemStats::Snapshot();
               send_snapshot(s, &current_snapshot);
             } else {
-              gpr_log(GPR_ERROR, "Wrong call method");
+              LOG(ERROR) << "Wrong call method";
             }
             break;
           case FLING_SERVER_SEND_INIT_METADATA:
@@ -338,7 +342,7 @@ int main(int argc, char** argv) {
         }
         break;
       case GRPC_QUEUE_SHUTDOWN:
-        GPR_ASSERT(shutdown_started);
+        CHECK(shutdown_started);
         shutdown_finished = 1;
         break;
       case GRPC_QUEUE_TIMEOUT:

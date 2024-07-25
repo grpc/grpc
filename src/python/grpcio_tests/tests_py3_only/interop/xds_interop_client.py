@@ -36,11 +36,18 @@ import grpc
 from grpc import _typing as grpc_typing
 import grpc_admin
 from grpc_channelz.v1 import channelz
+from grpc_csm_observability import CsmOpenTelemetryPlugin
+from opentelemetry.exporter.prometheus import PrometheusMetricReader
+from opentelemetry.sdk.metrics import MeterProvider
+from prometheus_client import start_http_server
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from src.python.grpcio_tests.tests.fork import native_debug
+
+native_debug.install_failure_signal_handler()
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
@@ -64,6 +71,8 @@ _METHOD_STR_TO_ENUM = {
 }
 
 _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
+
+_PROMETHEUS_PORT = 9464
 
 PerMethodMetadataType = Mapping[str, Sequence[Tuple[str, str]]]
 
@@ -269,13 +278,28 @@ def _start_rpc(
     stub: test_pb2_grpc.TestServiceStub,
     timeout: float,
     futures: Mapping[int, Tuple[FutureFromCallType, str]],
+    request_payload_size: int,
+    response_payload_size: int,
 ) -> None:
     logger.debug(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
+        request = messages_pb2.SimpleRequest(
+            response_type=messages_pb2.COMPRESSABLE,
+            response_size=response_payload_size,
+            payload=messages_pb2.Payload(body=b"0" * request_payload_size),
+        )
         future = stub.UnaryCall.future(
-            messages_pb2.SimpleRequest(), metadata=metadata, timeout=timeout
+            request, metadata=metadata, timeout=timeout
         )
     elif method == "EmptyCall":
+        if request_payload_size > 0:
+            logger.error(
+                f"request_payload_size should not be set for EMPTY_CALL"
+            )
+        if response_payload_size > 0:
+            logger.error(
+                f"response_payload_size should not be set for EMPTY_CALL"
+            )
         future = stub.EmptyCall.future(
             empty_pb2.Empty(), metadata=metadata, timeout=timeout
         )
@@ -365,6 +389,8 @@ class _ChannelConfiguration:
         rpc_timeout_sec: int,
         print_response: bool,
         secure_mode: bool,
+        request_payload_size: int,
+        response_payload_size: int,
     ):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
@@ -376,6 +402,8 @@ class _ChannelConfiguration:
         self.rpc_timeout_sec = rpc_timeout_sec
         self.print_response = print_response
         self.secure_mode = secure_mode
+        self.response_payload_size = response_payload_size
+        self.request_payload_size = request_payload_size
 
 
 def _run_single_channel(config: _ChannelConfiguration) -> None:
@@ -415,6 +443,8 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
                     stub,
                     float(config.rpc_timeout_sec),
                     futures,
+                    config.request_payload_size,
+                    config.response_payload_size,
                 )
                 print_response = config.print_response
             _remove_completed_rpcs(futures, config.print_response)
@@ -501,6 +531,10 @@ def _run(
     per_method_metadata: PerMethodMetadataType,
 ) -> None:
     logger.info("Starting python xDS Interop Client.")
+    csm_plugin = None
+    if args.enable_csm_observability:
+        csm_plugin = _prepare_csm_observability_plugin()
+        csm_plugin.register_global()
     global _global_server  # pylint: disable=global-statement
     method_handles = []
     channel_configs = {}
@@ -517,6 +551,8 @@ def _run(
             args.rpc_timeout_sec,
             args.print_response,
             args.secure_mode,
+            args.request_payload_size,
+            args.response_payload_size,
         )
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
@@ -529,12 +565,13 @@ def _run(
         _XdsUpdateClientConfigureServicer(channel_configs, args.qps),
         _global_server,
     )
-    channelz.add_channelz_servicer(_global_server)
     grpc_admin.add_admin_servicers(_global_server)
     _global_server.start()
     _global_server.wait_for_termination()
     for method_handle in method_handles:
         method_handle.stop()
+    if csm_plugin:
+        csm_plugin.deregister_global()
 
 
 def parse_metadata_arg(metadata_arg: str) -> PerMethodMetadataType:
@@ -568,6 +605,17 @@ def bool_arg(arg: str) -> bool:
         return False
     else:
         raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
+
+
+def _prepare_csm_observability_plugin() -> CsmOpenTelemetryPlugin:
+    # Start Prometheus client
+    start_http_server(port=_PROMETHEUS_PORT, addr="0.0.0.0")
+    reader = PrometheusMetricReader()
+    meter_provider = MeterProvider(metric_readers=[reader])
+    csm_plugin = CsmOpenTelemetryPlugin(
+        meter_provider=meter_provider,
+    )
+    return csm_plugin
 
 
 if __name__ == "__main__":
@@ -621,6 +669,24 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--log_file", default=None, type=str, help="A file to log to."
+    )
+    parser.add_argument(
+        "--enable_csm_observability",
+        help="Whether to enable CSM Observability",
+        default="False",
+        type=bool_arg,
+    )
+    parser.add_argument(
+        "--request_payload_size",
+        default=0,
+        type=int,
+        help="Set the SimpleRequest.payload.body to a string of repeated 0 (zero) ASCII characters of the given size in bytes.",
+    )
+    parser.add_argument(
+        "--response_payload_size",
+        default=0,
+        type=int,
+        help="Ask the server to respond with SimpleResponse.payload.body of the given length (may not be implemented on the server).",
     )
     rpc_help = "A comma-delimited list of RPC methods to run. Must be one of "
     rpc_help += ", ".join(_SUPPORTED_METHODS)

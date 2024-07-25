@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <map>
@@ -27,6 +25,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/matchers/matchers.h"
 

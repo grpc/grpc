@@ -18,10 +18,10 @@
 
 #include <set>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
@@ -36,7 +36,7 @@ static const int WARMUP = 1;
 static const int BENCHMARK = 3;
 
 static void RunSynchronousUnaryPingPong() {
-  gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
+  LOG(INFO) << "Running Synchronous Unary Ping Pong";
 
   ClientConfig client_config;
   client_config.set_client_type(SYNC_CLIENT);

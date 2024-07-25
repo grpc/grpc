@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 39.0.0
+PROJECT_NUMBER         = 43.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
 doc/core/grpc-polling-engines.md \
+doc/core/latent_see.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
 doc/core/transport_explainer.md \
@@ -786,6 +787,7 @@ doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
 doc/grpc_release_schedule.md \
+doc/grpc_xds_bootstrap_format.md \
 doc/grpc_xds_features.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
@@ -804,6 +806,7 @@ doc/service_config.md \
 doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
+doc/trace_flags.md \
 doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
@@ -813,6 +816,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -860,6 +864,7 @@ include/grpc/impl/grpc_types.h \
 include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
+include/grpc/passive_listener.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -872,6 +877,7 @@ include/grpc/support/cpu.h \
 include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
+include/grpc/support/metrics.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \

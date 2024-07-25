@@ -14,14 +14,15 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time_util.h"
 
 #include <stdint.h>
 #include <time.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 namespace grpc_core {
@@ -55,7 +56,7 @@ gpr_timespec ToGprTimeSpec(absl::Time time) {
 }
 
 absl::Duration ToAbslDuration(gpr_timespec ts) {
-  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
+  CHECK(ts.clock_type == GPR_TIMESPAN);
   if (gpr_time_cmp(ts, gpr_inf_future(GPR_TIMESPAN)) == 0) {
     return absl::InfiniteDuration();
   } else if (gpr_time_cmp(ts, gpr_inf_past(GPR_TIMESPAN)) == 0) {
@@ -66,7 +67,7 @@ absl::Duration ToAbslDuration(gpr_timespec ts) {
 }
 
 absl::Time ToAbslTime(gpr_timespec ts) {
-  GPR_ASSERT(ts.clock_type != GPR_TIMESPAN);
+  CHECK(ts.clock_type != GPR_TIMESPAN);
   gpr_timespec rts = gpr_convert_clock_type(ts, GPR_CLOCK_REALTIME);
   if (gpr_time_cmp(rts, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
     return absl::InfiniteFuture();

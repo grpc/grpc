@@ -15,12 +15,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/random/random.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -32,8 +33,6 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-
-extern grpc_core::TraceFlag grpc_chaotic_good_trace;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -47,17 +46,21 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         data_endpoint_(std::move(data_endpoint)),
         encoder_(std::move(hpack_encoder)),
         parser_(std::move(hpack_parser)) {
-    data_endpoint_.EnforceRxMemoryAlignment();
+    // Enable RxMemoryAlignment and RPC receive coalescing after the transport
+    // setup is complete. At this point all the settings frames should have
+    // been read.
+    data_endpoint_.EnforceRxMemoryAlignmentAndCoalescing();
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    auto buffers = frame.Serialize(&encoder_);
-    if (grpc_chaotic_good_trace.enabled()) {
-      gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
-              ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                  .value_or("<<unknown peer address>>")
-                  .c_str(),
-              frame.ToString().c_str());
+    bool saw_encoding_errors = false;
+    auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
+    // ignore encoding errors: they will be logged separately already
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
+      LOG(INFO) << "CHAOTIC_GOOD: WriteFrame to:"
+                << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+                       .value_or("<<unknown peer address>>")
+                << " " << frame.ToString();
     }
     return TryJoin<absl::StatusOr>(
         control_endpoint_.Write(std::move(buffers.control)),
@@ -73,14 +76,14 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
-          if (grpc_chaotic_good_trace.enabled()) {
-            gpr_log(GPR_INFO, "CHAOTIC_GOOD: ReadHeader from:%s %s",
-                    ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                        .value_or("<<unknown peer address>>")
-                        .c_str(),
-                    frame_header.ok()
-                        ? frame_header->ToString().c_str()
-                        : frame_header.status().ToString().c_str());
+          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
+            LOG(INFO) << "CHAOTIC_GOOD: ReadHeader from:"
+                      << ResolvedAddressToString(
+                             control_endpoint_.GetPeerAddress())
+                             .value_or("<<unknown peer address>>")
+                      << " "
+                      << (frame_header.ok() ? frame_header->ToString()
+                                            : frame_header.status().ToString());
           }
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
@@ -122,9 +125,9 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                                 FrameLimits limits) {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
-    if (grpc_chaotic_good_trace.enabled()) {
-      gpr_log(GPR_INFO, "CHAOTIC_GOOD: DeserializeFrame %s",
-              s.ok() ? frame.ToString().c_str() : s.ToString().c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
+      LOG(INFO) << "CHAOTIC_GOOD: DeserializeFrame "
+                << (s.ok() ? frame.ToString() : s.ToString());
     }
     return s;
   }

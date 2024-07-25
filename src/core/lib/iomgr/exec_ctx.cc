@@ -16,13 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -32,11 +32,11 @@
 static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
   closure->scheduled = false;
-  if (grpc_trace_closure.enabled()) {
-    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
-            closure, closure->file_created, closure->line_created,
-            closure->run ? "run" : "scheduled", closure->file_initiated,
-            closure->line_initiated);
+  if (GRPC_TRACE_FLAG_ENABLED(closure)) {
+    VLOG(2) << "running closure " << closure << ": created ["
+            << closure->file_created << ":" << closure->line_created
+            << "]: " << (closure->run ? "run" : "scheduled") << " ["
+            << closure->file_initiated << ":" << closure->line_initiated << "]";
   }
 #endif
   grpc_error_handle error =
@@ -44,8 +44,8 @@ static void exec_ctx_run(grpc_closure* closure) {
   closure->error_data.error = 0;
   closure->cb(closure->cb_arg, std::move(error));
 #ifndef NDEBUG
-  if (grpc_trace_closure.enabled()) {
-    gpr_log(GPR_DEBUG, "closure %p finished", closure);
+  if (GRPC_TRACE_FLAG_ENABLED(closure)) {
+    VLOG(2) << "closure " << closure << " finished";
   }
 #endif
 }
@@ -88,7 +88,7 @@ bool ExecCtx::Flush() {
       break;
     }
   }
-  GPR_ASSERT(combiner_data_.active_combiner == nullptr);
+  CHECK_EQ(combiner_data_.active_combiner, nullptr);
   return did_something;
 }
 
@@ -111,7 +111,7 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   closure->file_initiated = location.file();
   closure->line_initiated = location.line();
   closure->run = false;
-  GPR_ASSERT(closure->cb != nullptr);
+  CHECK_NE(closure->cb, nullptr);
 #endif
   closure->error_data.error = internal::StatusAllocHeapPtr(error);
   exec_ctx_sched(closure);
@@ -134,7 +134,7 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
     c->file_initiated = location.file();
     c->line_initiated = location.line();
     c->run = false;
-    GPR_ASSERT(c->cb != nullptr);
+    CHECK_NE(c->cb, nullptr);
 #endif
     exec_ctx_sched(c);
     c = next;

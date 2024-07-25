@@ -18,13 +18,14 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -46,17 +47,17 @@ const char overridden_fake_md_value[] = "overridden_fake_value";
 void PrintAuthContext(bool is_client, const grpc_auth_context* ctx) {
   const grpc_auth_property* p;
   grpc_auth_property_iterator it;
-  gpr_log(GPR_INFO, "%s peer:", is_client ? "client" : "server");
-  gpr_log(GPR_INFO, "\tauthenticated: %s",
-          grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
+  LOG(INFO) << (is_client ? "client" : "server") << " peer:";
+  LOG(INFO) << "\tauthenticated: "
+            << (grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
   it = grpc_auth_context_peer_identity(ctx);
   while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
+    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
   }
-  gpr_log(GPR_INFO, "\tall properties:");
+  LOG(INFO) << "\tall properties:";
   it = grpc_auth_context_property_iterator(ctx);
   while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
+    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
   }
 }
 
@@ -72,9 +73,9 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
   }
   EXPECT_NE(creds, nullptr);
   c.SetCredentials(creds);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")
@@ -89,11 +90,11 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
   PrintAuthContext(true, c.GetAuthContext().get());
   // Cannot set creds on the server call object.
   EXPECT_NE(grpc_call_set_credentials(s.c_call(), nullptr), GRPC_CALL_OK);
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
   test.Expect(102, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage("hello you")
@@ -137,9 +138,9 @@ void TestRequestResponseWithPayloadAndOverriddenCallCreds(
                                                  overridden_fake_md_value);
   }
   c.SetCredentials(creds);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")
@@ -154,11 +155,11 @@ void TestRequestResponseWithPayloadAndOverriddenCallCreds(
   PrintAuthContext(true, c.GetAuthContext().get());
   // Cannot set creds on the server call object.
   EXPECT_NE(grpc_call_set_credentials(s.c_call(), nullptr), GRPC_CALL_OK);
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
   test.Expect(102, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage("hello you")
@@ -196,9 +197,9 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   EXPECT_NE(creds, nullptr);
   c.SetCredentials(creds);
   c.SetCredentials(nullptr);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")
@@ -213,11 +214,11 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   PrintAuthContext(true, c.GetAuthContext().get());
   // Cannot set creds on the server call object.
   EXPECT_NE(grpc_call_set_credentials(s.c_call(), nullptr), GRPC_CALL_OK);
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
   test.Expect(102, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage("hello you")
@@ -247,9 +248,9 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
       grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   EXPECT_NE(creds, nullptr);
   c.SetCredentials(creds);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")
@@ -312,9 +313,9 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest, FailToSendCallCreds) {
   creds = grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
   EXPECT_NE(creds, nullptr);
   c.SetCredentials(creds);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")

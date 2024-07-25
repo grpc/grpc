@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_audit_logger_registry.h"
+#include "src/core/xds/grpc/xds_audit_logger_registry.h"
 
 #include <memory>
 #include <string>
@@ -36,16 +36,16 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/proto/grpc/testing/xds/v3/audit_logger_stream.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -66,9 +66,8 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   std::string serialized_config = config.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {
-      nullptr, GrpcXdsBootstrap::GrpcXdsServer(), nullptr, def_pool.ptr(),
-      arena.ptr()};
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+                                            def_pool.ptr(), arena.ptr()};
   auto* upb_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());

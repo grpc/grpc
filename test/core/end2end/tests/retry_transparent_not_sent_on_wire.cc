@@ -31,6 +31,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -114,8 +115,6 @@ class FailFirstTenCallsFilter {
 
 grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -126,7 +125,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstTenCallsFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailFirstTenCallsFilter"),
 };
 
 // Tests transparent retries when the call was never sent out on the wire.

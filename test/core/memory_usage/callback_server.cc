@@ -24,22 +24,25 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/xds_server_builder.h>
 
+#include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(bool, use_xds, false, "Use xDS");
+ABSL_FLAG(bool, chaotic_good, false, "Use chaotic good");
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
@@ -59,7 +62,7 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* /* request */,
       grpc::testing::MemorySize* response) override {
-    gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
+    LOG(INFO) << "BeforeSnapshot RPC CALL RECEIVED";
     response->set_rss(before_server_create);
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
@@ -77,17 +80,17 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
-  GPR_ASSERT(argc >= 1);
+  CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
   if (server_address.empty()) {
-    gpr_log(GPR_ERROR, "Server: No port entered");
+    LOG(ERROR) << "Server: No port entered";
     return 1;
   }
-  gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
+  LOG(INFO) << "Server port: " << server_address;
 
   // Get initial process memory usage before creating server
   long before_server_create = GetMemUsage();
@@ -101,8 +104,10 @@ int main(int argc, char** argv) {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();
-  if (absl::GetFlag(FLAGS_secure)) {
-    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    creds = grpc::ChaoticGoodInsecureServerCredentials();
+  } else if (absl::GetFlag(FLAGS_secure)) {
+    LOG(INFO) << "Supposed to be secure, is not yet";
     // TODO (chennancy) Add in secure credentials
   }
   builder->AddListeningPort(server_address, creds);
@@ -110,7 +115,7 @@ int main(int argc, char** argv) {
 
   // Set up the server to start accepting requests.
   std::shared_ptr<grpc::Server> server(builder->BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
+  LOG(INFO) << "Server listening on " << server_address;
 
   // Keep the program running until the server shuts down.
   server->Wait();

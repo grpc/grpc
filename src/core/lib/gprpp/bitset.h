@@ -15,14 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_BITSET_H
 #define GRPC_SRC_CORE_LIB_GPRPP_BITSET_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <type_traits>
 
-#include "src/core/lib/gpr/useful.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -138,7 +138,7 @@ class BitSet {
   uint32_t count() const {
     uint32_t count = 0;
     for (size_t i = 0; i < kUnits; i++) {
-      count += BitCount(units_[i]);
+      count += absl::popcount(units_[i]);
     }
     return count;
   }

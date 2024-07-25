@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -29,8 +30,8 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -84,10 +85,10 @@ TEST_P(WrrTest, Basic) {
   size_t num_picks = 0;
   SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult&) {
     if (++num_picks == 13) {
-      gpr_log(GPR_INFO, "request counts: %" PRIuPTR " %" PRIuPTR " %" PRIuPTR,
-              backends_[0]->backend_service()->request_count(),
-              backends_[1]->backend_service()->request_count(),
-              backends_[2]->backend_service()->request_count());
+      LOG(INFO) << "request counts: "
+                << backends_[0]->backend_service()->request_count() << " "
+                << backends_[1]->backend_service()->request_count() << " "
+                << backends_[2]->backend_service()->request_count();
       if (backends_[0]->backend_service()->request_count() == 6 &&
           backends_[1]->backend_service()->request_count() == 4 &&
           backends_[2]->backend_service()->request_count() == 3) {
@@ -132,12 +133,12 @@ TEST_P(WrrTest, MetricsHaveLocalityLabel) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Make sure we have a metric value for each of the two localities.
   EXPECT_THAT(
-      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
-                                      {LocalityNameString("locality0")}),
+      stats_plugin->GetDoubleHistogramValue(kEndpointWeights, kLabelValues,
+                                            {LocalityNameString("locality0")}),
       ::testing::Optional(::testing::Not(::testing::IsEmpty())));
   EXPECT_THAT(
-      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
-                                      {LocalityNameString("locality1")}),
+      stats_plugin->GetDoubleHistogramValue(kEndpointWeights, kLabelValues,
+                                            {LocalityNameString("locality1")}),
       ::testing::Optional(::testing::Not(::testing::IsEmpty())));
 }
 

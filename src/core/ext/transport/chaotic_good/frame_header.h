@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <cstdint>
 
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/bitset.h"
 
@@ -33,6 +33,19 @@ enum class FrameType : uint8_t {
   kFragment = 0x80,
   kCancel = 0x81,
 };
+
+inline std::ostream& operator<<(std::ostream& out, FrameType type) {
+  switch (type) {
+    case FrameType::kSettings:
+      return out << "Settings";
+    case FrameType::kFragment:
+      return out << "Fragment";
+    case FrameType::kCancel:
+      return out << "Cancel";
+    default:
+      return out << "Unknown[" << static_cast<int>(type) << "]";
+  }
+}
 
 struct FrameHeader {
   FrameType type = FrameType::kCancel;

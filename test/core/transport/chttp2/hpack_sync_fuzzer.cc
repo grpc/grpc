@@ -45,14 +45,13 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/proto_bit_gen.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/proto_bit_gen.h"
 
 bool squelch = true;
 bool leak_check = true;
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace grpc_core {
 namespace {
@@ -117,12 +116,8 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 
   // STAGE 2: Decode the buffer (encode_output) into a list of headers
   HPackParser parser;
-  auto memory_allocator =
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "test-allocator");
-  auto arena = MakeScopedArena(1024, &memory_allocator);
   ExecCtx exec_ctx;
-  grpc_metadata_batch read_metadata(arena.get());
+  grpc_metadata_batch read_metadata;
   parser.BeginFrame(
       &read_metadata, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
       HPackParser::Priority::None,
@@ -174,7 +169,9 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const hpack_sync_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::FuzzOneInput(msg);

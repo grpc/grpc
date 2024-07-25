@@ -16,15 +16,17 @@
 //
 //
 
+#include "absl/log/check.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define PFX_STR                                               \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                          \
@@ -55,11 +57,11 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_registered_call(
       server, registered_method, &s, &deadline, &request_metadata_recv,
       &payload, cq, cq, grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(payload != nullptr);
+  CHECK_NE(payload, nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);
@@ -69,9 +71,9 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
 static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
                            void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    CHECK(grpc_completion_queue_next(
+              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

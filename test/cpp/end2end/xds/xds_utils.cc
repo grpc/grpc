@@ -34,14 +34,14 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
+#include "src/core/util/tmpfile.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 
 namespace grpc {
 namespace testing {
@@ -84,7 +84,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "          \"server_uri\": \"<SERVER_URI>\",\n"
       "          \"channel_creds\": [\n"
       "            {\n"
-      "              \"type\": \"<SERVER_CREDS_TYPE>\"\n"
+      "              \"type\": \"<SERVER_CREDS_TYPE>\"<SERVER_CREDS_CONFIG>\n"
       "            }\n"
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
@@ -93,12 +93,20 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
   }
+  if (trusted_xds_server_) {
+    server_features.push_back("\"trusted_xds_server\"");
+  }
   std::vector<std::string> servers;
   for (absl::string_view server_uri : server_uris) {
     servers.emplace_back(absl::StrReplaceAll(
         kXdsServerTemplate,
         {{"<SERVER_URI>", server_uri},
          {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
+         {"<SERVER_CREDS_CONFIG>",
+          xds_channel_creds_config_.empty()
+              ? ""
+              : absl::StrCat(",\n              \"config\": ",
+                             xds_channel_creds_config_)},
          {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}}));
   }
   return absl::StrCat("      \"xds_servers\": [\n",
@@ -151,7 +159,7 @@ std::string XdsBootstrapBuilder::MakeAuthorityText() {
     const std::string& name = p.first;
     const AuthorityInfo& authority_info = p.second;
     std::vector<std::string> fields = {
-        MakeXdsServersText({authority_info.server})};
+        MakeXdsServersText(authority_info.servers)};
     if (!authority_info.client_listener_resource_name_template.empty()) {
       fields.push_back(absl::StrCat(
           "\"client_listener_resource_name_template\": \"",
@@ -359,6 +367,9 @@ ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
                              ->mutable_socket_address();
         socket_address->set_address(grpc_core::LocalIp());
         socket_address->set_port_value(port);
+      }
+      if (!endpoint.hostname.empty()) {
+        endpoint_proto->set_hostname(endpoint.hostname);
       }
     }
   }

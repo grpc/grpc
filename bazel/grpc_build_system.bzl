@@ -27,13 +27,13 @@
 Contains macros used throughout the repo.
 """
 
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
+load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
 load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES", "TEST_EXPERIMENT_POLLERS")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
-load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
-load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epoll1", "poll"]
@@ -45,6 +45,7 @@ def if_not_windows(a):
     return select({
         "//:windows": [],
         "//:windows_msvc": [],
+        "//:windows_clang": [],
         "//conditions:default": a,
     })
 
@@ -52,20 +53,23 @@ def if_windows(a):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
+        "//:windows_clang": a,
         "//conditions:default": [],
     })
 
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
-        if dep == "address_sorting":
+        if dep.startswith("@"):
+            ret.append(dep)
+        elif dep == "address_sorting":
             ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
-                "//conditions:default": ["//external:cares"],
+                "//conditions:default": ["//third_party:cares"],
             })
         elif dep == "cronet_c_for_grpc":
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
@@ -77,8 +81,10 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
+        elif dep == "libprotobuf_mutator":
+            ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
-            ret.append("//external:" + dep)
+            ret.append("//third_party:" + dep)
     return ret
 
 def _update_visibility(visibility):
@@ -98,20 +104,25 @@ def _update_visibility(visibility):
         "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
+        "core_credentials": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
+        "gpr_public_hdrs": PRIVATE,
         "grpclb": PRIVATE,
         "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpc_public_hdrs": PRIVATE,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
+        "grpc++_public_hdrs": PUBLIC,
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
+        "otel_plugin": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "tcp_tracer": PRIVATE,
@@ -120,6 +131,7 @@ def _update_visibility(visibility):
         "tsi": PRIVATE,
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
+        "xds_end2end_test_utils": PRIVATE,
         "grpc_python_observability": PRIVATE,
         "event_engine_base_hdrs": PRIVATE,
         "useful": PRIVATE,
@@ -225,6 +237,7 @@ def grpc_proto_library(
         name,
         srcs = [],
         deps = [],
+        visibility = None,
         well_known_protos = False,
         has_services = True,
         use_external = False,
@@ -233,6 +246,7 @@ def grpc_proto_library(
         name = name,
         srcs = srcs,
         deps = deps,
+        visibility = visibility,
         well_known_protos = well_known_protos,
         proto_only = not has_services,
         use_external = use_external,
@@ -529,7 +543,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
@@ -555,11 +569,22 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+    native.cc_library(
+        name = "%s_TEST_LIBRARY" % name,
+        testonly = 1,
+        srcs = srcs,
+        deps = core_deps,
+        tags = tags,
+    )
+
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+        if poller_config["srcs"] != srcs:
+            fail("srcs changed")
+        if poller_config["deps"] != core_deps:
+            fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
         native.cc_test(
             name = poller_config["name"],
-            srcs = poller_config["srcs"],
-            deps = poller_config["deps"],
+            deps = ["%s_TEST_LIBRARY" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
@@ -596,7 +621,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
@@ -714,6 +739,13 @@ def grpc_package(name, visibility = "private", features = []):
             features = features,
         )
 
+def grpc_filegroup(name, srcs, **kwargs):
+    native.filegroup(
+        name = name,
+        srcs = srcs,
+        **kwargs
+    )
+
 def grpc_objc_library(
         name,
         srcs = [],
@@ -771,4 +803,23 @@ def python_config_settings():
     native.config_setting(
         name = "python3",
         flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
+
+# buildifier: disable=unnamed-macro
+def grpc_clang_cl_settings():
+    native.platform(
+        name = "x64_windows-clang-cl",
+        constraint_values = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:windows",
+            "@bazel_tools//tools/cpp:clang-cl",
+        ],
+    )
+    native.config_setting(
+        name = "windows_clang",
+        constraint_values = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:windows",
+            "@bazel_tools//tools/cpp:clang-cl",
+        ],
     )

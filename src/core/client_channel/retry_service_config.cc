@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -30,12 +31,11 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/json/json_channel_args.h"
+#include "src/core/util/json/json_channel_args.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -142,9 +142,8 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
       if (max_attempts_ <= 1) {
         errors->AddError("must be at least 2");
       } else if (max_attempts_ > MAX_MAX_RETRY_ATTEMPTS) {
-        gpr_log(GPR_ERROR,
-                "service config: clamped retryPolicy.maxAttempts at %d",
-                MAX_MAX_RETRY_ATTEMPTS);
+        LOG(ERROR) << "service config: clamped retryPolicy.maxAttempts at "
+                   << MAX_MAX_RETRY_ATTEMPTS;
         max_attempts_ = MAX_MAX_RETRY_ATTEMPTS;
       }
     }

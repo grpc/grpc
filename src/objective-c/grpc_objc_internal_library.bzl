@@ -23,6 +23,11 @@ Each rule listed must be re-written for Google's internal build system, and
 each change must be ported from one to the other.
 """
 
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load(
+    "@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl",
+    "ios_test_runner",
+)
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "//bazel:generate_objc.bzl",
@@ -32,11 +37,6 @@ load(
     "generate_objc_srcs",
 )
 load("//bazel:grpc_build_system.bzl", "grpc_objc_library")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
-load(
-    "@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl",
-    "ios_test_runner",
-)
 
 # The default device type for ios objc unit tests
 IOS_UNIT_TEST_DEVICE_TYPE = "iPhone 11"

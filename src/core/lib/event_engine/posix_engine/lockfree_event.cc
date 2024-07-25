@@ -11,17 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 
 #include <atomic>
 #include <cstdint>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -79,7 +79,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       grpc_core::internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
+      CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

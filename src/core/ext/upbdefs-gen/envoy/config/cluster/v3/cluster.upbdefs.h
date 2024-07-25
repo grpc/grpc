@@ -10,14 +10,11 @@
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-#include "upb/port/def.inc"
+
+#include "upb/port/def.inc" // Must be last.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "upb/reflection/def.h"
-
-#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_config_cluster_v3_cluster_proto_upbdefinit;
 
@@ -134,6 +131,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_LoadBalancingPolicy_Pol
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions.HappyEyeballsConfig");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_TrackClusterStats_getmsgdef(upb_DefPool *s) {

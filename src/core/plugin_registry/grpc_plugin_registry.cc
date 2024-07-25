@@ -16,17 +16,17 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
-#include "src/core/lib/channel/server_call_tracer_filter.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
+#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
+#include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/http_connect_handshaker.h"
-#include "src/core/lib/transport/tcp_connect_handshaker.h"
+#include "src/core/server/server.h"
+#include "src/core/server/server_call_tracer_filter.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -42,10 +42,8 @@ extern void BuildClientChannelConfiguration(
 extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
-extern void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder);
 extern void RegisterLegacyChannelIdleFilters(
     CoreConfiguration::Builder* builder);
-extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
 extern void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
 extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
@@ -69,6 +67,8 @@ extern void RegisterWeightedRoundRobinLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
+extern void RegisterLoadBalancedCallDestination(
+    CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -81,10 +81,11 @@ namespace {
 void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   RegisterServerCallTracerFilter(builder);
   builder->channel_init()
-      ->RegisterFilter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
+      ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .SkipV3()
       .BeforeAll();
 }
 
@@ -96,6 +97,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // The order of the handshaker registration is crucial here.
   // We want TCP connect handshaker to be registered last so that it is added
   // to the start of the handshaker list.
+  RegisterEndpointInfoHandshaker(builder);
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterPriorityLbPolicy(builder);
@@ -107,12 +109,10 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
-  RegisterChannelIdleFilters(builder);
   RegisterLegacyChannelIdleFilters(builder);
   RegisterConnectedChannel(builder);
   RegisterGrpcLbPolicy(builder);
   RegisterHttpFilters(builder);
-  RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
@@ -121,6 +121,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterSockaddrResolver(builder);
   RegisterFakeResolver(builder);
   RegisterHttpProxyMapper(builder);
+  RegisterLoadBalancedCallDestination(builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   RegisterBinderResolver(builder);
 #endif

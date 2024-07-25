@@ -45,9 +45,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "test/core/util/parse_hexstring.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -107,10 +107,6 @@ class ParseTest : public ::testing::TestWithParam<Test> {
                   absl::optional<size_t> max_metadata_size,
                   std::string hexstring, absl::StatusOr<std::string> expect,
                   uint32_t flags) {
-    MemoryAllocator memory_allocator = MemoryAllocator(
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "test"));
-    auto arena = MakeScopedArena(1024, &memory_allocator);
     ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
@@ -118,7 +114,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     size_t i;
     absl::BitGen bitgen;
 
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
 
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),

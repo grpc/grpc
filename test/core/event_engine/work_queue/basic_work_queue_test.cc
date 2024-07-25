@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 
 #include <thread>
@@ -22,9 +20,10 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // TODO(hork): parameterize these tests for other WorkQueue implementations.
 

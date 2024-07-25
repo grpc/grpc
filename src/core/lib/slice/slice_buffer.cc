@@ -16,18 +16,19 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_buffer.h"
 
 #include <string.h>
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -81,7 +82,7 @@ Slice SliceBuffer::JoinIntoSlice() const {
            GRPC_SLICE_LENGTH(slice_buffer_.slices[i]));
     ofs += GRPC_SLICE_LENGTH(slice_buffer_.slices[i]);
   }
-  GPR_ASSERT(ofs == slice_buffer_.length);
+  CHECK(ofs == slice_buffer_.length);
   return Slice(slice);
 }
 
@@ -331,7 +332,7 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
     return;
   }
 
-  GPR_ASSERT(src->length >= n);
+  CHECK(src->length >= n);
   if (src->length == n) {
     grpc_slice_buffer_move_into(src, dst);
     return;
@@ -359,7 +360,7 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
             src, grpc_slice_split_tail_maybe_ref_no_inline(
                      &slice, n, GRPC_SLICE_REF_BOTH));
       }
-      GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
+      CHECK(GRPC_SLICE_LENGTH(slice) == n);
       grpc_slice_buffer_add(dst, slice);
       break;
     } else {  // n < slice_len
@@ -372,14 +373,14 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
             src, grpc_slice_split_tail_maybe_ref_no_inline(
                      &slice, n, GRPC_SLICE_REF_TAIL));
       }
-      GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
+      CHECK(GRPC_SLICE_LENGTH(slice) == n);
       grpc_slice_buffer_add_indexed(dst, slice);
       break;
     }
   }
-  GPR_ASSERT(dst->length == output_len);
-  GPR_ASSERT(src->length == new_input_len);
-  GPR_ASSERT(src->count > 0);
+  CHECK(dst->length == output_len);
+  CHECK(src->length == new_input_len);
+  CHECK_GT(src->count, 0u);
 }
 
 void grpc_slice_buffer_move_first_no_inline(grpc_slice_buffer* src, size_t n,
@@ -400,7 +401,7 @@ void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src, size_t n,
 void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
                                               void* dst) {
   char* dstp = static_cast<char*>(dst);
-  GPR_ASSERT(src->length >= n);
+  CHECK(src->length >= n);
 
   while (n > 0) {
     grpc_slice slice = grpc_slice_buffer_take_first(src);
@@ -426,7 +427,7 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
 void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
                                               void* dst) {
   uint8_t* dstp = static_cast<uint8_t*>(dst);
-  GPR_ASSERT(src->length >= n);
+  CHECK(src->length >= n);
 
   for (size_t i = 0; i < src->count; i++) {
     grpc_slice slice = src->slices[i];
@@ -443,7 +444,7 @@ void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
 template <bool allow_inline>
 void grpc_slice_buffer_trim_end_impl(grpc_slice_buffer* sb, size_t n,
                                      grpc_slice_buffer* garbage) {
-  GPR_ASSERT(n <= sb->length);
+  CHECK(n <= sb->length);
   sb->length -= n;
   for (;;) {
     size_t idx = sb->count - 1;
@@ -494,7 +495,7 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
 
 grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
   grpc_slice slice;
-  GPR_ASSERT(sb->count > 0);
+  CHECK_GT(sb->count, 0u);
   slice = sb->slices[0];
   sb->slices++;
   sb->count--;
@@ -504,7 +505,7 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb) {
-  GPR_DEBUG_ASSERT(sb->count > 0);
+  DCHECK_GT(sb->count, 0u);
   sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
   grpc_core::CSliceUnref(sb->slices[0]);
   sb->slices++;
