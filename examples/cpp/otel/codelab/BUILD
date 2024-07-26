@@ -63,3 +63,37 @@ cc_binary(
         "@io_opentelemetry_cpp//sdk/src/metrics",
     ],
 )
+
+cc_binary(
+    name = "greeter_callback_client_solution",
+    srcs = ["greeter_callback_client_solution.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "util",
+        "//:grpc++",
+        "//:grpcpp_otel_plugin",
+        "//examples/cpp/otel:util",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
+        "@io_opentelemetry_cpp//sdk/src/metrics",
+    ],
+)
+
+cc_binary(
+    name = "greeter_callback_server_solution",
+    srcs = ["greeter_callback_server_solution.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "util",
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_otel_plugin",
+        "//examples/cpp/otel:util",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings:str_format",
+        "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
+        "@io_opentelemetry_cpp//sdk/src/metrics",
+    ],
+)
