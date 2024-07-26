@@ -33,7 +33,7 @@ class CallSizeEstimator final {
   explicit CallSizeEstimator(size_t initial_estimate)
       : call_size_estimate_(initial_estimate) {}
 
-  size_t CallSizeEstimate() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION size_t CallSizeEstimate() {
     // We round up our current estimate to the NEXT value of kRoundUpSize.
     // This ensures:
     //  1. a consistent size allocation when our estimate is drifting slowly
@@ -46,7 +46,24 @@ class CallSizeEstimator final {
            ~(kRoundUpSize - 1);
   }
 
-  void UpdateCallSizeEstimate(size_t size);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void UpdateCallSizeEstimate(
+      size_t size) {
+    size_t cur = call_size_estimate_.load(std::memory_order_relaxed);
+    if (cur < size) {
+      // size grew: update estimate
+      call_size_estimate_.compare_exchange_weak(
+          cur, size, std::memory_order_relaxed, std::memory_order_relaxed);
+      // if we lose: never mind, something else will likely update soon enough
+    } else if (cur == size) {
+      // no change: holding pattern
+    } else if (cur > 0) {
+      // size shrank: decrease estimate
+      call_size_estimate_.compare_exchange_weak(
+          cur, std::min(cur - 1, (255 * cur + size) / 256),
+          std::memory_order_relaxed, std::memory_order_relaxed);
+      // if we lose: never mind, something else will likely update soon enough
+    }
+  }
 
  private:
   std::atomic<size_t> call_size_estimate_;
@@ -62,9 +79,7 @@ class CallArenaAllocator final : public ArenaFactory {
     return Arena::Create(call_size_estimator_.CallSizeEstimate(), Ref());
   }
 
-  void FinalizeArena(Arena* arena) override {
-    call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-  }
+  void FinalizeArena(Arena* arena) override;
 
   size_t CallSizeEstimate() { return call_size_estimator_.CallSizeEstimate(); }
 
