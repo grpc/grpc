@@ -47,7 +47,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
     ],
-    "gpr_log_severity_string": [],
     "gpr_log(": [
         "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",
@@ -85,6 +84,7 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_assertion_failed": [],
     "GPR_ASSERT": [],
     "GPR_DEBUG_ASSERT": [],
+    "gpr_log_severity_string": [],
 }
 
 errors = 0
