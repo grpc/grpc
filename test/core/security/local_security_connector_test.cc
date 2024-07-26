@@ -109,32 +109,28 @@ static void CheckSecurityLevelForChannel(grpc_local_connect_type connect_type,
 }
 
 TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionServer) {
-  grpc_endpoint ep = {
-      .vtable = &kUnixEndpointVtable,
-  };
+  grpc_endpoint ep;
+  ep.vtable = &kUnixEndpointVtable;
   CheckSecurityLevelForServer(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
 }
 
 TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionServer) {
   if (!grpc_core::IsLocalConnectorSecureEnabled()) {return;}
-  grpc_endpoint ep = {
-      .vtable = &kTcpEndpointVtable,
-  };
+  grpc_endpoint ep;
+  ep.vtable = &kTcpEndpointVtable;
   CheckSecurityLevelForServer(LOCAL_TCP, TSI_SECURITY_NONE, ep);
 }
 
 TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionChannel) {
-  grpc_endpoint ep = {
-      .vtable = &kUnixEndpointVtable,
-  };
+  grpc_endpoint ep;
+  ep.vtable = &kUnixEndpointVtable;
   CheckSecurityLevelForChannel(UDS, TSI_PRIVACY_AND_INTEGRITY, ep);
 }
 
 TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionChannel) {
   if (!grpc_core::IsLocalConnectorSecureEnabled()) {return;}
-  grpc_endpoint ep = {
-      .vtable = &kTcpEndpointVtable,
-  };
+  grpc_endpoint ep;
+  ep.vtable = &kTcpEndpointVtable;
   CheckSecurityLevelForChannel(LOCAL_TCP, TSI_SECURITY_NONE, ep);
 }
 
@@ -146,6 +142,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
+  LOG(ERROR) << "experiment" << grpc_core::IsLocalConnectorSecureEnabled();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
