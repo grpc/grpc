@@ -545,6 +545,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
   uint8_t ping_on_rst_stream_percent;
+
+  GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
 
 typedef enum {
