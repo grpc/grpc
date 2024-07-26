@@ -71,7 +71,7 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
     reply->set_message(prefix + request->name());
 
     // CODELAB HINT: This sleep seems suspicious.
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
     ServerUnaryReactor* reactor = context->DefaultReactor();
     reactor->Finish(Status::OK);
