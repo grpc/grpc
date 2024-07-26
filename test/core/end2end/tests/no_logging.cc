@@ -95,7 +95,6 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
             {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
              {"chttp2_transport.cc",
               std::regex("Sending goaway.*Channel Destroyed")},
-             {"config.cc", std::regex("gRPC experiments.*")},
              {"chaotic_good_server.cc",
               std::regex("Failed to bind some addresses for.*")},
              {"log.cc",

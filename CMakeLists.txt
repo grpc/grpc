@@ -22414,6 +22414,7 @@ add_executable(periodic_update_test
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -22426,6 +22427,7 @@ add_executable(periodic_update_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/resource_quota/periodic_update_test.cc
 )
 if(WIN32 AND MSVC)

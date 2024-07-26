@@ -677,6 +677,8 @@ class StreamWriteContext {
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
+  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_begin_write");
+
   int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
   ctx.FlushSettings();
@@ -732,11 +734,16 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   maybe_initiate_ping(t);
 
+  t->write_flow.Begin(GRPC_LATENT_SEE_METADATA("write"));
+
   return ctx.Result();
 }
 
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
+  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_end_write");
   grpc_chttp2_stream* s;
+
+  t->write_flow.End();
 
   if (t->channelz_socket != nullptr) {
     t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);
