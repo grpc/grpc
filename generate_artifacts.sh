@@ -34,7 +34,7 @@ done
 
 if [ "$check_master" = "t" ]; then
     if [ "$(git rev-parse --abbrev-ref HEAD)" != "master" ]; then
-        echo "Not on master branch - skipping"
+        echo "$(git rev-parse --abbrev-ref HEAD) is not master branch - skipping"
         exit 0
     fi
 fi
