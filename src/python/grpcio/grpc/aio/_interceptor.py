@@ -17,8 +17,19 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
-from typing import (AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable,
-                    Callable, Iterator, Generic, List, Optional, Sequence, Union)
+from typing import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import grpc
 from grpc._cython import cygrpc
@@ -498,6 +509,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             return await self._response_aiter.asend(None)
         except StopAsyncIteration:
             return cygrpc.EOF
+
 
 class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]

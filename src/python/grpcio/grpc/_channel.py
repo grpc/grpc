@@ -930,8 +930,9 @@ class _MultiThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
-                self._state.callbacks.append(functools.partial(
-                    fn, self))  # type: ignore
+                self._state.callbacks.append(
+                    functools.partial(fn, self)
+                )  # type: ignore
                 return
 
         fn(self)
@@ -1255,9 +1256,15 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     ]
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel: cygrpc.Channel, method: bytes, target: bytes,
-                 request_serializer: Optional[SerializingFunction],
-                 response_deserializer: Optional[DeserializingFunction], _registered_call_handle: Optional[int]):
+    def __init__(
+        self,
+        channel: cygrpc.Channel,
+        method: bytes,
+        target: bytes,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
+        _registered_call_handle: Optional[int],
+    ):
         self._channel = channel
         self._method = method
         self._target = target
