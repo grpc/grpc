@@ -18,6 +18,8 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
+./generate_artifacts.sh -m
+
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/test/android_ndk
