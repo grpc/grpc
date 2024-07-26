@@ -264,11 +264,13 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
 }
 
 CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
+  SKIP_IF_LOCAL_CREDS();
   TestRequestResponseWithPayloadAndCallCreds(*this, true);
 }
 
 CORE_END2END_TEST(PerCallCredsTest,
                   RequestResponseWithPayloadAndOverriddenCallCreds) {
+  SKIP_IF_LOCAL_CREDS();
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, true);
 }
 
