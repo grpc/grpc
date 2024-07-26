@@ -18,7 +18,9 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-./generate_artifacts.sh -m
+if [ -f ./generate_artifacts.sh ]; then
+    ./generate_artifacts.sh
+fi
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 

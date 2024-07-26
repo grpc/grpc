@@ -15,29 +15,5 @@
 
 set -e
 
-check_master=f
-
-usage() {
-    echo "generate_artifacts.sh [-m]"
-    echo "  -m: Only run on master branch"
-    exit 1
-}
-
-while test $# != 0
-do
-    case "$1" in
-    -m) check_master=t ;;
-    *) usage ;;
-    esac
-    shift
-done
-
-if [ "$check_master" = "t" ]; then
-    if [ "$(git rev-parse --abbrev-ref HEAD)" != "master" ]; then
-        echo "$(git rev-parse --abbrev-ref HEAD) is not master branch - skipping"
-        exit 0
-    fi
-fi
-
 git submodule update --init
 tools/buildgen/generate_projects.sh
