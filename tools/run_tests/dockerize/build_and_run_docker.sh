@@ -22,6 +22,9 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
+if [ -f ./generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
 cd -
 
 # Inputs
