@@ -138,7 +138,7 @@ class BitSet {
   uint32_t count() const {
     uint32_t count = 0;
     for (size_t i = 0; i < kUnits; i++) {
-      count += BitCount(units_[i]);
+      count += absl::popcount(units_[i]);
     }
     return count;
   }

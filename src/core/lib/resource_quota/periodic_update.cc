@@ -56,9 +56,8 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
     // Store the remainder left. Note that updates_remaining_ may have been
     // decremented by another thread whilst we performed the above calculations:
     // we simply discard those decrements.
-    auto remaining = better_guess - expected_updates_per_period_;
-    expected_updates_per_period_ = better_guess;
-    updates_remaining_.store(remaining, std::memory_order_release);
+    updates_remaining_.store(better_guess - expected_updates_per_period_,
+                             std::memory_order_release);
     // Not quite done, return, try for longer.
     return false;
   }

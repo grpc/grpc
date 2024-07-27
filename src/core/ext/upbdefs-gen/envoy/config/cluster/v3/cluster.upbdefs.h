@@ -133,6 +133,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptio
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.UpstreamConnectionOptions.HappyEyeballsConfig");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_TrackClusterStats_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.TrackClusterStats");

@@ -236,7 +236,7 @@ static const upb_MiniTableSub envoy_data_accesslog_v3_ResponseFlags_submsgs[1] =
   {.UPB_PRIVATE(submsg) = &envoy__data__accesslog__v3__ResponseFlags__Unauthorized_msg_init},
 };
 
-static const upb_MiniTableField envoy_data_accesslog_v3_ResponseFlags__fields[27] = {
+static const upb_MiniTableField envoy_data_accesslog_v3_ResponseFlags__fields[28] = {
   {1, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {3, 11, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -264,12 +264,13 @@ static const upb_MiniTableField envoy_data_accesslog_v3_ResponseFlags__fields[27
   {25, UPB_SIZE(39, 32), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {26, UPB_SIZE(40, 33), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {27, UPB_SIZE(41, 34), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {28, UPB_SIZE(42, 35), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__data__accesslog__v3__ResponseFlags_msg_init = {
   &envoy_data_accesslog_v3_ResponseFlags_submsgs[0],
   &envoy_data_accesslog_v3_ResponseFlags__fields[0],
-  48, 27, kUpb_ExtMode_NonExtendable, 27, UPB_FASTTABLE_MASK(248), 0,
+  48, 28, kUpb_ExtMode_NonExtendable, 28, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.data.accesslog.v3.ResponseFlags",
 #endif
@@ -302,7 +303,7 @@ const upb_MiniTable envoy__data__accesslog__v3__ResponseFlags_msg_init = {
     {0x002000003f0001c8, &upb_psb1_2bt},
     {0x002100003f0001d0, &upb_psb1_2bt},
     {0x002200003f0001d8, &upb_psb1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002300003f0001e0, &upb_psb1_2bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

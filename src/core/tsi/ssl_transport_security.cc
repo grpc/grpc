@@ -206,7 +206,7 @@ static void init_openssl(void) {
     CRYPTO_set_locking_callback(openssl_locking_cb);
     CRYPTO_set_id_callback(openssl_thread_id_cb);
   } else {
-    LOG(INFO) << "OpenSSL callback has already been set.";
+    GRPC_TRACE_LOG(tsi, INFO) << "OpenSSL callback has already been set.";
   }
 #endif
   g_ssl_ctx_ex_factory_index =
@@ -228,7 +228,7 @@ static void init_openssl(void) {
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
   if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi)) {
-    LOG(INFO) << absl::StrFormat("%20.20s - %30.30s  - %5.10s", msg,
+    LOG(INFO) << absl::StrFormat("%20.20s - %s  - %s", msg,
                                  SSL_state_string_long(ssl),
                                  SSL_state_string(ssl));
   }
@@ -337,7 +337,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   bool is_verified_root_cert) {
   X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
-    LOG(INFO) << "Could not get subject name from certificate.";
+    GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
     return TSI_NOT_FOUND;
   }
   BIO* bio = BIO_new(BIO_s_mem());
@@ -893,8 +893,9 @@ static tsi_result build_alpn_protocol_name_list(
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
   if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
-    LOG(INFO) << "Certificate verification failed to find relevant CRL file. "
-                 "Ignoring error.";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "Certificate verification failed to find relevant CRL file. "
+           "Ignoring error.";
     return 1;
   }
   if (cert_error != 0) {
@@ -961,7 +962,8 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   int success =
       SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, root_cert);
   if (success == 0) {
-    LOG(INFO) << "Could not set verified root cert in SSL's ex_data";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "Could not set verified root cert in SSL's ex_data";
   } else {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     X509_up_ref(root_cert);
@@ -979,7 +981,7 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   if (ssl_index < 0) {
     char err_str[256];
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-    LOG(INFO)
+    GRPC_TRACE_LOG(tsi, INFO)
         << "error getting the SSL index from the X509_STORE_CTX while looking "
            "up Crl: "
         << err_str;
@@ -987,7 +989,8 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
-    LOG(INFO) << "error while fetching from CrlProvider. SSL object is null";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "error while fetching from CrlProvider. SSL object is null";
     return nullptr;
   }
   SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
@@ -1005,13 +1008,14 @@ static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
   }
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
-    LOG(INFO) << "Could not get certificate issuer name";
+    GRPC_TRACE_LOG(tsi, INFO) << "Could not get certificate issuer name";
     return absl::InvalidArgumentError(issuer_name.status().message());
   }
   absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
   std::string akid_to_use;
   if (!akid.ok()) {
-    LOG(INFO) << "Could not get certificate authority key identifier.";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "Could not get certificate authority key identifier.";
   } else {
     akid_to_use = *akid;
   }
@@ -1174,8 +1178,8 @@ static tsi_result tsi_set_min_and_max_tls_versions(
     SSL_CTX* ssl_context, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version) {
   if (ssl_context == nullptr) {
-    LOG(INFO) << "Invalid nullptr argument to "
-                 "|tsi_set_min_and_max_tls_versions|.";
+    GRPC_TRACE_LOG(tsi, INFO) << "Invalid nullptr argument to "
+                                 "|tsi_set_min_and_max_tls_versions|.";
     return TSI_INVALID_ARGUMENT;
   }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -1196,7 +1200,7 @@ static tsi_result tsi_set_min_and_max_tls_versions(
       break;
 #endif
     default:
-      LOG(INFO) << "TLS version is not supported.";
+      GRPC_TRACE_LOG(tsi, INFO) << "TLS version is not supported.";
       return TSI_FAILED_PRECONDITION;
   }
 
@@ -1215,7 +1219,7 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 #endif
       break;
     default:
-      LOG(INFO) << "TLS version is not supported.";
+      GRPC_TRACE_LOG(tsi, INFO) << "TLS version is not supported.";
       return TSI_FAILED_PRECONDITION;
   }
 #endif
@@ -1830,6 +1834,17 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
+      // Output Cipher information
+      if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
+        tsi_ssl_handshaker_result* result =
+            reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
+        auto cipher = SSL_get_current_cipher(result->ssl);
+        if (cipher != nullptr) {
+          GRPC_TRACE_LOG(tsi, INFO) << absl::StrFormat(
+              "SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher),
+              SSL_CIPHER_get_name(cipher));
+        }
+      }
     }
   }
   return status;

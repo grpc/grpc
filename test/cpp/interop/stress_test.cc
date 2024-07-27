@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
                             server_addresses);
 
   // Parse test cases and weights
-  if (absl::GetFlag(FLAGS_test_cases).length() == 0) {
+  if (absl::GetFlag(FLAGS_test_cases).empty()) {
     LOG(ERROR) << "No test cases supplied";
     return 1;
   }

@@ -394,3 +394,19 @@ grpc_cc_benchmark(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_benchmark(
+    name = "bm_stats_plugin",
+    srcs = ["bm_stats_plugin.cc"],
+    external_deps = [
+        "absl/strings",
+        "otel/sdk/src/metrics",
+    ],
+    deps = [
+        ":helpers",
+        "//src/core:metrics",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
