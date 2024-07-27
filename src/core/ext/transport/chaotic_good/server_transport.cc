@@ -93,10 +93,8 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
                }
                if (end_of_stream || !status.ok()) {
                  call_initiator.FinishSends();
-                 // We have received end_of_stream. It is now safe to remove
-                 // the call from the stream map.
-                 MutexLock lock(&mu_);
-                 stream_map_.erase(stream_id);
+                 // Note that we cannot remove from the stream map yet, as we
+                 // may yet receive a cancellation.
                }
                return Success{};
              });
@@ -308,6 +306,10 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                  [this, &frame_header]() {
                    absl::optional<CallInitiator> call_initiator =
                        ExtractStream(frame_header.stream_id);
+                   GRPC_TRACE_LOG(chaotic_good, INFO)
+                       << "Cancel stream " << frame_header.stream_id
+                       << (call_initiator.has_value() ? " (active)"
+                                                      : " (not found)");
                    return If(
                        call_initiator.has_value(),
                        [&call_initiator]() {
@@ -414,6 +416,8 @@ void ChaoticGoodServerTransport::AbortWithError() {
 
 absl::optional<CallInitiator> ChaoticGoodServerTransport::LookupStream(
     uint32_t stream_id) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD " << this << " LookupStream " << stream_id;
   MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return absl::nullopt;
@@ -422,6 +426,8 @@ absl::optional<CallInitiator> ChaoticGoodServerTransport::LookupStream(
 
 absl::optional<CallInitiator> ChaoticGoodServerTransport::ExtractStream(
     uint32_t stream_id) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD " << this << " ExtractStream " << stream_id;
   MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return absl::nullopt;
@@ -432,6 +438,8 @@ absl::optional<CallInitiator> ChaoticGoodServerTransport::ExtractStream(
 
 absl::Status ChaoticGoodServerTransport::NewStream(
     uint32_t stream_id, CallInitiator call_initiator) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
   MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it != stream_map_.end()) {
@@ -441,9 +449,17 @@ absl::Status ChaoticGoodServerTransport::NewStream(
     return absl::InternalError("Stream id is not increasing");
   }
   stream_map_.emplace(stream_id, call_initiator);
-  call_initiator.OnDone([this, stream_id]() {
-    MutexLock lock(&mu_);
-    stream_map_.erase(stream_id);
+  call_initiator.OnDone([this, stream_id](bool) {
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD " << this << " OnDone " << stream_id;
+    absl::optional<CallInitiator> call_initiator = ExtractStream(stream_id);
+    if (call_initiator.has_value()) {
+      auto c = std::move(*call_initiator);
+      c.SpawnInfallible("cancel", [c]() mutable {
+        c.Cancel();
+        return Empty{};
+      });
+    }
   });
   return absl::OkStatus();
 }
