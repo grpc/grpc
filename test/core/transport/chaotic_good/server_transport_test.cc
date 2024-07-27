@@ -71,13 +71,13 @@ const uint8_t kGrpcStatus0[] = {0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
                                 0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ServerMetadataHandle TestInitialMetadata() {
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
 
 ServerMetadataHandle TestTrailingMetadata() {
-  auto md = Arena::MakePooled<ServerMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
   md->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
   return md;
 }

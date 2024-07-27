@@ -87,6 +87,12 @@ def ParseCommandLineArguments(args):
         action="store_false",
         help="If specified, disables checking experiment expiry dates",
     )
+    flag_parser.add_argument(
+        "--no_dbg_experiments",
+        action="store_true",
+        help="Prohibit 'debug' configurations",
+        default=False,
+    )
     return flag_parser.parse_args(args)
 
 
@@ -161,6 +167,10 @@ def _GenerateExperimentFiles(args, mode):
         if not compiler.AddRolloutSpecification(rollout_attr):
             print("ERROR adding rollout spec")
             sys.exit(1)
+
+    if mode != "test" and args.no_dbg_experiments:
+        print("Ensuring no debug experiments are configured")
+        compiler.EnsureNoDebugExperiments()
 
     print(f"Mode = {mode} Generating experiments headers")
     compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE, mode)

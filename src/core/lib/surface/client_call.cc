@@ -312,7 +312,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                 ServerMetadataHandle metadata;
                 if (!md.ok() || !md->has_value()) {
                   is_trailers_only_ = true;
-                  metadata = Arena::MakePooled<ServerMetadata>();
+                  metadata = Arena::MakePooledForOverwrite<ServerMetadata>();
                 } else {
                   metadata = std::move(md->value());
                   is_trailers_only_ =

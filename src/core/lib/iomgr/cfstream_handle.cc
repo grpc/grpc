@@ -24,6 +24,8 @@
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
@@ -64,8 +66,8 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
-            stream, type, client_callback_info);
+    VLOG(2) << "CFStream ReadCallback (" << handle << ", " << stream << ", "
+            << type << ", " << client_callback_info << ")";
   }
   switch (type) {
     case kCFStreamEventOpenCompleted:
@@ -98,8 +100,8 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
-            stream, type, clientCallBackInfo);
+    VLOG(2) << "CFStream WriteCallback (" << handle << ", " << stream << ", "
+            << type << ", " << clientCallBackInfo << ")";
   }
   switch (type) {
     case kCFStreamEventOpenCompleted:
@@ -176,9 +178,8 @@ void CFStreamHandle::Shutdown(grpc_error_handle error) {
 void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "CFStream Handle ref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
-            reason, val, val + 1);
+    VLOG(2).AtLocation(file, line) << "CFStream Handle ref " << this << " : "
+                                   << reason << " " << val << " -> " << val + 1;
   }
   gpr_ref(&refcount_);
 }
@@ -186,9 +187,8 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
-            reason, val, val - 1);
+    VLOG(2).AtLocation(file, line) << "CFStream Handle unref " << this << " : "
+                                   << reason << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&refcount_)) {
     delete this;

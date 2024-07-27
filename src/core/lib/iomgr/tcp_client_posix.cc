@@ -34,7 +34,6 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -143,8 +142,8 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
+    LOG(INFO) << "CLIENT_CONNECT: " << ac->addr_str
+              << ": on_alarm: error=" << grpc_core::StatusToString(error);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
@@ -182,8 +181,8 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_fd* fd;
 
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
+    LOG(INFO) << "CLIENT_CONNECT: " << ac->addr_str
+              << ": on_writable: error=" << grpc_core::StatusToString(error);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -383,8 +382,8 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->options = options;
 
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
-            ac->addr_str.c_str(), fdobj);
+    LOG(INFO) << "CLIENT_CONNECT: " << ac->addr_str
+              << ": asynchronously connecting fd " << fdobj;
   }
 
   int shard_number = connection_id % (*g_connection_shards).size();
