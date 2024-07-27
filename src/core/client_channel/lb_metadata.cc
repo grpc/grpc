@@ -75,10 +75,13 @@ LbMetadata::TestOnlyCopyToVector() const {
 void MetadataMutationHandler::Apply(
     LoadBalancingPolicy::MetadataMutations& metadata_mutations,
     grpc_metadata_batch* metadata) {
-  for (auto& p : metadata_mutations.additions_) {
+  for (auto& p : metadata_mutations.metadata_) {
     absl::string_view key = p.first;
     Slice& value =
         grpc_event_engine::experimental::internal::SliceCast<Slice>(p.second);
+    // TODO(roth): Should we prevent this from setting special keys like
+    // :authority, :path, content-type, etc?
+    metadata->Remove(key);
     // Gross, egregious hack to support legacy grpclb behavior.
     // TODO(ctiller): Use a promise context for this once that plumbing is done.
     if (key == GrpcLbClientStatsMetadata::key()) {
@@ -94,6 +97,24 @@ void MetadataMutationHandler::Apply(
                                   << " value:" << value.as_string_view();
                      });
   }
+}
+
+//
+// MaybeOverrideAuthority()
+//
+
+void MaybeOverrideAuthority(
+    grpc_event_engine::experimental::Slice authority_override,
+    grpc_metadata_batch* metadata) {
+  // Skip if no override requested.
+  if (authority_override.empty()) return;
+  // Skip if authority already set by the application on this RPC.
+  if (metadata->get_pointer(HttpAuthorityMetadata()) != nullptr) return;
+  // Otherwise, apply override.
+  Slice& authority =
+      grpc_event_engine::experimental::internal::SliceCast<Slice>(
+          authority_override);
+  metadata->Set(HttpAuthorityMetadata(), std::move(authority));
 }
 
 }  // namespace grpc_core

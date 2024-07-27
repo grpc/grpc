@@ -33,12 +33,18 @@ const upb_MiniTable envoy__config__listener__v3__UdpListenerConfig_msg_init = {
   &envoy_config_listener_v3_UdpListenerConfig_submsgs[0],
   &envoy_config_listener_v3_UdpListenerConfig__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.listener.v3.UdpListenerConfig",
+#endif
 };
 
 const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.listener.v3.ActiveRawUdpListenerConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[2] = {

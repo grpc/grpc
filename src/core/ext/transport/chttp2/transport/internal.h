@@ -545,6 +545,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
   uint8_t ping_on_rst_stream_percent;
+
+  GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
 
 typedef enum {
@@ -553,6 +555,51 @@ typedef enum {
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
   GRPC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
+
+namespace grpc_core {
+
+// A CallTracer wrapper that updates both the legacy and new APIs for
+// transport byte sizes.
+// TODO(ctiller): This can go away as part of removing the
+// grpc_transport_stream_stats struct.
+class Chttp2CallTracerWrapper final : public CallTracerInterface {
+ public:
+  explicit Chttp2CallTracerWrapper(grpc_chttp2_stream* stream)
+      : stream_(stream) {}
+
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override;
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override;
+
+  // Everything else is a no-op.
+  void RecordSendInitialMetadata(
+      grpc_metadata_batch* /*send_initial_metadata*/) override {}
+  void RecordSendTrailingMetadata(
+      grpc_metadata_batch* /*send_trailing_metadata*/) override {}
+  void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
+  void RecordSendCompressedMessage(
+      const SliceBuffer& /*send_compressed_message*/) override {}
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* /*recv_initial_metadata*/) override {}
+  void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
+  void RecordReceivedDecompressedMessage(
+      const SliceBuffer& /*recv_decompressed_message*/) override {}
+  void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
+  void RecordAnnotation(absl::string_view /*annotation*/) override {}
+  void RecordAnnotation(const Annotation& /*annotation*/) override {}
+  std::string TraceId() override { return ""; }
+  std::string SpanId() override { return ""; }
+  bool IsSampled() override { return false; }
+
+ private:
+  grpc_chttp2_stream* stream_;
+};
+
+}  // namespace grpc_core
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
@@ -653,7 +700,11 @@ struct grpc_chttp2_stream {
   /// Number of times written
   int64_t write_counter = 0;
 
+  grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
+
   /// Only set when enabled.
+  // TODO(roth): Remove this when the call_tracer_in_transport
+  // experiment finishes rolling out.
   grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
 
   /// Only set when enabled.
@@ -808,13 +859,8 @@ void grpc_chttp2_settings_timeout(
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-//
-#define GRPC_CHTTP2_IF_TRACING(stmt)     \
-  do {                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(http)) { \
-      (stmt);                            \
-    }                                    \
-  } while (0)
+#define GRPC_CHTTP2_IF_TRACING(severity) \
+  LOG_IF(severity, GRPC_TRACE_FLAG_ENABLED(http))
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
                              grpc_chttp2_stream* stream,

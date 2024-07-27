@@ -29,7 +29,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 /// -- Wrapper APIs declared in grpc_security.h -- *
@@ -122,16 +121,15 @@ void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
   if (!tsi_tls_session_key_logging_supported() || options == nullptr) {
     return;
   }
-  GRPC_API_TRACE(
-      "grpc_tls_credentials_options_set_tls_session_key_log_config(options=%p)",
-      1, (options));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_tls_credentials_options_set_tls_session_key_log_config(options="
+      << options << ")";
   // Tls session key logging is assumed to be enabled if the specified log
   // file is non-empty.
   if (path != nullptr) {
-    LOG(INFO) << "Enabling TLS session key logging with keys stored at: "
-              << path;
+    VLOG(2) << "Enabling TLS session key logging with keys stored at: " << path;
   } else {
-    LOG(INFO) << "Disabling TLS session key logging";
+    VLOG(2) << "Disabling TLS session key logging";
   }
   options->set_tls_session_key_log_file_path(path != nullptr ? path : "");
 }

@@ -25,6 +25,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -33,7 +34,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -82,11 +82,9 @@ HandshakeManager::HandshakeManager()
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    gpr_log(
-        GPR_INFO,
-        "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
-        this, std::string(handshaker->name()).c_str(), handshaker.get(),
-        handshakers_.size());
+    LOG(INFO) << "handshake_manager " << this << ": adding handshaker "
+              << std::string(handshaker->name()) << " [" << handshaker.get()
+              << "] at index " << handshakers_.size();
   }
   handshakers_.push_back(std::move(handshaker));
 }
@@ -142,17 +140,15 @@ void HandshakeManager::Shutdown(absl::Status error) {
   MutexLock lock(&mu_);
   if (!is_shutdown_) {
     if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      gpr_log(GPR_INFO, "handshake_manager %p: Shutdown() called: %s", this,
-              error.ToString().c_str());
+      LOG(INFO) << "handshake_manager " << this
+                << ": Shutdown() called: " << error;
     }
     is_shutdown_ = true;
     // Shutdown the handshaker that's currently in progress, if any.
     if (index_ > 0) {
       if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-        gpr_log(
-            GPR_INFO,
-            "handshake_manager %p: shutting down handshaker at index %" PRIuPTR,
-            this, index_ - 1);
+        LOG(INFO) << "handshake_manager " << this
+                  << ": shutting down handshaker at index " << index_ - 1;
       }
       handshakers_[index_ - 1]->Shutdown(std::move(error));
     }
@@ -161,11 +157,9 @@ void HandshakeManager::Shutdown(absl::Status error) {
 
 void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    gpr_log(GPR_INFO,
-            "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
-            ", args=%s",
-            this, error.ToString().c_str(), is_shutdown_, index_,
-            HandshakerArgsString(&args_).c_str());
+    LOG(INFO) << "handshake_manager " << this << ": error=" << error
+              << " shutdown=" << is_shutdown_ << " index=" << index_
+              << ", args=" << HandshakerArgsString(&args_);
   }
   CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
@@ -178,10 +172,10 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       args_.endpoint.reset();
     }
     if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      gpr_log(GPR_INFO,
-              "handshake_manager %p: handshaking complete -- scheduling "
-              "on_handshake_done with error=%s",
-              this, error.ToString().c_str());
+      LOG(INFO) << "handshake_manager " << this
+                << ": handshaking complete -- scheduling "
+                   "on_handshake_done with error="
+                << error;
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
@@ -202,11 +196,9 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   // Call the next handshaker.
   auto handshaker = handshakers_[index_];
   if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    gpr_log(
-        GPR_INFO,
-        "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
-        this, std::string(handshaker->name()).c_str(), handshaker.get(),
-        index_);
+    LOG(INFO) << "handshake_manager " << this << ": calling handshaker "
+              << handshaker->name() << " [" << handshaker.get() << "] at index "
+              << index_;
   }
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {

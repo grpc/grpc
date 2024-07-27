@@ -41,7 +41,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -57,7 +56,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -118,8 +116,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
   Json json;
   auto json_or = grpc_core::JsonParse(json_string);
   if (!json_or.ok()) {
-    gpr_log(GPR_ERROR, "JSON parsing failed: %s",
-            json_or.status().ToString().c_str());
+    LOG(ERROR) << "JSON parsing failed: " << json_or.status();
   } else {
     json = std::move(*json_or);
   }
@@ -175,9 +172,10 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   }
 
   if (response->status != 200) {
-    gpr_log(GPR_ERROR, "Call to http server ended with error %d [%s].",
-            response->status,
-            null_terminated_body != nullptr ? null_terminated_body : "");
+    LOG(ERROR) << "Call to http server ended with error " << response->status
+               << " ["
+               << (null_terminated_body != nullptr ? null_terminated_body : "")
+               << "]";
     status = GRPC_CREDENTIALS_ERROR;
     goto end;
   } else {
@@ -188,8 +186,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     auto json = grpc_core::JsonParse(
         null_terminated_body != nullptr ? null_terminated_body : "");
     if (!json.ok()) {
-      gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
-              null_terminated_body, json.status().ToString().c_str());
+      LOG(ERROR) << "Could not parse JSON from " << null_terminated_body << ": "
+                 << json.status();
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
@@ -424,8 +422,8 @@ class grpc_compute_engine_token_fetcher_credentials
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved) {
-  GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1,
-                 (reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
@@ -514,10 +512,9 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
   grpc_auth_refresh_token token =
       grpc_auth_refresh_token_create_from_string(json_refresh_token);
   if (GRPC_TRACE_FLAG_ENABLED(api)) {
-    gpr_log(GPR_INFO,
-            "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
-            "reserved=%p)",
-            create_loggable_refresh_token(&token).c_str(), reserved);
+    LOG(INFO) << "grpc_refresh_token_credentials_create(json_refresh_token="
+              << create_loggable_refresh_token(&token)
+              << ", reserved=" << reserved << ")";
   }
   CHECK_EQ(reserved, nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
@@ -541,8 +538,8 @@ void MaybeAddToBody(const char* field_name, const char* field,
 grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
   auto slice = LoadFile(path, /*add_null_terminator=*/true);
   if (!slice.ok()) return slice.status();
-  if (slice->length() == 0) {
-    gpr_log(GPR_ERROR, "Token file %s is empty", path);
+  if (slice->empty()) {
+    LOG(ERROR) << "Token file " << path << " is empty";
     return GRPC_ERROR_CREATE("Token file is empty.");
   }
   *token = slice->TakeCSlice();
@@ -706,8 +703,8 @@ grpc_call_credentials* grpc_sts_credentials_create(
   absl::StatusOr<grpc_core::URI> sts_url =
       grpc_core::ValidateStsCredentialsOptions(options);
   if (!sts_url.ok()) {
-    gpr_log(GPR_ERROR, "STS Credentials creation failed. Error: %s.",
-            sts_url.status().ToString().c_str());
+    LOG(ERROR) << "STS Credentials creation failed. Error: "
+               << sts_url.status();
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_core::StsTokenFetcherCredentials>(
@@ -745,10 +742,9 @@ std::string grpc_access_token_credentials::debug_string() {
 
 grpc_call_credentials* grpc_access_token_credentials_create(
     const char* access_token, void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_access_token_credentials_create(access_token=<redacted>, "
-      "reserved=%p)",
-      1, (reserved));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_access_token_credentials_create(access_"
+                               "token=<redacted>, reserved="
+                            << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();

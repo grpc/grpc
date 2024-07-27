@@ -59,6 +59,7 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -129,6 +130,7 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
+  GRPC_LATENT_SEE_PARENT_SCOPE("ClientCall::StartBatch");
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
@@ -310,7 +312,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                 ServerMetadataHandle metadata;
                 if (!md.ok() || !md->has_value()) {
                   is_trailers_only_ = true;
-                  metadata = Arena::MakePooled<ServerMetadata>();
+                  metadata = Arena::MakePooledForOverwrite<ServerMetadata>();
                 } else {
                   metadata = std::move(md->value());
                   is_trailers_only_ =

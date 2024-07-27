@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 42.0.0
+PROJECT_NUMBER         = 43.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
 doc/core/grpc-polling-engines.md \
+doc/core/latent_see.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
 doc/core/transport_explainer.md \
@@ -2419,7 +2420,6 @@ src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/README.md \
-src/core/lib/surface/api_trace.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
@@ -2716,6 +2716,8 @@ src/core/util/json/json_util.cc \
 src/core/util/json/json_util.h \
 src/core/util/json/json_writer.cc \
 src/core/util/json/json_writer.h \
+src/core/util/latent_see.cc \
+src/core/util/latent_see.h \
 src/core/util/linux/cpu.cc \
 src/core/util/linux/log.cc \
 src/core/util/log.cc \
@@ -2758,18 +2760,25 @@ src/core/xds/grpc/xds_client_grpc.cc \
 src/core/xds/grpc/xds_client_grpc.h \
 src/core/xds/grpc/xds_cluster.cc \
 src/core/xds/grpc/xds_cluster.h \
+src/core/xds/grpc/xds_cluster_parser.cc \
+src/core/xds/grpc/xds_cluster_parser.h \
 src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
 src/core/xds/grpc/xds_cluster_specifier_plugin.h \
 src/core/xds/grpc/xds_common_types.cc \
 src/core/xds/grpc/xds_common_types.h \
+src/core/xds/grpc/xds_common_types_parser.cc \
+src/core/xds/grpc/xds_common_types_parser.h \
 src/core/xds/grpc/xds_endpoint.cc \
 src/core/xds/grpc/xds_endpoint.h \
+src/core/xds/grpc/xds_endpoint_parser.cc \
+src/core/xds/grpc/xds_endpoint_parser.h \
 src/core/xds/grpc/xds_health_status.cc \
 src/core/xds/grpc/xds_health_status.h \
 src/core/xds/grpc/xds_http_fault_filter.cc \
 src/core/xds/grpc/xds_http_fault_filter.h \
-src/core/xds/grpc/xds_http_filters.cc \
-src/core/xds/grpc/xds_http_filters.h \
+src/core/xds/grpc/xds_http_filter.h \
+src/core/xds/grpc/xds_http_filter_registry.cc \
+src/core/xds/grpc/xds_http_filter_registry.h \
 src/core/xds/grpc/xds_http_rbac_filter.cc \
 src/core/xds/grpc/xds_http_rbac_filter.h \
 src/core/xds/grpc/xds_http_stateful_session_filter.cc \
@@ -2778,10 +2787,16 @@ src/core/xds/grpc/xds_lb_policy_registry.cc \
 src/core/xds/grpc/xds_lb_policy_registry.h \
 src/core/xds/grpc/xds_listener.cc \
 src/core/xds/grpc/xds_listener.h \
+src/core/xds/grpc/xds_listener_parser.cc \
+src/core/xds/grpc/xds_listener_parser.h \
 src/core/xds/grpc/xds_route_config.cc \
 src/core/xds/grpc/xds_route_config.h \
+src/core/xds/grpc/xds_route_config_parser.cc \
+src/core/xds/grpc/xds_route_config_parser.h \
 src/core/xds/grpc/xds_routing.cc \
 src/core/xds/grpc/xds_routing.h \
+src/core/xds/grpc/xds_server_grpc.cc \
+src/core/xds/grpc/xds_server_grpc.h \
 src/core/xds/grpc/xds_transport_grpc.cc \
 src/core/xds/grpc/xds_transport_grpc.h \
 src/core/xds/xds_client/xds_api.cc \

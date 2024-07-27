@@ -166,6 +166,9 @@ TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
 
 class XdsServerTlsTest : public XdsEnd2endTest {
  protected:
+  XdsServerTlsTest()
+      : XdsEnd2endTest(/*balancer_credentials=*/CreateTlsServerCredentials()) {}
+
   void SetUp() override {
     InitClient(MakeBootstrapBuilder().SetXdsChannelCredentials(
                    "tls", absl::StrCat("{\"ca_certificate_file\": \"",
@@ -176,10 +179,8 @@ class XdsServerTlsTest : public XdsEnd2endTest {
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsServerTlsTest,
-    ::testing::Values(XdsTestType().set_xds_server_uses_tls_creds(true)),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerTlsTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsServerTlsTest, Basic) {
   CreateAndStartBackends(1);

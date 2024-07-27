@@ -244,7 +244,10 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::Flusher
 
-BaseCallData::Flusher::Flusher(BaseCallData* call) : call_(call) {
+BaseCallData::Flusher::Flusher(BaseCallData* call)
+    : latent_see::InnerScope(
+          GRPC_LATENT_SEE_METADATA("PromiseBasedFilter Flusher")),
+      call_(call) {
   GRPC_CALL_STACK_REF(call_->call_stack(), "flusher");
 }
 
