@@ -23,7 +23,7 @@ import logging
 import sys
 import threading
 import types
-from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple
+from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple, Iterator, Iterable
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -36,9 +36,9 @@ from grpc._typing import GeneralIterableType
 from grpc._typing import InterceptorType
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
-from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
+from grpc._typing import ArityAgnosticMethodHandler
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -312,6 +312,9 @@ class StatusCode(enum.Enum):
 
 
 class Status(abc.ABC):
+    code: StatusCode
+    details: str
+    trailing_metadata: MetadataType
     """Describes the status of an RPC.
 
     This is an EXPERIMENTAL API.
@@ -440,6 +443,12 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 
 
 class ClientCallDetails(abc.ABC):
+    method: bytes
+    timeout: Optional[float]
+    metadata: Optional[MetadataType]
+    credentials: Optional[CallCredentials]
+    wait_for_ready: Optional[bool]
+    compression: Compression
     """Describes an RPC to be invoked.
 
     Attributes:
@@ -543,9 +552,9 @@ class StreamUnaryClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_stream_unary(
         self,
-        continuation: Callable[[ClientCallDetails, RequestIterableType], Any],
+        continuation: Callable[[ClientCallDetails, Iterable], Any],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
+        request_iterator: Iterable,
     ) -> Any:
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -583,9 +592,9 @@ class StreamStreamClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_stream_stream(
         self,
-        continuation: Callable[[ClientCallDetails, RequestIterableType], Any],
+        continuation: Callable[[ClientCallDetails, Iterable], Any],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
+        request_iterator: Iterable,
     ) -> Any:
         """Intercepts a stream-stream invocation.
 
@@ -871,7 +880,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -906,7 +915,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: Iterable,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -941,7 +950,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: Iterable,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -978,7 +987,7 @@ class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: Iterable,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -1022,7 +1031,7 @@ class Channel(abc.ABC):
     def subscribe(
         self,
         callback: Callable[[ChannelConnectivity], None],
-        try_to_connect: bool = False,
+        try_to_connect: Optional[bool] = False,
     ) -> None:
         """Subscribe to this Channel's connectivity state machine.
 
@@ -1061,7 +1070,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: bool = False,
+        _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1086,7 +1095,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: bool = False,
+        _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1111,7 +1120,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: bool = False,
+        _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1136,7 +1145,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: bool = False,
+        _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
@@ -1191,7 +1200,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer(self) -> str:
+    def peer(self) -> Optional[str]:
         """Identifies the peer that invoked the RPC being serviced.
 
         Returns:
@@ -1227,7 +1236,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def auth_context(self) -> Mapping[str, Sequence[bytes]]:
+    def auth_context(self) -> Mapping[Optional[str], Sequence[bytes]]:
         """Gets the auth context for the call.
 
         Returns:
@@ -1353,7 +1362,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def code(self) -> StatusCode:
+    def code(self) -> Optional[StatusCode]:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1386,6 +1395,15 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
 
 class RpcMethodHandler(abc.ABC):
+    request_streaming: Iterator
+    response_streaming: Iterator
+    request_deserializer: Optional[DeserializingFunction]
+    response_serializer: Optional[SerializingFunction]
+    unary_unary: ArityAgnosticMethodHandler
+    unary_stream: ArityAgnosticMethodHandler
+    stream_unary: ArityAgnosticMethodHandler
+    stream_stream: ArityAgnosticMethodHandler
+
     """An implementation of a single RPC method.
 
     Attributes:
@@ -2239,7 +2257,7 @@ def insecure_channel(
 
 def secure_channel(
     target: str,
-    credentials: ChannelCredentials,
+    credentials: Optional[ChannelCredentials],
     options: Optional[Sequence[ChannelArgumentType]] = None,
     compression: Optional[Compression] = None,
 ) -> Channel:
@@ -2261,7 +2279,7 @@ def secure_channel(
     from grpc import _channel  # pylint: disable=cyclic-import
     from grpc.experimental import _insecure_channel_credentials
 
-    if credentials._credentials is _insecure_channel_credentials:
+    if credentials._credentials is _insecure_channel_credentials: # type: ignore[union-attr]
         raise ValueError(
             "secure_channel cannot be called with insecure credentials."
             + " Call insecure_channel instead."
@@ -2269,13 +2287,13 @@ def secure_channel(
     return _channel.Channel(
         target,
         () if options is None else options,
-        credentials._credentials,
+        credentials._credentials, # type: ignore[union-attr]
         compression,
     )
 
 
 def intercept_channel(
-    channel: Channel, *interceptors: InterceptorType
+    channel: Channel, *interceptors: Sequence[InterceptorType]
 ) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
