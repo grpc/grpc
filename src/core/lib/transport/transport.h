@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -35,7 +36,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -191,8 +191,8 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
+    VLOG(2) << refcount->object_type << " " << refcount << ":"
+            << refcount->destroy.cb_arg << " REF " << reason;
   }
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
@@ -208,8 +208,8 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
+    VLOG(2) << refcount->object_type << " " << refcount << ":"
+            << refcount->destroy.cb_arg << " UNREF " << reason;
   }
   if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
     grpc_stream_destroy(refcount);

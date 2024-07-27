@@ -25,6 +25,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -85,7 +86,7 @@ class ServiceConfigCallData {
 
   template <typename A>
   A* GetCallAttribute() const {
-    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+    return DownCast<A*>(GetCallAttribute(A::TypeName()));
   }
 
   CallAttributeInterface* GetCallAttribute(UniqueTypeName type) const {
