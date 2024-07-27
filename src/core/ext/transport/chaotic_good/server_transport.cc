@@ -86,8 +86,8 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
                        std::move(frame.message->message));
                  },
                  []() -> StatusFlag { return Success{}; }),
-             [this, call_initiator, end_of_stream = frame.end_of_stream,
-              stream_id](StatusFlag status) mutable -> StatusFlag {
+             [call_initiator, end_of_stream = frame.end_of_stream](
+                 StatusFlag status) mutable -> StatusFlag {
                if (!status.ok() && GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
                  LOG(INFO) << "CHAOTIC_GOOD: Failed PushFragmentIntoCall";
                }
