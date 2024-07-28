@@ -394,7 +394,7 @@ class Party : public Activity, private Wakeable {
       const char* op, uint64_t prev_state, uint64_t new_state,
       DebugLocation loc = {}) {
     GRPC_TRACE_LOG(party_state, INFO).AtLocation(loc.file(), loc.line())
-        << DebugTag() << " " << op << " "
+        << "PARTY[" << this << "]" << op << " "
         << absl::StrFormat("%016" PRIx64 " -> %016" PRIx64, prev_state,
                            new_state);
   }
