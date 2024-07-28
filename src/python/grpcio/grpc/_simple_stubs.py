@@ -190,11 +190,11 @@ class ChannelCache:
             channel_data = self._mapping.get(key, None)
             call_handle = None
             if channel_data is not None:
-                channel : grpc.Channel = channel_data[0]
+                channel: grpc.Channel = channel_data[0]
                 # Register a new call handle if we're calling a registered method for an
                 # existing channel and this method is not registered.
                 if _registered_method:
-                    call_handle = channel._get_registered_call_handle(method) # type: ignore
+                    call_handle = channel._get_registered_call_handle(method)  # type: ignore
                 self._mapping.pop(key)
                 self._mapping[key] = (
                     channel,
@@ -206,7 +206,7 @@ class ChannelCache:
                     target, options, channel_credentials, compression
                 )
                 if _registered_method:
-                    call_handle = channel._get_registered_call_handle(method) # type: ignore
+                    call_handle = channel._get_registered_call_handle(method)  # type: ignore
                 self._mapping[key] = (
                     channel,
                     datetime.datetime.now() + _EVICTION_PERIOD,

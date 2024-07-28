@@ -124,7 +124,7 @@ def metadata_plugin_call_credentials(
 ) -> grpc.CallCredentials:
     if name is None:
         try:
-            effective_name = metadata_plugin.__name__ # type: ignore
+            effective_name = metadata_plugin.__name__  # type: ignore
         except AttributeError:
             effective_name = metadata_plugin.__class__.__name__
     else:

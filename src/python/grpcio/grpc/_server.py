@@ -231,7 +231,7 @@ def _possibly_finish_call(
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
         state.callbacks = None
-        return state, callbacks # type: ignore
+        return state, callbacks  # type: ignore
     else:
         return None, ()
 
@@ -478,9 +478,7 @@ class _Context(grpc.ServicerContext):
 
     def abort_with_status(self, status: grpc.Status) -> NoReturn:
         self._state.trailing_metadata = status.trailing_metadata
-        self.abort(
-            status.code, status.details
-        )
+        self.abort(status.code, status.details)
 
     def set_code(self, code: grpc.StatusCode) -> None:
         with self._state.condition:
@@ -611,7 +609,9 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[Optional[ResponseType], Optional[Iterator[ResponseType]]], bool]:
+) -> Tuple[
+    Union[Optional[ResponseType], Optional[Iterator[ResponseType]]], bool
+]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
@@ -620,11 +620,11 @@ def _call_behavior(
         try:
             response_or_iterator = None
             if send_response_callback is not None:
-                response_or_iterator = behavior( # type: ignore[call-arg]
+                response_or_iterator = behavior(  # type: ignore[call-arg]
                     argument, context, send_response_callback
-                ) 
+                )
             else:
-                response_or_iterator = behavior(argument, context) # type: ignore[call-arg]
+                response_or_iterator = behavior(argument, context)  # type: ignore[call-arg]
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -808,7 +808,7 @@ def _unary_response_in_pool(
     try:
         argument = argument_thunk()
         if argument is not None:
-            response, proceed = _call_behavior( # type: ignore
+            response, proceed = _call_behavior(  # type: ignore
                 rpc_event, state, behavior, argument, request_deserializer
             )
             if proceed:
@@ -859,12 +859,12 @@ def _stream_response_in_pool(
                     send_response_callback=send_response,
                 )
             else:
-                response_iterator, proceed = _call_behavior( # type: ignore
+                response_iterator, proceed = _call_behavior(  # type: ignore
                     rpc_event, state, behavior, argument, request_deserializer
                 )
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, response_iterator # type: ignore
+                        rpc_event, state, send_response, response_iterator  # type: ignore
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -887,7 +887,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
             rpc_event, state, response_iterator
         )
         if proceed:
-            send_response_callback(response) # type: ignore
+            send_response_callback(response)  # type: ignore
             if not _is_rpc_state_active(state):
                 break
         else:
@@ -1031,21 +1031,21 @@ def _reject_rpc(
     rpc_state: _RPCState,
     status: Union[cygrpc.StatusCode, int],
     details: bytes,
-) -> None: 
+) -> None:
     operations = (
         _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
         cygrpc.SendStatusFromServerOperation(
             None, status, details, _EMPTY_FLAGS
         ),
-    ) # type: ignore
-    rpc_event.call.start_server_batch( # type: ignore
+    )  # type: ignore
+    rpc_event.call.start_server_batch(  # type: ignore
         operations,
         lambda ignored_event: (
             rpc_state,
             (),
         ),
-    ) 
+    )
 
 
 def _handle_with_method_handler(
@@ -1064,20 +1064,20 @@ def _handle_with_method_handler(
             if method_handler.response_streaming:
                 return _handle_stream_stream(
                     rpc_event, state, method_handler, thread_pool
-                ) # type: ignore
+                )  # type: ignore
             else:
                 return _handle_stream_unary(
                     rpc_event, state, method_handler, thread_pool
-                ) # type: ignore
+                )  # type: ignore
         else:
             if method_handler.response_streaming:
                 return _handle_unary_stream(
                     rpc_event, state, method_handler, thread_pool
-                ) # type: ignore
+                )  # type: ignore
             else:
                 return _handle_unary_unary(
                     rpc_event, state, method_handler, thread_pool
-                ) # type: ignore
+                )  # type: ignore
 
 
 def _handle_call(
@@ -1288,11 +1288,11 @@ def _process_event_and_continue(
                 state.registered_method_handlers.get(
                     registered_method_name, None
                 ),
-            ) # type: ignore
+            )  # type: ignore
         else:
             method_with_handler = _GenericMethod(
                 state.generic_handlers,
-            ) # type: ignore
+            )  # type: ignore
         with state.lock:
             state.due.remove(event.tag)
             concurrency_exceeded = (

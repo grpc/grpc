@@ -123,12 +123,12 @@ class _BaseMultiCallable:
         """
         metadata = metadata or Metadata()
         if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata) # type: ignore
+            metadata = Metadata.from_tuple(metadata)  # type: ignore
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression) # type: ignore
+                *_compression.augment_metadata(metadata, compression)  # type: ignore
             )
-        return metadata # type: ignore
+        return metadata  # type: ignore
 
 
 class UnaryUnaryMultiCallable(

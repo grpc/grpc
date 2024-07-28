@@ -34,6 +34,7 @@ def _has_runtime_proto_symbols(mod: types.ModuleType) -> bool:
 def _is_grpc_tools_importable() -> bool:
     try:
         import grpc_tools  # pylint: disable=unused-import # pytype: disable=import-error
+
         return True
     except ImportError as e:
         # NOTE: It's possible that we're encountering a transitive ImportError, so

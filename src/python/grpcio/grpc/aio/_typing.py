@@ -22,7 +22,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    Type
+    Type,
 )
 
 from grpc._cython.cygrpc import EOF

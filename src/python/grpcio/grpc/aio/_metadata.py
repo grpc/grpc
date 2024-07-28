@@ -93,13 +93,13 @@ class Metadata(abc.Collection):
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
-        return abc.KeysView(self) # type: ignore[arg-type]
+        return abc.KeysView(self)  # type: ignore[arg-type]
 
     def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self) # type: ignore[arg-type]
+        return abc.ValuesView(self)  # type: ignore[arg-type]
 
     def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self) # type: ignore[arg-type]
+        return abc.ItemsView(self)  # type: ignore[arg-type]
 
     def get(
         self, key: MetadataKey, default: MetadataValue = None

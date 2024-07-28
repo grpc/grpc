@@ -29,7 +29,6 @@ from ._typing import NullaryCallbackType
 from grpc._typing import InterceptorType
 
 
-
 class _ServicePipeline(object):
     interceptors: Tuple[grpc.ServerInterceptor, ...]
 
@@ -131,7 +130,7 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression # type: ignore
+    return method, timeout, metadata, credentials, wait_for_ready, compression  # type: ignore
 
 
 class _FailureOutcome(
@@ -811,11 +810,7 @@ class _Channel(grpc.Channel):
 
 def intercept_channel(
     channel: grpc.Channel,
-    *interceptors: Optional[
-        Tuple[
-            InterceptorType
-        ]
-    ],
+    *interceptors: Optional[Tuple[InterceptorType]],
 ) -> grpc.Channel:
     for interceptor in reversed(list(interceptors)):
         if (

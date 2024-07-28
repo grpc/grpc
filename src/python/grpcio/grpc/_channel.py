@@ -694,7 +694,7 @@ class _SingleThreadedRendezvous(
             if self._state.code is None:
                 if not self._state.callbacks:
                     self._state.callbacks = []
-                self._state.callbacks.append(functools.partial(fn, self)) # type: ignore
+                self._state.callbacks.append(functools.partial(fn, self))  # type: ignore
                 return
 
         fn(self)
@@ -1002,7 +1002,7 @@ def _start_unary_request(
             grpc.StatusCode.INTERNAL,
             "Exception serializing request!",
         )
-        error = _InactiveRpcError(state) 
+        error = _InactiveRpcError(state)
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -1234,14 +1234,14 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
             state.target = _common.decode(self._target)
-            call = self._managed_call( # type: ignore
+            call = self._managed_call(  # type: ignore
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
                 None,
                 deadline,
                 metadata,
                 None if credentials is None else credentials._credentials,
-                (operations,), # type: ignore 
+                (operations,),  # type: ignore
                 event_handler,
                 self._context,
                 self._registered_call_handle,
@@ -1308,7 +1308,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 grpc.StatusCode.INTERNAL,
                 "Exception serializing request!",
             )
-            raise _InactiveRpcError(state) 
+            raise _InactiveRpcError(state)
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = (
@@ -1896,7 +1896,7 @@ def _deliveries(
 def _deliver(
     state: _ChannelConnectivityState,
     initial_connectivity: grpc.ChannelConnectivity,
-    initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]], # type: ignore
+    initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],  # type: ignore
 ) -> None:
     connectivity = initial_connectivity
     callbacks = initial_callbacks
@@ -1912,7 +1912,7 @@ def _deliver(
         with state.lock:
             callbacks = _deliveries(state)
             if callbacks:
-                connectivity = state.connectivity # type: ignore
+                connectivity = state.connectivity  # type: ignore
             else:
                 state.delivering = False
                 return
