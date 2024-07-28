@@ -205,9 +205,10 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  party_->Spawn("chaotic-writer", TransportWriteLoop(transport),
+  party_->Spawn("client-chaotic-writer", TransportWriteLoop(transport),
                 OnTransportActivityDone("write_loop"));
-  party_->Spawn("chaotic-reader", TransportReadLoop(std::move(transport)),
+  party_->Spawn("client-chaotic-reader",
+                TransportReadLoop(std::move(transport)),
                 OnTransportActivityDone("read_loop"));
 }
 

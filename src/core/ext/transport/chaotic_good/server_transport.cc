@@ -367,9 +367,9 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  party_->Spawn("chaotic-writer", TransportWriteLoop(transport),
+  party_->Spawn("server-chaotic-writer", TransportWriteLoop(transport),
                 OnTransportActivityDone("writer"));
-  party_->Spawn("chaotic-reader", TransportReadLoop(transport),
+  party_->Spawn("server-chaotic-reader", TransportReadLoop(transport),
                 OnTransportActivityDone("reader"));
 }
 
@@ -382,6 +382,7 @@ void ChaoticGoodServerTransport::SetCallDestination(
 }
 
 void ChaoticGoodServerTransport::Orphan() {
+  AbortWithError();
   RefCountedPtr<Party> party;
   {
     MutexLock lock(&mu_);
