@@ -20,7 +20,7 @@ from collections import abc
 from typing import Any, Iterator, List, Optional, Tuple, Union
 
 MetadataKey = str
-MetadataValue = Union[str, bytes]
+MetadataValue = Union[str, bytes, None]
 
 
 class Metadata(abc.Collection):
@@ -93,13 +93,13 @@ class Metadata(abc.Collection):
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
-        return abc.KeysView(self)
+        return abc.KeysView(self) # type: ignore[arg-type]
 
     def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self)
+        return abc.ValuesView(self) # type: ignore[arg-type]
 
     def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self)
+        return abc.ItemsView(self) # type: ignore[arg-type]
 
     def get(
         self, key: MetadataKey, default: MetadataValue = None

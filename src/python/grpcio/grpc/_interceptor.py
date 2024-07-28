@@ -25,6 +25,9 @@ from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import SerializingFunction
+from ._typing import NullaryCallbackType
+from grpc._typing import InterceptorType
+
 
 
 class _ServicePipeline(object):
@@ -128,7 +131,7 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression
+    return method, timeout, metadata, credentials, wait_for_ready, compression # type: ignore
 
 
 class _FailureOutcome(
@@ -187,7 +190,7 @@ class _FailureOutcome(
     ) -> Optional[types.TracebackType]:
         return self._traceback
 
-    def add_callback(self, unused_callback) -> bool:
+    def add_callback(self, unused_callback: NullaryCallbackType) -> bool:
         return False
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -232,7 +235,7 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def cancel(self) -> bool:
         return self._call.cancel()
 
-    def add_callback(self, callback) -> bool:
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
         return self._call.add_callback(callback)
 
     def cancelled(self) -> bool:
@@ -809,13 +812,8 @@ class _Channel(grpc.Channel):
 def intercept_channel(
     channel: grpc.Channel,
     *interceptors: Optional[
-        Sequence[
-            Union[
-                grpc.UnaryUnaryClientInterceptor,
-                grpc.UnaryStreamClientInterceptor,
-                grpc.StreamStreamClientInterceptor,
-                grpc.StreamUnaryClientInterceptor,
-            ]
+        Tuple[
+            InterceptorType
         ]
     ],
 ) -> grpc.Channel:

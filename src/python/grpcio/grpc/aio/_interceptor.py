@@ -29,6 +29,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    Tuple,
 )
 
 import grpc
@@ -117,7 +118,7 @@ class ClientCallDetails(
 
     method: bytes
     timeout: Optional[float]
-    metadata: Optional[Metadata]
+    metadata: Optional[Sequence[Tuple[Union[str, bytes], Union[str, bytes]]]]
     credentials: Optional[grpc.CallCredentials]
     wait_for_ready: Optional[bool]
 
@@ -212,7 +213,7 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
             [ClientCallDetails, RequestType], StreamUnaryCall
         ],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
+        request_iterator: Optional[RequestIterableType],
     ) -> StreamUnaryCall:
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -506,7 +507,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            return await self._response_aiter.asend(None)
+            return await self._response_aiter.asend(None) # type: ignore
         except StopAsyncIteration:
             return cygrpc.EOF
 
@@ -561,8 +562,8 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         await asyncio.wait(
             (
                 self._loop.create_task(
-                    self._write_to_iterator_queue.put(request)
-                ),  # type: ignore
+                    self._write_to_iterator_queue.put(request)  # type: ignore
+                ), 
                 self._status_code_task,
             ),
             return_when=asyncio.FIRST_COMPLETED,
@@ -680,8 +681,8 @@ class InterceptedUnaryUnaryCall(
                     _run_interceptor, interceptors[1:]
                 )
                 call_or_response = await interceptors[0].intercept_unary_unary(
-                    continuation, client_call_details, request
-                )  # type: ignore
+                    continuation, client_call_details, request # type: ignore
+                )  
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return call_or_response
@@ -692,7 +693,7 @@ class InterceptedUnaryUnaryCall(
                 return UnaryUnaryCall(
                     request,
                     _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
+                    client_call_details.metadata, # type: ignore
                     client_call_details.credentials,
                     client_call_details.wait_for_ready,
                     self._channel,
@@ -806,7 +807,7 @@ class InterceptedUnaryStreamCall(
                 self._last_returned_call_from_interceptors = UnaryStreamCall(
                     request,
                     _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
+                    client_call_details.metadata, # type: ignore
                     client_call_details.credentials,
                     client_call_details.wait_for_ready,
                     self._channel,
@@ -912,7 +913,7 @@ class InterceptedStreamUnaryCall(
                 return StreamUnaryCall(
                     request_iterator,
                     _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
+                    client_call_details.metadata, # type: ignore
                     client_call_details.credentials,
                     client_call_details.wait_for_ready,
                     self._channel,
@@ -1011,8 +1012,8 @@ class InterceptedStreamStreamCall(
                 ].intercept_stream_stream(
                     continuation,  # type: ignore
                     client_call_details,
-                    request_iterator,
-                )  # type: ignore
+                    request_iterator, # type: ignore
+                )  
 
                 if isinstance(
                     call_or_response_iterator, _base_call.StreamStreamCall
@@ -1033,7 +1034,7 @@ class InterceptedStreamStreamCall(
                 self._last_returned_call_from_interceptors = StreamStreamCall(
                     request_iterator,
                     _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
+                    client_call_details.metadata, # type: ignore
                     client_call_details.credentials,
                     client_call_details.wait_for_ready,
                     self._channel,

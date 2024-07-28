@@ -48,6 +48,7 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
+from grpc._typing import RequestIterableType
 import grpc.experimental  # pytype: disable=pyi-error
 
 _LOGGER = logging.getLogger(__name__)
@@ -229,7 +230,7 @@ def _handle_event(
                     state.debug_error_string = batch_operation.error_string()
             state.rpc_end_time = time.perf_counter()
             _observability.maybe_record_rpc_latency(state)
-            callbacks.extend(state.callbacks)
+            callbacks.extend(state.callbacks or [])
             state.callbacks = None
     return callbacks
 
@@ -434,6 +435,15 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def done(self) -> bool:
         """See grpc.Future.done."""
         return True
+
+    def is_active(self) -> bool:
+        return False
+
+    def time_remaining(self) -> Optional[float]:
+        return None
+
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
+        return False
 
     def result(
         self, timeout: Optional[float] = None
@@ -682,7 +692,9 @@ class _SingleThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
-                self._state.callbacks.append(functools.partial(fn, self))
+                if not self._state.callbacks:
+                    self._state.callbacks = []
+                self._state.callbacks.append(functools.partial(fn, self)) # type: ignore
                 return
 
         fn(self)
@@ -930,6 +942,8 @@ class _MultiThreadedRendezvous(
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
             if self._state.code is None:
+                if not self._state.callbacks:
+                    self._state.callbacks = []
                 self._state.callbacks.append(
                     functools.partial(fn, self)
                 )  # type: ignore
@@ -988,7 +1002,7 @@ def _start_unary_request(
             grpc.StatusCode.INTERNAL,
             "Exception serializing request!",
         )
-        error = _InactiveRpcError(state)  # pytype: disable=not-instantiable
+        error = _InactiveRpcError(state) 
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -1007,7 +1021,7 @@ def _end_unary_response_blocking(
         else:
             return state.response
     else:
-        raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+        raise _InactiveRpcError(state)
 
 
 def _stream_unary_invocation_operations(
@@ -1142,7 +1156,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous  # pylint: disable-msg=raising-bad-type
+            raise rendezvous  # type: ignore[misc]
         else:
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
@@ -1214,20 +1228,20 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous  # pylint: disable-msg=raising-bad-type
+            raise rendezvous  # type: ignore[misc]
         else:
             event_handler = _event_handler(state, self._response_deserializer)
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
             state.target = _common.decode(self._target)
-            call = self._managed_call(
+            call = self._managed_call( # type: ignore
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
                 None,
                 deadline,
                 metadata,
                 None if credentials is None else credentials._credentials,
-                (operations,),
+                (operations,), # type: ignore 
                 event_handler,
                 self._context,
                 self._registered_call_handle,
@@ -1294,7 +1308,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 grpc.StatusCode.INTERNAL,
                 "Exception serializing request!",
             )
-            raise _InactiveRpcError(state)  # pytype: disable=not-instantiable
+            raise _InactiveRpcError(state) 
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = (
@@ -1393,7 +1407,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready
         )
         if serialized_request is None:
-            raise rendezvous  # pylint: disable-msg=raising-bad-type
+            raise rendezvous  # type: ignore[misc]
         else:
             augmented_metadata = _compression.augment_metadata(
                 metadata, compression
@@ -1834,7 +1848,7 @@ class _ChannelConnectivityState(object):
     lock: threading.RLock
     channel: cygrpc.Channel
     polling: bool
-    connectivity: grpc.ChannelConnectivity
+    connectivity: Optional[grpc.ChannelConnectivity]
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
@@ -1882,7 +1896,7 @@ def _deliveries(
 def _deliver(
     state: _ChannelConnectivityState,
     initial_connectivity: grpc.ChannelConnectivity,
-    initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
+    initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]], # type: ignore
 ) -> None:
     connectivity = initial_connectivity
     callbacks = initial_callbacks
@@ -1898,7 +1912,7 @@ def _deliver(
         with state.lock:
             callbacks = _deliveries(state)
             if callbacks:
-                connectivity = state.connectivity
+                connectivity = state.connectivity # type: ignore
             else:
                 state.delivering = False
                 return

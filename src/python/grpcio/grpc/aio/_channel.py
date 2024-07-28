@@ -123,12 +123,12 @@ class _BaseMultiCallable:
         """
         metadata = metadata or Metadata()
         if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata)
+            metadata = Metadata.from_tuple(metadata) # type: ignore
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+                *_compression.augment_metadata(metadata, compression) # type: ignore
             )
-        return metadata
+        return metadata # type: ignore
 
 
 class UnaryUnaryMultiCallable(
@@ -499,7 +499,7 @@ class Channel(_base_channel.Channel):
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
     def _get_registered_call_handle(self, method: str) -> int:
-        pass
+        return 0
 
     # TODO(xuanwn): Implement _registered_method after we have
     # observability for Asyncio.
