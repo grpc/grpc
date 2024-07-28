@@ -220,10 +220,22 @@ struct ServerTrailingMetadataOperator {
       void* call_data, void* channel_data, ServerMetadataHandle metadata);
 };
 
-void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data);
-ServerMetadataHandle RunServerTrailingMetadata(
-    absl::Span<const ServerTrailingMetadataOperator> ops, void* call_data,
-    ServerMetadataHandle md);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void RunHalfClose(
+    absl::Span<const HalfCloseOperator> ops, void* call_data) {
+  for (const auto& op : ops) {
+    op.half_close(Offset(call_data, op.call_offset), op.channel_data);
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline ServerMetadataHandle
+RunServerTrailingMetadata(absl::Span<const ServerTrailingMetadataOperator> ops,
+                          void* call_data, ServerMetadataHandle md) {
+  for (auto& op : ops) {
+    md = op.server_trailing_metadata(Offset(call_data, op.call_offset),
+                                     op.channel_data, std::move(md));
+  }
+  return md;
+}
 
 // One call finalizer
 struct Finalizer {
@@ -1116,6 +1128,76 @@ class OperationExecutor {
   const Operator<T>* end_ops_;
 };
 
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline OperationExecutor<
+    T>::~OperationExecutor() {
+  if (promise_data_ != nullptr) {
+    ops_->early_destroy(promise_data_);
+    gpr_free_aligned(promise_data_);
+  }
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::Start(const Layout<T>* layout, T input, void* call_data) {
+  ops_ = layout->ops.data();
+  end_ops_ = ops_ + layout->ops.size();
+  if (layout->promise_size == 0) {
+    // No call state ==> instantaneously ready
+    auto r = InitStep(std::move(input), call_data);
+    CHECK(r.ready());
+    return r;
+  }
+  promise_data_ =
+      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
+  return InitStep(std::move(input), call_data);
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::InitStep(T input, void* call_data) {
+  CHECK(input != nullptr);
+  while (true) {
+    if (ops_ == end_ops_) {
+      return ResultOr<T>{std::move(input), nullptr};
+    }
+    auto p =
+        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
+                           ops_->channel_data, std::move(input));
+    if (auto* r = p.value_if_ready()) {
+      if (r->ok == nullptr) return std::move(*r);
+      input = std::move(r->ok);
+      ++ops_;
+      continue;
+    }
+    return Pending{};
+  }
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::Step(void* call_data) {
+  DCHECK_NE(promise_data_, nullptr);
+  auto p = ContinueStep(call_data);
+  if (p.ready()) {
+    gpr_free_aligned(promise_data_);
+    promise_data_ = nullptr;
+  }
+  return p;
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
+OperationExecutor<T>::ContinueStep(void* call_data) {
+  auto p = ops_->poll(promise_data_);
+  if (auto* r = p.value_if_ready()) {
+    if (r->ok == nullptr) return std::move(*r);
+    ++ops_;
+    return InitStep(std::move(r->ok), call_data);
+  }
+  return Pending{};
+}
+
 template <typename Fn>
 class ServerTrailingMetadataInterceptor {
  public:
@@ -1276,8 +1358,20 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
-  explicit CallFilters(ClientMetadataHandle client_initial_metadata);
-  ~CallFilters();
+  explicit CallFilters(ClientMetadataHandle client_initial_metadata)
+      : call_data_(nullptr),
+        push_client_initial_metadata_(std::move(client_initial_metadata)) {}
+  ~CallFilters() {
+    if (call_data_ != nullptr && call_data_ != &g_empty_call_data_) {
+      for (const auto& stack : stacks_) {
+        for (const auto& destructor : stack.stack->data_.filter_destructor) {
+          destructor.call_destroy(filters_detail::Offset(
+              call_data_, stack.call_data_offset + destructor.call_offset));
+        }
+      }
+      gpr_free_aligned(call_data_);
+    }
+  };
 
   CallFilters(const CallFilters&) = delete;
   CallFilters& operator=(const CallFilters&) = delete;
@@ -1525,6 +1619,8 @@ class CallFilters {
   MessageHandle push_client_to_server_message_;
   MessageHandle push_server_to_client_message_;
   ServerMetadataHandle push_server_trailing_metadata_;
+
+  static char g_empty_call_data_;
 };
 
 }  // namespace grpc_core
