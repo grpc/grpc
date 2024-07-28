@@ -89,14 +89,14 @@ def _serialized_request(request_event: cygrpc.BaseEvent) -> Optional[bytes]:
 
 # TODO(xuanwn) Change it to use correct cython type.
 # Issue: https://github.com/grpc/grpc/issues/32033
-def _application_code(code: grpc.StatusCode) -> Union[cygrpc.StatusCode, int]:
+def _application_code(code: grpc.StatusCode) -> Union[grpc.StatusCode, int]:
     cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
 
 # TODO(xuanwn) Change it to use correct cython type.
 # Issue: https://github.com/grpc/grpc/issues/32033
-def _completion_code(state: _RPCState) -> Union[cygrpc.StatusCode, int]:
+def _completion_code(state: _RPCState) -> Union[grpc.StatusCode, int]:
     if state.code is None:
         return cygrpc.StatusCode.ok
     else:
@@ -106,8 +106,8 @@ def _completion_code(state: _RPCState) -> Union[cygrpc.StatusCode, int]:
 # TODO(xuanwn) Change it to use correct cython type.
 # Issue: https://github.com/grpc/grpc/issues/32033
 def _abortion_code(
-    state: _RPCState, code: Union[cygrpc.StatusCode, int]
-) -> Union[cygrpc.StatusCode, int]:
+    state: _RPCState, code: Union[grpc.StatusCode, int]
+) -> Union[grpc.StatusCode, int]:
     if state.code is None:
         return code
     else:
@@ -480,7 +480,7 @@ class _Context(grpc.ServicerContext):
         self._state.trailing_metadata = status.trailing_metadata
         self.abort(
             status.code, status.details
-        )  # pytype: disable=bad-return-type
+        )
 
     def set_code(self, code: grpc.StatusCode) -> None:
         with self._state.condition:
@@ -542,7 +542,7 @@ class _RequestIterator(object):
             self._state.request = None
             return request
 
-        raise AssertionError()  # should never run
+        raise AssertionError()
 
     def _next(self) -> Any:
         with self._state.condition:
@@ -879,7 +879,7 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 def _send_message_callback_to_blocking_iterator_adapter(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    send_response_callback: Callable[[ResponseType, None], None],
+    send_response_callback: Callable[[ResponseType], None],
     response_iterator: Iterator[ResponseType],
 ) -> None:
     while True:
@@ -1053,7 +1053,7 @@ def _handle_with_method_handler(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
-) -> Tuple[_RPCState, Optional[futures.Future]]:
+) -> Optional[futures.Future]:
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
@@ -1141,7 +1141,7 @@ def _handle_call(
                 _handle_with_method_handler(
                     rpc_event, rpc_state, method_handler, thread_pool
                 ),
-            ) # type: ignore
+            )
     else:
         return None, None
 

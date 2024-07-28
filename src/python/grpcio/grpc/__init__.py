@@ -23,7 +23,7 @@ import logging
 import sys
 import threading
 import types
-from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple, Iterator, Iterable
+from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence, Tuple, Iterator, Iterable, Dict
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -658,6 +658,8 @@ class CallCredentials(object):
 
 
 class AuthMetadataContext(abc.ABC):
+    service_url: str
+    method_name: str
     """Provides information to call credentials metadata plugins.
 
     Attributes:
@@ -915,7 +917,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator: Iterable,
+        request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -950,7 +952,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request_iterator: Iterable,
+        request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -987,7 +989,7 @@ class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Iterable,
+        request_iterator: Iterator,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -1440,6 +1442,8 @@ class RpcMethodHandler(abc.ABC):
 
 
 class HandlerCallDetails(abc.ABC):
+    method: str
+    invocation_metadata: MetadataType
     """Describes an RPC that has just arrived for service.
 
     Attributes:
@@ -1545,7 +1549,7 @@ class Server(abc.ABC):
         """
         raise NotImplementedError()
 
-    def add_registered_method_handlers(self, service_name, method_handlers):
+    def add_registered_method_handlers(self, service_name: str, method_handlers: Dict[str, RpcMethodHandler]):
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -2293,7 +2297,7 @@ def secure_channel(
 
 
 def intercept_channel(
-    channel: Channel, *interceptors: Sequence[InterceptorType]
+    channel: Channel, *interceptors: Tuple[InterceptorType]
 ) -> Channel:
     """Intercepts a channel through a set of interceptors.
 

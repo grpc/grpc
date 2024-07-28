@@ -25,7 +25,7 @@ from grpc._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
-_channel = Any  # _channel.py imports this module.
+# _channel = Any  # _channel.py imports this module.
 ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 
@@ -292,7 +292,7 @@ def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
             plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
-def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
+def maybe_record_rpc_latency(state: "_channel._RPCState") -> None: 
     """Record the latency of the RPC, if the plugin is registered and stats is enabled.
 
     This method will be called at the end of each RPC.

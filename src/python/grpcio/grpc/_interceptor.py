@@ -812,7 +812,7 @@ class _Channel(grpc.Channel):
 def intercept_channel(
     channel: grpc.Channel,
     *interceptors: Optional[
-        Sequence[
+        Tuple[
             InterceptorType
         ]
     ],

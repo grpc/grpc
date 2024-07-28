@@ -436,6 +436,15 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         """See grpc.Future.done."""
         return True
 
+    def is_active(self) -> bool:
+        return False
+
+    def time_remaining(self) -> Optional[float]:
+        return None
+
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
+        return False
+
     def result(
         self, timeout: Optional[float] = None
     ) -> Any:  # pylint: disable=unused-argument
@@ -993,7 +1002,7 @@ def _start_unary_request(
             grpc.StatusCode.INTERNAL,
             "Exception serializing request!",
         )
-        error = _InactiveRpcError(state)  # type: ignore
+        error = _InactiveRpcError(state) 
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -1012,7 +1021,7 @@ def _end_unary_response_blocking(
         else:
             return state.response
     else:
-        raise _InactiveRpcError(state)  # type: ignore
+        raise _InactiveRpcError(state)
 
 
 def _stream_unary_invocation_operations(
@@ -1299,7 +1308,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 grpc.StatusCode.INTERNAL,
                 "Exception serializing request!",
             )
-            raise _InactiveRpcError(state)  # type: ignore
+            raise _InactiveRpcError(state) 
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = (
@@ -1903,7 +1912,7 @@ def _deliver(
         with state.lock:
             callbacks = _deliveries(state)
             if callbacks:
-                connectivity = state.connectivity
+                connectivity = state.connectivity # type: ignore
             else:
                 state.delivering = False
                 return
