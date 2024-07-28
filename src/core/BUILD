@@ -7683,6 +7683,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/log:check",
+        "absl/log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
