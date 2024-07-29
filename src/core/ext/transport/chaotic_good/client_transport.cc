@@ -27,7 +27,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "client_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
