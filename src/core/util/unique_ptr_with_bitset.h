@@ -29,10 +29,10 @@ template <typename T, size_t kBits>
 class UniquePtrWithBitset {
  public:
   UniquePtrWithBitset() : p_(0) {}
-  // NOLINTNEXTLINE(runtime/explicit)
+  // NOLINTNEXTLINE(google-explicit-constructor)
   UniquePtrWithBitset(std::nullptr_t) : p_(0) {}
   explicit UniquePtrWithBitset(T* p) : p_(reinterpret_cast<uintptr_t>(p)) {}
-  // NOLINTNEXTLINE(runtime/explicit)
+  // NOLINTNEXTLINE(google-explicit-constructor)
   UniquePtrWithBitset(std::unique_ptr<T>&& p)
       : UniquePtrWithBitset(p.release()) {}
   ~UniquePtrWithBitset() { delete get(); }
