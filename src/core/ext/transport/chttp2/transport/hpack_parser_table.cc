@@ -37,6 +37,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
@@ -56,10 +57,24 @@ auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   size_t index = first_entry_ % max_entries_;
   ++first_entry_;
   --num_entries_;
-  return std::move(entries_[index]);
+  auto& entry = entries_[index];
+  if (!entry.parse_status.TestBit(Memento::kUsedBit)) {
+    global_stats().IncrementHttp2HpackMisses();
+  }
+  return std::move(entry);
 }
 
-auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) const
+auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) -> const Memento* {
+  if (index >= num_entries_) return nullptr;
+  uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
+  auto& entry = entries_[offset];
+  const bool was_used = entry.parse_status.TestBit(Memento::kUsedBit);
+  entry.parse_status.SetBit(Memento::kUsedBit);
+  if (!was_used) global_stats().IncrementHttp2HpackHits();
+  return &entry;
+}
+
+auto HPackTable::MementoRingBuffer::Peek(uint32_t index) const
     -> const Memento* {
   if (index >= num_entries_) return nullptr;
   uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
@@ -79,12 +94,20 @@ void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   entries_.swap(entries);
 }
 
-void HPackTable::MementoRingBuffer::ForEach(
-    absl::FunctionRef<void(uint32_t, const Memento&)> f) const {
+template <typename F>
+void HPackTable::MementoRingBuffer::ForEach(F f) const {
   uint32_t index = 0;
-  while (auto* m = Lookup(index++)) {
+  while (auto* m = Peek(index++)) {
     f(index, *m);
   }
+}
+
+HPackTable::MementoRingBuffer::~MementoRingBuffer() {
+  ForEach([](uint32_t, const Memento& m) {
+    if (!m.parse_status.TestBit(Memento::kUsedBit)) {
+      global_stats().IncrementHttp2HpackMisses();
+    }
+  });
 }
 
 // Evict one element from the table

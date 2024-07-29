@@ -185,6 +185,8 @@ struct GlobalStats {
     kHttp2WritesBegun,
     kHttp2TransportStalls,
     kHttp2StreamStalls,
+    kHttp2HpackHits,
+    kHttp2HpackMisses,
     kCqPluckCreates,
     kCqNextCreates,
     kCqCallbackCreates,
@@ -259,6 +261,8 @@ struct GlobalStats {
       uint64_t http2_writes_begun;
       uint64_t http2_transport_stalls;
       uint64_t http2_stream_stalls;
+      uint64_t http2_hpack_hits;
+      uint64_t http2_hpack_misses;
       uint64_t cq_pluck_creates;
       uint64_t cq_next_creates;
       uint64_t cq_callback_creates;
@@ -366,6 +370,12 @@ class GlobalStatsCollector {
   void IncrementHttp2StreamStalls() {
     data_.this_cpu().http2_stream_stalls.fetch_add(1,
                                                    std::memory_order_relaxed);
+  }
+  void IncrementHttp2HpackHits() {
+    data_.this_cpu().http2_hpack_hits.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2HpackMisses() {
+    data_.this_cpu().http2_hpack_misses.fetch_add(1, std::memory_order_relaxed);
   }
   void IncrementCqPluckCreates() {
     data_.this_cpu().cq_pluck_creates.fetch_add(1, std::memory_order_relaxed);
@@ -526,6 +536,8 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> http2_writes_begun{0};
     std::atomic<uint64_t> http2_transport_stalls{0};
     std::atomic<uint64_t> http2_stream_stalls{0};
+    std::atomic<uint64_t> http2_hpack_hits{0};
+    std::atomic<uint64_t> http2_hpack_misses{0};
     std::atomic<uint64_t> cq_pluck_creates{0};
     std::atomic<uint64_t> cq_next_creates{0};
     std::atomic<uint64_t> cq_callback_creates{0};

@@ -34,6 +34,7 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/util/unique_ptr_with_bitset.h"
 
 namespace grpc_core {
 
@@ -54,11 +55,14 @@ class HPackTable {
 
   struct Memento {
     ParsedMetadata<grpc_metadata_batch> md;
-    std::unique_ptr<HpackParseResult> parse_status;
+    // Alongside parse_status we store one bit indicating whether this memento
+    // has been looked up (and therefore consumed) or not.
+    UniquePtrWithBitset<HpackParseResult, 1> parse_status;
+    static const int kUsedBit = 0;
   };
 
   // Lookup, but don't ref.
-  const Memento* Lookup(uint32_t index) const {
+  const Memento* Lookup(uint32_t index) {
     // Static table comes first, just return an entry from it.
     // NB: This imposes the constraint that the first
     // GRPC_CHTTP2_LAST_STATIC_ENTRY entries in the core static metadata table
@@ -97,6 +101,8 @@ class HPackTable {
 
   class MementoRingBuffer {
    public:
+    ~MementoRingBuffer();
+
     // Rebuild this buffer with a new max_entries_ size.
     void Rebuild(uint32_t max_entries);
 
@@ -109,10 +115,11 @@ class HPackTable {
     Memento PopOne();
 
     // Lookup the entry at index, or return nullptr if none exists.
-    const Memento* Lookup(uint32_t index) const;
+    const Memento* Lookup(uint32_t index);
+    const Memento* Peek(uint32_t index) const;
 
-    void ForEach(absl::FunctionRef<void(uint32_t dynamic_index, const Memento&)>
-                     f) const;
+    template <typename F>
+    void ForEach(F f) const;
 
     uint32_t max_entries() const { return max_entries_; }
     uint32_t num_entries() const { return num_entries_; }
@@ -130,7 +137,7 @@ class HPackTable {
     std::vector<Memento> entries_;
   };
 
-  const Memento* LookupDynamic(uint32_t index) const {
+  const Memento* LookupDynamic(uint32_t index) {
     // Not static - find the value in the list of valid entries
     const uint32_t tbl_index = index - (hpack_constants::kLastStaticEntry + 1);
     return entries_.Lookup(tbl_index);

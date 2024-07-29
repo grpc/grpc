@@ -698,7 +698,7 @@ class HPackParser::Parser {
     LOG(INFO) << "HTTP:" << log_info_.stream_id << ":" << type << ":"
               << (log_info_.is_client ? "CLI" : "SVR") << ": "
               << memento.md.DebugString()
-              << (memento.parse_status == nullptr
+              << (memento.parse_status.get() == nullptr
                       ? ""
                       : absl::StrCat(
                             " (parse error: ",
@@ -709,7 +709,7 @@ class HPackParser::Parser {
   void EmitHeader(const HPackTable::Memento& md) {
     // Pass up to the transport
     state_.frame_length += md.md.transport_size();
-    if (md.parse_status != nullptr) {
+    if (md.parse_status.get() != nullptr) {
       // Reject any requests with invalid metadata.
       input_->SetErrorAndContinueParsing(*md.parse_status);
     }
@@ -959,7 +959,7 @@ class HPackParser::Parser {
     } else {
       const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
-      if (state_.frame_error.ok() && memento->parse_status != nullptr) {
+      if (state_.frame_error.ok() && memento->parse_status.get() != nullptr) {
         input_->SetErrorAndContinueParsing(*memento->parse_status);
       }
     }

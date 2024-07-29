@@ -123,6 +123,8 @@ const absl::string_view
         "http2_writes_begun",
         "http2_transport_stalls",
         "http2_stream_stalls",
+        "http2_hpack_hits",
+        "http2_hpack_misses",
         "cq_pluck_creates",
         "cq_next_creates",
         "cq_callback_creates",
@@ -161,6 +163,8 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "control window",
     "Number of times sending was completely stalled by the stream flow control "
     "window",
+    "Number of HPACK cache hits",
+    "Number of HPACK cache misses (entries added but never used)",
     "Number of completion queues created for cq_pluck (indicates sync api "
     "usage)",
     "Number of completion queues created for cq_next (indicates cq async api "
@@ -421,6 +425,8 @@ GlobalStats::GlobalStats()
       http2_writes_begun{0},
       http2_transport_stalls{0},
       http2_stream_stalls{0},
+      http2_hpack_hits{0},
+      http2_hpack_misses{0},
       cq_pluck_creates{0},
       cq_next_creates{0},
       cq_callback_creates{0},
@@ -560,6 +566,10 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.http2_transport_stalls.load(std::memory_order_relaxed);
     result->http2_stream_stalls +=
         data.http2_stream_stalls.load(std::memory_order_relaxed);
+    result->http2_hpack_hits +=
+        data.http2_hpack_hits.load(std::memory_order_relaxed);
+    result->http2_hpack_misses +=
+        data.http2_hpack_misses.load(std::memory_order_relaxed);
     result->cq_pluck_creates +=
         data.cq_pluck_creates.load(std::memory_order_relaxed);
     result->cq_next_creates +=
@@ -664,6 +674,8 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->http2_transport_stalls =
       http2_transport_stalls - other.http2_transport_stalls;
   result->http2_stream_stalls = http2_stream_stalls - other.http2_stream_stalls;
+  result->http2_hpack_hits = http2_hpack_hits - other.http2_hpack_hits;
+  result->http2_hpack_misses = http2_hpack_misses - other.http2_hpack_misses;
   result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
