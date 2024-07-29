@@ -1219,6 +1219,7 @@ libs:
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/spinlock.h
+  - src/core/util/unique_ptr_with_bitset.h
   - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
@@ -2706,6 +2707,7 @@ libs:
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/spinlock.h
+  - src/core/util/unique_ptr_with_bitset.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -20712,6 +20714,19 @@ targets:
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
+  uses_polling: false
+- name: unique_ptr_with_bitset_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/unique_ptr_with_bitset.h
+  src:
+  - test/core/util/unique_ptr_with_bitset_test.cc
+  deps:
+  - gtest
+  - absl/log:check
+  - absl/numeric:bits
   uses_polling: false
 - name: unique_type_name_test
   gtest: true
