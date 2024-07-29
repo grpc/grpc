@@ -394,7 +394,7 @@ class Party : public Activity, private Wakeable {
       const char* op, uint64_t prev_state, uint64_t new_state,
       DebugLocation loc = {}) {
     GRPC_TRACE_LOG(party_state, INFO).AtLocation(loc.file(), loc.line())
-        << DebugTag() << " " << op << " "
+        << "PARTY[" << this << "]" << op << " "
         << absl::StrFormat("%016" PRIx64 " -> %016" PRIx64, prev_state,
                            new_state);
   }
@@ -430,12 +430,14 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
 template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
+  GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
   AddParticipant(new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete)));
 }
 
 template <typename Factory>
 auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
+  GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
   auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
       name, std::move(promise_factory));
   Participant* p = participant->Ref().release();

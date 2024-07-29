@@ -46,7 +46,7 @@ GRPC_MUST_USE_RESULT bool Party::RefIfNonZero() {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
     // zero
-    if (count == 0) {
+    if ((count & kRefMask) == 0) {
       return false;
     }
   } while (!state_.compare_exchange_weak(count, count + kOneRef,
@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -149,15 +149,24 @@ Party::Participant::~Participant() {
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
-  if ((state_.load(std::memory_order_relaxed) & kAllocatedMask) == 0) return;
+  uint64_t prev_state = state_.load(std::memory_order_relaxed);
+  if ((prev_state & kAllocatedMask) == 0) return;
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
-  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
-    if (auto* p =
-            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
-      p->Destroy();
+  uint64_t clear_state = 0;
+  do {
+    for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+      if (auto* p =
+              participants_[i].exchange(nullptr, std::memory_order_acquire)) {
+        clear_state |= 1ull << i << kAllocatedShift;
+        p->Destroy();
+      }
     }
-  }
+    if (clear_state == 0) return;
+  } while (!state_.compare_exchange_weak(prev_state, prev_state & ~clear_state,
+                                         std::memory_order_acq_rel));
+  LogStateChange("CancelRemainingParticipants", prev_state,
+                 prev_state & ~clear_state);
 }
 
 std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
