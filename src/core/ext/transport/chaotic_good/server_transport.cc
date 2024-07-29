@@ -24,6 +24,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "server_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -72,8 +73,7 @@ auto ChaoticGoodServerTransport::TransportWriteLoop(
 }
 
 auto ChaoticGoodServerTransport::PushFragmentIntoCall(
-    CallInitiator call_initiator, ClientFragmentFrame frame,
-    uint32_t stream_id) {
+    CallInitiator call_initiator, ClientFragmentFrame frame) {
   DCHECK(frame.headers == nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     LOG(INFO) << "CHAOTIC_GOOD: PushFragmentIntoCall: frame="
@@ -102,17 +102,16 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
 
 auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
     absl::optional<CallInitiator> call_initiator, absl::Status error,
-    ClientFragmentFrame frame, uint32_t stream_id) {
+    ClientFragmentFrame frame) {
   return If(
       call_initiator.has_value() && error.ok(),
-      [this, &call_initiator, &frame, &stream_id]() {
+      [this, &call_initiator, &frame]() {
         return Map(
             call_initiator->SpawnWaitable(
                 "push-fragment",
-                [call_initiator, frame = std::move(frame), stream_id,
-                 this]() mutable {
-                  return call_initiator->CancelIfFails(PushFragmentIntoCall(
-                      *call_initiator, std::move(frame), stream_id));
+                [call_initiator, frame = std::move(frame), this]() mutable {
+                  return call_initiator->CancelIfFails(
+                      PushFragmentIntoCall(*call_initiator, std::move(frame)));
                 }),
             [](StatusFlag status) { return StatusCast<absl::Status>(status); });
       },
@@ -256,8 +255,7 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     }
   }
   return MaybePushFragmentIntoCall(std::move(call_initiator), std::move(status),
-                                   std::move(fragment_frame),
-                                   frame_header.stream_id);
+                                   std::move(fragment_frame));
 }
 
 auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToExistingCall(
@@ -272,8 +270,7 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToExistingCall(
       frame_header, std::move(buffers), arena, fragment_frame,
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   return MaybePushFragmentIntoCall(std::move(call_initiator), std::move(status),
-                                   std::move(fragment_frame),
-                                   frame_header.stream_id);
+                                   std::move(fragment_frame));
 }
 
 auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
@@ -449,18 +446,20 @@ absl::Status ChaoticGoodServerTransport::NewStream(
     return absl::InternalError("Stream id is not increasing");
   }
   stream_map_.emplace(stream_id, call_initiator);
-  call_initiator.OnDone([this, stream_id](bool) {
-    GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "CHAOTIC_GOOD " << this << " OnDone " << stream_id;
-    absl::optional<CallInitiator> call_initiator = ExtractStream(stream_id);
-    if (call_initiator.has_value()) {
-      auto c = std::move(*call_initiator);
-      c.SpawnInfallible("cancel", [c]() mutable {
-        c.Cancel();
-        return Empty{};
+  call_initiator.OnDone(
+      [self = RefAsSubclass<ChaoticGoodServerTransport>(), stream_id](bool) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD " << self.get() << " OnDone " << stream_id;
+        absl::optional<CallInitiator> call_initiator =
+            self->ExtractStream(stream_id);
+        if (call_initiator.has_value()) {
+          auto c = std::move(*call_initiator);
+          c.SpawnInfallible("cancel", [c]() mutable {
+            c.Cancel();
+            return Empty{};
+          });
+        }
       });
-    }
-  });
   return absl::OkStatus();
 }
 
