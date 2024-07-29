@@ -322,8 +322,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
   if (PythonCensusStatsEnabled()) {
-    context_.Labels().emplace_back(kClientMethod,
-                                   parent_->method_);
+    context_.Labels().emplace_back(kClientMethod, parent_->method_);
     context_.Labels().emplace_back(kClientStatus,
                                    StatusCodeToString(status_code_));
     RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName,

@@ -280,9 +280,7 @@ inline std::string GetMethod(const char* method) {
   return std::string(absl::StripPrefix(method, "/"));
 }
 
-inline std::string GetTarget(const char* target) {
-  return std::string(target);
-}
+inline std::string GetTarget(const char* target) { return std::string(target); }
 
 // Fills a pre-allocated buffer with the value for the grpc-trace-bin header.
 // The buffer must be at least kGrpcTraceBinHeaderLen bytes long.
