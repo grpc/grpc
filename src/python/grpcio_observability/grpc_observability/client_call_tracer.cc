@@ -88,7 +88,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonCensusStatsEnabled()) {
-    context_.Labels().emplace_back(kClientMethod, std::string(method_));
+    context_.Labels().emplace_back(kClientMethod, method_);
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
                     context_.Labels(), identifier_, registered_method_,
                     /*include_exchange_labels=*/true);  // exclude first attempt
@@ -159,8 +159,8 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   if (!PythonCensusStatsEnabled()) {
     return;
   }
-  context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
-  context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
+  context_.Labels().emplace_back(kClientMethod, parent_->method_);
+  context_.Labels().emplace_back(kClientTarget, parent_->target_);
   RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, context_.Labels(),
                   parent_->identifier_, parent_->registered_method_,
                   /*include_exchange_labels=*/false);
@@ -264,8 +264,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   std::string final_status = absl::StatusCodeToString(status_code_);
-  context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
-  context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
+  context_.Labels().emplace_back(kClientMethod, parent_->method_);
+  context_.Labels().emplace_back(kClientTarget, parent_->target_);
   context_.Labels().emplace_back(kClientStatus, final_status);
   if (parent_->add_csm_optional_labels_) {
     parent_->labels_injector_.AddXdsOptionalLabels(
@@ -322,8 +322,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
   if (PythonCensusStatsEnabled()) {
-    context_.Labels().emplace_back(kClientMethod,
-                                   std::string(parent_->method_));
+    context_.Labels().emplace_back(kClientMethod, parent_->method_);
     context_.Labels().emplace_back(kClientStatus,
                                    StatusCodeToString(status_code_));
     RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName,
