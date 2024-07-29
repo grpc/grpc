@@ -101,7 +101,13 @@ class HPackTable {
 
   class MementoRingBuffer {
    public:
+    MementoRingBuffer() {}
     ~MementoRingBuffer();
+
+    MementoRingBuffer(const MementoRingBuffer&) = delete;
+    MementoRingBuffer& operator=(const MementoRingBuffer&) = delete;
+    MementoRingBuffer(MementoRingBuffer&&) = default;
+    MementoRingBuffer& operator=(MementoRingBuffer&&) = default;
 
     // Rebuild this buffer with a new max_entries_ size.
     void Rebuild(uint32_t max_entries);
