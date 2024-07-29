@@ -1953,6 +1953,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/time_precise.cc )
   s.files += %w( src/core/util/time_precise.h )
   s.files += %w( src/core/util/tmpfile.h )
+  s.files += %w( src/core/util/unique_ptr_with_bitset.h )
   s.files += %w( src/core/util/upb_utils.h )
   s.files += %w( src/core/util/useful.h )
   s.files += %w( src/core/util/windows/cpu.cc )

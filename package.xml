@@ -1935,6 +1935,7 @@
     <file baseinstalldir="/" name="src/core/util/time_precise.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/tmpfile.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/unique_ptr_with_bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
