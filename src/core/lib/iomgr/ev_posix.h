@@ -25,8 +25,6 @@
 
 #include <poll.h>
 
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
