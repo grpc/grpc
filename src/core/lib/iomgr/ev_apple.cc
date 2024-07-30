@@ -48,6 +48,8 @@
 #define GRPC_POLLING_TRACE(...)
 #endif  // NDEBUG
 
+#define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
+
 struct GlobalRunLoopContext {
   grpc_core::CondVar init_cv;
   grpc_core::CondVar input_source_cv;
