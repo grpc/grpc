@@ -1180,10 +1180,6 @@ static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
 void (*grpc_cancel_ares_request)(grpc_ares_request* r) =
     grpc_cancel_ares_request_impl;
 
-// ares_library_init and ares_library_cleanup are currently no-op except under
-// Windows. Calling them may cause race conditions when other parts of the
-// binary calls these functions concurrently.
-#ifdef GPR_WINDOWS
 grpc_error_handle grpc_ares_init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
@@ -1194,9 +1190,5 @@ grpc_error_handle grpc_ares_init(void) {
 }
 
 void grpc_ares_cleanup(void) { ares_library_cleanup(); }
-#else
-grpc_error_handle grpc_ares_init(void) { return absl::OkStatus(); }
-void grpc_ares_cleanup(void) {}
-#endif  // GPR_WINDOWS
 
 #endif  // GRPC_ARES == 1
