@@ -31,7 +31,7 @@ BASEDIR=$(realpath "$BASEDIR")/../..
 PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
 
 (cd "$BASEDIR";
-  pip install --upgrade "cython<3.0.0rc1";
+  pip install --upgrade "cython<4.0.0rc1";
   python setup.py install;
   pushd tools/distrib/python/grpcio_tools;
     ../make_grpcio_tools.py
