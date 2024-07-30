@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.66.0-dev")
-set(gRPC_CORE_VERSION     "42.0.0")
-set(gRPC_CORE_SOVERSION   "42")
-set(gRPC_CPP_VERSION      "1.66.0-dev")
-set(gRPC_CPP_SOVERSION    "1.66")
+set(PACKAGE_VERSION       "1.67.0-dev")
+set(gRPC_CORE_VERSION     "43.0.0")
+set(gRPC_CORE_SOVERSION   "43")
+set(gRPC_CPP_VERSION      "1.67.0-dev")
+set(gRPC_CPP_SOVERSION    "1.67")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -397,18 +397,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz
-    1ee20b3041a4f093cc393448ab022f770e70b509c8fe8399d6e83017067b2fc3
-    data-plane-api-091cfd044258312a56c632ae1860813b1c0c58bc
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+    e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
+    data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz
-    1ee20b3041a4f093cc393448ab022f770e70b509c8fe8399d6e83017067b2fc3
-    data-plane-api-091cfd044258312a56c632ae1860813b1c0c58bc
+    https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+    e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
+    data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -22414,6 +22414,7 @@ add_executable(periodic_update_test
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -22426,6 +22427,7 @@ add_executable(periodic_update_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/resource_quota/periodic_update_test.cc
 )
 if(WIN32 AND MSVC)

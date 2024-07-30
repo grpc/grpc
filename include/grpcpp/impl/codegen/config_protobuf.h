@@ -71,6 +71,7 @@
 #define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
   ::google::protobuf::io::ZeroCopyInputStream
 #define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
+#define GRPC_CUSTOM_CODEDOUTPUTSTREAM ::google::protobuf::io::CodedOutputStream
 #endif
 
 #ifndef GRPC_CUSTOM_JSONUTIL
@@ -113,6 +114,7 @@ namespace io {
 typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
 typedef GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ZeroCopyInputStream;
 typedef GRPC_CUSTOM_CODEDINPUTSTREAM CodedInputStream;
+typedef GRPC_CUSTOM_CODEDOUTPUTSTREAM CodedOutputStream;
 }  // namespace io
 
 }  // namespace protobuf
