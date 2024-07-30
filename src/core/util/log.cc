@@ -119,3 +119,10 @@ void gpr_log_verbosity_init(void) {
   }
 #endif  // GRPC_VERBOSITY_MACRO
 }
+
+void gpr_set_log_function([[maybe_unused]] gpr_log_func deprecated_setting) {
+  LOG(ERROR)
+      << "This function is deprecated. This function will be deleted in the "
+         "next gRPC release. You may create a new absl LogSink with similar "
+         "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
+}
