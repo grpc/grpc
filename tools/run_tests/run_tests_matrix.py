@@ -532,16 +532,6 @@ if __name__ == "__main__":
         + "(other tests will be skipped)",
     )
     argp.add_argument(
-        "--internal_ci",
-        default=False,
-        action="store_const",
-        const=True,
-        help=(
-            "(Deprecated, has no effect) Put reports into subdirectories to"
-            " improve presentation of results by Kokoro."
-        ),
-    )
-    argp.add_argument(
         "--bq_result_table",
         default="",
         type=str,

@@ -78,10 +78,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
     ],
-    "gpr_set_log_verbosity(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
@@ -90,10 +86,11 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
     ],
-    "gpr_assertion_failed": [],
     "GPR_ASSERT": [],
+    "gpr_assertion_failed": [],
     "GPR_DEBUG_ASSERT": [],
     "gpr_log_severity_string": [],
+    "gpr_set_log_verbosity(": [],
 }
 
 errors = 0

@@ -220,8 +220,6 @@ class HPackParser::Input {
   // Minimum number of bytes to unstuck the current parse
   size_t min_progress_size() const { return min_progress_size_; }
 
-  bool has_error() const { return !error_.ok(); }
-
   // Set the current error - tweaks the error to include a stream id so that
   // chttp2 does not close the connection.
   // Intended for errors that are specific to a stream and recoverable.
@@ -245,10 +243,7 @@ class HPackParser::Input {
   // read prior to being able to get further in this parse.
   void UnexpectedEOF(size_t min_progress_size) {
     CHECK_GT(min_progress_size, 0u);
-    if (min_progress_size_ != 0 || error_.connection_error()) {
-      DCHECK(eof_error());
-      return;
-    }
+    if (eof_error()) return;
     // Set min progress size, taking into account bytes parsed already but not
     // consumed.
     min_progress_size_ = min_progress_size + (begin_ - frontier_);
@@ -700,14 +695,15 @@ class HPackParser::Parser {
         type = "???";
         break;
     }
-    VLOG(2) << "HTTP:" << log_info_.stream_id << ":" << type << ":"
-            << (log_info_.is_client ? "CLI" : "SVR") << ": "
-            << memento.md.DebugString()
-            << (memento.parse_status == nullptr
-                    ? ""
-                    : absl::StrCat(
-                          " (parse error: ",
-                          memento.parse_status->Materialize().ToString(), ")"));
+    LOG(INFO) << "HTTP:" << log_info_.stream_id << ":" << type << ":"
+              << (log_info_.is_client ? "CLI" : "SVR") << ": "
+              << memento.md.DebugString()
+              << (memento.parse_status == nullptr
+                      ? ""
+                      : absl::StrCat(
+                            " (parse error: ",
+                            memento.parse_status->Materialize().ToString(),
+                            ")"));
   }
 
   void EmitHeader(const HPackTable::Memento& md) {
@@ -950,11 +946,10 @@ class HPackParser::Parser {
                                   state_.string_length)
             : String::Parse(input_, state_.is_string_huff_compressed,
                             state_.string_length);
-    HpackParseResult& status = state_.frame_error;
     absl::string_view key_string;
     if (auto* s = absl::get_if<Slice>(&state_.key)) {
       key_string = s->as_string_view();
-      if (status.ok()) {
+      if (state_.frame_error.ok()) {
         auto r = ValidateKey(key_string);
         if (r != ValidateMetadataResult::kOk) {
           input_->SetErrorAndContinueParsing(
@@ -964,7 +959,7 @@ class HPackParser::Parser {
     } else {
       const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
-      if (status.ok() && memento->parse_status != nullptr) {
+      if (state_.frame_error.ok() && memento->parse_status != nullptr) {
         input_->SetErrorAndContinueParsing(*memento->parse_status);
       }
     }
@@ -991,15 +986,15 @@ class HPackParser::Parser {
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
     auto md = grpc_metadata_batch::Parse(
         key_string, std::move(value_slice), state_.add_to_table, transport_size,
-        [key_string, &status, this](absl::string_view message, const Slice&) {
-          if (!status.ok()) return;
+        [key_string, this](absl::string_view message, const Slice&) {
+          if (!state_.frame_error.ok()) return;
           input_->SetErrorAndContinueParsing(
               HpackParseResult::MetadataParseError(key_string));
           LOG(ERROR) << "Error parsing '" << key_string
                      << "' metadata: " << message;
         });
-    HPackTable::Memento memento{std::move(md),
-                                status.PersistentStreamErrorOrNullptr()};
+    HPackTable::Memento memento{
+        std::move(md), state_.frame_error.PersistentStreamErrorOrNullptr()};
     input_->UpdateFrontier();
     state_.parse_state = ParseState::kTop;
     if (state_.add_to_table) {
