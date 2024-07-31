@@ -295,10 +295,12 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                                   {{"type", "AUDIT_LOG"}}));
   }
   */
+  /*
   if (meter_provider_ == nullptr) {
     return absl::InvalidArgumentError(
         "Need to configure a valid meter provider.");
   }
+  */
   grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<OpenTelemetryPluginImpl>(
           metrics_, std::move(meter_provider_), std::move(logger_provider_),
@@ -459,6 +461,9 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
   if (logger_provider_ != nullptr) {
     grpc_core::RegisterLoggingFilter(
         new LoggingSink(logger_provider_->GetLogger("otel_plugin_logger")));
+  }
+  if (meter_provider_ == nullptr) {
+    return;
   }
   auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
   // Per-call metrics.
