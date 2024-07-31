@@ -403,7 +403,8 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
 void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(user_data);
+  RefCountedPtr<SecurityHandshaker> h(
+      static_cast<SecurityHandshaker*>(user_data));
   MutexLock lock(&h->mu_);
   grpc_error_handle error = h->OnHandshakeNextDoneLocked(
       result, bytes_to_send, bytes_to_send_size, handshaker_result);
@@ -418,13 +419,15 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
   const unsigned char* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result* hs_result = nullptr;
+  auto self = RefAsSubclass<SecurityHandshaker>();
   tsi_result result = tsi_handshaker_next(
       handshaker_, bytes_received, bytes_received_size, &bytes_to_send,
-      &bytes_to_send_size, &hs_result, &OnHandshakeNextDoneGrpcWrapper, this,
-      &tsi_handshake_error_);
+      &bytes_to_send_size, &hs_result, &OnHandshakeNextDoneGrpcWrapper,
+      self.get(), &tsi_handshake_error_);
   if (result == TSI_ASYNC) {
-    // Handshaker operating asynchronously. Nothing else to do here;
-    // callback will be invoked in a TSI thread.
+    // Handshaker operating asynchronously. Callback will be invoked in a TSI
+    // thread. We no longer own the ref held in self.
+    self.release();
     return absl::OkStatus();
   }
   // Handshaker returned synchronously. Invoke callback directly in
@@ -444,6 +447,8 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataReceivedFromPeerFn(std::move(error));
+    // Avoid destruction outside of an ExecCtx (since this is non-cancelable).
+    self.reset();
   });
 }
 
@@ -474,6 +479,8 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataSentToPeerFn(std::move(error));
+    // Avoid destruction outside of an ExecCtx (since this is non-cancelable).
+    self.reset();
   });
 }
 
