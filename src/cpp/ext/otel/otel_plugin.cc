@@ -27,6 +27,7 @@
 #include "google/protobuf/text_format.h"
 #include "opentelemetry/common/key_value_iterable_view.h"
 #include "opentelemetry/logs/logger.h"
+#include "opentelemetry/logs/logger_provider.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -40,7 +41,7 @@
 #include <grpcpp/version_info.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/ext/filters/logging/logging_sink.h"
+#include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/match.h"
@@ -241,66 +242,66 @@ OpenTelemetryPluginBuilderImpl::SetChannelScopeFilter(
 }
 
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
-  if (logger_provider_ != nullptr) {
-    {
-      // Binary logging
-      grpc_core::LoggingSink::Entry mock_entry;
-      mock_entry.call_id = 1000;
-      mock_entry.sequence_id = 100;
-      mock_entry.type = grpc_core::LoggingSink::Entry::EventType::kClientHeader;
-      mock_entry.logger = grpc_core::LoggingSink::Entry::Logger::kClient;
-      constexpr char kMessage[] = "this is a message";
-      mock_entry.payload.message = kMessage;
-      mock_entry.payload.message_length = mock_entry.payload.message.size();
-      mock_entry.payload_truncated = true;
-      mock_entry.peer.type =
-          grpc_core::LoggingSink::Entry::Address::Type::kIpv4;
-      mock_entry.peer.address = "172.17.0.17";
-      mock_entry.peer.ip_port = 42842;
-      mock_entry.authority =
-          "observability-test-server-4ydoge240628155733:14285";
-      mock_entry.service_name = "grpc.testing.TestService";
-      mock_entry.method_name = "UnaryCall";
-      mock_entry.timestamp = grpc_core::Timestamp::Now();
-      ::google::protobuf::Struct proto_payload;
-      EntryToJsonStructProto(mock_entry, &proto_payload);
-      std::string json_payload;
-      google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
-      std::cout << json_payload << std::endl;
-      logger_provider_->GetLogger("otel_plugin_logger")
-          ->Debug(json_payload, opentelemetry::common::MakeAttributes(
-                                    {{"type", "BINARY_LOG"}}));
-    }
-    {
-      // Audit logging
-      grpc_core::experimental::AuditContext ac(
-          "UnaryCall", "spiffe://foo/user1", "example-policy", "admin-access",
-          true);
-      ::google::protobuf::Struct proto_payload;
-      (*proto_payload.mutable_fields())["rpcMethod"].set_string_value(
-          ac.rpc_method());
-      (*proto_payload.mutable_fields())["principal"].set_string_value(
-          ac.principal());
-      (*proto_payload.mutable_fields())["policyName"].set_string_value(
-          ac.policy_name());
-      (*proto_payload.mutable_fields())["matchedRule"].set_string_value(
-          ac.matched_rule());
-      (*proto_payload.mutable_fields())["authorized"].set_bool_value(
-          ac.authorized());
-      std::string json_payload;
-      google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
-      logger_provider_->GetLogger("otel_plugin_logger")
-          ->Debug(json_payload, opentelemetry::common::MakeAttributes(
-                                    {{"type", "AUDIT_LOG"}}));
-    }
+  /*
+  {
+    // Binary logging
+    grpc_core::LoggingSink::Entry mock_entry;
+    mock_entry.call_id = 1000;
+    mock_entry.sequence_id = 100;
+    mock_entry.type = grpc_core::LoggingSink::Entry::EventType::kClientHeader;
+    mock_entry.logger = grpc_core::LoggingSink::Entry::Logger::kClient;
+    constexpr char kMessage[] = "this is a message";
+    mock_entry.payload.message = kMessage;
+    mock_entry.payload.message_length = mock_entry.payload.message.size();
+    mock_entry.payload_truncated = true;
+    mock_entry.peer.type =
+        grpc_core::LoggingSink::Entry::Address::Type::kIpv4;
+    mock_entry.peer.address = "172.17.0.17";
+    mock_entry.peer.ip_port = 42842;
+    mock_entry.authority =
+        "observability-test-server-4ydoge240628155733:14285";
+    mock_entry.service_name = "grpc.testing.TestService";
+    mock_entry.method_name = "UnaryCall";
+    mock_entry.timestamp = grpc_core::Timestamp::Now();
+    ::google::protobuf::Struct proto_payload;
+    EntryToJsonStructProto(mock_entry, &proto_payload);
+    std::string json_payload;
+    google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
+    std::cout << json_payload << std::endl;
+    logger_provider_->GetLogger("otel_plugin_logger")
+        ->Debug(json_payload, opentelemetry::common::MakeAttributes(
+                                  {{"type", "BINARY_LOG"}}));
   }
+  {
+    // Audit logging
+    grpc_core::experimental::AuditContext ac(
+        "UnaryCall", "spiffe://foo/user1", "example-policy", "admin-access",
+        true);
+    ::google::protobuf::Struct proto_payload;
+    (*proto_payload.mutable_fields())["rpcMethod"].set_string_value(
+        ac.rpc_method());
+    (*proto_payload.mutable_fields())["principal"].set_string_value(
+        ac.principal());
+    (*proto_payload.mutable_fields())["policyName"].set_string_value(
+        ac.policy_name());
+    (*proto_payload.mutable_fields())["matchedRule"].set_string_value(
+        ac.matched_rule());
+    (*proto_payload.mutable_fields())["authorized"].set_bool_value(
+        ac.authorized());
+    std::string json_payload;
+    google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
+    logger_provider_->GetLogger("otel_plugin_logger")
+        ->Debug(json_payload, opentelemetry::common::MakeAttributes(
+                                  {{"type", "AUDIT_LOG"}}));
+  }
+  */
   if (meter_provider_ == nullptr) {
     return absl::InvalidArgumentError(
         "Need to configure a valid meter provider.");
   }
   grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<OpenTelemetryPluginImpl>(
-          metrics_, std::move(meter_provider_),
+          metrics_, std::move(meter_provider_), std::move(logger_provider_),
           std::move(target_attribute_filter_),
           std::move(generic_method_attribute_filter_),
           std::move(server_selector_), std::move(plugin_options_),
@@ -319,7 +320,8 @@ OpenTelemetryPluginBuilderImpl::Build() {
         "Need to configure a valid meter provider.");
   }
   return std::make_shared<OpenTelemetryPluginImpl>(
-      metrics_, meter_provider_, std::move(target_attribute_filter_),
+      metrics_, std::move(meter_provider_), std::move(logger_provider_),
+      std::move(target_attribute_filter_),
       std::move(generic_method_attribute_filter_), std::move(server_selector_),
       std::move(plugin_options_), std::move(optional_label_keys_),
       std::move(channel_scope_filter_));
@@ -422,10 +424,18 @@ void OpenTelemetryPluginImpl::ServerBuilderOption::UpdateArguments(
   plugin_->AddToChannelArguments(args);
 }
 
+void OpenTelemetryPluginImpl::LoggingSink::LogEntry(Entry entry) {
+  ::google::protobuf::Struct proto_payload;
+  EntryToJsonStructProto(entry, &proto_payload);
+  std::string json_payload;
+  google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
+  logger_->Debug(json_payload);
+}
+
 OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
     const absl::flat_hash_set<std::string>& metrics,
-    opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
-        meter_provider,
+    std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider,
+    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter,
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -439,12 +449,17 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
         bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter)
     : meter_provider_(std::move(meter_provider)),
+      logger_provider_(std::move(logger_provider)),
       server_selector_(std::move(server_selector)),
       target_attribute_filter_(std::move(target_attribute_filter)),
       generic_method_attribute_filter_(
           std::move(generic_method_attribute_filter)),
       plugin_options_(std::move(plugin_options)),
       channel_scope_filter_(std::move(channel_scope_filter)) {
+  if (logger_provider_ != nullptr) {
+    grpc_core::RegisterLoggingFilter(
+        new LoggingSink(logger_provider_->GetLogger("otel_plugin_logger")));
+  }
   auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
   // Per-call metrics.
   if (metrics.contains(grpc::OpenTelemetryPluginBuilder::

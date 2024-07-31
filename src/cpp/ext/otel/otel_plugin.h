@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include <bitset>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,6 +33,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "opentelemetry/logs/logger.h"
+#include "opentelemetry/logs/logger_provider.h"
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/observer_result.h"
@@ -42,6 +45,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/impl/server_builder_option.h>
 
+#include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/metrics.h"
@@ -212,8 +216,8 @@ class OpenTelemetryPluginImpl
  public:
   OpenTelemetryPluginImpl(
       const absl::flat_hash_set<std::string>& metrics,
-      opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
-          meter_provider,
+      std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider,
+      std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider,
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter,
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -383,6 +387,25 @@ class OpenTelemetryPluginImpl
     std::shared_ptr<OpenTelemetryPluginImpl> plugin_;
   };
 
+  class LoggingSink : public grpc_core::LoggingSink {
+   public:
+    explicit LoggingSink(
+        opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger)
+        : logger_(std::move(logger)) {}
+
+    Config FindMatch(bool is_client, absl::string_view service,
+                     absl::string_view method) override {
+      // TODO(yijiem): lift the config_parser from net/grpc.
+      return Config(std::numeric_limits<uint32_t>::max(),
+                    std::numeric_limits<uint32_t>::max());
+    }
+
+    void LogEntry(Entry entry) override;
+
+   private:
+    opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger_;
+  };
+
   // Returns the string form of \a key
   static absl::string_view OptionalLabelKeyToString(
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key);
@@ -507,8 +530,8 @@ class OpenTelemetryPluginImpl
   absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
                       grpc_core::Timestamp>
       callback_timestamps_ ABSL_GUARDED_BY(mu_);
-  opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
-      meter_provider_;
+  std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
+  std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider_;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
       server_selector_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
