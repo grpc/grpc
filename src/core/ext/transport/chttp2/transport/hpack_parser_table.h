@@ -21,6 +21,8 @@
 
 #include <stdint.h>
 
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -139,6 +141,12 @@ class HPackTable {
     // Maximum number of entries we could possibly fit in the table, given
     // defined overheads.
     uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
+    // Which index holds a timestamp (or kNoTimestamp if none do).
+    static constexpr uint32_t kNoTimestamp =
+        std::numeric_limits<uint32_t>::max();
+    uint32_t timestamp_index_ = kNoTimestamp;
+    // The timestamp associated with timestamp_entry_.
+    Timestamp timestamp_;
 
     std::vector<Memento> entries_;
   };

@@ -48,6 +48,10 @@ void HPackTable::MementoRingBuffer::Put(Memento m) {
     return entries_.push_back(std::move(m));
   }
   size_t index = (first_entry_ + num_entries_) % max_entries_;
+  if (timestamp_index_ == kNoTimestamp) {
+    timestamp_index_ = index;
+    timestamp_ = Timestamp::Now();
+  }
   entries_[index] = std::move(m);
   ++num_entries_;
 }
@@ -55,6 +59,11 @@ void HPackTable::MementoRingBuffer::Put(Memento m) {
 auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   CHECK_GT(num_entries_, 0u);
   size_t index = first_entry_ % max_entries_;
+  if (index == timestamp_index_) {
+    global_stats().IncrementHttp2HpackEntryLifetime(
+        (Timestamp::Now() - timestamp_).millis());
+    timestamp_index_ = kNoTimestamp;
+  }
   ++first_entry_;
   --num_entries_;
   auto& entry = entries_[index];

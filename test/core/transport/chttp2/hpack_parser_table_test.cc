@@ -152,6 +152,7 @@ TEST(HpackParserTableTest, ManyUnusedAdditions) {
   ExecCtx exec_ctx;
 
   auto stats_before = global_stats().Collect();
+  const Timestamp start = grpc_core::Timestamp::Now();
 
   for (i = 0; i < 100000; i++) {
     std::string key = absl::StrCat("K.", i);
@@ -170,10 +171,22 @@ TEST(HpackParserTableTest, ManyUnusedAdditions) {
   tbl.reset();
 
   auto stats_after = global_stats().Collect();
+  const Timestamp end = grpc_core::Timestamp::Now();
 
   EXPECT_EQ(stats_after->http2_hpack_hits, stats_before->http2_hpack_hits);
   EXPECT_EQ(stats_after->http2_hpack_misses - stats_before->http2_hpack_misses,
             100000);
+
+  size_t num_buckets_changed = 0;
+  const auto& lifetime_before = stats_before->http2_hpack_entry_lifetime;
+  const auto& lifetime_after = stats_after->http2_hpack_entry_lifetime;
+  for (size_t i = 0; i < lifetime_before.bucket_count(); i++) {
+    if (lifetime_before.buckets()[i] != lifetime_after.buckets()[i]) {
+      EXPECT_LE(i, lifetime_before.BucketFor((end - start).millis()));
+      num_buckets_changed++;
+    }
+  }
+  EXPECT_GT(num_buckets_changed, 0);
 }
 
 }  // namespace grpc_core
