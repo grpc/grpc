@@ -301,13 +301,15 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
         "Need to configure a valid meter provider.");
   }
   */
-  grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
-      std::make_shared<OpenTelemetryPluginImpl>(
-          metrics_, std::move(meter_provider_), std::move(logger_provider_),
-          std::move(target_attribute_filter_),
-          std::move(generic_method_attribute_filter_),
-          std::move(server_selector_), std::move(plugin_options_),
-          std::move(optional_label_keys_), std::move(channel_scope_filter_)));
+  auto otel_plugin = std::make_shared<OpenTelemetryPluginImpl>(
+      metrics_, std::move(meter_provider_), std::move(logger_provider_),
+      std::move(target_attribute_filter_),
+      std::move(generic_method_attribute_filter_), std::move(server_selector_),
+      std::move(plugin_options_), std::move(optional_label_keys_),
+      std::move(channel_scope_filter_));
+  if (meter_provider_ != nullptr) {
+    grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(otel_plugin);
+  }
   return absl::OkStatus();
 }
 
