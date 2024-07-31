@@ -393,7 +393,7 @@ class OpenTelemetryPluginImpl
         opentelemetry::nostd::shared_ptr<opentelemetry::logs::LoggerProvider>
             logger_provider,
         opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger)
-        : logger_(std::move(logger)) {}
+        : logger_provider_(logger_provider), logger_(std::move(logger)) {}
 
     Config FindMatch(bool is_client, absl::string_view service,
                      absl::string_view method) override {
