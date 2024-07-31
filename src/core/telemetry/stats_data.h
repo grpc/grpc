@@ -35,7 +35,7 @@ class Histogram_100000_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 20; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_100000_20 operator-(const Histogram_100000_20& left,
                                        const Histogram_100000_20& right);
 
@@ -59,7 +59,7 @@ class Histogram_65536_26 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 26; }
+  size_t bucket_count() const { return 26; }
   friend Histogram_65536_26 operator-(const Histogram_65536_26& left,
                                       const Histogram_65536_26& right);
 
@@ -83,7 +83,7 @@ class Histogram_100_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 20; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_100_20 operator-(const Histogram_100_20& left,
                                     const Histogram_100_20& right);
 
@@ -107,7 +107,7 @@ class Histogram_16777216_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 20; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
                                          const Histogram_16777216_20& right);
 
@@ -131,7 +131,7 @@ class Histogram_80_10 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 10; }
+  size_t bucket_count() const { return 10; }
   friend Histogram_80_10 operator-(const Histogram_80_10& left,
                                    const Histogram_80_10& right);
 
@@ -155,7 +155,7 @@ class Histogram_10000_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 20; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
                                       const Histogram_10000_20& right);
 
@@ -179,7 +179,7 @@ class Histogram_1800000_40 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
-  const size_t bucket_count() const { return 40; }
+  size_t bucket_count() const { return 40; }
   friend Histogram_1800000_40 operator-(const Histogram_1800000_40& left,
                                         const Histogram_1800000_40& right);
 
