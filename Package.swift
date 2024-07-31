@@ -1951,6 +1951,7 @@ let package = Package(
         "src/core/util/time_precise.cc",
         "src/core/util/time_precise.h",
         "src/core/util/tmpfile.h",
+        "src/core/util/unique_ptr_with_bitset.h",
         "src/core/util/upb_utils.h",
         "src/core/util/useful.h",
         "src/core/util/windows/cpu.cc",

@@ -81,4 +81,4 @@ class UniquePtrWithBitset {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_UTIL_UNIQUE_PTR_WITH_BITSET_H
