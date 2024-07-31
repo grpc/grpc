@@ -464,7 +464,7 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
     // Figure out why we need to do this.
     grpc_core::CoreConfiguration::Reset();
     grpc_core::RegisterLoggingFilter(new LoggingSink(
-        logger_provider, logger_provider_->GetLogger("otel_plugin_logger")));
+        logger_provider_, logger_provider_->GetLogger("otel_plugin_logger")));
   }
   if (meter_provider_ == nullptr) {
     return;
