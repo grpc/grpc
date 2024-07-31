@@ -21,6 +21,11 @@ licenses(["notice"])
 package(default_visibility = ["//:__subpackages__"])
 
 filegroup(
+    name = "_single_module_tester",
+    srcs = ["_single_module_tester.py"],
+)
+
+filegroup(
     name = "_gevent_test_main",
     srcs = ["_gevent_test_main.py"],
 )

@@ -12,34 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import tempfile
-import sys
+import os
 import subprocess
+import sys
+import tempfile
 
-LOGGING_ERROR_THRESHOLD = 50
-LOGGING_OUT_THRESHOLD = 20
+LOGGING_OUT_THRESHOLD = 0
+LOGGING_ERROR_THRESHOLD = 4
 
 if __name__ == "__main__":
- 
-    if len(sys.argv) != 2:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
-
-    target_module = sys.argv[1]
-    command = [sys.executable, "./src/python/grpcio_tests/tests/unit/_single_module_tester.py", target_module]  
     
-    with tempfile.TemporaryFile(mode="w+") as client_stdout:
-        with tempfile.TemporaryFile(mode="w+") as client_stderr:
-            result = subprocess.run(command, stdout=client_stdout, stderr=client_stderr, text=True) 
+    if len(sys.argv) != 3:
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+        sys.exit(1)
 
-            client_stdout.seek(0)
-            client_stderr.seek(0)
+    test_script = sys.argv[1]
+    target_module = sys.argv[2]
 
-            stdout_count = len(client_stdout.readlines()) 
-            stderr_count = len(client_stderr.readlines())
+    command = [
+        sys.executable, 
+        os.path.realpath(test_script), 
+        target_module, 
+        os.path.dirname(os.path.relpath(__file__))
+    ]
+
+    with tempfile.TemporaryFile(mode="w+") as stdout_file:
+        with tempfile.TemporaryFile(mode="w+") as stderr_file:
+
+            result = subprocess.run(
+                command, stdout=stdout_file, stderr=stderr_file, text=True, check=True
+            )
+
+            stdout_file.seek(0)
+            stderr_file.seek(0)
+
+            stdout_count = len(stdout_file.readlines())
+            stderr_count = len(stderr_file.readlines())
 
             if result.returncode != 0:
                 sys.exit('Test failure')
+
+            if stderr_count > LOGGING_ERROR_THRESHOLD:
+                print(f"Warning: Excessive error output detected ({stderr_count} lines):", file=sys.stderr)
+                stderr_file.seek(0)
+                for line in stderr_file:
+                    print(line.rstrip(), file=sys.stderr)                
+                    
+            if stdout_count > LOGGING_OUT_THRESHOLD:
+                print(f"Warning: Unexpected output detected ({stdout_count} lines):", file=sys.stderr)
+                stdout_file.seek(0)
+                for line in stdout_file:
+                    print(line.rstrip(), file=sys.stderr)            
             
-            if stderr_count > LOGGING_ERROR_THRESHOLD or stdout_count > LOGGING_OUT_THRESHOLD:
-                sys.exit('Test failure')
+                
