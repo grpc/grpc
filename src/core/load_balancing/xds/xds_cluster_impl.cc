@@ -64,6 +64,7 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -201,9 +202,11 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        LocalityData locality_data)
+        LocalityData locality_data, absl::string_view hostname)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
-          locality_data_(std::move(locality_data)) {}
+          locality_data_(std::move(locality_data)),
+          hostname_(grpc_event_engine::experimental::Slice::FromCopiedString(
+              hostname)) {}
 
     RefCountedStringValue locality() const {
       return Match(
@@ -225,8 +228,13 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           });
     }
 
+    const grpc_event_engine::experimental::Slice& hostname() const {
+      return hostname_;
+    }
+
    private:
     LocalityData locality_data_;
+    grpc_event_engine::experimental::Slice hostname_;
   };
 
   // A picker that wraps the picker from the child to perform drops.
@@ -454,6 +462,20 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
     }
+    // Handle authority rewriting if needed.
+    if (!subchannel_wrapper->hostname().empty()) {
+      auto* route_state_attribute =
+          call_state->GetCallAttribute<XdsRouteStateAttribute>();
+      if (route_state_attribute != nullptr) {
+        auto* route_action =
+            absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+                &route_state_attribute->route().action);
+        if (route_action != nullptr && route_action->auto_host_rewrite) {
+          complete_pick->authority_override =
+              subchannel_wrapper->hostname().Ref();
+        }
+      }
+    }
     // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     // Inject subchannel call tracker to record call completion.
@@ -652,23 +674,35 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
     return nullptr;
   }
   // Configure root cert.
-  absl::string_view root_provider_instance_name =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.instance_name;
-  absl::string_view root_cert_name =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.certificate_name;
+  absl::string_view root_cert_name;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
-  if (!root_provider_instance_name.empty()) {
-    root_cert_provider =
-        xds_client_->certificate_provider_store()
-            .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (root_cert_provider == nullptr) {
-      return absl::InternalError(
-          absl::StrCat("Certificate provider instance name: \"",
-                       root_provider_instance_name, "\" not recognized."));
-    }
-  }
+  bool use_system_root_certs = false;
+  absl::Status status = Match(
+      cluster_resource.common_tls_context.certificate_validation_context
+          .ca_certs,
+      [](const absl::monostate&) {
+        // No root cert configured.
+        return absl::OkStatus();
+      },
+      [&](const CommonTlsContext::CertificateProviderPluginInstance&
+              cert_provider) {
+        root_cert_name = cert_provider.certificate_name;
+        root_cert_provider =
+            xds_client_->certificate_provider_store()
+                .CreateOrGetCertificateProvider(cert_provider.instance_name);
+        if (root_cert_provider == nullptr) {
+          return absl::InternalError(
+              absl::StrCat("Certificate provider instance name: \"",
+                           cert_provider.instance_name, "\" not recognized."));
+        }
+        return absl::OkStatus();
+      },
+      [&](const CommonTlsContext::CertificateValidationContext::
+              SystemRootCerts&) {
+        use_system_root_certs = true;
+        return absl::OkStatus();
+      });
+  if (!status.ok()) return status;
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
       cluster_resource.common_tls_context.tls_certificate_provider_instance
@@ -693,8 +727,8 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
           .match_subject_alt_names;
   // Create xds cert provider.
   return MakeRefCounted<XdsCertificateProvider>(
-      root_cert_provider, root_cert_name, identity_cert_provider,
-      identity_cert_name, san_matchers);
+      std::move(root_cert_provider), root_cert_name, use_system_root_certs,
+      std::move(identity_cert_provider), identity_cert_name, san_matchers);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -808,7 +842,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
-      std::move(locality_data));
+      std::move(locality_data),
+      per_address_args.GetString(GRPC_ARG_ADDRESS_NAME).value_or(""));
 }
 
 void XdsClusterImplLb::Helper::UpdateState(

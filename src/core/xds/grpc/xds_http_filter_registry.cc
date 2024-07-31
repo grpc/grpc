@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter_registry.h"
 
 #include <map>
 #include <utility>
@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"

@@ -25,9 +25,6 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
-    "http2_stats_fix": "http2_stats_fix",
-    "keepalive_fix": "keepalive_fix",
-    "keepalive_server_fix": "keepalive_server_fix",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -138,6 +135,10 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_client",
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -153,9 +154,15 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "lb_unit_test": [
+                "work_serializer_dispatch",
+            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "work_serializer_dispatch",
             ],
         },
         "on": {
@@ -164,10 +171,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_listener",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -177,14 +180,12 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
         },
     },

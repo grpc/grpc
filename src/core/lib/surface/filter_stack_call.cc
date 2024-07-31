@@ -59,7 +59,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -269,7 +268,7 @@ void FilterStackCall::ExternalUnref() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c=" << this << ")";
 
   MaybeUnpublishFromParent();
 
@@ -731,6 +730,8 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
                                             bool is_notify_tag_closure) {
+  GRPC_LATENT_SEE_INNER_SCOPE("FilterStackCall::StartBatch");
+
   size_t i;
   const grpc_op* op;
   BatchControl* bctl;
