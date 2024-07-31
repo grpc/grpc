@@ -98,10 +98,10 @@ grpc_cc_library(
         "benchmark",
     ],
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//test/core/test_util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
 )
@@ -350,10 +350,6 @@ grpc_cc_benchmark(
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
-    tags = [
-        "manual",
-        "notap",
-    ],
     deps = [":callback_unary_ping_pong_h"],
 )
 
@@ -377,10 +373,6 @@ grpc_cc_benchmark(
     srcs = [
         "bm_callback_streaming_ping_pong.cc",
     ],
-    tags = [
-        "manual",
-        "notap",
-    ],
     deps = [":callback_streaming_ping_pong_h"],
 )
 
@@ -399,6 +391,22 @@ grpc_cc_benchmark(
         "//:gpr",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_basic_work_queue",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_stats_plugin",
+    srcs = ["bm_stats_plugin.cc"],
+    external_deps = [
+        "absl/strings",
+        "otel/sdk/src/metrics",
+    ],
+    deps = [
+        ":helpers",
+        "//src/core:metrics",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )

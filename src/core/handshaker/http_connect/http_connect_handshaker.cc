@@ -189,7 +189,7 @@ bool HttpConnectHandshaker::OnReadDoneLocked(absl::Status error) {
   // Add buffer to parser.
   while (args_->read_buffer.Count() > 0) {
     Slice slice = args_->read_buffer.TakeFirst();
-    if (slice.length() > 0) {
+    if (!slice.empty()) {
       size_t body_start_offset = 0;
       error = grpc_http_parser_parse(&http_parser_, slice.c_slice(),
                                      &body_start_offset);
@@ -296,8 +296,8 @@ void HttpConnectHandshaker::DoHandshake(
   // Log connection via proxy.
   std::string proxy_name(grpc_endpoint_get_peer(args->endpoint.get()));
   std::string server_name_string(*server_name);
-  LOG(INFO) << "Connecting to server " << server_name_string
-            << " via HTTP proxy " << proxy_name;
+  VLOG(2) << "Connecting to server " << server_name_string << " via HTTP proxy "
+          << proxy_name;
   // Construct HTTP CONNECT request.
   grpc_http_request request;
   request.method = const_cast<char*>("CONNECT");

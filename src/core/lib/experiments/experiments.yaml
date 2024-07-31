@@ -91,28 +91,6 @@
   expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
-- name: http2_stats_fix
-  description:
-    Fix on HTTP2 outgoing data stats reporting
-  expiry: 2024/09/30
-  owner: yashkt@google.com
-  test_tags: []
-- name: keepalive_fix
-  description:
-    Allows overriding keepalive_permit_without_calls.
-    Refer https://github.com/grpc/grpc/pull/33428 for more information.
-  expiry: 2024/06/30
-  owner: yashkt@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
-- name: keepalive_server_fix
-  description:
-    Allows overriding keepalive_permit_without_calls for servers.
-    Refer https://github.com/grpc/grpc/pull/33917 for more information.
-  expiry: 2024/12/31
-  owner: yashkt@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: max_pings_wo_data_throttle
   description:
     Experiment to throttle pings to a period of 1 min when
@@ -197,7 +175,7 @@
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/07/01
+  expiry: 2024/10/01
   owner: ctiller@google.com
   test_tags: []
 - name: work_serializer_dispatch
@@ -205,6 +183,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/06/30
+  expiry: 2024/09/30
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]

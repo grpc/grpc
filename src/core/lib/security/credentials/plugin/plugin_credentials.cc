@@ -35,7 +35,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -200,8 +199,9 @@ grpc_plugin_credentials::grpc_plugin_credentials(
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level, void* reserved) {
-  GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
-                 (reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_metadata_credentials_create_from_plugin(reserved=" << reserved
+      << ")";
   CHECK_EQ(reserved, nullptr);
   return new grpc_plugin_credentials(plugin, min_security_level);
 }

@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
@@ -166,11 +167,12 @@ class CallCombinerClosureList {
                                closure.reason);
     }
     if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
-      gpr_log(GPR_INFO,
-              "CallCombinerClosureList executing closure while already "
-              "holding call_combiner %p: closure=%s error=%s reason=%s",
-              call_combiner, closures_[0].closure->DebugString().c_str(),
-              StatusToString(closures_[0].error).c_str(), closures_[0].reason);
+      LOG(INFO) << "CallCombinerClosureList executing closure while already "
+                   "holding call_combiner "
+                << call_combiner
+                << ": closure=" << closures_[0].closure->DebugString()
+                << " error=" << StatusToString(closures_[0].error)
+                << " reason=" << closures_[0].reason;
     }
     // This will release the call combiner.
     ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);

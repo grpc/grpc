@@ -40,7 +40,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
 
@@ -123,9 +122,9 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
-    LOG(INFO) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
-                 "value less than minimum. Overriding configured value to "
-                 "minimum.";
+    VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
+               "value less than minimum. Overriding configured value to "
+               "minimum.";
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.
@@ -406,8 +405,8 @@ grpc_tls_certificate_provider_file_watcher_create(
 
 void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider) {
-  GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1,
-                 (provider));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_tls_certificate_provider_release(provider=" << provider << ")";
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
 }

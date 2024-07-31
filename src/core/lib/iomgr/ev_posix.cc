@@ -46,9 +46,9 @@
 
 // Polling API trace only enabled in debug builds
 #ifndef NDEBUG
-#define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (GRPC_TRACE_FLAG_ENABLED(polling_api)) {                \
-    gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
+#define GRPC_POLLING_API_TRACE(format, ...)                                \
+  if (GRPC_TRACE_FLAG_ENABLED(polling_api)) {                              \
+    LOG(INFO) << "(polling-api) " << absl::StrFormat(format, __VA_ARGS__); \
   }
 #else
 #define GRPC_POLLING_API_TRACE(...)
@@ -104,7 +104,8 @@ static void try_engine(absl::string_view engine) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
         g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
-      VLOG(2) << "Using polling engine: " << g_event_engine->name;
+      GRPC_TRACE_VLOG(polling_api, 2)
+          << "Using polling engine: " << g_event_engine->name;
       return;
     }
   }
