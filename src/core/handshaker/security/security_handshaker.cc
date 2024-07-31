@@ -88,12 +88,15 @@ class SecurityHandshaker : public Handshaker {
 
  private:
   grpc_error_handle DoHandshakerNextLocked(const unsigned char* bytes_received,
-                                           size_t bytes_received_size);
+                                           size_t bytes_received_size)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   grpc_error_handle OnHandshakeNextDoneLocked(
       tsi_result result, const unsigned char* bytes_to_send,
-      size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result);
-  void HandshakeFailedLocked(absl::Status error);
+      size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void HandshakeFailedLocked(absl::Status error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void Finish(absl::Status status);
 
   void OnHandshakeDataReceivedFromPeerFn(absl::Status error);
@@ -105,7 +108,7 @@ class SecurityHandshaker : public Handshaker {
       size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result);
   void OnPeerCheckedFn(grpc_error_handle error);
   size_t MoveReadBufferIntoHandshakeBuffer();
-  grpc_error_handle CheckPeerLocked();
+  grpc_error_handle CheckPeerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // State set at creation time.
   tsi_handshaker* handshaker_;
