@@ -714,7 +714,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     }
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
         GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream)) {
-      LOG(INFO) << "[t:" << t << " fd:" << grpc_endpoint_get_fd(t->ep.get())
+      LOG(INFO) << "[t:" << t << " fd:" << grpc_endpoint_get_fd(t->ep)
                 << " peer:" << t->peer_string.as_string_view()
                 << "] Accepting new stream; "
                    "num_incoming_streams_before_settings_ack="
