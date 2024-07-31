@@ -233,6 +233,7 @@ EXPORTS
     gpr_log
     gpr_should_log
     gpr_log_verbosity_init
+    gpr_set_log_function
     gpr_format_message
     gpr_strdup
     gpr_asprintf
