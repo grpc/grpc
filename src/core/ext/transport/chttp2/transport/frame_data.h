@@ -33,6 +33,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 // start processing a new data frame
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
@@ -49,7 +50,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* parser,
 
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              uint32_t write_bytes, int is_eof,
-                             grpc_transport_one_way_stats* stats,
+                             grpc_core::CallTracerInterface* call_tracer,
                              grpc_slice_buffer* outbuf);
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(

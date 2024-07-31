@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.66.0-dev'
+  version = '1.67.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -199,7 +199,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.35'
+    ss.dependency 'BoringSSL-GRPC', '0.0.36'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -221,6 +221,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/numeric/bits', abseil_version
     ss.dependency 'abseil/random/bit_gen_ref', abseil_version
     ss.dependency 'abseil/random/distributions', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
@@ -1756,7 +1757,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/byte_buffer.cc',
                       'src/core/lib/surface/byte_buffer_reader.cc',
                       'src/core/lib/surface/call.cc',
@@ -2090,18 +2090,25 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_client_grpc.h',
                       'src/core/xds/grpc/xds_cluster.cc',
                       'src/core/xds/grpc/xds_cluster.h',
+                      'src/core/xds/grpc/xds_cluster_parser.cc',
+                      'src/core/xds/grpc/xds_cluster_parser.h',
                       'src/core/xds/grpc/xds_cluster_specifier_plugin.cc',
                       'src/core/xds/grpc/xds_cluster_specifier_plugin.h',
                       'src/core/xds/grpc/xds_common_types.cc',
                       'src/core/xds/grpc/xds_common_types.h',
+                      'src/core/xds/grpc/xds_common_types_parser.cc',
+                      'src/core/xds/grpc/xds_common_types_parser.h',
                       'src/core/xds/grpc/xds_endpoint.cc',
                       'src/core/xds/grpc/xds_endpoint.h',
+                      'src/core/xds/grpc/xds_endpoint_parser.cc',
+                      'src/core/xds/grpc/xds_endpoint_parser.h',
                       'src/core/xds/grpc/xds_health_status.cc',
                       'src/core/xds/grpc/xds_health_status.h',
                       'src/core/xds/grpc/xds_http_fault_filter.cc',
                       'src/core/xds/grpc/xds_http_fault_filter.h',
-                      'src/core/xds/grpc/xds_http_filters.cc',
-                      'src/core/xds/grpc/xds_http_filters.h',
+                      'src/core/xds/grpc/xds_http_filter.h',
+                      'src/core/xds/grpc/xds_http_filter_registry.cc',
+                      'src/core/xds/grpc/xds_http_filter_registry.h',
                       'src/core/xds/grpc/xds_http_rbac_filter.cc',
                       'src/core/xds/grpc/xds_http_rbac_filter.h',
                       'src/core/xds/grpc/xds_http_stateful_session_filter.cc',
@@ -2110,10 +2117,16 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_lb_policy_registry.h',
                       'src/core/xds/grpc/xds_listener.cc',
                       'src/core/xds/grpc/xds_listener.h',
+                      'src/core/xds/grpc/xds_listener_parser.cc',
+                      'src/core/xds/grpc/xds_listener_parser.h',
                       'src/core/xds/grpc/xds_route_config.cc',
                       'src/core/xds/grpc/xds_route_config.h',
+                      'src/core/xds/grpc/xds_route_config_parser.cc',
+                      'src/core/xds/grpc/xds_route_config_parser.h',
                       'src/core/xds/grpc/xds_routing.cc',
                       'src/core/xds/grpc/xds_routing.h',
+                      'src/core/xds/grpc/xds_server_grpc.cc',
+                      'src/core/xds/grpc/xds_server_grpc.h',
                       'src/core/xds/grpc/xds_transport_grpc.cc',
                       'src/core/xds/grpc/xds_transport_grpc.h',
                       'src/core/xds/xds_client/xds_api.cc',
@@ -2213,6 +2226,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/message/copy.h',
                       'third_party/upb/upb/message/internal/accessors.h',
                       'third_party/upb/upb/message/internal/array.h',
+                      'third_party/upb/upb/message/internal/compare_unknown.c',
+                      'third_party/upb/upb/message/internal/compare_unknown.h',
                       'third_party/upb/upb/message/internal/extension.c',
                       'third_party/upb/upb/message/internal/extension.h',
                       'third_party/upb/upb/message/internal/map.h',
@@ -3227,7 +3242,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
                               'src/core/lib/surface/call_utils.h',
@@ -3385,18 +3399,25 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_certificate_provider.h',
                               'src/core/xds/grpc/xds_client_grpc.h',
                               'src/core/xds/grpc/xds_cluster.h',
+                              'src/core/xds/grpc/xds_cluster_parser.h',
                               'src/core/xds/grpc/xds_cluster_specifier_plugin.h',
                               'src/core/xds/grpc/xds_common_types.h',
+                              'src/core/xds/grpc/xds_common_types_parser.h',
                               'src/core/xds/grpc/xds_endpoint.h',
+                              'src/core/xds/grpc/xds_endpoint_parser.h',
                               'src/core/xds/grpc/xds_health_status.h',
                               'src/core/xds/grpc/xds_http_fault_filter.h',
-                              'src/core/xds/grpc/xds_http_filters.h',
+                              'src/core/xds/grpc/xds_http_filter.h',
+                              'src/core/xds/grpc/xds_http_filter_registry.h',
                               'src/core/xds/grpc/xds_http_rbac_filter.h',
                               'src/core/xds/grpc/xds_http_stateful_session_filter.h',
                               'src/core/xds/grpc/xds_lb_policy_registry.h',
                               'src/core/xds/grpc/xds_listener.h',
+                              'src/core/xds/grpc/xds_listener_parser.h',
                               'src/core/xds/grpc/xds_route_config.h',
+                              'src/core/xds/grpc/xds_route_config_parser.h',
                               'src/core/xds/grpc/xds_routing.h',
+                              'src/core/xds/grpc/xds_server_grpc.h',
                               'src/core/xds/grpc/xds_transport_grpc.h',
                               'src/core/xds/xds_client/xds_api.h',
                               'src/core/xds/xds_client/xds_bootstrap.h',
@@ -3455,6 +3476,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/message/copy.h',
                               'third_party/upb/upb/message/internal/accessors.h',
                               'third_party/upb/upb/message/internal/array.h',
+                              'third_party/upb/upb/message/internal/compare_unknown.h',
                               'third_party/upb/upb/message/internal/extension.h',
                               'third_party/upb/upb/message/internal/map.h',
                               'third_party/upb/upb/message/internal/map_entry.h',

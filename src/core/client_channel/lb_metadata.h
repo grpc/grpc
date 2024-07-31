@@ -21,6 +21,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/slice.h>
+
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/lb_policy.h"
 
@@ -44,6 +46,10 @@ class MetadataMutationHandler {
   static void Apply(LoadBalancingPolicy::MetadataMutations& metadata_mutations,
                     grpc_metadata_batch* metadata);
 };
+
+void MaybeOverrideAuthority(
+    grpc_event_engine::experimental::Slice authority_override,
+    grpc_metadata_batch* metadata);
 
 }  // namespace grpc_core
 

@@ -52,7 +52,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
         starting_up_server()
 
         # Initial metadata will be send back immediately after calling send_initial_metadata.
-        print("sending inital metadata back")
+        print("sending initial metadata back")
         servicer_context.send_initial_metadata(_INITIAL_METADATA)
 
         # Time for server to process the request.

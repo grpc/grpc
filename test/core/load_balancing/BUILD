@@ -158,6 +158,7 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_xds_override_host",
+        "//src/core:xds_health_status",
         "//test/core/test_util:grpc_test_util",
     ],
 )

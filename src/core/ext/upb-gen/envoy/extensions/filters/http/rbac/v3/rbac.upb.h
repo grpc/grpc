@@ -102,13 +102,13 @@ UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBAC_has_shadow_rules(cons
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_shadow_rules_stat_prefix(envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_extensions_filters_http_rbac_v3_RBAC_shadow_rules_stat_prefix(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -145,10 +145,34 @@ UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBAC_has_shadow_matcher(co
   const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_rules_stat_prefix(envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(40, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView envoy_extensions_filters_http_rbac_v3_RBAC_rules_stat_prefix(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(40, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_track_per_rule_stats(envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBAC_track_per_rule_stats(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_rules(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct envoy_config_rbac_v3_RBAC* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_rbac_v3_RBAC* envoy_extensions_filters_http_rbac_v3_RBAC_mutable_rules(envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena) {
   struct envoy_config_rbac_v3_RBAC* sub = (struct envoy_config_rbac_v3_RBAC*)envoy_extensions_filters_http_rbac_v3_RBAC_rules(msg);
@@ -160,7 +184,7 @@ UPB_INLINE struct envoy_config_rbac_v3_RBAC* envoy_extensions_filters_http_rbac_
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_rules(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct envoy_config_rbac_v3_RBAC* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_rbac_v3_RBAC* envoy_extensions_filters_http_rbac_v3_RBAC_mutable_shadow_rules(envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena) {
   struct envoy_config_rbac_v3_RBAC* sub = (struct envoy_config_rbac_v3_RBAC*)envoy_extensions_filters_http_rbac_v3_RBAC_shadow_rules(msg);
@@ -171,12 +195,12 @@ UPB_INLINE struct envoy_config_rbac_v3_RBAC* envoy_extensions_filters_http_rbac_
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_rules_stat_prefix(envoy_extensions_filters_http_rbac_v3_RBAC *msg, upb_StringView value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  const upb_MiniTableField field = {3, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_matcher(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct xds_type_matcher_v3_Matcher* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rbac_v3_RBAC_mutable_matcher(envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_Matcher* sub = (struct xds_type_matcher_v3_Matcher*)envoy_extensions_filters_http_rbac_v3_RBAC_matcher(msg);
@@ -188,7 +212,7 @@ UPB_INLINE struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rba
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_matcher(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct xds_type_matcher_v3_Matcher* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rbac_v3_RBAC_mutable_shadow_matcher(envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_Matcher* sub = (struct xds_type_matcher_v3_Matcher*)envoy_extensions_filters_http_rbac_v3_RBAC_shadow_matcher(msg);
@@ -197,6 +221,14 @@ UPB_INLINE struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rba
     if (sub) envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_matcher(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_rules_stat_prefix(envoy_extensions_filters_http_rbac_v3_RBAC *msg, upb_StringView value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(40, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_track_per_rule_stats(envoy_extensions_filters_http_rbac_v3_RBAC *msg, bool value) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.extensions.filters.http.rbac.v3.RBACPerRoute */
@@ -254,7 +286,7 @@ UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBACPerRoute_has_rbac(cons
 
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBACPerRoute_set_rbac(envoy_extensions_filters_http_rbac_v3_RBACPerRoute *msg, envoy_extensions_filters_http_rbac_v3_RBAC* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_rbac_v3_RBAC* envoy_extensions_filters_http_rbac_v3_RBACPerRoute_mutable_rbac(envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_http_rbac_v3_RBAC* sub = (struct envoy_extensions_filters_http_rbac_v3_RBAC*)envoy_extensions_filters_http_rbac_v3_RBACPerRoute_rbac(msg);

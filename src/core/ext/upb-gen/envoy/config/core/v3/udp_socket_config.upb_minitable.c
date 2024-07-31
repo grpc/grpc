@@ -29,6 +29,9 @@ const upb_MiniTable envoy__config__core__v3__UdpSocketConfig_msg_init = {
   &envoy_config_core_v3_UdpSocketConfig_submsgs[0],
   &envoy_config_core_v3_UdpSocketConfig__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.UdpSocketConfig",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

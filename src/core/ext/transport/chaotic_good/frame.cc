@@ -154,7 +154,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   CHECK_NE(arena, nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooledForOverwrite<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),

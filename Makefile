@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 42.0.0
-CPP_VERSION = 1.66.0-dev
+CORE_VERSION = 43.0.0
+CPP_VERSION = 1.67.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -42
+SHARED_VERSION_CORE = -43
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -1491,18 +1491,24 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_certificate_provider.cc \
     src/core/xds/grpc/xds_client_grpc.cc \
     src/core/xds/grpc/xds_cluster.cc \
+    src/core/xds/grpc/xds_cluster_parser.cc \
     src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
     src/core/xds/grpc/xds_common_types.cc \
+    src/core/xds/grpc/xds_common_types_parser.cc \
     src/core/xds/grpc/xds_endpoint.cc \
+    src/core/xds/grpc/xds_endpoint_parser.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
-    src/core/xds/grpc/xds_http_filters.cc \
+    src/core/xds/grpc/xds_http_filter_registry.cc \
     src/core/xds/grpc/xds_http_rbac_filter.cc \
     src/core/xds/grpc/xds_http_stateful_session_filter.cc \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
+    src/core/xds/grpc/xds_listener_parser.cc \
     src/core/xds/grpc/xds_route_config.cc \
+    src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \
+    src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/xds_api.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \
@@ -1684,6 +1690,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/compat.c \
     third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/compare_unknown.c \
     third_party/upb/upb/message/internal/extension.c \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
@@ -1836,8 +1843,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.42 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.42
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.43 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.43
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

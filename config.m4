@@ -866,18 +866,24 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_certificate_provider.cc \
     src/core/xds/grpc/xds_client_grpc.cc \
     src/core/xds/grpc/xds_cluster.cc \
+    src/core/xds/grpc/xds_cluster_parser.cc \
     src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
     src/core/xds/grpc/xds_common_types.cc \
+    src/core/xds/grpc/xds_common_types_parser.cc \
     src/core/xds/grpc/xds_endpoint.cc \
+    src/core/xds/grpc/xds_endpoint_parser.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
-    src/core/xds/grpc/xds_http_filters.cc \
+    src/core/xds/grpc/xds_http_filter_registry.cc \
     src/core/xds/grpc/xds_http_rbac_filter.cc \
     src/core/xds/grpc/xds_http_stateful_session_filter.cc \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
+    src/core/xds/grpc/xds_listener_parser.cc \
     src/core/xds/grpc/xds_route_config.cc \
+    src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \
+    src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/xds_api.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \
@@ -1342,6 +1348,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/compat.c \
     third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/compare_unknown.c \
     third_party/upb/upb/message/internal/extension.c \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
@@ -1384,7 +1391,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.66.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.67.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)

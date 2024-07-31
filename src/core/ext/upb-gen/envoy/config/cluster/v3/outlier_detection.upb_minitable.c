@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "envoy/config/cluster/v3/outlier_detection.upb_minitable.h"
+#include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
@@ -17,7 +18,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[22] = {
+static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[24] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
@@ -40,9 +41,11 @@ static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[2
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
   {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields[23] = {
+static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields[25] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -66,12 +69,17 @@ static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields
   {21, UPB_SIZE(92, 168), 83, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {22, UPB_SIZE(96, 176), 84, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {23, UPB_SIZE(100, 184), 85, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {24, UPB_SIZE(104, 192), 0, 22, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {25, UPB_SIZE(108, 200), 86, 23, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__cluster__v3__OutlierDetection_msg_init = {
   &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
   &envoy_config_cluster_v3_OutlierDetection__fields[0],
-  UPB_SIZE(104, 192), 23, kUpb_ExtMode_NonExtendable, 23, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(112, 208), 25, kUpb_ExtMode_NonExtendable, 25, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.cluster.v3.OutlierDetection",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -86,6 +94,22 @@ const upb_MiniTable envoy__config__cluster__v3__OutlierDetection_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000b00003f000060, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00c000003f1601c2, &upb_prm_2bt_maxmaxb},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

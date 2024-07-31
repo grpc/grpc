@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.66.0-dev")
-set(gRPC_CORE_VERSION     "42.0.0")
-set(gRPC_CORE_SOVERSION   "42")
-set(gRPC_CPP_VERSION      "1.66.0-dev")
-set(gRPC_CPP_SOVERSION    "1.66")
+set(PACKAGE_VERSION       "1.67.0-dev")
+set(gRPC_CORE_VERSION     "43.0.0")
+set(gRPC_CORE_SOVERSION   "43")
+set(gRPC_CPP_VERSION      "1.67.0-dev")
+set(gRPC_CPP_SOVERSION    "1.67")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -397,18 +397,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/78f198cf96ecdc7120ef640406770aa01af775c4.tar.gz
-    ddd3beedda1178a79e0d988f76f362002aced09749452515853f106e22bd2249
-    data-plane-api-78f198cf96ecdc7120ef640406770aa01af775c4
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+    e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
+    data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/78f198cf96ecdc7120ef640406770aa01af775c4.tar.gz
-    ddd3beedda1178a79e0d988f76f362002aced09749452515853f106e22bd2249
-    data-plane-api-78f198cf96ecdc7120ef640406770aa01af775c4
+    https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+    e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
+    data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -908,13 +908,10 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c bm_inproc)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c bm_load_balanced_call_destination)
+    add_dependencies(buildtests_c bm_metadata)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c bm_party)
-  endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c bm_picker)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fd_conservation_posix_test)
@@ -1242,6 +1239,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
+  add_dependencies(buildtests_cxx lb_metadata_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx load_balanced_call_destination_test)
   endif()
@@ -1808,6 +1806,7 @@ target_link_libraries(gpr
   absl::log_globals
   absl::log
   absl::memory
+  absl::bits
   absl::random_random
   absl::status
   absl::cord
@@ -2661,18 +2660,24 @@ add_library(grpc
   src/core/xds/grpc/xds_certificate_provider.cc
   src/core/xds/grpc/xds_client_grpc.cc
   src/core/xds/grpc/xds_cluster.cc
+  src/core/xds/grpc/xds_cluster_parser.cc
   src/core/xds/grpc/xds_cluster_specifier_plugin.cc
   src/core/xds/grpc/xds_common_types.cc
+  src/core/xds/grpc/xds_common_types_parser.cc
   src/core/xds/grpc/xds_endpoint.cc
+  src/core/xds/grpc/xds_endpoint_parser.cc
   src/core/xds/grpc/xds_health_status.cc
   src/core/xds/grpc/xds_http_fault_filter.cc
-  src/core/xds/grpc/xds_http_filters.cc
+  src/core/xds/grpc/xds_http_filter_registry.cc
   src/core/xds/grpc/xds_http_rbac_filter.cc
   src/core/xds/grpc/xds_http_stateful_session_filter.cc
   src/core/xds/grpc/xds_lb_policy_registry.cc
   src/core/xds/grpc/xds_listener.cc
+  src/core/xds/grpc/xds_listener_parser.cc
   src/core/xds/grpc/xds_route_config.cc
+  src/core/xds/grpc/xds_route_config_parser.cc
   src/core/xds/grpc/xds_routing.cc
+  src/core/xds/grpc/xds_server_grpc.cc
   src/core/xds/grpc/xds_transport_grpc.cc
   src/core/xds/xds_client/xds_api.cc
   src/core/xds/xds_client/xds_bootstrap.cc
@@ -3371,16 +3376,6 @@ add_library(grpc_unsecure
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -3424,8 +3419,8 @@ target_include_directories(grpc_unsecure
 )
 target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
   absl::config
@@ -3679,11 +3674,6 @@ add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/lex/strtod.c
   third_party/upb/upb/lex/unicode.c
   third_party/upb/upb/message/copy.c
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3701,11 +3691,6 @@ add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/method_def.c
   third_party/upb/upb/reflection/oneof_def.c
   third_party/upb/upb/reflection/service_def.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_json_lib PUBLIC cxx_std_14)
@@ -3741,8 +3726,8 @@ target_include_directories(upb_json_lib
 )
 target_link_libraries(upb_json_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
 )
 
 
@@ -3814,6 +3799,7 @@ add_library(upb_message_lib
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/message/array.c
   third_party/upb/upb/message/compat.c
+  third_party/upb/upb/message/internal/compare_unknown.c
   third_party/upb/upb/message/internal/extension.c
   third_party/upb/upb/message/internal/message.c
   third_party/upb/upb/message/map.c
@@ -3822,6 +3808,8 @@ add_library(upb_message_lib
   third_party/upb/upb/mini_table/extension_registry.c
   third_party/upb/upb/mini_table/internal/message.c
   third_party/upb/upb/mini_table/message.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_message_lib PUBLIC cxx_std_14)
@@ -3873,17 +3861,73 @@ if(gRPC_INSTALL)
 endif()
 
 
+add_library(upb_mini_descriptor_lib
+  third_party/upb/upb/hash/common.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
+)
+
+target_compile_features(upb_mini_descriptor_lib PUBLIC cxx_std_14)
+
+set_target_properties(upb_mini_descriptor_lib PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb_mini_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_descriptor_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_descriptor_lib.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb_mini_descriptor_lib
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb_mini_descriptor_lib
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb_base_lib
+  upb_mem_lib
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb_mini_descriptor_lib EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/lex/atoi.c
   third_party/upb/upb/lex/round_trip.c
   third_party/upb/upb/lex/strtod.c
   third_party/upb/upb/lex/unicode.c
   third_party/upb/upb/message/copy.c
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3902,11 +3946,6 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/oneof_def.c
   third_party/upb/upb/reflection/service_def.c
   third_party/upb/upb/text/encode.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_textformat_lib PUBLIC cxx_std_14)
@@ -3942,6 +3981,61 @@ target_include_directories(upb_textformat_lib
 )
 target_link_libraries(upb_textformat_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  upb_mini_descriptor_lib
+  upb_wire_lib
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb_textformat_lib EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
+add_library(upb_wire_lib
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/internal/decode_fast.c
+)
+
+target_compile_features(upb_wire_lib PUBLIC cxx_std_14)
+
+set_target_properties(upb_wire_lib PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb_wire_lib PROPERTIES COMPILE_PDB_NAME "upb_wire_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_wire_lib.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb_wire_lib
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb_wire_lib
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   utf8_range_lib
   upb_message_lib
 )
@@ -3949,7 +4043,7 @@ target_link_libraries(upb_textformat_lib
 
 
 if(gRPC_INSTALL)
-  install(TARGETS upb_textformat_lib EXPORT gRPCTargets
+  install(TARGETS upb_wire_lib EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -4084,8 +4178,8 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_BENCHMARK_LIBRARIES}
-  grpc++_unsecure
-  grpc_test_util_unsecure
+  grpc++
+  grpc_test_util
   grpc++_test_config
 )
 
@@ -5450,16 +5544,6 @@ add_library(grpc_authorization_provider
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -5502,8 +5586,8 @@ target_include_directories(grpc_authorization_provider
 )
 target_link_libraries(grpc_authorization_provider
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
@@ -6135,20 +6219,20 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(bm_load_balanced_call_destination
-    test/core/client_channel/bm_load_balanced_call_destination.cc
+  add_executable(bm_metadata
+    test/core/transport/bm_metadata.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
-      target_compile_definitions(bm_load_balanced_call_destination
+      target_compile_definitions(bm_metadata
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
       )
     endif()
   endif()
-  target_compile_features(bm_load_balanced_call_destination PUBLIC cxx_std_14)
-  target_include_directories(bm_load_balanced_call_destination
+  target_compile_features(bm_metadata PUBLIC cxx_std_14)
+  target_include_directories(bm_metadata
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6162,7 +6246,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(bm_load_balanced_call_destination
+  target_link_libraries(bm_metadata
     ${_gRPC_ALLTARGETS_LIBRARIES}
     ${_gRPC_BENCHMARK_LIBRARIES}
     grpc
@@ -6202,45 +6286,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bm_party
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    ${_gRPC_BENCHMARK_LIBRARIES}
-    grpc
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(bm_picker
-    test/core/load_balancing/bm_picker.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(bm_picker
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(bm_picker PUBLIC cxx_std_14)
-  target_include_directories(bm_picker
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(bm_picker
     ${_gRPC_ALLTARGETS_LIBRARIES}
     ${_gRPC_BENCHMARK_LIBRARIES}
     grpc
@@ -8767,6 +8812,7 @@ target_link_libraries(bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::check
+  absl::bits
 )
 
 
@@ -9062,16 +9108,6 @@ add_executable(call_filters_test
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/latent_see.cc
   test/core/transport/call_filters_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9104,8 +9140,8 @@ target_include_directories(call_filters_test
 target_link_libraries(call_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::no_destructor
   absl::flat_hash_map
@@ -9613,16 +9649,6 @@ add_executable(call_utils_test
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   test/core/call/call_utils_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9655,8 +9681,8 @@ target_include_directories(call_utils_test
 target_link_libraries(call_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
@@ -10070,16 +10096,6 @@ add_executable(cancel_callback_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
   test/core/promise/cancel_callback_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -10112,8 +10128,8 @@ target_include_directories(cancel_callback_test
 target_link_libraries(cancel_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -11180,16 +11196,6 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
   test/core/gprpp/chunked_vector_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11222,8 +11228,8 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -14486,16 +14492,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -14528,8 +14524,8 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::hash
@@ -15296,16 +15292,6 @@ add_executable(flow_control_test
   src/core/lib/transport/bdp_estimator.cc
   src/core/util/latent_see.cc
   test/core/transport/chttp2/flow_control_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15338,8 +15324,8 @@ target_include_directories(flow_control_test
 target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -15384,16 +15370,6 @@ add_executable(for_each_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
   test/core/promise/for_each_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15426,8 +15402,8 @@ target_include_directories(for_each_test
 target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -18933,16 +18909,6 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
   test/core/promise/interceptor_list_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18975,8 +18941,8 @@ target_include_directories(interceptor_list_test
 target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -19845,6 +19811,48 @@ target_link_libraries(lb_load_data_store_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(lb_metadata_test
+  test/core/client_channel/lb_metadata_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lb_metadata_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(lb_metadata_test PUBLIC cxx_std_14)
+target_include_directories(lb_metadata_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(lb_metadata_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(load_balanced_call_destination_test
@@ -20149,16 +20157,6 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
   test/core/promise/map_pipe_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20191,8 +20189,8 @@ target_include_directories(map_pipe_test
 target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -22416,6 +22414,7 @@ add_executable(periodic_update_test
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -22428,17 +22427,8 @@ add_executable(periodic_update_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/resource_quota/periodic_update_test.cc
-  third_party/upb/upb/mini_descriptor/build_enum.c
-  third_party/upb/upb/mini_descriptor/decode.c
-  third_party/upb/upb/mini_descriptor/internal/base92.c
-  third_party/upb/upb/mini_descriptor/internal/encode.c
-  third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -22471,8 +22461,8 @@ target_include_directories(periodic_update_test
 target_link_libraries(periodic_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  utf8_range_lib
-  upb_message_lib
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::flat_hash_map
   absl::function_ref
   absl::hash
@@ -30487,6 +30477,7 @@ target_link_libraries(table_test
   gtest
   absl::check
   absl::type_traits
+  absl::bits
   absl::utility
 )
 
@@ -33018,6 +33009,7 @@ target_link_libraries(unique_type_name_test
   gtest
   absl::flat_hash_map
   absl::check
+  absl::bits
   absl::str_format
 )
 
@@ -33138,6 +33130,7 @@ target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::check
+  absl::bits
 )
 
 
@@ -38032,7 +38025,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_any_invocable absl_base absl_bits absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   ""
   "-lgpr"
   ""
@@ -38043,10 +38036,10 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -38054,10 +38047,10 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "-laddress_sorting -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -38065,10 +38058,10 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -38076,10 +38069,10 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "-laddress_sorting -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
   "grpc++_unsecure.pc")
 
 # grpcpp_otel_plugin .pc file
@@ -38087,8 +38080,8 @@ generate_pkgconfig(
   "gRPC++ OpenTelemetry Plugin"
   "OpenTelemetry Plugin for gRPC C++"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
   "libcares openssl re2 zlib"
   "-lgrpcpp_otel_plugin"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mem_lib -lupb_base_lib"
   "grpcpp_otel_plugin.pc")
