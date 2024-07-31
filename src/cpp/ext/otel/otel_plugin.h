@@ -389,7 +389,9 @@ class OpenTelemetryPluginImpl
 
   class LoggingSink : public grpc_core::LoggingSink {
    public:
-    explicit LoggingSink(
+    LoggingSink(
+        opentelemetry::nostd::shared_ptr<opentelemetry::logs::LoggerProvider>
+            logger_provider,
         opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger)
         : logger_(std::move(logger)) {}
 
@@ -403,6 +405,8 @@ class OpenTelemetryPluginImpl
     void LogEntry(Entry entry) override;
 
    private:
+    opentelemetry::nostd::shared_ptr<opentelemetry::logs::LoggerProvider>
+        logger_provider_;
     opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger_;
   };
 
