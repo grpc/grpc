@@ -23,6 +23,7 @@
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/health_check_client_internal.h"
@@ -54,7 +55,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     return picker_;
   }
 
-  void UpdateState(size_t num_endpoints) {
+  void UpdateLbPolicy(size_t num_endpoints) {
     {
       MutexLock lock(&mu_);
       picker_ = nullptr;
@@ -65,7 +66,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
               grpc_resolved_address addr;
               int port = i % 65536;
               int ip = i / 65536;
-              CHECK(ip < 256);
+              CHECK_LT(ip, 256);
               CHECK(grpc_parse_uri(
                   URI::Parse(absl::StrCat("ipv4:127.0.0.", ip, ":", port))
                       .value(),
@@ -118,9 +119,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       }
     }
 
-    void CancelDataWatcher(DataWatcherInterface* watcher) override {
-      // LOG(FATAL) << "unimplemented";
-    }
+    void CancelDataWatcher(DataWatcherInterface* watcher) override {}
 
    private:
     void AddConnectivityWatcherInternal(
@@ -141,10 +140,9 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     BenchmarkHelper* helper_;
   };
 
-  class ChannelControl final
-      : public LoadBalancingPolicy::ChannelControlHelper {
+  class LbHelper final : public LoadBalancingPolicy::ChannelControlHelper {
    public:
-    explicit ChannelControl(BenchmarkHelper* helper) : helper_(helper) {}
+    explicit LbHelper(BenchmarkHelper* helper) : helper_(helper) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_resolved_address& address,
@@ -200,9 +198,9 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       std::make_shared<WorkSerializer>(event_engine_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_ =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
-          name_, LoadBalancingPolicy::Args{
-                     work_serializer_, std::make_unique<ChannelControl>(this),
-                     ChannelArgs()});
+          name_, LoadBalancingPolicy::Args{work_serializer_,
+                                           std::make_unique<LbHelper>(this),
+                                           ChannelArgs()});
   RefCountedPtr<LoadBalancingPolicy::Config> config_;
   Mutex mu_;
   CondVar cv_;
@@ -213,11 +211,14 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       connectivity_watchers_ ABSL_GUARDED_BY(mu_);
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_ =
       GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          experimental::StatsPluginChannelScope("foo", "foo"));
+          experimental::StatsPluginChannelScope(
+              "foo", "foo",
+              grpc_event_engine::experimental::ChannelArgsEndpointConfig{
+                  ChannelArgs{}}));
 };
 
 void BM_Pick(benchmark::State& state, BenchmarkHelper& helper) {
-  helper.UpdateState(state.range(0));
+  helper.UpdateLbPolicy(state.range(0));
   auto picker = helper.GetPicker();
   for (auto _ : state) {
     picker->Pick(LoadBalancingPolicy::PickArgs{
