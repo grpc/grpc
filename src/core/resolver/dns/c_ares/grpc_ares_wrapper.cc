@@ -62,6 +62,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -1179,8 +1180,10 @@ static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
 
 void (*grpc_cancel_ares_request)(grpc_ares_request* r) =
     grpc_cancel_ares_request_impl;
+grpc_core::Mutex ares_setup_mu_;
 
 grpc_error_handle grpc_ares_init(void) {
+  grpc_core::MutexLock lock(&ares_setup_mu_);
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
     return GRPC_ERROR_CREATE(
@@ -1189,6 +1192,9 @@ grpc_error_handle grpc_ares_init(void) {
   return absl::OkStatus();
 }
 
-void grpc_ares_cleanup(void) { ares_library_cleanup(); }
+void grpc_ares_cleanup(void) {
+  ares_library_cleanup();
+  grpc_core::MutexLock lock(&ares_setup_mu_);
+}
 
 #endif  // GRPC_ARES == 1
