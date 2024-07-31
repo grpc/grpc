@@ -126,7 +126,7 @@ class SecurityHandshaker : public Handshaker {
   tsi_handshaker_result* handshaker_result_ = nullptr;
   size_t max_frame_size_ = 0;
   std::string tsi_handshake_error_;
-  grpc_closure* on_peer_checked_ = nullptr;
+  grpc_closure* on_peer_checked_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
@@ -214,6 +214,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
 
 void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
   MutexLock lock(&mu_);
+  on_peer_checked_ = nullptr;
   if (!error.ok() || is_shutdown_) {
     HandshakeFailedLocked(error);
     return;
@@ -319,7 +320,6 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   }
   on_peer_checked_ = NewClosure(
       [self = RefAsSubclass<SecurityHandshaker>()](absl::Status status) {
-        self->on_peer_checked_ = nullptr;
         self->OnPeerCheckedFn(std::move(status));
       });
   connector_->check_peer(peer, args_->endpoint.get(), args_->args,
