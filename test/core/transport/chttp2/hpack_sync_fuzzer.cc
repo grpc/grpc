@@ -202,8 +202,8 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
     hpack_encoder_detail::Encoder encoder_2(
         &compressor, msg.use_true_binary_metadata(), encode_output_2);
     encoder_2.EmitIndexed(62);
-    CHECK_EQ(encode_output_2.Count(), 1);
-    grpc_metadata_batch read_metadata_2;
+    GPR_ASSERT(encode_output_2.Count() == 1);
+    grpc_metadata_batch read_metadata_2(arena.get());
     parser.BeginFrame(
         &read_metadata_2, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
         HPackParser::Priority::None,
