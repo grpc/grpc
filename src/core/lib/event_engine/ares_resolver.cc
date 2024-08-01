@@ -97,6 +97,8 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
       return absl::UnimplementedError(error_msg);
     case ARES_ENOTFOUND:
       return absl::NotFoundError(error_msg);
+    case ARES_ECONNREFUSED:
+      return absl::UnavailableError(error_msg);
     default:
       return absl::UnknownError(error_msg);
   }
