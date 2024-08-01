@@ -5335,9 +5335,11 @@ targets:
 - name: bm_picker
   build: test
   language: c
-  headers: []
+  headers:
+  - test/core/test_util/build.h
   src:
   - test/core/load_balancing/bm_picker.cc
+  - test/core/test_util/build.cc
   deps:
   - benchmark
   - grpc
