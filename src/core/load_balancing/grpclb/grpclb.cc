@@ -949,8 +949,8 @@ void GrpcLb::BalancerCallState::Orphan() {
 void GrpcLb::BalancerCallState::StartQuery() {
   CHECK_NE(lb_call_, nullptr);
   GRPC_TRACE_LOG(glb, INFO)
-          << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this < < < <
-      ": Starting LB call " << lb_call_;
+      << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this
+      << ": Starting LB call " << lb_call_;
   // Create the ops.
   grpc_call_error call_error;
   grpc_op ops[3];
@@ -1526,8 +1526,9 @@ class GrpcLb::NullLbTokenEndpointIterator final
   void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
-      GRPC_TRACE_LOG(glb, INFO) << "[grpclb " << this < < < <
-          "] fallback address: " << endpoint.ToString();
+      GRPC_TRACE_LOG(glb, INFO)
+          << "[grpclb " << this
+          << "] fallback address: " << endpoint.ToString();
       callback(EndpointAddresses(endpoint.addresses(),
                                  endpoint.args().SetObject(empty_token_)));
     });
@@ -1762,9 +1763,9 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
       std::make_unique<Helper>(RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args), &glb_trace);
-  GRPC_TRACE_LOG(glb, INFO) << "[grpclb " << this
-                            << "] Created new child policy handler (" < < < <
-      lb_policy.get() << ")";
+  GRPC_TRACE_LOG(glb, INFO)
+      << "[grpclb " << this << "] Created new child policy handler ("
+      << lb_policy.get() << ")";
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created child policy. This will make the child policy progress upon
   // activity on gRPC LB, which in turn is tied to the application's call.
@@ -1816,8 +1817,8 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   }
   // Update the policy.
   GRPC_TRACE_LOG(glb, INFO)
-          << "[grpclb " << this << "] Updating child policy handler " < < < <
-      child_policy_.get();
+      << "[grpclb " << this << "] Updating child policy handler "
+      << child_policy_.get();
   // TODO(roth): If we're in fallback mode and the child policy rejects the
   // update, we should propagate that failure back to the resolver somehow.
   (void)child_policy_->UpdateLocked(std::move(update_args));
@@ -1859,9 +1860,9 @@ void GrpcLb::OnSubchannelCacheTimerLocked() {
     subchannel_cache_timer_handle_.reset();
     auto it = cached_subchannels_.begin();
     if (it != cached_subchannels_.end()) {
-      GRPC_TRACE_LOG(glb, INFO) << "[grpclb " << this << "] removing "
-                                << it->second.size() < < < <
-          " subchannels from cache";
+      GRPC_TRACE_LOG(glb, INFO)
+          << "[grpclb " << this << "] removing " << it->second.size()
+          << " subchannels from cache";
       cached_subchannels_.erase(it);
     }
     if (!cached_subchannels_.empty()) {

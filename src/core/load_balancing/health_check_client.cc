@@ -342,8 +342,8 @@ class HealthProducer::ConnectivityWatcher final
 
 void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   GRPC_TRACE_LOG(health_check_client, INFO)
-          << "HealthProducer " << this << ": starting with subchannel " < < < <
-      subchannel.get();
+      << "HealthProducer " << this << ": starting with subchannel "
+      << subchannel.get();
   subchannel_ = std::move(subchannel);
   {
     MutexLock lock(&mu_);
@@ -498,8 +498,8 @@ MakeHealthCheckWatcher(
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
   }
   GRPC_TRACE_LOG(health_check_client, INFO)
-          << "creating HealthWatcher -- health_check_service_name=\"" < < < <
-      health_check_service_name.value_or("N/A") << "\"";
+      << "creating HealthWatcher -- health_check_service_name=\""
+      << health_check_service_name.value_or("N/A") << "\"";
   return std::make_unique<HealthWatcher>(std::move(work_serializer),
                                          std::move(health_check_service_name),
                                          std::move(watcher));

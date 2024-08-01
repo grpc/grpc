@@ -403,9 +403,8 @@ void PriorityLb::ChoosePriorityLocked() {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
     GRPC_TRACE_LOG(priority_lb, INFO)
-            << "[priority_lb " << this << "] trying priority "
-            << priority < < < <
-        ", child " << child_name;
+        << "[priority_lb " << this << "] trying priority " << priority
+        << ", child " << child_name;
     auto& child = children_[child_name];
     // Create child if needed.
     if (child == nullptr) {
@@ -462,9 +461,8 @@ void PriorityLb::ChoosePriorityLocked() {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
     GRPC_TRACE_LOG(priority_lb, INFO)
-            << "[priority_lb " << this << "] trying priority "
-            << priority < < < <
-        ", child " << child_name;
+        << "[priority_lb " << this << "] trying priority " << priority
+        << ", child " << child_name;
     auto& child = children_[child_name];
     CHECK(child != nullptr);
     if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
@@ -627,16 +625,16 @@ PriorityLb::ChildPriority::ChildPriority(
     RefCountedPtr<PriorityLb> priority_policy, std::string name)
     : priority_policy_(std::move(priority_policy)), name_(std::move(name)) {
   GRPC_TRACE_LOG(priority_lb, INFO)
-          << "[priority_lb " << priority_policy_.get() < < < <
-      "] creating child " << name_ << " (" << this << ")";
+      << "[priority_lb " << priority_policy_.get() << "] creating child "
+      << name_ << " (" << this << ")";
   // Start the failover timer.
   failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
 }
 
 void PriorityLb::ChildPriority::Orphan() {
   GRPC_TRACE_LOG(priority_lb, INFO)
-          << "[priority_lb " << priority_policy_.get() << "] child " < < < <
-      name_ << " (" << this << "): orphaned";
+      << "[priority_lb " << priority_policy_.get() << "] child " << name_
+      << " (" << this << "): orphaned";
   failover_timer_.reset();
   deactivation_timer_.reset();
   // Remove the child policy's interested_parties pollset_set from the
@@ -664,8 +662,8 @@ absl::Status PriorityLb::ChildPriority::UpdateLocked(
     bool ignore_reresolution_requests) {
   if (priority_policy_->shutting_down_) return absl::OkStatus();
   GRPC_TRACE_LOG(priority_lb, INFO)
-          << "[priority_lb " << priority_policy_.get() << "] child " < < < <
-      name_ << " (" << this << "): start update";
+      << "[priority_lb " << priority_policy_.get() << "] child " << name_
+      << " (" << this << "): start update";
   ignore_reresolution_requests_ = ignore_reresolution_requests;
   // Create policy if needed.
   if (child_policy_ == nullptr) {

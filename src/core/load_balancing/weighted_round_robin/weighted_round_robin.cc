@@ -568,15 +568,13 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
 
 WeightedRoundRobin::Picker::~Picker() {
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-          << "[WRR " << wrr_.get() << " picker " << this < < < <
-      "] destroying picker";
+      << "[WRR " << wrr_.get() << " picker " << this << "] destroying picker";
 }
 
 void WeightedRoundRobin::Picker::Orphaned() {
   MutexLock lock(&timer_mu_);
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-          << "[WRR " << wrr_.get() << " picker " << this < < < <
-      "] cancelling timer";
+      << "[WRR " << wrr_.get() << " picker " << this << "] cancelling timer";
   wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
   timer_handle_.reset();
   wrr_.reset();
@@ -643,8 +641,8 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
                            {wrr_->channel_control_helper()->GetTarget()},
                            {wrr_->locality_name_});
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-          << "[WRR " << wrr_.get() << " picker " << this < < < <
-      "] new weights: " << absl::StrJoin(weights, " ");
+      << "[WRR " << wrr_.get() << " picker " << this
+      << "] new weights: " << absl::StrJoin(weights, " ");
   auto scheduler_or = StaticStrideScheduler::Make(
       weights, [this]() { return wrr_->scheduler_state_.fetch_add(1); });
   std::shared_ptr<StaticStrideScheduler> scheduler;
@@ -652,12 +650,12 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     scheduler =
         std::make_shared<StaticStrideScheduler>(std::move(*scheduler_or));
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-            << "[WRR " << wrr_.get() << " picker " << this < < < <
-        "] new scheduler: " << scheduler.get();
+        << "[WRR " << wrr_.get() << " picker " << this
+        << "] new scheduler: " << scheduler.get();
   } else {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-            << "[WRR " << wrr_.get() << " picker " << this < < < <
-        "] no scheduler, falling back to RR";
+        << "[WRR " << wrr_.get() << " picker " << this
+        << "] no scheduler, falling back to RR";
     stats_plugins.AddCounter(kMetricRrFallback, 1,
                              {wrr_->channel_control_helper()->GetTarget()},
                              {wrr_->locality_name_});
@@ -686,8 +684,8 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
           MutexLock lock(&self->timer_mu_);
           if (self->timer_handle_.has_value()) {
             GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-                    << "[WRR " << self->wrr_.get() << " picker " < < < <
-                self.get() << "] timer fired";
+                << "[WRR " << self->wrr_.get() << " picker " << self.get()
+                << "] timer fired";
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
@@ -710,8 +708,8 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
                          .GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD)
                          .value_or("")) {
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-          << "[WRR " << this << "] Created -- locality_name=\"" < < < <
-      std::string(locality_name_) << "\"";
+      << "[WRR " << this << "] Created -- locality_name=\""
+      << std::string(locality_name_) << "\"";
 }
 
 WeightedRoundRobin::~WeightedRoundRobin() {
@@ -772,9 +770,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
             ordered_addresses.begin(), ordered_addresses.end()));
   } else {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-            << "[WRR " << this
-            << "] received update with address error: " < < < <
-        args.addresses.status().ToString();
+        << "[WRR " << this << "] received update with address error: "
+        << args.addresses.status().ToString();
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (endpoint_list_ != nullptr) return args.addresses.status();
@@ -887,8 +884,8 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OnStateUpdate(
   }
   if (new_state == GRPC_CHANNEL_IDLE) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-            << "[WRR " << wrr << "] child " << this < < < <
-        " reported IDLE; requesting connection";
+        << "[WRR " << wrr << "] child " << this
+        << " reported IDLE; requesting connection";
     ExitIdleLocked();
   } else if (new_state == GRPC_CHANNEL_READY) {
     // If we transition back to READY state, restart the blackout period.
@@ -983,14 +980,14 @@ void WeightedRoundRobin::WrrEndpointList::
   // 3) ALL children are TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
   if (num_ready_ > 0) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-            << "[WRR " << wrr << "] reporting READY with endpoint list " < < < <
-        this;
+        << "[WRR " << wrr << "] reporting READY with endpoint list " << this;
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
         MakeRefCounted<Picker>(wrr->RefAsSubclass<WeightedRoundRobin>(), this));
   } else if (num_connecting_ > 0) {
-    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO) << "[WRR " << wrr < < < <
-        "] reporting CONNECTING with endpoint list " << this;
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
+        << this;
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         MakeRefCounted<QueuePicker>(nullptr));

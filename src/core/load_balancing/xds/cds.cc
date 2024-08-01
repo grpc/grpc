@@ -663,9 +663,8 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
        Json::FromObject(std::move(outlier_detection_config))},
   })});
   GRPC_TRACE_LOG(cds_lb, INFO)
-          << "[cdslb " << this
-          << "] generated config for child policy: " < < < <
-      JsonDump(outlier_detection_policy, /*indent=*/1);
+      << "[cdslb " << this << "] generated config for child policy: "
+      << JsonDump(outlier_detection_policy, /*indent=*/1);
   return outlier_detection_policy;
 }
 
@@ -696,9 +695,8 @@ Json CdsLb::CreateChildPolicyConfigForAggregateCluster(
        })},
   })});
   GRPC_TRACE_LOG(cds_lb, INFO)
-          << "[cdslb " << this
-          << "] generated config for child policy: " < < < <
-      JsonDump(json, /*indent=*/1);
+      << "[cdslb " << this << "] generated config for child policy: "
+      << JsonDump(json, /*indent=*/1);
   return json;
 }
 
@@ -714,8 +712,8 @@ void CdsLb::ResetState() {
 }
 
 void CdsLb::ReportTransientFailure(absl::Status status) {
-  GRPC_TRACE_LOG(cds_lb, INFO) << "[cdslb " << this < < < <
-      "] reporting TRANSIENT_FAILURE: " << status;
+  GRPC_TRACE_LOG(cds_lb, INFO)
+      << "[cdslb " << this << "] reporting TRANSIENT_FAILURE: " << status;
   ResetState();
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,

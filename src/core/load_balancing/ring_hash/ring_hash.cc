@@ -656,9 +656,8 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     });
   } else {
     GRPC_TRACE_LOG(ring_hash_lb, INFO)
-            << "[RH " << this
-            << "] received update with addresses error: " < < < <
-        args.addresses.status();
+        << "[RH " << this << "] received update with addresses error: "
+        << args.addresses.status();
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (!endpoints_.empty()) return args.addresses.status();

@@ -274,8 +274,8 @@ void OrcaProducer::MaybeStartStreamLocked() {
 
 void OrcaProducer::NotifyWatchers(
     const BackendMetricData& backend_metric_data) {
-  GRPC_TRACE_LOG(orca_client, INFO) << "OrcaProducer " << this < < < <
-      ": reporting backend metrics to watchers";
+  GRPC_TRACE_LOG(orca_client, INFO)
+      << "OrcaProducer " << this << ": reporting backend metrics to watchers";
   MutexLock lock(&mu_);
   for (OrcaWatcher* watcher : watchers_) {
     watcher->watcher()->OnBackendMetricReport(backend_metric_data);
