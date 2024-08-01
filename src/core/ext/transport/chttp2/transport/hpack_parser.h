@@ -236,6 +236,8 @@ class HPackParser {
     HPackTable hpack_table;
     // Error so far for this frame (set by class Input)
     HpackParseResult frame_error;
+    // Error so far for this field (set by class Input)
+    HpackParseResult field_error;
     // Length of frame so far.
     uint32_t frame_length = 0;
     // Length of the string being parsed
