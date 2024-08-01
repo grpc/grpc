@@ -215,7 +215,7 @@ g_stands_for = "guardian"  # @unused
 
 core_version = "39.0.0"  # @unused
 
-version = "1.62.2"  # @unused
+version = "1.62.3"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
