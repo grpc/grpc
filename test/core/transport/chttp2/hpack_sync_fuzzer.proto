@@ -44,4 +44,7 @@ message Msg {
   repeated Header headers = 2;
   grpc.testing.FuzzConfigVars config_vars = 3;
   repeated uint64 random_numbers = 4;
+  // Ensure that a header "a: b" appended to headers with hpack incremental
+  // indexing is correctly added to the hpack table.
+  bool check_ab_preservation = 5;
 }
