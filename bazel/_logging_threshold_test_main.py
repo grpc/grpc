@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 LOGGING_OUT_THRESHOLD = 0
-LOGGING_ERROR_THRESHOLD = 4
+LOGGING_ERROR_THRESHOLD = 0
 
 if __name__ == "__main__":
     
@@ -56,12 +56,12 @@ if __name__ == "__main__":
                 print(f"Warning: Excessive error output detected ({stderr_count} lines):")
                 stderr_file.seek(0)
                 for line in stderr_file:
-                    print(line.rstrip())                
+                    print(line)                
                     
             if stdout_count > LOGGING_OUT_THRESHOLD:
                 print(f"Warning: Unexpected output detected ({stdout_count} lines):")
                 stdout_file.seek(0)
                 for line in stdout_file:
-                    print(line.rstrip())            
+                    print(line)            
             
                 
