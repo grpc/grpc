@@ -53,15 +53,15 @@ if __name__ == "__main__":
                 sys.exit('Test failure')
 
             if stderr_count > LOGGING_ERROR_THRESHOLD:
-                print(f"Warning: Excessive error output detected ({stderr_count} lines):", file=sys.stderr)
+                print(f"Warning: Excessive error output detected ({stderr_count} lines):")
                 stderr_file.seek(0)
                 for line in stderr_file:
-                    print(line.rstrip(), file=sys.stderr)                
+                    print(line.rstrip())                
                     
             if stdout_count > LOGGING_OUT_THRESHOLD:
-                print(f"Warning: Unexpected output detected ({stdout_count} lines):", file=sys.stderr)
+                print(f"Warning: Unexpected output detected ({stdout_count} lines):")
                 stdout_file.seek(0)
                 for line in stdout_file:
-                    print(line.rstrip(), file=sys.stderr)            
+                    print(line.rstrip())            
             
                 

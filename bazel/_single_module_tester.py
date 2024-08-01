@@ -40,6 +40,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 3:
         print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+        sys.exit(1)
+
 
     target_module = sys.argv[1]
     unittest_path = sys.argv[2]
