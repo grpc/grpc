@@ -215,7 +215,7 @@ g_stands_for = "gjallarhorn"  # @unused
 
 core_version = "37.0.0"  # @unused
 
-version = "1.60.1"  # @unused
+version = "1.60.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
