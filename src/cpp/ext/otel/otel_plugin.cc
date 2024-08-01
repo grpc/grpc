@@ -433,7 +433,10 @@ void OpenTelemetryPluginImpl::LoggingSink::LogEntry(Entry entry) {
   EntryToJsonStructProto(entry, &proto_payload);
   std::string json_payload;
   google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
-  logger_->Debug(json_payload);
+  logger_->Debug(json_payload, opentelemetry::common::MakeAttributes(
+                                   {{"gcp.source_location",
+                                     "{\"file\": \"otel_plugin.cc\", \"line\": "
+                                     "\"436\", \"function\": \"LogEntry\"}"}}));
 }
 
 OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
