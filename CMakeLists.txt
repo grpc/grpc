@@ -908,10 +908,16 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c bm_inproc)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c bm_load_balanced_call_destination)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c bm_metadata)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c bm_party)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c bm_picker)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fd_conservation_posix_test)
@@ -6219,6 +6225,45 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
+  add_executable(bm_load_balanced_call_destination
+    test/core/client_channel/bm_load_balanced_call_destination.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bm_load_balanced_call_destination
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(bm_load_balanced_call_destination PUBLIC cxx_std_14)
+  target_include_directories(bm_load_balanced_call_destination
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(bm_load_balanced_call_destination
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    grpc
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
   add_executable(bm_metadata
     test/core/transport/bm_metadata.cc
   )
@@ -6286,6 +6331,45 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bm_party
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    grpc
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(bm_picker
+    test/core/load_balancing/bm_picker.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bm_picker
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(bm_picker PUBLIC cxx_std_14)
+  target_include_directories(bm_picker
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(bm_picker
     ${_gRPC_ALLTARGETS_LIBRARIES}
     ${_gRPC_BENCHMARK_LIBRARIES}
     grpc
