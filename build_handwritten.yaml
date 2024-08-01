@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gjallarhorn
   protobuf_version: 3.25.0
-  version: 1.60.1
+  version: 1.60.2
 configs:
   asan:
     CC: clang
