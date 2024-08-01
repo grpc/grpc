@@ -1272,6 +1272,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
   }
+  // DNS: debug
+  auto peer_address_string = sock.PeerAddressString();
+  leak_debug_marker_ =
+      absl::StrCat("grpc_endpoint_debug_marker type=posix_event_engine peer=",
+                   peer_address_string.ok() ? *peer_address_string : "unknown");
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;

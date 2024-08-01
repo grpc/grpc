@@ -16,6 +16,8 @@
 //
 //
 
+#include <string>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -555,6 +557,9 @@ struct grpc_tcp {
   bool socket_ts_enabled;  // True if timestamping options are set on the socket
                            //
   bool ts_capable;         // Cache whether we can set timestamping options
+
+  // DNS: used to track leaks in core dumps
+  std::string leak_debug_marker;
 };
 
 struct backup_poller {
@@ -1962,6 +1967,9 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
+  tcp->leak_debug_marker =
+      absl::StrCat("grpc_endpoint_debug_marker type=posix fd=", tcp->fd,
+                   " peer=", tcp->peer_string);
   CHECK(options.resource_quota != nullptr);
   tcp->memory_owner =
       options.resource_quota->memory_quota()->CreateMemoryOwner();
