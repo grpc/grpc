@@ -72,7 +72,7 @@ class TCPConnectHandshaker : public Handshaker {
  private:
   ~TCPConnectHandshaker() override;
   void FinishLocked(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void Connected(void* arg, grpc_error_handle error);
+  void Connected(grpc_error_handle error);
 
   Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
@@ -85,7 +85,6 @@ class TCPConnectHandshaker : public Handshaker {
   HandshakerArgs* args_ = nullptr;
   bool bind_endpoint_to_pollset_ = false;
   grpc_resolved_address addr_;
-  grpc_closure connected_;
 };
 
 TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
@@ -97,7 +96,6 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
   if (interested_parties_ != nullptr) {
     grpc_polling_entity_add_to_pollset_set(&pollent_, interested_parties_);
   }
-  GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
 void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
@@ -152,42 +150,41 @@ void TCPConnectHandshaker::DoHandshake(
   // Instead pass endpoint_to_destroy_ and swap this endpoint to
   // args endpoint on success.
   grpc_tcp_client_connect(
-      &connected_, &endpoint_to_destroy_, interested_parties_,
+      NewClosure(
+          [self = RefAsSubclass<TCPConnectHandshaker>()](
+              grpc_error_handle error) { self->Connected(std::move(error)); }),
+      &endpoint_to_destroy_, interested_parties_,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args->args),
       &addr_, args->deadline);
 }
 
-void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
-  RefCountedPtr<TCPConnectHandshaker> self(
-      static_cast<TCPConnectHandshaker*>(arg));
-  {
-    MutexLock lock(&self->mu_);
-    if (!error.ok() || self->shutdown_) {
-      if (error.ok()) {
-        error = GRPC_ERROR_CREATE("tcp handshaker shutdown");
-      }
-      if (self->endpoint_to_destroy_ != nullptr) {
-        grpc_endpoint_destroy(self->endpoint_to_destroy_);
-        self->endpoint_to_destroy_ = nullptr;
-      }
-      if (!self->shutdown_) {
-        self->shutdown_ = true;
-        self->FinishLocked(std::move(error));
-      } else {
-        // The on_handshake_done_ callback was already invoked as part of
-        // shutdown when connecting, so nothing to be done here.
-      }
-      return;
+void TCPConnectHandshaker::Connected(grpc_error_handle error) {
+  MutexLock lock(&mu_);
+  if (!error.ok() || shutdown_) {
+    if (error.ok()) {
+      error = GRPC_ERROR_CREATE("tcp handshaker shutdown");
     }
-    CHECK_NE(self->endpoint_to_destroy_, nullptr);
-    self->args_->endpoint.reset(self->endpoint_to_destroy_);
-    self->endpoint_to_destroy_ = nullptr;
-    if (self->bind_endpoint_to_pollset_) {
-      grpc_endpoint_add_to_pollset_set(self->args_->endpoint.get(),
-                                       self->interested_parties_);
+    if (endpoint_to_destroy_ != nullptr) {
+      grpc_endpoint_destroy(endpoint_to_destroy_);
+      endpoint_to_destroy_ = nullptr;
     }
-    self->FinishLocked(absl::OkStatus());
+    if (!shutdown_) {
+      shutdown_ = true;
+      FinishLocked(std::move(error));
+    } else {
+      // The on_handshake_done_ callback was already invoked as part of
+      // shutdown when connecting, so nothing to be done here.
+    }
+    return;
   }
+  CHECK_NE(endpoint_to_destroy_, nullptr);
+  args_->endpoint.reset(endpoint_to_destroy_);
+  endpoint_to_destroy_ = nullptr;
+  if (bind_endpoint_to_pollset_) {
+    grpc_endpoint_add_to_pollset_set(args_->endpoint.get(),
+                                     interested_parties_);
+  }
+  FinishLocked(absl::OkStatus());
 }
 
 TCPConnectHandshaker::~TCPConnectHandshaker() {
