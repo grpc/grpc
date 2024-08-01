@@ -766,10 +766,9 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
     } else {
       report = controller_.Update(current_estimate - kSetPoint);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-      LOG(INFO) << "RQ: pressure:" << current_estimate << " report:" << report
-                << " controller:" << controller_.DebugString();
-    }
+    GRPC_TRACE_LOG(resource_quota, INFO) << "RQ: pressure:" << current_estimate
+                                         << " report:" << report < < < <
+        " controller:" << controller_.DebugString();
     report_.store(report, std::memory_order_relaxed);
   });
   return report_.load(std::memory_order_relaxed);
