@@ -231,7 +231,7 @@ g_stands_for = "gnarly"  # @unused
 
 core_version = "42.0.0"  # @unused
 
-version = "1.65.3"  # @unused
+version = "1.65.4"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
