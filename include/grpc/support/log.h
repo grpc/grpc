@@ -53,9 +53,6 @@ GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
 
 GPRAPI int gpr_should_log(gpr_log_severity severity);
 
-/** Set global log verbosity */
-GPRAPI void gpr_set_log_verbosity(gpr_log_severity deprecated_setting);
-
 GPRAPI void gpr_log_verbosity_init(void);
 
 /** Log overrides: applications can use this API to intercept logging calls
