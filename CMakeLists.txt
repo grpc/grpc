@@ -6344,6 +6344,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bm_picker
     test/core/load_balancing/bm_picker.cc
+    test/core/test_util/build.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
