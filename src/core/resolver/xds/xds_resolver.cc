@@ -545,9 +545,9 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
 absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     XdsResolver* resolver, const XdsRouteConfigResource::Route& route,
     const Duration& default_max_stream_duration) {
-  GRPC_TRACE_LOG(xds_resolver, INFO) << "[xds_resolver " << resolver
-                                     << "] XdsConfigSelector " << this < < < <
-      ": route: " << route.ToString();
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[xds_resolver " << resolver << "] XdsConfigSelector " << this
+      << ": route: " << route.ToString();
   routes_.emplace_back(route);
   auto* route_entry = &routes_.back();
   auto maybe_add_cluster = [&](absl::string_view cluster_key,
@@ -636,9 +636,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<RouteConfigData> route_config_data)
     : resolver_(std::move(resolver)),
       route_config_data_(std::move(route_config_data)) {
-  GRPC_TRACE_LOG(xds_resolver, INFO)
-          << "[xds_resolver " << resolver_.get() < < < <
-      "] creating XdsConfigSelector " << this;
+  GRPC_TRACE_LOG(xds_resolver, INFO) << "[xds_resolver " << resolver_.get()
+                                     << "] creating XdsConfigSelector " << this;
   // Populate filter list.
   const auto& http_filter_registry =
       static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
@@ -659,8 +658,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   GRPC_TRACE_LOG(xds_resolver, INFO)
-          << "[xds_resolver " << resolver_.get() < < < <
-      "] destroying XdsConfigSelector " << this;
+      << "[xds_resolver " << resolver_.get()
+      << "] destroying XdsConfigSelector " << this;
   route_config_data_.reset();
   if (!IsWorkSerializerDispatchEnabled()) {
     resolver_->MaybeRemoveUnusedClusters();
@@ -960,9 +959,8 @@ void XdsResolver::StartLocked() {
         absl::StrReplaceAll(name_template, {{"%s", resource_name_fragment}});
   }
   GRPC_TRACE_LOG(xds_resolver, INFO)
-          << "[xds_resolver " << this
-          << "] Started with lds_resource_name " < < < <
-      lds_resource_name_;
+      << "[xds_resolver " << this << "] Started with lds_resource_name "
+      << lds_resource_name_;
   // Start watch for xDS config.
   dependency_mgr_ = MakeOrphanable<XdsDependencyManager>(
       xds_client_, work_serializer_,

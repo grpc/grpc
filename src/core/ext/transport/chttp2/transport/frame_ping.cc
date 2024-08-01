@@ -94,8 +94,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
     CHECK(is_last);
     if (p->is_ack) {
       GRPC_TRACE_LOG(http2_ping, INFO)
-              << (t->is_client ? "CLIENT" : "SERVER") << "[" << t < < < <
-          "]: received ping ack " << p->opaque_8bytes;
+          << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+          << "]: received ping ack " << p->opaque_8bytes;
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {

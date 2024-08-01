@@ -91,8 +91,8 @@ static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     t->lists[id].tail = s->links[id].prev;
   }
   GRPC_TRACE_LOG(http2_stream_state, INFO)
-          << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr") < < < <
-      "]: remove from " << stream_list_id_string(id);
+      << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
+      << "]: remove from " << stream_list_id_string(id);
 }
 
 static bool stream_list_maybe_remove(grpc_chttp2_transport* t,
@@ -122,8 +122,8 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
   t->lists[id].tail = s;
   s->included.set(id);
   GRPC_TRACE_LOG(http2_stream_state, INFO)
-          << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr") < < < <
-      "]: add to " << stream_list_id_string(id);
+      << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
+      << "]: add to " << stream_list_id_string(id);
 }
 
 static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,

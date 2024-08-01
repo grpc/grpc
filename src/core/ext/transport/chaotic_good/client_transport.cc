@@ -281,8 +281,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
       call_handler.PullClientInitialMetadata(),
       [send_fragment](ClientMetadataHandle md) mutable {
         GRPC_TRACE_LOG(chaotic_good, INFO)
-                << "CHAOTIC_GOOD: Sending initial metadata: " < < < <
-            md->DebugString();
+            << "CHAOTIC_GOOD: Sending initial metadata: " << md->DebugString();
         ClientFragmentFrame frame;
         frame.headers = std::move(md);
         return send_fragment(std::move(frame));

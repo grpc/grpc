@@ -112,8 +112,8 @@ ChannelCompression::ChannelCompression(const ChannelArgs& args)
 MessageHandle ChannelCompression::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm) const {
   GRPC_TRACE_LOG(compression, INFO)
-          << "CompressMessage: len=" << message->payload()->Length() < < < <
-      " alg=" << algorithm << " flags=" << message->flags();
+      << "CompressMessage: len=" << message->payload()->Length()
+      << " alg=" << algorithm << " flags=" << message->flags();
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordSendMessage(*message->payload());

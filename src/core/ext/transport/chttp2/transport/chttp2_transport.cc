@@ -1654,8 +1654,8 @@ void grpc_chttp2_transport::PerformStreamOp(
   }
 
   GRPC_TRACE_LOG(http, INFO)
-          << "perform_stream_op[s=" << s << "; op=" << op < < < <
-      "]: " << grpc_transport_stream_op_batch_string(op, false);
+      << "perform_stream_op[s=" << s << "; op=" << op
+      << "]: " << grpc_transport_stream_op_batch_string(op, false);
 
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
   op->handler_private.extra_arg = gs;
@@ -1999,8 +1999,8 @@ static void perform_transport_op_locked(void* stream_op,
 }
 
 void grpc_chttp2_transport::PerformOp(grpc_transport_op* op) {
-  GRPC_TRACE_LOG(http, INFO) << "perform_transport_op[t=" << this < < < <
-      "]: " << grpc_transport_op_string(op);
+  GRPC_TRACE_LOG(http, INFO) << "perform_transport_op[t=" << this
+                             << "]: " << grpc_transport_op_string(op);
   op->handler_private.extra_arg = this;
   Ref().release()->combiner->Run(
       GRPC_CLOSURE_INIT(&op->handler_private.closure,
@@ -2815,8 +2815,9 @@ static void start_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void start_bdp_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view() < < < <
-      ": Start BDP ping err=" << grpc_core::StatusToString(error);
+  GRPC_TRACE_LOG(http, INFO)
+      << t->peer_string.as_string_view()
+      << ": Start BDP ping err=" << grpc_core::StatusToString(error);
   if (!error.ok() || !t->closed_with_error.ok()) {
     return;
   }
@@ -2839,8 +2840,9 @@ static void finish_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void finish_bdp_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  GRPC_TRACE_LOG(http, INFO) << t->peer_string.as_string_view() < < < <
-      ": Complete BDP ping err=" << grpc_core::StatusToString(error);
+  GRPC_TRACE_LOG(http, INFO)
+      << t->peer_string.as_string_view()
+      << ": Complete BDP ping err=" << grpc_core::StatusToString(error);
   if (!error.ok() || !t->closed_with_error.ok()) {
     return;
   }
@@ -3103,8 +3105,8 @@ static void benign_reclaimer_locked(
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
     GRPC_TRACE_LOG(resource_quota, INFO)
-            << "HTTP2: " << t->peer_string.as_string_view() < < < <
-        " - send goaway to free memory";
+        << "HTTP2: " << t->peer_string.as_string_view()
+        << " - send goaway to free memory";
     send_goaway(t.get(),
                 grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
                                    grpc_core::StatusIntProperty::kHttp2Error,
@@ -3129,8 +3131,8 @@ static void destructive_reclaimer_locked(
     // As stream_map is a hash map, this selects effectively a random stream.
     grpc_chttp2_stream* s = t->stream_map.begin()->second;
     GRPC_TRACE_LOG(resource_quota, INFO)
-            << "HTTP2: " << t->peer_string.as_string_view() < < < <
-        " - abandon stream id " << s->id;
+        << "HTTP2: " << t->peer_string.as_string_view()
+        << " - abandon stream id " << s->id;
     grpc_chttp2_cancel_stream(
         t.get(), s,
         grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),

@@ -151,8 +151,8 @@ ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, FaultInjectionFilter* filter) {
   auto decision = filter->MakeInjectionDecision(md);
   GRPC_TRACE_LOG(fault_injection_filter, INFO)
-          << "chand=" << this << ": Fault injection triggered " < < < <
-      decision.ToString();
+      << "chand=" << this << ": Fault injection triggered "
+      << decision.ToString();
   auto delay = decision.DelayUntil();
   return TrySeq(Sleep(delay), [decision = std::move(decision)]() {
     return decision.MaybeAbort();

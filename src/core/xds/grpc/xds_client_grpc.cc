@@ -269,8 +269,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       key, std::move(*bootstrap), channel_args,
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
-  GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get() < < < <
-      "] Created xDS client for key " << key;
+  GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
+                                   << "] Created xDS client for key " << key;
   return xds_client;
 }
 

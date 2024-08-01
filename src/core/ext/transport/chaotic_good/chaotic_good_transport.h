@@ -126,8 +126,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
     GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: DeserializeFrame " < < < <
-        (s.ok() ? frame.ToString() : s.ToString());
+        << "CHAOTIC_GOOD: DeserializeFrame "
+        << (s.ok() ? frame.ToString() : s.ToString());
     return s;
   }
 
