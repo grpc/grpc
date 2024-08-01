@@ -436,7 +436,7 @@ void OpenTelemetryPluginImpl::LoggingSink::LogEntry(Entry entry) {
   logger_->Debug(json_payload, opentelemetry::common::MakeAttributes(
                                    {{"gcp.source_location",
                                      "{\"file\": \"otel_plugin.cc\", \"line\": "
-                                     "\"436\", \"function\": \"LogEntry\"}"}}));
+                                     "436, \"function\": \"LogEntry\"}"}}));
 }
 
 OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
