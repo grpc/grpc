@@ -150,18 +150,15 @@ struct secure_endpoint : public grpc_endpoint {
 
 static void destroy(secure_endpoint* ep) { delete ep; }
 
-#ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(ep, reason) \
   secure_endpoint_unref((ep), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
-    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    VLOG(2).AtLocation(file, line) << "SECENDP unref " << ep << " : " << reason
+  gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+  LOG(INFO).AtLocation(file, line) << "SECENDP unref " << ep << " : " << reason
                                    << " " << val << " -> " << val - 1;
-  }
   if (gpr_unref(&ep->ref)) {
     destroy(ep);
   }
@@ -169,24 +166,11 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
 
 static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
-    gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    VLOG(2).AtLocation(file, line) << "SECENDP   ref " << ep << " : " << reason
+  gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
+  LOG(INFO).AtLocation(file, line) << "SECENDP   ref " << ep << " : " << reason
                                    << " " << val << " -> " << val + 1;
-  }
   gpr_ref(&ep->ref);
 }
-#else
-#define SECURE_ENDPOINT_UNREF(ep, reason) secure_endpoint_unref((ep))
-#define SECURE_ENDPOINT_REF(ep, reason) secure_endpoint_ref((ep))
-static void secure_endpoint_unref(secure_endpoint* ep) {
-  if (gpr_unref(&ep->ref)) {
-    destroy(ep);
-  }
-}
-
-static void secure_endpoint_ref(secure_endpoint* ep) { gpr_ref(&ep->ref); }
-#endif
 
 static void maybe_post_reclaimer(secure_endpoint* ep) {
   if (!ep->has_posted_reclaimer) {
