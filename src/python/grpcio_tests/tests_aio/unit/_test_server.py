@@ -120,6 +120,14 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
             aggregated_payload_size=aggregate_size
         )
 
+    async def StreamingInputCallWithUnavailable(
+        self, unused_request_async_iterator, context
+    ):
+        self._append_to_log()
+        await context.abort(
+            grpc.StatusCode.UNAVAILABLE, "Service is unavailable"
+        )
+
     async def FullDuplexCall(self, request_async_iterator, context):
         self._append_to_log()
         await _maybe_echo_metadata(context)
@@ -151,7 +159,12 @@ def _create_extra_generic_handler(servicer: TestServiceServicer):
             servicer.UnaryCallWithSleep,
             request_deserializer=messages_pb2.SimpleRequest.FromString,
             response_serializer=messages_pb2.SimpleResponse.SerializeToString,
-        )
+        ),
+        "StreamingInputCallWithUnavailable": grpc.stream_unary_rpc_method_handler(
+            servicer.StreamingInputCallWithUnavailable,
+            request_deserializer=messages_pb2.StreamingInputCallRequest.FromString,
+            response_serializer=messages_pb2.StreamingInputCallResponse.SerializeToString,
+        ),
     }
     return grpc.method_handlers_generic_handler(
         "grpc.testing.TestService", rpc_method_handlers
