@@ -178,8 +178,8 @@ static grpc_error_handle CreateEventEngineListener(
                 return;
               }
               GRPC_TRACE_LOG(tcp, INFO) << "SERVER_CONNECT: incoming external "
-                                           "connection: " < < < <
-                  addr_uri->c_str();
+                                           "connection: "
+                                        << addr_uri->c_str();
             }
             read_notifier_pollset =
                 (*(s->pollsets))[static_cast<size_t>(
@@ -916,8 +916,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       return;
     }
     GRPC_TRACE_LOG(tcp, INFO)
-            << "SERVER_CONNECT: incoming external connection: " < < < <
-        *addr_uri;
+        << "SERVER_CONNECT: incoming external connection: " << *addr_uri;
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
     read_notifier_pollset =

@@ -50,8 +50,8 @@ class BdpEstimator {
   // transport (but not necessarily started)
   void SchedulePing() {
     GRPC_TRACE_LOG(bdp_estimator, INFO)
-            << "bdp[" << name_ << "]:sched acc=" << accumulator_ < < < <
-        " est=" << estimate_;
+        << "bdp[" << name_ << "]:sched acc=" << accumulator_
+        << " est=" << estimate_;
     CHECK(ping_state_ == PingState::UNSCHEDULED);
     ping_state_ = PingState::SCHEDULED;
     accumulator_ = 0;
@@ -62,8 +62,8 @@ class BdpEstimator {
   // the ping is on the wire
   void StartPing() {
     GRPC_TRACE_LOG(bdp_estimator, INFO)
-            << "bdp[" << name_ << "]:start acc=" << accumulator_ < < < <
-        " est=" << estimate_;
+        << "bdp[" << name_ << "]:start acc=" << accumulator_
+        << " est=" << estimate_;
     CHECK(ping_state_ == PingState::SCHEDULED);
     ping_state_ = PingState::STARTED;
     ping_start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);

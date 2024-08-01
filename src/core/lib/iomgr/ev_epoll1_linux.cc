@@ -1125,9 +1125,8 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
           }
           goto done;
         } else {
-          GRPC_TRACE_LOG(polling, INFO)
-                  << " .. non-root poller " << next_worker < < < <
-              " (root=" << root_worker << ")";
+          GRPC_TRACE_LOG(polling, INFO) << " .. non-root poller " << next_worker
+                                        << " (root=" << root_worker << ")";
           SET_KICK_STATE(next_worker, KICKED);
           ret_err = grpc_wakeup_fd_wakeup(&global_wakeup_fd);
           goto done;
