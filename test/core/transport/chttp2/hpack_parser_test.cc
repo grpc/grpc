@@ -440,19 +440,82 @@ INSTANTIATE_TEST_SUITE_P(
         Test{"Base64LegalEncoding",
              {},
              {},
-             {// Binary metadata: created using:
-              // tools/codegen/core/gen_header_frame.py
-              //    --compression inc --no_framing --output hexstr
-              //    < test/core/transport/chttp2/bad-base64.headers
-              {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
-               "27732074756573646179",
-               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "illegal base64 encoding"),
-               0},
-              {"be",
-               absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
-                                   "illegal base64 encoding"),
-               0}}},
+             {
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"be",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 {"82", ":method: GET\n", 0},
+             }},
+        Test{"Base64LegalEncodingWorksAfterFailure",
+             {},
+             {},
+             {
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"be",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 {"400e636f6e74656e742d6c656e6774680135",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 {"be", "content-length: 5\n", 0},
+             }},
+        Test{"Base64LegalEncodingWorksAfterFailure2",
+             {},
+             {},
+             {
+                 {// Generated with: tools/codegen/core/gen_header_frame.py
+                  // --compression inc --output hexstr --no_framing <
+                  // test/core/transport/chttp2/MiXeD-CaSe.headers
+                  "400a4d695865442d436153651073686f756c64206e6f74207061727365",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+                 // Binary metadata: created using:
+                 // tools/codegen/core/gen_header_frame.py
+                 //    --compression inc --no_framing --output hexstr
+                 //    < test/core/transport/chttp2/bad-base64.headers
+                 {"4009612e622e632d62696e1c6c75636b696c7920666f722075732c206974"
+                  "27732074756573646179",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"), 0},
+                 {"be", absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  0},
+                 {"400e636f6e74656e742d6c656e6774680135",
+                  absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  kEndOfHeaders},
+                 {"be", "content-length: 5\n", 0},
+                 {"bf",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  0},
+                 // Only the first error in each frame is reported, so we should
+                 // still see the same error here...
+                 {"c0",
+                  absl::InternalError("Error parsing 'a.b.c-bin' metadata: "
+                                      "illegal base64 encoding"),
+                  kEndOfHeaders},
+                 // ... but if we look at the next frame we should see the
+                 // stored error
+                 {"c0", absl::InternalError("Illegal header key: MiXeD-CaSe"),
+                  kEndOfHeaders},
+             }},
         Test{"TeIsTrailers",
              {},
              {},
