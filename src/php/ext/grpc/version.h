@@ -20,6 +20,6 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define PHP_GRPC_VERSION "1.60.1"
+#define PHP_GRPC_VERSION "1.60.2"
 
 #endif /* VERSION_H */
