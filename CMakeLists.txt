@@ -908,10 +908,16 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c bm_inproc)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c bm_load_balanced_call_destination)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c bm_metadata)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c bm_party)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c bm_picker)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fd_conservation_posix_test)
@@ -1255,7 +1261,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx map_pipe_test)
   add_dependencies(buildtests_cxx match_test)
   add_dependencies(buildtests_cxx matchers_test)
-  add_dependencies(buildtests_cxx max_concurrent_streams_policy_test)
   add_dependencies(buildtests_cxx max_concurrent_streams_test)
   add_dependencies(buildtests_cxx max_connection_age_test)
   add_dependencies(buildtests_cxx max_connection_idle_test)
@@ -1406,6 +1411,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx retry_transparent_not_sent_on_wire_test)
   add_dependencies(buildtests_cxx retry_unref_before_finish_test)
   add_dependencies(buildtests_cxx retry_unref_before_recv_test)
+  add_dependencies(buildtests_cxx ring_buffer_test)
   add_dependencies(buildtests_cxx ring_hash_test)
   add_dependencies(buildtests_cxx rls_end2end_test)
   add_dependencies(buildtests_cxx rls_lb_config_parser_test)
@@ -1940,7 +1946,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
-  src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -3037,7 +3042,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
-  src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -6219,6 +6223,45 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
+  add_executable(bm_load_balanced_call_destination
+    test/core/client_channel/bm_load_balanced_call_destination.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bm_load_balanced_call_destination
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(bm_load_balanced_call_destination PUBLIC cxx_std_14)
+  target_include_directories(bm_load_balanced_call_destination
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(bm_load_balanced_call_destination
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    grpc
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
   add_executable(bm_metadata
     test/core/transport/bm_metadata.cc
   )
@@ -6286,6 +6329,46 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   )
 
   target_link_libraries(bm_party
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    grpc
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(bm_picker
+    test/core/load_balancing/bm_picker.cc
+    test/core/test_util/build.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(bm_picker
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(bm_picker PUBLIC cxx_std_14)
+  target_include_directories(bm_picker
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(bm_picker
     ${_gRPC_ALLTARGETS_LIBRARIES}
     ${_gRPC_BENCHMARK_LIBRARIES}
     grpc
@@ -20287,48 +20370,6 @@ target_link_libraries(matchers_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(max_concurrent_streams_policy_test
-  src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
-  test/core/transport/chttp2/max_concurrent_streams_policy_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(max_concurrent_streams_policy_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(max_concurrent_streams_policy_test PUBLIC cxx_std_14)
-target_include_directories(max_concurrent_streams_policy_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(max_concurrent_streams_policy_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(max_concurrent_streams_test
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
@@ -27186,6 +27227,38 @@ target_link_libraries(retry_unref_before_recv_test
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(ring_buffer_test
+  test/core/util/ring_buffer_test.cc
+)
+target_compile_features(ring_buffer_test PUBLIC cxx_std_14)
+target_include_directories(ring_buffer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(ring_buffer_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
 )
 
 

@@ -290,7 +290,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -1218,6 +1217,7 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -1319,7 +1319,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -2289,7 +2288,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -2705,6 +2703,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
@@ -2764,7 +2763,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -4755,6 +4753,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -5279,6 +5278,24 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_load_balanced_call_destination
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/client_channel/bm_load_balanced_call_destination.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_metadata
   build: test
   language: c
@@ -5303,6 +5320,25 @@ targets:
   headers: []
   src:
   - test/core/promise/bm_party.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001s
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
+- name: bm_picker
+  build: test
+  language: c
+  headers:
+  - test/core/test_util/build.h
+  src:
+  - test/core/load_balancing/bm_picker.cc
+  - test/core/test_util/build.cc
   deps:
   - benchmark
   - grpc
@@ -5447,6 +5483,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6677,6 +6714,7 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
@@ -6864,6 +6902,7 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/transport/call_state.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7208,6 +7247,7 @@ targets:
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7861,6 +7901,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -8656,6 +8697,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10204,6 +10246,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10754,6 +10797,7 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10870,6 +10914,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -12454,6 +12499,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -12544,6 +12590,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
@@ -13016,6 +13063,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13249,6 +13297,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -13335,18 +13384,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: max_concurrent_streams_policy_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
-  src:
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
-  - test/core/transport/chttp2/max_concurrent_streams_policy_test.cc
-  deps:
-  - gtest
-  - gpr
 - name: max_concurrent_streams_test
   gtest: true
   build: test
@@ -13803,6 +13840,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14116,6 +14154,7 @@ targets:
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14470,6 +14509,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -15035,6 +15075,7 @@ targets:
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -18007,6 +18048,17 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: ring_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/ring_buffer.h
+  src:
+  - test/core/util/ring_buffer_test.cc
+  deps:
+  - gtest
+  uses_polling: false
 - name: ring_hash_test
   gtest: true
   build: test
@@ -20824,6 +20876,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
