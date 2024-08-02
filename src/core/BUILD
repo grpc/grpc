@@ -7215,23 +7215,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "max_concurrent_streams_policy",
-    srcs = [
-        "ext/transport/chttp2/transport/max_concurrent_streams_policy.cc",
-    ],
-    hdrs = [
-        "ext/transport/chttp2/transport/max_concurrent_streams_policy.h",
-    ],
-    external_deps = [
-        "absl/log:check",
-    ],
-    deps = [
-        "//:gpr",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "huffsyms",
     srcs = [
         "ext/transport/chttp2/transport/huffsyms.cc",

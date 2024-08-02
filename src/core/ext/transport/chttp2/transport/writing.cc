@@ -49,7 +49,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
@@ -260,8 +259,6 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    t_->settings.mutable_local().SetMaxConcurrentStreams(
-        t_->max_concurrent_streams_policy.AdvertiseValue());
     auto update = t_->settings.MaybeSendUpdate();
     if (update.has_value()) {
       grpc_core::Http2Frame frame(std::move(*update));
@@ -280,7 +277,6 @@ class WriteContext {
             });
       }
       t_->flow_control.FlushedSettings();
-      t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }

@@ -65,7 +65,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
@@ -547,7 +546,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
     value = channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1);
     if (value >= 0) {
       t->settings.mutable_local().SetMaxConcurrentStreams(value);
-      t->max_concurrent_streams_policy.SetTarget(value);
     }
   } else if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
     VLOG(2) << GRPC_ARG_MAX_CONCURRENT_STREAMS
