@@ -73,6 +73,10 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_security_handshaker_early_release =
+    "If set, handshaker releases security resources early.";
+const char* const additional_constraints_security_handshaker_early_release =
+    "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
@@ -141,6 +145,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
+     true},
+    {"security_handshaker_early_release",
+     description_security_handshaker_early_release,
+     additional_constraints_security_handshaker_early_release, nullptr, 0, true,
      true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, nullptr, 0, false, false},
@@ -217,6 +225,10 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_security_handshaker_early_release =
+    "If set, handshaker releases security resources early.";
+const char* const additional_constraints_security_handshaker_early_release =
+    "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
@@ -285,6 +297,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
+     true},
+    {"security_handshaker_early_release",
+     description_security_handshaker_early_release,
+     additional_constraints_security_handshaker_early_release, nullptr, 0, true,
      true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, nullptr, 0, false, false},
@@ -361,6 +377,10 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_security_handshaker_early_release =
+    "If set, handshaker releases security resources early.";
+const char* const additional_constraints_security_handshaker_early_release =
+    "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
@@ -429,6 +449,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
+     true},
+    {"security_handshaker_early_release",
+     description_security_handshaker_early_release,
+     additional_constraints_security_handshaker_early_release, nullptr, 0, true,
      true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, nullptr, 0, false, false},

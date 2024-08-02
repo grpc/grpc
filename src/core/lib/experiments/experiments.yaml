@@ -135,6 +135,11 @@
   expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: security_handshaker_early_release
+  description:
+    If set, handshaker releases security resources early.
+  expiry: 2024/11/21
+  owner: ctiller@google.com
 - name: server_privacy
   description:
     If set, server privacy

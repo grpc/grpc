@@ -76,6 +76,8 @@ inline bool IsPeerStateBasedFramingEnabled() { return false; }
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURITY_HANDSHAKER_EARLY_RELEASE
+inline bool IsSecurityHandshakerEarlyReleaseEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -109,6 +111,8 @@ inline bool IsPeerStateBasedFramingEnabled() { return false; }
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURITY_HANDSHAKER_EARLY_RELEASE
+inline bool IsSecurityHandshakerEarlyReleaseEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -141,6 +145,8 @@ inline bool IsPeerStateBasedFramingEnabled() { return false; }
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURITY_HANDSHAKER_EARLY_RELEASE
+inline bool IsSecurityHandshakerEarlyReleaseEnabled() { return true; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -169,6 +175,7 @@ enum ExperimentIds {
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdSecurityHandshakerEarlyRelease,
   kExperimentIdServerPrivacy,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -237,6 +244,10 @@ inline bool IsPromiseBasedInprocTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURITY_HANDSHAKER_EARLY_RELEASE
+inline bool IsSecurityHandshakerEarlyReleaseEnabled() {
+  return IsExperimentEnabled<kExperimentIdSecurityHandshakerEarlyRelease>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() {

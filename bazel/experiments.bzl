@@ -32,6 +32,7 @@ EXPERIMENT_ENABLES = {
     "pick_first_new": "pick_first_new",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "security_handshaker_early_release": "security_handshaker_early_release",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
