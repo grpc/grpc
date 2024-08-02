@@ -51,7 +51,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -95,9 +94,8 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     fds_ = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
-    auto* transport = grpc_create_chttp2_transport(
-        core_server->channel_args(), OrphanablePtr<grpc_endpoint>(fds_.server),
-        false);
+    auto* transport = grpc_create_chttp2_transport(core_server->channel_args(),
+                                                   fds_.server, false);
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     CHECK(core_server->SetupTransport(transport, nullptr,
                                       core_server->channel_args(),

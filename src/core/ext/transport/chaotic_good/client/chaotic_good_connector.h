@@ -77,7 +77,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
       RefCountedPtr<ChaoticGoodConnector> self);
   static auto WaitForDataEndpointSetup(
       RefCountedPtr<ChaoticGoodConnector> self);
-  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
+  static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   Mutex mu_;

@@ -29,7 +29,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -70,10 +69,7 @@ class ClientFuzzer final : public BasicFuzzer {
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
     Transport* transport = grpc_create_chttp2_transport(
-        args,
-        OrphanablePtr<grpc_endpoint>(
-            mock_endpoint_controller_->TakeCEndpoint()),
-        true);
+        args, mock_endpoint_controller_->TakeCEndpoint(), true);
     channel_ = ChannelCreate("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                              transport)
                    ->release()
