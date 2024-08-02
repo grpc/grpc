@@ -183,21 +183,16 @@ class CdsLb final : public LoadBalancingPolicy {
 //
 
 CdsLb::CdsLb(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this << "] created";
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO) << "[cdslb " << this << "] created";
 }
 
 CdsLb::~CdsLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this << "] destroying cds LB policy";
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO)
+      << "[cdslb " << this << "] destroying cds LB policy";
 }
 
 void CdsLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO) << "[cdslb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
 }
@@ -280,11 +275,10 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this
-              << "] received update: cluster=" << new_config->cluster()
-              << " is_dynamic=" << new_config->is_dynamic();
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO)
+      << "[cdslb " << this
+      << "] received update: cluster=" << new_config->cluster()
+      << " is_dynamic=" << new_config->is_dynamic();
   CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
@@ -295,11 +289,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      LOG(INFO) << "[cdslb " << this
-                << "] obtaining dynamic subscription for cluster "
-                << cluster_name_;
-    }
+    GRPC_TRACE_LOG(cds_lb, INFO)
+        << "[cdslb " << this << "] obtaining dynamic subscription for cluster "
+        << cluster_name_;
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
       // Should never happen.
@@ -326,11 +318,10 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // If we are already subscribed, it's possible that we just
       // recently subscribed but another update came through before we
       // got the new cluster, in which case it will still be missing.
-      if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-        LOG(INFO) << "[cdslb " << this
-                  << "] xDS config has no entry for dynamic cluster "
-                  << cluster_name_ << ", waiting for subsequent update";
-      }
+      GRPC_TRACE_LOG(cds_lb, INFO)
+          << "[cdslb " << this
+          << "] xDS config has no entry for dynamic cluster " << cluster_name_
+          << ", waiting for subsequent update";
       // Stay in CONNECTING until we get an update that has the cluster.
       return absl::OkStatus();
     }
@@ -452,11 +443,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     }
     grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
-    if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      LOG(INFO) << "[cdslb " << this << "] created child policy "
-                << (*child_config)->name() << " (" << child_policy_.get()
-                << ")";
-    }
+    GRPC_TRACE_LOG(cds_lb, INFO)
+        << "[cdslb " << this << "] created child policy "
+        << (*child_config)->name() << " (" << child_policy_.get() << ")";
   }
   // Update child policy.
   update_args.config = std::move(*child_config);

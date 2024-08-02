@@ -597,21 +597,16 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
 //
 
 RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] Created";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] Created";
 }
 
 RingHash::~RingHash() {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] Destroying Ring Hash policy";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO)
+      << "[RH " << this << "] Destroying Ring Hash policy";
 }
 
 void RingHash::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] Shutting down";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] Shutting down";
   shutdown_ = true;
   endpoint_map_.clear();
 }
@@ -625,9 +620,7 @@ void RingHash::ResetBackoffLocked() {
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-      LOG(INFO) << "[RH " << this << "] received update";
-    }
+    GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
     // De-dup endpoints, taking weight into account.
     endpoints_.clear();
     std::map<EndpointAddressSet, size_t> endpoint_indices;
@@ -641,11 +634,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
             prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-        if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-          LOG(INFO) << "[RH " << this << "] merging duplicate endpoint for "
-                    << key.ToString() << ", combined weight "
-                    << weight_arg + prev_weight_arg;
-        }
+        GRPC_TRACE_LOG(ring_hash_lb, INFO)
+            << "[RH " << this << "] merging duplicate endpoint for "
+            << key.ToString() << ", combined weight "
+            << weight_arg + prev_weight_arg;
         prev_endpoint = EndpointAddresses(
             prev_endpoint.addresses(),
             prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,

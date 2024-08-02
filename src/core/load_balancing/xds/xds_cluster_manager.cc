@@ -256,9 +256,8 @@ XdsClusterManagerLb::~XdsClusterManagerLb() {
 }
 
 void XdsClusterManagerLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << this << "] shutting down";
   shutting_down_ = true;
   children_.clear();
 }
@@ -273,9 +272,8 @@ void XdsClusterManagerLb::ResetBackoffLocked() {
 
 absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   if (shutting_down_) return absl::OkStatus();
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << this << "] Received update";
   update_in_progress_ = true;
   // Update config.
   config_ = args.config.TakeAsSubclass<XdsClusterManagerLbConfig>();
@@ -366,22 +364,18 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   } else {
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << this
-              << "] connectivity changed to "
-              << ConnectivityStateName(connectivity_state);
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << this << "] connectivity changed to "
+      << ConnectivityStateName(connectivity_state);
   ClusterPicker::ClusterMap cluster_map;
   for (const auto& p : config_->cluster_map()) {
     const std::string& cluster_name = p.first;
     RefCountedPtr<SubchannelPicker>& child_picker = cluster_map[cluster_name];
     child_picker = children_[cluster_name]->picker();
     if (child_picker == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-        LOG(INFO) << "[xds_cluster_manager_lb " << this << "] child "
-                  << cluster_name
-                  << " has not yet returned a picker; creating a QueuePicker.";
-      }
+      GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+          << "[xds_cluster_manager_lb " << this << "] child " << cluster_name
+          << " has not yet returned a picker; creating a QueuePicker.";
       child_picker =
           MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
     }
@@ -421,11 +415,9 @@ XdsClusterManagerLb::ClusterChild::~ClusterChild() {
 }
 
 void XdsClusterManagerLb::ClusterChild::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
-              << "] ClusterChild " << this << " " << name_
-              << ": shutting down child";
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
+      << "] ClusterChild " << this << " " << name_ << ": shutting down child";
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   grpc_pollset_set_del_pollset_set(
@@ -456,11 +448,10 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &xds_cluster_manager_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
-              << "] ClusterChild " << this << " " << name_
-              << ": Created new child policy handler " << lb_policy.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
+      << "] ClusterChild " << this << " " << name_
+      << ": Created new child policy handler " << lb_policy.get();
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // xDS LB, which in turn is tied to the application's call.
@@ -493,11 +484,10 @@ absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
   update_args.addresses = addresses;
   update_args.args = args;
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
-              << "] ClusterChild " << this << " " << name_
-              << ": Updating child policy handler " << child_policy_.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
+      << "] ClusterChild " << this << " " << name_
+      << ": Updating child policy handler " << child_policy_.get();
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 

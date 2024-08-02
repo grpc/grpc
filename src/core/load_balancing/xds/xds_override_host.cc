@@ -487,18 +487,15 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       if (it == policy_->subchannel_map_.end()) continue;
       if (!override_host_health_status_set_.Contains(
               it->second->eds_health_status())) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "Subchannel " << address
-                    << " health status is not overridden ("
-                    << it->second->eds_health_status().ToString() << ")";
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "Subchannel " << address << " health status is not overridden ("
+            << it->second->eds_health_status().ToString() << ")";
         continue;
       }
       auto subchannel = it->second->GetSubchannelRef();
       if (subchannel == nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "No subchannel for " << address;
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "No subchannel for " << address;
         if (address_with_no_subchannel.empty()) {
           address_with_no_subchannel = it->first;
         }
@@ -508,9 +505,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "Picker override found READY subchannel " << address;
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "Picker override found READY subchannel " << address;
         it->second->set_last_used_time();
         override_host_attr->set_actual_address_list(it->second->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
@@ -524,9 +520,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // No READY subchannel found.  If we found an IDLE subchannel, trigger
   // a connection attempt and queue the pick until that attempt completes.
   if (idle_subchannel != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "Picker override found IDLE subchannel";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "Picker override found IDLE subchannel";
     // Deletes itself after the connection is requested.
     new SubchannelConnectionRequester(std::move(idle_subchannel));
     return PickResult::Queue();
@@ -534,18 +529,16 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
   // queue the pick and wait for the connection attempt to complete.
   if (found_connecting) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "Picker override found CONNECTING subchannel";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "Picker override found CONNECTING subchannel";
     return PickResult::Queue();
   }
   // No READY, IDLE, or CONNECTING subchannels found.  If we found an
   // entry that has no subchannel, then queue the pick and trigger
   // creation of a subchannel for that entry.
   if (!address_with_no_subchannel.empty()) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "Picker override found entry with no subchannel";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "Picker override found entry with no subchannel";
     if (!IsWorkSerializerDispatchEnabled()) {
       new SubchannelCreationRequester(policy_, address_with_no_subchannel);
     } else {
@@ -649,9 +642,8 @@ void XdsOverrideHostLb::IdleTimer::OnTimerLocked() {
 
 XdsOverrideHostLb::XdsOverrideHostLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this << "] created";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] created";
 }
 
 XdsOverrideHostLb::~XdsOverrideHostLb() {
@@ -662,9 +654,8 @@ XdsOverrideHostLb::~XdsOverrideHostLb() {
 }
 
 void XdsOverrideHostLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
 }
@@ -732,11 +723,9 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
       if (status.status() != XdsHealthStatus::kDraining) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                    << endpoint.ToString()
-                    << ": not draining, passing to child";
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "[xds_override_host_lb " << this << "] endpoint "
+            << endpoint.ToString() << ": not draining, passing to child";
         callback(endpoint);
       }
     });
@@ -747,9 +736,8 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
 };
 
 absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] Received update";
   // Grab new LB policy config.
   if (args.config == nullptr) {
     return absl::InvalidArgumentError("Missing policy config");
