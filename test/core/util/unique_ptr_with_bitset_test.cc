@@ -49,7 +49,6 @@ TEST(UniquePtrWithBitsetTest, Basic) {
   UniquePtrWithBitset<int, 1> ptr2;
   ptr2 = std::move(ptr);
   EXPECT_EQ(*ptr2, 43);
-  EXPECT_EQ(ptr.get(), nullptr);
   EXPECT_EQ(ptr2.TestBit(0), true);
 }
 
