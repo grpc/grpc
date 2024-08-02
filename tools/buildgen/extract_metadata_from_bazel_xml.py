@@ -112,7 +112,8 @@ EXTERNAL_SOURCE_PREFIXES = {
 def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
     output = subprocess.check_output(
-        ["tools/bazel", "query", "--noimplicit_deps", "--output", "xml", query]
+        ["tools/bazel", "query", "--noimplicit_deps", "--output", "xml", query],
+        shell=True
     )
     return ET.fromstring(output)
 
