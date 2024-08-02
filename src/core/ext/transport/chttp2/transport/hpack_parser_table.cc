@@ -68,7 +68,7 @@ auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   --num_entries_;
   auto& entry = entries_[index];
   if (!entry.parse_status.TestBit(Memento::kUsedBit)) {
-    global_stats().IncrementHttp2HpackMisses();
+    global_stats().IncrementHttp2HpackUnusedEntries();
   }
   return std::move(entry);
 }
@@ -79,7 +79,7 @@ auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) -> const Memento* {
   auto& entry = entries_[offset];
   const bool was_used = entry.parse_status.TestBit(Memento::kUsedBit);
   entry.parse_status.SetBit(Memento::kUsedBit);
-  if (!was_used) global_stats().IncrementHttp2HpackHits();
+  if (!was_used) global_stats().IncrementHttp2HpackUsedEntries();
   return &entry;
 }
 
@@ -114,7 +114,7 @@ void HPackTable::MementoRingBuffer::ForEach(F f) const {
 HPackTable::MementoRingBuffer::~MementoRingBuffer() {
   ForEach([](uint32_t, const Memento& m) {
     if (!m.parse_status.TestBit(Memento::kUsedBit)) {
-      global_stats().IncrementHttp2HpackMisses();
+      global_stats().IncrementHttp2HpackUnusedEntries();
     }
   });
 }

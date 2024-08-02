@@ -123,7 +123,10 @@ class HPackTable {
     Memento PopOne();
 
     // Lookup the entry at index, or return nullptr if none exists.
+    // Marks the entry as having being used (for hit/miss rate calculations).
     const Memento* Lookup(uint32_t index);
+    // Peek at the entry at index, or return nullptr if none exists.
+    // Does not mark the entry as having been used.
     const Memento* Peek(uint32_t index) const;
 
     template <typename F>
