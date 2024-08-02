@@ -276,7 +276,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
       auto wakeup_mask = std::exchange(wakeup_mask_, 0);
       while (wakeup_mask != 0) {
         const uint64_t t = LowestOneBit(wakeup_mask);
-        const int i = CountTrailingZeros(t);
+        const int i = absl::countr_zero(t);
         wakeup_mask ^= t;
         // If the participant is null, skip.
         // This allows participants to complete whilst wakers still exist
@@ -364,7 +364,7 @@ void Party::AddParticipants(Participant** participants, size_t count) {
       }
       wakeup_mask |= new_mask;
       allocated |= new_mask;
-      slots[i] = CountTrailingZeros(new_mask);
+      slots[i] = absl::countr_zero(new_mask);
     }
     // Try to allocate this slot and take a ref (atomically).
     // Ref needs to be taken because once we store the participant it could be
@@ -406,7 +406,7 @@ void Party::AddParticipant(Participant* participant) {
         << "No available slots for new participant; allocated=" << allocated
         << " state=" << state << " wakeup_mask=" << wakeup_mask;
     allocated |= wakeup_mask;
-    slot = CountTrailingZeros(wakeup_mask);
+    slot = absl::countr_zero(wakeup_mask);
     // Try to allocate this slot and take a ref (atomically).
     // Ref needs to be taken because once we store the participant it could be
     // spuriously woken up and unref the party.
