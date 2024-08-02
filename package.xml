@@ -1926,6 +1926,7 @@
     <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/string.h" role="src" />

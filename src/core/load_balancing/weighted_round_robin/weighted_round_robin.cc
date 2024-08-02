@@ -560,6 +560,9 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
               << "] created picker from endpoint_list=" << endpoint_list
               << " with " << endpoints_.size() << " subchannels";
   }
+  // Note: BuildSchedulerAndStartTimerLocked() passes out pointers to `this`,
+  // so we need to ensure that we really hold timer_mu_.
+  MutexLock lock(&timer_mu_);
   BuildSchedulerAndStartTimerLocked();
 }
 
@@ -674,6 +677,10 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
               << "] scheduling timer for "
               << config_->weight_update_period().ToString();
   }
+  // It's insufficient to hold the implicit constructor lock here, a real lock
+  // over timer_mu_ is needed: we update timer_handle_ after the timer is
+  // scheduled, but it may run on another thread before that occurs, causing a
+  // race.
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       config_->weight_update_period(),
       [self = WeakRefAsSubclass<Picker>(),

@@ -1942,6 +1942,7 @@ let package = Package(
         "src/core/util/posix/sync.cc",
         "src/core/util/posix/time.cc",
         "src/core/util/posix/tmpfile.cc",
+        "src/core/util/ring_buffer.h",
         "src/core/util/spinlock.h",
         "src/core/util/string.cc",
         "src/core/util/string.h",

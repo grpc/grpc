@@ -18,8 +18,12 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_ENABLE_LATENT_SEE
+#include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -27,6 +31,7 @@
 
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ring_buffer.h"
 
 namespace grpc_core {
 namespace latent_see {
@@ -59,6 +64,7 @@ struct Bin {
 
 class Log {
  public:
+  static constexpr int kMaxEventsPerCpu = 50000;
   static Bin* MaybeStartBin(void* owner) {
     if (bin_ != nullptr) return bin_;
     Bin* bin = free_bins_.load(std::memory_order_acquire);
@@ -120,7 +126,8 @@ class Log {
   static std::atomic<Bin*> free_bins_;
   struct Fragment {
     Mutex mu;
-    std::vector<RecordedEvent> events ABSL_GUARDED_BY(mu);
+    grpc_core::RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu> events
+        ABSL_GUARDED_BY(mu);
   };
   PerCpu<Fragment> fragments_{PerCpuOptions()};
 };
