@@ -355,9 +355,8 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
-      if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-        LOG(INFO) << "[" << this << "] Early return " << ret << " bytes";
-      }
+      GRPC_TRACE_LOG(resource_quota, INFO)
+          << "[" << this << "] Early return " << ret << " bytes";
       CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
@@ -548,9 +547,7 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Adding allocator " << allocator;
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO) << "Adding allocator " << allocator;
 
   AllocatorBucket::Shard& shard = small_allocators_.SelectShard(allocator);
 
@@ -561,9 +558,7 @@ void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
 }
 
 void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Removing allocator " << allocator;
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO) << "Removing allocator " << allocator;
 
   AllocatorBucket::Shard& small_shard =
       small_allocators_.SelectShard(allocator);
@@ -608,9 +603,8 @@ void BasicMemoryQuota::MaybeMoveAllocator(GrpcMemoryAllocatorImpl* allocator,
 
 void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
     GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Moving allocator " << allocator << " to small";
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO)
+      << "Moving allocator " << allocator << " to small";
 
   AllocatorBucket::Shard& old_shard = big_allocators_.SelectShard(allocator);
 
@@ -629,9 +623,8 @@ void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
 
 void BasicMemoryQuota::MaybeMoveAllocatorSmallToBig(
     GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-    LOG(INFO) << "Moving allocator " << allocator << " to big";
-  }
+  GRPC_TRACE_LOG(resource_quota, INFO)
+      << "Moving allocator " << allocator << " to big";
 
   AllocatorBucket::Shard& old_shard = small_allocators_.SelectShard(allocator);
 

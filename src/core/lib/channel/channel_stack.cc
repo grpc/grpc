@@ -118,11 +118,9 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    LOG(INFO) << "CHANNEL_STACK: init " << name;
-    for (size_t i = 0; i < filter_count; i++) {
-      LOG(INFO) << "CHANNEL_STACK:   filter " << filters[i]->name;
-    }
+  GRPC_TRACE_LOG(channel_stack, INFO) << "CHANNEL_STACK: init " << name;
+  for (size_t i = 0; i < filter_count; i++) {
+    LOG(INFO) << "CHANNEL_STACK:   filter " << filters[i]->name;
   }
 
   stack->on_destroy.Init([]() {});

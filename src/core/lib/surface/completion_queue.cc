@@ -699,9 +699,9 @@ static void cq_end_op_for_next(
         << "cq_end_op_for_next(cq=" << cq << ", tag=" << tag
         << ", error=" << errmsg.c_str() << ", done=" << done
         << ", done_arg=" << done_arg << ", storage=" << storage << ")";
-    if (GRPC_TRACE_FLAG_ENABLED(op_failure) && !error.ok()) {
-      LOG(INFO) << "Operation failed: tag=" << tag << ", error=" << errmsg;
-    }
+    GRPC_TRACE_LOG(op_failure) && !error.ok(, INFO)
+                                      << "Operation failed: tag=" << tag
+                                      << ", error=" << errmsg;
   }
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
   int is_success = (error.ok());
