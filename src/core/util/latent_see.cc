@@ -21,12 +21,12 @@
 #include <string>
 #include <vector>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/util/ring_buffer.h"
-
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ring_buffer.h"
 
 namespace grpc_core {
 namespace latent_see {

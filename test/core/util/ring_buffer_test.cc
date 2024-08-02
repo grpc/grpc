@@ -16,10 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "src/core/util/ring_buffer.h"
 
 #include "gtest/gtest.h"
-#include "src/core/util/ring_buffer.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -29,7 +30,7 @@ TEST(RingBufferTest, BufferAppendPopTest) {
   RingBuffer<int, kBufferCapacity> buffer;
   EXPECT_FALSE(buffer.PopIfNotEmpty().has_value());
 
-  for (int i = 0; i < (3 * kBufferCapacity)/2; ++i) {
+  for (int i = 0; i < (3 * kBufferCapacity) / 2; ++i) {
     buffer.Append(i);
   }
   // Pop half of the elements. Elements in [kBufferCapacity / 2,
