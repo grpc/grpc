@@ -148,7 +148,22 @@ grpc_cc_library(
     ],
     deps = [
         "per_cpu",
+        "ring_buffer",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "ring_buffer",
+    srcs = [],
+    hdrs = [
+        "util/ring_buffer.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "//:gpr_platform",
     ],
 )
 
@@ -7184,23 +7199,6 @@ grpc_cc_library(
         "match",
         "time",
         "//:channel_arg_names",
-        "//:gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "max_concurrent_streams_policy",
-    srcs = [
-        "ext/transport/chttp2/transport/max_concurrent_streams_policy.cc",
-    ],
-    hdrs = [
-        "ext/transport/chttp2/transport/max_concurrent_streams_policy.h",
-    ],
-    external_deps = [
-        "absl/log:check",
-    ],
-    deps = [
-        "//:gpr",
         "//:gpr_platform",
     ],
 )

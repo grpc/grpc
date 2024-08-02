@@ -15,10 +15,17 @@
 #include "src/core/util/latent_see.h"
 
 #ifdef GRPC_ENABLE_LATENT_SEE
+#include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <string>
+#include <vector>
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ring_buffer.h"
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 namespace grpc_core {
@@ -34,7 +41,10 @@ std::string Log::GenerateJson() {
   std::vector<RecordedEvent> events;
   for (auto& fragment : fragments_) {
     MutexLock lock(&fragment.mu);
-    events.insert(events.end(), fragment.events.begin(), fragment.events.end());
+    for (auto it = fragment.events.begin(); it != fragment.events.end(); ++it) {
+      events.push_back(*it);
+    }
+    fragment.events.Clear();
   }
   absl::optional<std::chrono::steady_clock::time_point> start_time;
   for (auto& event : events) {
@@ -103,7 +113,7 @@ void Log::FlushBin(Bin* bin) {
   {
     MutexLock lock(&fragment.mu);
     for (auto event : bin->events) {
-      fragment.events.push_back(RecordedEvent{thread_id, batch_id, event});
+      fragment.events.Append(RecordedEvent{thread_id, batch_id, event});
     }
   }
   bin->events.clear();

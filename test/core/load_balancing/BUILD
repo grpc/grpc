@@ -277,5 +277,6 @@ grpc_cc_benchmark(
         "//:config",
         "//:grpc",
         "//src/core:lb_policy",
+        "//test/core/test_util:build",
     ],
 )
