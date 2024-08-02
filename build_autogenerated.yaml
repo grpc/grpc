@@ -290,7 +290,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -1320,7 +1319,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -2290,7 +2288,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -2766,7 +2763,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -13388,18 +13384,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: max_concurrent_streams_policy_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
-  src:
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
-  - test/core/transport/chttp2/max_concurrent_streams_policy_test.cc
-  deps:
-  - gtest
-  - gpr
 - name: max_concurrent_streams_test
   gtest: true
   build: test
