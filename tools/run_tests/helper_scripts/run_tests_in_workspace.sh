@@ -30,6 +30,8 @@ git clone . "${WORKSPACE_NAME}"
 git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
     && git submodule update --init --reference ${repo_root}/${name} ${name}'
 
+python3 -m pip install pyyaml
+
 if [ -f ${repo_root}/${WORKSPACE_NAME}/generate_artifacts.sh ]; then
     ${repo_root}/${WORKSPACE_NAME}/generate_artifacts.sh
 fi
