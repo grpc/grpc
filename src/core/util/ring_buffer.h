@@ -52,7 +52,7 @@ class RingBuffer {
 
     RingBufferIterator() : buffer_(nullptr), head_(0), size_(0) {};
     RingBufferIterator(const RingBufferIterator& other) = default;
-    RingBufferIterator(const RingBuffer<T, kCapacity>* buffer)
+    explicit RingBufferIterator(const RingBuffer<T, kCapacity>* buffer)
         : buffer_(buffer), head_(buffer->head_), size_(buffer->size_) {
       if (!size_) {
         buffer_ = nullptr;
