@@ -110,17 +110,14 @@ class XdsResolver final : public Resolver {
         uri_(std::move(args.uri)),
         data_plane_authority_(std::move(data_plane_authority)),
         channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      LOG(INFO) << "[xds_resolver " << this << "] created for URI "
-                << uri_.ToString() << "; data plane authority is "
-                << data_plane_authority_;
-    }
+    GRPC_TRACE_LOG(xds_resolver, INFO)
+        << "[xds_resolver " << this << "] created for URI " << uri_.ToString()
+        << "; data plane authority is " << data_plane_authority_;
   }
 
   ~XdsResolver() override {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-      LOG(INFO) << "[xds_resolver " << this << "] destroyed";
-    }
+    GRPC_TRACE_LOG(xds_resolver, INFO)
+        << "[xds_resolver " << this << "] destroyed";
   }
 
   void StartLocked() override;
@@ -974,9 +971,8 @@ void XdsResolver::StartLocked() {
 }
 
 void XdsResolver::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[xds_resolver " << this << "] shutting down";
   if (xds_client_ != nullptr) {
     dependency_mgr_.reset();
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
@@ -987,9 +983,8 @@ void XdsResolver::ShutdownLocked() {
 
 void XdsResolver::OnUpdate(
     RefCountedPtr<const XdsDependencyManager::XdsConfig> config) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] received updated xDS config";
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[xds_resolver " << this << "] received updated xDS config";
   if (xds_client_ == nullptr) return;
   current_config_ = std::move(config);
   GenerateResult();

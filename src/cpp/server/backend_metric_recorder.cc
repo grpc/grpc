@@ -70,30 +70,26 @@ void ServerMetricRecorder::UpdateBackendMetricDataState(
 
 void ServerMetricRecorder::SetCpuUtilization(double value) {
   if (!IsUtilizationWithSoftLimitsValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] CPU utilization rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] CPU utilization rejected: " << value;
     return;
   }
   UpdateBackendMetricDataState(
       [value](BackendMetricData* data) { data->cpu_utilization = value; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] CPU utilization set: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] CPU utilization set: " << value;
 }
 
 void ServerMetricRecorder::SetMemoryUtilization(double value) {
   if (!IsUtilizationValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] Mem utilization rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] Mem utilization rejected: " << value;
     return;
   }
   UpdateBackendMetricDataState(
       [value](BackendMetricData* data) { data->mem_utilization = value; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] Mem utilization set: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] Mem utilization set: " << value;
 }
 
 void ServerMetricRecorder::SetApplicationUtilization(double value) {
@@ -107,37 +103,30 @@ void ServerMetricRecorder::SetApplicationUtilization(double value) {
   UpdateBackendMetricDataState([value](BackendMetricData* data) {
     data->application_utilization = value;
   });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] Application utilization set: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] Application utilization set: " << value;
 }
 
 void ServerMetricRecorder::SetQps(double value) {
   if (!IsRateValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] QPS rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] QPS rejected: " << value;
     return;
   }
   UpdateBackendMetricDataState(
       [value](BackendMetricData* data) { data->qps = value; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] QPS set: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO) << "[" << this << "] QPS set: " << value;
 }
 
 void ServerMetricRecorder::SetEps(double value) {
   if (!IsRateValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] EPS rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] EPS rejected: " << value;
     return;
   }
   UpdateBackendMetricDataState(
       [value](BackendMetricData* data) { data->eps = value; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] EPS set: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO) << "[" << this << "] EPS set: " << value;
 }
 
 void ServerMetricRecorder::SetNamedUtilization(string_ref name, double value) {
@@ -176,39 +165,34 @@ void ServerMetricRecorder::SetAllNamedUtilization(
 void ServerMetricRecorder::ClearCpuUtilization() {
   UpdateBackendMetricDataState(
       [](BackendMetricData* data) { data->cpu_utilization = -1; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] CPU utilization cleared.";
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] CPU utilization cleared.";
 }
 
 void ServerMetricRecorder::ClearMemoryUtilization() {
   UpdateBackendMetricDataState(
       [](BackendMetricData* data) { data->mem_utilization = -1; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] Mem utilization cleared.";
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] Mem utilization cleared.";
 }
 
 void ServerMetricRecorder::ClearApplicationUtilization() {
   UpdateBackendMetricDataState(
       [](BackendMetricData* data) { data->application_utilization = -1; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] Application utilization cleared.";
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] Application utilization cleared.";
 }
 
 void ServerMetricRecorder::ClearQps() {
   UpdateBackendMetricDataState([](BackendMetricData* data) { data->qps = -1; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] QPS utilization cleared.";
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] QPS utilization cleared.";
 }
 
 void ServerMetricRecorder::ClearEps() {
   UpdateBackendMetricDataState([](BackendMetricData* data) { data->eps = -1; });
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] EPS utilization cleared.";
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] EPS utilization cleared.";
 }
 
 void ServerMetricRecorder::ClearNamedUtilization(string_ref name) {
@@ -251,30 +235,26 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
 experimental::CallMetricRecorder&
 BackendMetricState::RecordCpuUtilizationMetric(double value) {
   if (!IsUtilizationWithSoftLimitsValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] CPU utilization value rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] CPU utilization value rejected: " << value;
     return *this;
   }
   cpu_utilization_.store(value, std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] CPU utilization recorded: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] CPU utilization recorded: " << value;
   return *this;
 }
 
 experimental::CallMetricRecorder&
 BackendMetricState::RecordMemoryUtilizationMetric(double value) {
   if (!IsUtilizationValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] Mem utilization value rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] Mem utilization value rejected: " << value;
     return *this;
   }
   mem_utilization_.store(value, std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] Mem utilization recorded: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] Mem utilization recorded: " << value;
   return *this;
 }
 
@@ -288,39 +268,34 @@ BackendMetricState::RecordApplicationUtilizationMetric(double value) {
     return *this;
   }
   application_utilization_.store(value, std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] Application utilization recorded: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] Application utilization recorded: " << value;
   return *this;
 }
 
 experimental::CallMetricRecorder& BackendMetricState::RecordQpsMetric(
     double value) {
   if (!IsRateValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] QPS value rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] QPS value rejected: " << value;
     return *this;
   }
   qps_.store(value, std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] QPS recorded: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] QPS recorded: " << value;
   return *this;
 }
 
 experimental::CallMetricRecorder& BackendMetricState::RecordEpsMetric(
     double value) {
   if (!IsRateValid(value)) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      LOG(INFO) << "[" << this << "] EPS value rejected: " << value;
-    }
+    GRPC_TRACE_LOG(backend_metric, INFO)
+        << "[" << this << "] EPS value rejected: " << value;
     return *this;
   }
   eps_.store(value, std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this << "] EPS recorded: " << value;
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this << "] EPS recorded: " << value;
   return *this;
 }
 

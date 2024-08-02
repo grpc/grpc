@@ -375,9 +375,8 @@ XdsDependencyManager::XdsDependencyManager(
 }
 
 void XdsDependencyManager::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this << "] shutting down";
   if (listener_watcher_ != nullptr) {
     XdsListenerResourceType::CancelWatch(
         xds_client_.get(), listener_resource_name_, listener_watcher_,
@@ -453,11 +452,9 @@ void XdsDependencyManager::OnListenerUpdate(
           }
           // Start watch for the new RDS resource name.
           route_config_name_ = rds_name;
-          if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-            LOG(INFO) << "[XdsDependencyManager " << this
-                      << "] starting watch for route config "
-                      << route_config_name_;
-          }
+          GRPC_TRACE_LOG(xds_resolver, INFO)
+              << "[XdsDependencyManager " << this
+              << "] starting watch for route config " << route_config_name_;
           auto watcher =
               MakeRefCounted<RouteConfigWatcher>(Ref(), route_config_name_);
           route_config_watcher_ = watcher.get();
@@ -540,11 +537,9 @@ absl::flat_hash_set<absl::string_view> GetClustersFromVirtualHost(
 void XdsDependencyManager::OnRouteConfigUpdate(
     const std::string& name,
     std::shared_ptr<const XdsRouteConfigResource> route_config) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this
-              << "] received RouteConfig update for "
-              << (name.empty() ? "<inline>" : name);
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
+                                     << "] received RouteConfig update for "
+                                     << (name.empty() ? "<inline>" : name);
   if (xds_client_ == nullptr) return;
   // Ignore updates for stale names.
   if (name.empty()) {
@@ -575,20 +570,18 @@ void XdsDependencyManager::OnRouteConfigUpdate(
 }
 
 void XdsDependencyManager::OnError(std::string context, absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this
-              << "] received Listener or RouteConfig error: " << context << " "
-              << status;
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this
+      << "] received Listener or RouteConfig error: " << context << " "
+      << status;
   if (xds_client_ == nullptr) return;
   if (current_virtual_host_ != nullptr) return;
   watcher_->OnError(context, std::move(status));
 }
 
 void XdsDependencyManager::OnResourceDoesNotExist(std::string context) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this << "] " << context;
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this << "] " << context;
   if (xds_client_ == nullptr) return;
   current_virtual_host_ = nullptr;
   watcher_->OnResourceDoesNotExist(std::move(context));

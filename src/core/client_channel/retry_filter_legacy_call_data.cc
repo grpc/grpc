@@ -139,21 +139,18 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
         }
       },
       is_transparent_retry);
-  if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
-              << " attempt=" << this
-              << ": created attempt, lb_call=" << lb_call_.get();
-  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << "chand=" << calld->chand_ << " calld=" << calld << " attempt=" << this
+      << ": created attempt, lb_call=" << lb_call_.get();
   // If per_attempt_recv_timeout is set, start a timer.
   if (calld->retry_policy_ != nullptr &&
       calld->retry_policy_->per_attempt_recv_timeout().has_value()) {
     const Duration per_attempt_recv_timeout =
         *calld->retry_policy_->per_attempt_recv_timeout();
-    if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-      LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
-                << " attempt=" << this << ": per-attempt timeout in "
-                << per_attempt_recv_timeout.millis() << " ms";
-    }
+    GRPC_TRACE_LOG(retry, INFO)
+        << "chand=" << calld->chand_ << " calld=" << calld
+        << " attempt=" << this << ": per-attempt timeout in "
+        << per_attempt_recv_timeout.millis() << " ms";
     // Schedule retry after computed delay.
     GRPC_CALL_STACK_REF(calld->owning_call_, "OnPerAttemptRecvTimer");
     Ref(DEBUG_LOCATION, "OnPerAttemptRecvTimer").release();
@@ -317,11 +314,10 @@ void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
 void RetryFilter::LegacyCallData::CallAttempt::AddClosureForBatch(
     grpc_transport_stream_op_batch* batch, const char* reason,
     CallCombinerClosureList* closures) {
-  if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-              << " attempt=" << this << ": adding batch (" << reason
-              << "): " << grpc_transport_stream_op_batch_string(batch, false);
-  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << "chand=" << calld_->chand_ << " calld=" << calld_
+      << " attempt=" << this << ": adding batch (" << reason
+      << "): " << grpc_transport_stream_op_batch_string(batch, false);
   batch->handler_private.extra_arg = lb_call_.get();
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
@@ -529,11 +525,10 @@ void RetryFilter::LegacyCallData::CallAttempt::StartRetriableBatches() {
   AddRetriableBatches(&closures);
   // Note: This will yield the call combiner.
   // Start batches on LB call.
-  if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-              << " attempt=" << this << ": starting " << closures.size()
-              << " retriable batches on lb_call=" << lb_call_.get();
-  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << "chand=" << calld_->chand_ << " calld=" << calld_
+      << " attempt=" << this << ": starting " << closures.size()
+      << " retriable batches on lb_call=" << lb_call_.get();
   closures.RunClosures(calld_->call_combiner_);
 }
 
@@ -600,28 +595,24 @@ bool RetryFilter::LegacyCallData::CallAttempt::ShouldRetry(
   ++calld_->num_attempts_completed_;
   if (calld_->num_attempts_completed_ >=
       calld_->retry_policy_->max_attempts()) {
-    if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-      LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-                << " attempt=" << this << ": exceeded "
-                << calld_->retry_policy_->max_attempts() << " retry attempts";
-    }
+    GRPC_TRACE_LOG(retry, INFO)
+        << "chand=" << calld_->chand_ << " calld=" << calld_
+        << " attempt=" << this << ": exceeded "
+        << calld_->retry_policy_->max_attempts() << " retry attempts";
     return false;
   }
   // Check server push-back.
   if (server_pushback.has_value()) {
     if (*server_pushback < Duration::Zero()) {
-      if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-        LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-                  << " attempt=" << this
-                  << ": not retrying due to server push-back";
-      }
+      GRPC_TRACE_LOG(retry, INFO)
+          << "chand=" << calld_->chand_ << " calld=" << calld_
+          << " attempt=" << this << ": not retrying due to server push-back";
       return false;
     } else {
-      if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-        LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-                  << " attempt=" << this << ": server push-back: retry in "
-                  << server_pushback->millis() << " ms";
-      }
+      GRPC_TRACE_LOG(retry, INFO)
+          << "chand=" << calld_->chand_ << " calld=" << calld_
+          << " attempt=" << this << ": server push-back: retry in "
+          << server_pushback->millis() << " ms";
     }
   }
   // We should retry.
@@ -705,11 +696,9 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
 void RetryFilter::LegacyCallData::CallAttempt::
     MaybeCancelPerAttemptRecvTimer() {
   if (per_attempt_recv_timer_handle_.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-      LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-                << " attempt=" << this
-                << ": cancelling perAttemptRecvTimeout timer";
-    }
+    GRPC_TRACE_LOG(retry, INFO)
+        << "chand=" << calld_->chand_ << " calld=" << calld_
+        << " attempt=" << this << ": cancelling perAttemptRecvTimeout timer";
     if (calld_->chand_->event_engine()->Cancel(
             *per_attempt_recv_timer_handle_)) {
       Unref(DEBUG_LOCATION, "OnPerAttemptRecvTimer");
@@ -728,11 +717,10 @@ RetryFilter::LegacyCallData::CallAttempt::BatchData::BatchData(
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(retry) ? "BatchData" : nullptr,
                  refcount),
       call_attempt_(attempt.release()) {
-  if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << call_attempt_->calld_->chand_
-              << " calld=" << call_attempt_->calld_
-              << " attempt=" << call_attempt_ << ": creating batch " << this;
-  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << "chand=" << call_attempt_->calld_->chand_
+      << " calld=" << call_attempt_->calld_ << " attempt=" << call_attempt_
+      << ": creating batch " << this;
   // We hold a ref to the call stack for every batch sent on a call attempt.
   // This is because some batches on the call attempt may not complete
   // until after all of the batches are completed at the surface (because
@@ -749,11 +737,10 @@ RetryFilter::LegacyCallData::CallAttempt::BatchData::BatchData(
 }
 
 RetryFilter::LegacyCallData::CallAttempt::BatchData::~BatchData() {
-  if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << call_attempt_->calld_->chand_
-              << " calld=" << call_attempt_->calld_
-              << " attempt=" << call_attempt_ << ": destroying batch " << this;
-  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << "chand=" << call_attempt_->calld_->chand_
+      << " calld=" << call_attempt_->calld_ << " attempt=" << call_attempt_
+      << ": destroying batch " << this;
   CallAttempt* call_attempt = std::exchange(call_attempt_, nullptr);
   grpc_call_stack* owning_call = call_attempt->calld_->owning_call_;
   call_attempt->Unref(DEBUG_LOCATION, "~BatchData");
@@ -849,11 +836,10 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
     if (GPR_UNLIKELY(
             (call_attempt->trailing_metadata_available_ || !error.ok()) &&
             !call_attempt->completed_recv_trailing_metadata_)) {
-      if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-        LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
-                  << " attempt=" << call_attempt
-                  << ": deferring recv_initial_metadata_ready (Trailers-Only)";
-      }
+      GRPC_TRACE_LOG(retry, INFO)
+          << "chand=" << calld->chand_ << " calld=" << calld
+          << " attempt=" << call_attempt
+          << ": deferring recv_initial_metadata_ready (Trailers-Only)";
       call_attempt->recv_initial_metadata_ready_deferred_batch_ =
           std::move(batch_data);
       call_attempt->recv_initial_metadata_error_ = error;
@@ -1259,11 +1245,10 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
     }
   }
   if (have_pending_send_ops) {
-    if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-      LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
-                << " attempt=" << call_attempt_
-                << ": starting next batch for pending send op(s)";
-    }
+    GRPC_TRACE_LOG(retry, INFO)
+        << "chand=" << calld->chand_ << " calld=" << calld
+        << " attempt=" << call_attempt_
+        << ": starting next batch for pending send op(s)";
     call_attempt_->AddRetriableBatches(closures);
   }
 }
@@ -1561,11 +1546,11 @@ RetryFilter::LegacyCallData::~LegacyCallData() {
 
 void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  if (GRPC_TRACE_FLAG_ENABLED(retry) && !GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << "chand=" << chand_ << " calld=" << this
-              << ": batch started from surface: "
-              << grpc_transport_stream_op_batch_string(batch, false);
-  }
+  GRPC_TRACE_LOG(retry) &&
+      !GRPC_TRACE_FLAG_ENABLED(channel, INFO)
+          << "chand=" << chand_ << " calld=" << this
+          << ": batch started from surface: "
+          << grpc_transport_stream_op_batch_string(batch, false);
   // If we have an LB call, delegate to the LB call.
   if (committed_call_ != nullptr) {
     // Note: This will release the call combiner.
@@ -1584,11 +1569,9 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
   if (GPR_UNLIKELY(batch->cancel_stream)) {
     // Save cancel_error in case subsequent batches are started.
     cancelled_from_surface_ = batch->payload->cancel_stream.cancel_error;
-    if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-      LOG(INFO) << "chand=" << chand_ << " calld=" << this
-                << ": cancelled from surface: "
-                << StatusToString(cancelled_from_surface_);
-    }
+    GRPC_TRACE_LOG(retry, INFO) << "chand=" << chand_ << " calld=" << this
+                                << ": cancelled from surface: "
+                                << StatusToString(cancelled_from_surface_);
     // Fail any pending batches.
     PendingBatchesFail(cancelled_from_surface_);
     // If we have a current call attempt, commit the call, then send
@@ -1654,11 +1637,9 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
     if (!retry_codepath_started_ && retry_committed_ &&
         (retry_policy_ == nullptr ||
          !retry_policy_->per_attempt_recv_timeout().has_value())) {
-      if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-        LOG(INFO) << "chand=" << chand_ << " calld=" << this
-                  << ": retry committed before first attempt; "
-                  << "creating LB call";
-      }
+      GRPC_TRACE_LOG(retry, INFO) << "chand=" << chand_ << " calld=" << this
+                                  << ": retry committed before first attempt; "
+                                  << "creating LB call";
       PendingBatchClear(pending);
       auto* service_config_call_data =
           DownCast<ClientChannelServiceConfigCallData*>(
@@ -1970,11 +1951,9 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
   } else {
     next_attempt_timeout = retry_backoff_.NextAttemptTime() - Timestamp::Now();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << chand_ << " calld=" << this
-              << ": retrying failed call in " << next_attempt_timeout.millis()
-              << " ms";
-  }
+  GRPC_TRACE_LOG(retry, INFO)
+      << "chand=" << chand_ << " calld=" << this << ": retrying failed call in "
+      << next_attempt_timeout.millis() << " ms";
   // Schedule retry after computed delay.
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   retry_timer_handle_ =
