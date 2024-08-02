@@ -1944,6 +1944,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/posix/sync.cc )
   s.files += %w( src/core/util/posix/time.cc )
   s.files += %w( src/core/util/posix/tmpfile.cc )
+  s.files += %w( src/core/util/ring_buffer.h )
   s.files += %w( src/core/util/spinlock.h )
   s.files += %w( src/core/util/string.cc )
   s.files += %w( src/core/util/string.h )

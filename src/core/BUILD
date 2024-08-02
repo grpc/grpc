@@ -148,7 +148,22 @@ grpc_cc_library(
     ],
     deps = [
         "per_cpu",
+        "ring_buffer",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "ring_buffer",
+    srcs = [],
+    hdrs = [
+        "util/ring_buffer.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "//:gpr_platform",
     ],
 )
 

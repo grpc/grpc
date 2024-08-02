@@ -1218,6 +1218,7 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
@@ -2705,6 +2706,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
@@ -4755,6 +4757,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -5484,6 +5487,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6714,6 +6718,7 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
@@ -6901,6 +6906,7 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/transport/call_state.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7245,6 +7251,7 @@ targets:
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -7898,6 +7905,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -8693,6 +8701,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10241,6 +10250,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10791,6 +10801,7 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -10907,6 +10918,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -12491,6 +12503,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -12581,6 +12594,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
@@ -13053,6 +13067,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13286,6 +13301,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
@@ -13840,6 +13856,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14153,6 +14170,7 @@ targets:
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14507,6 +14525,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -15072,6 +15091,7 @@ targets:
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -18044,6 +18064,17 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: ring_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/ring_buffer.h
+  src:
+  - test/core/util/ring_buffer_test.cc
+  deps:
+  - gtest
+  uses_polling: false
 - name: ring_hash_test
   gtest: true
   build: test
@@ -20861,6 +20892,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
