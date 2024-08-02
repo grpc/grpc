@@ -126,8 +126,7 @@ class Log {
   static std::atomic<Bin*> free_bins_;
   struct Fragment {
     Mutex mu;
-    grpc_core::RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu> events
-        ABSL_GUARDED_BY(mu);
+    RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu> events ABSL_GUARDED_BY(mu);
   };
   PerCpu<Fragment> fragments_{PerCpuOptions()};
 };
