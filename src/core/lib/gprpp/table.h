@@ -334,6 +334,15 @@ class Table {
                 absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
   }
 
+  // Iterate through each set field in the table if it exists in Vs, in the
+  // order of Vs. For each existing field, call the filter function. If the
+  // function returns true, keep the field. Otherwise, remove the field.
+  template <typename F, typename... Vs>
+  void FilterIn(F f) {
+    FilterInImpl(std::move(f),
+                 absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
+  }
+
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
 
@@ -415,6 +424,18 @@ class Table {
     }
   }
 
+  // Call (*f)(value) if that value is in the table.
+  // If the value is present in the table and (*f)(value) returns false, remove
+  // the value from the table.
+  template <size_t I, typename F>
+  void FilterIf(F* f) {
+    if (auto* p = get<I>()) {
+      if (!(*f)(*p)) {
+        clear<I>();
+      }
+    }
+  }
+
   // For each field (element I=0, 1, ...) if that field is present, call its
   // destructor.
   template <size_t... I>
@@ -442,6 +463,13 @@ class Table {
   template <typename F, size_t... I>
   void ForEachImpl(F f, absl::index_sequence<I...>) const {
     table_detail::do_these_things<int>({(CallIf<I>(&f), 1)...});
+  }
+
+  // For each field (element I=0, 1, ...) if that field is present, call f. If
+  // f returns false, remove the field from the table.
+  template <typename F, size_t... I>
+  void FilterInImpl(F f, absl::index_sequence<I...>) {
+    table_detail::do_these_things<int>({(FilterIf<I>(&f), 1)...});
   }
 
   template <size_t... I>
