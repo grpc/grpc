@@ -152,7 +152,7 @@ TEST(HpackParserTableTest, ManyUnusedAdditions) {
   ExecCtx exec_ctx;
 
   auto stats_before = global_stats().Collect();
-  const Timestamp start = grpc_core::Timestamp::Now();
+  const Timestamp start = Timestamp::Now();
 
   for (i = 0; i < 100000; i++) {
     std::string key = absl::StrCat("K.", i);
@@ -171,7 +171,7 @@ TEST(HpackParserTableTest, ManyUnusedAdditions) {
   tbl.reset();
 
   auto stats_after = global_stats().Collect();
-  const Timestamp end = grpc_core::Timestamp::Now();
+  const Timestamp end = Timestamp::Now();
 
   EXPECT_EQ(stats_after->http2_hpack_hits, stats_before->http2_hpack_hits);
   EXPECT_EQ(stats_after->http2_hpack_misses - stats_before->http2_hpack_misses,
