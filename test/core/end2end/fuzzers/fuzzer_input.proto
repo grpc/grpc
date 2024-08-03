@@ -172,6 +172,20 @@ message ChaoticGoodFrame {
 
 message ChaoticGoodSettings {}
 
+message FakeTransportFrame {
+    enum MessageString {
+        CLIENT_INIT = 0;
+        SERVER_INIT = 1;
+        CLIENT_FINISHED = 2;
+        SERVER_FINISHED = 3;
+    }
+
+    oneof payload {
+        bytes raw_bytes = 1;
+        MessageString message_string = 2;
+    }
+}
+
 message InputSegment {
     int32 delay_ms = 1;
     oneof payload {
@@ -187,6 +201,7 @@ message InputSegment {
         H2ClientPrefix client_prefix = 11;
         uint32 repeated_zeros = 12;
         ChaoticGoodFrame chaotic_good = 13;
+        FakeTransportFrame fake_transport_frame = 14;
     }
 }
 

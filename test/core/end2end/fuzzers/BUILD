@@ -225,3 +225,22 @@ grpc_proto_fuzzer(
         "//:grpc",
     ],
 )
+
+grpc_proto_fuzzer(
+    name = "connector_fuzzer_chttp2_fakesec",
+    srcs = ["connector_fuzzer_chttp2_fakesec.cc"],
+    corpus = "connector_fuzzer_chttp2_fakesec_corpus",
+    end2end_fuzzer = True,
+    language = "C++",
+    proto = None,
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":connector_fuzzer",
+        "//:grpc",
+    ],
+)

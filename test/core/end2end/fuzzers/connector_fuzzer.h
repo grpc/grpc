@@ -18,12 +18,15 @@
 #include "absl/functional/function_ref.h"
 
 #include "src/core/client_channel/connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 
 namespace grpc_core {
 
 void RunConnectorFuzzer(
     const fuzzer_input::Msg& msg,
+    absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
+        make_security_connector,
     absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector);
 
 }

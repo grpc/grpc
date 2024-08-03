@@ -210,6 +210,8 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
     frame->offset += to_read_size;
     available_size -= to_read_size;
     frame->size = load32_little_endian(frame->data);
+    if (frame->size < 4) return TSI_DATA_CORRUPTED;
+    if (frame->size > 16 * 1024 * 1024) return TSI_DATA_CORRUPTED;
     tsi_fake_frame_ensure_size(frame);
   }
 

@@ -44,8 +44,11 @@ class ConnectorFuzzer {
  public:
   ConnectorFuzzer(
       const fuzzer_input::Msg& msg,
+      absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
+          make_security_connector,
       absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector)
-      : engine_([actions = msg.event_engine_actions()]() {
+      : make_security_connector_(make_security_connector),
+        engine_([actions = msg.event_engine_actions()]() {
           SetEventEngineFactory([actions]() -> std::unique_ptr<EventEngine> {
             return std::make_unique<FuzzingEventEngine>(
                 FuzzingEventEngine::Options(), actions);
@@ -109,11 +112,16 @@ class ConnectorFuzzer {
         mock_endpoint_controller_->TakeCEndpoint());
     SubchannelConnector::Result result;
     bool done = false;
+    auto channel_args = ChannelArgs{}.SetObject<EventEngine>(engine_).SetObject(
+        resource_quota_);
+    auto security_connector = make_security_connector_();
+    if (security_connector != nullptr) {
+      channel_args = channel_args.SetObject(std::move(security_connector));
+    }
     connector_->Connect(
-        SubchannelConnector::Args{
-            &addr, nullptr, Timestamp::Now() + Duration::Seconds(20),
-            ChannelArgs{}.SetObject<EventEngine>(engine_).SetObject(
-                resource_quota_)},
+        SubchannelConnector::Args{&addr, nullptr,
+                                  Timestamp::Now() + Duration::Seconds(20),
+                                  channel_args},
         &result, NewClosure([&done, &result](grpc_error_handle status) {
           done = true;
           if (status.ok()) result.transport->Orphan();
@@ -128,6 +136,8 @@ class ConnectorFuzzer {
  private:
   RefCountedPtr<ResourceQuota> resource_quota_ =
       MakeRefCounted<ResourceQuota>("fuzzer");
+  absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
+      make_security_connector_;
   std::shared_ptr<FuzzingEventEngine> engine_;
   std::queue<fuzzer_input::NetworkInput> network_inputs_;
   std::shared_ptr<MockEndpointController> mock_endpoint_controller_;
@@ -139,6 +149,8 @@ class ConnectorFuzzer {
 
 void RunConnectorFuzzer(
     const fuzzer_input::Msg& msg,
+    absl::FunctionRef<RefCountedPtr<grpc_channel_security_connector>()>
+        make_security_connector,
     absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector) {
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     grpc_disable_all_absl_logs();
@@ -151,7 +163,7 @@ void RunConnectorFuzzer(
   CHECK_EQ(once, 42);  // avoid unused variable warning
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
-  ConnectorFuzzer(msg, make_connector).Run();
+  ConnectorFuzzer(msg, make_security_connector, make_connector).Run();
 }
 
 }  // namespace grpc_core

@@ -19,6 +19,9 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/connector_fuzzer.h"
 
@@ -26,7 +29,10 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   grpc_core::RunConnectorFuzzer(
       msg,
       []() {
-        return grpc_core::RefCountedPtr<grpc_channel_security_connector>();
+        return grpc_fake_channel_security_connector_create(
+            grpc_core::RefCountedPtr<grpc_channel_credentials>(
+                grpc_fake_transport_security_credentials_create()),
+            nullptr, "foobar", grpc_core::ChannelArgs{});
       },
       []() { return grpc_core::MakeOrphanable<grpc_core::Chttp2Connector>(); });
 }
