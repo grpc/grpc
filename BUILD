@@ -4037,6 +4037,7 @@ grpc_cc_library(
         "tsi_base",
         "//src/core:slice",
         "//src/core:useful",
+        "//src/core:dump_args",
     ],
 )
 
