@@ -29,9 +29,12 @@
 #include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/util/json/json_reader.h"
+#include "test/core/test_util/build.h"
 
 namespace grpc_core {
 namespace {
+
+bool IsSlowBuild() { return BuiltUnderMsan() || BuiltUnderUbsan(); }
 
 class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
  public:
@@ -236,7 +239,7 @@ void BM_Pick(benchmark::State& state, BenchmarkHelper& helper) {
                       return *helper;                           \
                     }())                                        \
       ->RangeMultiplier(10)                                     \
-      ->Range(1, 100000)
+      ->Range(1, IsSlowBuild() ? 1000 : 100000)
 
 PICKER_BENCHMARK(pick_first, "[{\"pick_first\":{}}]");
 PICKER_BENCHMARK(
