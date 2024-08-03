@@ -239,10 +239,9 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.args = std::move(args.args);
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] updating child policy "
-              << child_policy_.get();
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] updating child policy "
+      << child_policy_.get();
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -256,10 +255,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   auto lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "weighted_target_experimental", std::move(lb_policy_args));
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this
-              << "] created new child policy " << lb_policy.get();
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] created new child policy "
+      << lb_policy.get();
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // this LB policy, which in turn is tied to the application's call.

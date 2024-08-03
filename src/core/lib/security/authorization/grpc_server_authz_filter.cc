@@ -77,10 +77,9 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
     AuthorizationEngine::Decision decision =
         engines.deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-        LOG(INFO) << "chand=" << this << ": request denied by policy "
-                  << decision.matching_policy_name;
-      }
+      GRPC_TRACE_LOG(grpc_authz_api, INFO)
+          << "chand=" << this << ": request denied by policy "
+          << decision.matching_policy_name;
       return false;
     }
   }
@@ -95,10 +94,8 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
       return true;
     }
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    LOG(INFO) << "chand=" << this
-              << ": request denied, no matching policy found.";
-  }
+  GRPC_TRACE_LOG(grpc_authz_api, INFO)
+      << "chand=" << this << ": request denied, no matching policy found.";
   return false;
 }
 
