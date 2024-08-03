@@ -4035,9 +4035,9 @@ grpc_cc_library(
     deps = [
         "gpr",
         "tsi_base",
+        "//src/core:dump_args",
         "//src/core:slice",
         "//src/core:useful",
-        "//src/core:dump_args",
     ],
 )
 
