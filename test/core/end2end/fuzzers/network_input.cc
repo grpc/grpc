@@ -545,4 +545,15 @@ Duration ScheduleConnection(
   return delay;
 }
 
+void ScheduleWrites(
+    const fuzzer_input::NetworkInput& network_input,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
+  auto schedule = MakeSchedule(network_input);
+  auto ep = std::shared_ptr<EventEngine::Endpoint>(std::move(endpoint));
+  ReadForever(ep);
+  ScheduleWritesForReads(ep, event_engine, std::move(schedule));
+}
+
 }  // namespace grpc_core

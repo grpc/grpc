@@ -15,10 +15,13 @@
 #include "test/core/end2end/fuzzers/connector_fuzzer.h"
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
@@ -26,9 +29,13 @@
 bool squelch = true;
 bool leak_check = true;
 
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::MockEndpointController;
 using ::grpc_event_engine::experimental::SetEventEngineFactory;
+using ::grpc_event_engine::experimental::URIToResolvedAddress;
 
 namespace grpc_core {
 namespace {
@@ -39,26 +46,36 @@ class ConnectorFuzzer {
       const fuzzer_input::Msg& msg,
       absl::FunctionRef<OrphanablePtr<SubchannelConnector>()> make_connector)
       : engine_([actions = msg.event_engine_actions()]() {
-          SetEventEngineFactory(
-              [actions]() -> std::unique_ptr<
-                              grpc_event_engine::experimental::EventEngine> {
-                return std::make_unique<FuzzingEventEngine>(
-                    FuzzingEventEngine::Options(), actions);
-              });
+          SetEventEngineFactory([actions]() -> std::unique_ptr<EventEngine> {
+            return std::make_unique<FuzzingEventEngine>(
+                FuzzingEventEngine::Options(), actions);
+          });
           return std::dynamic_pointer_cast<FuzzingEventEngine>(
               GetDefaultEventEngine());
         }()),
-        mock_endpoint_controller_(
-            grpc_event_engine::experimental::MockEndpointController::Create(
-                engine_)),
+        mock_endpoint_controller_(MockEndpointController::Create(engine_)),
         connector_(make_connector()) {
     CHECK(engine_);
+    for (const auto& input : msg.network_input()) {
+      network_inputs_.push(input);
+    }
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     ExecCtx exec_ctx;
     Executor::SetThreadingAll(false);
-    ScheduleReads(msg.network_input()[0], mock_endpoint_controller_,
-                  engine_.get());
+    listener_ =
+        engine_
+            ->CreateListener(
+                [this](std::unique_ptr<EventEngine::Endpoint> endpoint,
+                       MemoryAllocator) {
+                  if (network_inputs_.empty()) return;
+                  ScheduleWrites(network_inputs_.front(), std::move(endpoint),
+                                 engine_.get());
+                  network_inputs_.pop();
+                },
+                [](absl::Status) {}, ChannelArgsEndpointConfig(ChannelArgs{}),
+                std::make_unique<grpc_core::MemoryQuota>("foo"))
+            .value();
     if (msg.has_shutdown_connector() &&
         msg.shutdown_connector().delay_ms() > 0) {
       auto shutdown_connector = msg.shutdown_connector();
@@ -74,6 +91,7 @@ class ConnectorFuzzer {
   }
 
   ~ConnectorFuzzer() {
+    listener_.reset();
     connector_.reset();
     mock_endpoint_controller_.reset();
     engine_->TickUntilIdle();
@@ -82,19 +100,24 @@ class ConnectorFuzzer {
   }
 
   void Run() {
+    grpc_resolved_address addr;
+    CHECK(grpc_parse_uri(URI::Parse("ipv4:127.0.0.1:1234").value(), &addr));
+    CHECK_OK(
+        listener_->Bind(URIToResolvedAddress("ipv4:127.0.0.1:1234").value()));
+    CHECK_OK(listener_->Start());
     OrphanablePtr<grpc_endpoint> endpoint(
         mock_endpoint_controller_->TakeCEndpoint());
     SubchannelConnector::Result result;
     bool done = false;
-    grpc_resolved_address addr;
-    CHECK(grpc_parse_uri(URI::Parse("ipv4:127.0.0.1:1234").value(), &addr));
     connector_->Connect(
         SubchannelConnector::Args{
             &addr, nullptr, Timestamp::Now() + Duration::Seconds(20),
-            ChannelArgs{}
-                .SetObject<grpc_event_engine::experimental::EventEngine>(
-                    engine_)},
-        &result, NewClosure([&done](grpc_error_handle) { done = true; }));
+            ChannelArgs{}.SetObject<EventEngine>(engine_).SetObject(
+                resource_quota_)},
+        &result, NewClosure([&done, &result](grpc_error_handle status) {
+          done = true;
+          if (status.ok()) result.transport->Orphan();
+        }));
 
     while (!done) {
       engine_->Tick();
@@ -103,9 +126,12 @@ class ConnectorFuzzer {
   }
 
  private:
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> engine_;
-  std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
-      mock_endpoint_controller_;
+  RefCountedPtr<ResourceQuota> resource_quota_ =
+      MakeRefCounted<ResourceQuota>("fuzzer");
+  std::shared_ptr<FuzzingEventEngine> engine_;
+  std::queue<fuzzer_input::NetworkInput> network_inputs_;
+  std::shared_ptr<MockEndpointController> mock_endpoint_controller_;
+  std::unique_ptr<EventEngine::Listener> listener_;
   OrphanablePtr<SubchannelConnector> connector_;
 };
 
