@@ -136,10 +136,9 @@ class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
 
 void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
                                                const DebugLocation& location) {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::Run() " << this << " Scheduling callback ["
-              << location.file() << ":" << location.line() << "]";
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO)
+      << "WorkSerializer::Run() " << this << " Scheduling callback ["
+      << location.file() << ":" << location.line() << "]";
   // Increment queue size for the new callback and owner count to attempt to
   // take ownership of the WorkSerializer.
   const uint64_t prev_ref_pair =
@@ -405,10 +404,9 @@ void WorkSerializer::DispatchingWorkSerializer::Orphan() {
 // Implementation of WorkSerializerImpl::Run
 void WorkSerializer::DispatchingWorkSerializer::Run(
     std::function<void()> callback, const DebugLocation& location) {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer[" << this << "] Scheduling callback ["
-              << location.file() << ":" << location.line() << "]";
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO)
+      << "WorkSerializer[" << this << "] Scheduling callback ["
+      << location.file() << ":" << location.line() << "]";
   global_stats().IncrementWorkSerializerItemsEnqueued();
   MutexLock lock(&mu_);
   if (!running_) {
@@ -438,10 +436,9 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   // Grab the last element of processing_ - which is the next item in our
   // queue since processing_ is stored in reverse order.
   auto& cb = processing_.back();
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer[" << this << "] Executing callback ["
-              << cb.location.file() << ":" << cb.location.line() << "]";
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO)
+      << "WorkSerializer[" << this << "] Executing callback ["
+      << cb.location.file() << ":" << cb.location.line() << "]";
   // Run the work item.
   const auto start = std::chrono::steady_clock::now();
   SetCurrentThread();

@@ -237,10 +237,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
     GRPC_TRACE_LOG(round_robin, INFO) << "[RR " << this << "] received update";
     addresses = args.addresses->get();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << this << "] received update with address error: "
-                << args.addresses.status();
-    }
+    GRPC_TRACE_LOG(round_robin, INFO)
+        << "[RR " << this
+        << "] received update with address error: " << args.addresses.status();
     // If we already have a child list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (endpoint_list_ != nullptr) return args.addresses.status();
@@ -304,10 +303,9 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
               << status << ")";
   }
   if (new_state == GRPC_CHANNEL_IDLE) {
-    if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << round_robin << "] child " << this
-                << " reported IDLE; requesting connection";
-    }
+    GRPC_TRACE_LOG(round_robin, INFO)
+        << "[RR " << round_robin << "] child " << this
+        << " reported IDLE; requesting connection";
     ExitIdleLocked();
   }
   // If state changed, update state counters.
@@ -387,10 +385,9 @@ void RoundRobin::RoundRobinEndpointList::
   // 2) ANY child is CONNECTING => policy is CONNECTING.
   // 3) ALL children are TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
   if (num_ready_ > 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << round_robin << "] reporting READY with child list "
-                << this;
-    }
+    GRPC_TRACE_LOG(round_robin, INFO)
+        << "[RR " << round_robin << "] reporting READY with child list "
+        << this;
     std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
     for (const auto& endpoint : endpoints()) {
       auto state = endpoint->connectivity_state();
@@ -403,10 +400,9 @@ void RoundRobin::RoundRobinEndpointList::
         GRPC_CHANNEL_READY, absl::OkStatus(),
         MakeRefCounted<Picker>(round_robin, std::move(pickers)));
   } else if (num_connecting_ > 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << round_robin
-                << "] reporting CONNECTING with child list " << this;
-    }
+    GRPC_TRACE_LOG(round_robin, INFO)
+        << "[RR " << round_robin << "] reporting CONNECTING with child list "
+        << this;
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         MakeRefCounted<QueuePicker>(nullptr));
