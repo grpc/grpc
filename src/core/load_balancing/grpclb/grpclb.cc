@@ -1174,18 +1174,17 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         if (response.client_stats_report_interval != Duration::Zero()) {
           client_stats_report_interval_ = std::max(
               Duration::Seconds(1), response.client_stats_report_interval);
-          if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-            LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                      << ": Received initial LB response message; client load "
-                         "reporting interval = "
-                      << client_stats_report_interval_.millis()
-                      << " milliseconds";
-          }
-        } else
+          GRPC_TRACE_LOG(glb, INFO)
+              << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
+              << ": Received initial LB response message; client load "
+                 "reporting interval = "
+              << client_stats_report_interval_.millis() << " milliseconds";
+        } else {
           GRPC_TRACE_LOG(glb, INFO)
               << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
               << ": Received initial LB response message; client load "
                  "reporting NOT enabled";
+        }
         seen_initial_response_ = true;
         break;
       }
@@ -1193,13 +1192,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         CHECK_NE(lb_call_, nullptr);
         auto serverlist_wrapper =
             MakeRefCounted<Serverlist>(std::move(response.serverlist));
-        if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-          LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                    << ": Serverlist with "
-                    << serverlist_wrapper->serverlist().size()
-                    << " servers received:\n"
-                    << serverlist_wrapper->AsText();
-        }
+        GRPC_TRACE_LOG(glb, INFO) < < < <
+            "[grpclb " << grpclb_policy() << "] lb_calld=" << this
+                       << ": Serverlist with "
+                       << serverlist_wrapper->serverlist().size()
+                       << " servers received:\n"
+                       << serverlist_wrapper->AsText();
         seen_serverlist_ = true;
         // Start sending client load report only after we start using the
         // serverlist returned from the current LB call.
