@@ -345,7 +345,7 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
         uint32_t length = payload.length();
         std::vector<unsigned char> bytes;
         bytes.resize(4);
-        store32_little_endian(length, bytes.data());
+        store32_little_endian(length + 4, bytes.data());
         for (auto c : payload) {
           bytes.push_back(static_cast<unsigned char>(c));
         }
