@@ -113,10 +113,9 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
-    if (GRPC_TRACE_FLAG_ENABLED(http)) {
-      LOG(INFO) << "[chttp2 transport=" << t << " stream=" << s
-                << "] received RST_STREAM(reason=" << reason << ")";
-    }
+    GRPC_TRACE_LOG(http, INFO)
+        << "[chttp2 transport=" << t << " stream=" << s
+        << "] received RST_STREAM(reason=" << reason << ")";
     grpc_error_handle error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(

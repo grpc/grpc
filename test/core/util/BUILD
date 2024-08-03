@@ -124,3 +124,16 @@ grpc_cc_test(
         "//src/core:useful",
     ],
 )
+
+grpc_cc_test(
+    name = "ring_buffer_test",
+    srcs = ["ring_buffer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:ring_buffer",
+    ],
+)

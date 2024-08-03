@@ -81,55 +81,6 @@ TEST(UsefulTest, RoundUpToPowerOf2) {
   EXPECT_EQ(RoundUpToPowerOf2(8), 8);
 }
 
-TEST(UsefulTest, CountTrailingZeros32) {
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(1)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(2)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(3)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(4)), 2);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(5)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(6)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(7)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(8)), 3);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(9)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(10)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(11)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(12)), 2);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(13)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(14)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(15)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(16)), 4);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(256)), 8);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(65535)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(65536)), 16);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint32_t>(0x80000000)), 31);
-}
-
-TEST(UsefulTest, CountTrailingZeros64) {
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(1)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(2)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(3)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(4)), 2);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(5)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(6)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(7)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(8)), 3);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(9)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(10)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(11)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(12)), 2);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(13)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(14)), 1);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(15)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(16)), 4);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(256)), 8);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(65535)), 0);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(65536)), 16);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(0x80000000)), 31);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(0x100000000)), 32);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(0x1000000000000)), 48);
-  EXPECT_EQ(CountTrailingZeros(static_cast<uint64_t>(0x8000000000000000)), 63);
-}
-
 TEST(UsefulTest, LowestOneBit8) {
   EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(0)), 0);
   EXPECT_EQ(LowestOneBit(static_cast<uint8_t>(1)), 1);
