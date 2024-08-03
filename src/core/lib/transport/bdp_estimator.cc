@@ -69,10 +69,9 @@ Timestamp BdpEstimator::CompletePing() {
   }
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
-    if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
-      LOG(INFO) << "bdp[" << name_ << "]:update_inter_time to "
-                << inter_ping_delay_.millis() << "ms";
-    }
+    GRPC_TRACE_LOG(bdp_estimator, INFO)
+        << "bdp[" << name_ << "]:update_inter_time to "
+        << inter_ping_delay_.millis() << "ms";
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;

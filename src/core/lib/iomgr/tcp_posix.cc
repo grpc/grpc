@@ -661,10 +661,8 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
   old_count = g_uncovered_notifications_pending--;
   g_backup_poller_mu->Unlock();
   CHECK_GT(old_count, 1);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "BACKUP_POLLER:" << p << " uncover cnt " << old_count << "->"
-              << old_count - 1;
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " uncover cnt "
+                            << old_count << "->" << old_count - 1;
 }
 
 // gRPC API considers a Write operation to be done the moment it clears ‘flow
@@ -695,10 +693,8 @@ static void cover_self(grpc_tcp* tcp) {
     p = g_backup_poller;
     g_backup_poller_mu->Unlock();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "BACKUP_POLLER:" << p << " add " << tcp << " cnt "
-              << old_count - 1 << "->" << old_count;
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " add " << tcp
+                            << " cnt " << old_count - 1 << "->" << old_count;
   grpc_pollset_add_fd(BACKUP_POLLER_POLLSET(p), tcp->em_fd);
 }
 
@@ -717,10 +713,8 @@ static void notify_on_write(grpc_tcp* tcp) {
 
 static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << arg
-              << " got_write: " << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_LOG(tcp, INFO)
+      << "TCP:" << arg << " got_write: " << grpc_core::StatusToString(error);
   drop_uncovered(static_cast<grpc_tcp*>(arg));
   tcp_handle_write(arg, error);
 }
@@ -1112,10 +1106,8 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp
-              << " got_read: " << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_LOG(tcp, INFO)
+      << "TCP:" << tcp << " got_read: " << grpc_core::StatusToString(error);
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
   if (GPR_LIKELY(error.ok()) && tcp->memory_owner.is_valid()) {
@@ -1455,10 +1447,9 @@ static bool process_errors(grpc_tcp* tcp) {
       } else {
         // Got a control message that is not a timestamp or zerocopy. Don't know
         // how to handle this.
-        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-          LOG(INFO) << "unknown control message cmsg_level:" << cmsg->cmsg_level
-                    << " cmsg_type:" << cmsg->cmsg_type;
-        }
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "unknown control message cmsg_level:" << cmsg->cmsg_level
+            << " cmsg_type:" << cmsg->cmsg_type;
         return processed_err;
       }
     }

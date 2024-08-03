@@ -249,10 +249,9 @@ XdsClusterManagerLb::XdsClusterManagerLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {}
 
 XdsClusterManagerLb::~XdsClusterManagerLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << this
-              << "] destroying xds_cluster_manager LB policy";
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << this
+      << "] destroying xds_cluster_manager LB policy";
 }
 
 void XdsClusterManagerLb::ShutdownLocked() {
@@ -406,17 +405,15 @@ XdsClusterManagerLb::ClusterChild::ClusterChild(
     : xds_cluster_manager_policy_(std::move(xds_cluster_manager_policy)),
       name_(name),
       picker_(MakeRefCounted<QueuePicker>(nullptr)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
-              << "] created ClusterChild " << this << " for " << name_;
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
+      << "] created ClusterChild " << this << " for " << name_;
 }
 
 XdsClusterManagerLb::ClusterChild::~ClusterChild() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
-              << "] ClusterChild " << this << ": destroying child";
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb " << xds_cluster_manager_policy_.get()
+      << "] ClusterChild " << this << ": destroying child";
   xds_cluster_manager_policy_.reset(DEBUG_LOCATION, "ClusterChild");
 }
 
