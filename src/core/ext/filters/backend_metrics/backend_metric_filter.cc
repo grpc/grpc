@@ -139,9 +139,10 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
         << "] Backend metrics serialized. size: " << serialized->size();
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
-  } else
+  } else {
     GRPC_TRACE_LOG(backend_metric_filter, INFO)
         << "[" << this << "] No backend metrics.";
+  }
 }
 
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
