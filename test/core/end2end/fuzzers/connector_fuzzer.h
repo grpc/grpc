@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_CORE_END2END_FUZZERS_CONNECTOR_FUZZER_H
-#define TEST_CORE_END2END_FUZZERS_CONNECTOR_FUZZER_H
+#ifndef GRPC_TEST_CORE_END2END_FUZZERS_CONNECTOR_FUZZER_H
+#define GRPC_TEST_CORE_END2END_FUZZERS_CONNECTOR_FUZZER_H
 
 #include "absl/functional/function_ref.h"
 
@@ -31,4 +31,4 @@ void RunConnectorFuzzer(
 
 }
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FUZZERS_CONNECTOR_FUZZER_H

@@ -197,8 +197,9 @@ void FuzzingEventEngine::TickUntilIdle() {
                             outstanding_writes_.load());
       if (tasks_by_id_.empty() &&
           outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
-          outstanding_reads_.load(std::memory_order_relaxed) == 0)
+          outstanding_reads_.load(std::memory_order_relaxed) == 0) {
         return;
+      }
     }
     Tick();
   }
