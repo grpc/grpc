@@ -268,10 +268,9 @@ class EnvironmentAutoDetectHelper
                 // If fetching from the MetadataServer failed and we were
                 // assuming a GCE environment, fallback to "global".
                 else if (assuming_gce_) {
-                  if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-                    LOG(INFO) << "Environment Autodetect: Falling back to "
-                                 "global resource type";
-                  }
+                  GRPC_TRACE_LOG(environment_autodetect, INFO)
+                      << "Environment Autodetect: Falling back to "
+                      << "global resource type";
                   assuming_gce_ = false;
                   resource_.resource_type = "global";
                 }

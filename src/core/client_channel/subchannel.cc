@@ -602,10 +602,9 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
-    if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-      LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-                << ": throttling keepalive time to " << new_keepalive_time;
-    }
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << this << " " << key_.ToString()
+        << ": throttling keepalive time to " << new_keepalive_time;
     args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time);
   }
 }
@@ -758,10 +757,9 @@ void Subchannel::OnRetryTimer() {
 
 void Subchannel::OnRetryTimerLocked() {
   if (shutdown_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-              << ": backoff delay elapsed, reporting IDLE";
-  }
+  GRPC_TRACE_LOG(subchannel, INFO)
+      << "subchannel " << this << " " << key_.ToString()
+      << ": backoff delay elapsed, reporting IDLE";
   SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
