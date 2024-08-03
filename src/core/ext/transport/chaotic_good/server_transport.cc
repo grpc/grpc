@@ -75,10 +75,8 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
   DCHECK(frame.headers == nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-    LOG(INFO) << "CHAOTIC_GOOD: PushFragmentIntoCall: frame="
-              << frame.ToString();
-  }
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: PushFragmentIntoCall: frame=" << frame.ToString();
   return Seq(If(
                  frame.message.has_value(),
                  [&call_initiator, &frame]() mutable {
@@ -185,10 +183,9 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
       call_initiator.PullServerInitialMetadata(),
       [stream_id, outgoing_frames, call_initiator,
        this](absl::optional<ServerMetadataHandle> md) mutable {
-        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-          LOG(INFO) << "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md="
-                    << (md.has_value() ? (*md)->DebugString() : "null");
-        }
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md="
+            << (md.has_value() ? (*md)->DebugString() : "null");
         return If(
             md.has_value(),
             [&md, stream_id, &outgoing_frames, &call_initiator, this]() {
@@ -340,10 +337,9 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
     absl::string_view activity) {
   return [self = RefAsSubclass<ChaoticGoodServerTransport>(),
           activity](absl::Status status) {
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      LOG(INFO) << "CHAOTIC_GOOD: OnTransportActivityDone: activity="
-                << activity << " status=" << status;
-    }
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: OnTransportActivityDone: activity=" << activity
+        << " status=" << status;
     self->AbortWithError();
   };
 }
