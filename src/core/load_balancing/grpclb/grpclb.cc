@@ -1192,12 +1192,11 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         CHECK_NE(lb_call_, nullptr);
         auto serverlist_wrapper =
             MakeRefCounted<Serverlist>(std::move(response.serverlist));
-        GRPC_TRACE_LOG(glb, INFO) < < < <
-            "[grpclb " << grpclb_policy() << "] lb_calld=" << this
-                       << ": Serverlist with "
-                       << serverlist_wrapper->serverlist().size()
-                       << " servers received:\n"
-                       << serverlist_wrapper->AsText();
+        GRPC_TRACE_LOG(glb, INFO)
+            << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
+            << ": Serverlist with " << serverlist_wrapper->serverlist().size()
+            << " servers received:\n"
+            << serverlist_wrapper->AsText();
         seen_serverlist_ = true;
         // Start sending client load report only after we start using the
         // serverlist returned from the current LB call.
