@@ -847,8 +847,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     if (p->selected_ != nullptr) {
       GRPC_TRACE_LOG(pick_first, INFO)
           << "[PF " << p << "] subchannel list " << subchannel_list_
-          << ": new update has no subchannels in "
-          << "state READY; dropping existing connection and going IDLE";
+          << ": new update has no subchannels in state READY; dropping "
+             "existing connection and going IDLE";
       p->GoIdle();
     } else {
       // Start trying to connect, starting with the first subchannel.
