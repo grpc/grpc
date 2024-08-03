@@ -2378,9 +2378,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         GRPC_TRACE_LOG(channel, INFO)
             << LogTag() << ": WakeInsideCombiner: metadata_push done";
         send_initial_metadata_->metadata_push_.reset();
-      } else
+      } else {
         GRPC_TRACE_LOG(channel, INFO)
             << LogTag() << ": WakeInsideCombiner: metadata_push pending";
+      }
     }
   }
   if (send_message() != nullptr) {
