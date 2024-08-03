@@ -1538,11 +1538,11 @@ RetryFilter::LegacyCallData::~LegacyCallData() {
 
 void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  GRPC_TRACE_LOG(retry) &&
-      !GRPC_TRACE_FLAG_ENABLED(channel, INFO)
-          << "chand=" << chand_ << " calld=" << this
-          << ": batch started from surface: "
-          << grpc_transport_stream_op_batch_string(batch, false);
+  if (GRPC_TRACE_FLAG_ENABLED(retry) && !GRPC_TRACE_FLAG_ENABLED(channel)) {
+    LOG(INFO) << "chand=" << chand_ << " calld=" << this
+              << ": batch started from surface: "
+              << grpc_transport_stream_op_batch_string(batch, false);
+  }
   // If we have an LB call, delegate to the LB call.
   if (committed_call_ != nullptr) {
     // Note: This will release the call combiner.
@@ -1627,9 +1627,9 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
     if (!retry_codepath_started_ && retry_committed_ &&
         (retry_policy_ == nullptr ||
          !retry_policy_->per_attempt_recv_timeout().has_value())) {
-      GRPC_TRACE_LOG(retry, INFO) << "chand=" << chand_ << " calld=" << this
-                                  << ": retry committed before first attempt; "
-                                  << "creating LB call";
+      GRPC_TRACE_LOG(retry, INFO)
+          << "chand=" << chand_ << " calld=" << this
+          << ": retry committed before first attempt; creating LB call";
       PendingBatchClear(pending);
       auto* service_config_call_data =
           DownCast<ClientChannelServiceConfigCallData*>(

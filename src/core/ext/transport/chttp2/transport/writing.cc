@@ -757,11 +757,11 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
           grpc_core::ExecCtx exec_ctx;
           grpc_chttp2_ping_timeout(t);
         });
-    GRPC_TRACE_LOG(http2_ping) &&
-        id.has_value(, INFO)
-            << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
-            << "]: Set ping timeout timer of " << timeout.ToString()
-            << " for ping id " << id.value();
+    if (GRPC_TRACE_FLAG_ENABLED(http2_ping) && id.has_value()) {
+      LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
+                << "]: Set ping timeout timer of " << timeout.ToString()
+                << " for ping id " << id.value();
+    }
 
     if (t->keepalive_incoming_data_wanted &&
         t->keepalive_timeout < t->ping_timeout &&
