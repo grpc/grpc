@@ -309,6 +309,9 @@ absl::Status FuzzingEventEngine::FuzzingListener::Start() {
 bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
   CHECK(!closed[index]);
   const int peer_index = 1 - index;
+  GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
+      << "WRITE[" << this << ":" << index << "]: entry "
+      << GRPC_DUMP_ARGS(data->Length());
   if (data->Length() == 0) return true;
   size_t write_len = std::numeric_limits<size_t>::max();
   // Check the write_sizes queue for fuzzer imposed restrictions on this write
@@ -332,16 +335,21 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
   pending[index].resize(prev_len + write_len);
   // Move bytes from the to-write data into the pending buffer.
   data->MoveFirstNBytesIntoBuffer(write_len, pending[index].data() + prev_len);
+  GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
+      << "WRITE[" << this << ":" << index << "]: post-move "
+      << GRPC_DUMP_ARGS(data->Length());
   // If there was a pending read, then we can fulfill it.
   if (pending_read[peer_index].has_value()) {
     pending_read[peer_index]->buffer->Append(
         Slice::FromCopiedBuffer(pending[index]));
     pending[index].clear();
     g_fuzzing_event_engine->RunLocked(
-        RunType::kWrite, [cb = std::move(pending_read[peer_index]->on_read),
-                          this, peer_index]() mutable {
+        RunType::kWrite,
+        [cb = std::move(pending_read[peer_index]->on_read), this, peer_index,
+         buffer = pending_read[peer_index]->buffer]() mutable {
           GRPC_TRACE_LOG(fuzzing_ee_writes, INFO)
-              << "FINISH_READ[" << this << ":" << peer_index << "]";
+              << "FINISH_READ[" << this << ":" << peer_index
+              << "]: " << GRPC_DUMP_ARGS(buffer->Length());
           cb(absl::OkStatus());
         });
     pending_read[peer_index].reset();
@@ -386,6 +394,15 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
               [on_writable = std::move(on_writable)]() mutable {
                 on_writable(absl::InternalError("Endpoint closed"));
               });
+          if (middle->pending_read[1 - index].has_value()) {
+            g_fuzzing_event_engine->RunLocked(
+                RunType::kRunAfter,
+                [cb = std::move(
+                     middle->pending_read[1 - index]->on_read)]() mutable {
+                  cb(absl::InternalError("Endpoint closed"));
+                });
+            middle->pending_read[1 - index].reset();
+          }
           return;
         }
         if (middle->Write(data, index)) {
