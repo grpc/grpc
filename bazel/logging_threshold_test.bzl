@@ -49,7 +49,7 @@ def py_grpc_logging_threshold_test(
     augmented_deps = deps + [
         ":{}".format(lib_name),
     ]
-    
+
     # The main file needs to be in the same package as the test file.
     copied_main_name = name + _COPIED_MAIN_SUFFIX
     copied_main_filename = copied_main_name + ".py"
@@ -59,7 +59,7 @@ def py_grpc_logging_threshold_test(
         outs = [copied_main_filename],
         cmd = "cp $< $@",
     )
-    
+
     native.py_test(
         name = name + ".logging_threshold",
         args = ["$(location //bazel:_single_module_tester)", name],
