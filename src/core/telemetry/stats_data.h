@@ -35,6 +35,7 @@ class Histogram_100000_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_100000_20 operator-(const Histogram_100000_20& left,
                                        const Histogram_100000_20& right);
 
@@ -58,6 +59,7 @@ class Histogram_65536_26 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 26; }
   friend Histogram_65536_26 operator-(const Histogram_65536_26& left,
                                       const Histogram_65536_26& right);
 
@@ -81,6 +83,7 @@ class Histogram_100_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_100_20 operator-(const Histogram_100_20& left,
                                     const Histogram_100_20& right);
 
@@ -104,6 +107,7 @@ class Histogram_16777216_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
                                          const Histogram_16777216_20& right);
 
@@ -127,6 +131,7 @@ class Histogram_80_10 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 10; }
   friend Histogram_80_10 operator-(const Histogram_80_10& left,
                                    const Histogram_80_10& right);
 
@@ -150,6 +155,7 @@ class Histogram_10000_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 20; }
   friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
                                       const Histogram_10000_20& right);
 
@@ -168,6 +174,30 @@ class HistogramCollector_10000_20 {
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
+class HistogramCollector_1800000_40;
+class Histogram_1800000_40 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 40; }
+  friend Histogram_1800000_40 operator-(const Histogram_1800000_40& left,
+                                        const Histogram_1800000_40& right);
+
+ private:
+  friend class HistogramCollector_1800000_40;
+  uint64_t buckets_[40]{};
+};
+class HistogramCollector_1800000_40 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_1800000_40::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_1800000_40* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[40]{};
+};
 struct GlobalStats {
   enum class Counter {
     kClientCallsCreated,
@@ -185,6 +215,8 @@ struct GlobalStats {
     kHttp2WritesBegun,
     kHttp2TransportStalls,
     kHttp2StreamStalls,
+    kHttp2HpackHits,
+    kHttp2HpackMisses,
     kCqPluckCreates,
     kCqNextCreates,
     kCqCallbackCreates,
@@ -213,6 +245,7 @@ struct GlobalStats {
     kTcpReadOfferIovSize,
     kHttp2SendMessageSize,
     kHttp2MetadataSize,
+    kHttp2HpackEntryLifetime,
     kWrrSubchannelListSize,
     kWrrSubchannelReadySize,
     kWorkSerializerRunTimeMs,
@@ -259,6 +292,8 @@ struct GlobalStats {
       uint64_t http2_writes_begun;
       uint64_t http2_transport_stalls;
       uint64_t http2_stream_stalls;
+      uint64_t http2_hpack_hits;
+      uint64_t http2_hpack_misses;
       uint64_t cq_pluck_creates;
       uint64_t cq_next_creates;
       uint64_t cq_callback_creates;
@@ -287,6 +322,7 @@ struct GlobalStats {
   Histogram_80_10 tcp_read_offer_iov_size;
   Histogram_16777216_20 http2_send_message_size;
   Histogram_65536_26 http2_metadata_size;
+  Histogram_1800000_40 http2_hpack_entry_lifetime;
   Histogram_10000_20 wrr_subchannel_list_size;
   Histogram_10000_20 wrr_subchannel_ready_size;
   Histogram_100000_20 work_serializer_run_time_ms;
@@ -366,6 +402,12 @@ class GlobalStatsCollector {
   void IncrementHttp2StreamStalls() {
     data_.this_cpu().http2_stream_stalls.fetch_add(1,
                                                    std::memory_order_relaxed);
+  }
+  void IncrementHttp2HpackHits() {
+    data_.this_cpu().http2_hpack_hits.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2HpackMisses() {
+    data_.this_cpu().http2_hpack_misses.fetch_add(1, std::memory_order_relaxed);
   }
   void IncrementCqPluckCreates() {
     data_.this_cpu().cq_pluck_creates.fetch_add(1, std::memory_order_relaxed);
@@ -447,6 +489,9 @@ class GlobalStatsCollector {
   void IncrementHttp2MetadataSize(int value) {
     data_.this_cpu().http2_metadata_size.Increment(value);
   }
+  void IncrementHttp2HpackEntryLifetime(int value) {
+    data_.this_cpu().http2_hpack_entry_lifetime.Increment(value);
+  }
   void IncrementWrrSubchannelListSize(int value) {
     data_.this_cpu().wrr_subchannel_list_size.Increment(value);
   }
@@ -526,6 +571,8 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> http2_writes_begun{0};
     std::atomic<uint64_t> http2_transport_stalls{0};
     std::atomic<uint64_t> http2_stream_stalls{0};
+    std::atomic<uint64_t> http2_hpack_hits{0};
+    std::atomic<uint64_t> http2_hpack_misses{0};
     std::atomic<uint64_t> cq_pluck_creates{0};
     std::atomic<uint64_t> cq_next_creates{0};
     std::atomic<uint64_t> cq_callback_creates{0};
@@ -551,6 +598,7 @@ class GlobalStatsCollector {
     HistogramCollector_80_10 tcp_read_offer_iov_size;
     HistogramCollector_16777216_20 http2_send_message_size;
     HistogramCollector_65536_26 http2_metadata_size;
+    HistogramCollector_1800000_40 http2_hpack_entry_lifetime;
     HistogramCollector_10000_20 wrr_subchannel_list_size;
     HistogramCollector_10000_20 wrr_subchannel_ready_size;
     HistogramCollector_100000_20 work_serializer_run_time_ms;

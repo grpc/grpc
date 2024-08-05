@@ -4569,11 +4569,13 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_trace",
         "hpack_parse_result",
+        "stats",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",
         "//src/core:slice",
+        "//src/core:unique_ptr_with_bitset",
     ],
 )
 
