@@ -138,6 +138,7 @@ class FuzzingEventEngine : public EventEngine {
       if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
     }
     IoToken& operator=(const IoToken& other) {
+      if (refs_ == other.refs_) return *this;
       if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
       refs_ = other.refs_;
       if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
