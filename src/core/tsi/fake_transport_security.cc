@@ -28,6 +28,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
