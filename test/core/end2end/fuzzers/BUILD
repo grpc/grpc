@@ -169,6 +169,25 @@ grpc_proto_fuzzer(
 )
 
 grpc_proto_fuzzer(
+    name = "server_fuzzer_chttp2_fake_creds",
+    srcs = ["server_fuzzer_chttp2_fake_creds.cc"],
+    corpus = "server_fuzzer_chttp2_fake_creds_corpus",
+    end2end_fuzzer = True,
+    language = "C++",
+    proto = None,
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":server_fuzzer",
+        "//:grpc",
+    ],
+)
+
+grpc_proto_fuzzer(
     name = "server_fuzzer_chaotic_good",
     srcs = ["server_fuzzer_chaotic_good.cc"],
     corpus = "server_fuzzer_chaotic_good_corpus",
