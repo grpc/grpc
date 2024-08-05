@@ -91,6 +91,26 @@ class ConnectorFuzzer {
             shutdown_connector.shutdown_message()));
       });
     }
+    // Abbreviated runtime for interpreting API actions, since we simply don't
+    // support many here.
+    uint64_t when_ms = 0;
+    for (const auto& action : msg.api_actions()) {
+      switch (action.type_case()) {
+        default:
+          break;
+        case api_fuzzer::Action::kSleepMs:
+          when_ms += action.sleep_ms();
+          break;
+        case api_fuzzer::Action::kResizeResourceQuota:
+          engine_->RunAfterExactly(
+              Duration::Milliseconds(when_ms),
+              [this, new_size = action.resize_resource_quota()]() {
+                resource_quota_->memory_quota()->SetSize(new_size);
+              });
+          when_ms += 1;
+          break;
+      }
+    }
   }
 
   ~ConnectorFuzzer() {
