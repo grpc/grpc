@@ -35,7 +35,10 @@ class UniquePtrWithBitset {
   // NOLINTNEXTLINE(google-explicit-constructor)
   UniquePtrWithBitset(std::unique_ptr<T>&& p)
       : UniquePtrWithBitset(p.release()) {}
-  ~UniquePtrWithBitset() { delete get(); }
+  ~UniquePtrWithBitset() {
+    DCHECK_LE(kBits, absl::countr_zero(alignof(T)));
+    delete get();
+  }
   UniquePtrWithBitset(const UniquePtrWithBitset&) = delete;
   UniquePtrWithBitset& operator=(const UniquePtrWithBitset&) = delete;
   UniquePtrWithBitset(UniquePtrWithBitset&& other) noexcept
@@ -74,7 +77,6 @@ class UniquePtrWithBitset {
   }
 
  private:
-  static_assert(kBits <= absl::countr_zero(alignof(T)), "kBits too large");
   static constexpr uintptr_t kBitMask = (1 << kBits) - 1;
   uintptr_t p_;
 };
