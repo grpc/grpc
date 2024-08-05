@@ -210,7 +210,7 @@ void TCPConnectHandshaker::FinishLocked(absl::Status error) {
 
 class TCPConnectHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const ChannelArgs& args,
+  void AddHandshakers(const ChannelArgs& /*args*/,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(
