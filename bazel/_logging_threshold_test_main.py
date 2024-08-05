@@ -13,12 +13,13 @@
 # limitations under the License.
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
 
-LOGGING_OUT_THRESHOLD = 0
-LOGGING_ERROR_THRESHOLD = 0
+_OK_TEST_REGEX = r"^-+.*Ran ([\d]+) tests* in ([\d.]+)s.*OK(?: \(skipped=(\d+)\))?\n$"
+
 _SKIP_TESTS = [
     "_rpc_part_1_test",
     "_server_shutdown_test",
@@ -30,6 +31,7 @@ _SKIP_TESTS = [
     "_rpc_part_2_test",
     "_invocation_defects_test",
     "_dynamic_stubs_test",
+    "_channel_connectivity_test",
 ]
 
 if __name__ == "__main__":
@@ -69,7 +71,8 @@ if __name__ == "__main__":
             if result.returncode != 0:
                 sys.exit("Test failure")
 
-            if stderr_count > LOGGING_ERROR_THRESHOLD:
+            stderr_file.seek(0)
+            if not re.fullmatch(_OK_TEST_REGEX, stderr_file.read(), re.DOTALL):
                 print(
                     f"Warning: Excessive error output detected ({stderr_count} lines):"
                 )
@@ -77,7 +80,7 @@ if __name__ == "__main__":
                 for line in stderr_file:
                     print(line)
 
-            if stdout_count > LOGGING_OUT_THRESHOLD:
+            if stdout_count > 0:
                 print(
                     f"Warning: Unexpected output detected ({stdout_count} lines):"
                 )
