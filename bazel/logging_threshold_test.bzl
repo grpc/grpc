@@ -15,8 +15,6 @@
 Houses py_grpc_logging_threshold_test.
 """
 
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-
 _COPIED_MAIN_SUFFIX = ".logging_threshold.main"
 
 def py_grpc_logging_threshold_test(
