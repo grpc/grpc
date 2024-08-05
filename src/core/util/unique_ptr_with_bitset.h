@@ -36,7 +36,7 @@ class UniquePtrWithBitset {
   UniquePtrWithBitset(std::unique_ptr<T>&& p)
       : UniquePtrWithBitset(p.release()) {}
   ~UniquePtrWithBitset() {
-    DCHECK_LE(kBits, absl::countr_zero(alignof(T)));
+    DCHECK_LE(kBits, static_cast<size_t>(absl::countr_zero(alignof(T))));
     delete get();
   }
   UniquePtrWithBitset(const UniquePtrWithBitset&) = delete;
