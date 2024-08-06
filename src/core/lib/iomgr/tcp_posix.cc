@@ -209,7 +209,8 @@ class TcpZerocopySendCtx {
     if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
-      LOG(INFO) << "Disabling TCP TX zerocopy due to memory pressure.\n";
+      GRPC_TRACE_LOG(tcp, INFO)
+          << "Disabling TCP TX zerocopy due to memory pressure.\n";
       memory_limited_ = true;
     } else {
       for (int idx = 0; idx < max_sends_; ++idx) {
@@ -668,10 +669,8 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
   old_count = g_uncovered_notifications_pending--;
   g_backup_poller_mu->Unlock();
   CHECK_GT(old_count, 1);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "BACKUP_POLLER:" << p << " uncover cnt " << old_count << "->"
-              << old_count - 1;
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " uncover cnt "
+                            << old_count << "->" << old_count - 1;
 }
 
 // gRPC API considers a Write operation to be done the moment it clears ‘flow
@@ -704,10 +703,8 @@ static void cover_self(grpc_tcp* tcp) {
     p = g_backup_poller;
     g_backup_poller_mu->Unlock();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "BACKUP_POLLER:" << p << " add " << tcp << " cnt "
-              << old_count - 1 << "->" << old_count;
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " add " << tcp
+                            << " cnt " << old_count - 1 << "->" << old_count;
   grpc_pollset_add_fd(BACKUP_POLLER_POLLSET(p), tcp->em_fd);
 }
 
@@ -730,10 +727,8 @@ static void notify_on_write(grpc_tcp* tcp) {
 
 static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << arg
-              << " got_write: " << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_LOG(tcp, INFO)
+      << "TCP:" << arg << " got_write: " << grpc_core::StatusToString(error);
   drop_uncovered(static_cast<grpc_tcp*>(arg));
   tcp_handle_write(arg, error);
 }
@@ -914,6 +909,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
 #define MAX_READ_IOVEC 64
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  GRPC_LATENT_SEE_INNER_SCOPE("tcp_do_read");
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     LOG(INFO) << "TCP:" << tcp << " do_read";
   }
@@ -1127,10 +1123,8 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp
-              << " got_read: " << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_LOG(tcp, INFO)
+      << "TCP:" << tcp << " got_read: " << grpc_core::StatusToString(error);
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
   if (GPR_LIKELY(error.ok()) && tcp->memory_owner.is_valid()) {
@@ -1210,6 +1204,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
 // of bytes sent.
 ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
                  int additional_flags = 0) {
+  GRPC_LATENT_SEE_INNER_SCOPE("tcp_send");
   ssize_t sent_length;
   do {
     // TODO(klempner): Cork if this is a partial write
@@ -1407,6 +1402,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
 /// messages from the queue.
 ///
 static bool process_errors(grpc_tcp* tcp) {
+  GRPC_LATENT_SEE_INNER_SCOPE("process_errors");
   bool processed_err = false;
   struct iovec iov;
   iov.iov_base = nullptr;
@@ -1468,10 +1464,9 @@ static bool process_errors(grpc_tcp* tcp) {
       } else {
         // Got a control message that is not a timestamp or zerocopy. Don't know
         // how to handle this.
-        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-          LOG(INFO) << "unknown control message cmsg_level:" << cmsg->cmsg_level
-                    << " cmsg_type:" << cmsg->cmsg_type;
-        }
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "unknown control message cmsg_level:" << cmsg->cmsg_level
+            << " cmsg_type:" << cmsg->cmsg_type;
         return processed_err;
       }
     }

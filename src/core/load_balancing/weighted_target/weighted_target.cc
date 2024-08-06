@@ -290,10 +290,9 @@ WeightedTargetLb::WeightedTargetLb(Args args)
 }
 
 WeightedTargetLb::~WeightedTargetLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << this
-              << "] destroying weighted_target LB policy";
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << this
+      << "] destroying weighted_target LB policy";
 }
 
 void WeightedTargetLb::ShutdownLocked() {
@@ -382,10 +381,9 @@ void WeightedTargetLb::UpdateStateLocked() {
   // all children.  This avoids unnecessary picker churn while an update
   // is being propagated to our children.
   if (update_in_progress_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << this
-              << "] scanning children to determine connectivity state";
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << this
+      << "] scanning children to determine connectivity state";
   // Construct lists of child pickers with associated weights, one for
   // children that are in state READY and another for children that are
   // in state TRANSIENT_FAILURE.  Each child is represented by a portion of
@@ -450,10 +448,9 @@ void WeightedTargetLb::UpdateStateLocked() {
   } else {
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << this << "] connectivity changed to "
-              << ConnectivityStateName(connectivity_state);
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << this << "] connectivity changed to "
+      << ConnectivityStateName(connectivity_state);
   RefCountedPtr<SubchannelPicker> picker;
   absl::Status status;
   switch (connectivity_state) {
@@ -525,10 +522,9 @@ WeightedTargetLb::WeightedChild::WeightedChild(
     : weighted_target_policy_(std::move(weighted_target_policy)),
       name_(name),
       picker_(MakeRefCounted<QueuePicker>(nullptr)) {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << weighted_target_policy_.get()
-              << "] created WeightedChild " << this << " for " << name_;
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << weighted_target_policy_.get()
+      << "] created WeightedChild " << this << " for " << name_;
 }
 
 WeightedTargetLb::WeightedChild::~WeightedChild() {
@@ -657,10 +653,9 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
 void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   // If already deactivated, don't do that again.
   if (weight_ == 0) return;
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << weighted_target_policy_.get()
-              << "] WeightedChild " << this << " " << name_ << ": deactivating";
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << weighted_target_policy_.get()
+      << "] WeightedChild " << this << " " << name_ << ": deactivating";
   // Set the child weight to 0 so that future picker won't contain this child.
   weight_ = 0;
   // Start a timer to delete the child.

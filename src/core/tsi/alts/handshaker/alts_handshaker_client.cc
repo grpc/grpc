@@ -220,14 +220,14 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   }
   // TSI handshake has been shutdown.
   if (alts_tsi_handshaker_has_shutdown(handshaker)) {
-    LOG(INFO) << "TSI handshake shutdown";
+    VLOG(2) << "TSI handshake shutdown";
     handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN,
                          "TSI handshake shutdown", nullptr, 0, nullptr);
     return;
   }
   // Check for failed grpc read.
   if (!is_ok || client->inject_read_failure) {
-    LOG(INFO) << "read failed on grpc call to handshaker service";
+    VLOG(2) << "read failed on grpc call to handshaker service";
     handle_response_done(client, TSI_INTERNAL_ERROR,
                          "read failed on grpc call to handshaker service",
                          nullptr, 0, nullptr);
@@ -470,10 +470,10 @@ static void on_status_received(void* arg, grpc_error_handle error) {
     // status from the final ALTS message with the status here.
     char* status_details =
         grpc_slice_to_c_string(client->handshake_status_details);
-    LOG(INFO) << "alts_grpc_handshaker_client:" << client
-              << " on_status_received status:" << client->handshake_status_code
-              << " details:|" << status_details << "| error:|"
-              << grpc_core::StatusToString(error) << "|";
+    VLOG(2) << "alts_grpc_handshaker_client:" << client
+            << " on_status_received status:" << client->handshake_status_code
+            << " details:|" << status_details << "| error:|"
+            << grpc_core::StatusToString(error) << "|";
     gpr_free(status_details);
   }
   maybe_complete_tsi_next(client, true /* receive_status_finished */,

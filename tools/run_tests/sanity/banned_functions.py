@@ -46,9 +46,7 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/windows/log.cc",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
-        "./test/core/end2end/tests/no_logging.cc",
     ],
-    "gpr_log_severity_string": [],
     "gpr_log(": [
         "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",
@@ -72,34 +70,27 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
         "./src/ruby/ext/grpc/rb_call_credentials.c",
-        "./test/core/end2end/tests/no_logging.cc",
     ],
     "gpr_log_message(": [
-        "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",
         "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
     ],
-    "gpr_set_log_verbosity(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-        "./test/core/end2end/tests/no_logging.cc",
-    ],
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
-        "./test/core/end2end/tests/no_logging.cc",
     ],
     "gpr_set_log_function(": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
-        "./test/core/end2end/tests/no_logging.cc",
     ],
-    "gpr_assertion_failed": [],
     "GPR_ASSERT": [],
+    "gpr_assertion_failed": [],
     "GPR_DEBUG_ASSERT": [],
+    "gpr_log_severity_string": [],
+    "gpr_set_log_verbosity(": [],
 }
 
 errors = 0
