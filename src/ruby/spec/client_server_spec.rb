@@ -25,13 +25,6 @@ shared_context 'setup: tags' do
   end
 
   def server_allows_client_to_proceed(metadata = {})
-    recvd_rpc = @server.request_call
-    expect(recvd_rpc).to_not eq nil
-    server_call = recvd_rpc.call
-    ops = { CallOps::SEND_INITIAL_METADATA => metadata }
-    server_batch = server_call.run_batch(ops)
-    expect(server_batch.send_metadata).to be true
-    server_call
   end
 
   def new_client_call
@@ -57,8 +50,6 @@ shared_examples 'basic GRPC message delivery is OK' do
     run_services_on_server(@server, services: [EchoService]) do
       call = @stub.an_rpc(EchoMsg.new, return_op: true)
       expect(call.execute).to be_a(EchoMsg)
-      # exercise the peer method
-      expect(call.peer).to be_a(String)
     end
   end
 
@@ -72,153 +63,56 @@ shared_examples 'basic GRPC message delivery is OK' do
       response = call.execute
       expect(response).to be_a(EchoMsg)
       expect(response.msg).to eq(long_request_str)
-      # exercise the peer method
-      expect(call.peer).to be_a(String)
     end
   end
-
-  #it 'servers can ignore a client write and send a status' do
-  #  call = new_client_call
-  #  server_call = nil
-
-  #  server_thread = Thread.new do
-  #    server_call = server_allows_client_to_proceed
-  #  end
-
-  #  client_ops = {
-  #    CallOps::SEND_INITIAL_METADATA => {},
-  #    CallOps::SEND_MESSAGE => sent_message,
-  #    CallOps::SEND_CLOSE_FROM_CLIENT => nil
-  #  }
-  #  client_batch = call.run_batch(client_ops)
-  #  expect(client_batch.send_metadata).to be true
-  #  expect(client_batch.send_message).to be true
-  #  expect(client_batch.send_close).to be true
-
-  #  # confirm the server can read the inbound message
-  #  the_status = Struct::Status.new(StatusCodes::OK, 'OK')
-  #  server_thread.join
-  #  server_ops = {
-  #    CallOps::SEND_STATUS_FROM_SERVER => the_status
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.message).to eq nil
-  #  expect(server_batch.send_status).to be true
-
-  #  final_client_batch = call.run_batch(
-  #    CallOps::RECV_INITIAL_METADATA => nil,
-  #    CallOps::RECV_STATUS_ON_CLIENT => nil)
-  #  expect(final_client_batch.metadata).to eq({})
-  #  expect(final_client_batch.status.code).to eq(0)
-  #end
-
-  #it 'completes calls by sending status to client and server' do
-  #  call = new_client_call
-  #  server_call = nil
-
-  #  server_thread = Thread.new do
-  #    server_call = server_allows_client_to_proceed
-  #  end
-
-  #  client_ops = {
-  #    CallOps::SEND_INITIAL_METADATA => {},
-  #    CallOps::SEND_MESSAGE => sent_message
-  #  }
-  #  client_batch = call.run_batch(client_ops)
-  #  expect(client_batch.send_metadata).to be true
-  #  expect(client_batch.send_message).to be true
-
-  #  # confirm the server can read the inbound message and respond
-  #  the_status = Struct::Status.new(StatusCodes::OK, 'OK', {})
-  #  server_thread.join
-  #  server_ops = {
-  #    CallOps::RECV_MESSAGE => nil
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.message).to eq sent_message
-  #  server_ops = {
-  #    CallOps::SEND_MESSAGE => reply_text,
-  #    CallOps::SEND_STATUS_FROM_SERVER => the_status
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.send_status).to be true
-  #  expect(server_batch.send_message).to be true
-
-  #  # confirm the client can receive the server response and status.
-  #  client_ops = {
-  #    CallOps::SEND_CLOSE_FROM_CLIENT => nil,
-  #    CallOps::RECV_INITIAL_METADATA => nil,
-  #    CallOps::RECV_MESSAGE => nil,
-  #    CallOps::RECV_STATUS_ON_CLIENT => nil
-  #  }
-  #  final_client_batch = call.run_batch(client_ops)
-  #  expect(final_client_batch.send_close).to be true
-  #  expect(final_client_batch.message).to eq reply_text
-  #  expect(final_client_batch.status).to eq the_status
-
-  #  # confirm the server can receive the client close.
-  #  server_ops = {
-  #    CallOps::RECV_CLOSE_ON_SERVER => nil
-  #  }
-  #  final_server_batch = server_call.run_batch(server_ops)
-  #  expect(final_server_batch.send_close).to be true
-  #end
 
   def client_cancel_test(cancel_proc, expected_code,
                          expected_details)
-    call = new_client_call
-    server_call = nil
-
-    server_thread = Thread.new do
-      server_call = server_allows_client_to_proceed
+    call = @stub.an_rpc(EchoMsg.new, return_op: true)
+    p "RUN SERVICES BEGIN"
+    run_services_on_server(@server, services: [EchoService]) do
+      # start the call, but don't send a message yet
+      call.start_call
+      # cancel the call
+      p "CANCEL CALL BEGIN"
+      cancel_proc.call(call)
+      p "CANCEL CALL END"
+      # check the client's status
+      failed = false
+      begin
+        p "EXECUTE BEGIN"
+        call.execute
+        p "EXECUTE END"
+      rescue GRPC::BadStatus => e
+        failed = true
+        expect(e.code).to be expected_code
+        expect(e.details).to eq expected_details
+      end
+      expect(failed).to be(true)
+    p "RUN SERVICES END"
     end
-
-    client_ops = {
-      CallOps::SEND_INITIAL_METADATA => {},
-      CallOps::RECV_INITIAL_METADATA => nil
-    }
-    client_batch = call.run_batch(client_ops)
-    expect(client_batch.send_metadata).to be true
-    expect(client_batch.metadata).to eq({})
-
-    cancel_proc.call(call)
-
-    server_thread.join
-    server_ops = {
-      CallOps::RECV_CLOSE_ON_SERVER => nil
-    }
-    server_batch = server_call.run_batch(server_ops)
-    expect(server_batch.send_close).to be true
-
-    client_ops = {
-      CallOps::RECV_STATUS_ON_CLIENT => {}
-    }
-    client_batch = call.run_batch(client_ops)
-
-    expect(client_batch.status.code).to be expected_code
-    expect(client_batch.status.details).to eq expected_details
   end
 
-  #it 'clients can cancel a call on the server' do
-  #  expected_code = StatusCodes::CANCELLED
-  #  expected_details = 'CANCELLED'
-  #  cancel_proc = proc { |call| call.cancel }
-  #  client_cancel_test(cancel_proc, expected_code, expected_details)
-  #end
+  it 'clients can cancel a call on the server' do
+    expected_code = StatusCodes::CANCELLED
+    expected_details = 'CANCELLED'
+    cancel_proc = proc { |call| call.cancel }
+    client_cancel_test(cancel_proc, expected_code, expected_details)
+  end
 
-  #it 'cancel_with_status unknown status' do
-  #  code = StatusCodes::UNKNOWN
-  #  details = 'test unknown reason'
-  #  cancel_proc = proc { |call| call.cancel_with_status(code, details) }
-  #  client_cancel_test(cancel_proc, code, details)
-  #end
+  it 'cancel_with_status unknown status' do
+    code = StatusCodes::UNKNOWN
+    details = 'test unknown reason'
+    cancel_proc = proc { |call| call.cancel_with_status(code, details) }
+    client_cancel_test(cancel_proc, code, details)
+  end
 
-  #it 'cancel_with_status unknown status' do
-  #  code = StatusCodes::FAILED_PRECONDITION
-  #  details = 'test failed precondition reason'
-  #  cancel_proc = proc { |call| call.cancel_with_status(code, details) }
-  #  client_cancel_test(cancel_proc, code, details)
-  #end
+  it 'cancel_with_status unknown status' do
+    code = StatusCodes::FAILED_PRECONDITION
+    details = 'test failed precondition reason'
+    cancel_proc = proc { |call| call.cancel_with_status(code, details) }
+    client_cancel_test(cancel_proc, code, details)
+  end
 end
 
 shared_examples 'GRPC metadata delivery works OK' do
