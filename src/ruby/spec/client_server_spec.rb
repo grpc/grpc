@@ -64,7 +64,7 @@ shared_examples 'basic GRPC message delivery is OK' do
   #  expect(call.peer).to be_a(String)
   #end
 
-  #it 'servers receive requests from clients and can respond' do
+  #it 'simple unary calls work' do
   #  call = new_client_call
   #  server_call = nil
 
@@ -594,10 +594,12 @@ describe 'the secure http client/server' do
         Channel::SSL_TARGET => 'foo.test.google.fr'
       }
     }
+    args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
+    @ch = Channel.new(
+      "0.0.0.0:#{server_port}", args,
+      GRPC::Core::ChannelCredentials.new(certs[0], nil, nil))
     @stub = EchoStub.new(
-      "0.0.0.0:#{server_port}",
-      GRPC::Core::ChannelCredentials.new(certs[0], nil, nil),
-      **client_opts)
+      "0.0.0.0:#{server_port}", nil, channel_override: @ch)
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
@@ -605,52 +607,6 @@ describe 'the secure http client/server' do
 
   it_behaves_like 'GRPC metadata delivery works OK' do
   end
-
-  #def credentials_update_test(creds_update_md)
-  #  auth_proc = proc { creds_update_md }
-
-
-  #  recvd_rpc = nil
-  #  rcv_thread = Thread.new do
-  #    recvd_rpc = @server.request_call
-  #  end
-
-  #  call = new_client_call
-  #  #call.set_credentials! call_creds
-
-  #  client_batch = call.run_batch(
-  #    CallOps::SEND_INITIAL_METADATA => initial_md,
-  #    CallOps::SEND_CLOSE_FROM_CLIENT => nil)
-  #  expect(client_batch.send_metadata).to be true
-  #  expect(client_batch.send_close).to be true
-
-  #  # confirm the server can receive the client metadata
-  #  rcv_thread.join
-  #  expect(recvd_rpc).to_not eq nil
-  #  recvd_md = recvd_rpc.metadata
-  #  replace_symbols = Hash[expected_md.each_pair.collect { |x, y| [x.to_s, y] }]
-  #  #expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
-
-  #  credentials_update_test_finish_call(call, recvd_rpc.call)
-  #end
-
-  #def credentials_update_test_finish_call(client_call, server_call)
-  #  final_server_batch = server_call.run_batch(
-  #    CallOps::RECV_CLOSE_ON_SERVER => nil,
-  #    CallOps::SEND_INITIAL_METADATA => nil,
-  #    CallOps::SEND_STATUS_FROM_SERVER => ok_status)
-  #  expect(final_server_batch.send_close).to be(true)
-  #  expect(final_server_batch.send_metadata).to be(true)
-  #  expect(final_server_batch.send_status).to be(true)
-  #  server_call.close
-
-  #  final_client_batch = client_call.run_batch(
-  #    CallOps::RECV_INITIAL_METADATA => nil,
-  #    CallOps::RECV_STATUS_ON_CLIENT => nil)
-  #  expect(final_client_batch.metadata).to eq({})
-  #  expect(final_client_batch.status.code).to eq(0)
-  #  client_call.close
-  #end
 
   it 'modifies metadata with CallCredentials' do
     # create call creds
