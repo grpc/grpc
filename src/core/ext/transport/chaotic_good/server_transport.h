@@ -131,10 +131,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame,
-                                 uint32_t stream_id);
+                                 absl::Status error, ClientFragmentFrame frame);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame, uint32_t stream_id);
+                            ClientFragmentFrame frame);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;

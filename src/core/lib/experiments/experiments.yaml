@@ -55,14 +55,14 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -88,7 +88,7 @@
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: max_pings_wo_data_throttle
@@ -138,7 +138,7 @@
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
