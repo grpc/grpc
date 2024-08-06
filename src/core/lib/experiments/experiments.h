@@ -67,6 +67,8 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
+inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -86,8 +88,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
-inline bool IsLocalConnectorSecure() { return false; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -103,6 +103,8 @@ inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
+inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -122,8 +124,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
-inline bool IsLocalConnectorSecure() { return false; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -138,6 +138,8 @@ inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
+inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -157,8 +159,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
-inline bool IsLocalConnectorSecure() { return false; }
 #endif
 
 #else
@@ -221,7 +221,7 @@ inline bool IsEventEngineListenerEnabled() {
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
 }
-#define GRPC_EXPERIMENT_IS_LOCAL_CONNECTOR_SECURE
+#define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
   return IsExperimentEnabled<kExperimentIdLocalConnectorSecure>();
 }
