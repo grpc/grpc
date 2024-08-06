@@ -48,156 +48,34 @@ shared_examples 'basic GRPC message delivery is OK' do
   include_context 'setup: tags'
 
   context 'the test channel' do
-    #it 'should have a target' do
-    #  expect(@ch.target).to be_a(String)
-    #end
+    it 'should have a target' do
+      expect(@ch.target).to be_a(String)
+    end
   end
 
-  context 'a client call' do
-    #it 'should have a peer' do
-    #  expect(new_client_call.peer).to be_a(String)
-    #end
+  it 'unary calls work' do
+    run_services_on_server(@server, services: [EchoService]) do
+      call = @stub.an_rpc(EchoMsg.new, return_op: true)
+      expect(call.execute).to be_a(EchoMsg)
+      # exercise the peer method
+      expect(call.peer).to be_a(String)
+    end
   end
 
-  #it 'calls have peer info' do
-  #  call = new_client_call
-  #  expect(call.peer).to be_a(String)
-  #end
-
-  #it 'simple unary calls work' do
-  #  call = new_client_call
-  #  server_call = nil
-
-  #  server_thread = Thread.new do
-  #    server_call = server_allows_client_to_proceed
-  #  end
-
-  #  client_ops = {
-  #    CallOps::SEND_INITIAL_METADATA => {},
-  #    CallOps::SEND_MESSAGE => sent_message,
-  #    CallOps::SEND_CLOSE_FROM_CLIENT => nil
-  #  }
-  #  client_batch = call.run_batch(client_ops)
-  #  expect(client_batch.send_metadata).to be true
-  #  expect(client_batch.send_message).to be true
-  #  expect(client_batch.send_close).to be true
-
-  #  # confirm the server can read the inbound message
-  #  server_thread.join
-  #  server_ops = {
-  #    CallOps::RECV_MESSAGE => nil
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.message).to eq(sent_message)
-  #  server_ops = {
-  #    CallOps::RECV_CLOSE_ON_SERVER => nil,
-  #    CallOps::SEND_STATUS_FROM_SERVER => ok_status
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.send_close).to be true
-  #  expect(server_batch.send_status).to be true
-
-  #  # finish the call
-  #  final_client_batch = call.run_batch(
-  #    CallOps::RECV_INITIAL_METADATA => nil,
-  #    CallOps::RECV_STATUS_ON_CLIENT => nil)
-  #  expect(final_client_batch.metadata).to eq({})
-  #  expect(final_client_batch.status.code).to eq(0)
-  #end
-
-  #it 'responses written by servers are received by the client' do
-  #  call = new_client_call
-  #  server_call = nil
-
-  #  server_thread = Thread.new do
-  #    server_call = server_allows_client_to_proceed
-  #  end
-
-  #  client_ops = {
-  #    CallOps::SEND_INITIAL_METADATA => {},
-  #    CallOps::SEND_MESSAGE => sent_message,
-  #    CallOps::SEND_CLOSE_FROM_CLIENT => nil
-  #  }
-  #  client_batch = call.run_batch(client_ops)
-  #  expect(client_batch.send_metadata).to be true
-  #  expect(client_batch.send_message).to be true
-  #  expect(client_batch.send_close).to be true
-
-  #  # confirm the server can read the inbound message
-  #  server_thread.join
-  #  server_ops = {
-  #    CallOps::RECV_MESSAGE => nil
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.message).to eq(sent_message)
-  #  server_ops = {
-  #    CallOps::RECV_CLOSE_ON_SERVER => nil,
-  #    CallOps::SEND_MESSAGE => reply_text,
-  #    CallOps::SEND_STATUS_FROM_SERVER => ok_status
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.send_close).to be true
-  #  expect(server_batch.send_message).to be true
-  #  expect(server_batch.send_status).to be true
-
-  #  # finish the call
-  #  final_client_batch = call.run_batch(
-  #    CallOps::RECV_INITIAL_METADATA => nil,
-  #    CallOps::RECV_MESSAGE => nil,
-  #    CallOps::RECV_STATUS_ON_CLIENT => nil)
-  #  expect(final_client_batch.metadata).to eq({})
-  #  expect(final_client_batch.message).to eq(reply_text)
-  #  expect(final_client_batch.status.code).to eq(0)
-  #end
-
-  #it 'compressed messages can be sent and received' do
-  #  call = new_client_call
-  #  server_call = nil
-  #  long_request_str = '0' * 2000
-  #  long_response_str = '1' * 2000
-  #  md = { 'grpc-internal-encoding-request' => 'gzip' }
-
-  #  server_thread = Thread.new do
-  #    server_call = server_allows_client_to_proceed(md)
-  #  end
-
-  #  client_ops = {
-  #    CallOps::SEND_INITIAL_METADATA => md,
-  #    CallOps::SEND_MESSAGE => long_request_str,
-  #    CallOps::SEND_CLOSE_FROM_CLIENT => nil
-  #  }
-  #  client_batch = call.run_batch(client_ops)
-  #  expect(client_batch.send_metadata).to be true
-  #  expect(client_batch.send_message).to be true
-  #  expect(client_batch.send_close).to be true
-
-  #  # confirm the server can read the inbound message
-  #  server_thread.join
-  #  server_ops = {
-  #    CallOps::RECV_MESSAGE => nil
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.message).to eq(long_request_str)
-  #  server_ops = {
-  #    CallOps::RECV_CLOSE_ON_SERVER => nil,
-  #    CallOps::SEND_MESSAGE => long_response_str,
-  #    CallOps::SEND_STATUS_FROM_SERVER => ok_status
-  #  }
-  #  server_batch = server_call.run_batch(server_ops)
-  #  expect(server_batch.send_close).to be true
-  #  expect(server_batch.send_message).to be true
-  #  expect(server_batch.send_status).to be true
-
-  #  client_ops = {
-  #    CallOps::RECV_INITIAL_METADATA => nil,
-  #    CallOps::RECV_MESSAGE => nil,
-  #    CallOps::RECV_STATUS_ON_CLIENT => nil
-  #  }
-  #  final_client_batch = call.run_batch(client_ops)
-  #  expect(final_client_batch.metadata).to eq({})
-  #  expect(final_client_batch.message).to eq long_response_str
-  #  expect(final_client_batch.status.code).to eq(0)
-  #end
+  it 'unary calls work when enabling compression' do
+    run_services_on_server(@server, services: [EchoService]) do
+      long_request_str = '0' * 2000
+      md = { 'grpc-internal-encoding-request' => 'gzip' }
+      call = @stub.an_rpc(EchoMsg.new(msg: long_request_str),
+                          return_op: true,
+                          metadata: md)
+      response = call.execute
+      expect(response).to be_a(EchoMsg)
+      expect(response.msg).to eq(long_request_str)
+      # exercise the peer method
+      expect(call.peer).to be_a(String)
+    end
+  end
 
   #it 'servers can ignore a client write and send a status' do
   #  call = new_client_call
