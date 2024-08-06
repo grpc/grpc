@@ -88,4 +88,4 @@ tools/buildgen/generate_projects.sh
 git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
-tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --internal_ci --build_only
+tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --build_only
