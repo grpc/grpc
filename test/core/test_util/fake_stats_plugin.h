@@ -355,11 +355,13 @@ class FakeStatsPlugin : public StatsPlugin {
   void AddCallback(RegisteredMetricCallback* callback) override {
     VLOG(2) << "FakeStatsPlugin[" << this << "]::AddCallback(" << callback
             << ")";
+    MutexLock lock(&callback_mu_);
     callbacks_.insert(callback);
   }
   void RemoveCallback(RegisteredMetricCallback* callback) override {
     VLOG(2) << "FakeStatsPlugin[" << this << "]::RemoveCallback(" << callback
             << ")";
+    MutexLock lock(&callback_mu_);
     callbacks_.erase(callback);
   }
 
@@ -635,7 +637,7 @@ class FakeStatsPlugin : public StatsPlugin {
       ABSL_GUARDED_BY(&callback_mu_);
   absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_
       ABSL_GUARDED_BY(&callback_mu_);
-  std::set<RegisteredMetricCallback*> callbacks_;
+  std::set<RegisteredMetricCallback*> callbacks_ ABSL_GUARDED_BY(&callback_mu_);
 };
 
 class FakeStatsPluginBuilder {
