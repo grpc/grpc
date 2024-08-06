@@ -138,10 +138,8 @@ class FuzzingEventEngine : public EventEngine {
       if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
     }
     IoToken& operator=(const IoToken& other) {
-      if (refs_ == other.refs_) return *this;
-      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
-      refs_ = other.refs_;
-      if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
+      IoToken copy(other);
+      Swap(copy);
       return *this;
     }
     IoToken(IoToken&& other) noexcept
@@ -151,6 +149,7 @@ class FuzzingEventEngine : public EventEngine {
       refs_ = std::exchange(other.refs_, nullptr);
       return *this;
     }
+    void Swap(IoToken& other) { std::swap(refs_, other.refs_); }
 
    private:
     std::atomic<size_t>* refs_;
