@@ -66,27 +66,21 @@ shared_examples 'basic GRPC message delivery is OK' do
   def client_cancel_test(cancel_proc, expected_code,
                          expected_details)
     call = @stub.an_rpc(EchoMsg.new, return_op: true)
-    p "RUN SERVICES BEGIN"
     run_services_on_server(@server, services: [EchoService]) do
       # start the call, but don't send a message yet
       call.start_call
       # cancel the call
-      p "CANCEL CALL BEGIN"
       cancel_proc.call(call)
-      p "CANCEL CALL END"
       # check the client's status
       failed = false
       begin
-        p "EXECUTE BEGIN"
         call.execute
-        p "EXECUTE END"
       rescue GRPC::BadStatus => e
         failed = true
         expect(e.code).to be expected_code
         expect(e.details).to eq expected_details
       end
       expect(failed).to be(true)
-    p "RUN SERVICES END"
     end
   end
 
@@ -308,12 +302,6 @@ describe 'the http client/server' do
     @stub = EchoStub.new(
       "0.0.0.0:#{server_port}", nil, channel_override: @ch)
   end
-
-#  after(:example) do
-#    @ch.close
-#    @server.shutdown_and_notify(deadline)
-#    @server.close
-#  end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
   end
