@@ -48,6 +48,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -87,6 +88,7 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_transport* t);
 static grpc_error_handle init_ping_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t);
+static grpc_error_handle init_security_frame_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_non_header_skip_frame_parser(
     grpc_chttp2_transport* t);
 
@@ -193,6 +195,8 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
       return MakeFrameTypeString("GOAWAY", flags, {});
     case GRPC_CHTTP2_FRAME_WINDOW_UPDATE:
       return MakeFrameTypeString("WINDOW_UPDATE", flags, {});
+    case GRPC_CHTTP2_FRAME_SECURITY:
+      return MakeFrameTypeString("SECURITY", flags, {});
     default:
       return MakeFrameTypeString(
           absl::StrCat("UNKNOWN_FRAME_TYPE_", static_cast<int>(frame_type)),
@@ -452,6 +456,15 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
       return init_ping_parser(t);
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
+    case GRPC_CHTTP2_FRAME_SECURITY:
+      if (!t->settings.peer().allow_security_frame()) {
+        if (GRPC_TRACE_FLAG_ENABLED(http)) {
+          gpr_log(GPR_ERROR,
+                  "Security frame received but not allowed, ignoring");
+        }
+        return init_non_header_skip_frame_parser(t);
+      }
+      return init_security_frame_parser(t);
     default:
       if (GRPC_TRACE_FLAG_ENABLED(http)) {
         LOG(ERROR) << "Unknown frame type "
@@ -871,6 +884,16 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
   }
   t->parser = grpc_chttp2_transport::Parser{
       "settings", grpc_chttp2_settings_parser_parse, &t->simple.settings};
+  return absl::OkStatus();
+}
+
+static grpc_error_handle init_security_frame_parser(grpc_chttp2_transport* t) {
+  grpc_error_handle err =
+      grpc_chttp2_security_frame_parser_begin_frame(&t->security_frame_parser);
+  if (!err.ok()) return err;
+  t->parser = grpc_chttp2_transport::Parser{
+      "security_frame", grpc_chttp2_security_frame_parser_parse,
+      &t->security_frame_parser};
   return absl::OkStatus();
 }
 

@@ -211,6 +211,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_ping.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_rst_stream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_rst_stream.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_window_update.cc" role="src" />
@@ -1703,6 +1705,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/transport_framing_endpoint_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_fwd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.cc" role="src" />

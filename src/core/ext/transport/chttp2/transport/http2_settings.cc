@@ -59,6 +59,9 @@ void Http2Settings::Diff(
     cb(kGrpcPreferredReceiveCryptoFrameSizeWireId,
        preferred_receive_crypto_message_size_);
   }
+  if (allow_security_frame_ != old.allow_security_frame_) {
+    cb(kGrpcAllowSecurityFrameWireId, allow_security_frame_);
+  }
 }
 
 std::string Http2Settings::WireIdToName(uint16_t wire_id) {
@@ -79,6 +82,8 @@ std::string Http2Settings::WireIdToName(uint16_t wire_id) {
       return std::string(allow_true_binary_metadata_name());
     case kGrpcPreferredReceiveCryptoFrameSizeWireId:
       return std::string(preferred_receive_crypto_message_size_name());
+    case kGrpcAllowSecurityFrameWireId:
+      return std::string(allow_security_frame_name());
     default:
       return absl::StrCat("UNKNOWN (", wire_id, ")");
   }
@@ -119,6 +124,10 @@ grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
       preferred_receive_crypto_message_size_ =
           Clamp(value, min_preferred_receive_crypto_message_size(),
                 max_preferred_receive_crypto_message_size());
+      break;
+    case kGrpcAllowSecurityFrameWireId:
+      if (value > 1) return GRPC_HTTP2_PROTOCOL_ERROR;
+      allow_security_frame_ = value != 0;
       break;
   }
   return GRPC_HTTP2_NO_ERROR;

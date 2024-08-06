@@ -163,6 +163,8 @@ TEST(Frame, Serialization) {
                     0x0b, 'h', 'e', 'l', 'l', 'o'));
   EXPECT_EQ(Serialize(Http2WindowUpdateFrame{1, 0x12345678}),
             ByteVec(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78));
+  EXPECT_EQ(Serialize(Http2SecurityFrame{SliceBufferFromString("hello")}),
+            ByteVec(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'));
 }
 
 TEST(Frame, Parse) {
@@ -216,6 +218,8 @@ TEST(Frame, Parse) {
                                   Slice::FromCopiedString("hello")}));
   EXPECT_EQ(ParseFrame(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78),
             Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
+  EXPECT_EQ(ParseFrame(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'),
+            Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParsePadded) {
