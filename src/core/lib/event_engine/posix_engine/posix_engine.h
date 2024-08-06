@@ -175,6 +175,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
       int fd, const EndpointConfig& config) override;
 
+  ConnectionHandle CreateEndpointFromUnconnectedFd(
+      int fd, EventEngine::OnConnectCallback on_connect,
+      const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
+      MemoryAllocator memory_allocator, EventEngine::Duration timeout) override;
+
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
@@ -235,13 +240,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
   static void PollerWorkInternal(
       std::shared_ptr<PosixEnginePollerManager> poller_manager);
-
-  ConnectionHandle ConnectInternal(
-      grpc_event_engine::experimental::PosixSocketWrapper sock,
-      OnConnectCallback on_connect, ResolvedAddress addr,
-      MemoryAllocator&& allocator,
-      const grpc_event_engine::experimental::PosixTcpOptions& options,
-      Duration timeout);
 
   void OnConnectFinishInternal(int connection_handle);
 

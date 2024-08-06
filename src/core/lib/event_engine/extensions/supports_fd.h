@@ -119,6 +119,23 @@ class EventEngineSupportsFdExtension {
   virtual std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
       int fd, const EndpointConfig& config) = 0;
 
+  /// Creates an EventEngine::Endpoint from a file descriptor that is configured
+  /// and bound locally but not yet connected to a remote peer. Returns a
+  /// connection handle to track status of connection attempt. Created endpoint
+  /// will be returned through `on_connect` callback.
+  /// \a fd - The socket file descriptor.
+  /// \a on_connect - The callback to invoke once fd is connected to peer.
+  /// \a addr - The remote peer to connect to. This should be the mapped peer
+  /// address returned when creating a new socket.
+  /// \a config - Additional configuration to be applied to the endpoint.
+  /// \a memory_allocator - The endpoint may use the provided memory allocator
+  /// to track memory allocations.
+  /// \a timeout - The timeout to use for the connection attempt.
+  virtual EventEngine::ConnectionHandle CreateEndpointFromUnconnectedFd(
+      int fd, EventEngine::OnConnectCallback on_connect,
+      const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
+      MemoryAllocator memory_allocator, EventEngine::Duration timeout) = 0;
+
   /// Called when the posix listener has accepted a new client connection.
   /// \a listener_fd - The listening socket fd that accepted the new client
   /// connection.
