@@ -553,6 +553,15 @@ class RlsLb final : public LoadBalancingPolicy {
       Cache::Iterator lru_iterator_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
+    // State that is returned back for cleanup on shutting down the cache. The
+    // state should be released outside a lock.
+    struct CacheShutdownState {
+      std::unordered_map<RequestKey, OrphanablePtr<Entry>,
+                         absl::Hash<RequestKey>>
+          map;
+      std::list<RequestKey> lru_list;
+    };
+
     explicit Cache(RlsLb* lb_policy);
 
     // Finds an entry from the cache that corresponds to a key. If an entry is
@@ -578,7 +587,8 @@ class RlsLb final : public LoadBalancingPolicy {
     void ResetAllBackoff() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     // Shutdown the cache; clean-up and orphan all the stored cache entries.
-    void Shutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+    GRPC_MUST_USE_RESULT CacheShutdownState Shutdown()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
     void ReportMetricsLocked(CallbackMetricReporter& reporter)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
@@ -951,7 +961,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
     wrapper_->connectivity_state_ = state;
     DCHECK(picker != nullptr);
     if (picker != nullptr) {
-      wrapper_->picker_ = std::move(picker);
+      wrapper_->picker_.swap(picker);
     }
   }
   wrapper_->lb_policy_->UpdatePickerLocked();
@@ -1424,9 +1434,10 @@ void RlsLb::Cache::ResetAllBackoff() {
   lb_policy_->UpdatePickerAsync();
 }
 
-void RlsLb::Cache::Shutdown() {
-  map_.clear();
-  lru_list_.clear();
+RlsLb::Cache::CacheShutdownState RlsLb::Cache::Shutdown() {
+  CacheShutdownState shutdown_state;
+  shutdown_state.map = std::move(map_);
+  shutdown_state.lru_list = std::move(lru_list_);
   if (cleanup_timer_handle_.has_value() &&
       lb_policy_->channel_control_helper()->GetEventEngine()->Cancel(
           *cleanup_timer_handle_)) {
@@ -1435,6 +1446,7 @@ void RlsLb::Cache::Shutdown() {
     }
   }
   cleanup_timer_handle_.reset();
+  return shutdown_state;
 }
 
 void RlsLb::Cache::ReportMetricsLocked(CallbackMetricReporter& reporter) {
@@ -1471,12 +1483,14 @@ void RlsLb::Cache::OnCleanupTimer() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
     LOG(INFO) << "[rlslb " << lb_policy_ << "] cache cleanup timer fired";
   }
+  std::vector<OrphanablePtr<Entry>> entries_to_delete;
   MutexLock lock(&lb_policy_->mu_);
   if (!cleanup_timer_handle_.has_value()) return;
   if (lb_policy_->is_shutdown_) return;
   for (auto it = map_.begin(); it != map_.end();) {
     if (GPR_UNLIKELY(it->second->ShouldRemove() && it->second->CanEvict())) {
       size_ -= it->second->Size();
+      entries_to_delete.push_back(std::move(it->second));
       it = map_.erase(it);
     } else {
       ++it;
@@ -1827,6 +1841,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
               << ": response info: " << response.ToString();
   }
   std::vector<ChildPolicyWrapper*> child_policies_to_finish_update;
+  std::vector<OrphanablePtr<RlsRequest>> requests_to_delete;
   {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
@@ -1834,7 +1849,11 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
     Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
     child_policies_to_finish_update = cache_entry->OnRlsResponseLocked(
         std::move(response), std::move(backoff_state_));
-    lb_policy_->request_map_.erase(key_);
+    auto it = lb_policy_->request_map_.find(key_);
+    if (it != lb_policy_->request_map_.end()) {
+      requests_to_delete.push_back(std::move(it->second));
+      lb_policy_->request_map_.erase(it);
+    }
   }
   // Now that we've released the lock, finish the update on any newly
   // created child policies.
@@ -2113,14 +2132,25 @@ void RlsLb::ShutdownLocked() {
     LOG(INFO) << "[rlslb " << this << "] policy shutdown";
   }
   registered_metric_callback_.reset();
-  MutexLock lock(&mu_);
-  is_shutdown_ = true;
-  config_.reset(DEBUG_LOCATION, "ShutdownLocked");
-  channel_args_ = ChannelArgs();
-  cache_.Shutdown();
-  request_map_.clear();
-  rls_channel_.reset();
-  default_child_policy_.reset();
+  RefCountedPtr<RlsLbConfig> config_to_delete;
+  ChannelArgs channel_args_to_delete;
+  Cache::CacheShutdownState cache_shutdown_state;
+  std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
+                     absl::Hash<RequestKey>>
+      request_map_to_delete;
+  OrphanablePtr<RlsChannel> rls_channel_to_delete;
+  RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
+  {
+    MutexLock lock(&mu_);
+    is_shutdown_ = true;
+    config_to_delete = std::move(config_);
+    channel_args_to_delete = std::move(channel_args_);
+    cache_shutdown_state = cache_.Shutdown();
+    request_map_to_delete = std::move(request_map_);
+    rls_channel_to_delete = std::move(rls_channel_);
+    child_policy_to_delete = std::move(default_child_policy_);
+  }
+  config_to_delete.reset(DEBUG_LOCATION, "ShutdownLocked");
 }
 
 void RlsLb::UpdatePickerAsync() {
