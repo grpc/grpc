@@ -24,9 +24,6 @@ shared_context 'setup: tags' do
     Time.now + 5
   end
 
-  def server_allows_client_to_proceed(metadata = {})
-  end
-
   def new_client_call
     @ch.create_call(nil, nil, '/method', nil, deadline)
   end
@@ -134,57 +131,36 @@ shared_examples 'GRPC metadata delivery works OK' do
       @bad_keys << { 1 => 'a value' }
     end
 
-    #it 'raises an exception if a metadata key is invalid' do
-    #  @bad_keys.each do |md|
-    #    call = new_client_call
-    #    client_ops = {
-    #      CallOps::SEND_INITIAL_METADATA => md
-    #    }
-    #    blk = proc do
-    #      call.run_batch(client_ops)
-    #    end
-    #    expect(&blk).to raise_error
-    #  end
-    #end
+    it 'raises an exception if a metadata key is invalid' do
+      @bad_keys.each do |md|
+        # Note: no need to run a server in this test b/c the failure
+        # happens while validating metadata to send.
+        failed = false
+        begin
+          @stub.an_rpc(EchoMsg.new, metadata: md)
+        rescue => e
+          failed = true
+          expect(e).to be_a(TypeError)
+          expect(e.message).to eq('grpc_rb_md_ary_fill_hash_cb: bad type for key parameter')
+        end
+        expect(failed).to be(true)
+      end
+    end
 
-    #it 'sends all the metadata pairs when keys and values are valid' do
-    #  @valid_metadata.each do |md|
-    #    recvd_rpc = nil
-    #    rcv_thread = Thread.new do
-    #      recvd_rpc = @server.request_call
-    #    end
-
-    #    call = new_client_call
-    #    client_ops = {
-    #      CallOps::SEND_INITIAL_METADATA => md,
-    #      CallOps::SEND_CLOSE_FROM_CLIENT => nil
-    #    }
-    #    client_batch = call.run_batch(client_ops)
-    #    expect(client_batch.send_metadata).to be true
-
-    #    # confirm the server can receive the client metadata
-    #    rcv_thread.join
-    #    expect(recvd_rpc).to_not eq nil
-    #    recvd_md = recvd_rpc.metadata
-    #    replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
-    #    expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
-
-    #    # finish the call
-    #    final_server_batch = recvd_rpc.call.run_batch(
-    #      CallOps::RECV_CLOSE_ON_SERVER => nil,
-    #      CallOps::SEND_INITIAL_METADATA => nil,
-    #      CallOps::SEND_STATUS_FROM_SERVER => ok_status)
-    #    expect(final_server_batch.send_close).to be(true)
-    #    expect(final_server_batch.send_metadata).to be(true)
-    #    expect(final_server_batch.send_status).to be(true)
-
-    #    final_client_batch = call.run_batch(
-    #      CallOps::RECV_INITIAL_METADATA => nil,
-    #      CallOps::RECV_STATUS_ON_CLIENT => nil)
-    #    expect(final_client_batch.metadata).to eq({})
-    #    expect(final_client_batch.status.code).to eq(0)
-    #  end
-    #end
+    it 'sends all the metadata pairs when keys and values are valid' do
+      service = EchoService.new
+      run_services_on_server(@server, services: [service]) do
+        @valid_metadata.each_with_index do |md, i|
+          expect(@stub.an_rpc(EchoMsg.new, metadata: md)).to be_a(EchoMsg)
+          # confirm the server can receive the client metadata
+          # finish the call
+          expect(service.received_md.length).to eq(i + 1)
+          md.each do |k, v|
+            expect(service.received_md[i][k.to_s]).to eq(v)
+          end
+        end
+      end
+    end
   end
 
   describe 'from server => client' do
@@ -326,17 +302,18 @@ end
 describe 'the http client/server' do
   before(:example) do
     server_host = '0.0.0.0:0'
-    @server = new_core_server_for_testing(nil)
+    @server = new_rpc_server_for_testing
     server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
-    @server.start
     @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
+    @stub = EchoStub.new(
+      "0.0.0.0:#{server_port}", nil, channel_override: @ch)
   end
 
-  after(:example) do
-    @ch.close
-    @server.shutdown_and_notify(deadline)
-    @server.close
-  end
+#  after(:example) do
+#    @ch.close
+#    @server.shutdown_and_notify(deadline)
+#    @server.close
+#  end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
   end

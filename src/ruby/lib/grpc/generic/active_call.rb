@@ -620,6 +620,8 @@ module GRPC
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
     def start_call(metadata = {})
+      # TODO(apolcyn): we should cancel and clean up the call in case this
+      # send initial MD op fails.
       merge_metadata_to_send(metadata) && send_initial_metadata
     end
 
