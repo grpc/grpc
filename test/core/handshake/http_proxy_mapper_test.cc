@@ -253,6 +253,53 @@ TEST_P(IncludedAddressesTest, AddressIncluded) {
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), GetParam());
 }
 
+TEST(HttpUnixProxyTest, EmptyAuthorityAllowed) {
+  auto args =
+      ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http+unix:///path/to/socket");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "unix:/path/to/socket");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+}
+
+TEST(HttpUnixProxyTest, PercentEncodedAuthorityAllowed) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
+                                "http+unix://%2Fpath%2Fto%2Fsocket");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "unix:/path/to/socket");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+}
+
+TEST(HttpUnixAbstractProxyTest, EmptyAuthorityAllowed) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
+                                "http+unix-abstract:///path/to/socket");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "unix-abstract:/path/to/socket");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+}
+
+TEST(HttpUnixAbstractProxyTest, PercentEncodedAuthorityAllowed) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
+                                "http+unix-abstract://%2Fpath%2Fto%2Fsocket");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "unix-abstract:/path/to/socket");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+}
+
+// The standard does not allow non-integer port; but gRPC passes the port string
+// through without checking.
+TEST(HttpUnixProxyTest, StringPortNamePassthrough) {
+  auto args =
+      ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http+unix:///path/to/socket");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:port", &args),
+            "unix:/path/to/socket");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:port");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

@@ -35,6 +35,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -64,6 +65,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/util/http_client/parser.h"
 #include "test/core/test_util/port.h"
 
@@ -72,6 +74,7 @@ struct grpc_end2end_http_proxy {
       : combiner(grpc_combiner_create(
             grpc_event_engine::experimental::GetDefaultEventEngine())) {}
   std::string proxy_name;
+  std::string protocol;
   std::atomic<bool> is_shutdown{false};
   std::atomic<size_t> users{1};
   grpc_core::Thread thd;
@@ -675,14 +678,12 @@ static void thread_main(void* arg) {
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    const grpc_channel_args* args) {
+    const grpc_channel_args* args, grpc_local_connect_type connect_type,
+    const std::string& socket_path) {
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   proxy_destroyed.store(false);
-  // Construct proxy address.
-  const int proxy_port = grpc_pick_unused_port_or_die();
-  proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
-  VLOG(2) << "Proxy address: " << proxy->proxy_name;
+
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
@@ -693,18 +694,49 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
       on_accept, proxy, &proxy->server);
   CHECK_OK(error);
+
   // Bind to port.
-  grpc_resolved_address resolved_addr;
-  grpc_sockaddr_in* addr =
-      reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(grpc_sockaddr_in);
-  addr->sin_family = GRPC_AF_INET;
-  grpc_sockaddr_set_port(&resolved_addr, proxy_port);
-  int port;
-  error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
-  CHECK_OK(error);
-  CHECK(port == proxy_port);
+  if (connect_type == UDS) {
+    absl::StatusOr<std::vector<grpc_resolved_address>> resolved_addrs;
+    if (socket_path[0] == '\0') {
+      proxy->protocol = "http+unix-abstract";
+      proxy->proxy_name = socket_path.substr(1);
+      resolved_addrs =
+          grpc_resolve_unix_abstract_domain_address(proxy->proxy_name);
+    } else {
+      proxy->protocol = "http+unix";
+      proxy->proxy_name = socket_path;
+      resolved_addrs =
+          grpc_resolve_unix_domain_address(proxy->proxy_name);
+    }
+    CHECK_OK(resolved_addrs);
+
+    const grpc_sockaddr* addr =
+        reinterpret_cast<const grpc_sockaddr*>((*resolved_addrs)[0].addr);
+
+    CHECK_EQ(addr->sa_family, GRPC_AF_UNIX);
+    int unused_port;
+    error = grpc_tcp_server_add_port(proxy->server, &(*resolved_addrs)[0],
+                                     &unused_port);
+    CHECK_OK(error);
+  } else {
+    const int proxy_port = grpc_pick_unused_port_or_die();
+    proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
+    proxy->protocol = "http";
+    grpc_resolved_address resolved_addr;
+    grpc_sockaddr_in* addr =
+        reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
+    memset(&resolved_addr, 0, sizeof(resolved_addr));
+    resolved_addr.len = sizeof(grpc_sockaddr_in);
+    addr->sin_family = GRPC_AF_INET;
+    grpc_sockaddr_set_port(&resolved_addr, proxy_port);
+    int port;
+    error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
+    CHECK_OK(error);
+    CHECK(port == proxy_port);
+  }
+  VLOG(2) << "Proxy address: " << proxy->protocol << "://" << proxy->proxy_name;
+
   // Start server.
   auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &proxy->mu);
@@ -739,4 +771,9 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy) {
   return proxy->proxy_name.c_str();
+}
+
+const char* grpc_end2end_http_proxy_get_protocol(
+    grpc_end2end_http_proxy* proxy) {
+  return proxy->protocol.c_str();
 }

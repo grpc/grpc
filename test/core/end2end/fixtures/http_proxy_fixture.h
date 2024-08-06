@@ -20,6 +20,9 @@
 #define GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+
+#include <string>
 
 // The test credentials being used for HTTP Proxy Authorization
 #define GRPC_TEST_HTTP_PROXY_AUTH_CREDS "aladdin:opensesame"
@@ -33,11 +36,15 @@
 typedef struct grpc_end2end_http_proxy grpc_end2end_http_proxy;
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    const grpc_channel_args* args);
+    const grpc_channel_args* args, grpc_local_connect_type connect_type,
+    const std::string& socket_path);
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
+    grpc_end2end_http_proxy* proxy);
+
+const char* grpc_end2end_http_proxy_get_protocol(
     grpc_end2end_http_proxy* proxy);
 
 #endif  // GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H
