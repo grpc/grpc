@@ -173,123 +173,69 @@ shared_examples 'GRPC metadata delivery works OK' do
       @bad_keys << { 1 => 'a value' }
     end
 
-    #it 'raises an exception if a metadata key is invalid' do
-    #  @bad_keys.each do |md|
-    #    recvd_rpc = nil
-    #    rcv_thread = Thread.new do
-    #      recvd_rpc = @server.request_call
-    #    end
+    it 'raises an exception if a metadata key is invalid' do
+      service = EchoService.new
+      run_services_on_server(@server, services: [service]) do
+        @bad_keys.each do |md|
+          proceed = Queue.new
+          server_exception = nil
+          service.on_call_started = proc do |call|
+            begin
+              call.send_initial_metadata(md)
+            rescue => e
+              server_exception = e
+            ensure
+              proceed.push(1)
+            end
+          end
+          client_exception = nil
+          client_call = @stub.an_rpc(EchoMsg.new, return_op: true)
+          thr = Thread.new do
+            begin
+              client_call.execute
+            rescue GRPC::BadStatus => e
+              client_exception = e
+            end
+          end
+          proceed.pop
+          # TODO(apolcyn): we shouldn't need this cancel here. It's
+          # only currently needed b/c the server does not seem to properly
+          # terminate the RPC if it fails to send initial metadata. That
+          # should be fixed, in which case this cancellation can be removed.
+          client_call.cancel
+          thr.join
+          p client_exception
+          expect(client_exception.nil?).to be(false)
+          expect(server_exception.nil?).to be(false)
+          expect(server_exception).to be_a(TypeError)
+          expect(server_exception.message).to eq(
+            'grpc_rb_md_ary_fill_hash_cb: bad type for key parameter')
+        end
+      end
+    end
 
-    #    call = new_client_call
-    #    # client signals that it's done sending metadata to allow server to
-    #    # respond
-    #    client_ops = {
-    #      CallOps::SEND_INITIAL_METADATA => nil
-    #    }
-    #    call.run_batch(client_ops)
+    it 'sends an empty hash if no metadata is added' do
+      run_services_on_server(@server, services: [EchoService]) do
+        call = @stub.an_rpc(EchoMsg.new, return_op: true)
+        expect(call.execute).to be_a(EchoMsg)
+        expect(call.metadata).to eq({})
+      end
+    end
 
-    #    # server gets the invocation
-    #    rcv_thread.join
-    #    expect(recvd_rpc).to_not eq nil
-    #    server_ops = {
-    #      CallOps::SEND_INITIAL_METADATA => md
-    #    }
-    #    blk = proc do
-    #      recvd_rpc.call.run_batch(server_ops)
-    #    end
-    #    expect(&blk).to raise_error
-
-    #    # cancel the call so the server can shut down immediately
-    #    call.cancel
-    #  end
-    #end
-
-    #it 'sends an empty hash if no metadata is added' do
-    #  recvd_rpc = nil
-    #  rcv_thread = Thread.new do
-    #    recvd_rpc = @server.request_call
-    #  end
-
-    #  call = new_client_call
-    #  # client signals that it's done sending metadata to allow server to
-    #  # respond
-    #  client_ops = {
-    #    CallOps::SEND_INITIAL_METADATA => nil,
-    #    CallOps::SEND_CLOSE_FROM_CLIENT => nil
-    #  }
-    #  client_batch = call.run_batch(client_ops)
-    #  expect(client_batch.send_metadata).to be true
-    #  expect(client_batch.send_close).to be true
-
-    #  # server gets the invocation but sends no metadata back
-    #  rcv_thread.join
-    #  expect(recvd_rpc).to_not eq nil
-    #  server_call = recvd_rpc.call
-    #  server_ops = {
-    #    # receive close and send status to finish the call
-    #    CallOps::RECV_CLOSE_ON_SERVER => nil,
-    #    CallOps::SEND_INITIAL_METADATA => nil,
-    #    CallOps::SEND_STATUS_FROM_SERVER => ok_status
-    #  }
-    #  srv_batch = server_call.run_batch(server_ops)
-    #  expect(srv_batch.send_close).to be true
-    #  expect(srv_batch.send_metadata).to be true
-    #  expect(srv_batch.send_status).to be true
-
-    #  # client receives nothing as expected
-    #  client_ops = {
-    #    CallOps::RECV_INITIAL_METADATA => nil,
-    #    # receive status to finish the call
-    #    CallOps::RECV_STATUS_ON_CLIENT => nil
-    #  }
-    #  final_client_batch = call.run_batch(client_ops)
-    #  expect(final_client_batch.metadata).to eq({})
-    #  expect(final_client_batch.status.code).to eq(0)
-    #end
-
-    #it 'sends all the pairs when keys and values are valid' do
-    #  @valid_metadata.each do |md|
-    #    recvd_rpc = nil
-    #    rcv_thread = Thread.new do
-    #      recvd_rpc = @server.request_call
-    #    end
-
-    #    call = new_client_call
-    #    # client signals that it's done sending metadata to allow server to
-    #    # respond
-    #    client_ops = {
-    #      CallOps::SEND_INITIAL_METADATA => nil,
-    #      CallOps::SEND_CLOSE_FROM_CLIENT => nil
-    #    }
-    #    client_batch = call.run_batch(client_ops)
-    #    expect(client_batch.send_metadata).to be true
-    #    expect(client_batch.send_close).to be true
-
-    #    # server gets the invocation but sends no metadata back
-    #    rcv_thread.join
-    #    expect(recvd_rpc).to_not eq nil
-    #    server_call = recvd_rpc.call
-    #    server_ops = {
-    #      CallOps::RECV_CLOSE_ON_SERVER => nil,
-    #      CallOps::SEND_INITIAL_METADATA => md,
-    #      CallOps::SEND_STATUS_FROM_SERVER => ok_status
-    #    }
-    #    srv_batch = server_call.run_batch(server_ops)
-    #    expect(srv_batch.send_close).to be true
-    #    expect(srv_batch.send_metadata).to be true
-    #    expect(srv_batch.send_status).to be true
-
-    #    # client receives nothing as expected
-    #    client_ops = {
-    #      CallOps::RECV_INITIAL_METADATA => nil,
-    #      CallOps::RECV_STATUS_ON_CLIENT => nil
-    #    }
-    #    final_client_batch = call.run_batch(client_ops)
-    #    replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
-    #    expect(final_client_batch.metadata).to eq(replace_symbols)
-    #    expect(final_client_batch.status.code).to eq(0)
-    #  end
-    #end
+    it 'sends all the pairs when keys and values are valid' do
+      service = EchoService.new
+      run_services_on_server(@server, services: [service]) do
+        @valid_metadata.each do |md|
+          service.on_call_started = proc do |call|
+            call.send_initial_metadata(md)
+          end
+          call = @stub.an_rpc(EchoMsg.new, return_op: true)
+          call.execute
+          replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
+          expect(call.metadata).to eq(replace_symbols)
+        end
+      end
+    end
   end
 end
 
