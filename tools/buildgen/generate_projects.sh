@@ -60,7 +60,7 @@ if [[ ! -d $VIRTUALENV_BIN ]]; then
 fi
 
 $VIRTUALENV_BIN/pip install --upgrade --ignore-installed grpcio-tools==1.59.0
-$VIRTUALENV_BIN/pip install --upgrade --ignore-installed mako==1.3.5
+$VIRTUALENV_BIN/pip install --upgrade --ignore-installed mako==1.2.4
 $VIRTUALENV_BIN/python tools/distrib/python/xds_protos/build.py
 $VIRTUALENV_BIN/python tools/distrib/python/make_grpcio_tools.py
 $VIRTUALENV_BIN/python src/python/grpcio_observability/make_grpcio_observability.py
