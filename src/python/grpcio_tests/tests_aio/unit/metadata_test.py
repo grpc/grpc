@@ -17,6 +17,7 @@ import asyncio
 import logging
 import platform
 import random
+from typing import Any, Tuple
 import unittest
 
 import grpc
@@ -54,7 +55,7 @@ _INITIAL_METADATA_FOR_GENERIC_HANDLER = aio.Metadata(
     ("a-must-have-key", "secret"),
 )
 
-_INVALID_METADATA_TEST_CASES = (
+_INVALID_METADATA_TEST_CASES: Tuple[Any, ...] = (
     (
         TypeError,
         ((42, 42),),

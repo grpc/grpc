@@ -46,10 +46,10 @@ class _MethodImplementation(
 def unary_unary_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a unary-unary RPC method as a callable value
-        that takes a request value and an face.ServicerContext object and
-        returns a response value.
+      Args:
+        behavior: The implementation of a unary-unary RPC method as a callable value
+          that takes a request value and an face.ServicerContext object and
+          returns a response value.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -65,16 +65,16 @@ def unary_unary_inline(behavior):
         None,
         None,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def unary_stream_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a unary-stream RPC method as a callable
-        value that takes a request value and an face.ServicerContext object and
-        returns an iterator of response values.
+      Args:
+        behavior: The implementation of a unary-stream RPC method as a callable
+          value that takes a request value and an face.ServicerContext object and
+          returns an iterator of response values.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -90,16 +90,16 @@ def unary_stream_inline(behavior):
         None,
         None,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def stream_unary_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a stream-unary RPC method as a callable
-        value that takes an iterator of request values and an
-        face.ServicerContext object and returns a response value.
+      Args:
+        behavior: The implementation of a stream-unary RPC method as a callable
+          value that takes an iterator of request values and an
+          face.ServicerContext object and returns a response value.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -115,20 +115,21 @@ def stream_unary_inline(behavior):
         None,
         None,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def stream_stream_inline(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a stream-stream RPC method as a callable
-        value that takes an iterator of request values and an
-        face.ServicerContext object and returns an iterator of response values.
+      Args:
+        behavior: The implementation of a stream-stream RPC method as a callable
+          value that takes an iterator of request values and an
+          face.ServicerContext object and returns an iterator of response values.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
     """
+    # pylint: disable=line-too-long
     return _MethodImplementation(
         cardinality.Cardinality.STREAM_STREAM,
         style.Service.INLINE,
@@ -140,16 +141,16 @@ def stream_stream_inline(behavior):
         None,
         None,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def unary_unary_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a unary-unary RPC method as a callable
-        value that takes a request value, a response callback to which to pass
-        the response value of the RPC, and an face.ServicerContext.
+      Args:
+        behavior: The implementation of a unary-unary RPC method as a callable
+          value that takes a request value, a response callback to which to pass
+          the response value of the RPC, and an face.ServicerContext.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -165,16 +166,16 @@ def unary_unary_event(behavior):
         None,
         None,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def unary_stream_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a unary-stream RPC method as a callable
-        value that takes a request value, a stream.Consumer to which to pass the
-        the response values of the RPC, and an face.ServicerContext.
+      Args:
+        behavior: The implementation of a unary-stream RPC method as a callable
+          value that takes a request value, a stream.Consumer to which to pass the
+          the response values of the RPC, and an face.ServicerContext.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -190,17 +191,17 @@ def unary_stream_event(behavior):
         behavior,
         None,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def stream_unary_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a stream-unary RPC method as a callable
-        value that takes a response callback to which to pass the response value
-        of the RPC and an face.ServicerContext and returns a stream.Consumer to
-        which the request values of the RPC should be passed.
+      Args:
+        behavior: The implementation of a stream-unary RPC method as a callable
+          value that takes a response callback to which to pass the response value
+          of the RPC and an face.ServicerContext and returns a stream.Consumer to
+          which the request values of the RPC should be passed.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -216,17 +217,17 @@ def stream_unary_event(behavior):
         None,
         behavior,
         None,
-    )
+    )  # pytype: disable=wrong-arg-count
 
 
 def stream_stream_event(behavior):
     """Creates an face.MethodImplementation for the given behavior.
 
-    Args:
-      behavior: The implementation of a stream-stream RPC method as a callable
-        value that takes a stream.Consumer to which to pass the response values
-        of the RPC and an face.ServicerContext and returns a stream.Consumer to
-        which the request values of the RPC should be passed.
+      Args:
+        behavior: The implementation of a stream-stream RPC method as a callable
+          value that takes a stream.Consumer to which to pass the response values
+          of the RPC and an face.ServicerContext and returns a stream.Consumer to
+          which the request values of the RPC should be passed.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -242,4 +243,4 @@ def stream_stream_event(behavior):
         None,
         None,
         behavior,
-    )
+    )  # pytype: disable=wrong-arg-count
