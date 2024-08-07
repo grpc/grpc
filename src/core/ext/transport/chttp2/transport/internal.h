@@ -76,6 +76,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
 
@@ -256,11 +257,18 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
+  // Callback for transport framing endpoint extension to send security frames
+  // received directly from the endpoint on wire.
+  void WriteSecurityFrame(grpc_core::SliceBuffer* data);
+  void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
   grpc_core::OrphanablePtr<grpc_endpoint> ep;
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
   grpc_core::Slice peer_string;
+
+  grpc_core::TransportFramingEndpointExtension*
+      transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
   const grpc_core::MemoryAllocator::Reservation self_reservation;

@@ -1721,6 +1721,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/timeout_encoding.h )
   s.files += %w( src/core/lib/transport/transport.cc )
   s.files += %w( src/core/lib/transport/transport.h )
+  s.files += %w( src/core/lib/transport/transport_framing_endpoint_extension.h )
   s.files += %w( src/core/lib/transport/transport_fwd.h )
   s.files += %w( src/core/lib/transport/transport_op_string.cc )
   s.files += %w( src/core/lib/uri/uri_parser.cc )

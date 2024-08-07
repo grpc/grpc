@@ -1114,6 +1114,7 @@ libs:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
+  - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/lib/uri/uri_parser.h
   - src/core/load_balancing/address_filtering.h
@@ -2635,6 +2636,7 @@ libs:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
+  - src/core/lib/transport/transport_framing_endpoint_extension.h
   - src/core/lib/transport/transport_fwd.h
   - src/core/lib/uri/uri_parser.h
   - src/core/load_balancing/address_filtering.h

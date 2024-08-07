@@ -33,6 +33,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/bind_front.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -104,6 +105,7 @@
 #include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -605,6 +607,22 @@ static void init_keepalive_pings_if_enabled_locked(
   }
 }
 
+void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer* data) {
+  combiner->Run(grpc_core::NewClosure([transport = Ref(), data]
+                                      (grpc_error_handle) mutable {
+                  transport->WriteSecurityFrameLocked(data);
+                }),
+                absl::OkStatus());
+}
+
+void grpc_chttp2_transport::WriteSecurityFrameLocked(
+    grpc_core::SliceBuffer* data) {
+  if (data == nullptr) {
+    return;
+  }
+  // TODO(alishananda): create security frame and append to qbuf, initiate write
+}
+
 using grpc_event_engine::experimental::QueryExtension;
 using grpc_event_engine::experimental::TcpTraceExtension;
 
@@ -645,6 +663,15 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     if (epte != nullptr) {
       epte->InitializeAndReturnTcpTracer();
     }
+  }
+
+  transport_framing_endpoint_extension = QueryExtension<
+      grpc_core::TransportFramingEndpointExtension>(
+      grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+          ep.get()));
+  if (transport_framing_endpoint_extension != nullptr) {
+    transport_framing_endpoint_extension->SetSendFrameCallback(
+        absl::bind_front(&grpc_chttp2_transport::WriteSecurityFrame, this));
   }
 
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==

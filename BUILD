@@ -4774,6 +4774,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
+        "absl/functional:bind_front",
         "absl/hash",
         "absl/log:check",
         "absl/log:log",
@@ -4849,6 +4850,7 @@ grpc_cc_library(
         "//src/core:status_conversion",
         "//src/core:status_helper",
         "//src/core:time",
+        "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
     ],

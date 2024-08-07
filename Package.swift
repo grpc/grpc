@@ -1719,6 +1719,7 @@ let package = Package(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport.h",
+        "src/core/lib/transport/transport_framing_endpoint_extension.h",
         "src/core/lib/transport/transport_fwd.h",
         "src/core/lib/transport/transport_op_string.cc",
         "src/core/lib/uri/uri_parser.cc",
