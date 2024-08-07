@@ -242,65 +242,6 @@ OpenTelemetryPluginBuilderImpl::SetChannelScopeFilter(
 }
 
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
-  /*
-  {
-    // Binary logging
-    grpc_core::LoggingSink::Entry mock_entry;
-    mock_entry.call_id = 1000;
-    mock_entry.sequence_id = 100;
-    mock_entry.type = grpc_core::LoggingSink::Entry::EventType::kClientHeader;
-    mock_entry.logger = grpc_core::LoggingSink::Entry::Logger::kClient;
-    constexpr char kMessage[] = "this is a message";
-    mock_entry.payload.message = kMessage;
-    mock_entry.payload.message_length = mock_entry.payload.message.size();
-    mock_entry.payload_truncated = true;
-    mock_entry.peer.type =
-        grpc_core::LoggingSink::Entry::Address::Type::kIpv4;
-    mock_entry.peer.address = "172.17.0.17";
-    mock_entry.peer.ip_port = 42842;
-    mock_entry.authority =
-        "observability-test-server-4ydoge240628155733:14285";
-    mock_entry.service_name = "grpc.testing.TestService";
-    mock_entry.method_name = "UnaryCall";
-    mock_entry.timestamp = grpc_core::Timestamp::Now();
-    ::google::protobuf::Struct proto_payload;
-    EntryToJsonStructProto(mock_entry, &proto_payload);
-    std::string json_payload;
-    google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
-    std::cout << json_payload << std::endl;
-    logger_provider_->GetLogger("otel_plugin_logger")
-        ->Debug(json_payload, opentelemetry::common::MakeAttributes(
-                                  {{"type", "BINARY_LOG"}}));
-  }
-  {
-    // Audit logging
-    grpc_core::experimental::AuditContext ac(
-        "UnaryCall", "spiffe://foo/user1", "example-policy", "admin-access",
-        true);
-    ::google::protobuf::Struct proto_payload;
-    (*proto_payload.mutable_fields())["rpcMethod"].set_string_value(
-        ac.rpc_method());
-    (*proto_payload.mutable_fields())["principal"].set_string_value(
-        ac.principal());
-    (*proto_payload.mutable_fields())["policyName"].set_string_value(
-        ac.policy_name());
-    (*proto_payload.mutable_fields())["matchedRule"].set_string_value(
-        ac.matched_rule());
-    (*proto_payload.mutable_fields())["authorized"].set_bool_value(
-        ac.authorized());
-    std::string json_payload;
-    google::protobuf::json::MessageToJsonString(proto_payload, &json_payload);
-    logger_provider_->GetLogger("otel_plugin_logger")
-        ->Debug(json_payload, opentelemetry::common::MakeAttributes(
-                                  {{"type", "AUDIT_LOG"}}));
-  }
-  */
-  /*
-  if (meter_provider_ == nullptr) {
-    return absl::InvalidArgumentError(
-        "Need to configure a valid meter provider.");
-  }
-  */
   auto otel_plugin = std::make_shared<OpenTelemetryPluginImpl>(
       metrics_, std::move(meter_provider_), std::move(logger_provider_),
       std::move(target_attribute_filter_),

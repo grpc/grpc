@@ -105,8 +105,6 @@ class OpenTelemetryPluginBuilder {
   /// If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
-  OpenTelemetryPluginBuilder& SetLoggerProvider(
-      std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider);
   /// DEPRECATED: If set, \a target_attribute_filter is called per channel to
   /// decide whether to record the target attribute on client or to replace it
   /// with "other". This helps reduce the cardinality on metrics in cases where
@@ -158,9 +156,28 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetChannelScopeFilter(
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
           channel_scope_filter);
-  /// Builds and registers a global plugin that acts on all channels and servers
-  /// running on the process. Must be called no more than once and must not be
-  /// called if Build() is called.
+
+  /// Logging
+  struct RpcEventConfig {
+    struct Path {
+      absl::string_view service;
+      absl::string_view method;
+    };
+    std::vector<Path> paths;
+    bool exclude = false;
+    bool is_client = false;
+    uint32_t max_metadata_bytes = 0;
+    uint32_t max_message_bytes = 0;
+  };
+  /// TODO(yijiem): add comments
+  OpenTelemetryPluginBuilder& SetLoggerProvider(
+      std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider);
+  OpenTelemetryPluginBuilder& SetRpcEventConfigs(
+      std::vector<RpcEventConfig> rpc_event_configs);
+
+  /// Builds and registers a global plugin that acts on all channels and
+  /// servers running on the process. Must be called no more than once and
+  /// must not be called if Build() is called.
   absl::Status BuildAndRegisterGlobal();
   /// EXPERIMENTAL API
   /// Builds an open telemetry plugin, returns the plugin object when succeeded
