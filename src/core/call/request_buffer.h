@@ -29,7 +29,6 @@ class RequestBuffer {
   class Reader {
    public:
     explicit Reader(RequestBuffer* buffer) : buffer_(buffer) {}
-    ~Reader();
 
     Reader(const Reader&) = delete;
     Reader& operator=(const Reader&) = delete;
@@ -48,9 +47,17 @@ class RequestBuffer {
     Poll<ValueOrFailure<absl::optional<MessageHandle>>> PollPullMessage();
 
     template <typename T>
-    T ClaimObject(T& object) {
+    T ClaimObject(T& object) ABSL_EXCLUSIVE_LOCKS_REQUIRED(buffer_->mu_) {
       if (buffer_->winner_ == this) return std::move(object);
-      return object->Copy();
+      return CopyObject(object);
+    }
+
+    ClientMetadataHandle CopyObject(const ClientMetadataHandle& md) {
+      return Arena::MakePooled<ClientMetadata>(md->Copy());
+    }
+
+    MessageHandle CopyObject(const MessageHandle& msg) {
+      return Arena::MakePooled<Message>(msg->payload()->Copy(), msg->flags());
     }
 
     RequestBuffer* const buffer_;

@@ -1606,6 +1606,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "request_buffer",
+    srcs = [
+        "call/request_buffer.cc",
+    ],
+    hdrs = [
+        "call/request_buffer.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "call_spine",
+        "message",
+        "metadata",
+        "wait_set",
+    ],
+)
+
+grpc_cc_library(
     name = "slice_refcount",
     hdrs = [
         "lib/slice/slice_refcount.h",
