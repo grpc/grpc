@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef REQUEST_BUFFER_H
-#define REQUEST_BUFFER_H
+#ifndef GRPC_SRC_CORE_CALL_REQUEST_BUFFER_H
+#define GRPC_SRC_CORE_CALL_REQUEST_BUFFER_H
 
 #include <utility>
 
@@ -112,4 +112,4 @@ class RequestBuffer {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_CALL_REQUEST_BUFFER_H
