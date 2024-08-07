@@ -14,46 +14,136 @@
 
 #include "src/core/call/request_buffer.h"
 
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/try_seq.h"
+#include <cstdint>
+
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
-Poll<Empty> RequestBuffer::PushClientToServerMessage(MessageHandle message) {
+StatusFlag RequestBuffer::PushClientInitialMetadata(ClientMetadataHandle md) {
   ReleasableMutexLock lock(&mu_);
-  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
-    buffering->client_to_server_messages.push_back(std::move(message));
-    auto wakeup = next_client_to_server_event_wait_set_.TakeWakeupSet();
-    lock.Release();
-    wakeup.Wakeup();
-    return Empty{};
-  }
-  auto& streaming = absl::get<Streaming>(state_);
-  if (streaming.pending_message != nullptr) return Pending{};
-  streaming.pending_message = std::move(message);
-  auto wakeup = next_client_to_server_event_wait_set_.TakeWakeupSet();
+  if (absl::get_if<Cancelled>(&state_)) return Failure{};
+  auto& buffering = absl::get<Buffering>(state_);
+  CHECK_EQ(buffering.initial_metadata.get(), nullptr);
+  buffering.initial_metadata = std::move(md);
+  auto wakeup = pull_waiters_.TakeWakeupSet();
   lock.Release();
   wakeup.Wakeup();
-  return Empty{};
+  return Success{};
 }
 
-void RequestBuffer::Consume(CallHandler handler) {
-  handler.SpawnGuarded("read", [this, handler = std::move(handler)]() mutable {
-    return TrySeq(
-        handler.PullClientInitialMetadata(),
-        [this, handler](ClientMetadataHandle client_initial_metadata) {
-          MutexLock lock(&mu_);
-          auto& buffering = absl::get<Buffering>(state_);
-          buffering.client_initial_metadata =
-              std::move(client_initial_metadata);
-          next_client_to_server_event_wait_set_.TakeWakeupSet().Wakeup();
-          return ForEach(OutgoingMessages(handler),
-                         [this](MessageHandle message) {
-                           return PushClientToServerMessage(std::move(message));
-                         });
-        });
-  });
+Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
+    MessageHandle& message) {
+  ReleasableMutexLock lock(&mu_);
+  if (absl::get_if<Cancelled>(&state_)) return Failure{};
+  size_t buffered = 0;
+  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+    buffering->messages.push_back(std::move(message));
+    buffering->buffered += message->payload()->Length();
+    buffered = buffering->buffered;
+  } else {
+    auto& streaming = absl::get<Streaming>(state_);
+    CHECK_EQ(streaming.end_of_stream, false);
+    if (streaming.message != nullptr) {
+      return PendingPush();
+    }
+    streaming.message = std::move(message);
+  }
+  auto wakeup = pull_waiters_.TakeWakeupSet();
+  lock.Release();
+  wakeup.Wakeup();
+  return buffered;
+}
+
+StatusFlag RequestBuffer::FinishSends() {
+  ReleasableMutexLock lock(&mu_);
+  if (absl::get_if<Cancelled>(&state_)) return Failure{};
+  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+    state_.emplace<Buffered>(std::move(buffering->initial_metadata),
+                             std::move(buffering->messages));
+  } else {
+    auto& streaming = absl::get<Streaming>(state_);
+    CHECK_EQ(streaming.end_of_stream, false);
+    streaming.end_of_stream = true;
+  }
+  auto wakeup = pull_waiters_.TakeWakeupSet();
+  lock.Release();
+  wakeup.Wakeup();
+  return Success{};
+}
+
+void RequestBuffer::Cancel(absl::Status error) {
+  ReleasableMutexLock lock(&mu_);
+  if (absl::holds_alternative<Cancelled>(state_)) return;
+  state_.emplace<Cancelled>(std::move(error));
+  auto wakeup = pull_waiters_.TakeWakeupSet();
+  lock.Release();
+  wakeup.Wakeup();
+}
+
+void RequestBuffer::SwitchToStreaming(Reader* winner) {
+  ReleasableMutexLock lock(&mu_);
+  CHECK_EQ(winner_, nullptr);
+  winner_ = winner;
+  auto wakeup = pull_waiters_.TakeWakeupSet();
+  lock.Release();
+  wakeup.Wakeup();
+}
+
+Poll<ValueOrFailure<ClientMetadataHandle>>
+RequestBuffer::Reader::PollPullClientInitialMetadata() {
+  MutexLock lock(&buffer_->mu_);
+  if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
+    error_ = absl::CancelledError("Another call was chosen");
+    return Failure{};
+  }
+  if (auto* buffering = absl::get_if<Buffering>(&buffer_->state_)) {
+    if (buffering->initial_metadata.get() == nullptr) {
+      return buffer_->PendingPull();
+    }
+    return ClaimObject(buffering->initial_metadata);
+  }
+  if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
+    return ClaimObject(buffered->initial_metadata);
+  }
+  error_ = absl::get<Cancelled>(buffer_->state_).error;
+  return Failure{};
+}
+
+Poll<ValueOrFailure<absl::optional<MessageHandle>>>
+RequestBuffer::Reader::PollPullMessage() {
+  ReleasableMutexLock lock(&buffer_->mu_);
+  if (buffer_->winner_ != nullptr && buffer_->winner_ != this) {
+    error_ = absl::CancelledError("Another call was chosen");
+    return Failure{};
+  }
+  if (auto* buffering = absl::get_if<Buffering>(&buffer_->state_)) {
+    if (message_index_ == buffering->messages.size()) {
+      return buffer_->PendingPull();
+    }
+    const auto idx = message_index_;
+    ++message_index_;
+    return ClaimObject(buffering->messages[idx]);
+  }
+  if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
+    if (message_index_ == buffered->messages.size()) return absl::nullopt;
+    const auto idx = message_index_;
+    ++message_index_;
+    return ClaimObject(buffered->messages[idx]);
+  }
+  if (auto* streaming = absl::get_if<Streaming>(&buffer_->state_)) {
+    if (streaming->message == nullptr) {
+      if (streaming->end_of_stream) return absl::nullopt;
+      return buffer_->PendingPull();
+    }
+    auto msg = std::move(streaming->message);
+    auto waker = std::move(buffer_->push_waker_);
+    lock.Release();
+    waker.Wakeup();
+    return msg;
+  }
+  error_ = absl::get<Cancelled>(buffer_->state_).error;
+  return Failure{};
 }
 
 }  // namespace grpc_core

@@ -15,6 +15,8 @@
 #ifndef REQUEST_BUFFER_H
 #define REQUEST_BUFFER_H
 
+#include <utility>
+
 #include "src/core/lib/promise/wait_set.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/message.h"
@@ -22,50 +24,90 @@
 
 namespace grpc_core {
 
-class RequestBufferPolicy {
- public:
-  enum class TrailersOnlyResponseAction : uint8_t {
-    kCommit,
-    kDiscard,
-  };
-
-  virtual TrailersOnlyResponseAction OnTrailersOnlyResponse(
-      const ServerMetadata& trailers) = 0;
-
- protected:
-  ~RequestBufferPolicy() = default;
-};
-
 class RequestBuffer {
  public:
-  explicit RequestBuffer(RequestBufferPolicy* policy) : policy_(policy) {}
-  void Consume(CallHandler handler);
-  auto StartChild(uintptr_t key) {
-    return []() -> Poll<CallHandler> { return Pending{}; };
+  class Reader {
+   public:
+    explicit Reader(RequestBuffer* buffer) : buffer_(buffer) {}
+    ~Reader();
+
+    Reader(const Reader&) = delete;
+    Reader& operator=(const Reader&) = delete;
+
+    GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
+      return [this]() { return PollPullClientInitialMetadata(); };
+    }
+    GRPC_MUST_USE_RESULT auto PullMessage() {
+      return [this]() { return PollPullMessage(); };
+    }
+
+    absl::Status TakeError() { return std::move(error_); }
+
+   private:
+    Poll<ValueOrFailure<ClientMetadataHandle>> PollPullClientInitialMetadata();
+    Poll<ValueOrFailure<absl::optional<MessageHandle>>> PollPullMessage();
+
+    template <typename T>
+    T ClaimObject(T& object) {
+      if (buffer_->winner_ == this) return std::move(object);
+      return object->Copy();
+    }
+
+    RequestBuffer* const buffer_;
+    size_t message_index_ = 0;
+    absl::Status error_;
+  };
+
+  StatusFlag PushClientInitialMetadata(ClientMetadataHandle md);
+  // Resolves to a ValueOrFailure<size_t> where the size_t is the amount of data
+  // buffered (or 0 if we're in streaming mode).
+  GRPC_MUST_USE_RESULT auto PushMessage(MessageHandle message) {
+    return [this, message = std::move(message)]() mutable {
+      return PollPushMessage(message);
+    };
   }
-  void Commit(uintptr_t key);
+  StatusFlag FinishSends();
+  void Cancel(absl::Status error = absl::CancelledError());
+
+  void SwitchToStreaming(Reader* winner);
 
  private:
   struct Buffering {
-    ClientMetadataHandle client_initial_metadata;
-    absl::InlinedVector<MessageHandle, 1> client_to_server_messages;
-    WaitSet become_streaming;
+    ClientMetadataHandle initial_metadata;
+    absl::InlinedVector<MessageHandle, 1> messages;
+    size_t buffered = 0;
+  };
+  struct Buffered {
+    Buffered(ClientMetadataHandle md,
+             absl::InlinedVector<MessageHandle, 1> msgs)
+        : initial_metadata(std::move(md)), messages(std::move(msgs)) {}
+    ClientMetadataHandle initial_metadata;
+    absl::InlinedVector<MessageHandle, 1> messages;
   };
   struct Streaming {
-    uintptr_t winner;
-    MessageHandle pending_message;
-    Waker pending_message_sent;
+    MessageHandle message;
+    bool end_of_stream;
   };
+  struct Cancelled {
+    explicit Cancelled(absl::Status error) : error(std::move(error)) {}
+    absl::Status error;
+  };
+  using State = absl::variant<Buffering, Buffered, Streaming, Cancelled>;
 
-  using State = absl::variant<Buffering, Streaming>;
+  Poll<ValueOrFailure<size_t>> PollPushMessage(MessageHandle& message);
+  Pending PendingPull() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return pull_waiters_.AddPending(Activity::current()->MakeOwningWaker());
+  }
+  Pending PendingPush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    push_waker_ = Activity::current()->MakeOwningWaker();
+    return Pending();
+  }
 
-  Poll<Empty> PushClientToServerMessage(MessageHandle message)
-      ABSL_LOCKS_EXCLUDED(mu_);
-
-  RequestBufferPolicy* const policy_;
   Mutex mu_;
+  Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
   State state_ ABSL_GUARDED_BY(mu_){Buffering{}};
-  WaitSet next_client_to_server_event_wait_set_ ABSL_GUARDED_BY(mu_);
+  WaitSet pull_waiters_ ABSL_GUARDED_BY(mu_);
+  Waker push_waker_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
