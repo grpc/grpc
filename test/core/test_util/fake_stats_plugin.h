@@ -428,6 +428,7 @@ class FakeStatsPlugin : public StatsPlugin {
   void TriggerCallbacks() {
     VLOG(2) << "FakeStatsPlugin[" << this << "]::TriggerCallbacks(): START";
     Reporter reporter(*this);
+    MutexLock lock(&callback_mu_);
     for (auto* callback : callbacks_) {
       callback->Run(reporter);
     }
