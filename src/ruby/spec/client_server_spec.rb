@@ -16,26 +16,8 @@ require 'spec_helper'
 
 include GRPC::Core
 
-shared_context 'setup: tags' do
-  let(:sent_message) { 'sent message' }
-  let(:reply_text) { 'the reply' }
-
-  def deadline
-    Time.now + 5
-  end
-
-  def new_client_call
-    @ch.create_call(nil, nil, '/method', nil, deadline)
-  end
-
-  def ok_status
-    Struct::Status.new(StatusCodes::OK, 'OK')
-  end
-end
-
 shared_examples 'basic GRPC message delivery is OK' do
   include GRPC::Core
-  include_context 'setup: tags'
 
   context 'the test channel' do
     it 'should have a target' do
@@ -107,8 +89,6 @@ shared_examples 'basic GRPC message delivery is OK' do
 end
 
 shared_examples 'GRPC metadata delivery works OK' do
-  include_context 'setup: tags'
-
   describe 'from client => server' do
     before(:example) do
       n = 7  # arbitrary number of metadata
@@ -251,8 +231,6 @@ describe 'the http client/server' do
 end
 
 describe 'the secure http client/server' do
-  include_context 'setup: tags'
-
   def load_test_certs
     test_root = File.join(File.dirname(__FILE__), 'testdata')
     files = ['ca.pem', 'server1.key', 'server1.pem']
