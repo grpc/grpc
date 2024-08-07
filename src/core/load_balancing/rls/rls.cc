@@ -556,10 +556,10 @@ class RlsLb final : public LoadBalancingPolicy {
     // State that is returned back for cleanup on shutting down the cache. The
     // state should be released outside a lock.
     struct CacheShutdownState {
+      std::list<RequestKey> lru_list;
       std::unordered_map<RequestKey, OrphanablePtr<Entry>,
                          absl::Hash<RequestKey>>
           map;
-      std::list<RequestKey> lru_list;
     };
 
     explicit Cache(RlsLb* lb_policy);
@@ -2133,13 +2133,13 @@ void RlsLb::ShutdownLocked() {
   }
   registered_metric_callback_.reset();
   RefCountedPtr<RlsLbConfig> config_to_delete;
-  ChannelArgs channel_args_to_delete;
-  Cache::CacheShutdownState cache_shutdown_state;
+  RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
+  OrphanablePtr<RlsChannel> rls_channel_to_delete;
   std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
                      absl::Hash<RequestKey>>
       request_map_to_delete;
-  OrphanablePtr<RlsChannel> rls_channel_to_delete;
-  RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
+  Cache::CacheShutdownState cache_shutdown_state;
+  ChannelArgs channel_args_to_delete;
   {
     MutexLock lock(&mu_);
     is_shutdown_ = true;
