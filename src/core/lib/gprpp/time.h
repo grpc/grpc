@@ -328,7 +328,7 @@ inline Duration operator-(Timestamp lhs, Timestamp rhs) {
   }
   return Duration::Milliseconds(
       time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
-                             -rhs.milliseconds_after_process_epoch()));
+                             -static_cast<int64_t>(rhs.milliseconds_after_process_epoch())));
 }
 
 inline Duration operator*(Duration lhs, double rhs) {
