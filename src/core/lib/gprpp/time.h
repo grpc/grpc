@@ -326,9 +326,9 @@ inline Duration operator-(Timestamp lhs, Timestamp rhs) {
   if (rhs == Timestamp::InfFuture() && lhs != Timestamp::InfFuture()) {
     return Duration::NegativeInfinity();
   }
-  return Duration::Milliseconds(
-      time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
-                             -static_cast<int64_t>(rhs.milliseconds_after_process_epoch())));
+  return Duration::Milliseconds(time_detail::MillisAdd(
+      lhs.milliseconds_after_process_epoch(),
+      -static_cast<int64_t>(rhs.milliseconds_after_process_epoch())));
 }
 
 inline Duration operator*(Duration lhs, double rhs) {
