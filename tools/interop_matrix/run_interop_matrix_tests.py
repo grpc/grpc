@@ -348,7 +348,9 @@ languages = args.language if args.language != ["all"] else _LANGUAGES
 total_num_failures = 0
 _xml_report_tree = report_utils.new_junit_xml_tree()
 for lang in languages:
-    docker_images = _get_test_images_for_lang(lang, args.release, args.docker_path)
+    docker_images = _get_test_images_for_lang(
+        lang, args.release, args.docker_path
+    )
     for runtime in sorted(docker_images.keys()):
         total_num_failures += _run_tests_for_lang(
             lang, runtime, docker_images[runtime], _xml_report_tree
