@@ -20,29 +20,30 @@
 
 namespace grpc_core {
 
-auto RequestBuffer::PushClientToServerMessage(MessageHandle message) {
-  return MatchMutable(
-      &state_,
-      [&message, this](Buffering* buffering) -> Poll<Empty> {
-        buffering->client_to_server_messages.push_back(std::move(message));
-        next_client_to_server_event_wait_set_.TakeWakeupSet().Wakeup();
-        return Empty{};
-      },
-      [&message, this](Streaming* streaming) -> Poll<Empty> {
-        if (streaming->pending_message != nullptr) {
-          return Pending{};
-        }
-        streaming->pending_message = std::move(message);
-        next_client_to_server_event_wait_set_.TakeWakeupSet().Wakeup();
-        return Empty{};
-      });
+Poll<Empty> RequestBuffer::PushClientToServerMessage(MessageHandle message) {
+  ReleasableMutexLock lock(&mu_);
+  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+    buffering->client_to_server_messages.push_back(std::move(message));
+    auto wakeup = next_client_to_server_event_wait_set_.TakeWakeupSet();
+    lock.Release();
+    wakeup.Wakeup();
+    return Empty{};
+  }
+  auto& streaming = absl::get<Streaming>(state_);
+  if (streaming.pending_message != nullptr) return Pending{};
+  streaming.pending_message = std::move(message);
+  auto wakeup = next_client_to_server_event_wait_set_.TakeWakeupSet();
+  lock.Release();
+  wakeup.Wakeup();
+  return Empty{};
 }
 
-void RequestBuffer::Start(CallHandler handler) {
+void RequestBuffer::Consume(CallHandler handler) {
   handler.SpawnGuarded("read", [this, handler = std::move(handler)]() mutable {
     return TrySeq(
         handler.PullClientInitialMetadata(),
         [this, handler](ClientMetadataHandle client_initial_metadata) {
+          MutexLock lock(&mu_);
           auto& buffering = absl::get<Buffering>(state_);
           buffering.client_initial_metadata =
               std::move(client_initial_metadata);
@@ -53,14 +54,6 @@ void RequestBuffer::Start(CallHandler handler) {
                          });
         });
   });
-}
-
-CallHandler RequestBuffer::Proxy(uintptr_t key) {
-  return MatchMutable(
-      &state_, [key](Buffering* buffering) {},
-      [key](Streaming*) {
-        return MakeFailedCall(absl::CancelledError("Call already committed"));
-      });
 }
 
 }  // namespace grpc_core

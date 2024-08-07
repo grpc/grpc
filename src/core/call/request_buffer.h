@@ -22,10 +22,27 @@
 
 namespace grpc_core {
 
+class RequestBufferPolicy {
+ public:
+  enum class TrailersOnlyResponseAction : uint8_t {
+    kCommit,
+    kDiscard,
+  };
+
+  virtual TrailersOnlyResponseAction OnTrailersOnlyResponse(
+      const ServerMetadata& trailers) = 0;
+
+ protected:
+  ~RequestBufferPolicy() = default;
+};
+
 class RequestBuffer {
  public:
-  void Start(CallHandler handler);
-  CallHandler Proxy(uintptr_t key);
+  explicit RequestBuffer(RequestBufferPolicy* policy) : policy_(policy) {}
+  void Consume(CallHandler handler);
+  auto StartChild(uintptr_t key) {
+    return []() -> Poll<CallHandler> { return Pending{}; };
+  }
   void Commit(uintptr_t key);
 
  private:
@@ -40,13 +57,15 @@ class RequestBuffer {
     Waker pending_message_sent;
   };
 
-  auto PushClientToServerMessage(MessageHandle message);
-  virtual void OnTrailersOnlyResponse(uintptr_t key,
-                                      ServerMetadata& trailers) = 0;
-
   using State = absl::variant<Buffering, Streaming>;
-  State state_{Buffering{}};
-  WaitSet next_client_to_server_event_wait_set_;
+
+  Poll<Empty> PushClientToServerMessage(MessageHandle message)
+      ABSL_LOCKS_EXCLUDED(mu_);
+
+  RequestBufferPolicy* const policy_;
+  Mutex mu_;
+  State state_ ABSL_GUARDED_BY(mu_){Buffering{}};
+  WaitSet next_client_to_server_event_wait_set_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
