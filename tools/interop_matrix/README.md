@@ -18,8 +18,8 @@ The steps are:
   - `gcloud artifacts docker images list us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_java --include-tags` should show an image entry with tag `v1.9.9`.
   - images can also be viewed in https://pantheon.corp.google.com/artifacts/docker/grpc-testing/us/testing-images-public
 - Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
-  - `gcloud docker -- pull us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_java:v1.9.9` followed by
-  - `docker_image=s-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_java:v1.9.9 tools/interop_matrix/testcases/java__master`
+  - `docker pull us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_java:v1.9.9` followed by
+  - `docker_image=us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_java:v1.9.9 tools/interop_matrix/testcases/java__master`
 - Commit the change and create a PR to upstream/master.
 - Trigger an adhoc run of interop matrix tests: https://fusion.corp.google.com/projectanalysis/summary/KOKORO/prod:grpc%2Fcore%2Fexperimental%2Flinux%2Fgrpc_interop_matrix_adhoc
 - Once tests pass, request a PR review.
@@ -50,7 +50,7 @@ For more details on each step, refer to sections below.
 
 ## Instructions for running test cases against an AR image manually
 
-- Download a docker image from AR.  For example: `gcloud docker -- pull us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.8:v1.16.0`.
+- Download a docker image from AR.  For example: `docker pull us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.8:v1.16.0`.
 - Run test cases by specifying `docker_image` variable inline with the test case script created above.
 For example:
   - `docker_image=us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.8:v1.16.0 ./testcases/go__master` will run go__master test cases against `go1.8` with gRPC release `v1.16.0` docker image in AR.
