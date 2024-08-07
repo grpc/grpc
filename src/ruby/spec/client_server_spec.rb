@@ -127,14 +127,13 @@ shared_examples 'GRPC metadata delivery works OK' do
 
     it 'raises an exception if a metadata key is invalid' do
       @bad_keys.each do |md|
-        # Note: no need to run a server in this test b/c the failure
+        # NOTE: no need to run a server in this test b/c the failure
         # happens while validating metadata to send.
         failed = false
         begin
           @stub.an_rpc(EchoMsg.new, metadata: md)
-        rescue => e
+        rescue TypeError => e
           failed = true
-          expect(e).to be_a(TypeError)
           expect(e.message).to eq('grpc_rb_md_ary_fill_hash_cb: bad type for key parameter')
         end
         expect(failed).to be(true)
@@ -180,22 +179,18 @@ shared_examples 'GRPC metadata delivery works OK' do
           proceed = Queue.new
           server_exception = nil
           service.on_call_started = proc do |call|
-            begin
-              call.send_initial_metadata(md)
-            rescue => e
-              server_exception = e
-            ensure
-              proceed.push(1)
-            end
+            call.send_initial_metadata(md)
+          rescue TypeError => e
+            server_exception = e
+          ensure
+            proceed.push(1)
           end
           client_exception = nil
           client_call = @stub.an_rpc(EchoMsg.new, return_op: true)
           thr = Thread.new do
-            begin
-              client_call.execute
-            rescue GRPC::BadStatus => e
-              client_exception = e
-            end
+            client_call.execute
+          rescue GRPC::BadStatus => e
+            client_exception = e
           end
           proceed.pop
           # TODO(apolcyn): we shouldn't need this cancel here. It's
@@ -207,7 +202,6 @@ shared_examples 'GRPC metadata delivery works OK' do
           p client_exception
           expect(client_exception.nil?).to be(false)
           expect(server_exception.nil?).to be(false)
-          expect(server_exception).to be_a(TypeError)
           expect(server_exception.message).to eq(
             'grpc_rb_md_ary_fill_hash_cb: bad type for key parameter')
         end
@@ -272,11 +266,6 @@ describe 'the secure http client/server' do
       nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
     @server = new_rpc_server_for_testing
     server_port = @server.add_http2_port(server_host, server_creds)
-    client_opts = {
-      channel_args: {
-        Channel::SSL_TARGET => 'foo.test.google.fr'
-      }
-    }
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
     @ch = Channel.new(
       "0.0.0.0:#{server_port}", args,

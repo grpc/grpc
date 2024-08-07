@@ -51,7 +51,7 @@ class EchoService
 
   def an_rpc(req, call)
     GRPC.logger.info('echo service received a request')
-    on_call_started.call(call) unless on_call_started.nil?
+    on_call_started&.call(call)
     call.output_metadata.update(@trailing_metadata)
     @received_md << call.metadata unless call.metadata.nil?
     req
