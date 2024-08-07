@@ -181,7 +181,7 @@ describe GRPC::Core::Call do
     end
   end
 
-  def make_test_call(&blk)
+  def make_test_call
     call = @ch.create_call(nil, nil, 'phony_method', nil, deadline)
     yield call
     call.close
