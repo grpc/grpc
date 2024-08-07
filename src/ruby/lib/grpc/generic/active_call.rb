@@ -667,6 +667,7 @@ module GRPC
 
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.
+    # TODO(apolcyn): expose peer getter
     Operation = view_class(:cancel, :cancel_with_status, :cancelled?, :deadline,
                            :execute, :metadata, :status, :start_call, :wait,
                            :write_flag, :write_flag=, :trailing_metadata)
