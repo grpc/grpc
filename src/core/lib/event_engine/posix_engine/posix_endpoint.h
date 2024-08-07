@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -601,6 +602,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   EventHandle* handle_;
   PosixEventPoller* poller_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+
+  // DNS: used to track leaks in core dumps
+  std::string leak_debug_marker_;
 };
 
 class PosixEndpoint : public PosixEndpointWithFdSupport {
