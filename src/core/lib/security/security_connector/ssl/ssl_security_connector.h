@@ -36,6 +36,7 @@ struct grpc_ssl_config {
   verify_peer_options verify_options;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
+  tsi_server_certificate_request_type server_request_type;
 };
 
 // Creates an SSL channel_security_connector.

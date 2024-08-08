@@ -93,6 +93,11 @@ typedef enum {
   TSI_TLS1_3,
 } tsi_tls_version;
 
+typedef enum {
+    TSI_REQUEST_SERVER_CERTIFICATE_AND_VERIFY,
+    TSI_REQUEST_SERVER_CERTIFICATE_BUT_DONT_VERIFY,
+} tsi_server_certificate_request_type;
+
 const char* tsi_result_to_string(tsi_result result);
 const char* tsi_security_level_to_string(tsi_security_level security_level);
 

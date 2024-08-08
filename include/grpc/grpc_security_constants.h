@@ -136,6 +136,22 @@ typedef enum {
   GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY,
 } grpc_security_level;
 
+typedef enum {
+  /** Client requests server certificate.
+
+     The cerificate presented by the server is verified by grpc framework (The
+     server needs to present signed certs for a successful connection).
+
+     The key cert pair should still be valid for the SSL connection to be
+     established. */
+  GRPC_SSL_REQUEST_SERVER_CERTIFICATE_AND_VERIFY,
+  /** Client requests server certificate but does not verify the certificate.
+
+     The key cert pair should still be valid for the SSL connection to be
+     established. */
+  GRPC_SSL_REQUEST_SERVER_CERTIFICATE_BUT_DONT_VERIFY,
+} grpc_ssl_server_certificate_request_type;
+
 /**
  * Type of local connections for which local channel/server credentials will be
  * applied. It supports UDS and local TCP connections.

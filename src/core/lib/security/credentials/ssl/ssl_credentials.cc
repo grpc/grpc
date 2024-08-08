@@ -208,6 +208,7 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
   options.session_cache = ssl_session_cache;
   options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
   options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
+  options.server_certificate_request = config->server_request_type;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -251,6 +252,27 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
 
   return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
                                   verify_options);
+}
+
+grpc_channel_credentials* grpc_ssl_credentials_create_with_request_type(
+    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    grpc_ssl_server_certificate_request_type server_request_type) {
+  grpc_ssl_credentials* c = static_cast<grpc_ssl_credentials*>(
+      gpr_zalloc(sizeof(grpc_ssl_credentials)));
+  GRPC_API_TRACE(
+      "grpc_ssl_credentials_create(pem_root_certs=%s, "
+      "pem_key_cert_pair=%p, "
+      "type=%d)",
+      3, (pem_root_certs, pem_key_cert_pair, server_request_type));
+
+  c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
+  c->base.vtable = &ssl_vtable;
+  gpr_ref_init(&c->base.refcount, 1);
+  ssl_build_config(pem_root_certs, pem_key_cert_pair, nullptr, &c->config);
+
+  c->config.server_request_type = server_request_type == GRPC_SSL_REQUEST_SERVER_CERTIFICATE_BUT_DONT_VERIFY ?
+      TSI_REQUEST_SERVER_CERTIFICATE_BUT_DONT_VERIFY : TSI_REQUEST_SERVER_CERTIFICATE_AND_VERIFY;
+  return &c->base;
 }
 
 //
