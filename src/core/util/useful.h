@@ -133,19 +133,19 @@ inline uint32_t RoundUpToPowerOf2(uint32_t v) {
 
 // Return a value with only the lowest bit left on.
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint8_t LowestOneBit(uint8_t x) {
-  return x & ~x + 1;
+  return x & (~x + 1);
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint16_t LowestOneBit(uint16_t x) {
-  return x & ~x + 1;
+  return x & (~x + 1);
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t LowestOneBit(uint32_t x) {
-  return x & ~x + 1;
+  return x & (~x + 1);
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint64_t LowestOneBit(uint64_t x) {
-  return x & ~x + 1;
+  return x & (~x + 1);
 }
 
 }  // namespace grpc_core
