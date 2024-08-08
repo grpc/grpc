@@ -20,7 +20,7 @@ grpc_package(name = "test/cpp/microbenchmarks/huffman_geometries", visibility = 
 
 genrule(
   name = "generate_huffman_geometries",
-  srcs = [
+  tools = [
     "//tools/codegen/core:gen_huffman_decompressor",
   ],
   outs = ["shard_%d.cc" % i for i in range(100)] + 
@@ -35,5 +35,5 @@ grpc_cc_library(
   hdrs = ["shard_%d.h" % i for i in range(100)] + [
     "index.h",
   ],
-  deps = ["//:gpr_platform"]
+  deps = ["//:gpr_platform"],
 )
