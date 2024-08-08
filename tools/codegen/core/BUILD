@@ -27,5 +27,9 @@ grpc_cc_binary(
     deps = [
         "//src/core:huffsyms",
         "//src/core:match",
+        "//src/core:env",
     ],
+    visibility = [
+        "//test/cpp/microbenchmarks/huffman_geometries:__pkg__",
+    ]
 )
