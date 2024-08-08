@@ -15,5 +15,9 @@
 
 set -ex
 
+if [ -f ./generate_artifacts.sh ]; then
+    ./generate_artifacts.sh
+fi
+
 export PREPARE_BUILD_INSTALL_DEPS_OBJC=true
 $(dirname $0)/grpc_run_tests_matrix.sh
