@@ -2132,7 +2132,6 @@ void RlsLb::ShutdownLocked() {
     LOG(INFO) << "[rlslb " << this << "] policy shutdown";
   }
   registered_metric_callback_.reset();
-  RefCountedPtr<RlsLbConfig> config_to_delete;
   RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
   OrphanablePtr<RlsChannel> rls_channel_to_delete;
   std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
@@ -2140,6 +2139,7 @@ void RlsLb::ShutdownLocked() {
       request_map_to_delete;
   Cache::CacheShutdownState cache_shutdown_state;
   ChannelArgs channel_args_to_delete;
+  RefCountedPtr<RlsLbConfig> config_to_delete;
   {
     MutexLock lock(&mu_);
     is_shutdown_ = true;
@@ -2151,6 +2151,12 @@ void RlsLb::ShutdownLocked() {
     child_policy_to_delete = std::move(default_child_policy_);
   }
   config_to_delete.reset(DEBUG_LOCATION, "ShutdownLocked");
+  channel_args_to_delete = ChannelArgs();
+  cache_shutdown_state.map.clear();
+  cache_shutdown_state.lru_list.clear();
+  request_map_to_delete.clear();
+  rls_channel_to_delete.reset();
+  child_policy_to_delete.reset();
 }
 
 void RlsLb::UpdatePickerAsync() {
