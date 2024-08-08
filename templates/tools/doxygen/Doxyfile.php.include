@@ -14,7 +14,7 @@
       if os.path.splitext(filename)[1] == '.md':
         srcdoc.append(os.path.join(dirpath, filename))
 
-  subprocess.check_call(["src/php/bin/php_extension_to_php_doc.sh", "generate"])
+  subprocess.check_call("bash src/php/bin/php_extension_to_php_doc.sh generate", shell=True)
 
   version = settings.php_version
   doxy_input = ' \\\n'.join(sorted(set(
@@ -25,7 +25,7 @@
             srcdoc)
     )))
 
-  subprocess.check_call(["src/php/bin/php_extension_to_php_doc.sh", "cleanup"])
+  subprocess.check_call("bash src/php/bin/php_extension_to_php_doc.sh cleanup", shell=True)
 %>
 ${doxy_base("PHP", version, doxy_input, internal)}
 </%def> 
