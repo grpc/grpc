@@ -501,8 +501,8 @@ class BuildCtx {
   void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
                int depth, Sink* out);
   void AddMatchBody(TableBuilder* table_builder, std::string index,
-                    std::string ofs, const MatchCase& match_case, bool is_top,
-                    bool refill, int depth, Sink* out);
+                    std::string ofs, const MatchCase& match_case, bool refill,
+                    int depth, Sink* out);
   void AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
                Sink* out);
 
@@ -888,7 +888,7 @@ class TableBuilder {
     table->slice_bits = slice_bits;
     const int pack_consume_bits = ConsumeBits();
     const int pack_match_bits = MatchBits();
-    for (size_t i = 0; i < slices; i++) {
+    for (int i = 0; i < slices; i++) {
       auto& slice = table->slices[i];
       for (size_t j = 0; j < elems_.size() / slices; j++) {
         const auto& elem = elems_[i * elems_.size() / slices + j];
@@ -1048,7 +1048,7 @@ class TableBuilder {
     // identity => 0,1,2,3,...
     bool is_identity = true;
     for (size_t i = 0; i < values.size(); i++) {
-      if (values[i] != i) {
+      if (static_cast<size_t>(values[i]) != i) {
         is_identity = false;
         break;
       }
@@ -1059,7 +1059,7 @@ class TableBuilder {
     // offset => k,k+1,k+2,k+3,...
     bool is_offset = true;
     for (size_t i = 1; i < values.size(); i++) {
-      if (values[i] - values[0] != i) {
+      if (static_cast<size_t>(values[i] - values[0]) != i) {
         is_offset = false;
         break;
       }
@@ -1068,10 +1068,10 @@ class TableBuilder {
       note_solution(std::make_unique<OffsetArray>(values[0]));
     }
     // offset => k,k,k+1,k+1,...
-    for (int d = 2; d < 32; d++) {
+    for (size_t d = 2; d < 32; d++) {
       bool is_linear = true;
       for (size_t i = 1; i < values.size(); i++) {
-        if (values[i] - values[0] != (i / d)) {
+        if (static_cast<size_t>(values[i] - values[0]) != (i / d)) {
           is_linear = false;
           break;
         }
@@ -1366,7 +1366,7 @@ void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
   for (auto sym : syms) {
     if ((n >> (n_bits - sym.bits.length())) == sym.bits.mask()) {
       emit.push_back(sym.symbol);
-      size_t bits_left = n_bits - sym.bits.length();
+      int bits_left = n_bits - sym.bits.length();
       if (bits_left == 0) {
         table_builder->Add(add_case(emit.size()), emit, 0);
         return;
@@ -1442,15 +1442,15 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
                         ";"));
   if (match_cases.size() == 1) {
     AddMatchBody(&table_builder, "index", "emit_ofs",
-                 match_cases.begin()->first, is_top, refill, depth, out);
+                 match_cases.begin()->first, refill, depth, out);
   } else {
     auto s = out->Add<Switch>(
         absl::StrCat("(op >> ", table_builder.ConsumeBits(), ") & ",
                      (1 << table_builder.MatchBits()) - 1));
     for (auto kv : match_cases) {
       auto c = s->Case(kv.second);
-      AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, is_top,
-                   refill, depth, c);
+      AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, refill, depth,
+                   c);
       c->Add("break;");
     }
   }
@@ -1458,7 +1458,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
-                            bool is_top, bool refill, int depth, Sink* out) {
+                            bool refill, int depth, Sink* out) {
   if (absl::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
@@ -1469,7 +1469,7 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
       int max_bits = 0;
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
       AddStep(p->syms,
-              depth + 1 >= max_bits_for_depth_.size()
+              static_cast<size_t>(depth + 1) >= max_bits_for_depth_.size()
                   ? max_bits
                   : std::min(max_bits, max_bits_for_depth_[depth + 1]),
               false, true, depth + 1,
@@ -1626,7 +1626,7 @@ class PermutationBuilder {
     }
   }
 
-  const int max_depth_;
+  const size_t max_depth_;
   std::vector<std::vector<int>> perms_;
 };
 
