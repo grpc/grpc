@@ -16,24 +16,28 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/microbenchmarks/huffman_geometries", visibility = "public")
+grpc_package(
+    name = "test/cpp/microbenchmarks/huffman_geometries",
+    visibility = "public",
+)
 
 genrule(
-  name = "generate_huffman_geometries",
-  tools = [
-    "//tools/codegen/core:gen_huffman_decompressor",
-  ],
-  outs = ["shard_%d.cc" % i for i in range(100)] + 
-         ["shard_%d.h" % i for i in range(100)] + 
-         ["index.h"],
-  cmd = "GEN_OUT=$(@D)/../../../.. $(location //tools/codegen/core:gen_huffman_decompressor) microbenchmarks",
+    name = "generate_huffman_geometries",
+    outs = ["shard_%d.cc" % i for i in range(100)] +
+           ["shard_%d.h" % i for i in range(100)] + [
+        "index.h",
+    ],
+    cmd = "GEN_OUT=$(@D)/../../../.. $(location //tools/codegen/core:gen_huffman_decompressor) microbenchmarks",
+    tools = [
+        "//tools/codegen/core:gen_huffman_decompressor",
+    ],
 )
 
 grpc_cc_library(
-  name = "huffman_geometries",
-  srcs = ["shard_%d.cc" % i for i in range(100)],
-  hdrs = ["shard_%d.h" % i for i in range(100)] + [
-    "index.h",
-  ],
-  deps = ["//:gpr_platform"],
+    name = "huffman_geometries",
+    srcs = ["shard_%d.cc" % i for i in range(100)],
+    hdrs = ["shard_%d.h" % i for i in range(100)] + [
+        "index.h",
+    ],
+    deps = ["//:gpr_platform"],
 )
