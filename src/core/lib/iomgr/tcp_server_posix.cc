@@ -433,7 +433,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
 
     // For UNIX sockets, the accept call might not fill up the member sun_path
-    // of sockaddr_un, so explicitly call getpeername to get it.
+    // of sockaddr_un, so explicitly call getsockname to get it.
     if (grpc_is_unix_socket(&addr)) {
       memset(&addr, 0, sizeof(addr));
       addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
@@ -442,7 +442,7 @@ static void on_read(void* arg, grpc_error_handle err) {
         auto listener_addr_uri = grpc_sockaddr_to_uri(&sp->addr);
         gpr_log(
             GPR_ERROR,
-            "Failed getpeername: %s. Dropping the connection, and continuing "
+            "Failed getsockname: %s. Dropping the connection, and continuing "
             "to listen on %s:%d.",
             grpc_core::StrError(errno).c_str(),
             listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
