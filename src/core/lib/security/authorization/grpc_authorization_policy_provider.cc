@@ -167,11 +167,10 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (cb_ != nullptr) {
     cb_(contents_changed, absl::OkStatus());
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    LOG(INFO) << "authorization policy reload status: successfully loaded new "
-                 "policy\n"
-              << file_contents_;
-  }
+  GRPC_TRACE_LOG(grpc_authz_api, INFO)
+      << "authorization policy reload status: successfully loaded new "
+         "policy\n"
+      << file_contents_;
   return absl::OkStatus();
 }
 
