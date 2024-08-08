@@ -2132,31 +2132,42 @@ void RlsLb::ShutdownLocked() {
     LOG(INFO) << "[rlslb " << this << "] policy shutdown";
   }
   registered_metric_callback_.reset();
-  RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
-  OrphanablePtr<RlsChannel> rls_channel_to_delete;
-  std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
-                     absl::Hash<RequestKey>>
-      request_map_to_delete;
   Cache::CacheShutdownState cache_shutdown_state;
-  ChannelArgs channel_args_to_delete;
-  RefCountedPtr<RlsLbConfig> config_to_delete;
-  {
-    MutexLock lock(&mu_);
-    is_shutdown_ = true;
-    config_to_delete = std::move(config_);
-    channel_args_to_delete = std::move(channel_args_);
-    cache_shutdown_state = cache_.Shutdown();
-    request_map_to_delete = std::move(request_map_);
-    rls_channel_to_delete = std::move(rls_channel_);
-    child_policy_to_delete = std::move(default_child_policy_);
-  }
-  config_to_delete.reset(DEBUG_LOCATION, "ShutdownLocked");
-  channel_args_to_delete = ChannelArgs();
+  MutexLock lock(&mu_);
+  is_shutdown_ = true;
+  config_.reset(DEBUG_LOCATION, "ShutdownLocked");
+  channel_args_ = ChannelArgs();
+  cache_shutdown_state = cache_.Shutdown();
   cache_shutdown_state.map.clear();
   cache_shutdown_state.lru_list.clear();
-  request_map_to_delete.clear();
-  rls_channel_to_delete.reset();
-  child_policy_to_delete.reset();
+  request_map_.clear();
+  rls_channel_.reset();
+  default_child_policy_.reset();
+  // RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
+  // OrphanablePtr<RlsChannel> rls_channel_to_delete;
+  // std::unordered_map<RequestKey, OrphanablePtr<RlsRequest>,
+  //                    absl::Hash<RequestKey>>
+  //     request_map_to_delete;
+  // Cache::CacheShutdownState cache_shutdown_state;
+  // ChannelArgs channel_args_to_delete;
+  // RefCountedPtr<RlsLbConfig> config_to_delete;
+  // {
+  //   MutexLock lock(&mu_);
+  //   is_shutdown_ = true;
+  //   config_to_delete = std::move(config_);
+  //   channel_args_to_delete = std::move(channel_args_);
+  //   cache_shutdown_state = cache_.Shutdown();
+  //   request_map_to_delete = std::move(request_map_);
+  //   rls_channel_to_delete = std::move(rls_channel_);
+  //   child_policy_to_delete = std::move(default_child_policy_);
+  // }
+  // config_to_delete.reset(DEBUG_LOCATION, "ShutdownLocked");
+  // channel_args_to_delete = ChannelArgs();
+  // cache_shutdown_state.map.clear();
+  // cache_shutdown_state.lru_list.clear();
+  // request_map_to_delete.clear();
+  // rls_channel_to_delete.reset();
+  // child_policy_to_delete.reset();
 }
 
 void RlsLb::UpdatePickerAsync() {
