@@ -223,6 +223,7 @@ class OpenTelemetryPluginImpl
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
+  ~OpenTelemetryPluginImpl() override;
 
  private:
   class ClientCallTracer;
@@ -480,6 +481,7 @@ class OpenTelemetryPluginImpl
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
   };
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   // Instruments for per-call metrics.
   ClientMetrics client_;
   ServerMetrics server_;

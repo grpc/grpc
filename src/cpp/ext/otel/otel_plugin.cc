@@ -37,6 +37,7 @@
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -366,7 +367,8 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
     absl::AnyInvocable<
         bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter)
-    : meter_provider_(std::move(meter_provider)),
+    : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+      meter_provider_(std::move(meter_provider)),
       server_selector_(std::move(server_selector)),
       target_attribute_filter_(std::move(target_attribute_filter)),
       generic_method_attribute_filter_(
@@ -561,6 +563,36 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
           }
         }
       });
+}
+
+OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
+  for (const auto& instrument_data : instruments_data_) {
+    grpc_core::Match(
+        instrument_data.instrument, [](const Disabled&) {},
+        [](const std::unique_ptr<opentelemetry::metrics::Counter<double>>&) {},
+        [](const std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>&) {
+        },
+        [](const std::unique_ptr<
+            opentelemetry::metrics::Histogram<uint64_t>>&) {},
+        [](const std::unique_ptr<opentelemetry::metrics::Histogram<double>>&) {
+        },
+        [](const std::unique_ptr<CallbackGaugeState<int64_t>>& state) {
+          if (state->ot_callback_registered) {
+            state->instrument->RemoveCallback(
+                &CallbackGaugeState<int64_t>::CallbackGaugeCallback,
+                state.get());
+            state->ot_callback_registered = false;
+          }
+        },
+        [](const std::unique_ptr<CallbackGaugeState<double>>& state) {
+          if (state->ot_callback_registered) {
+            state->instrument->RemoveCallback(
+                &CallbackGaugeState<double>::CallbackGaugeCallback,
+                state.get());
+            state->ot_callback_registered = false;
+          }
+        });
+  }
 }
 
 namespace {
@@ -848,11 +880,6 @@ void OpenTelemetryPluginImpl::RemoveCallback(
           CHECK_NE(callback_gauge_state, nullptr);
           CHECK((*callback_gauge_state)->ot_callback_registered);
           CHECK_EQ((*callback_gauge_state)->caches.erase(callback), 1u);
-          if ((*callback_gauge_state)->caches.empty()) {
-            gauges_that_need_to_remove_callback.push_back(
-                callback_gauge_state->get());
-            (*callback_gauge_state)->ot_callback_registered = false;
-          }
           break;
         }
         case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
@@ -867,11 +894,6 @@ void OpenTelemetryPluginImpl::RemoveCallback(
           CHECK_NE(callback_gauge_state, nullptr);
           CHECK((*callback_gauge_state)->ot_callback_registered);
           CHECK_EQ((*callback_gauge_state)->caches.erase(callback), 1u);
-          if ((*callback_gauge_state)->caches.empty()) {
-            gauges_that_need_to_remove_callback.push_back(
-                callback_gauge_state->get());
-            (*callback_gauge_state)->ot_callback_registered = false;
-          }
           break;
         }
         default:
@@ -879,21 +901,6 @@ void OpenTelemetryPluginImpl::RemoveCallback(
               "Unknown or unsupported value type: %d", descriptor.value_type));
       }
     }
-  }
-  // RemoveCallback internally grabs OpenTelemetry's observable_registry's
-  // lock. So we need to call it without our plugin lock otherwise we may
-  // deadlock.
-  for (const auto& gauge : gauges_that_need_to_remove_callback) {
-    grpc_core::Match(
-        gauge,
-        [](CallbackGaugeState<int64_t>* gauge) {
-          gauge->instrument->RemoveCallback(
-              &CallbackGaugeState<int64_t>::CallbackGaugeCallback, gauge);
-        },
-        [](CallbackGaugeState<double>* gauge) {
-          gauge->instrument->RemoveCallback(
-              &CallbackGaugeState<double>::CallbackGaugeCallback, gauge);
-        });
   }
 }
 
