@@ -1714,7 +1714,10 @@ void GenSelected() {
 }
 
 int main(int argc, char** argv) {
-  bool did_stuff = false;
+  if (argc < 2) {
+    fprintf(stderr, "No generators specified\n");
+    return 1;
+  }
   std::map<std::string, std::function<void()>> generators = {
       {"microbenchmarks", GenMicrobenchmarks}, {"selected", GenSelected}};
   for (int i = 1; i < argc; i++) {
@@ -1724,11 +1727,6 @@ int main(int argc, char** argv) {
       return 1;
     }
     it->second();
-    did_stuff = true;
-  }
-  if (!did_stuff) {
-    fprintf(stderr, "No generators specified\n");
-    return 1;
   }
   return 0;
 }
