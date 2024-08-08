@@ -50,7 +50,9 @@ grpc_ssl_credentials::grpc_ssl_credentials(
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
   // Use default (e.g. OS) root certificates if the user did not pass any root
   // certificates.
-  if (config_.pem_root_certs == nullptr) {
+  if (config_.pem_root_certs == nullptr &&
+      config_.server_request_type ==
+          TSI_REQUEST_SERVER_CERTIFICATE_AND_VERIFY) {
     const char* pem_root_certs =
         grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (pem_root_certs == nullptr) {
