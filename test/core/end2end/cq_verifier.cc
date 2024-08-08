@@ -365,7 +365,7 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   while (!expectations_.empty()) {
     must_log = std::exchange(added_expectations_, false) || must_log;
     if (log_verifications_ && must_log) {
-      LOG(ERROR) << "Verify " << ToShortString() << " for " << timeout;
+      VLOG(2) << "Verify " << ToShortString() << " for " << timeout;
     }
     must_log = false;
     grpc_event ev = Step(deadline);
