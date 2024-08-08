@@ -172,6 +172,20 @@ message ChaoticGoodFrame {
 
 message ChaoticGoodSettings {}
 
+message FakeTransportFrame {
+    enum MessageString {
+        CLIENT_INIT = 0;
+        SERVER_INIT = 1;
+        CLIENT_FINISHED = 2;
+        SERVER_FINISHED = 3;
+    }
+
+    oneof payload {
+        bytes raw_bytes = 1;
+        MessageString message_string = 2;
+    }
+}
+
 message InputSegment {
     int32 delay_ms = 1;
     oneof payload {
@@ -187,6 +201,7 @@ message InputSegment {
         H2ClientPrefix client_prefix = 11;
         uint32 repeated_zeros = 12;
         ChaoticGoodFrame chaotic_good = 13;
+        FakeTransportFrame fake_transport_frame = 14;
     }
 }
 
@@ -204,10 +219,18 @@ message NetworkInput {
     }
 }
 
+// Only for connector fuzzer, when to drop the connector
+message ShutdownConnector {
+    int32 delay_ms = 1;
+    int32 shutdown_status = 2;
+    string shutdown_message = 3;
+}
+
 message Msg {
     repeated NetworkInput network_input = 1;
     repeated api_fuzzer.Action api_actions = 2;
     fuzzing_event_engine.Actions event_engine_actions = 3;
     grpc.testing.FuzzConfigVars config_vars = 4;
     grpc.testing.FuzzingChannelArgs channel_args = 5;
+    ShutdownConnector shutdown_connector = 6;
 }
