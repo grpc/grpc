@@ -41,7 +41,6 @@ using testing::StartsWith;
 namespace grpc_core {
 namespace {
 void CheckPeer(std::string peer_name) {
-  LOG(INFO) << "DO_NOT_SUBMIT_tjagtap :simple_request:CheckPeer";
   // If the peer name is a uds path, then check if it is filled
   if (absl::StartsWith(peer_name, "unix:/")) {
     EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
@@ -49,7 +48,6 @@ void CheckPeer(std::string peer_name) {
 }
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
-  LOG(INFO) << "DO_NOT_SUBMIT_tjagtap :simple_request:SimpleRequestBody";
   auto before = global_stats().Collect();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
@@ -100,13 +98,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) {
-  LOG(INFO) << "DO_NOT_SUBMIT_tjagtap :simple_request:SimpleRequest";
-  SimpleRequestBody(*this);
-}
+CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) { SimpleRequestBody(*this); }
 
 CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest10) {
-  LOG(INFO) << "DO_NOT_SUBMIT_tjagtap :simple_request:SimpleRequest10";
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }
