@@ -35,7 +35,7 @@ for FILENAME in call_credentials.c call.c channel.c channel_credentials.c \
         awk -f php_extension_doxygen_filter.awk ../ext/grpc/$FILENAME \
             > ../lib/Grpc/$CLASS_NAME.php
     elif [[ "$COMMAND" == "cleanup" ]]; then
-        rm ../lib/Grpc/$CLASS_NAME.php || true
+        rm ../lib/Grpc/$CLASS_NAME.php
     else
         >&2 echo "Missing or wrong command. Usage: '$(basename $0) <generate|cleanup>'"
         exit 1
@@ -48,5 +48,5 @@ if [[ "$COMMAND" == "generate" ]]; then
     awk -f php_extension_doxygen_filter.awk ../ext/grpc/php_grpc.c \
         > ../lib/Grpc/Constants.php
 elif [[ "$COMMAND" == "cleanup" ]]; then
-    rm ../lib/Grpc/Constants.php || true
+    rm ../lib/Grpc/Constants.php
 fi
