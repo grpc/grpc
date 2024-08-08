@@ -200,11 +200,9 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    LOG(INFO) << GetContext<Activity>()->DebugTag()
-              << " PushServerTrailingMetadata[" << this
-              << "]: " << md->DebugString() << " into " << DebugString();
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << " PushServerTrailingMetadata["
+      << this << "]: " << md->DebugString() << " into " << DebugString();
   CHECK(md != nullptr);
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {

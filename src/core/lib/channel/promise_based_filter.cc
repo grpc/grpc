@@ -398,11 +398,9 @@ bool BaseCallData::SendMessage::IsIdle() const {
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
   Flusher flusher(base_);
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << base_->LogTag()
-              << " SendMessage.OnComplete st=" << StateString(state_)
-              << " status=" << status;
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << base_->LogTag() << " SendMessage.OnComplete st=" << StateString(state_)
+      << " status=" << status;
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
@@ -429,11 +427,9 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
 
 void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
                                      Flusher* flusher) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << base_->LogTag()
-              << " SendMessage.Done st=" << StateString(state_)
-              << " md=" << metadata.DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << base_->LogTag() << " SendMessage.Done st=" << StateString(state_)
+      << " md=" << metadata.DebugString();
   switch (state_) {
     case State::kCancelled:
     case State::kCancelledButNotYetPolled:
@@ -681,11 +677,10 @@ void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
 }
 
 void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << base_->LogTag()
-              << " ReceiveMessage.OnComplete st=" << StateString(state_)
-              << " status=" << status;
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << base_->LogTag()
+      << " ReceiveMessage.OnComplete st=" << StateString(state_)
+      << " status=" << status;
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
@@ -722,11 +717,9 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 
 void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
                                         Flusher* flusher) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << base_->LogTag()
-              << " ReceiveMessage.Done st=" << StateString(state_)
-              << " md=" << metadata.DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << base_->LogTag() << " ReceiveMessage.Done st=" << StateString(state_)
+      << " md=" << metadata.DebugString();
   switch (state_) {
     case State::kInitial:
       state_ = State::kCancelled;
@@ -842,11 +835,10 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       CHECK(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = r_push.value_if_ready()) {
-        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-          LOG(INFO) << base_->LogTag()
-                    << " ReceiveMessage.WakeInsideCombiner push complete: "
-                    << (*p ? "true" : "false");
-        }
+        GRPC_TRACE_LOG(channel, INFO)
+            << base_->LogTag()
+            << " ReceiveMessage.WakeInsideCombiner push complete: "
+            << (*p ? "true" : "false");
         // We haven't pulled through yet, so this certainly shouldn't succeed.
         CHECK(!*p);
         state_ = State::kCancelled;
@@ -1366,9 +1358,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   CapturedBatch batch(b);
   Flusher flusher(this);
 
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << " StartBatch " << DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO) << LogTag() << " StartBatch " << DebugString();
 
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.
@@ -1489,9 +1479,8 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 
 // Handle cancellation.
 void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << " Cancel error=" << error.ToString();
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << LogTag() << " Cancel error=" << error.ToString();
   // Track the latest reason for cancellation.
   cancelled_error_ = error;
   // Stop running the promise.
@@ -1568,11 +1557,10 @@ void ClientCallData::StartPromise(Flusher* flusher) {
 }
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << " ClientCallData.RecvInitialMetadataReady "
-              << DebugString() << " error:" << error.ToString()
-              << " md:" << recv_initial_metadata_->metadata->DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << LogTag() << " ClientCallData.RecvInitialMetadataReady "
+      << DebugString() << " error:" << error.ToString()
+      << " md:" << recv_initial_metadata_->metadata->DebugString();
   ScopedContext context(this);
   Flusher flusher(this);
   if (!error.ok()) {
@@ -1974,9 +1962,8 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
 }
 
 ServerCallData::~ServerCallData() {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << " ~ServerCallData " << DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << LogTag() << " ~ServerCallData " << DebugString();
   if (send_initial_metadata_ != nullptr) {
     send_initial_metadata_->~SendInitialMetadata();
   }
@@ -2001,9 +1988,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   Flusher flusher(this);
   bool wake = false;
 
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << " StartBatch: " << DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO) << LogTag() << " StartBatch: " << DebugString();
 
   // If this is a cancel stream, cancel anything we have pending and
   // propagate the cancellation.
@@ -2306,9 +2291,8 @@ void ServerCallData::RecvInitialMetadataReadyCallback(void* arg,
 
 void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << ": RecvInitialMetadataReady " << error;
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << LogTag() << ": RecvInitialMetadataReady " << error;
   CHECK(recv_initial_state_ == RecvInitialState::kForwarded);
   // If there was an error we just propagate that through
   if (!error.ok()) {
@@ -2370,9 +2354,8 @@ std::string ServerCallData::DebugString() const {
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   PollContext poll_ctx(this, flusher);
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << ": WakeInsideCombiner " << DebugString();
-  }
+  GRPC_TRACE_LOG(channel, INFO)
+      << LogTag() << ": WakeInsideCombiner " << DebugString();
   poll_ctx.ClearRepoll();
   if (send_initial_metadata_ != nullptr) {
     if (send_initial_metadata_->state ==
@@ -2392,12 +2375,12 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     }
     if (send_initial_metadata_->metadata_push_.has_value()) {
       if ((*send_initial_metadata_->metadata_push_)().ready()) {
-        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-          LOG(INFO) << LogTag() << ": WakeInsideCombiner: metadata_push done";
-        }
+        GRPC_TRACE_LOG(channel, INFO)
+            << LogTag() << ": WakeInsideCombiner: metadata_push done";
         send_initial_metadata_->metadata_push_.reset();
-      } else if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-        LOG(INFO) << LogTag() << ": WakeInsideCombiner: metadata_push pending";
+      } else {
+        GRPC_TRACE_LOG(channel, INFO)
+            << LogTag() << ": WakeInsideCombiner: metadata_push pending";
       }
     }
   }
