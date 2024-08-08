@@ -1556,8 +1556,9 @@ XdsClient::XdsClient(
       << "[xds_client " << this << "] creating xds client";
   CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
-    LOG(INFO) << "[xds_client " << this
-              << "] xDS node ID: " << bootstrap_->node()->id();
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "[xds_client " << this
+        << "] xDS node ID: " << bootstrap_->node()->id();
   }
 }
 
