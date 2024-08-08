@@ -290,6 +290,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "unique_ptr_with_bitset",
+    hdrs = ["util/unique_ptr_with_bitset.h"],
+    external_deps = [
+        "absl/log:check",
+        "absl/numeric:bits",
+    ],
+    language = "c++",
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "examine_stack",
     srcs = [
         "lib/gprpp/examine_stack.cc",
