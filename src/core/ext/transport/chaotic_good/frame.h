@@ -156,6 +156,9 @@ struct ServerFragmentFrame final : public FrameInterface {
 };
 
 struct CancelFrame final : public FrameInterface {
+  CancelFrame() = default;
+  explicit CancelFrame(uint32_t stream_id) : stream_id(stream_id) {}
+
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
