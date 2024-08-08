@@ -18,6 +18,9 @@
 
 #include "test/core/promise/poll_matcher.h"
 
+using testing::Mock;
+using testing::StrictMock;
+
 namespace grpc_core {
 
 namespace {
@@ -25,6 +28,41 @@ void CrashOnParseError(absl::string_view error, const Slice& data) {
   LOG(FATAL) << "Failed to parse " << error << " from "
              << data.as_string_view();
 }
+
+// A mock activity that can be activated and deactivated.
+class MockActivity : public Activity, public Wakeable {
+ public:
+  MOCK_METHOD(void, WakeupRequested, ());
+
+  void ForceImmediateRepoll(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void Orphan() override {}
+  Waker MakeOwningWaker() override { return Waker(this, 0); }
+  Waker MakeNonOwningWaker() override { return Waker(this, 0); }
+  void Wakeup(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void WakeupAsync(WakeupMask /*mask*/) override { WakeupRequested(); }
+  void Drop(WakeupMask /*mask*/) override {}
+  std::string DebugTag() const override { return "MockActivity"; }
+  std::string ActivityDebugTag(WakeupMask /*mask*/) const override {
+    return DebugTag();
+  }
+
+  void Activate() {
+    if (scoped_activity_ == nullptr) {
+      scoped_activity_ = std::make_unique<ScopedActivity>(this);
+    }
+  }
+
+  void Deactivate() { scoped_activity_.reset(); }
+
+ private:
+  std::unique_ptr<ScopedActivity> scoped_activity_;
+};
+
+#define EXPECT_WAKEUP(activity, statement)                                 \
+  EXPECT_CALL((activity), WakeupRequested()).Times(::testing::AtLeast(1)); \
+  statement;                                                               \
+  Mock::VerifyAndClearExpectations(&(activity));
+
 }  // namespace
 
 TEST(RequestBufferTest, NoOp) { RequestBuffer buffer; }
@@ -33,9 +71,30 @@ TEST(RequestBufferTest, PushThenPullClientInitialMetadata) {
   RequestBuffer buffer;
   ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Append("key", Slice::FromStaticString("value"), CrashOnParseError);
-  ASSERT_EQ(buffer.PushClientInitialMetadata(std::move(md)), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(std::move(md)), Success{});
   RequestBuffer::Reader reader(&buffer);
   auto poll = reader.PullClientInitialMetadata()();
+  ASSERT_THAT(poll, IsReady());
+  auto value = std::move(poll.value());
+  ASSERT_TRUE(value.ok());
+  std::string backing;
+  EXPECT_EQ((*value)->GetStringValue("key", &backing), "value");
+}
+
+TEST(RequestBufferTest, PullThenPushClientInitialMetadata) {
+  StrictMock<MockActivity> activity;
+  RequestBuffer buffer;
+  RequestBuffer::Reader reader(&buffer);
+  activity.Activate();
+  auto poller = reader.PullClientInitialMetadata();
+  auto poll = poller();
+  EXPECT_THAT(poll, IsPending());
+  ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
+  md->Append("key", Slice::FromStaticString("value"), CrashOnParseError);
+  EXPECT_WAKEUP(
+      activity,
+      EXPECT_EQ(buffer.PushClientInitialMetadata(std::move(md)), Success{}));
+  poll = poller();
   ASSERT_THAT(poll, IsReady());
   auto value = std::move(poll.value());
   ASSERT_TRUE(value.ok());
