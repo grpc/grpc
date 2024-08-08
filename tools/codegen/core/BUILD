@@ -31,5 +31,10 @@ grpc_cc_binary(
     ],
     visibility = [
         "//test/cpp/microbenchmarks/huffman_geometries:__pkg__",
-    ]
+    ],
+    tags = [
+        "nomsan",
+        "notsan",
+        "noubsan",
+    ],
 )
