@@ -26,6 +26,7 @@ StatusFlag RequestBuffer::PushClientInitialMetadata(ClientMetadataHandle md) {
   auto& buffering = absl::get<Buffering>(state_);
   CHECK_EQ(buffering.initial_metadata.get(), nullptr);
   buffering.initial_metadata = std::move(md);
+  buffering.buffered += buffering.initial_metadata->TransportSize();
   auto wakeup = pull_waiters_.TakeWakeupSet();
   lock.Release();
   wakeup.Wakeup();
@@ -38,9 +39,9 @@ Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
   if (absl::get_if<Cancelled>(&state_)) return Failure{};
   size_t buffered = 0;
   if (auto* buffering = absl::get_if<Buffering>(&state_)) {
-    buffering->messages.push_back(std::move(message));
     buffering->buffered += message->payload()->Length();
     buffered = buffering->buffered;
+    buffering->messages.push_back(std::move(message));
   } else {
     auto& streaming = absl::get<Streaming>(state_);
     CHECK_EQ(streaming.end_of_stream, false);

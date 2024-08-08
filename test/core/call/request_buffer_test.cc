@@ -63,22 +63,66 @@ class MockActivity : public Activity, public Wakeable {
   statement;                                                               \
   Mock::VerifyAndClearExpectations(&(activity));
 
+ClientMetadataHandle TestMetadata() {
+  ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
+  md->Append("key", Slice::FromStaticString("value"), CrashOnParseError);
+  return md;
+}
+
+MessageHandle TestMessage(int index = 0) {
+  return Arena::MakePooled<Message>(
+      SliceBuffer(Slice::FromCopiedString(absl::StrCat("message ", index))), 0);
+}
+
+MATCHER(IsTestMetadata, "") {
+  if (arg == nullptr) return false;
+  std::string backing;
+  if (arg->GetStringValue("key", &backing) != "value") {
+    *result_listener << arg->DebugString();
+    return false;
+  }
+  return true;
+}
+
+MATCHER(IsTestMessage, "") {
+  if (arg == nullptr) return false;
+  if (arg->flags() != 0) {
+    *result_listener << "flags: " << arg->flags();
+    return false;
+  }
+  if (arg->payload()->JoinIntoString() != "message 0") {
+    *result_listener << "payload: " << arg->payload()->JoinIntoString();
+    return false;
+  }
+  return true;
+}
+
+MATCHER_P(IsTestMessage, index, "") {
+  if (arg == nullptr) return false;
+  if (arg->flags() != 0) {
+    *result_listener << "flags: " << arg->flags();
+    return false;
+  }
+  if (arg->payload()->JoinIntoString() != absl::StrCat("message ", index)) {
+    *result_listener << "payload: " << arg->payload()->JoinIntoString();
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 TEST(RequestBufferTest, NoOp) { RequestBuffer buffer; }
 
 TEST(RequestBufferTest, PushThenPullClientInitialMetadata) {
   RequestBuffer buffer;
-  ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
-  md->Append("key", Slice::FromStaticString("value"), CrashOnParseError);
-  EXPECT_EQ(buffer.PushClientInitialMetadata(std::move(md)), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   RequestBuffer::Reader reader(&buffer);
   auto poll = reader.PullClientInitialMetadata()();
   ASSERT_THAT(poll, IsReady());
   auto value = std::move(poll.value());
   ASSERT_TRUE(value.ok());
-  std::string backing;
-  EXPECT_EQ((*value)->GetStringValue("key", &backing), "value");
+  EXPECT_THAT(*value, IsTestMetadata());
 }
 
 TEST(RequestBufferTest, PullThenPushClientInitialMetadata) {
@@ -98,8 +142,43 @@ TEST(RequestBufferTest, PullThenPushClientInitialMetadata) {
   ASSERT_THAT(poll, IsReady());
   auto value = std::move(poll.value());
   ASSERT_TRUE(value.ok());
-  std::string backing;
-  EXPECT_EQ((*value)->GetStringValue("key", &backing), "value");
+  EXPECT_THAT(*value, IsTestMetadata());
+}
+
+TEST(RequestBufferTest, PushThenPullMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+}
+
+TEST(RequestBufferTest, PullThenPushMessage) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  EXPECT_THAT(poll_msg, IsPending());
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(49)));
+  poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
 }  // namespace grpc_core
