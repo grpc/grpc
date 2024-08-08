@@ -22,6 +22,8 @@
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
 
+#include "absl/base/attributes.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
@@ -46,11 +48,11 @@ typedef enum gpr_log_severity {
 #define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO
 #define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
 
-/** Log a message. It's advised to use GPR_xxx above to generate the context
- * for each message */
+ABSL_DEPRECATED("Deprecated. Use ABSL_LOG, LOG, ABSL_VLOG or VLOG instead.")
 GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
                     const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 
+ABSL_DEPRECATED("Deprecated. Use ABSL_VLOG_IS_ON instead.")
 GPRAPI int gpr_should_log(gpr_log_severity severity);
 
 GPRAPI void gpr_log_verbosity_init(void);
