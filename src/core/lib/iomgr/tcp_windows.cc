@@ -176,9 +176,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->read_info;
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp << " on_read";
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "TCP:" << tcp << " on_read";
 
   if (error.ok()) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
@@ -208,9 +206,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
           }
         }
       } else {
-        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-          LOG(INFO) << "TCP:" << tcp << " unref read_slice";
-        }
+        GRPC_TRACE_LOG(tcp, INFO) << "TCP:" << tcp << " unref read_slice";
         grpc_slice_buffer_reset_and_unref(tcp->read_slices);
         error = grpc_error_set_int(
             tcp->shutting_down ? GRPC_ERROR_CREATE("TCP stream shutting down")
@@ -239,9 +235,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   WSABUF buffers[MAX_WSABUF_COUNT];
   size_t i;
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp << " win_read";
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "TCP:" << tcp << " win_read";
 
   if (tcp->shutting_down) {
     grpc_core::ExecCtx::Run(
@@ -310,9 +304,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   grpc_winsocket_callback_info* info = &handle->write_info;
   grpc_closure* cb;
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp << " on_write";
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "TCP:" << tcp << " on_write";
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;

@@ -39,15 +39,6 @@
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 
-#ifndef NDEBUG
-#define GRPC_POLLING_TRACE(format, ...)                              \
-  if (GRPC_TRACE_FLAG_ENABLED(apple_polling)) {                      \
-    VLOG(2) << "(polling) " << absl::StrFormat(format, __VA_ARGS__); \
-  }
-#else
-#define GRPC_POLLING_TRACE(...)
-#endif  // NDEBUG
-
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
 struct GlobalRunLoopContext {

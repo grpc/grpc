@@ -47,18 +47,16 @@ Timestamp BdpEstimator::CompletePing() {
               1e-9 * static_cast<double>(dt_ts.tv_nsec);
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   Duration start_inter_ping_delay = inter_ping_delay_;
-  if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
-    LOG(INFO) << "bdp[" << name_ << "]:complete acc=" << accumulator_
-              << " est=" << estimate_ << " dt=" << dt << " bw=" << bw / 125000.0
-              << "Mbs bw_est=" << bw_est_ / 125000.0 << "Mbs";
-  }
+  GRPC_TRACE_LOG(bdp_estimator, INFO)
+      << "bdp[" << name_ << "]:complete acc=" << accumulator_
+      << " est=" << estimate_ << " dt=" << dt << " bw=" << bw / 125000.0
+      << "Mbs bw_est=" << bw_est_ / 125000.0 << "Mbs";
   CHECK(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = std::max(accumulator_, estimate_ * 2);
     bw_est_ = bw;
-    if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
-      LOG(INFO) << "bdp[" << name_ << "]: estimate increased to " << estimate_;
-    }
+    GRPC_TRACE_LOG(bdp_estimator, INFO)
+        << "bdp[" << name_ << "]: estimate increased to " << estimate_;
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
                              // exponentially get faster at probing
   } else if (inter_ping_delay_ < Duration::Seconds(10)) {
