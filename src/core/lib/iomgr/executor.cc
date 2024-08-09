@@ -104,12 +104,12 @@ size_t Executor::RunClosures(const char* executor_name,
     grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
     GRPC_TRACE_LOG(executor, INFO)
-        << "EXECUTOR " << executor_name << " run " << c << " [created by "
+        << "EXECUTOR (" << executor_name << ") run " << c << " [created by "
         << c->file_created << ":" << c->line_created << "]";
     c->scheduled = false;
 #else
     GRPC_TRACE_LOG(executor, INFO)
-        << "EXECUTOR " << executor_name << " run " << c;
+        << "EXECUTOR (" << executor_name << ") run " << c;
 #endif
     grpc_error_handle error =
         internal::StatusMoveFromHeapPtr(c->error_data.error);
@@ -130,13 +130,13 @@ bool Executor::IsThreaded() const {
 void Executor::SetThreading(bool threading) {
   gpr_atm curr_num_threads = gpr_atm_acq_load(&num_threads_);
   GRPC_TRACE_LOG(executor, INFO)
-      << "EXECUTOR " << name_ << " SetThreading(" << threading << ") begin";
+      << "EXECUTOR (" << name_ << ") SetThreading(" << threading << ") begin";
 
   if (threading) {
     if (curr_num_threads > 0) {
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_
-          << " SetThreading(true). curr_num_threads > 0";
+          << "EXECUTOR (" << name_
+          << ") SetThreading(true). curr_num_threads > 0";
       return;
     }
 
@@ -159,8 +159,8 @@ void Executor::SetThreading(bool threading) {
   } else {  // !threading
     if (curr_num_threads == 0) {
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_
-          << " SetThreading(false). curr_num_threads == 0";
+          << "EXECUTOR (" << name_
+          << ") SetThreading(false). curr_num_threads == 0";
       return;
     }
 
@@ -180,7 +180,7 @@ void Executor::SetThreading(bool threading) {
     for (gpr_atm i = 0; i < curr_num_threads; i++) {
       thd_state_[i].thd.Join();
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_ << " Thread " << i + 1 << " of "
+          << "EXECUTOR (" << name_ << ") Thread " << i + 1 << " of "
           << curr_num_threads << " joined";
     }
 
@@ -203,7 +203,7 @@ void Executor::SetThreading(bool threading) {
   }
 
   GRPC_TRACE_LOG(executor, INFO)
-      << "EXECUTOR " << name_ << " SetThreading(" << threading << ") done";
+      << "EXECUTOR (" << name_ << ") SetThreading(" << threading << ") done";
 }
 
 void Executor::Shutdown() { SetThreading(false); }
@@ -217,7 +217,7 @@ void Executor::ThreadMain(void* arg) {
   size_t subtract_depth = 0;
   for (;;) {
     GRPC_TRACE_LOG(executor, INFO)
-        << "EXECUTOR " << ts->name << " [%" << ts->id
+        << "EXECUTOR (" << ts->name << ") [" << ts->id
         << "]: step (sub_depth=" << subtract_depth << ")";
 
     gpr_mu_lock(&ts->mu);
@@ -230,7 +230,7 @@ void Executor::ThreadMain(void* arg) {
 
     if (ts->shutdown) {
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << ts->name << " [%" << ts->id << "]: shutdown";
+          << "EXECUTOR (" << ts->name << ") [" << ts->id << "]: shutdown";
       gpr_mu_unlock(&ts->mu);
       break;
     }
@@ -240,7 +240,7 @@ void Executor::ThreadMain(void* arg) {
     gpr_mu_unlock(&ts->mu);
 
     GRPC_TRACE_LOG(executor, INFO)
-        << "EXECUTOR " << ts->name << " [%" << ts->id << "]: execute";
+        << "EXECUTOR (" << ts->name << ") [" << ts->id << "]: execute";
 
     ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
@@ -263,12 +263,12 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
     if (cur_thread_count == 0) {
 #ifndef NDEBUG
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_ << " schedule " << closure << " (created "
+          << "EXECUTOR (" << name_ << ") schedule " << closure << " (created "
           << closure->file_created << ":" << closure->line_created
           << ") inline";
 #else
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_ << " schedule " << closure << " inline";
+          << "EXECUTOR (" << name_ << ") schedule " << closure << " inline";
 #endif
       grpc_closure_list_append(ExecCtx::Get()->closure_list(), closure, error);
       return;
@@ -289,13 +289,13 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
     for (;;) {
 #ifndef NDEBUG
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_ << " try to schedule " << closure << " ("
+          << "EXECUTOR (" << name_ << ") try to schedule " << closure << " ("
           << (is_short ? "short" : "long") << ") (created "
           << closure->file_created << ":" << closure->line_created
           << ") to thread " << ts->id;
 #else
       GRPC_TRACE_LOG(executor, INFO)
-          << "EXECUTOR " << name_ << " try to schedule " << closure << " ("
+          << "EXECUTOR (" << name_ << ") try to schedule " << closure << " ("
           << (is_short ? "short" : "long") << ") to thread " << ts->id;
 #endif
 
