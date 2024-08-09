@@ -93,7 +93,7 @@ class GrpcXdsClient final : public XdsClient {
   std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
-  std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
+  OrphanablePtr<RegisteredMetricCallback> registered_metric_callback_;
 };
 
 namespace internal {

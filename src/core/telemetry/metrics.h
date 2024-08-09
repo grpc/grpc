@@ -334,10 +334,12 @@ class StatsPlugin {
       absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
-  virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
+  virtual void AddCallback(
+      RefCountedPtr<RegisteredMetricCallback> callback) = 0;
   // Removes a callback previously added via AddCallback().  The stats
   // plugin may not use the callback after this method returns.
-  virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
+  virtual void RemoveCallback(
+      RefCountedPtr<RegisteredMetricCallback> callback) = 0;
   // Returns true if instrument \a handle is enabled.
   virtual bool IsInstrumentEnabled(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const = 0;
@@ -459,7 +461,7 @@ class GlobalStatsPluginRegistry {
     // destroyed, the callback is de-registered.  The returned object
     // must not outlive the StatsPluginGroup object that created it.
     template <typename... Args>
-    GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
+    GRPC_MUST_USE_RESULT OrphanablePtr<RegisteredMetricCallback>
     RegisterCallback(absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
                      Duration min_interval, Args... args);
 
@@ -520,7 +522,8 @@ class GlobalStatsPluginRegistry {
 };
 
 // A metric callback that is registered with a stats plugin group.
-class RegisteredMetricCallback {
+class RegisteredMetricCallback
+    : public InternallyRefCounted<RegisteredMetricCallback> {
  public:
   RegisteredMetricCallback(
       GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
@@ -528,7 +531,7 @@ class RegisteredMetricCallback {
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics,
       Duration min_interval);
 
-  ~RegisteredMetricCallback();
+  void Orphan() override;
 
   // Invokes the callback.  The callback will report metric data via reporter.
   void Run(CallbackMetricReporter& reporter) { callback_(reporter); }
@@ -551,12 +554,12 @@ class RegisteredMetricCallback {
 };
 
 template <typename... Args>
-inline std::unique_ptr<RegisteredMetricCallback>
+inline OrphanablePtr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
     absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
     Duration min_interval, Args... args) {
   AssertIsCallbackGaugeHandle(args...);
-  return std::make_unique<RegisteredMetricCallback>(
+  return MakeOrphanable<RegisteredMetricCallback>(
       *this, std::move(callback),
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},
       min_interval);
