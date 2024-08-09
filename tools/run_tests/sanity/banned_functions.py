@@ -38,17 +38,17 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 # More files may be added to the RUBY_PHP_ALLOW_LIST
 # if they belong to the PHP or RUBY folder.
 RUBY_PHP_ALLOW_LIST = [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-        "./src/php/ext/grpc/call_credentials.c",
-        "./src/php/ext/grpc/channel.c",
-        "./src/ruby/ext/grpc/rb_call.c",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-        "./src/ruby/ext/grpc/rb_channel.c",
-        "./src/ruby/ext/grpc/rb_event_thread.c",
-        "./src/ruby/ext/grpc/rb_grpc.c",
-        "./src/ruby/ext/grpc/rb_server.c",
-],
+    "./include/grpc/support/log.h",
+    "./src/core/util/log.cc",
+    "./src/php/ext/grpc/call_credentials.c",
+    "./src/php/ext/grpc/channel.c",
+    "./src/ruby/ext/grpc/rb_call.c",
+    "./src/ruby/ext/grpc/rb_call_credentials.c",
+    "./src/ruby/ext/grpc/rb_channel.c",
+    "./src/ruby/ext/grpc/rb_event_thread.c",
+    "./src/ruby/ext/grpc/rb_grpc.c",
+    "./src/ruby/ext/grpc/rb_server.c",
+]
 
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
