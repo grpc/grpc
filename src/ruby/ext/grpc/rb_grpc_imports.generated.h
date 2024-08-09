@@ -735,9 +735,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
 typedef int(*grpc_absl_vlog2_enabled_type)();
 extern grpc_absl_vlog2_enabled_type grpc_absl_vlog2_enabled_import;
 #define grpc_absl_vlog2_enabled grpc_absl_vlog2_enabled_import
@@ -756,6 +753,9 @@ extern grpc_absl_vlog_type grpc_absl_vlog_import;
 typedef void(*grpc_absl_vlog_int_type)(const char* file, int line, const char* message_str, intptr_t num);
 extern grpc_absl_vlog_int_type grpc_absl_vlog_int_import;
 #define grpc_absl_vlog_int grpc_absl_vlog_int_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

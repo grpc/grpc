@@ -27,9 +27,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-GPRAPI void gpr_log_verbosity_init(void);
-
 #define GPR_LOCATION __FILE__, __LINE__
 
 /** Deprecated. **/
@@ -49,6 +46,8 @@ GPRAPI void grpc_absl_log_info_int(const char* file, int line,
 GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str);
 GPRAPI void grpc_absl_vlog_int(const char* file, int line,
                                const char* message_str, intptr_t num);
+
+GPRAPI void gpr_log_verbosity_init(void);
 
 #ifdef __cplusplus
 }
