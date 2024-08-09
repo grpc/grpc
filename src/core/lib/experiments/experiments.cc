@@ -426,7 +426,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,

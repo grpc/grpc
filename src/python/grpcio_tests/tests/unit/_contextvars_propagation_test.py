@@ -119,7 +119,9 @@ class ContextVarsPropagationTest(unittest.TestCase):
             composite_credentials = grpc.composite_channel_credentials(
                 local_credentials, call_credentials
             )
-            with grpc.secure_channel(f"unix:{uds_path}", composite_credentials) as channel:
+            with grpc.secure_channel(
+                f"unix:{uds_path}", composite_credentials
+            ) as channel:
                 stub = channel.unary_unary(
                     grpc._common.fully_qualified_method(
                         _SERVICE_NAME, _UNARY_UNARY

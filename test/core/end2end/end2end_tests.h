@@ -684,9 +684,9 @@ class CoreEnd2endTestRegistry {
     GTEST_SKIP() << "Disabled for initial v3 testing";      \
   }
 
-#define SKIP_IF_LOCAL_CREDS()                                        \
+#define SKIP_IF_LOCAL_CREDS()                                   \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_LOCAL_CREDS) { \
-    GTEST_SKIP() << "Disabled for Local TCP Connection";      \
+    GTEST_SKIP() << "Disabled for Local TCP Connection";        \
   }
 
 #define CORE_END2END_TEST(suite, name)                                       \

@@ -149,7 +149,8 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   if (grpc_core::IsLocalConnectorSecureEnabled()) {
     switch (type) {
       case UDS:
-        security_level = tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+        security_level =
+            tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
         break;
       default:
         security_level = tsi_security_level_to_string(TSI_SECURITY_NONE);
