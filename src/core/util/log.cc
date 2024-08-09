@@ -35,6 +35,11 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
+void gpr_unreachable_code(const char* reason, const char* file, int line) {
+  grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
+                   grpc_core::SourceLocation(file, line));
+}
+
 int grpc_absl_vlog2_enabled() { return ABSL_VLOG_IS_ON(2); }
 
 GPRAPI void grpc_absl_log_error(const char* file, int line,
@@ -50,11 +55,6 @@ GPRAPI void grpc_absl_log_info(const char* file, int line,
 GPRAPI void grpc_absl_vlog(const char* file, int line,
                            const char* message_str) {
   VLOG(2).AtLocation(file, line) << message_str;
-}
-
-void gpr_unreachable_code(const char* reason, const char* file, int line) {
-  grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
-                   grpc_core::SourceLocation(file, line));
 }
 
 void gpr_log_verbosity_init(void) {
