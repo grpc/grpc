@@ -43,7 +43,7 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/ruby/ext/grpc/rb_call_credentials.c",
     ],
     "gpr_assertion_failed": [],
-    "gpr_log": [],
+    "gpr_log(": [],
     "gpr_log_func_args": [],
     "gpr_log_message": [],
     "gpr_log_severity": [],
