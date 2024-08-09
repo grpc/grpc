@@ -459,9 +459,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "SERVER_CONNECT: incoming connection: " << *addr_uri;
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "SERVER_CONNECT: incoming connection: " << *addr_uri;
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
