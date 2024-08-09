@@ -272,9 +272,19 @@ void create_and_add_channel_to_persistent_list(
       // If no channel can be deleted from the persistent map,
       // do not persist this one.
       create_channel(channel, target, args, creds);
-      grpc_absl_log_info_str(GPR_LOCATION, "[Warning] The number of channel for the target is maxed out bounded. Target will not be persisted. Target : ", target);
-      grpc_absl_log_info_int(GPR_LOCATION, "[Warning] Target upper bound: ", target_bound_status->upper_bound);
-      grpc_absl_log_info_int(GPR_LOCATION, "[Warning] Current size: ", target_bound_status->current_count);
+      grpc_absl_log_info_str(
+        GPR_LOCATION,
+        "[Warning] The number of channel for the target is maxed out bounded."
+        " Target will not be persisted. Target : ",
+        target);
+      grpc_absl_log_info_int(
+        GPR_LOCATION,
+        "[Warning] Target upper bound: ",
+        target_bound_status->upper_bound);
+      grpc_absl_log_info_int(
+        GPR_LOCATION,
+        "[Warning] Current size: ",
+        target_bound_status->current_count);
       return;
     }
   }
