@@ -77,7 +77,7 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
               StringValueCStr(source_line_number),
               StringValueCStr(callback_args_str));
     } else {
-      gpr_log(GPR_DEBUG,
+      absl_vlog(GPR_LOCATION,
               "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
               "(failed to get source filename and line) with arguments:|%s|",
               StringValueCStr(callback_func_str),

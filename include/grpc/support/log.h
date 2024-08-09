@@ -41,19 +41,22 @@ typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_ERROR
 } gpr_log_severity;
 
-/** Macros to build log contexts at various severity levels */
-#define GPR_DEBUG __FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG
-#define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO
-#define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
-
-/** Log a message. It's advised to use GPR_xxx above to generate the context
- * for each message */
-GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
-                    const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-
 GPRAPI int gpr_should_log(gpr_log_severity severity);
 
 GPRAPI void gpr_log_verbosity_init(void);
+
+#define GPR_LOCATION __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
+
+/* Deprecated */
+GPRAPI void absl_log_error(const char* file, int line, const char* message_str);
+
+/* Deprecated */
+GPRAPI void absl_log_info(const char* file, int line, const char* message_str);
+GPRAPI void absl_log_info_int(const char* file, int line, const char* message_str, intptr_t num);
+
+/* Deprecated */
+GPRAPI void absl_vlog(const char* file, int line, const char* message_str);
+GPRAPI void absl_vlog_int(const char* file, int line, const char* message_str, intptr_t num);
 
 #ifdef __cplusplus
 }
