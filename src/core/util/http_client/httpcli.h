@@ -48,8 +48,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/http_client/parser.h"
