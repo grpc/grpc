@@ -636,8 +636,8 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
           ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
           GRPC_TRACE_LOG(cares_resolver, INFO)
               << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-              << " c-ares resolver gets a AF_INET6 result: \n"
-              << "  addr: " << output << "\n  port: " << hostname_qa->port
+              << " c-ares resolver gets a AF_INET6 result: \n  addr: " << output
+              << "\n  port: " << hostname_qa->port
               << "\n  sin6_scope_id: " << addr.sin6_scope_id;
           break;
         }
@@ -655,8 +655,8 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
           ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
           GRPC_TRACE_LOG(cares_resolver, INFO)
               << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-              << " c-ares resolver gets a AF_INET result: \n"
-              << "  addr: " << output << "\n  port: " << hostname_qa->port;
+              << " c-ares resolver gets a AF_INET result: \n  addr: " << output
+              << "\n  port: " << hostname_qa->port;
           break;
         }
         default:
