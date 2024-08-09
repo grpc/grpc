@@ -27,36 +27,37 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #define GPR_LOCATION __FILE__, __LINE__
 
-/** Deprecated. **/
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI int grpc_absl_vlog2_enabled();
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_log_error(const char* file, int line,
                                 const char* message_str);
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_log_info(const char* file, int line,
                                const char* message_str);
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_log_info_int(const char* file, int line,
                                    const char* message_str, intptr_t num);
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_log_info_str(const char* file, int line,
                                    const char* message_str1,
                                    const char* message_str2);
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str);
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_vlog_int(const char* file, int line,
                                const char* message_str, intptr_t num);
 
-/* Deprecated */
+/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_vlog_str(const char* file, int line,
                                const char* message_str1,
                                const char* message_str2);
