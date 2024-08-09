@@ -425,10 +425,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   void ReturnFree() {
     size_t ret = free_bytes_.exchange(0, std::memory_order_acq_rel);
     if (ret == 0) return;
-    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-      LOG(INFO) << "Allocator " << this << " returning " << ret
-                << " bytes to quota";
-    }
+    GRPC_TRACE_LOG(resource_quota, INFO)
+        << "Allocator " << this << " returning " << ret << " bytes to quota";
     taken_bytes_.fetch_sub(ret, std::memory_order_relaxed);
     memory_quota_->Return(ret);
     memory_quota_->MaybeMoveAllocator(this, /*old_free_bytes=*/ret,

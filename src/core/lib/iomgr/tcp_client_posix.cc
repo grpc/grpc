@@ -141,10 +141,9 @@ done:
 static void tc_on_alarm(void* acp, grpc_error_handle error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "CLIENT_CONNECT: " << ac->addr_str
-              << ": on_alarm: error=" << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_LOG(tcp, INFO)
+      << "CLIENT_CONNECT: " << ac->addr_str
+      << ": on_alarm: error=" << grpc_core::StatusToString(error);
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
     grpc_fd_shutdown(ac->fd, GRPC_ERROR_CREATE("connect() timed out"));
@@ -180,10 +179,9 @@ static void on_writable(void* acp, grpc_error_handle error) {
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "CLIENT_CONNECT: " << ac->addr_str
-              << ": on_writable: error=" << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_LOG(tcp, INFO)
+      << "CLIENT_CONNECT: " << ac->addr_str
+      << ": on_writable: error=" << grpc_core::StatusToString(error);
 
   gpr_mu_lock(&ac->mu);
   CHECK(ac->fd);
@@ -381,10 +379,8 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
                     grpc_schedule_on_exec_ctx);
   ac->options = options;
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "CLIENT_CONNECT: " << ac->addr_str
-              << ": asynchronously connecting fd " << fdobj;
-  }
+  GRPC_TRACE_LOG(tcp, INFO) << "CLIENT_CONNECT: " << ac->addr_str
+                            << ": asynchronously connecting fd " << fdobj;
 
   int shard_number = connection_id % (*g_connection_shards).size();
   struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];

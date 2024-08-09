@@ -55,14 +55,14 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -88,7 +88,7 @@
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: local_connector_secure
@@ -135,12 +135,6 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
-- name: rstpit
-  description:
-    On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
-  expiry: 2024/08/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2024/08/01
@@ -149,7 +143,7 @@
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false

@@ -290,7 +290,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -1075,7 +1074,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -1219,7 +1217,9 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
+  - src/core/util/unique_ptr_with_bitset.h
   - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
@@ -1320,7 +1320,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -2290,7 +2289,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
@@ -2597,7 +2595,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -2707,23 +2704,11 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
+  - src/core/util/unique_ptr_with_bitset.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -2780,7 +2765,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
@@ -3119,17 +3103,9 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - z
   - absl/algorithm:container
   - absl/base:config
@@ -3304,15 +3280,6 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3347,11 +3314,6 @@ libs:
   - third_party/upb/upb/reflection/method_def.h
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - third_party/upb/upb/json/decode.c
   - third_party/upb/upb/json/encode.c
@@ -3360,11 +3322,6 @@ libs:
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3382,12 +3339,9 @@ libs:
   - third_party/upb/upb/reflection/method_def.c
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
 - name: upb_mem_lib
   build: all
   language: c
@@ -3470,6 +3424,54 @@ libs:
   deps:
   - upb_base_lib
   - upb_mem_lib
+- name: upb_mini_descriptor_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/base/internal/endian.h
+  - third_party/upb/upb/base/internal/log2.h
+  - third_party/upb/upb/hash/common.h
+  - third_party/upb/upb/hash/int_table.h
+  - third_party/upb/upb/hash/str_table.h
+  - third_party/upb/upb/message/internal/map_entry.h
+  - third_party/upb/upb/message/internal/types.h
+  - third_party/upb/upb/mini_descriptor/build_enum.h
+  - third_party/upb/upb/mini_descriptor/decode.h
+  - third_party/upb/upb/mini_descriptor/internal/base92.h
+  - third_party/upb/upb/mini_descriptor/internal/decoder.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
+  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
+  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
+  - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/mini_table/enum.h
+  - third_party/upb/upb/mini_table/extension.h
+  - third_party/upb/upb/mini_table/extension_registry.h
+  - third_party/upb/upb/mini_table/field.h
+  - third_party/upb/upb/mini_table/file.h
+  - third_party/upb/upb/mini_table/internal/enum.h
+  - third_party/upb/upb/mini_table/internal/extension.h
+  - third_party/upb/upb/mini_table/internal/field.h
+  - third_party/upb/upb/mini_table/internal/file.h
+  - third_party/upb/upb/mini_table/internal/message.h
+  - third_party/upb/upb/mini_table/internal/size_log2.h
+  - third_party/upb/upb/mini_table/internal/sub.h
+  - third_party/upb/upb/mini_table/message.h
+  - third_party/upb/upb/mini_table/sub.h
+  src:
+  - third_party/upb/upb/hash/common.c
+  - third_party/upb/upb/mini_descriptor/build_enum.c
+  - third_party/upb/upb/mini_descriptor/decode.c
+  - third_party/upb/upb/mini_descriptor/internal/base92.c
+  - third_party/upb/upb/mini_descriptor/internal/encode.c
+  - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/mini_table/extension_registry.c
+  - third_party/upb/upb/mini_table/internal/message.c
+  - third_party/upb/upb/mini_table/message.c
+  deps:
+  - upb_base_lib
+  - upb_mem_lib
 - name: upb_textformat_lib
   build: all
   language: c
@@ -3480,15 +3482,6 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3524,22 +3517,12 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/text/encode.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3558,6 +3541,20 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/text/encode.c
+  deps:
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+- name: upb_wire_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/internal/constants.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  src:
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/internal/decode_fast.c
@@ -4691,7 +4688,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -4759,22 +4755,9 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -5041,17 +5024,9 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - re2
   - z
   - absl/base:config
@@ -5143,185 +5118,6 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
-- name: bm_call_spine
-  build: test
-  language: c
-  headers:
-  - test/core/transport/call_spine_benchmarks.h
-  src:
-  - test/core/transport/bm_call_spine.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_chaotic_good
-  build: test
-  language: c
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/transport/call_spine_benchmarks.h
-  src:
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/lib/transport/promise_endpoint.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/transport/benchmarks/bm_chaotic_good.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_client_call
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/call/bm_client_call.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_client_channel
-  build: test
-  language: c
-  headers:
-  - test/core/transport/call_spine_benchmarks.h
-  src:
-  - test/core/client_channel/bm_client_channel.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_experiments
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/experiments/bm_experiments.cc
-  deps:
-  - benchmark
-  - grpc_test_util
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_http_client_filter
-  build: test
-  language: c
-  headers:
-  - test/core/transport/call_spine_benchmarks.h
-  src:
-  - test/core/filters/bm_http_client_filter.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_inproc
-  build: test
-  language: c
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/transport/call_spine_benchmarks.h
-  src:
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/lib/transport/promise_endpoint.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/transport/benchmarks/bm_inproc.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
-- name: bm_party
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/promise/bm_party.cc
-  deps:
-  - benchmark
-  - grpc
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -5373,27 +5169,6 @@ targets:
   - linux
   - posix
   - windows
-- name: static_stride_scheduler_benchmark
-  build: test
-  language: c
-  headers:
-  - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
-  src:
-  - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
-  - test/core/load_balancing/static_stride_scheduler_benchmark.cc
-  deps:
-  - absl/algorithm:container
-  - absl/types:span
-  - benchmark
-  - gpr
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
 - name: test_core_iomgr_timer_list_test
   build: test
   language: c
@@ -5455,6 +5230,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6669,7 +6445,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -6686,23 +6461,10 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -6749,18 +6511,10 @@ targets:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/latent_see.cc
   - test/core/transport/call_filters_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/base:no_destructor
   - absl/container:flat_hash_map
@@ -6895,6 +6649,7 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/transport/call_state.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7176,7 +6931,6 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_utils.h
@@ -7240,22 +6994,9 @@ targets:
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -7492,18 +7233,10 @@ targets:
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - test/core/call/call_utils_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - z
   - absl/base:config
   - absl/base:no_destructor
@@ -7915,22 +7648,9 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -7961,18 +7681,10 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
   - test/core/promise/cancel_callback_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -8732,22 +8444,9 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -8778,18 +8477,10 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
   - test/core/gprpp/chunked_vector_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -10302,22 +9993,9 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -10342,18 +10020,10 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/hash:hash
@@ -10874,22 +10544,9 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -10924,18 +10581,10 @@ targets:
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/util/latent_see.cc
   - test/core/transport/chttp2/flow_control_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -11012,23 +10661,10 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -11059,18 +10695,10 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
   - test/core/promise/for_each_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -12618,6 +12246,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -12708,23 +12337,10 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -12755,18 +12371,10 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
   - test/core/promise/interceptor_list_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -13202,6 +12810,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13305,25 +12914,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
-- name: lock_free_event_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/posix/lock_free_event_test.cc
-  deps:
-  - gtest
-  - benchmark
-  - grpc_test_util
-  args:
-  - --benchmark_min_time=0.001s
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - linux
-  - posix
   uses_polling: false
 - name: log_too_many_open_files_test
   gtest: true
@@ -13435,23 +13025,10 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -13482,18 +13059,10 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
   - test/core/promise/map_pipe_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -13543,18 +13112,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: max_concurrent_streams_policy_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h
-  src:
-  - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
-  - test/core/transport/chttp2/max_concurrent_streams_policy_test.cc
-  deps:
-  - gtest
-  - gpr
 - name: max_concurrent_streams_test
   gtest: true
   build: test
@@ -14011,6 +13568,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14324,6 +13882,7 @@ targets:
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -14662,6 +14221,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/iomgr/closure.h
@@ -14676,22 +14236,10 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/mini_descriptor/build_enum.h
-  - third_party/upb/upb/mini_descriptor/decode.h
-  - third_party/upb/upb/mini_descriptor/internal/base92.h
-  - third_party/upb/upb/mini_descriptor/internal/decoder.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.h
-  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
-  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
-  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
-  - third_party/upb/upb/mini_descriptor/link.h
-  - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
-  - third_party/upb/upb/wire/internal/decoder.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -14700,6 +14248,7 @@ targets:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/glob.cc
+  - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -14712,19 +14261,12 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/latent_see.cc
   - test/core/resource_quota/periodic_update_test.cc
-  - third_party/upb/upb/mini_descriptor/build_enum.c
-  - third_party/upb/upb/mini_descriptor/decode.c
-  - third_party/upb/upb/mini_descriptor/internal/base92.c
-  - third_party/upb/upb/mini_descriptor/internal/encode.c
-  - third_party/upb/upb/mini_descriptor/link.c
-  - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
   deps:
   - gtest
-  - utf8_range_lib
-  - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -15261,6 +14803,7 @@ targets:
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -18233,6 +17776,17 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: ring_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/ring_buffer.h
+  src:
+  - test/core/util/ring_buffer_test.cc
+  deps:
+  - gtest
+  uses_polling: false
 - name: ring_hash_test
   gtest: true
   build: test
@@ -20939,6 +20493,19 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
+- name: unique_ptr_with_bitset_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/unique_ptr_with_bitset.h
+  src:
+  - test/core/util/unique_ptr_with_bitset_test.cc
+  deps:
+  - gtest
+  - absl/log:check
+  - absl/numeric:bits
+  uses_polling: false
 - name: unique_type_name_test
   gtest: true
   build: test
@@ -21050,6 +20617,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/latent_see.h
+  - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -21740,7 +21308,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
@@ -21835,6 +21404,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -22324,6 +21894,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -22888,12 +22459,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 1ee20b3041a4f093cc393448ab022f770e70b509c8fe8399d6e83017067b2fc3
+  hash: e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-091cfd044258312a56c632ae1860813b1c0c58bc
+  strip_prefix: data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

@@ -404,10 +404,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << xds_cluster_impl_lb
-              << "] constructed new picker " << this;
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << xds_cluster_impl_lb
+      << "] constructed new picker " << this;
 }
 
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
@@ -500,23 +499,20 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
 XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<GrpcXdsClient> xds_client,
                                    Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] created -- using xds client " << xds_client_.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] created -- using xds client "
+      << xds_client_.get();
 }
 
 XdsClusterImplLb::~XdsClusterImplLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] destroying xds_cluster_impl LB policy";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this
+      << "] destroying xds_cluster_impl LB policy";
 }
 
 void XdsClusterImplLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
   xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
@@ -537,10 +533,9 @@ void XdsClusterImplLb::ResetState() {
 }
 
 void XdsClusterImplLb::ReportTransientFailure(absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] reporting TRANSIENT_FAILURE: " << status;
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this
+      << "] reporting TRANSIENT_FAILURE: " << status;
   ResetState();
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
@@ -564,9 +559,8 @@ std::string GetEdsResourceName(const XdsClusterResource& cluster_resource) {
 }
 
 absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] Received update";
   // Grab new LB policy config.
   auto new_config = args.config.TakeAsSubclass<XdsClusterImplLbConfig>();
   // Cluster name should never change, because the cds policy will assign a
@@ -674,23 +668,35 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
     return nullptr;
   }
   // Configure root cert.
-  absl::string_view root_provider_instance_name =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.instance_name;
-  absl::string_view root_cert_name =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.certificate_name;
+  absl::string_view root_cert_name;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
-  if (!root_provider_instance_name.empty()) {
-    root_cert_provider =
-        xds_client_->certificate_provider_store()
-            .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (root_cert_provider == nullptr) {
-      return absl::InternalError(
-          absl::StrCat("Certificate provider instance name: \"",
-                       root_provider_instance_name, "\" not recognized."));
-    }
-  }
+  bool use_system_root_certs = false;
+  absl::Status status = Match(
+      cluster_resource.common_tls_context.certificate_validation_context
+          .ca_certs,
+      [](const absl::monostate&) {
+        // No root cert configured.
+        return absl::OkStatus();
+      },
+      [&](const CommonTlsContext::CertificateProviderPluginInstance&
+              cert_provider) {
+        root_cert_name = cert_provider.certificate_name;
+        root_cert_provider =
+            xds_client_->certificate_provider_store()
+                .CreateOrGetCertificateProvider(cert_provider.instance_name);
+        if (root_cert_provider == nullptr) {
+          return absl::InternalError(
+              absl::StrCat("Certificate provider instance name: \"",
+                           cert_provider.instance_name, "\" not recognized."));
+        }
+        return absl::OkStatus();
+      },
+      [&](const CommonTlsContext::CertificateValidationContext::
+              SystemRootCerts&) {
+        use_system_root_certs = true;
+        return absl::OkStatus();
+      });
+  if (!status.ok()) return status;
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
       cluster_resource.common_tls_context.tls_certificate_provider_instance
@@ -715,8 +721,8 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
           .match_subject_alt_names;
   // Create xds cert provider.
   return MakeRefCounted<XdsCertificateProvider>(
-      root_cert_provider, root_cert_name, identity_cert_provider,
-      identity_cert_name, san_matchers);
+      std::move(root_cert_provider), root_cert_name, use_system_root_certs,
+      std::move(identity_cert_provider), identity_cert_name, san_matchers);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -724,11 +730,10 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-      LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity (drop all): state=READY picker="
-                << drop_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+        << "[xds_cluster_impl_lb " << this
+        << "] updating connectivity (drop all): state=READY picker="
+        << drop_picker.get();
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
                                           std::move(drop_picker));
     return;
@@ -757,10 +762,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &xds_cluster_impl_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] Created new child policy handler " << lb_policy.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this
+      << "] Created new child policy handler " << lb_policy.get();
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // this policy, which in turn is tied to the application's call.
@@ -784,10 +788,9 @@ absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
   update_args.args =
       args.Set(GRPC_ARG_XDS_CLUSTER_NAME, config_->cluster_name());
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] Updating child policy handler " << child_policy_.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] Updating child policy handler "
+      << child_policy_.get();
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 

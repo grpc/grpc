@@ -65,6 +65,7 @@
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 
 using envoy::config::listener::v3::Listener;
@@ -1559,11 +1560,56 @@ TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
       tls_context.common_tls_context.tls_certificate_provider_instance;
   EXPECT_EQ(cert_provider_instance.instance_name, "provider1");
   EXPECT_EQ(cert_provider_instance.certificate_name, "cert_name");
-  auto& ca_cert_provider_instance =
-      tls_context.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance;
-  EXPECT_EQ(ca_cert_provider_instance.instance_name, "provider1");
-  EXPECT_EQ(ca_cert_provider_instance.certificate_name, "ca_cert_name");
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &tls_context.common_tls_context.certificate_validation_context
+               .ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "ca_cert_name");
+}
+
+TEST_F(TcpListenerTest, SystemRootCerts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  Listener listener;
+  listener.set_name("foo");
+  HttpConnectionManager hcm;
+  auto* filter = hcm.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(Router());
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name("rds_name");
+  rds->mutable_config_source()->mutable_self();
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(hcm);
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  auto* common_tls_context =
+      downstream_tls_context.mutable_common_tls_context();
+  auto* cert_provider =
+      common_tls_context->mutable_tls_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  common_tls_context->mutable_validation_context()->mutable_system_root_certs();
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  auto* address = listener.mutable_address()->mutable_socket_address();
+  address->set_address("127.0.0.1");
+  address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(listener.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsListenerResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating server Listener: ["
+            "field:default_filter_chain.transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext]"
+            ".common_tls_context "
+            "error:system_root_certs not supported]")
+      << decode_result.resource.status();
 }
 
 TEST_F(TcpListenerTest, ClientCertificateRequired) {
@@ -1620,11 +1666,13 @@ TEST_F(TcpListenerTest, ClientCertificateRequired) {
       tls_context.common_tls_context.tls_certificate_provider_instance;
   EXPECT_EQ(cert_provider_instance.instance_name, "provider1");
   EXPECT_EQ(cert_provider_instance.certificate_name, "cert_name");
-  auto& ca_cert_provider_instance =
-      tls_context.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance;
-  EXPECT_EQ(ca_cert_provider_instance.instance_name, "provider1");
-  EXPECT_EQ(ca_cert_provider_instance.certificate_name, "ca_cert_name");
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &tls_context.common_tls_context.certificate_validation_context
+               .ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "ca_cert_name");
 }
 
 // This is just one example of where CommonTlsContext::Parse() will

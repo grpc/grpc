@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.66.0dev</release>
-  <api>1.66.0dev</api>
+  <release>1.67.0dev</release>
+  <api>1.67.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.66.0 update
+- gRPC Core 1.67.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -232,8 +232,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/legacy_frame.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_abuse_policy.h" role="src" />
@@ -1625,7 +1623,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.cc" role="src" />
@@ -1927,6 +1924,7 @@
     <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/string.h" role="src" />
@@ -1936,6 +1934,7 @@
     <file baseinstalldir="/" name="src/core/util/time_precise.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/tmpfile.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/unique_ptr_with_bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />

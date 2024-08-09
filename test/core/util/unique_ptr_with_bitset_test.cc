@@ -1,4 +1,6 @@
-// Copyright 2023 gRPC authors.
+//
+//
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,35 +13,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//
 
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
+#include "src/core/util/unique_ptr_with_bitset.h"
 
+#include <stdint.h>
+
+#include <limits>
 #include <memory>
 
 #include "gtest/gtest.h"
 
+#include <grpc/support/port_platform.h>
+
 namespace grpc_core {
-namespace {
 
-TEST(MaxConcurrentStreamsPolicyTest, NoOpWorks) {
-  Chttp2MaxConcurrentStreamsPolicy policy;
-  policy.SetTarget(100);
-  EXPECT_EQ(policy.AdvertiseValue(), 100);
+TEST(UniquePtrWithBitsetTest, Basic) {
+  UniquePtrWithBitset<int, 1> ptr;
+  EXPECT_EQ(ptr.get(), nullptr);
+  EXPECT_EQ(ptr.TestBit(0), false);
+  ptr.reset(new int(42));
+  EXPECT_EQ(*ptr, 42);
+  EXPECT_EQ(ptr.TestBit(0), false);
+  ptr.SetBit(0);
+  EXPECT_EQ(ptr.TestBit(0), true);
+  ptr.reset();
+  EXPECT_EQ(ptr.get(), nullptr);
+  EXPECT_EQ(ptr.TestBit(0), true);
+  ptr.ClearBit(0);
+  EXPECT_EQ(ptr.TestBit(0), false);
+  ptr.reset(new int(43));
+  ptr.SetBit(0);
+
+  UniquePtrWithBitset<int, 1> ptr2;
+  ptr2 = std::move(ptr);
+  EXPECT_EQ(*ptr2, 43);
+  EXPECT_EQ(ptr2.TestBit(0), true);
 }
 
-TEST(MaxConcurrentStreamsPolicyTest, BasicFlow) {
-  Chttp2MaxConcurrentStreamsPolicy policy;
-  policy.SetTarget(100);
-  EXPECT_EQ(policy.AdvertiseValue(), 100);
-  policy.AddDemerit();
-  EXPECT_EQ(policy.AdvertiseValue(), 99);
-  policy.FlushedSettings();
-  EXPECT_EQ(policy.AdvertiseValue(), 99);
-  policy.AckLastSend();
-  EXPECT_EQ(policy.AdvertiseValue(), 100);
-}
-
-}  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

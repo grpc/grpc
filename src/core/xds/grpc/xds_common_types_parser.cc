@@ -44,6 +44,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -75,6 +76,14 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 //
 
 namespace {
+
+bool XdsSystemRootCertsEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 // CertificateProviderInstance is deprecated but we are still supporting it for
 // backward compatibility reasons. Note that we still parse the data into the
@@ -202,9 +211,17 @@ CertificateValidationContextParse(
   if (ca_certificate_provider_instance != nullptr) {
     ValidationErrors::ScopedField field(errors,
                                         ".ca_certificate_provider_instance");
-    certificate_validation_context.ca_certificate_provider_instance =
+    certificate_validation_context.ca_certs =
         CertificateProviderPluginInstanceParse(
             context, ca_certificate_provider_instance, errors);
+  } else if (XdsSystemRootCertsEnabled()) {
+    auto* system_root_certs =
+        envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_system_root_certs(
+            certificate_validation_context_proto);
+    if (system_root_certs != nullptr) {
+      certificate_validation_context.ca_certs =
+          CommonTlsContext::CertificateValidationContext::SystemRootCerts();
+    }
   }
   if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_spki(
           certificate_validation_context_proto, nullptr) != nullptr) {
@@ -263,23 +280,26 @@ CommonTlsContext CommonTlsContextParse(
                                             errors);
     }
     // If after parsing default_validation_context,
-    // common_tls_context->certificate_validation_context.ca_certificate_provider_instance
-    // is empty, fall back onto
+    // common_tls_context->certificate_validation_context.ca_certs does not
+    // contain a cert provider, fall back onto
     // 'validation_context_certificate_provider_instance' inside
     // 'combined_validation_context'. Note that this way of fetching root
     // certificates is deprecated and will be removed in the future.
     // TODO(yashykt): Remove this once it's no longer needed.
-    const auto* validation_context_certificate_provider_instance =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
-            combined_validation_context);
-    if (common_tls_context.certificate_validation_context
-            .ca_certificate_provider_instance.Empty() &&
-        validation_context_certificate_provider_instance != nullptr) {
-      ValidationErrors::ScopedField field(
-          errors, ".validation_context_certificate_provider_instance");
-      common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance = CertificateProviderInstanceParse(
-          context, validation_context_certificate_provider_instance, errors);
+    if (!absl::holds_alternative<
+            CommonTlsContext::CertificateProviderPluginInstance>(
+            common_tls_context.certificate_validation_context.ca_certs)) {
+      const auto* validation_context_certificate_provider_instance =
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
+              combined_validation_context);
+      if (validation_context_certificate_provider_instance != nullptr) {
+        ValidationErrors::ScopedField field(
+            errors, ".validation_context_certificate_provider_instance");
+        common_tls_context.certificate_validation_context.ca_certs =
+            CertificateProviderInstanceParse(
+                context, validation_context_certificate_provider_instance,
+                errors);
+      }
     }
   } else {
     auto* validation_context =

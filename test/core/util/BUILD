@@ -113,6 +113,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "unique_ptr_with_bitset_test",
+    srcs = ["unique_ptr_with_bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:unique_ptr_with_bitset",
+    ],
+)
+
+grpc_cc_test(
     name = "useful_test",
     srcs = ["useful_test.cc"],
     external_deps = ["gtest"],
@@ -122,5 +135,18 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_test(
+    name = "ring_buffer_test",
+    srcs = ["ring_buffer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:ring_buffer",
     ],
 )

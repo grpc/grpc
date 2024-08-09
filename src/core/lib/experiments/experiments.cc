@@ -72,10 +72,6 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const char* const description_rstpit =
-    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
-    "duration";
-const char* const additional_constraints_rstpit = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -147,8 +143,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
-    {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
-     false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -227,10 +221,6 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const char* const description_rstpit =
-    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
-    "duration";
-const char* const additional_constraints_rstpit = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -302,8 +292,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
-    {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
-     false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -382,10 +370,6 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const char* const description_rstpit =
-    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
-    "duration";
-const char* const additional_constraints_rstpit = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -457,8 +441,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
-    {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
-     false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,

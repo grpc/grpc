@@ -32,7 +32,6 @@ EXPERIMENT_ENABLES = {
     "peer_state_based_framing": "peer_state_based_framing",
     "pick_first_new": "pick_first_new",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
-    "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
@@ -64,7 +63,6 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -115,7 +113,6 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -158,7 +155,6 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "multiping",
                 "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],

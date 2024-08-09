@@ -55,7 +55,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/debug/trace.h"
@@ -205,6 +204,8 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
+  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");
+
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -648,7 +649,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     } else if (GPR_UNLIKELY(
                    t->max_concurrent_streams_overload_protection &&
                    t->streams_allocated.load(std::memory_order_relaxed) >
-                       t->max_concurrent_streams_policy.AdvertiseValue())) {
+                       t->settings.local().max_concurrent_streams())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       ++t->num_pending_induced_frames;
@@ -657,13 +658,12 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (GPR_UNLIKELY(
-                   t->stream_map.size() >=
-                       t->max_concurrent_streams_policy.AdvertiseValue() &&
-                   grpc_core::RandomEarlyDetection(
-                       t->max_concurrent_streams_policy.AdvertiseValue(),
-                       t->settings.acked().max_concurrent_streams())
-                       .Reject(t->stream_map.size(), t->bitgen))) {
+    } else if (GPR_UNLIKELY(t->stream_map.size() >=
+                                t->settings.local().max_concurrent_streams() &&
+                            grpc_core::RandomEarlyDetection(
+                                t->settings.local().max_concurrent_streams(),
+                                t->settings.acked().max_concurrent_streams())
+                                .Reject(t->stream_map.size(), t->bitgen))) {
       // We are under the limit of max concurrent streams for the current
       // setting, but are over the next value that will be advertised.
       // Apply some backpressure by randomly not accepting new streams.
@@ -825,9 +825,6 @@ static grpc_error_handle init_rst_stream_parser(grpc_chttp2_transport* t) {
   s->call_tracer_wrapper.RecordIncomingBytes({9, 0, 0});
   t->parser = grpc_chttp2_transport::Parser{
       "rst_stream", grpc_chttp2_rst_stream_parser_parse, &t->simple.rst_stream};
-  if (!t->is_client && grpc_core::IsRstpitEnabled()) {
-    t->max_concurrent_streams_policy.AddDemerit();
-  }
   return absl::OkStatus();
 }
 
@@ -852,7 +849,6 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
     return err;
   }
   if (t->incoming_frame_flags & GRPC_CHTTP2_FLAG_ACK) {
-    t->max_concurrent_streams_policy.AckLastSend();
     if (!t->settings.AckLastSend()) {
       return GRPC_ERROR_CREATE("Received unexpected settings ack");
     }

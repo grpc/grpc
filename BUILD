@@ -227,11 +227,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gladiator"  # @unused
+g_stands_for = "gesundheit"  # @unused
 
-core_version = "42.0.0"  # @unused
+core_version = "43.0.0"  # @unused
 
-version = "1.66.0-dev"  # @unused
+version = "1.67.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -579,7 +579,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -659,7 +658,6 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -1151,7 +1149,6 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "api_trace",
         "channel",
         "channel_create",
         "config",
@@ -1329,7 +1326,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -1474,21 +1470,6 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:thread_quota",
-    ],
-)
-
-grpc_cc_library(
-    name = "api_trace",
-    hdrs = [
-        "//src/core:lib/surface/api_trace.h",
-    ],
-    external_deps = [
-        "absl/log:log",
-    ],
-    language = "c++",
-    deps = [
-        "gpr",
-        "grpc_trace",
     ],
 )
 
@@ -1763,7 +1744,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channelz",
         "cpp_impl_of",
@@ -1809,7 +1789,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "channel",
         "channelz",
         "config",
@@ -1905,7 +1884,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "call_combiner",
         "call_tracer",
         "channel",
@@ -2035,7 +2013,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "api_trace",
         "call_combiner",
         "call_tracer",
         "channel",
@@ -2299,7 +2276,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "channel_arg_names",
         "channelz",
         "config",
@@ -3303,6 +3279,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_spinlock",
+        "//src/core:latent_see",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -4058,6 +4035,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "tsi_base",
+        "//src/core:dump_args",
         "//src/core:slice",
         "//src/core:useful",
     ],
@@ -4090,7 +4068,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
-        "api_trace",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -4593,11 +4570,13 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_trace",
         "hpack_parse_result",
+        "stats",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",
         "//src/core:slice",
+        "//src/core:unique_ptr_with_bitset",
     ],
 )
 
@@ -4853,7 +4832,6 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:match",
-        "//src/core:max_concurrent_streams_policy",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",

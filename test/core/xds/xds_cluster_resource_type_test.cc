@@ -65,6 +65,7 @@
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
@@ -932,12 +933,40 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.common_tls_context.certificate_validation_context
-                .ca_certificate_provider_instance.instance_name,
-            "provider1");
-  EXPECT_EQ(resource.common_tls_context.certificate_validation_context
-                .ca_certificate_provider_instance.certificate_name,
-            "cert_name");
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &resource.common_tls_context.certificate_validation_context.ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
+}
+
+TEST_F(TlsConfigTest, SystemRootCerts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  auto* common_tls_context = upstream_tls_context.mutable_common_tls_context();
+  auto* validation_context = common_tls_context->mutable_validation_context();
+  validation_context->mutable_system_root_certs();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_TRUE(absl::holds_alternative<
+              CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
+      resource.common_tls_context.certificate_validation_context.ca_certs));
 }
 
 // This is just one example of where CommonTlsContext::Parse() will
@@ -1078,7 +1107,7 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
             "field:transport_socket.typed_config.value["
             "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]"
             ".common_tls_context "
-            "error:no CA certificate provider instance configured]")
+            "error:no CA certs configured]")
       << decode_result.resource.status();
 }
 

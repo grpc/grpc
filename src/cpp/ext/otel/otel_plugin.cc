@@ -637,12 +637,18 @@ void OpenTelemetryPluginImpl::AddCounter(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
-  absl::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
-      instrument_data.instrument)
-      ->Add(value, NPCMetricsKeyValueIterable(
-                       descriptor.label_keys, label_values,
-                       descriptor.optional_label_keys, optional_values,
-                       instrument_data.optional_labels_bits));
+  if (label_values.empty() && optional_values.empty()) {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
+        instrument_data.instrument)
+        ->Add(value);
+  } else {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
+        instrument_data.instrument)
+        ->Add(value, NPCMetricsKeyValueIterable(
+                         descriptor.label_keys, label_values,
+                         descriptor.optional_label_keys, optional_values,
+                         instrument_data.optional_labels_bits));
+  }
 }
 
 void OpenTelemetryPluginImpl::AddCounter(
@@ -661,12 +667,18 @@ void OpenTelemetryPluginImpl::AddCounter(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
-  absl::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
-      instrument_data.instrument)
-      ->Add(value, NPCMetricsKeyValueIterable(
-                       descriptor.label_keys, label_values,
-                       descriptor.optional_label_keys, optional_values,
-                       instrument_data.optional_labels_bits));
+  if (label_values.empty() && optional_values.empty()) {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+        instrument_data.instrument)
+        ->Add(value);
+  } else {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+        instrument_data.instrument)
+        ->Add(value, NPCMetricsKeyValueIterable(
+                         descriptor.label_keys, label_values,
+                         descriptor.optional_label_keys, optional_values,
+                         instrument_data.optional_labels_bits));
+  }
 }
 
 void OpenTelemetryPluginImpl::RecordHistogram(
@@ -685,14 +697,20 @@ void OpenTelemetryPluginImpl::RecordHistogram(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
-  absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
-      instrument_data.instrument)
-      ->Record(value,
-               NPCMetricsKeyValueIterable(descriptor.label_keys, label_values,
-                                          descriptor.optional_label_keys,
-                                          optional_values,
-                                          instrument_data.optional_labels_bits),
-               opentelemetry::context::Context{});
+  if (label_values.empty() && optional_values.empty()) {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
+        instrument_data.instrument)
+        ->Record(value, opentelemetry::context::Context{});
+  } else {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
+        instrument_data.instrument)
+        ->Record(value,
+                 NPCMetricsKeyValueIterable(
+                     descriptor.label_keys, label_values,
+                     descriptor.optional_label_keys, optional_values,
+                     instrument_data.optional_labels_bits),
+                 opentelemetry::context::Context{});
+  }
 }
 
 void OpenTelemetryPluginImpl::RecordHistogram(
@@ -711,14 +729,20 @@ void OpenTelemetryPluginImpl::RecordHistogram(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
-  absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
-      instrument_data.instrument)
-      ->Record(value,
-               NPCMetricsKeyValueIterable(descriptor.label_keys, label_values,
-                                          descriptor.optional_label_keys,
-                                          optional_values,
-                                          instrument_data.optional_labels_bits),
-               opentelemetry::context::Context{});
+  if (label_values.empty() && optional_values.empty()) {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
+        instrument_data.instrument)
+        ->Record(value, opentelemetry::context::Context{});
+  } else {
+    absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
+        instrument_data.instrument)
+        ->Record(value,
+                 NPCMetricsKeyValueIterable(
+                     descriptor.label_keys, label_values,
+                     descriptor.optional_label_keys, optional_values,
+                     instrument_data.optional_labels_bits),
+                 opentelemetry::context::Context{});
+  }
 }
 
 void OpenTelemetryPluginImpl::AddCallback(
@@ -881,20 +905,27 @@ void OpenTelemetryPluginImpl::CallbackGaugeState<ValueType>::Observe(
   for (const auto& pair : cache) {
     CHECK(pair.first.size() <= (descriptor.label_keys.size() +
                                 descriptor.optional_label_keys.size()));
-    auto& instrument_data = ot_plugin->instruments_data_.at(id);
-    opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
-        opentelemetry::metrics::ObserverResultT<ValueType>>>(result)
-        ->Observe(pair.second,
-                  NPCMetricsKeyValueIterable(
-                      descriptor.label_keys,
-                      absl::FixedArray<absl::string_view>(
-                          pair.first.begin(),
-                          pair.first.begin() + descriptor.label_keys.size()),
-                      descriptor.optional_label_keys,
-                      absl::FixedArray<absl::string_view>(
-                          pair.first.begin() + descriptor.label_keys.size(),
-                          pair.first.end()),
-                      instrument_data.optional_labels_bits));
+    if (descriptor.label_keys.empty() &&
+        descriptor.optional_label_keys.empty()) {
+      opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
+          opentelemetry::metrics::ObserverResultT<ValueType>>>(result)
+          ->Observe(pair.second);
+    } else {
+      auto& instrument_data = ot_plugin->instruments_data_.at(id);
+      opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
+          opentelemetry::metrics::ObserverResultT<ValueType>>>(result)
+          ->Observe(pair.second,
+                    NPCMetricsKeyValueIterable(
+                        descriptor.label_keys,
+                        absl::FixedArray<absl::string_view>(
+                            pair.first.begin(),
+                            pair.first.begin() + descriptor.label_keys.size()),
+                        descriptor.optional_label_keys,
+                        absl::FixedArray<absl::string_view>(
+                            pair.first.begin() + descriptor.label_keys.size(),
+                            pair.first.end()),
+                        instrument_data.optional_labels_bits));
+    }
   }
 }
 
