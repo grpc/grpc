@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test")
 load("//bazel:cython_library.bzl", "pyx_library")
 
 pyx_library(
@@ -23,14 +24,13 @@ pyx_library(
     deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
 )
 
-py_test(
-    name = "fork_test",
+internal_py_grpc_test(
+    name = "_fork_interop_test",
     srcs = glob(["*.py"]),
     # TODO(yijiem): remove this to test EventEngine fork support
     env = {"GRPC_EXPERIMENTS": "-event_engine_client"},
     imports = ["../.."],
     main = "_fork_interop_test.py",
-    python_version = "PY3",
     deps = [
         ":native_debug",
         "//src/proto/grpc/testing:empty_py_pb2",
