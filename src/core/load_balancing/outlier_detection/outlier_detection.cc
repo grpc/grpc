@@ -532,11 +532,10 @@ OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
                                    RefCountedPtr<SubchannelPicker> picker,
                                    bool counting_enabled)
     : picker_(std::move(picker)), counting_enabled_(counting_enabled) {
-  if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-    LOG(INFO) << "[outlier_detection_lb " << outlier_detection_lb
-              << "] constructed new picker " << this << " and counting "
-              << "is " << (counting_enabled ? "enabled" : "disabled");
-  }
+  GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+      << "[outlier_detection_lb " << outlier_detection_lb
+      << "] constructed new picker " << this << " and counting "
+      << "is " << (counting_enabled ? "enabled" : "disabled");
 }
 
 LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
@@ -574,9 +573,8 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 
 OutlierDetectionLb::OutlierDetectionLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-    LOG(INFO) << "[outlier_detection_lb " << this << "] created";
-  }
+  GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+      << "[outlier_detection_lb " << this << "] created";
 }
 
 OutlierDetectionLb::~OutlierDetectionLb() {
@@ -586,9 +584,8 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 }
 
 void OutlierDetectionLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-    LOG(INFO) << "[outlier_detection_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+      << "[outlier_detection_lb " << this << "] shutting down";
   ejection_timer_.reset();
   shutting_down_ = true;
   // Remove the child policy's interested_parties pollset_set from the
@@ -612,9 +609,8 @@ void OutlierDetectionLb::ResetBackoffLocked() {
 }
 
 absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-    LOG(INFO) << "[outlier_detection_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+      << "[outlier_detection_lb " << this << "] Received update";
   auto old_config = std::move(config_);
   // Update config.
   config_ = args.config.TakeAsSubclass<OutlierDetectionLbConfig>();
@@ -627,9 +623,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     ejection_timer_.reset();
   } else if (ejection_timer_ == nullptr) {
     // No timer running.  Start it now.
-    if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-      LOG(INFO) << "[outlier_detection_lb " << this << "] starting timer";
-    }
+    GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+        << "[outlier_detection_lb " << this << "] starting timer";
     ejection_timer_ = MakeOrphanable<EjectionTimer>(
         RefAsSubclass<OutlierDetectionLb>(), Timestamp::Now());
     for (const auto& p : endpoint_state_map_) {
@@ -687,11 +682,9 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
             key, MakeRefCounted<EndpointState>(std::move(subchannels)));
       } else if (!config_->CountingEnabled()) {
         // If counting is not enabled, reset state.
-        if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-          LOG(INFO) << "[outlier_detection_lb " << this
-                    << "] counting disabled; disabling ejection for "
-                    << key.ToString();
-        }
+        GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+            << "[outlier_detection_lb " << this
+            << "] counting disabled; disabling ejection for " << key.ToString();
         it->second->DisableEjection();
       }
     });
@@ -931,17 +924,14 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     const double success_rate_stdev_factor =
         static_cast<double>(config.success_rate_ejection->stdev_factor) / 1000;
     double ejection_threshold = mean - stdev * success_rate_stdev_factor;
-    if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-      LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                << "] stdev=" << stdev
-                << ", ejection_threshold=" << ejection_threshold;
-    }
+    GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+        << "[outlier_detection_lb " << parent_.get() << "] stdev=" << stdev
+        << ", ejection_threshold=" << ejection_threshold;
     for (auto& candidate : success_rate_ejection_candidates) {
-      if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-        LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                  << "] checking candidate " << candidate.first
-                  << ": success_rate=" << candidate.second;
-      }
+      GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+          << "[outlier_detection_lb " << parent_.get()
+          << "] checking candidate " << candidate.first
+          << ": success_rate=" << candidate.second;
       if (candidate.second < ejection_threshold) {
         uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
         double current_percent =
@@ -979,11 +969,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
                 << config.failure_percentage_ejection->enforcement_percentage;
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
-      if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-        LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                  << "] checking candidate " << candidate.first
-                  << ": success_rate=" << candidate.second;
-      }
+      GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+          << "[outlier_detection_lb " << parent_.get()
+          << "] checking candidate " << candidate.first
+          << ": success_rate=" << candidate.second;
       // Extra check to make sure success rate algorithm didn't already
       // eject this backend.
       if (candidate.first->ejection_time().has_value()) continue;

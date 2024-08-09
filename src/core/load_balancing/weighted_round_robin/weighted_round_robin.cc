@@ -555,11 +555,10 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
   }
   global_stats().IncrementWrrSubchannelListSize(endpoint_list->size());
   global_stats().IncrementWrrSubchannelReadySize(endpoints_.size());
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] created picker from endpoint_list=" << endpoint_list
-              << " with " << endpoints_.size() << " subchannels";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this
+      << "] created picker from endpoint_list=" << endpoint_list << " with "
+      << endpoints_.size() << " subchannels";
   // Note: BuildSchedulerAndStartTimerLocked() passes out pointers to `this`,
   // so we need to ensure that we really hold timer_mu_.
   MutexLock lock(&timer_mu_);
@@ -584,11 +583,9 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   size_t index = PickIndex();
   CHECK(index < endpoints_.size());
   auto& endpoint_info = endpoints_[index];
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] returning index " << index
-              << ", picker=" << endpoint_info.picker.get();
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this << "] returning index "
+      << index << ", picker=" << endpoint_info.picker.get();
   auto result = endpoint_info.picker->Pick(args);
   // Collect per-call utilization data if needed.
   if (!config_->enable_oob_load_report()) {
@@ -665,11 +662,10 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] scheduling timer for "
-              << config_->weight_update_period().ToString();
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this
+      << "] scheduling timer for "
+      << config_->weight_update_period().ToString();
   // It's insufficient to hold the implicit constructor lock here, a real lock
   // over timer_mu_ is needed: we update timer_handle_ after the timer is
   // scheduled, but it may run on another thread before that occurs, causing a
@@ -713,17 +709,15 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
 }
 
 WeightedRoundRobin::~WeightedRoundRobin() {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << this << "] Destroying Round Robin policy";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << this << "] Destroying Round Robin policy";
   CHECK(endpoint_list_ == nullptr);
   CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void WeightedRoundRobin::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << this << "] Shutting down";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << this << "] Shutting down";
   shutdown_ = true;
   endpoint_list_.reset();
   latest_pending_endpoint_list_.reset();
@@ -741,9 +735,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   config_ = args.config.TakeAsSubclass<WeightedRoundRobinConfig>();
   std::shared_ptr<EndpointAddressesIterator> addresses;
   if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << this << "] received update";
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << this << "] received update";
     // Weed out duplicate endpoints.  Also sort the endpoints so that if
     // the set of endpoints doesn't change, their indexes in the endpoint
     // list don't change, since this avoids unnecessary churn in the
@@ -992,11 +985,9 @@ void WeightedRoundRobin::WrrEndpointList::
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         MakeRefCounted<QueuePicker>(nullptr));
   } else if (num_transient_failure_ == size()) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr
-                << "] reporting TRANSIENT_FAILURE with endpoint list " << this
-                << ": " << status_for_tf;
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr << "] reporting TRANSIENT_FAILURE with endpoint list "
+        << this << ": " << status_for_tf;
     if (!status_for_tf.ok()) {
       last_failure_ = absl::UnavailableError(
           absl::StrCat("connections to all backends failing; last error: ",
