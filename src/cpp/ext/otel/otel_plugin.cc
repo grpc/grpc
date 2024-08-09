@@ -878,53 +878,54 @@ void OpenTelemetryPluginImpl::RemoveCallback(
 
 void OpenTelemetryPluginImpl::RemoveCallbackImpl(
     grpc_core::RefCountedPtr<grpc_core::RegisteredMetricCallback> callback) {
-  std::vector<
-      absl::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
-      gauges_that_need_to_remove_callback;
-  {
-    grpc_core::MutexLock lock(&mu_);
-    callback_timestamps_.erase(callback.get());
-    for (const auto& handle : callback->metrics()) {
-      const auto& descriptor =
-          grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-      CHECK(
-          descriptor.instrument_type ==
+  grpc_core::MutexLock lock(&mu_);
+  callback_timestamps_.erase(callback.get());
+  for (const auto& handle : callback->metrics()) {
+    const auto& descriptor =
+        grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+    CHECK(descriptor.instrument_type ==
           grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
-      switch (descriptor.value_type) {
-        case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
-          const auto& instrument_data = instruments_data_.at(handle.index);
-          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
-            // This instrument is disabled.
-            continue;
-          }
-          auto* callback_gauge_state =
-              absl::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
-                  &instrument_data.instrument);
-          CHECK_NE(callback_gauge_state, nullptr);
-          CHECK((*callback_gauge_state)->ot_callback_registered);
-          CHECK_EQ((*callback_gauge_state)->caches.erase(callback.get()), 1u);
-          break;
+    switch (descriptor.value_type) {
+      case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
+        const auto& instrument_data = instruments_data_.at(handle.index);
+        if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+          // This instrument is disabled.
+          continue;
         }
-        case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
-          const auto& instrument_data = instruments_data_.at(handle.index);
-          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
-            // This instrument is disabled.
-            continue;
-          }
-          auto* callback_gauge_state =
-              absl::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
-                  &instrument_data.instrument);
-          CHECK_NE(callback_gauge_state, nullptr);
-          CHECK((*callback_gauge_state)->ot_callback_registered);
-          CHECK_EQ((*callback_gauge_state)->caches.erase(callback.get()), 1u);
-          break;
-        }
-        default:
-          grpc_core::Crash(absl::StrFormat(
-              "Unknown or unsupported value type: %d", descriptor.value_type));
+        auto* callback_gauge_state =
+            absl::get_if<std::unique_ptr<CallbackGaugeState<int64_t>>>(
+                &instrument_data.instrument);
+        CHECK_NE(callback_gauge_state, nullptr);
+        CHECK((*callback_gauge_state)->ot_callback_registered);
+        CHECK_EQ((*callback_gauge_state)->caches.erase(callback.get()), 1u);
+        break;
       }
+      case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
+        const auto& instrument_data = instruments_data_.at(handle.index);
+        if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+          // This instrument is disabled.
+          continue;
+        }
+        auto* callback_gauge_state =
+            absl::get_if<std::unique_ptr<CallbackGaugeState<double>>>(
+                &instrument_data.instrument);
+        CHECK_NE(callback_gauge_state, nullptr);
+        CHECK((*callback_gauge_state)->ot_callback_registered);
+        CHECK_EQ((*callback_gauge_state)->caches.erase(callback.get()), 1u);
+        break;
+      }
+      default:
+        grpc_core::Crash(absl::StrFormat(
+            "Unknown or unsupported value type: %d", descriptor.value_type));
     }
   }
+  // Note that we are not removing the callback from OpenTelemetry immediately,
+  // and instead remove it when the plugin is destroyed. We just have a single
+  // callback per OpenTelemetry instrument which is a small number. If we decide
+  // to remove the callback immediately at this point, we need to make sure that
+  // 1) the callback is removed without holding mu_ and 2) we make sure that
+  // this does not race against a possible `AddCallback` operation. A potential
+  // way to do this is to use WorkSerializer.
 }
 
 template <typename ValueType>
