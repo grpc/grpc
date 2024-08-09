@@ -225,6 +225,24 @@ TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
 
+TEST(RequestBufferTest, PushThenPullMessageRepeatedly) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  for (int i = 0; i < 100; i++) {
+    auto pusher = buffer.PushMessage(TestMessage());
+    EXPECT_THAT(pusher(), IsReady(40 + 9 * (i + 1)));
+    auto pull_msg = reader.PullMessage();
+    auto poll_msg = pull_msg();
+    ASSERT_THAT(poll_msg, IsReady());
+    ASSERT_TRUE(poll_msg.value().ok());
+    ASSERT_TRUE(poll_msg.value().value().has_value());
+    EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  }
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
