@@ -30,7 +30,7 @@ extern "C" {
 
 GPRAPI void gpr_log_verbosity_init(void);
 
-#define GPR_LOCATION __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
+#define GPR_LOCATION __FILE__, __LINE__
 
 /** Deprecated. **/
 GPRAPI int grpc_absl_vlog2_enabled();
