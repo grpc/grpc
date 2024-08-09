@@ -68,9 +68,7 @@ static void grpc_rb_server_shutdown_and_notify_internal(grpc_rb_server* server,
           server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL, NULL);
     }
     if (ev.type != GRPC_OP_COMPLETE) {
-      absl_log_info_int(GPR_LOCATION,
-              "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:",
-              ev.type);
+      grpc_absl_log_info_int(GPR_LOCATION,"GRPC_RUBY: bad grpc_server_shutdown_and_notify result:", ev.type);
     }
   }
 }
@@ -192,7 +190,7 @@ struct server_request_call_args {
 
 static void shutdown_server_unblock_func(void* arg) {
   grpc_rb_server* server = (grpc_rb_server*)arg;
-  absl_log_info(GPR_LOCATION, "GRPC_RUBY: shutdown_server_unblock_func");
+  grpc_absl_log_info(GPR_LOCATION, "GRPC_RUBY: shutdown_server_unblock_func");
   GRPC_RUBY_ASSERT(server->wrapped != NULL);
   grpc_event event;
   void* tag = &event;
@@ -202,7 +200,7 @@ static void shutdown_server_unblock_func(void* arg) {
   // cancelled all calls.
   event = grpc_completion_queue_pluck(server->queue, tag,
                                       gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  gpr_log(GPR_INFO,
+  gpr_log(GPR_DEBUG,
           "GRPC_RUBY: shutdown_server_unblock_func pluck event.type: %d "
           "event.success: %d",
           event.type, event.success);

@@ -37,17 +37,22 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    "gpr_log_severity": [],
-    "gpr_log(": [],
-    "gpr_should_log(": [],
-    "gpr_log_message(": [],
-    "gpr_log_func_args": [],
-    "gpr_set_log_function(": [],
-    "GPR_ASSERT": [],
+    "grpc_absl_vlog2_enabled(": [
+        "./include/grpc/support/log.h",
+        "./src/core/util/log.cc",
+        "./src/ruby/ext/grpc/rb_call_credentials.c",
+    ],
     "gpr_assertion_failed": [],
-    "GPR_DEBUG_ASSERT": [],
+    "gpr_log(": [],
+    "gpr_log_func_args": [],
+    "gpr_log_message(": [],
+    "gpr_log_severity": [],
     "gpr_log_severity_string": [],
+    "gpr_set_log_function(": [],
     "gpr_set_log_verbosity(": [],
+    "gpr_should_log(": [],
+    "GPR_ASSERT": [],
+    "GPR_DEBUG_ASSERT": [],
 }
 
 errors = 0

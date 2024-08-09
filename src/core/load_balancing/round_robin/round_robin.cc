@@ -196,11 +196,9 @@ RoundRobin::Picker::Picker(
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
   size_t index = last_picked_index_.fetch_add(1, std::memory_order_relaxed) %
                  pickers_.size();
-  if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-    LOG(INFO) << "[RR " << parent_ << " picker " << this
-              << "] using picker index " << index
-              << ", picker=" << pickers_[index].get();
-  }
+  GRPC_TRACE_LOG(round_robin, INFO)
+      << "[RR " << parent_ << " picker " << this << "] using picker index "
+      << index << ", picker=" << pickers_[index].get();
   return pickers_[index]->Pick(args);
 }
 
@@ -209,23 +207,18 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
 //
 
 RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-    LOG(INFO) << "[RR " << this << "] Created";
-  }
+  GRPC_TRACE_LOG(round_robin, INFO) << "[RR " << this << "] Created";
 }
 
 RoundRobin::~RoundRobin() {
-  if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-    LOG(INFO) << "[RR " << this << "] Destroying Round Robin policy";
-  }
+  GRPC_TRACE_LOG(round_robin, INFO)
+      << "[RR " << this << "] Destroying Round Robin policy";
   CHECK(endpoint_list_ == nullptr);
   CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void RoundRobin::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-    LOG(INFO) << "[RR " << this << "] Shutting down";
-  }
+  GRPC_TRACE_LOG(round_robin, INFO) << "[RR " << this << "] Shutting down";
   shutdown_ = true;
   endpoint_list_.reset();
   latest_pending_endpoint_list_.reset();
@@ -241,9 +234,7 @@ void RoundRobin::ResetBackoffLocked() {
 absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   EndpointAddressesIterator* addresses = nullptr;
   if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << this << "] received update";
-    }
+    GRPC_TRACE_LOG(round_robin, INFO) << "[RR " << this << "] received update";
     addresses = args.addresses->get();
   } else {
     GRPC_TRACE_LOG(round_robin, INFO)
@@ -416,11 +407,10 @@ void RoundRobin::RoundRobinEndpointList::
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         MakeRefCounted<QueuePicker>(nullptr));
   } else if (num_transient_failure_ == size()) {
-    if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      LOG(INFO) << "[RR " << round_robin
-                << "] reporting TRANSIENT_FAILURE with child list " << this
-                << ": " << status_for_tf;
-    }
+    GRPC_TRACE_LOG(round_robin, INFO)
+        << "[RR " << round_robin
+        << "] reporting TRANSIENT_FAILURE with child list " << this << ": "
+        << status_for_tf;
     if (!status_for_tf.ok()) {
       last_failure_ = absl::UnavailableError(
           absl::StrCat("connections to all backends failing; last error: ",

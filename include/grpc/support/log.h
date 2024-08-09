@@ -41,22 +41,23 @@ typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_ERROR
 } gpr_log_severity;
 
-GPRAPI int gpr_should_log(gpr_log_severity severity);
-
 GPRAPI void gpr_log_verbosity_init(void);
 
 #define GPR_LOCATION __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
 
-/* Deprecated */
-GPRAPI void absl_log_error(const char* file, int line, const char* message_str);
+/** Deprecated. **/
+GPRAPI int grpc_absl_vlog2_enabled();
 
 /* Deprecated */
-GPRAPI void absl_log_info(const char* file, int line, const char* message_str);
-GPRAPI void absl_log_info_int(const char* file, int line, const char* message_str, intptr_t num);
+GPRAPI void grpc_absl_log_error(const char* file, int line, const char* message_str);
 
 /* Deprecated */
-GPRAPI void absl_vlog(const char* file, int line, const char* message_str);
-GPRAPI void absl_vlog_int(const char* file, int line, const char* message_str, intptr_t num);
+GPRAPI void grpc_absl_log_info(const char* file, int line, const char* message_str);
+GPRAPI void grpc_absl_log_info_int(const char* file, int line, const char* message_str, intptr_t num);
+
+/* Deprecated */
+GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str);
+GPRAPI void grpc_absl_vlog_int(const char* file, int line, const char* message_str, intptr_t num);
 
 #ifdef __cplusplus
 }

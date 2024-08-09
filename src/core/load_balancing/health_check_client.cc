@@ -146,11 +146,9 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
 
 void HealthProducer::HealthChecker::NotifyWatchersLocked(
     grpc_connectivity_state state, absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthProducer " << producer_.get() << " HealthChecker "
-              << this << ": reporting state " << ConnectivityStateName(state)
-              << " to watchers";
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthProducer " << producer_.get() << " HealthChecker " << this
+      << ": reporting state " << ConnectivityStateName(state) << " to watchers";
   work_serializer_->Schedule(
       [self = Ref(), state, status = std::move(status)]() {
         MutexLock lock(&self->producer_->mu_);
@@ -285,11 +283,10 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
   void SetHealthStatusLocked(SubchannelStreamClient* client,
                              grpc_connectivity_state state,
                              const char* reason) {
-    if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-      LOG(INFO) << "HealthCheckClient " << client
-                << ": setting state=" << ConnectivityStateName(state)
-                << " reason=" << reason;
-    }
+    GRPC_TRACE_LOG(health_check_client, INFO)
+        << "HealthCheckClient " << client
+        << ": setting state=" << ConnectivityStateName(state)
+        << " reason=" << reason;
     health_checker_->OnHealthWatchStatusChange(
         state, state == GRPC_CHANNEL_TRANSIENT_FAILURE
                    ? absl::UnavailableError(reason)
@@ -300,11 +297,9 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
 };
 
 void HealthProducer::HealthChecker::StartHealthStreamLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthProducer " << producer_.get() << " HealthChecker "
-              << this << ": creating HealthClient for \""
-              << health_check_service_name_ << "\"";
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthProducer " << producer_.get() << " HealthChecker " << this
+      << ": creating HealthClient for \"" << health_check_service_name_ << "\"";
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
       std::make_unique<HealthStreamEventHandler>(Ref()),
@@ -356,9 +351,8 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
 }
 
 void HealthProducer::Orphaned() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthProducer " << this << ": shutting down";
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthProducer " << this << ": shutting down";
   {
     MutexLock lock(&mu_);
     health_checkers_.clear();
@@ -406,11 +400,10 @@ void HealthProducer::RemoveWatcher(
 
 void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
                                                const absl::Status& status) {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthProducer " << this
-              << ": subchannel state update: state="
-              << ConnectivityStateName(state) << " status=" << status;
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthProducer " << this
+      << ": subchannel state update: state=" << ConnectivityStateName(state)
+      << " status=" << status;
   MutexLock lock(&mu_);
   state_ = state;
   status_ = status;
@@ -432,11 +425,10 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
 //
 
 HealthWatcher::~HealthWatcher() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthWatcher " << this << ": unregistering from producer "
-              << producer_.get() << " (health_check_service_name=\""
-              << health_check_service_name_.value_or("N/A") << "\")";
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthWatcher " << this << ": unregistering from producer "
+      << producer_.get() << " (health_check_service_name=\""
+      << health_check_service_name_.value_or("N/A") << "\")";
   if (producer_ != nullptr) {
     producer_->RemoveWatcher(this, health_check_service_name_);
   }
