@@ -328,7 +328,7 @@ static void grpc_ruby_init_threads() {
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
-  gpr_log(GPR_INFO,
+  gpr_log(GPR_DEBUG,
           "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=%d",
           g_bg_thread_init_done);
   rb_mutex_lock(g_bg_thread_init_rb_mu);
