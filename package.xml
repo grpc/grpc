@@ -106,6 +106,7 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="include/grpcpp/support/global_callback_hook.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channel_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz.cc" role="src" />
@@ -2010,6 +2011,7 @@
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/cpp/client/global_callback_hook.cc" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />

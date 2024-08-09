@@ -1513,6 +1513,7 @@ LIBGRPC_SRC = \
     src/core/xds/xds_client/xds_bootstrap.cc \
     src/core/xds/xds_client/xds_client.cc \
     src/core/xds/xds_client/xds_client_stats.cc \
+    src/cpp/client/global_callback_hook.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
@@ -1805,6 +1806,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/support/workaround_list.h \
+    include/grpcpp/support/global_callback_hook.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 

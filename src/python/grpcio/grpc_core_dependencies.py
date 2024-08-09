@@ -862,6 +862,7 @@ CORE_SOURCE_FILES = [
     'src/core/xds/xds_client/xds_bootstrap.cc',
     'src/core/xds/xds_client/xds_client.cc',
     'src/core/xds/xds_client/xds_client_stats.cc',
+    'src/cpp/client/global_callback_hook.cc',
     'third_party/abseil-cpp/absl/base/internal/cycleclock.cc',
     'third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc',
     'third_party/abseil-cpp/absl/base/internal/raw_logging.cc',

@@ -2650,6 +2650,7 @@ add_library(grpc
   src/core/xds/xds_client/xds_bootstrap.cc
   src/core/xds/xds_client/xds_client.cc
   src/core/xds/xds_client/xds_client_stats.cc
+  src/cpp/client/global_callback_hook.cc
 )
 
 target_compile_features(grpc PUBLIC cxx_std_14)
@@ -2798,6 +2799,7 @@ foreach(_hdr
   include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/support/workaround_list.h
+  include/grpcpp/support/global_callback_hook.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3342,6 +3344,7 @@ add_library(grpc_unsecure
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/cpp/client/global_callback_hook.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -3489,6 +3492,7 @@ foreach(_hdr
   include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/support/workaround_list.h
+  include/grpcpp/support/global_callback_hook.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)

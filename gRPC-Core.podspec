@@ -192,7 +192,8 @@ Pod::Spec.new do |s|
                       'include/grpc/support/sync_windows.h',
                       'include/grpc/support/thd_id.h',
                       'include/grpc/support/time.h',
-                      'include/grpc/support/workaround_list.h'
+                      'include/grpc/support/workaround_list.h',
+                      'include/grpcpp/support/global_callback_hook.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
@@ -2142,6 +2143,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/xds_resource_type.h',
                       'src/core/xds/xds_client/xds_resource_type_impl.h',
                       'src/core/xds/xds_client/xds_transport.h',
+                      'src/cpp/client/global_callback_hook.cc',
                       'third_party/re2/re2/bitmap256.h',
                       'third_party/re2/re2/bitstate.cc',
                       'third_party/re2/re2/compile.cc',

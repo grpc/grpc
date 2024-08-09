@@ -583,6 +583,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "config",
         "exec_ctx",
+        "global_callback_hook",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -662,6 +663,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "config",
         "exec_ctx",
+        "global_callback_hook",
         "gpr",
         "grpc_alts_credentials",
         "grpc_base",
@@ -907,6 +909,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:grpc++_public_hdrs"],
     deps = [
+        "global_callback_hook",
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
     ],
@@ -951,6 +954,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
+        "global_callback_hook",
         "grpc++_base",
         "//src/core:gpr_atm",
         "//src/core:slice",
@@ -1260,6 +1264,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "generic_stub_internal",
+        "global_callback_hook",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
@@ -2455,6 +2460,7 @@ grpc_cc_library(
         "config",
         "exec_ctx",
         "generic_stub_internal",
+        "global_callback_hook",
         "gpr",
         "grpc",
         "grpc++_codegen_proto",
@@ -2544,6 +2550,7 @@ grpc_cc_library(
         "config",
         "exec_ctx",
         "generic_stub_internal",
+        "global_callback_hook",
         "gpr",
         "grpc_base",
         "grpc_core_credentials_header",
@@ -4911,6 +4918,21 @@ grpc_cc_library(
         "//src/core:strerror",
         "//src/core:tchar",
     ],
+)
+
+grpc_cc_library(
+    name = "global_callback_hook",
+    srcs = [
+        "src/cpp/client/global_callback_hook.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/support/global_callback_hook.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/functional:function_ref",
+    ],
+    language = "c++",
 )
 
 # TODO(yashykt): Remove the UPB definitions from here once they are no longer needed
