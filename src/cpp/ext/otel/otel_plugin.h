@@ -478,6 +478,10 @@ class OpenTelemetryPluginImpl
     //               x
     // instrument2 ----- RegisteredMetricCallback2
     // One instrument can be registered by multiple callbacks.
+    // Note that we are not holding a ref on the callback here since we expect
+    // the callback owner to be holding a ref while it is needed. Once the
+    // callback is removed by the owner, we get and maintain weak refs while we
+    // actually remove the callback from our structures.
     absl::flat_hash_map<grpc_core::RegisteredMetricCallback*, Cache> caches
         ABSL_GUARDED_BY(ot_plugin->mu_);
     OpenTelemetryPluginImpl* ot_plugin;
