@@ -35,6 +35,8 @@ import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
+# More files may be added to the RUBY_PHP_ALLOW_LIST
+# if they belong to the PHP or RUBY folder.
 RUBY_PHP_ALLOW_LIST = [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
@@ -45,13 +47,12 @@ RUBY_PHP_ALLOW_LIST = [
         "./src/ruby/ext/grpc/rb_channel.c",
         "./src/ruby/ext/grpc/rb_event_thread.c",
         "./src/ruby/ext/grpc/rb_grpc.c",
+        "./src/ruby/ext/grpc/rb_server.c",
 ],
 
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     # These logging functions are only for php and ruby.
-    # More files may be added to the RUBY_PHP_ALLOW_LIST
-    # as needed.
     "grpc_absl_log_error(" : RUBY_PHP_ALLOW_LIST,
     "grpc_absl_log_info(" : RUBY_PHP_ALLOW_LIST,
     "grpc_absl_log_info_int(" : RUBY_PHP_ALLOW_LIST,
