@@ -25,37 +25,20 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # Submodule name is passed as the RUN_TESTS_FLAGS variable
 SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
 
-# TODO: remove the explicit check for `protobuf` and build to previous commit once protobuf build at head is fixed 
-if [ "${SUBMODULE_NAME}" == "protobuf" ]
-then
-  # Previous commit ID to be tested at
-  SUBMODULE_COMMIT_ID="${BAZEL_FLAGS}"
+# Name of branch to checkout is passed as BAZEL_FLAGS variable
+# If unset, "master" is used by default.
+SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
 
-  # Update submodule to be tested at a previous specified commit
-  (cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "${SUBMODULE_COMMIT_ID}" .)
+# Update submodule to be tested at HEAD
+(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
 
-  echo "This suite tests whether gRPC HEAD builds with the specified previous commit of the protobuf submodule"
-  echo "If a test breaks, some change in the grpc repository has caused the failure"
-  echo ""
-  echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify ${SUBMODULE_COMMIT_ID})"
-  echo ""
-else
-  # Name of branch to checkout is passed as BAZEL_FLAGS variable
-  # If unset, "master" is used by default.
-  SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
-
-  # Update submodule to be tested at HEAD
-  (cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
-  
-  echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
-  echo "If a test breaks, either"
-  echo "1) some change in the grpc repository has caused the failure"
-  echo "2) some change that was just merged in the submodule head has caused the failure."
-
-  echo ""
-  echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
-  echo ""
-fi
+echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
+echo "If a test breaks, either"
+echo "1) some change in the grpc repository has caused the failure"
+echo "2) some change that was just merged in the submodule head has caused the failure."
+echo ""
+echo "submodule '${SUBMODULE_NAME}' is at commit: $(cd third_party/${SUBMODULE_NAME}; git rev-parse --verify HEAD)"
+echo ""
 
 # Update bazel for generate_projects
 case "$SUBMODULE_NAME" in
