@@ -230,9 +230,13 @@ EXPORTS
     gpr_free_aligned
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_log
-    grpc_absl_vlog2_enabled
     gpr_log_verbosity_init
+    grpc_absl_vlog2_enabled
+    grpc_absl_log_error
+    grpc_absl_log_info
+    grpc_absl_log_info_int
+    grpc_absl_vlog
+    grpc_absl_vlog_int
     gpr_format_message
     gpr_strdup
     gpr_asprintf
