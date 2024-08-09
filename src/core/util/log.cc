@@ -40,6 +40,8 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
+int absl_vlog2_enabled() { return ABSL_VLOG_IS_ON(2); }
+
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
