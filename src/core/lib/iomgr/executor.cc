@@ -439,7 +439,7 @@ bool Executor::IsThreadedDefault() {
 
 void Executor::SetThreadingAll(bool enable) {
   GRPC_TRACE_LOG(executor, INFO)
-      << "Executor::SetThreadingAll(" << enable << ") called";
+      << "EXECUTOR Executor::SetThreadingAll(" << enable << ") called";
   for (size_t i = 0; i < static_cast<size_t>(ExecutorType::NUM_EXECUTORS);
        i++) {
     executors[i]->SetThreading(enable);
@@ -448,7 +448,7 @@ void Executor::SetThreadingAll(bool enable) {
 
 void Executor::SetThreadingDefault(bool enable) {
   GRPC_TRACE_LOG(executor, INFO)
-      << "Executor::SetThreadingDefault(" << enable << ") called";
+      << "EXECUTOR Executor::SetThreadingDefault(" << enable << ") called";
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
 
