@@ -42,11 +42,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -56,6 +56,9 @@
 #include "src/core/util/http_client/parser.h"
 
 namespace grpc_core {
+
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::ResolvedAddressToURI;
 
 namespace {
 
@@ -173,7 +176,11 @@ HttpRequest::HttpRequest(
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
-      resolver_(GetDNSResolver()) {
+      resolver_(
+          ChannelArgs::FromC(channel_args_)
+              .GetObjectRef<EventEngine>()
+              ->GetDNSResolver(EventEngine::DNSResolver::ResolverOptions())
+              .value()) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -208,10 +215,8 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_handle_ = resolver_->LookupHostname(
-      absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
-      uri_.scheme(), kDefaultDNSRequestTimeout, pollset_set_,
-      /*name_server=*/"");
+  resolver_->LookupHostname(absl::bind_front(&HttpRequest::OnResolved, this),
+                            uri_.authority(), uri_.scheme());
 }
 
 void HttpRequest::Orphan() {
@@ -220,8 +225,8 @@ void HttpRequest::Orphan() {
     CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
-    if (dns_request_handle_.has_value() &&
-        resolver_->Cancel(dns_request_handle_.value())) {
+    if (resolver_ != nullptr) {
+      resolver_.reset();
       Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
       Unref();
     }
@@ -239,8 +244,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
   if (overall_error_.ok()) {
     overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
-  const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
-  auto addr_text = grpc_sockaddr_to_uri(addr);
+  auto addr_text = ResolvedAddressToURI(addresses_[next_address_ - 1]);
   if (addr_text.ok()) error = AddMessagePrefix(*addr_text, std::move(error));
   overall_error_ = grpc_error_add_child(overall_error_, std::move(error));
 }
@@ -310,7 +314,7 @@ void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   StartWrite();
 }
 
-void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
+void HttpRequest::DoHandshake(const EventEngine::ResolvedAddress& addr) {
   // Create the security connector using the credentials and target name.
   ChannelArgs args = ChannelArgs::FromC(channel_args_);
   RefCountedPtr<grpc_channel_security_connector> sc =
@@ -321,7 +325,7 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
                                          &overall_error_, 1));
     return;
   }
-  absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(addr);
+  absl::StatusOr<std::string> address = ResolvedAddressToURI(addr);
   if (!address.ok()) {
     Finish(GRPC_ERROR_CREATE_REFERENCING("Failed to extract URI from address",
                                          &overall_error_, 1));
@@ -354,15 +358,16 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
                                          &overall_error_, 1));
     return;
   }
-  const grpc_resolved_address* addr = &addresses_[next_address_++];
-  DoHandshake(addr);
+  DoHandshake(addresses_[next_address_++]);
 }
 
 void HttpRequest::OnResolved(
-    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or) {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
-  dns_request_handle_.reset();
+  resolver_.reset();
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
     return;
