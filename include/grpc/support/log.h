@@ -49,15 +49,19 @@ GPRAPI void gpr_log_verbosity_init(void);
 GPRAPI int grpc_absl_vlog2_enabled();
 
 /* Deprecated */
-GPRAPI void grpc_absl_log_error(const char* file, int line, const char* message_str);
+GPRAPI void grpc_absl_log_error(const char* file, int line,
+                                const char* message_str);
 
 /* Deprecated */
-GPRAPI void grpc_absl_log_info(const char* file, int line, const char* message_str);
-GPRAPI void grpc_absl_log_info_int(const char* file, int line, const char* message_str, intptr_t num);
+GPRAPI void grpc_absl_log_info(const char* file, int line,
+                               const char* message_str);
+GPRAPI void grpc_absl_log_info_int(const char* file, int line,
+                                   const char* message_str, intptr_t num);
 
 /* Deprecated */
 GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str);
-GPRAPI void grpc_absl_vlog_int(const char* file, int line, const char* message_str, intptr_t num);
+GPRAPI void grpc_absl_vlog_int(const char* file, int line,
+                               const char* message_str, intptr_t num);
 
 #ifdef __cplusplus
 }

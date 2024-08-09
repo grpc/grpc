@@ -68,7 +68,9 @@ static void grpc_rb_server_shutdown_and_notify_internal(grpc_rb_server* server,
           server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL, NULL);
     }
     if (ev.type != GRPC_OP_COMPLETE) {
-      grpc_absl_log_info_int(GPR_LOCATION,"GRPC_RUBY: bad grpc_server_shutdown_and_notify result:", ev.type);
+      grpc_absl_log_info_int(
+          GPR_LOCATION,
+          "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:", ev.type);
     }
   }
 }

@@ -35,15 +35,18 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
-GPRAPI void grpc_absl_log_error(const char* file, int line, const char* message_str){
+GPRAPI void grpc_absl_log_error(const char* file, int line,
+                                const char* message_str) {
   LOG(ERROR).AtLocation(file, line) << message_str;
 }
 
-GPRAPI void grpc_absl_log_info(const char* file, int line, const char* message_str){
+GPRAPI void grpc_absl_log_info(const char* file, int line,
+                               const char* message_str) {
   LOG(INFO).AtLocation(file, line) << message_str;
 }
 
-GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str){
+GPRAPI void grpc_absl_vlog(const char* file, int line,
+                           const char* message_str) {
   VLOG(2).AtLocation(file, line) << message_str;
 }
 

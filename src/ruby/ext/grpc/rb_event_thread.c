@@ -156,7 +156,9 @@ void grpc_rb_event_queue_thread_start() {
 void grpc_rb_event_queue_thread_stop() {
   GRPC_RUBY_ASSERT(g_one_time_init_done);
   if (!RTEST(g_event_thread)) {
-    grpc_absl_log_error(GPR_LOCATION,"GRPC_RUBY: call credentials thread stop: thread not running");
+    grpc_absl_log_error(
+        GPR_LOCATION,
+        "GRPC_RUBY: call credentials thread stop: thread not running");
     return;
   }
   rb_thread_call_without_gvl(grpc_rb_event_unblocking_func_wrapper, NULL, NULL,
