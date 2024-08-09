@@ -45,6 +45,11 @@ GPRAPI void grpc_absl_log_info_int(const char* file, int line,
                                    const char* message_str, intptr_t num);
 
 /* Deprecated */
+GPRAPI void grpc_absl_log_info_str(const char* file, int line,
+                                   const char* message_str1,
+                                   intptr_t message_str2);
+
+/* Deprecated */
 GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str);
 
 /* Deprecated */
