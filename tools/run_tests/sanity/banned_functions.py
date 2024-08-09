@@ -122,4 +122,4 @@ if errors > 0:
 # Basically, a change rendered this script useless and we did not realize it.
 # This check ensures that this type of issue doesn't occur again.
 assert num_files > 18000  # we have more files
-print(('Number of files checked : %d ' % (num_files)))
+print(("Number of files checked : %d " % (num_files)))
