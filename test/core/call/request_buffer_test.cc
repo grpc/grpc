@@ -181,6 +181,50 @@ TEST(RequestBufferTest, PullThenPushMessage) {
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
+TEST(RequestBufferTest, PullEndOfStream) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
+TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

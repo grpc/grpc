@@ -60,8 +60,9 @@ StatusFlag RequestBuffer::FinishSends() {
   ReleasableMutexLock lock(&mu_);
   if (absl::get_if<Cancelled>(&state_)) return Failure{};
   if (auto* buffering = absl::get_if<Buffering>(&state_)) {
-    state_.emplace<Buffered>(std::move(buffering->initial_metadata),
-                             std::move(buffering->messages));
+    Buffered buffered(std::move(buffering->initial_metadata),
+                      std::move(buffering->messages));
+    state_.emplace<Buffered>(std::move(buffered));
   } else {
     auto& streaming = absl::get<Streaming>(state_);
     CHECK_EQ(streaming.end_of_stream, false);
