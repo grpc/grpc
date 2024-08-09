@@ -165,11 +165,10 @@ MessageHandle ChannelCompression::CompressMessage(
 
 absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     bool is_client, MessageHandle message, DecompressArgs args) const {
-  if (GRPC_TRACE_FLAG_ENABLED(compression)) {
-    LOG(INFO) << "DecompressMessage: len=" << message->payload()->Length()
-              << " max=" << args.max_recv_message_length.value_or(-1)
-              << " alg=" << args.algorithm;
-  }
+  GRPC_TRACE_LOG(compression, INFO)
+      << "DecompressMessage: len=" << message->payload()->Length()
+      << " max=" << args.max_recv_message_length.value_or(-1)
+      << " alg=" << args.algorithm;
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordReceivedMessage(*message->payload());

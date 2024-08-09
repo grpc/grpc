@@ -117,9 +117,8 @@ void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
 void HPackCompressor::SetMaxTableSize(uint32_t max_table_size) {
   if (table_.SetMaxSize(std::min(max_usable_size_, max_table_size))) {
     advertise_table_size_change_ = true;
-    if (GRPC_TRACE_FLAG_ENABLED(http)) {
-      LOG(INFO) << "set max table size from encoder to " << max_table_size;
-    }
+    GRPC_TRACE_LOG(http, INFO)
+        << "set max table size from encoder to " << max_table_size;
   }
 }
 

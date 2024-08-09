@@ -318,9 +318,8 @@ void ChaoticGoodConnector::OnHandshakeDone(
         },
         EventEngineWakeupScheduler(event_engine_),
         [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
-          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-            LOG(INFO) << "ChaoticGoodConnector::OnHandshakeDone: " << status;
-          }
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "ChaoticGoodConnector::OnHandshakeDone: " << status;
           if (status.ok()) {
             MutexLock lock(&self->mu_);
             self->result_->transport = new ChaoticGoodClientTransport(

@@ -51,19 +51,17 @@ XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
       lrs_server_(lrs_server),
       cluster_name_(cluster_name),
       eds_service_name_(eds_service_name) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client_.get() << "] created drop stats "
-              << this << " for {" << lrs_server_ << ", " << cluster_name_
-              << ", " << eds_service_name_ << "}";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client_.get() << "] created drop stats " << this
+      << " for {" << lrs_server_ << ", " << cluster_name_ << ", "
+      << eds_service_name_ << "}";
 }
 
 XdsClusterDropStats::~XdsClusterDropStats() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client_.get()
-              << "] destroying drop stats " << this << " for {" << lrs_server_
-              << ", " << cluster_name_ << ", " << eds_service_name_ << "}";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client_.get() << "] destroying drop stats "
+      << this << " for {" << lrs_server_ << ", " << cluster_name_ << ", "
+      << eds_service_name_ << "}";
   xds_client_->RemoveClusterDropStats(lrs_server_, cluster_name_,
                                       eds_service_name_, this);
   xds_client_.reset(DEBUG_LOCATION, "DropStats");

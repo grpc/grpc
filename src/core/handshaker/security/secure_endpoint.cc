@@ -195,9 +195,8 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-              LOG(INFO) << "secure endpoint: benign reclamation to free memory";
-            }
+            GRPC_TRACE_LOG(resource_quota, INFO)
+                << "secure endpoint: benign reclamation to free memory";
             grpc_slice temp_read_slice;
             grpc_slice temp_write_slice;
 
