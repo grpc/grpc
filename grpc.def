@@ -237,6 +237,7 @@ EXPORTS
     grpc_absl_log_info_str
     grpc_absl_vlog
     grpc_absl_vlog_int
+    grpc_absl_vlog_str
     gpr_log_verbosity_init
     gpr_format_message
     gpr_strdup

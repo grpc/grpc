@@ -747,7 +747,7 @@ extern grpc_absl_log_info_type grpc_absl_log_info_import;
 typedef void(*grpc_absl_log_info_int_type)(const char* file, int line, const char* message_str, intptr_t num);
 extern grpc_absl_log_info_int_type grpc_absl_log_info_int_import;
 #define grpc_absl_log_info_int grpc_absl_log_info_int_import
-typedef void(*grpc_absl_log_info_str_type)(const char* file, int line, const char* message_str1, intptr_t message_str2);
+typedef void(*grpc_absl_log_info_str_type)(const char* file, int line, const char* message_str1, const char* message_str2);
 extern grpc_absl_log_info_str_type grpc_absl_log_info_str_import;
 #define grpc_absl_log_info_str grpc_absl_log_info_str_import
 typedef void(*grpc_absl_vlog_type)(const char* file, int line, const char* message_str);
@@ -756,6 +756,9 @@ extern grpc_absl_vlog_type grpc_absl_vlog_import;
 typedef void(*grpc_absl_vlog_int_type)(const char* file, int line, const char* message_str, intptr_t num);
 extern grpc_absl_vlog_int_type grpc_absl_vlog_int_import;
 #define grpc_absl_vlog_int grpc_absl_vlog_int_import
+typedef void(*grpc_absl_vlog_str_type)(const char* file, int line, const char* message_str1, const char* message_str2);
+extern grpc_absl_vlog_str_type grpc_absl_vlog_str_import;
+#define grpc_absl_vlog_str grpc_absl_vlog_str_import
 typedef void(*gpr_log_verbosity_init_type)(void);
 extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 #define gpr_log_verbosity_init gpr_log_verbosity_init_import

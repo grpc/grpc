@@ -59,7 +59,7 @@ GPRAPI void grpc_absl_log_info_int(const char* file, int line,
 
 GPRAPI void grpc_absl_log_info_str(const char* file, int line,
                                    const char* message_str1,
-                                   intptr_t message_str2) {
+                                   const char* message_str2) {
   LOG(INFO).AtLocation(file, line) << message_str1 << message_str2;
 }
 
@@ -71,6 +71,12 @@ GPRAPI void grpc_absl_vlog(const char* file, int line,
 GPRAPI void grpc_absl_vlog_int(const char* file, int line,
                                const char* message_str, intptr_t num) {
   VLOG(2).AtLocation(file, line) << message_str << num;
+}
+
+GPRAPI void grpc_absl_vlog_str(const char* file, int line,
+                               const char* message_str1,
+                               const char* message_str2) {
+  VLOG(2).AtLocation(file, line) << message_str1 << message_str2;
 }
 
 void gpr_log_verbosity_init(void) {

@@ -260,6 +260,7 @@ grpc_absl_log_info_int_type grpc_absl_log_info_int_import;
 grpc_absl_log_info_str_type grpc_absl_log_info_str_import;
 grpc_absl_vlog_type grpc_absl_vlog_import;
 grpc_absl_vlog_int_type grpc_absl_vlog_int_import;
+grpc_absl_vlog_str_type grpc_absl_vlog_str_import;
 gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 gpr_format_message_type gpr_format_message_import;
 gpr_strdup_type gpr_strdup_import;
@@ -550,6 +551,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_absl_log_info_str_import = (grpc_absl_log_info_str_type) GetProcAddress(library, "grpc_absl_log_info_str");
   grpc_absl_vlog_import = (grpc_absl_vlog_type) GetProcAddress(library, "grpc_absl_vlog");
   grpc_absl_vlog_int_import = (grpc_absl_vlog_int_type) GetProcAddress(library, "grpc_absl_vlog_int");
+  grpc_absl_vlog_str_import = (grpc_absl_vlog_str_type) GetProcAddress(library, "grpc_absl_vlog_str");
   gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
   gpr_format_message_import = (gpr_format_message_type) GetProcAddress(library, "gpr_format_message");
   gpr_strdup_import = (gpr_strdup_type) GetProcAddress(library, "gpr_strdup");
