@@ -161,9 +161,8 @@ void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
     refs_.fetch_sub(MakeRefPair(1, 0), std::memory_order_acq_rel);
     CallbackWrapper* cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
-    if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-      LOG(INFO) << "  Scheduling on queue : item " << cb_wrapper;
-    }
+    GRPC_TRACE_LOG(work_serializer, INFO)
+        << "  Scheduling on queue : item " << cb_wrapper;
     queue_.Push(&cb_wrapper->mpscq_node);
   }
 }
@@ -172,19 +171,15 @@ void WorkSerializer::LegacyWorkSerializer::Schedule(
     std::function<void()> callback, const DebugLocation& location) {
   CallbackWrapper* cb_wrapper =
       new CallbackWrapper(std::move(callback), location);
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::Schedule() " << this
-              << " Scheduling callback " << cb_wrapper << " ["
-              << location.file() << ":" << location.line() << "]";
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO)
+      << "WorkSerializer::Schedule() " << this << " Scheduling callback "
+      << cb_wrapper << " [" << location.file() << ":" << location.line() << "]";
   refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_acq_rel);
   queue_.Push(&cb_wrapper->mpscq_node);
 }
 
 void WorkSerializer::LegacyWorkSerializer::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::Orphan() " << this;
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO) << "WorkSerializer::Orphan() " << this;
   const uint64_t prev_ref_pair =
       refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0 && GetSize(prev_ref_pair) == 1) {
@@ -196,9 +191,8 @@ void WorkSerializer::LegacyWorkSerializer::Orphan() {
 // The thread that calls this loans itself to the work serializer so as to
 // execute all the scheduled callbacks.
 void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::DrainQueue() " << this;
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO)
+      << "WorkSerializer::DrainQueue() " << this;
   // Attempt to take ownership of the WorkSerializer. Also increment the queue
   // size as required by `DrainQueueOwned()`.
   const uint64_t prev_ref_pair =
@@ -217,9 +211,8 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
 }
 
 void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-    LOG(INFO) << "WorkSerializer::DrainQueueOwned() " << this;
-  }
+  GRPC_TRACE_LOG(work_serializer, INFO)
+      << "WorkSerializer::DrainQueueOwned() " << this;
   while (true) {
     auto prev_ref_pair = refs_.fetch_sub(MakeRefPair(0, 1));
     // It is possible that while draining the queue, the last callback ended
@@ -264,11 +257,10 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
       GRPC_TRACE_LOG(work_serializer, INFO)
           << "  Queue returned nullptr, trying again";
     }
-    if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
-      LOG(INFO) << "  Running item " << cb_wrapper
-                << " : callback scheduled at [" << cb_wrapper->location.file()
-                << ":" << cb_wrapper->location.line() << "]";
-    }
+    GRPC_TRACE_LOG(work_serializer, INFO)
+        << "  Running item " << cb_wrapper << " : callback scheduled at ["
+        << cb_wrapper->location.file() << ":" << cb_wrapper->location.line()
+        << "]";
     cb_wrapper->callback();
     delete cb_wrapper;
   }

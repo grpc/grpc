@@ -738,15 +738,12 @@ extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
+typedef int(*absl_vlog2_enabled_type)();
+extern absl_vlog2_enabled_type absl_vlog2_enabled_import;
+#define absl_vlog2_enabled absl_vlog2_enabled_import
 typedef void(*gpr_log_verbosity_init_type)(void);
 extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 #define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func deprecated_setting);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

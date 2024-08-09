@@ -40,6 +40,8 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
+int absl_vlog2_enabled() { return ABSL_VLOG_IS_ON(2); }
+
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
@@ -118,11 +120,4 @@ void gpr_log_verbosity_init(void) {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
-}
-
-void gpr_set_log_function([[maybe_unused]] gpr_log_func deprecated_setting) {
-  LOG(ERROR)
-      << "This function is deprecated. This function will be deleted in the "
-         "next gRPC release. You may create a new absl LogSink with similar "
-         "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
 }
