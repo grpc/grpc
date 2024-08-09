@@ -1888,7 +1888,6 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/android/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/gcp_metadata_query.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/gcp_metadata_query.h" role="src" />
@@ -1915,11 +1914,9 @@
     <file baseinstalldir="/" name="src/core/util/latent_see.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/latent_see.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/linux/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/msys/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/posix/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
@@ -1938,7 +1935,6 @@
     <file baseinstalldir="/" name="src/core/util/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/windows/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/string_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/sync.cc" role="src" />

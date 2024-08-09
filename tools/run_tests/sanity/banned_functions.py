@@ -35,59 +35,54 @@ import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
+# More files may be added to the RUBY_PHP_ALLOW_LIST
+# if they belong to the PHP or RUBY folder.
+RUBY_PHP_ALLOW_LIST = [
+    "./include/grpc/support/log.h",
+    "./src/core/util/log.cc",
+    "./src/php/ext/grpc/call_credentials.c",
+    "./src/php/ext/grpc/channel.c",
+    "./src/ruby/ext/grpc/rb_call.c",
+    "./src/ruby/ext/grpc/rb_call_credentials.c",
+    "./src/ruby/ext/grpc/rb_channel.c",
+    "./src/ruby/ext/grpc/rb_event_thread.c",
+    "./src/ruby/ext/grpc/rb_grpc.c",
+    "./src/ruby/ext/grpc/rb_server.c",
+]
+
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    "absl_vlog2_enabled(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-    ],
-    "gpr_log_severity": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
-        "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
-    ],
-    "gpr_log(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/call_credentials.c",
-        "./src/php/ext/grpc/channel.c",
-        "./src/ruby/ext/grpc/rb_call.c",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-        "./src/ruby/ext/grpc/rb_channel.c",
-        "./src/ruby/ext/grpc/rb_event_thread.c",
-        "./src/ruby/ext/grpc/rb_grpc.c",
-        "./src/ruby/ext/grpc/rb_server.c",
-    ],
-    "gpr_should_log(": [
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-    ],
-    "gpr_log_message(": [
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-    ],
-    "gpr_log_func_args": [],
-    "gpr_set_log_function(": [],
-    "GPR_ASSERT": [],
+    # These logging functions are only for php and ruby.
+    "grpc_absl_log_error(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_info(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_info_int(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_info_str(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_vlog(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_vlog2_enabled(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_vlog_int(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_vlog_str(": RUBY_PHP_ALLOW_LIST,
+    # These have been deprecated.
+    # Most of these have been deleted.
+    # Putting this check here just to prevent people from
+    # submitting PRs with any of these commented out.
     "gpr_assertion_failed": [],
-    "GPR_DEBUG_ASSERT": [],
+    "gpr_log(": [],
+    "gpr_log_func_args": [],
+    "gpr_log_message": [],
+    "gpr_log_severity": [],
     "gpr_log_severity_string": [],
-    "gpr_set_log_verbosity(": [],
+    "gpr_set_log_function": [],
+    "gpr_set_log_verbosity": [],
+    "gpr_should_log": [],
+    # These macros have been deprecated.
+    # Most of these have been deleted.
+    # Putting this check here just to prevent people from
+    # submitting PRs with any of these commented out.
+    "GPR_ASSERT": [],
+    "GPR_DEBUG_ASSERT": [],
+    "GPR_DEBUG": [],
+    "GPR_ERROR": [],
+    "GPR_INFO": [],
 }
 
 errors = 0
@@ -127,4 +122,4 @@ if errors > 0:
 # Basically, a change rendered this script useless and we did not realize it.
 # This check ensures that this type of issue doesn't occur again.
 assert num_files > 18000  # we have more files
-# print(('Number of files checked : %d ' % (num_files)))
+print(("Number of files checked : %d " % (num_files)))
