@@ -511,9 +511,8 @@ XdsClusterImplLb::~XdsClusterImplLb() {
 }
 
 void XdsClusterImplLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
   xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
@@ -560,9 +559,8 @@ std::string GetEdsResourceName(const XdsClusterResource& cluster_resource) {
 }
 
 absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] Received update";
   // Grab new LB policy config.
   auto new_config = args.config.TakeAsSubclass<XdsClusterImplLbConfig>();
   // Cluster name should never change, because the cds policy will assign a
@@ -732,11 +730,10 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-      LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity (drop all): state=READY picker="
-                << drop_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+        << "[xds_cluster_impl_lb " << this
+        << "] updating connectivity (drop all): state=READY picker="
+        << drop_picker.get();
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
                                           std::move(drop_picker));
     return;
