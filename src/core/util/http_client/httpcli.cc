@@ -227,8 +227,6 @@ void HttpRequest::Orphan() {
     // cancel potentially pending DNS resolution.
     if (resolver_ != nullptr) {
       resolver_.reset();
-      Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
-      Unref();
     }
     if (handshake_mgr_ != nullptr) {
       // Shutdown will cancel any ongoing tcp connect.
