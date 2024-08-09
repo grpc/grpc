@@ -115,11 +115,11 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
       rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
   if (grpc_absl_vlog2_enabled()) {
-    grpc_absl_vlog_int(
+    grpc_absl_vlog_str(
         GPR_LOCATION,
         "GRPC_RUBY call credentials callback failed, exception inspect: ",
         StringValueCStr(rb_exception_info));
-    grpc_absl_vlog_int(
+    grpc_absl_vlog_str(
         GPR_LOCATION, "GRPC_RUBY call credentials callback failed, backtrace: ",
         StringValueCStr(backtrace_str));
   }
