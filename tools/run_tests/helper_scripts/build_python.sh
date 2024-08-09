@@ -86,6 +86,19 @@ function toolchain() {
   fi
 }
 
+# When we mount and reuse the existing repo from host machine inside docker
+# container, the `tools/bazel.rc` file is shared to the docker container and 
+# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh 
+# (outside docker container) forces bazel to look for the same host location
+# inside the docker container, which doesn't exist.
+# Hence overriding it again with the working directory inside the container 
+# should solve this issue
+BAZEL_DEP_PATH="$(pwd)/third_party/protobuf"
+BAZEL_DEP_NAME="com_google_protobuf"
+echo "bazel override_repository is set for ${BAZEL_DEP_NAME} to ${BAZEL_DEP_PATH}"
+echo "build --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools/bazel.rc"
+
 ####################
 # Script Arguments #
 ####################
