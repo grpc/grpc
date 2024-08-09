@@ -205,7 +205,9 @@ class OpenTelemetryPluginBuilderImpl {
 class OpenTelemetryPluginImpl
     : public grpc::experimental::OpenTelemetryPlugin,
       public grpc_core::StatsPlugin,
-      public std::enable_shared_from_this<OpenTelemetryPluginImpl> {
+      public std::enable_shared_from_this<OpenTelemetryPluginImpl>,
+      private grpc::internal::GrpcLibrary  // needed for EventEngine
+{
  public:
   OpenTelemetryPluginImpl(
       const absl::flat_hash_set<std::string>& metrics,
@@ -223,6 +225,7 @@ class OpenTelemetryPluginImpl
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
+  ~OpenTelemetryPluginImpl() override;
 
  private:
   class ClientCallTracer;
@@ -420,10 +423,18 @@ class OpenTelemetryPluginImpl
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
-  void AddCallback(grpc_core::RegisteredMetricCallback* callback)
+  void AddCallback(
+      grpc_core::RefCountedPtr<grpc_core::RegisteredMetricCallback> callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
-  void RemoveCallback(grpc_core::RegisteredMetricCallback* callback)
+  void AddCallbackImpl(
+      grpc_core::RefCountedPtr<grpc_core::RegisteredMetricCallback> callback)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  void RemoveCallback(
+      grpc_core::RefCountedPtr<grpc_core::RegisteredMetricCallback> callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
+  void RemoveCallbackImpl(
+      grpc_core::RefCountedPtr<grpc_core::RegisteredMetricCallback> callback)
+      ABSL_LOCKS_EXCLUDED(mu_);
   grpc_core::ClientCallTracer* GetClientCallTracer(
       const grpc_core::Slice& path, bool registered_method,
       std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
@@ -480,6 +491,7 @@ class OpenTelemetryPluginImpl
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
   };
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   // Instruments for per-call metrics.
   ClientMetrics client_;
   ServerMetrics server_;

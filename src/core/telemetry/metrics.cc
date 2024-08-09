@@ -90,14 +90,15 @@ RegisteredMetricCallback::RegisteredMetricCallback(
       metrics_(std::move(metrics)),
       min_interval_(min_interval) {
   for (auto& state : stats_plugin_group_.plugins_state_) {
-    state.plugin->AddCallback(this);
+    state.plugin->AddCallback(Ref());
   }
 }
 
-RegisteredMetricCallback::~RegisteredMetricCallback() {
+void RegisteredMetricCallback::Orphan() {
   for (auto& state : stats_plugin_group_.plugins_state_) {
-    state.plugin->RemoveCallback(this);
+    state.plugin->RemoveCallback(Ref());
   }
+  Unref(DEBUG_LOCATION, "RegisteredMetricCallback::Orphan");
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(

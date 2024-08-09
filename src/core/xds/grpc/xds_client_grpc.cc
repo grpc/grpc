@@ -313,8 +313,10 @@ GrpcXdsClient::GrpcXdsClient(
               .certificate_providers())),
       stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
-          [this](CallbackMetricReporter& reporter) {
-            ReportCallbackMetrics(reporter);
+          [xds_client = WeakRefAsSubclass<GrpcXdsClient>(
+               DEBUG_LOCATION, "GrpcXdsClient Metric Callback")](
+              CallbackMetricReporter& reporter) {
+            xds_client->ReportCallbackMetrics(reporter);
           },
           Duration::Seconds(5), kMetricConnected, kMetricResources)) {}
 

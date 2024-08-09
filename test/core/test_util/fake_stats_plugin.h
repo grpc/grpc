@@ -352,15 +352,16 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
-  void AddCallback(RegisteredMetricCallback* callback) override {
-    VLOG(2) << "FakeStatsPlugin[" << this << "]::AddCallback(" << callback
+  void AddCallback(RefCountedPtr<RegisteredMetricCallback> callback) override {
+    VLOG(2) << "FakeStatsPlugin[" << this << "]::AddCallback(" << callback.get()
             << ")";
-    callbacks_.insert(callback);
+    callbacks_.insert(callback.get());
   }
-  void RemoveCallback(RegisteredMetricCallback* callback) override {
-    VLOG(2) << "FakeStatsPlugin[" << this << "]::RemoveCallback(" << callback
-            << ")";
-    callbacks_.erase(callback);
+  void RemoveCallback(
+      RefCountedPtr<RegisteredMetricCallback> callback) override {
+    VLOG(2) << "FakeStatsPlugin[" << this << "]::RemoveCallback("
+            << callback.get() << ")";
+    callbacks_.erase(callback.get());
   }
 
   ClientCallTracer* GetClientCallTracer(

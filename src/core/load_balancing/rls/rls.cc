@@ -787,7 +787,7 @@ class RlsLb final : public LoadBalancingPolicy {
   std::map<std::string /*target*/, ChildPolicyWrapper*> child_policy_map_;
 
   // Must be after mu_, so that it is destroyed before mu_.
-  std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
+  OrphanablePtr<RegisteredMetricCallback> registered_metric_callback_;
 };
 
 //
@@ -1935,9 +1935,11 @@ RlsLb::RlsLb(Args args)
       cache_(this),
       registered_metric_callback_(
           channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
-              [this](CallbackMetricReporter& reporter) {
-                MutexLock lock(&mu_);
-                cache_.ReportMetricsLocked(reporter);
+              [rls_lb = RefAsSubclass<RlsLb>(DEBUG_LOCATION,
+                                             "RlsLB Metric Callback")](
+                  CallbackMetricReporter& reporter) {
+                MutexLock lock(&rls_lb->mu_);
+                rls_lb->cache_.ReportMetricsLocked(reporter);
               },
               Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries)) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
