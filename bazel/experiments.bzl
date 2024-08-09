@@ -25,6 +25,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
+    "local_connector_secure": "local_connector_secure",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -52,6 +53,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "local_connector_secure",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -99,6 +103,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "local_connector_secure",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -132,6 +139,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_client",
+                "local_connector_secure",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [

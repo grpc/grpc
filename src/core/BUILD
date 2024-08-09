@@ -4097,6 +4097,7 @@ grpc_cc_library(
         "//:sockaddr_utils",
         "//:tsi_base",
         "//:uri_parser",
+        "//src/core:experiments",
     ],
 )
 

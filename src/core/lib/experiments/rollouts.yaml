@@ -75,6 +75,8 @@
     windows: true
 - name: free_large_allocator
   default: false
+- name: local_connector_secure
+  default: false
 - name: max_pings_wo_data_throttle
   default: false
 - name: monitoring_experiment
