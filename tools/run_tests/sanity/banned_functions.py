@@ -42,6 +42,12 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/log.cc",
         "./src/ruby/ext/grpc/rb_call_credentials.c",
     ],
+    "grpc_absl_log_error(": [
+        "./include/grpc/support/log.h",
+        "./src/core/util/log.cc",
+        "./src/ruby/ext/grpc/rb_channel.c",
+        "./src/ruby/ext/grpc/rb_event_thread.c",
+    ],
     "gpr_assertion_failed": [],
     "gpr_log(": [],
     "gpr_log_func_args": [],
@@ -53,6 +59,9 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_should_log": [],
     "GPR_ASSERT": [],
     "GPR_DEBUG_ASSERT": [],
+    "GPR_DEBUG": [],
+    "GPR_INFO": [],
+    "GPR_ERROR": [],
 }
 
 errors = 0
