@@ -84,7 +84,7 @@
 // Exclude this fixture from experiment runs
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 14)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 15)
-#define FEATURE_MASK_IS_LOCAL_CREDS (1 << 16)
+#define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 16)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -684,9 +684,9 @@ class CoreEnd2endTestRegistry {
     GTEST_SKIP() << "Disabled for initial v3 testing";      \
   }
 
-#define SKIP_IF_LOCAL_CREDS()                                        \
-  if (GetParam()->feature_mask & FEATURE_MASK_IS_LOCAL_CREDS) { \
-    GTEST_SKIP() << "Disabled for Local TCP Connection";      \
+#define SKIP_IF_LOCAL_TCP_CREDS()                                   \
+  if (GetParam()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
+    GTEST_SKIP() << "Disabled for Local TCP Connection";            \
   }
 
 #define CORE_END2END_TEST(suite, name)                                       \

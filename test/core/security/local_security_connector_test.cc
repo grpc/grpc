@@ -142,7 +142,6 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
-  LOG(ERROR) << "experiment" << grpc_core::IsLocalConnectorSecureEnabled();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
