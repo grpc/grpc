@@ -28,6 +28,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
@@ -210,6 +211,8 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
     frame->offset += to_read_size;
     available_size -= to_read_size;
     frame->size = load32_little_endian(frame->data);
+    if (frame->size < 4) return TSI_DATA_CORRUPTED;
+    if (frame->size > 16 * 1024 * 1024) return TSI_DATA_CORRUPTED;
     tsi_fake_frame_ensure_size(frame);
   }
 

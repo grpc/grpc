@@ -52,7 +52,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
@@ -382,8 +381,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       delayed_ping_timer_handle =
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   grpc_closure retry_initiate_ping_locked;
-
-  grpc_core::Chttp2MaxConcurrentStreamsPolicy max_concurrent_streams_policy;
 
   /// ping acks
   size_t ping_ack_count = 0;

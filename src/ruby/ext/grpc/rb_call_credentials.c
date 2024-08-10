@@ -60,7 +60,7 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   VALUE callback_func = rb_ary_entry(args, 0);
   VALUE callback_args = rb_ary_entry(args, 1);
   VALUE md_ary_obj = rb_ary_entry(args, 2);
-  if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (absl_vlog2_enabled()) {
     VALUE callback_func_str = rb_funcall(callback_func, rb_intern("to_s"), 0);
     VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
     VALUE callback_source_info =
@@ -112,7 +112,7 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
   VALUE rb_exception_info =
       rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
-  gpr_log(GPR_INFO,
+  gpr_log(GPR_DEBUG,
           "GRPC_RUBY call credentials callback failed, exception inspect:|%s| "
           "backtrace:|%s|",
           StringValueCStr(rb_exception_info), StringValueCStr(backtrace_str));

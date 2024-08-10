@@ -117,10 +117,9 @@ ConnectivityStateTracker::~ConnectivityStateTracker() {
 void ConnectivityStateTracker::AddWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-  if (GRPC_TRACE_FLAG_ENABLED(connectivity_state)) {
-    LOG(INFO) << "ConnectivityStateTracker " << name_ << "[" << this
-              << "]: add watcher " << watcher.get();
-  }
+  GRPC_TRACE_LOG(connectivity_state, INFO)
+      << "ConnectivityStateTracker " << name_ << "[" << this
+      << "]: add watcher " << watcher.get();
   grpc_connectivity_state current_state =
       state_.load(std::memory_order_relaxed);
   if (initial_state != current_state) {
@@ -141,10 +140,9 @@ void ConnectivityStateTracker::AddWatcher(
 
 void ConnectivityStateTracker::RemoveWatcher(
     ConnectivityStateWatcherInterface* watcher) {
-  if (GRPC_TRACE_FLAG_ENABLED(connectivity_state)) {
-    LOG(INFO) << "ConnectivityStateTracker " << name_ << "[" << this
-              << "]: remove watcher " << watcher;
-  }
+  GRPC_TRACE_LOG(connectivity_state, INFO)
+      << "ConnectivityStateTracker " << name_ << "[" << this
+      << "]: remove watcher " << watcher;
   watchers_.erase(watcher);
 }
 
@@ -178,10 +176,9 @@ void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
 
 grpc_connectivity_state ConnectivityStateTracker::state() const {
   grpc_connectivity_state state = state_.load(std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(connectivity_state)) {
-    LOG(INFO) << "ConnectivityStateTracker " << name_ << "[" << this
-              << "]: get current state: " << ConnectivityStateName(state);
-  }
+  GRPC_TRACE_LOG(connectivity_state, INFO)
+      << "ConnectivityStateTracker " << name_ << "[" << this
+      << "]: get current state: " << ConnectivityStateName(state);
   return state;
 }
 

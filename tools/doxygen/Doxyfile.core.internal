@@ -1022,8 +1022,6 @@ src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/legacy_frame.h \
-src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
-src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
@@ -2728,6 +2726,7 @@ src/core/util/posix/string.cc \
 src/core/util/posix/sync.cc \
 src/core/util/posix/time.cc \
 src/core/util/posix/tmpfile.cc \
+src/core/util/ring_buffer.h \
 src/core/util/spinlock.h \
 src/core/util/string.cc \
 src/core/util/string.h \
@@ -2737,6 +2736,7 @@ src/core/util/time.cc \
 src/core/util/time_precise.cc \
 src/core/util/time_precise.h \
 src/core/util/tmpfile.h \
+src/core/util/unique_ptr_with_bitset.h \
 src/core/util/upb_utils.h \
 src/core/util/useful.h \
 src/core/util/windows/cpu.cc \

@@ -90,12 +90,14 @@ constexpr Base64InverseTable kBase64InverseTable;
 class HPackParser::Input {
  public:
   Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
-        const uint8_t* end, absl::BitGenRef bitsrc, HpackParseResult& error)
+        const uint8_t* end, absl::BitGenRef bitsrc,
+        HpackParseResult& frame_error, HpackParseResult& field_error)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
         end_(end),
         frontier_(begin),
-        error_(error),
+        frame_error_(frame_error),
+        field_error_(field_error),
         bitsrc_(bitsrc) {}
 
   // If input is backed by a slice, retrieve its refcount. If not, return
@@ -214,13 +216,17 @@ class HPackParser::Input {
 
   // Check if we saw an EOF
   bool eof_error() const {
-    return min_progress_size_ != 0 || error_.connection_error();
+    return min_progress_size_ != 0 || frame_error_.connection_error();
+  }
+
+  // Reset the field error to be ok
+  void ClearFieldError() {
+    if (field_error_.ok()) return;
+    field_error_ = HpackParseResult();
   }
 
   // Minimum number of bytes to unstuck the current parse
   size_t min_progress_size() const { return min_progress_size_; }
-
-  bool has_error() const { return !error_.ok(); }
 
   // Set the current error - tweaks the error to include a stream id so that
   // chttp2 does not close the connection.
@@ -245,10 +251,7 @@ class HPackParser::Input {
   // read prior to being able to get further in this parse.
   void UnexpectedEOF(size_t min_progress_size) {
     CHECK_GT(min_progress_size, 0u);
-    if (min_progress_size_ != 0 || error_.connection_error()) {
-      DCHECK(eof_error());
-      return;
-    }
+    if (eof_error()) return;
     // Set min progress size, taking into account bytes parsed already but not
     // consumed.
     min_progress_size_ = min_progress_size + (begin_ - frontier_);
@@ -301,13 +304,18 @@ class HPackParser::Input {
   // Do not use this directly, instead use SetErrorAndContinueParsing or
   // SetErrorAndStopParsing.
   void SetError(HpackParseResult error) {
-    if (!error_.ok() || min_progress_size_ > 0) {
-      if (error.connection_error() && !error_.connection_error()) {
-        error_ = std::move(error);  // connection errors dominate
+    SetErrorFor(frame_error_, error);
+    SetErrorFor(field_error_, std::move(error));
+  }
+
+  void SetErrorFor(HpackParseResult& error, HpackParseResult new_error) {
+    if (!error.ok() || min_progress_size_ > 0) {
+      if (new_error.connection_error() && !error.connection_error()) {
+        error = std::move(new_error);  // connection errors dominate
       }
       return;
     }
-    error_ = std::move(error);
+    error = std::move(new_error);
   }
 
   // Refcount if we are backed by a slice
@@ -319,7 +327,8 @@ class HPackParser::Input {
   // Frontier denotes the first byte past successfully processed input
   const uint8_t* frontier_;
   // Current error
-  HpackParseResult& error_;
+  HpackParseResult& frame_error_;
+  HpackParseResult& field_error_;
   // If the error was EOF, we flag it here by noting how many more bytes would
   // be needed to make progress
   size_t min_progress_size_ = 0;
@@ -596,6 +605,7 @@ class HPackParser::Parser {
   bool ParseTop() {
     DCHECK(state_.parse_state == ParseState::kTop);
     auto cur = *input_->Next();
+    input_->ClearFieldError();
     switch (cur >> 4) {
         // Literal header not indexed - First byte format: 0000xxxx
         // Literal header never indexed - First byte format: 0001xxxx
@@ -700,20 +710,21 @@ class HPackParser::Parser {
         type = "???";
         break;
     }
-    VLOG(2) << "HTTP:" << log_info_.stream_id << ":" << type << ":"
-            << (log_info_.is_client ? "CLI" : "SVR") << ": "
-            << memento.md.DebugString()
-            << (memento.parse_status == nullptr
-                    ? ""
-                    : absl::StrCat(
-                          " (parse error: ",
-                          memento.parse_status->Materialize().ToString(), ")"));
+    LOG(INFO) << "HTTP:" << log_info_.stream_id << ":" << type << ":"
+              << (log_info_.is_client ? "CLI" : "SVR") << ": "
+              << memento.md.DebugString()
+              << (memento.parse_status.get() == nullptr
+                      ? ""
+                      : absl::StrCat(
+                            " (parse error: ",
+                            memento.parse_status->Materialize().ToString(),
+                            ")"));
   }
 
   void EmitHeader(const HPackTable::Memento& md) {
     // Pass up to the transport
     state_.frame_length += md.md.transport_size();
-    if (md.parse_status != nullptr) {
+    if (md.parse_status.get() != nullptr) {
       // Reject any requests with invalid metadata.
       input_->SetErrorAndContinueParsing(*md.parse_status);
     }
@@ -950,11 +961,10 @@ class HPackParser::Parser {
                                   state_.string_length)
             : String::Parse(input_, state_.is_string_huff_compressed,
                             state_.string_length);
-    HpackParseResult& status = state_.frame_error;
     absl::string_view key_string;
     if (auto* s = absl::get_if<Slice>(&state_.key)) {
       key_string = s->as_string_view();
-      if (status.ok()) {
+      if (state_.field_error.ok()) {
         auto r = ValidateKey(key_string);
         if (r != ValidateMetadataResult::kOk) {
           input_->SetErrorAndContinueParsing(
@@ -964,7 +974,7 @@ class HPackParser::Parser {
     } else {
       const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
-      if (status.ok() && memento->parse_status != nullptr) {
+      if (state_.field_error.ok() && memento->parse_status.get() != nullptr) {
         input_->SetErrorAndContinueParsing(*memento->parse_status);
       }
     }
@@ -991,15 +1001,15 @@ class HPackParser::Parser {
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
     auto md = grpc_metadata_batch::Parse(
         key_string, std::move(value_slice), state_.add_to_table, transport_size,
-        [key_string, &status, this](absl::string_view message, const Slice&) {
-          if (!status.ok()) return;
+        [key_string, this](absl::string_view message, const Slice&) {
+          if (!state_.field_error.ok()) return;
           input_->SetErrorAndContinueParsing(
               HpackParseResult::MetadataParseError(key_string));
           LOG(ERROR) << "Error parsing '" << key_string
                      << "' metadata: " << message;
         });
-    HPackTable::Memento memento{std::move(md),
-                                status.PersistentStreamErrorOrNullptr()};
+    HPackTable::Memento memento{
+        std::move(md), state_.field_error.PersistentStreamErrorOrNullptr()};
     input_->UpdateFrontier();
     state_.parse_state = ParseState::kTop;
     if (state_.add_to_table) {
@@ -1112,13 +1122,13 @@ grpc_error_handle HPackParser::Parse(
     std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
     return ParseInput(
         Input(nullptr, buffer.data(), buffer.data() + buffer.size(), bitsrc,
-              state_.frame_error),
+              state_.frame_error, state_.field_error),
         is_last, call_tracer);
   }
-  return ParseInput(
-      Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
-            GRPC_SLICE_END_PTR(slice), bitsrc, state_.frame_error),
-      is_last, call_tracer);
+  return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
+                          GRPC_SLICE_END_PTR(slice), bitsrc, state_.frame_error,
+                          state_.field_error),
+                    is_last, call_tracer);
 }
 
 grpc_error_handle HPackParser::ParseInput(
