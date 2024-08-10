@@ -51,7 +51,8 @@ typedef enum gpr_log_severity {
 GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
                     const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 
-GPRAPI int gpr_should_log(gpr_log_severity severity);
+/** Deprecated. **/
+GPRAPI int absl_vlog2_enabled();
 
 GPRAPI void gpr_log_verbosity_init(void);
 

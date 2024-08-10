@@ -136,15 +136,13 @@ XdsWrrLocalityLb::XdsWrrLocalityLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {}
 
 XdsWrrLocalityLb::~XdsWrrLocalityLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] destroying";
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] destroying";
 }
 
 void XdsWrrLocalityLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] shutting down";
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
@@ -161,9 +159,8 @@ void XdsWrrLocalityLb::ResetBackoffLocked() {
 }
 
 absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] Received update";
   auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
   // Scan the addresses to find the weight for each locality.
   std::map<RefCountedStringValue, uint32_t> locality_weights;
@@ -203,11 +200,9 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
            })},
       }),
   });
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this
-              << "] generated child policy config: "
-              << JsonDump(child_config_json, /*indent=*/1);
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] generated child policy config: "
+      << JsonDump(child_config_json, /*indent=*/1);
   // Parse config.
   auto child_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
