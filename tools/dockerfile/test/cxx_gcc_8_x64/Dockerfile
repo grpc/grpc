@@ -58,7 +58,7 @@ RUN python3 -m pip install twisted
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
-# Install ccache (use slighly older release of ccache that works older compilers and cmake)
+# Install ccache (use slightly older release of ccache that works older compilers and cmake)
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.

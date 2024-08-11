@@ -82,7 +82,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
 }  // namespace experimental
 }  // namespace grpc_core
 
-// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++
+// TODO(gtcooke94) - Mark with api macro when all wrapped languages support C++
 // in core APIs
 /**
  * EXPERIMENTAL API - Subject to change

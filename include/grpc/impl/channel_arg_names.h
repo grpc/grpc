@@ -259,7 +259,7 @@
    issued by the tcp_write(). By default, this is set to 4. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
   "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
-/* Overrides the TCP socket recieve buffer size, SO_RCVBUF. */
+/* Overrides the TCP socket receive buffer size, SO_RCVBUF. */
 #define GRPC_ARG_TCP_RECEIVE_BUFFER_SIZE "grpc.tcp_receive_buffer_size"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
