@@ -692,7 +692,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
   if (config.grpc_tools_version.size() > 0) {
-    out->Print(var, "import warnings\n");
+    out->Print(var, "import warnings\n;from pathlib import Path\n");
   }
   if (generate_in_pb2_grpc) {
     out->Print("\n");
@@ -773,7 +773,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
           out->Print(
               var,
               "f'The grpc package installed is at version {GRPC_VERSION},'\n"
-              "+ f' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
+              "+ f' but the generated code in {Path(__file__).name} "
               "depends on'\n"
               "+ f' grpcio>={GRPC_GENERATED_VERSION}.'\n"
               "+ f' Please upgrade your grpc module to "
