@@ -1028,9 +1028,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
-      if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-        LOG(INFO) << pollset << " poll=" << r;
-      }
+      GRPC_TRACE_LOG(polling, INFO) << pollset << " poll=" << r;
 
       if (r < 0) {
         if (errno != EINTR) {
@@ -1052,9 +1050,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
-          if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-            LOG(INFO) << pollset << ": got_wakeup";
-          }
+          GRPC_TRACE_LOG(polling, INFO) << pollset << ": got_wakeup";
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }

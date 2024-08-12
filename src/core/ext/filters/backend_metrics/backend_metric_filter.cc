@@ -135,10 +135,9 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   }
   absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
   if (serialized.has_value() && !serialized->empty()) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-      LOG(INFO) << "[" << this
-                << "] Backend metrics serialized. size: " << serialized->size();
-    }
+    GRPC_TRACE_LOG(backend_metric_filter, INFO)
+        << "[" << this
+        << "] Backend metrics serialized. size: " << serialized->size();
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
   } else if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {

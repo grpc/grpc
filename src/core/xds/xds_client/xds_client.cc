@@ -457,10 +457,9 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
                                      : nullptr),
       xds_client_(std::move(xds_client)),
       server_(server) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client_.get() << "] creating channel "
-              << this << " for server " << server.server_uri();
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client_.get() << "] creating channel " << this
+      << " for server " << server.server_uri();
   absl::Status status;
   transport_ = xds_client_->transport_factory_->Create(
       server,
@@ -474,10 +473,9 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
 }
 
 XdsClient::XdsChannel::~XdsChannel() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client() << "] destroying xds channel "
-              << this << " for server " << server_.server_uri();
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client() << "] destroying xds channel " << this
+      << " for server " << server_.server_uri();
   xds_client_.reset(DEBUG_LOCATION, "XdsChannel");
 }
 
@@ -486,10 +484,9 @@ XdsClient::XdsChannel::~XdsChannel() {
 // called from DualRefCounted::Unref, which cannot have a lock annotation for
 // a lock in this subclass.
 void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client() << "] orphaning xds channel "
-              << this << " for server " << server_.server_uri();
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client() << "] orphaning xds channel " << this
+      << " for server " << server_.server_uri();
   shutting_down_ = true;
   transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
@@ -583,10 +580,9 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     }
     if (authority_state.xds_channels.back()->status().ok()) return true;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client_.get() << "] authority "
-              << authority << ": No fallback server";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client_.get() << "] authority " << authority
+      << ": No fallback server";
   return false;
 }
 
@@ -1568,8 +1564,9 @@ XdsClient::XdsClient(
   }
   CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
-    LOG(INFO) << "[xds_client " << this
-              << "] xDS node ID: " << bootstrap_->node()->id();
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "[xds_client " << this
+        << "] xDS node ID: " << bootstrap_->node()->id();
   }
 }
 
@@ -1702,10 +1699,9 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       // If we already have a cached value for the resource, notify the new
       // watcher immediately.
       if (resource_state.resource != nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-          LOG(INFO) << "[xds_client " << this
-                    << "] returning cached listener data for " << name;
-        }
+        GRPC_TRACE_LOG(xds_client, INFO)
+            << "[xds_client " << this << "] returning cached listener data for "
+            << name;
         work_serializer_.Schedule(
             [watcher, value = resource_state.resource]()
                 ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
@@ -1715,10 +1711,9 @@ void XdsClient::WatchResource(const XdsResourceType* type,
             DEBUG_LOCATION);
       } else if (resource_state.meta.client_status ==
                  XdsApi::ResourceMetadata::DOES_NOT_EXIST) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-          LOG(INFO) << "[xds_client " << this
-                    << "] reporting cached does-not-exist for " << name;
-        }
+        GRPC_TRACE_LOG(xds_client, INFO)
+            << "[xds_client " << this
+            << "] reporting cached does-not-exist for " << name;
         work_serializer_.Schedule(
             [watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
               watcher->OnResourceDoesNotExist(ReadDelayHandle::NoWait());

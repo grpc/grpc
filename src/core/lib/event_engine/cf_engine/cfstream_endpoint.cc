@@ -331,6 +331,10 @@ void CFStreamEndpointImpl::DoWrite(
   size_t total_written_size = 0;
   for (size_t i = 0; i < data->Count(); i++) {
     auto slice = data->RefSlice(i);
+    if (slice.size() == 0) {
+      continue;
+    }
+
     size_t written_size =
         CFWriteStreamWrite(cf_write_stream_, slice.begin(), slice.size());
 

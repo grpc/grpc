@@ -139,17 +139,14 @@ void HandshakeManager::DoHandshake(
 void HandshakeManager::Shutdown(absl::Status error) {
   MutexLock lock(&mu_);
   if (!is_shutdown_) {
-    if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      LOG(INFO) << "handshake_manager " << this
-                << ": Shutdown() called: " << error;
-    }
+    GRPC_TRACE_LOG(handshaker, INFO)
+        << "handshake_manager " << this << ": Shutdown() called: " << error;
     is_shutdown_ = true;
     // Shutdown the handshaker that's currently in progress, if any.
     if (index_ > 0) {
-      if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-        LOG(INFO) << "handshake_manager " << this
-                  << ": shutting down handshaker at index " << index_ - 1;
-      }
+      GRPC_TRACE_LOG(handshaker, INFO)
+          << "handshake_manager " << this
+          << ": shutting down handshaker at index " << index_ - 1;
       handshakers_[index_ - 1]->Shutdown(std::move(error));
     }
   }
