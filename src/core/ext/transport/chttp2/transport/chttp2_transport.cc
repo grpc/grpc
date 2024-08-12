@@ -1405,80 +1405,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (!grpc_core::IsCallTracerInTransportEnabled()) {
-      if (s->call_tracer != nullptr) {
-        s->call_tracer->RecordAnnotation(
-            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                      gpr_now(GPR_CLOCK_REALTIME))
-                .Add(s->t->flow_control.stats())
-                .Add(s->flow_control.stats()));
-      }
-    } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
-      auto* call_tracer =
-          s->arena->GetContext<grpc_core::CallTracerInterface>();
-      if (call_tracer != nullptr && call_tracer->IsSampled()) {
-        call_tracer->RecordAnnotation(
-            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                      gpr_now(GPR_CLOCK_REALTIME))
-                .Add(s->t->flow_control.stats())
-                .Add(s->flow_control.stats()));
-      }
-    }
-    if (t->is_client && t->channelz_socket != nullptr) {
-      t->channelz_socket->RecordStreamStartedFromLocal();
-    }
-    CHECK_EQ(s->send_initial_metadata_finished, nullptr);
-    on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
-
-    s->send_initial_metadata_finished = add_closure_barrier(on_complete);
-    s->send_initial_metadata =
-        op_payload->send_initial_metadata.send_initial_metadata;
-    if (t->is_client) {
-      s->deadline = std::min(
-          s->deadline,
-          s->send_initial_metadata->get(grpc_core::GrpcTimeoutMetadata())
-              .value_or(grpc_core::Timestamp::InfFuture()));
-    }
-    if (contains_non_ok_status(s->send_initial_metadata)) {
-      s->seen_error = true;
-    }
-    if (!s->write_closed) {
-      if (t->is_client) {
-        if (t->closed_with_error.ok()) {
-          CHECK_EQ(s->id, 0u);
-          grpc_chttp2_list_add_waiting_for_concurrency(t, s);
-          maybe_start_some_streams(t);
-        } else {
-          s->trailing_metadata_buffer.Set(
-              grpc_core::GrpcStreamNetworkState(),
-              grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
-          grpc_chttp2_cancel_stream(
-              t, s,
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE_REFERENCING("Transport closed",
-                                                &t->closed_with_error, 1),
-                  grpc_core::StatusIntProperty::kRpcStatus,
-                  GRPC_STATUS_UNAVAILABLE),
-              false);
-        }
-      } else {
-        CHECK_NE(s->id, 0u);
-        grpc_chttp2_mark_stream_writable(t, s);
-        if (!(op->send_message &&
-              (op->payload->send_message.flags & GRPC_WRITE_BUFFER_HINT))) {
-          grpc_chttp2_initiate_write(
-              t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
-        }
-      }
-    } else {
-      s->send_initial_metadata = nullptr;
-      grpc_chttp2_complete_closure_step(
-          t, &s->send_initial_metadata_finished,
-          GRPC_ERROR_CREATE_REFERENCING(
-              "Attempt to send initial metadata after stream was closed",
-              &s->write_closed_error, 1),
-          "send_initial_metadata_finished");
-    }
+    send_initial_metadata_locked(op, s, op_payload, t);
   }
 
   if (op->send_message) {
@@ -1632,6 +1559,85 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   GRPC_CHTTP2_STREAM_UNREF(s, "perform_stream_op");
+}
+
+static void send_initial_metadata_locked(
+    grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
+    grpc_transport_stream_op_batch_payload* op_payload,
+    grpc_chttp2_transport* t) {
+  if (!grpc_core::IsCallTracerInTransportEnabled()) {
+    if (s->call_tracer != nullptr) {
+      s->call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                    gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s->t->flow_control.stats())
+              .Add(s->flow_control.stats()));
+    }
+  } else if (grpc_core::IsTraceRecordCallopsEnabled()) {
+    auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+    if (call_tracer != nullptr && call_tracer->IsSampled()) {
+      call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                    gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s->t->flow_control.stats())
+              .Add(s->flow_control.stats()));
+    }
+  }
+  if (t->is_client && t->channelz_socket != nullptr) {
+    t->channelz_socket->RecordStreamStartedFromLocal();
+  }
+  CHECK_EQ(s->send_initial_metadata_finished, nullptr);
+  on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
+
+  s->send_initial_metadata_finished = add_closure_barrier(on_complete);
+  s->send_initial_metadata =
+      op_payload->send_initial_metadata.send_initial_metadata;
+  if (t->is_client) {
+    s->deadline =
+        std::min(s->deadline,
+                 s->send_initial_metadata->get(grpc_core::GrpcTimeoutMetadata())
+                     .value_or(grpc_core::Timestamp::InfFuture()));
+  }
+  if (contains_non_ok_status(s->send_initial_metadata)) {
+    s->seen_error = true;
+  }
+  if (!s->write_closed) {
+    if (t->is_client) {
+      if (t->closed_with_error.ok()) {
+        CHECK_EQ(s->id, 0u);
+        grpc_chttp2_list_add_waiting_for_concurrency(t, s);
+        maybe_start_some_streams(t);
+      } else {
+        s->trailing_metadata_buffer.Set(
+            grpc_core::GrpcStreamNetworkState(),
+            grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
+        grpc_chttp2_cancel_stream(
+            t, s,
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE_REFERENCING("Transport closed",
+                                              &t->closed_with_error, 1),
+                grpc_core::StatusIntProperty::kRpcStatus,
+                GRPC_STATUS_UNAVAILABLE),
+            false);
+      }
+    } else {
+      CHECK_NE(s->id, 0u);
+      grpc_chttp2_mark_stream_writable(t, s);
+      if (!(op->send_message &&
+            (op->payload->send_message.flags & GRPC_WRITE_BUFFER_HINT))) {
+        grpc_chttp2_initiate_write(
+            t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
+      }
+    }
+  } else {
+    s->send_initial_metadata = nullptr;
+    grpc_chttp2_complete_closure_step(
+        t, &s->send_initial_metadata_finished,
+        GRPC_ERROR_CREATE_REFERENCING(
+            "Attempt to send initial metadata after stream was closed",
+            &s->write_closed_error, 1),
+        "send_initial_metadata_finished");
+  }
 }
 
 void grpc_chttp2_transport::PerformStreamOp(
