@@ -282,7 +282,7 @@ uint8_t grpc_call_is_client(grpc_call* call);
 
 class ClientCallTracerWrapper {
  public:
-  ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
+  explicit ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
       : tracer_(tracer) {}
 
  private:
