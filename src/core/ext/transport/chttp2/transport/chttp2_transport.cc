@@ -1365,7 +1365,7 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 static void send_initial_metadata_locked(
     grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
     grpc_transport_stream_op_batch_payload* op_payload,
-    grpc_chttp2_transport* t) {
+    grpc_chttp2_transport* t, grpc_closure* on_complete) {
   if (!grpc_core::IsCallTracerInTransportEnabled()) {
     if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
@@ -1444,7 +1444,7 @@ static void send_initial_metadata_locked(
 static void send_message_locked(
     grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
     grpc_transport_stream_op_batch_payload* op_payload,
-    grpc_chttp2_transport* t) {
+    grpc_chttp2_transport* t, grpc_closure* on_complete) {
   t->num_messages_in_next_write++;
   grpc_core::global_stats().IncrementHttp2SendMessageSize(
       op->payload->send_message.send_message->Length());
@@ -1524,7 +1524,7 @@ static void send_message_locked(
 static void send_trailing_metadata_locked(
     grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
     grpc_transport_stream_op_batch_payload* op_payload,
-    grpc_chttp2_transport* t) {
+    grpc_chttp2_transport* t, grpc_closure* on_complete) {
   CHECK_EQ(s->send_trailing_metadata_finished, nullptr);
   on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
   s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
@@ -1643,15 +1643,15 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    send_initial_metadata_locked(op, s, op_payload, t);
+    send_initial_metadata_locked(op, s, op_payload, t, on_complete);
   }
 
   if (op->send_message) {
-    send_message_locked(op, s, op_payload, t);
+    send_message_locked(op, s, op_payload, t, on_complete);
   }
 
   if (op->send_trailing_metadata) {
-    send_trailing_metadata_locked(op, s, op_payload, t);
+    send_trailing_metadata_locked(op, s, op_payload, t, on_complete);
   }
 
   if (op->recv_initial_metadata) {
