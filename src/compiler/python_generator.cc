@@ -763,7 +763,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       out->Print("\nif _version_not_supported:\n");
       {
         IndentScope raii_warning_indent(out);
-        out->Print("warnings.warn(\n");
+        out->Print("from pathlib import Path\n\nwarnings.warn(\n");
         {
           IndentScope raii_warning_string_indent(out);
           std::string filename_without_ext = file->filename_without_ext();
@@ -772,17 +772,15 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
           var["Pb2GrpcFileName"] = filename_without_ext;
           out->Print(
               var,
-              "f'The grpc package installed is at version {GRPC_VERSION},'\n"
-              "+ f' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
-              "depends on'\n"
-              "+ f' grpcio>={GRPC_GENERATED_VERSION}.'\n"
-              "+ f' Please upgrade your grpc module to "
-              "grpcio>={GRPC_GENERATED_VERSION}'\n"
-              "+ f' or downgrade your generated code using "
-              "grpcio-tools<={GRPC_VERSION}.'\n"
-              "+ f' This warning will become an error in "
-              "{EXPECTED_ERROR_RELEASE},'\n"
-              "+ f' scheduled for release on {SCHEDULED_RELEASE_DATE}.',\n"
+              "(\n"
+              "    f'The grpc package installed is at version {GRPC_VERSION},'\n"
+              "    f' but the generated code in {Path(__file__).name} depends on'\n"
+              "    f' grpcio>={GRPC_GENERATED_VERSION}.'\n"
+              "    f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'\n"
+              "    f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'\n"
+              "    f' This warning will become an error in {EXPECTED_ERROR_RELEASE},'\n"
+              "    f' scheduled for release on {SCHEDULED_RELEASE_DATE}.'\n"
+              "),\n"
               "RuntimeWarning\n");
         }
         out->Print(")\n");
