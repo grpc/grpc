@@ -265,6 +265,10 @@ void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
+// Both sets and manages call tracer life cycle using ClientCallTracerWrapper.
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer);
+
 void* grpc_call_tracer_get(grpc_call* call);
 
 #define GRPC_CALL_LOG_BATCH(ops, nops)                    \
@@ -275,6 +279,15 @@ void* grpc_call_tracer_get(grpc_call* call);
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
+
+class ClientCallTracerWrapper {
+ public:
+  ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
+      : tracer_(tracer) {}
+
+ private:
+  std::unique_ptr<grpc_core::ClientCallTracer> tracer_;
+};
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.
