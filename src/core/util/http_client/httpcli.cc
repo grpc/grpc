@@ -56,10 +56,10 @@
 
 namespace grpc_core {
 
+namespace {
+
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::ResolvedAddressToURI;
-
-namespace {
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
@@ -174,12 +174,7 @@ HttpRequest::HttpRequest(
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
-      test_only_generate_response_(std::move(test_only_generate_response)),
-      resolver_(
-          ChannelArgs::FromC(channel_args_)
-              .GetObjectRef<EventEngine>()
-              ->GetDNSResolver(EventEngine::DNSResolver::ResolverOptions())
-              .value()) {
+      test_only_generate_response_(std::move(test_only_generate_response)) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -194,6 +189,9 @@ HttpRequest::HttpRequest(
                     grpc_schedule_on_exec_ctx);
   CHECK(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  resolver_ = ChannelArgs::FromC(channel_args_)
+                  .GetObjectRef<EventEngine>()
+                  ->GetDNSResolver(EventEngine::DNSResolver::ResolverOptions());
 }
 
 HttpRequest::~HttpRequest() {
@@ -213,9 +211,14 @@ void HttpRequest::Start() {
     test_only_generate_response_.value()();
     return;
   }
+  if (!resolver_.ok()) {
+    Finish(resolver_.status());
+    return;
+  }
   Ref().release();  // ref held by pending DNS resolution
-  resolver_->LookupHostname(absl::bind_front(&HttpRequest::OnResolved, this),
-                            uri_.authority(), uri_.scheme());
+  (*resolver_)
+      ->LookupHostname(absl::bind_front(&HttpRequest::OnResolved, this),
+                       uri_.authority(), uri_.scheme());
 }
 
 void HttpRequest::Orphan() {
@@ -224,8 +227,8 @@ void HttpRequest::Orphan() {
     CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
-    if (resolver_ != nullptr) {
-      resolver_.reset();
+    if (*resolver_ != nullptr) {
+      resolver_->reset();
     }
     if (handshake_mgr_ != nullptr) {
       // Shutdown will cancel any ongoing tcp connect.
@@ -364,7 +367,7 @@ void HttpRequest::OnResolved(
   ExecCtx exec_ctx;
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
-  resolver_.reset();
+  resolver_->reset();
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE("cancelled during DNS resolution"));
     return;

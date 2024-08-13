@@ -260,7 +260,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine::DNSResolver>
+  absl::StatusOr<std::unique_ptr<
+      grpc_event_engine::experimental::EventEngine::DNSResolver>>
       resolver_;
 };
 
