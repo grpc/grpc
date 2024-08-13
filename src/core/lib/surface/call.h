@@ -265,12 +265,12 @@ void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
-// Both sets and manages call tracer life cycle.
+// Sets call tracer on the call and manages its life by using the call's arena.
 // When using this API, the tracer will be destroyed by grpc_call arena when
 // grpc_call is about to be destroyed. The caller of this API SHOULD NOT
 // manually destroy the tracer. This API is used by Python as a way of using
-// Arena to manage the lifetime of the call tracer. Python need this API because
-// the tracer was created within a separate shared object library which don't
+// Arena to manage the lifetime of the call tracer. Python needs this API because
+// the tracer was created within a separate shared object library which doesn't
 // have access to core functions like arena->ManagedNew<>.
 void grpc_call_tracer_set_and_manage(grpc_call* call,
                                      grpc_core::ClientCallTracer* tracer);
