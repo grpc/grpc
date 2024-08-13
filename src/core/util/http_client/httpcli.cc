@@ -174,7 +174,11 @@ HttpRequest::HttpRequest(
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
-      test_only_generate_response_(std::move(test_only_generate_response)) {
+      test_only_generate_response_(std::move(test_only_generate_response)),
+      resolver_(
+          ChannelArgs::FromC(channel_args_)
+              .GetObjectRef<EventEngine>()
+              ->GetDNSResolver(EventEngine::DNSResolver::ResolverOptions())) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -189,9 +193,6 @@ HttpRequest::HttpRequest(
                     grpc_schedule_on_exec_ctx);
   CHECK(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
-  resolver_ = ChannelArgs::FromC(channel_args_)
-                  .GetObjectRef<EventEngine>()
-                  ->GetDNSResolver(EventEngine::DNSResolver::ResolverOptions());
 }
 
 HttpRequest::~HttpRequest() {
