@@ -893,11 +893,9 @@ bool Subchannel::PublishTransportLocked() {
   }
   connecting_result_.Reset();
   // Publish.
-  if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-              << ": new connected subchannel at "
-              << connected_subchannel_.get();
-  }
+  GRPC_TRACE_LOG(subchannel, INFO)
+      << "subchannel " << this << " " << key_.ToString()
+      << ": new connected subchannel at " << connected_subchannel_.get();
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket_node));
   }
