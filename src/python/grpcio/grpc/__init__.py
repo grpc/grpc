@@ -32,7 +32,6 @@ from typing import (
     Sequence,
     Tuple,
     Iterator,
-    Iterable,
     Dict,
 )
 
@@ -47,6 +46,8 @@ from grpc._typing import GeneralIterableType
 from grpc._typing import InterceptorType
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
+from grpc._typing import RequestIteratorType
+from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
 from grpc._typing import ArityAgnosticMethodHandler
@@ -563,9 +564,9 @@ class StreamUnaryClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_stream_unary(
         self,
-        continuation: Callable[[ClientCallDetails, Iterable], Any],
+        continuation: Callable[[ClientCallDetails, RequestIterableType], Any],
         client_call_details: ClientCallDetails,
-        request_iterator: Iterable,
+        request_iterator: RequestIterableType,
     ) -> Any:
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -603,9 +604,9 @@ class StreamStreamClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_stream_stream(
         self,
-        continuation: Callable[[ClientCallDetails, Iterable], Any],
+        continuation: Callable[[ClientCallDetails, RequestIterableType], Any],
         client_call_details: ClientCallDetails,
-        request_iterator: Iterable,
+        request_iterator: RequestIterableType,
     ) -> Any:
         """Intercepts a stream-stream invocation.
 
@@ -893,7 +894,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -928,7 +929,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -963,7 +964,7 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,
@@ -1000,7 +1001,7 @@ class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[CallCredentials] = None,

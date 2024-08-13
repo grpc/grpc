@@ -682,22 +682,12 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
 class _Channel(grpc.Channel):
     _channel: grpc.Channel
-    _interceptor: Union[
-        grpc.UnaryUnaryClientInterceptor,
-        grpc.UnaryStreamClientInterceptor,
-        grpc.StreamStreamClientInterceptor,
-        grpc.StreamUnaryClientInterceptor,
-    ]
+    _interceptor: InterceptorType
 
     def __init__(
         self,
         channel: grpc.Channel,
-        interceptor: Union[
-            grpc.UnaryUnaryClientInterceptor,
-            grpc.UnaryStreamClientInterceptor,
-            grpc.StreamStreamClientInterceptor,
-            grpc.StreamUnaryClientInterceptor,
-        ],
+        interceptor: InterceptorType,
     ):
         self._channel = channel
         self._interceptor = interceptor
