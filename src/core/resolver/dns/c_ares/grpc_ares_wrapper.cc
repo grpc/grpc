@@ -72,6 +72,13 @@
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/string.h"
 
+#define GRPC_CARES_TRACE_LOG(format, ...)                                      \
+  do {                                                                         \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {                             \
+      VLOG(2) << "(c-ares resolver) " << absl::StrFormat(format, __VA_ARGS__); \
+    }                                                                          \
+  } while (0)
+
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;
 
