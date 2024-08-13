@@ -947,7 +947,7 @@ class BaseCallData : public Activity, private Wakeable {
     }
   };
 
-  class Flusher {
+  class Flusher : public latent_see::InnerScope {
    public:
     explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.

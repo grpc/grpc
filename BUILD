@@ -227,11 +227,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gladiator"  # @unused
+g_stands_for = "gesundheit"  # @unused
 
-core_version = "42.0.0"  # @unused
+core_version = "43.0.0"  # @unused
 
-version = "1.66.0-dev"  # @unused
+version = "1.67.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -3279,6 +3279,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_spinlock",
+        "//src/core:latent_see",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -4034,6 +4035,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "tsi_base",
+        "//src/core:dump_args",
         "//src/core:slice",
         "//src/core:useful",
     ],
@@ -4568,11 +4570,13 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_trace",
         "hpack_parse_result",
+        "stats",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",
         "//src/core:slice",
+        "//src/core:unique_ptr_with_bitset",
     ],
 )
 
@@ -4828,7 +4832,6 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:match",
-        "//src/core:max_concurrent_streams_policy",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",

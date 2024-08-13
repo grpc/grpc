@@ -190,7 +190,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
-    LOG(INFO) << "Cropping token lifetime to maximum allowed value.";
+    VLOG(2) << "Cropping token lifetime to maximum allowed value.";
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime());
   }
 

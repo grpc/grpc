@@ -626,6 +626,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
         features = features,
+        visibility = visibility,
     )
 
 # buildifier: disable=unnamed-macro

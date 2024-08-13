@@ -303,6 +303,10 @@ with open("src/core/telemetry/stats_data.h", "w") as H:
         print("  static int BucketFor(int value);", file=H)
         print("  const uint64_t* buckets() const { return buckets_; }", file=H)
         print(
+            "  size_t bucket_count() const { return %d; }" % shape.buckets,
+            file=H,
+        )
+        print(
             "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left,"
             " const Histogram_%d_%d& right);"
             % (

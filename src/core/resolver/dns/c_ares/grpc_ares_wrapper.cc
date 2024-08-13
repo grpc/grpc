@@ -181,6 +181,22 @@ class GrpcAresQuery final {
   const std::string name_;
 };
 
+static absl::Status AresStatusToAbslStatus(int status,
+                                           absl::string_view error_msg) {
+  switch (status) {
+    case ARES_ECANCELLED:
+      return absl::CancelledError(error_msg);
+    case ARES_ENOTIMP:
+      return absl::UnimplementedError(error_msg);
+    case ARES_ENOTFOUND:
+      return absl::NotFoundError(error_msg);
+    case ARES_ECONNREFUSED:
+      return absl::UnavailableError(error_msg);
+    default:
+      return absl::UnknownError(error_msg);
+  }
+}
+
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
     grpc_ares_ev_driver* ev_driver)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
@@ -715,8 +731,8 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
-    r->error = grpc_error_add_child(error, r->error);
+    r->error = grpc_error_add_child(AresStatusToAbslStatus(status, error_msg),
+                                    r->error);
   }
   destroy_hostbyname_request_locked(hr);
 }
@@ -761,8 +777,8 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
         ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error_handle error = GRPC_ERROR_CREATE(error_msg);
-    r->error = grpc_error_add_child(error, r->error);
+    r->error = grpc_error_add_child(AresStatusToAbslStatus(status, error_msg),
+                                    r->error);
   }
   delete q;
 }
@@ -780,7 +796,6 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
-  grpc_error_handle error;
   if (status != ARES_SUCCESS) goto fail;
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
                        q->name().c_str());
@@ -824,8 +839,8 @@ fail:
                       q->name(), ares_strerror(status));
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                        error_msg.c_str());
-  error = GRPC_ERROR_CREATE(error_msg);
-  r->error = grpc_error_add_child(error, r->error);
+  r->error =
+      grpc_error_add_child(AresStatusToAbslStatus(status, error_msg), r->error);
 }
 
 grpc_error_handle set_request_dns_server(grpc_ares_request* r,

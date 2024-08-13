@@ -61,7 +61,9 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
     return grpc::Status::OK;
   }
   ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
-  return msg.SerializeToZeroCopyStream(&writer)
+  protobuf::io::CodedOutputStream cs(&writer);
+  msg.SerializeWithCachedSizes(&cs);
+  return !cs.HadError()
              ? grpc::Status::OK
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }

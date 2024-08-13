@@ -389,16 +389,14 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   if (has_sync_methods) {
     // This is a Sync server
-    LOG(INFO) << "Synchronous server. Num CQs: "
-              << sync_server_settings_.num_cqs
-              << ", Min pollers: " << sync_server_settings_.min_pollers
-              << ", Max Pollers: " << sync_server_settings_.max_pollers
-              << ", CQ timeout (msec): "
-              << sync_server_settings_.cq_timeout_msec;
+    VLOG(2) << "Synchronous server. Num CQs: " << sync_server_settings_.num_cqs
+            << ", Min pollers: " << sync_server_settings_.min_pollers
+            << ", Max Pollers: " << sync_server_settings_.max_pollers
+            << ", CQ timeout (msec): " << sync_server_settings_.cq_timeout_msec;
   }
 
   if (has_callback_methods) {
-    LOG(INFO) << "Callback server.";
+    VLOG(2) << "Callback server.";
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(

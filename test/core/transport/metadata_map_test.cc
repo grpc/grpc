@@ -260,6 +260,83 @@ TEST(DebugStringBuilderTest, TestAllRedacted) {
   }
 }
 
+std::vector<std::string> GetEncodableHeaders() {
+  return {
+      // clang-format off
+          std::string(ContentTypeMetadata::key()),
+          std::string(EndpointLoadMetricsBinMetadata::key()),
+          std::string(GrpcAcceptEncodingMetadata::key()),
+          std::string(GrpcEncodingMetadata::key()),
+          std::string(GrpcInternalEncodingRequest::key()),
+          std::string(GrpcLbClientStatsMetadata::key()),
+          std::string(GrpcMessageMetadata::key()),
+          std::string(GrpcPreviousRpcAttemptsMetadata::key()),
+          std::string(GrpcRetryPushbackMsMetadata::key()),
+          std::string(GrpcServerStatsBinMetadata::key()),
+          std::string(GrpcStatusMetadata::key()),
+          std::string(GrpcTagsBinMetadata::key()),
+          std::string(GrpcTimeoutMetadata::key()),
+          std::string(GrpcTraceBinMetadata::key()),
+          std::string(HostMetadata::key()),
+          std::string(HttpAuthorityMetadata::key()),
+          std::string(HttpMethodMetadata::key()),
+          std::string(HttpPathMetadata::key()),
+          std::string(HttpSchemeMetadata::key()),
+          std::string(HttpStatusMetadata::key()),
+          std::string(LbCostBinMetadata::key()),
+          std::string(LbTokenMetadata::key()),
+          std::string(TeMetadata::key()),
+      // clang-format on
+  };
+}
+
+template <typename NonEncodableHeader, typename Value>
+void AddNonEncodableHeader(grpc_metadata_batch& md, Value value) {
+  md.Set(NonEncodableHeader(), value);
+}
+
+template <bool filter_unknown>
+class HeaderFilter {
+ public:
+  template <typename Key>
+  bool operator()(Key) {
+    return filter_unknown;
+  }
+  bool operator()(absl::string_view /*key*/) { return !filter_unknown; }
+};
+
+TEST(MetadataMapTest, FilterTest) {
+  grpc_metadata_batch map;
+  std::vector<std::string> allow_list_keys = GetEncodableHeaders();
+  std::vector<std::string> unknown_keys = {"unknown_key_1", "unknown_key_2"};
+  allow_list_keys.insert(allow_list_keys.end(), unknown_keys.begin(),
+                         unknown_keys.end());
+  // Add some encodable and unknown headers
+  for (const std::string& curr_key : allow_list_keys) {
+    map.Append(curr_key, Slice::FromStaticString("value1"),
+               [](absl::string_view /*error*/, const Slice& /*value*/) {});
+  }
+
+  // Add 5 non-encodable headers
+  constexpr int kNumNonEncodableHeaders = 5;
+  AddNonEncodableHeader<GrpcCallWasCancelled, bool>(map, true);
+  AddNonEncodableHeader<GrpcRegisteredMethod, void*>(map, nullptr);
+  AddNonEncodableHeader<GrpcStatusContext, std::string>(map, "value1");
+  AddNonEncodableHeader<GrpcStatusFromWire>(map, "value1");
+  AddNonEncodableHeader<GrpcStreamNetworkState,
+                        GrpcStreamNetworkState::ValueType>(
+      map, GrpcStreamNetworkState::kNotSentOnWire);
+
+  EXPECT_EQ(map.count(), allow_list_keys.size() + kNumNonEncodableHeaders);
+  // Remove all unknown headers
+  map.Filter(HeaderFilter<true>());
+  EXPECT_EQ(map.count(), allow_list_keys.size() + kNumNonEncodableHeaders -
+                             unknown_keys.size());
+  // Remove all encodable headers
+  map.Filter(HeaderFilter<false>());
+  EXPECT_EQ(map.count(), kNumNonEncodableHeaders);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
