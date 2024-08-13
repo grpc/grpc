@@ -1555,8 +1555,7 @@ static void send_trailing_metadata_locked(
 }
 
 static void recv_initial_metadata_locked(
-    grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
-    grpc_transport_stream_op_batch_payload* op_payload,
+    grpc_chttp2_stream* s, grpc_transport_stream_op_batch_payload* op_payload,
     grpc_chttp2_transport* t) {
   CHECK_EQ(s->recv_initial_metadata_ready, nullptr);
   s->recv_initial_metadata_ready =
@@ -1572,8 +1571,7 @@ static void recv_initial_metadata_locked(
 }
 
 static void recv_message_locked(
-    grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
-    grpc_transport_stream_op_batch_payload* op_payload,
+    grpc_chttp2_stream* s, grpc_transport_stream_op_batch_payload* op_payload,
     grpc_chttp2_transport* t) {
   CHECK_EQ(s->recv_message_ready, nullptr);
   s->recv_message_ready = op_payload->recv_message.recv_message_ready;
@@ -1586,8 +1584,7 @@ static void recv_message_locked(
 }
 
 static void recv_trailing_metadata_locked(
-    grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
-    grpc_transport_stream_op_batch_payload* op_payload,
+    grpc_chttp2_stream* s, grpc_transport_stream_op_batch_payload* op_payload,
     grpc_chttp2_transport* t) {
   CHECK_EQ(s->collecting_stats, nullptr);
   s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
