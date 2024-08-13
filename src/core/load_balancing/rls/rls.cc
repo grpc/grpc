@@ -2138,8 +2138,9 @@ void RlsLb::ResetBackoffLocked() {
 void RlsLb::ShutdownLocked() {
   GRPC_TRACE_LOG(rls_lb, INFO) << "[rlslb " << this << "] policy shutdown";
   registered_metric_callback_.reset();
-  std::vector<OrphanablePtr<Cache::Entry>> entries_to_delete;
   RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
+  std::vector<OrphanablePtr<Cache::Entry>> entries_to_delete;
+  OrphanablePtr<RlsChannel> rls_channel_to_delete;
   ChannelArgs channel_args_to_delete;
   {
     MutexLock lock(&mu_);
@@ -2148,7 +2149,7 @@ void RlsLb::ShutdownLocked() {
     channel_args_to_delete = std::move(channel_args_);
     entries_to_delete = cache_.Shutdown();
     request_map_.clear();
-    rls_channel_.reset();
+    rls_channel_to_delete = std::move(rls_channel_);
     child_policy_to_delete = std::move(default_child_policy_);
   }
 }
