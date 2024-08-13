@@ -1652,15 +1652,15 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->recv_initial_metadata) {
-    recv_initial_metadata_locked(op, s, op_payload, t);
+    recv_initial_metadata_locked(s, op_payload, t);
   }
 
   if (op->recv_message) {
-    recv_message_locked(op, s, op_payload, t);
+    recv_message_locked(s, op_payload, t);
   }
 
   if (op->recv_trailing_metadata) {
-    recv_trailing_metadata_locked(op, s, op_payload, t);
+    recv_trailing_metadata_locked(s, op_payload, t);
   }
 
   if (on_complete != nullptr) {
