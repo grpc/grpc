@@ -25,7 +25,7 @@ from grpc._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
-# _channel = Any  # _channel.py imports this module.
+_channel = Any  # _channel.py imports this module. # type :ignore
 ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 

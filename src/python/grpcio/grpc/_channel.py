@@ -25,7 +25,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterator,
     List,
     Optional,
     Sequence,
@@ -49,6 +48,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
 from grpc._typing import RequestIterableType
+from grpc._typing import RequestIteratorType
 import grpc.experimental  # pytype: disable=pyi-error
 
 _LOGGER = logging.getLogger(__name__)
@@ -260,7 +260,7 @@ def _event_handler(
 # TODO(xuanwn): Create a base class for IntegratedCall and SegregatedCall.
 # pylint: disable=too-many-statements
 def _consume_request_iterator(
-    request_iterator: Iterator,
+    request_iterator: RequestIteratorType,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
     request_serializer: Optional[SerializingFunction],
@@ -1488,7 +1488,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def _blocking(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float],
         metadata: Optional[MetadataType],
         credentials: Optional[grpc.CallCredentials],
@@ -1533,7 +1533,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def __call__(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -1555,7 +1555,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def with_call(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -1577,7 +1577,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def future(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -1664,7 +1664,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
     def __call__(
         self,
-        request_iterator: Iterator,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
