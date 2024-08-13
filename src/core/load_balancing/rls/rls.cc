@@ -556,15 +556,6 @@ class RlsLb final : public LoadBalancingPolicy {
       Cache::Iterator lru_iterator_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
-    // State that is returned back for cleanup on shutting down the cache. The
-    // state should be released outside a lock.
-    struct CacheShutdownState {
-      std::list<RequestKey> lru_list;
-      std::unordered_map<RequestKey, OrphanablePtr<Entry>,
-                         absl::Hash<RequestKey>>
-          map;
-    };
-
     explicit Cache(RlsLb* lb_policy);
 
     // Finds an entry from the cache that corresponds to a key. If an entry is
