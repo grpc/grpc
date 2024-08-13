@@ -18,8 +18,8 @@ import collections
 from typing import MutableMapping
 
 import grpc
-from grpc_health.v1 import health_pb2 as _health_pb2 # type :ignore
-from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc # type :ignore
+from grpc_health.v1 import health_pb2 as _health_pb2  # type :ignore
+from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc  # type :ignore
 
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):

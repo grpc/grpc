@@ -920,13 +920,13 @@ def _handle_unary_unary(
     )
     return thread_pool.submit(
         state.context.run,
-        _unary_response_in_pool, # type: ignore[arg-type]
+        _unary_response_in_pool,  # type: ignore[arg-type]
         rpc_event,
-        state, # type: ignore[arg-type]
-        method_handler.unary_unary, # type: ignore[arg-type]
-        unary_request, # type: ignore[arg-type]
-        method_handler.request_deserializer, # type: ignore[arg-type]
-        method_handler.response_serializer, # type: ignore[arg-type]
+        state,  # type: ignore[arg-type]
+        method_handler.unary_unary,  # type: ignore[arg-type]
+        unary_request,  # type: ignore[arg-type]
+        method_handler.request_deserializer,  # type: ignore[arg-type]
+        method_handler.response_serializer,  # type: ignore[arg-type]
     )
 
 
@@ -944,13 +944,13 @@ def _handle_unary_stream(
     )
     return thread_pool.submit(
         state.context.run,
-        _stream_response_in_pool, # type: ignore[arg-type]
+        _stream_response_in_pool,  # type: ignore[arg-type]
         rpc_event,
-        state, # type: ignore[arg-type]
-        method_handler.unary_stream, # type: ignore[arg-type]
-        unary_request, # type: ignore[arg-type]
-        method_handler.request_deserializer, # type: ignore[arg-type]
-        method_handler.response_serializer, # type: ignore[arg-type]
+        state,  # type: ignore[arg-type]
+        method_handler.unary_stream,  # type: ignore[arg-type]
+        unary_request,  # type: ignore[arg-type]
+        method_handler.request_deserializer,  # type: ignore[arg-type]
+        method_handler.response_serializer,  # type: ignore[arg-type]
     )
 
 
@@ -968,13 +968,13 @@ def _handle_stream_unary(
     )
     return thread_pool.submit(
         state.context.run,
-        _unary_response_in_pool, # type: ignore[arg-type]
+        _unary_response_in_pool,  # type: ignore[arg-type]
         rpc_event,
-        state, # type: ignore[arg-type]
-        method_handler.stream_unary, # type: ignore[arg-type]
-        lambda: request_iterator, # type: ignore[arg-type]
-        method_handler.request_deserializer, # type: ignore[arg-type]
-        method_handler.response_serializer, # type: ignore[arg-type]
+        state,  # type: ignore[arg-type]
+        method_handler.stream_unary,  # type: ignore[arg-type]
+        lambda: request_iterator,  # type: ignore[arg-type]
+        method_handler.request_deserializer,  # type: ignore[arg-type]
+        method_handler.response_serializer,  # type: ignore[arg-type]
     )
 
 
@@ -992,13 +992,13 @@ def _handle_stream_stream(
     )
     return thread_pool.submit(
         state.context.run,
-        _stream_response_in_pool, # type: ignore[arg-type]
+        _stream_response_in_pool,  # type: ignore[arg-type]
         rpc_event,
-        state, # type: ignore[arg-type]
-        method_handler.stream_stream, # type: ignore[arg-type]
-        lambda: request_iterator, # type: ignore[arg-type]
-        method_handler.request_deserializer, # type: ignore[arg-type]
-        method_handler.response_serializer, # type: ignore[arg-type]
+        state,  # type: ignore[arg-type]
+        method_handler.stream_stream,  # type: ignore[arg-type]
+        lambda: request_iterator,  # type: ignore[arg-type]
+        method_handler.request_deserializer,  # type: ignore[arg-type]
+        method_handler.response_serializer,  # type: ignore[arg-type]
     )
 
 
