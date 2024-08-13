@@ -166,7 +166,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       GRPC_TRACE_LOG(cares_resolver, INFO)
           << "(EventEngine c-ares resolver) fd:|" << GetName()
           << "| RegisterForOnWriteableLocked called tcp_write_state_: "
-          << tcp_write_state_ << " connect_done_: " << connect_done_;
+          << static_cast<int>(tcp_write_state_)
+          << " connect_done_: " << connect_done_;
     }
     CHECK(write_closure_ == nullptr);
     write_closure_ = std::move(write_closure);
