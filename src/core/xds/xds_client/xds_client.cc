@@ -599,11 +599,9 @@ void XdsClient::XdsChannel::SetHealthyLocked() {
     auto channel_it = std::find(channels.begin(), channels.end(), this);
     // Skip if this is not on the list
     if (channel_it != channels.end()) {
-      if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-        LOG(INFO) << "[xds_client " << xds_client_.get() << "] authority "
-                  << authority.first << ": Falling forward to "
-                  << server_.server_uri();
-      }
+      GRPC_TRACE_LOG(xds_client, INFO)
+          << "[xds_client " << xds_client_.get() << "] authority "
+          << authority.first << ": Falling forward to " << server_.server_uri();
       // Lower priority channels are no longer needed, connection is back!
       channels.erase(channel_it + 1, channels.end());
     }
@@ -711,11 +709,10 @@ void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
   CHECK(xds_channel_->transport_ != nullptr);
   CHECK(call_ == nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_channel()->xds_client()
-              << "] xds server " << xds_channel()->server_.server_uri()
-              << ": start new call from retryable call " << this;
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_channel()->xds_client() << "] xds server "
+      << xds_channel()->server_.server_uri()
+      << ": start new call from retryable call " << this;
   call_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
 }
@@ -747,11 +744,10 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnRetryTimer() {
   if (timer_handle_.has_value()) {
     timer_handle_.reset();
     if (shutting_down_) return;
-    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(INFO) << "[xds_client " << xds_channel()->xds_client()
-                << "] xds server " << xds_channel()->server_.server_uri()
-                << ": retry timer fired (retryable call: " << this << ")";
-    }
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "[xds_client " << xds_channel()->xds_client() << "] xds server "
+        << xds_channel()->server_.server_uri()
+        << ": retry timer fired (retryable call: " << this << ")";
     StartNewCallLocked();
   }
 }
@@ -945,11 +941,9 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   if (resource_state.resource != nullptr &&
       result_.type->ResourcesEqual(resource_state.resource.get(),
                                    decode_result.resource->get())) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(INFO) << "[xds_client " << xds_client() << "] " << result_.type_url
-                << " resource " << resource_name
-                << " identical to current, ignoring.";
-    }
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "[xds_client " << xds_client() << "] " << result_.type_url
+        << " resource " << resource_name << " identical to current, ignoring.";
     return;
   }
   // Update the resource state.
@@ -1490,11 +1484,10 @@ void XdsClient::XdsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
   if (send_all_clusters == send_all_clusters_ &&
       cluster_names_ == new_cluster_names &&
       load_reporting_interval_ == new_load_reporting_interval) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
-                << xds_channel()->server_.server_uri()
-                << ": incoming LRS response identical to current, ignoring.";
-    }
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "[xds_client " << xds_client() << "] xds server "
+        << xds_channel()->server_.server_uri()
+        << ": incoming LRS response identical to current, ignoring.";
     return;
   }
   // If the interval has changed, we'll need to restart the timer below.
@@ -1559,9 +1552,8 @@ XdsClient::XdsClient(
       work_serializer_(engine),
       engine_(std::move(engine)),
       metrics_reporter_(std::move(metrics_reporter)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << this << "] creating xds client";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << this << "] creating xds client";
   CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
     GRPC_TRACE_LOG(xds_client, INFO)
@@ -1571,15 +1563,13 @@ XdsClient::XdsClient(
 }
 
 XdsClient::~XdsClient() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << this << "] destroying xds client";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << this << "] destroying xds client";
 }
 
 void XdsClient::Orphaned() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << this << "] shutting down xds client";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << this << "] shutting down xds client";
   MutexLock lock(&mu_);
   shutting_down_ = true;
   // Clear cache and any remaining watchers that may not have been cancelled.
@@ -1721,11 +1711,10 @@ void XdsClient::WatchResource(const XdsResourceType* type,
             DEBUG_LOCATION);
       } else if (resource_state.meta.client_status ==
                  XdsApi::ResourceMetadata::NACKED) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-          LOG(INFO) << "[xds_client " << this
-                    << "] reporting cached validation failure for " << name
-                    << ": " << resource_state.meta.failed_details;
-        }
+        GRPC_TRACE_LOG(xds_client, INFO)
+            << "[xds_client " << this
+            << "] reporting cached validation failure for " << name << ": "
+            << resource_state.meta.failed_details;
         std::string details = resource_state.meta.failed_details;
         const auto* node = bootstrap_->node();
         if (node != nullptr) {
@@ -1744,11 +1733,9 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     }
     absl::Status channel_status = authority_state.xds_channels.back()->status();
     if (!channel_status.ok()) {
-      if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-        LOG(INFO) << "[xds_client " << this
-                  << "] returning cached channel error for " << name << ": "
-                  << channel_status;
-      }
+      GRPC_TRACE_LOG(xds_client, INFO)
+          << "[xds_client " << this << "] returning cached channel error for "
+          << name << ": " << channel_status;
       work_serializer_.Schedule(
           [watcher = std::move(watcher), status = std::move(channel_status)]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) mutable {
@@ -2047,9 +2034,8 @@ void XdsClient::NotifyWatchersOnResourceDoesNotExist(
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
     const std::set<std::string>& clusters) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << this << "] start building load report";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << this << "] start building load report";
   XdsApi::ClusterLoadReportMap snapshot_map;
   auto server_it = xds_load_report_server_map_.find(xds_server.Key());
   if (server_it == xds_load_report_server_map_.end()) return snapshot_map;
@@ -2074,11 +2060,10 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     if (load_report.drop_stats != nullptr) {
       snapshot.dropped_requests +=
           load_report.drop_stats->GetSnapshotAndReset();
-      if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-        LOG(INFO) << "[xds_client " << this << "] cluster=" << cluster_key.first
-                  << " eds_service_name=" << cluster_key.second
-                  << " drop_stats=" << load_report.drop_stats;
-      }
+      GRPC_TRACE_LOG(xds_client, INFO)
+          << "[xds_client " << this << "] cluster=" << cluster_key.first
+          << " eds_service_name=" << cluster_key.second
+          << " drop_stats=" << load_report.drop_stats;
     }
     // Aggregate locality stats.
     for (auto it = load_report.locality_stats.begin();
