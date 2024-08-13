@@ -216,9 +216,9 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
   GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
-          << "(event_engine client channel resolver) DNSResolver::"
-          << resolver_.get() < < < <
-      " Starting hostname resolution for " << resolver_->name_to_resolve();
+      << "(event_engine client channel resolver) DNSResolver::"
+      << resolver_.get() << " Starting hostname resolution for "
+      << resolver_->name_to_resolve();
   is_hostname_inflight_ = true;
   event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
@@ -232,9 +232,9 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       resolver_->name_to_resolve(), kDefaultSecurePort);
   if (resolver_->enable_srv_queries_) {
     GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
-            << "(event_engine client channel resolver) DNSResolver::"
-            << resolver_.get() < < < <
-        " Starting SRV record resolution for " << resolver_->name_to_resolve();
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting SRV record resolution for "
+        << resolver_->name_to_resolve();
     is_srv_inflight_ = true;
     event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
@@ -249,9 +249,9 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
   if (resolver_->request_service_config_) {
     GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
-            << "(event_engine client channel resolver) DNSResolver::"
-            << resolver_.get() < < < <
-        " Starting TXT record resolution for " << resolver_->name_to_resolve();
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting TXT record resolution for "
+        << resolver_->name_to_resolve();
     is_txt_inflight_ = true;
     event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
