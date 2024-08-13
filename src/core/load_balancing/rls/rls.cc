@@ -405,7 +405,7 @@ class RlsLb final : public LoadBalancingPolicy {
     RefCountedPtr<RlsLb> lb_policy_;
     std::string target_;
 
-    bool is_shutdown_ = false;
+    bool is_shutdown_ ABSL_GUARDED_BY(&RlsLb::mu_) = false;
 
     OrphanablePtr<ChildPolicyHandler> child_policy_;
     RefCountedPtr<LoadBalancingPolicy::Config> pending_config_;
@@ -816,7 +816,10 @@ void RlsLb::ChildPolicyWrapper::Orphaned() {
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] ChildPolicyWrapper=" << this
       << " [" << target_ << "]: shutdown";
-  is_shutdown_ = true;
+  {
+    MutexLock lock(&lb_policy_->mu_);
+    is_shutdown_ = true;
+  }
   lb_policy_->child_policy_map_.erase(target_);
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
