@@ -421,7 +421,7 @@ class RlsLb final : public LoadBalancingPolicy {
   class Picker final : public LoadBalancingPolicy::SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<RlsLb> lb_policy);
-    ~Picker() override;
+    ~Picker() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_) override = default;
 
     PickResult Pick(PickArgs args) override;
 
@@ -1038,15 +1038,6 @@ RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
     default_child_policy_ =
         lb_policy_->default_child_policy_->Ref(DEBUG_LOCATION, "Picker");
   }
-}
-
-RlsLb::Picker::~Picker() {
-#ifndef NDEBUG
-  // Verify that we never destroy the picker from within the critical region.
-  // This is to protect us against unreffing child policies from within the
-  // critical region and deadlocking.
-  MutexLock lock(&lb_policy_->mu_);
-#endif
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
