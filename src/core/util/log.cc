@@ -40,43 +40,68 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
-int grpc_absl_vlog2_enabled() { return ABSL_VLOG_IS_ON(2); }
-
-GPRAPI void grpc_absl_log_error(const char* file, int line,
-                                const char* message_str) {
-  LOG(ERROR).AtLocation(file, line) << message_str;
+GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
+                          const char* message_str) {
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(file, line) << message_str;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      LOG(INFO).AtLocation(file, line) << message_str;
+      return;
+    case GPR_LOG_SEVERITY_ERROR:
+      LOG(ERROR).AtLocation(file, line) << message_str;
+      return;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
+                 << "), using ERROR";
+      LOG(ERROR).AtLocation(file, line) << message;
+  }
 }
 
-GPRAPI void grpc_absl_log_info(const char* file, int line,
-                               const char* message_str) {
-  LOG(INFO).AtLocation(file, line) << message_str;
+GPRAPI void grpc_absl_log_int(const char* file, int line,
+                              gpr_log_severity severity,
+                              const char* message_str, intptr_t num) {
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(file, line) << message_str << num;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      LOG(INFO).AtLocation(file, line) << message_str << num;
+      return;
+    case GPR_LOG_SEVERITY_ERROR:
+      LOG(ERROR).AtLocation(file, line) << message_str << num;
+      return;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
+                 << "), using ERROR";
+      LOG(ERROR).AtLocation(file, line) << message << num;
+  }
 }
 
-GPRAPI void grpc_absl_log_info_int(const char* file, int line,
-                                   const char* message_str, intptr_t num) {
-  LOG(INFO).AtLocation(file, line) << message_str << num;
-}
-
-GPRAPI void grpc_absl_log_info_str(const char* file, int line,
-                                   const char* message_str1,
-                                   const char* message_str2) {
-  LOG(INFO).AtLocation(file, line) << message_str1 << message_str2;
-}
-
-GPRAPI void grpc_absl_vlog(const char* file, int line,
-                           const char* message_str) {
-  VLOG(2).AtLocation(file, line) << message_str;
-}
-
-GPRAPI void grpc_absl_vlog_int(const char* file, int line,
-                               const char* message_str, intptr_t num) {
-  VLOG(2).AtLocation(file, line) << message_str << num;
-}
-
-GPRAPI void grpc_absl_vlog_str(const char* file, int line,
-                               const char* message_str1,
-                               const char* message_str2) {
-  VLOG(2).AtLocation(file, line) << message_str1 << message_str2;
+/** Should only be used from gRPC PHP and RUBY. **/
+GPRAPI void grpc_absl_log_str(const char* file, int line,
+                              gpr_log_severity severity,
+                              const char* message_str1,
+                              const char* message_str2) {
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(file, line) << message_str1 << message_str2;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      LOG(INFO).AtLocation(file, line) << message_str1 << message_str2;
+      return;
+    case GPR_LOG_SEVERITY_ERROR:
+      LOG(ERROR).AtLocation(file, line) << message_str1 << message_str2;
+      return;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
+                 << "), using ERROR";
+      LOG(ERROR).AtLocation(file, line) << message << message_str2;
+  }
 }
 
 void gpr_log_verbosity_init(void) {

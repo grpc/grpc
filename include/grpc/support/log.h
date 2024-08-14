@@ -28,39 +28,33 @@
 extern "C" {
 #endif
 
-#define GPR_LOCATION __FILE__, __LINE__
+/** The severity of a log message - use the #defines below when calling into
+   gpr_log to additionally supply file and line data */
+typedef enum gpr_log_severity {
+  GPR_LOG_SEVERITY_DEBUG,
+  GPR_LOG_SEVERITY_INFO,
+  GPR_LOG_SEVERITY_ERROR
+} gpr_log_severity;
+
+/** Macros to build log contexts at various severity levels */
+#define GPR_DEBUG __FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG
+#define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO
+#define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
 
 /** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI int grpc_absl_vlog2_enabled();
+GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
+                          const char* message_str);
 
 /** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_log_error(const char* file, int line,
-                                const char* message_str);
+GPRAPI void grpc_absl_log_int(const char* file, int line,
+                              gpr_log_severity severity,
+                              const char* message_str, intptr_t num);
 
 /** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_log_info(const char* file, int line,
-                               const char* message_str);
-
-/** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_log_info_int(const char* file, int line,
-                                   const char* message_str, intptr_t num);
-
-/** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_log_info_str(const char* file, int line,
-                                   const char* message_str1,
-                                   const char* message_str2);
-
-/** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_vlog(const char* file, int line, const char* message_str);
-
-/** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_vlog_int(const char* file, int line,
-                               const char* message_str, intptr_t num);
-
-/** Should only be used from gRPC PHP and RUBY. **/
-GPRAPI void grpc_absl_vlog_str(const char* file, int line,
-                               const char* message_str1,
-                               const char* message_str2);
+GPRAPI void grpc_absl_log_str(const char* file, int line,
+                              gpr_log_severity severity,
+                              const char* message_str1,
+                              const char* message_str2);
 
 GPRAPI void gpr_log_verbosity_init(void);
 
