@@ -44,7 +44,6 @@ GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
                           const char* message_str) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
       VLOG(2).AtLocation(file, line) << message_str;
       return;
     case GPR_LOG_SEVERITY_INFO:
@@ -63,7 +62,6 @@ GPRAPI void grpc_absl_log_int(const char* file, int line,
                               const char* message_str, intptr_t num) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
       VLOG(2).AtLocation(file, line) << message_str << num;
       return;
     case GPR_LOG_SEVERITY_INFO:
@@ -77,14 +75,12 @@ GPRAPI void grpc_absl_log_int(const char* file, int line,
   }
 }
 
-/** Should only be used from gRPC PHP and RUBY. **/
 GPRAPI void grpc_absl_log_str(const char* file, int line,
                               gpr_log_severity severity,
                               const char* message_str1,
                               const char* message_str2) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
       VLOG(2).AtLocation(file, line) << message_str1 << message_str2;
       return;
     case GPR_LOG_SEVERITY_INFO:
