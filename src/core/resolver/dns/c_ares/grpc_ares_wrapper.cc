@@ -730,9 +730,8 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
           ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
           GRPC_TRACE_VLOG(cares_resolver, 2)
               << "(c-ares resolver) request:" << r
-              << " c-ares resolver gets a AF_INET result: \n"
-              << "  addr: " << output << "\n  port: " << ntohs(hr->port)
-              << "\n";
+              << " c-ares resolver gets a AF_INET result: \n  addr: " << output
+              << "\n  port: " << ntohs(hr->port) << "\n";
           break;
         }
       }
@@ -865,8 +864,9 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
                                          absl::string_view dns_server)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   if (!dns_server.empty()) {
-    GRPC_TRACE_VLOG(cares_resolver, 2) << "(c-ares resolver) request:" << r
-                                       << " Using DNS server " << dns_server;
+    GRPC_TRACE_VLOG(cares_resolver, 2)
+        << "(c-ares resolver) request:" << r << " Using DNS server "
+        << dns_server.data();
     grpc_resolved_address addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
       r->dns_server_addr.family = AF_INET;
