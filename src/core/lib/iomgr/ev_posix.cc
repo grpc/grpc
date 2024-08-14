@@ -153,8 +153,8 @@ bool grpc_event_engine_run_in_background(void) {
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
-  GRPC_TRACE_DLOG(polling_api, INFO)
-      << "fd_create(" << fd << ", " << name << ", " << track_err << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO) << "(polling-api) fd_create(" << fd << ", "
+                                     << name << ", " << track_err << ")";
   GRPC_TRACE_LOG(fd_trace, INFO) << "(fd-trace) fd_create(" << fd << ", "
                                  << name << ", " << track_err << ")";
   return g_event_engine->fd_create(
@@ -168,8 +168,8 @@ int grpc_fd_wrapped_fd(grpc_fd* fd) {
 void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                     const char* reason) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "fd_orphan(" << grpc_fd_wrapped_fd(fd) << ", " << on_done << ", "
-      << release_fd << ", " << reason << ")";
+      << "(polling-api) fd_orphan(" << grpc_fd_wrapped_fd(fd) << ", " << on_done
+      << ", " << release_fd << ", " << reason << ")";
   GRPC_TRACE_LOG(fd_trace, INFO)
       << "(fd-trace) grpc_fd_orphan, fd:" << grpc_fd_wrapped_fd(fd)
       << " closed";
@@ -179,7 +179,7 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
 
 void grpc_fd_set_pre_allocated(grpc_fd* fd) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "fd_set_pre_allocated(" << grpc_fd_wrapped_fd(fd) << ")";
+      << "(polling-api) fd_set_pre_allocated(" << grpc_fd_wrapped_fd(fd) << ")";
   GRPC_TRACE_LOG(fd_trace, INFO)
       << "(fd-trace) fd_set_pre_allocated(" << grpc_fd_wrapped_fd(fd) << ")";
   g_event_engine->fd_set_pre_allocated(fd);
@@ -218,17 +218,20 @@ void grpc_fd_set_error(grpc_fd* fd) { g_event_engine->fd_set_error(fd); }
 static size_t pollset_size(void) { return g_event_engine->pollset_size; }
 
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
-  GRPC_TRACE_DLOG(polling_api, INFO) << "pollset_init(" << pollset << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO)
+      << "(polling-api) pollset_init(" << pollset << ")";
   g_event_engine->pollset_init(pollset, mu);
 }
 
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  GRPC_TRACE_DLOG(polling_api, INFO) << "pollset_shutdown(" << pollset << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO)
+      << "(polling-api) pollset_shutdown(" << pollset << ")";
   g_event_engine->pollset_shutdown(pollset, closure);
 }
 
 static void pollset_destroy(grpc_pollset* pollset) {
-  GRPC_TRACE_DLOG(polling_api, INFO) << "pollset_destroy(" << pollset << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO)
+      << "(polling-api) pollset_destroy(" << pollset << ")";
   g_event_engine->pollset_destroy(pollset);
 }
 
@@ -236,26 +239,27 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker,
                                       grpc_core::Timestamp deadline) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_work(" << pollset << ", "
+      << "(polling-api) pollset_work(" << pollset << ", "
       << deadline.milliseconds_after_process_epoch() << ") begin";
   grpc_error_handle err =
       g_event_engine->pollset_work(pollset, worker, deadline);
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_work(" << pollset << ", "
+      << "(polling-api) pollset_work(" << pollset << ", "
       << deadline.milliseconds_after_process_epoch() << ") end";
   return err;
 }
 
 static grpc_error_handle pollset_kick(grpc_pollset* pollset,
                                       grpc_pollset_worker* specific_worker) {
-  GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_kick(" << pollset << ", " << specific_worker << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO) << "(polling-api) pollset_kick(" << pollset
+                                     << ", " << specific_worker << ")";
   return g_event_engine->pollset_kick(pollset, specific_worker);
 }
 
 void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_add_fd(" << pollset << ", " << grpc_fd_wrapped_fd(fd) << ")";
+      << "(polling-api) pollset_add_fd(" << pollset << ", "
+      << grpc_fd_wrapped_fd(fd) << ")";
   g_event_engine->pollset_add_fd(pollset, fd);
 }
 
@@ -270,41 +274,44 @@ grpc_pollset_vtable grpc_posix_pollset_vtable = {
 
 static grpc_pollset_set* pollset_set_create(void) {
   grpc_pollset_set* pss = g_event_engine->pollset_set_create();
-  GRPC_TRACE_DLOG(polling_api, INFO) << "pollset_set_create(" << pss << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO)
+      << "(polling-api) pollset_set_create(" << pss << ")";
   return pss;
 }
 
 static void pollset_set_destroy(grpc_pollset_set* pollset_set) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_set_destroy(" << pollset_set << ")";
+      << "(polling-api) pollset_set_destroy(" << pollset_set << ")";
   g_event_engine->pollset_set_destroy(pollset_set);
 }
 
 static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
                                     grpc_pollset* pollset) {
-  GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_set_add_pollset(" << pollset_set << ", " << pollset << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO) << "(polling-api) pollset_set_add_pollset("
+                                     << pollset_set << ", " << pollset << ")";
   g_event_engine->pollset_set_add_pollset(pollset_set, pollset);
 }
 
 static void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
                                     grpc_pollset* pollset) {
-  GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_set_del_pollset(" << pollset_set << ", " << pollset << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO) << "(polling-api) pollset_set_del_pollset("
+                                     << pollset_set << ", " << pollset << ")";
   g_event_engine->pollset_set_del_pollset(pollset_set, pollset);
 }
 
 static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
                                         grpc_pollset_set* item) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_set_add_pollset_set(" << bag << ", " << item << ")";
+      << "(polling-api) pollset_set_add_pollset_set(" << bag << ", " << item
+      << ")";
   g_event_engine->pollset_set_add_pollset_set(bag, item);
 }
 
 static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
                                         grpc_pollset_set* item) {
   GRPC_TRACE_DLOG(polling_api, INFO)
-      << "pollset_set_del_pollset_set(" << bag << ", " << item << ")";
+      << "(polling-api) pollset_set_del_pollset_set(" << bag << ", " << item
+      << ")";
   g_event_engine->pollset_set_del_pollset_set(bag, item);
 }
 
@@ -314,14 +321,16 @@ grpc_pollset_set_vtable grpc_posix_pollset_set_vtable = {
     pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
 void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
-  GRPC_TRACE_DLOG(polling_api, INFO) << "pollset_set_add_fd(" << pollset_set
-                                     << ", " << grpc_fd_wrapped_fd(fd) << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO)
+      << "(polling-api) pollset_set_add_fd(" << pollset_set << ", "
+      << grpc_fd_wrapped_fd(fd) << ")";
   g_event_engine->pollset_set_add_fd(pollset_set, fd);
 }
 
 void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
-  GRPC_TRACE_DLOG(polling_api, INFO) << "pollset_set_del_fd(" << pollset_set
-                                     << ", " << grpc_fd_wrapped_fd(fd) << ")";
+  GRPC_TRACE_DLOG(polling_api, INFO)
+      << "(polling-api) pollset_set_del_fd(" << pollset_set << ", "
+      << grpc_fd_wrapped_fd(fd) << ")";
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
 }
 
