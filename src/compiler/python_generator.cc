@@ -692,7 +692,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
   if (config.grpc_tools_version.size() > 0) {
-    out->Print(var, "import warnings\n;from pathlib import Path\n");
+    out->Print(var, "import warnings\nfrom pathlib import Path\n");
   }
   if (generate_in_pb2_grpc) {
     out->Print("\n");
