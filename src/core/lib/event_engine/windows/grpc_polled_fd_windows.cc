@@ -423,7 +423,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     // this fd.
     GRPC_TRACE_LOG(cares_resolver, INFO)
         << "(EventEngine c-ares resolver) fd:|" << GetName()
-        << "| SendVTCP called tcp_write_state_:" << tcp_write_state_;
+        << "| SendVTCP called tcp_write_state_:"
+        << static_cast<int>(tcp_write_state_);
     switch (tcp_write_state_) {
       case WRITE_IDLE:
         tcp_write_state_ = WRITE_REQUESTED;
