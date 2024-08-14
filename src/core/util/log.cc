@@ -54,9 +54,7 @@ GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
       LOG(ERROR).AtLocation(file, line) << message_str;
       return;
     default:
-      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
-                 << "), using ERROR";
-      LOG(ERROR).AtLocation(file, line) << message;
+      DCHECK(false) << "Invalid severity";
   }
 }
 
@@ -75,9 +73,7 @@ GPRAPI void grpc_absl_log_int(const char* file, int line,
       LOG(ERROR).AtLocation(file, line) << message_str << num;
       return;
     default:
-      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
-                 << "), using ERROR";
-      LOG(ERROR).AtLocation(file, line) << message << num;
+      DCHECK(false) << "Invalid severity";
   }
 }
 
@@ -98,9 +94,7 @@ GPRAPI void grpc_absl_log_str(const char* file, int line,
       LOG(ERROR).AtLocation(file, line) << message_str1 << message_str2;
       return;
     default:
-      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
-                 << "), using ERROR";
-      LOG(ERROR).AtLocation(file, line) << message << message_str2;
+      DCHECK(false) << "Invalid severity";
   }
 }
 
