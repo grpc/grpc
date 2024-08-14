@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 /** The severity of a log message - use the #defines below when calling into
-   gpr_log to additionally supply file and line data */
+   grpc_absl_log to additionally supply file and line data */
 typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_DEBUG,
   GPR_LOG_SEVERITY_INFO,
