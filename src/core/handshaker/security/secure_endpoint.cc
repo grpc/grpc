@@ -105,7 +105,6 @@ struct secure_endpoint {
   }
 
   ~secure_endpoint() {
-    memory_owner.Reset();
     tsi_frame_protector_destroy(protector);
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
     grpc_slice_buffer_destroy(&source_buffer);
@@ -382,9 +381,12 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 
 static void on_write(void* user_data, grpc_error_handle error) {
   secure_endpoint* ep = static_cast<secure_endpoint*>(user_data);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, std::exchange(ep->write_cb, nullptr),
-                          std::move(error));
+  grpc_closure* cb = ep->write_cb;
+  ep->write_cb = nullptr;
   SECURE_ENDPOINT_UNREF(ep, "write");
+  grpc_core::EnsureRunInExecCtx([cb, error = std::move(error)]() {
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
+  });
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
@@ -507,6 +509,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   grpc_endpoint_destroy(ep->wrapped_ep);
+  ep->memory_owner.Reset();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
