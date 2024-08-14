@@ -41,16 +41,25 @@ typedef enum gpr_log_severity {
 #define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO
 #define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
 
-/** Should only be used from gRPC PHP and RUBY. **/
+/**
+ * Should only be used from gRPC PHP and RUBY.
+ * Equivalent to ABSL_LOG(severity) << message_str;
+ * **/
 GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
                           const char* message_str);
 
-/** Should only be used from gRPC PHP and RUBY. **/
+/**
+ * Should only be used from gRPC PHP and RUBY.
+ * Equivalent to ABSL_LOG(severity) << message_str << num;
+ * **/
 GPRAPI void grpc_absl_log_int(const char* file, int line,
                               gpr_log_severity severity,
                               const char* message_str, intptr_t num);
 
-/** Should only be used from gRPC PHP and RUBY. **/
+/**
+ * Should only be used from gRPC PHP and RUBY.
+ * Equivalent to ABSL_LOG(severity) << message_str1 << message_str2;
+ * **/
 GPRAPI void grpc_absl_log_str(const char* file, int line,
                               gpr_log_severity severity,
                               const char* message_str1,
