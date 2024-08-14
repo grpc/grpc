@@ -40,8 +40,6 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: call_status_override_on_cancellation
-  default: true
 - name: call_tracer_in_transport
   default: true
 - name: call_v3
@@ -79,8 +77,6 @@
   default: false
 - name: monitoring_experiment
   default: true
-- name: peer_state_based_framing
-  default: false
 - name: pending_queue_cap
   default: true
 - name: pick_first_new
