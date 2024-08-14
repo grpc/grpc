@@ -1643,7 +1643,7 @@ TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
   EXPECT_EQ(resource.override_host_statuses.ToString(), "{}");
 }
 
-using TelemetryLabelTest = XdsClusterTest;
+using MetadataTest = XdsClusterTest;
 
 MATCHER_P(JsonEq, json_str, "") {
   std::string actual = JsonDump(arg);
@@ -1652,7 +1652,7 @@ MATCHER_P(JsonEq, json_str, "") {
   return ok;
 }
 
-TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
+TEST_F(MetadataTest, MetadataSet) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
@@ -1689,7 +1689,7 @@ TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
                                        "}"))));
 }
 
-TEST_F(TelemetryLabelTest, MissingMetadataField) {
+TEST_F(MetadataTest, MetadataUnset) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
