@@ -493,6 +493,13 @@ void grpc_call_tracer_set(grpc_call* call,
   return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
 }
 
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  arena->ManagedNew<ClientCallTracerWrapper>(tracer);
+  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+}
+
 void* grpc_call_tracer_get(grpc_call* call) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
   auto* call_tracer =

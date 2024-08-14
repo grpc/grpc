@@ -50,7 +50,7 @@ def maybe_save_server_trace_context(RequestCallEvent event) -> None:
 
 cdef void _set_call_tracer(grpc_call* call, void* capsule_ptr):
   cdef ClientCallTracer* call_tracer = <ClientCallTracer*>capsule_ptr
-  grpc_call_tracer_set(call, call_tracer)
+  grpc_call_tracer_set_and_manage(call, call_tracer)
 
 
 cdef void* _get_call_tracer(grpc_call* call):

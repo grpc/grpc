@@ -274,6 +274,16 @@ void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
 
 void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
+// Sets call tracer on the call and manages its life by using the call's arena.
+// When using this API, the tracer will be destroyed by grpc_call arena when
+// grpc_call is about to be destroyed. The caller of this API SHOULD NOT
+// manually destroy the tracer. This API is used by Python as a way of using
+// Arena to manage the lifetime of the call tracer. Python needs this API
+// because the tracer was created within a separate shared object library which
+// doesn't have access to core functions like arena->ManagedNew<>.
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer);
+
 void* grpc_call_tracer_get(grpc_call* call);
 
 #define GRPC_CALL_LOG_BATCH(sev, ops, nops) \
@@ -284,6 +294,15 @@ void* grpc_call_tracer_get(grpc_call* call);
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
+
+class ClientCallTracerWrapper {
+ public:
+  explicit ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
+      : tracer_(tracer) {}
+
+ private:
+  std::unique_ptr<grpc_core::ClientCallTracer> tracer_;
+};
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.

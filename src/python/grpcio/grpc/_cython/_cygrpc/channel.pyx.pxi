@@ -72,10 +72,10 @@ cdef class _CallState:
   def __cinit__(self):
     self.due = set()
 
-  cdef void maybe_delete_call_tracer(self) except *:
-    if not self.call_tracer_capsule:
-      return
-    _observability.delete_call_tracer(self.call_tracer_capsule)
+  cdef void delete_call(self) except *:
+    with nogil:
+      grpc_call_unref(self.c_call)
+    self.c_call = NULL
 
   cdef void maybe_save_registered_method(self, bytes method_name) except *:
     with _observability.get_plugin() as plugin:
