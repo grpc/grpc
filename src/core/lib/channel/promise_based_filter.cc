@@ -1074,10 +1074,14 @@ class ClientCallData::PollContext {
       case SendInitialState::kForwarded: {
         // Poll the promise once since we're waiting for it.
         Poll<ServerMetadataHandle> poll = self_->promise_();
-      GRPC_TRACE_LOG(channel, INFO)  << self_->LogTag()                     << " ClientCallData.PollContext.Run: poll="                     << PollToString(poll,                                     [](const ServerMetadataHandle& h) {
-          return h->DebugString();)
-                    << "; " << self_->DebugString();
-        }
+        GRPC_TRACE_LOG(channel, INFO)
+            << self_->LogTag() << " ClientCallData.PollContext.Run: poll="
+            << PollToString(poll,
+                            [](const ServerMetadataHandle& h) {
+                              return h->DebugString();
+                            })
+            << "; " << self_->DebugString();
+
         if (auto* r = poll.value_if_ready()) {
           auto md = std::move(*r);
           if (self_->send_message() != nullptr) {
@@ -2410,25 +2414,30 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
-  GRPC_TRACE_LOG(channel, INFO)  << LogTag() << ": WakeInsideCombiner poll="                 << PollToString(poll,                                 [](const ServerMetadataHandle& h) {
-      return h->DebugString();)
-                       .c_str()
-                << "; send_initial_metadata="
-                << (send_initial_metadata_ == nullptr
-                        ? "null"
-                        : SendInitialMetadata::StateString(
-                              send_initial_metadata_->state))
-                << " send_trailing_metadata="
-                << StateString(send_trailing_state_);
-    }
+    GRPC_TRACE_FLAG_ENABLED(channel, INFO)
+        << LogTag() << ": WakeInsideCombiner poll="
+        << PollToString(
+               poll,
+               [](const ServerMetadataHandle& h) { return h->DebugString(); })
+               .c_str()
+        << "; send_initial_metadata="
+        << (send_initial_metadata_ == nullptr
+                ? "null"
+                : SendInitialMetadata::StateString(
+                      send_initial_metadata_->state))
+        << " send_trailing_metadata=" << StateString(send_trailing_state_);
+
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
             SendInitialMetadata::kQueuedAndPushedToPipe) {
       CHECK(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
-    GRPC_TRACE_LOG(channel, INFO)  << LogTag()                   << ": WakeInsideCombiner send_initial_metadata poll="                   << PollToString(                          p, [](const NextResult<ServerMetadataHandle>& h) {
-        return (*h)->DebugString(););
-      }
+      GRPC_TRACE_FLAG_ENABLED(channel, INFO)
+          << LogTag() << ": WakeInsideCombiner send_initial_metadata poll="
+          << PollToString(p, [](const NextResult<ServerMetadataHandle>& h) {
+               return (*h)->DebugString();
+             });
+
       if (auto* nr = p.value_if_ready()) {
         ServerMetadataHandle md = std::move(nr->value());
         if (send_initial_metadata_->batch->payload->send_initial_metadata
