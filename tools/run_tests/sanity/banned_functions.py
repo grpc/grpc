@@ -53,14 +53,9 @@ RUBY_PHP_ALLOW_LIST = [
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     # These logging functions are only for php and ruby.
-    "grpc_absl_log_error(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_log_info(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_log_info_int(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_log_info_str(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_vlog(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_vlog2_enabled(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_vlog_int(": RUBY_PHP_ALLOW_LIST,
-    "grpc_absl_vlog_str(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_int(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_str(": RUBY_PHP_ALLOW_LIST,
     # These have been deprecated.
     # Most of these have been deleted.
     # Putting this check here just to prevent people from
@@ -69,7 +64,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log(": [],
     "gpr_log_func_args": [],
     "gpr_log_message": [],
-    "gpr_log_severity": [],
     "gpr_log_severity_string": [],
     "gpr_set_log_function": [],
     "gpr_set_log_verbosity": [],
@@ -80,9 +74,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     # submitting PRs with any of these commented out.
     "GPR_ASSERT": [],
     "GPR_DEBUG_ASSERT": [],
-    "GPR_DEBUG": [],
-    "GPR_ERROR": [],
-    "GPR_INFO": [],
 }
 
 errors = 0
