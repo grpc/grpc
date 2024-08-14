@@ -468,13 +468,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
 
 void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
                                                    bool allow_push_to_pipe) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << base_->LogTag()
-              << " SendMessage.WakeInsideCombiner st=" << StateString(state_)
-              << (state_ == State::kBatchCompleted
-                      ? absl::StrCat(" status=", completed_status_.ToString())
-                      : "");
-  }
+GRPC_TRACE_LOG(channel, INFO)  << base_->LogTag()               << " SendMessage.WakeInsideCombiner st=" << StateString(state_)               << (state_ == State::kBatchCompleted                       ? absl::StrCat(" status=", completed_status_.ToString())                       : "");
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
@@ -502,12 +496,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       CHECK(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = r_push.value_if_ready()) {
-        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-          LOG(INFO) << base_->LogTag()
-                    << " SendMessage.WakeInsideCombiner push complete, "
-                       "result="
-                    << (*p ? "true" : "false");
-        }
+      GRPC_TRACE_LOG(channel, INFO)  << base_->LogTag()                     << " SendMessage.WakeInsideCombiner push complete, "                        "result="                     << (*p ? "true" : "false");
         // We haven't pulled through yet, so this certainly shouldn't succeed.
         CHECK(!*p);
         state_ = State::kCancelled;
@@ -517,12 +506,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       CHECK(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = r_next.value_if_ready()) {
-        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-          LOG(INFO) << base_->LogTag()
-                    << " SendMessage.WakeInsideCombiner next complete, "
-                       "result.has_value="
-                    << (p->has_value() ? "true" : "false");
-        }
+      GRPC_TRACE_LOG(channel, INFO)  << base_->LogTag()                     << " SendMessage.WakeInsideCombiner next complete, "                        "result.has_value="                     << (p->has_value() ? "true" : "false");
         if (p->has_value()) {
           batch_->payload->send_message.send_message->Swap((**p)->payload());
           batch_->payload->send_message.flags = (**p)->flags();
@@ -774,13 +758,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
 
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                                                       bool allow_push_to_pipe) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << base_->LogTag()
-              << " ReceiveMessage.WakeInsideCombiner st=" << StateString(state_)
-              << " push?=" << (push_.has_value() ? "yes" : "no")
-              << " next?=" << (next_.has_value() ? "yes" : "no")
-              << " allow_push_to_pipe=" << (allow_push_to_pipe ? "yes" : "no");
-  }
+GRPC_TRACE_LOG(channel, INFO)  << base_->LogTag()               << " ReceiveMessage.WakeInsideCombiner st=" << StateString(state_)               << " push?=" << (push_.has_value() ? "yes" : "no")               << " next?=" << (next_.has_value() ? "yes" : "no")               << " allow_push_to_pipe=" << (allow_push_to_pipe ? "yes" : "no");
   switch (state_) {
     case State::kInitial:
     case State::kIdle:
@@ -865,12 +843,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
               p->cancelled() ? absl::CancelledError() : absl::OkStatus(),
               "recv_message");
         }
-        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-          LOG(INFO) << base_->LogTag()
-                    << " ReceiveMessage.WakeInsideCombiner next complete: "
-                    << (p->has_value() ? "got message" : "end of stream")
-                    << " new_state=" << StateString(state_);
-        }
+      GRPC_TRACE_LOG(channel, INFO)  << base_->LogTag()                     << " ReceiveMessage.WakeInsideCombiner next complete: "                     << (p->has_value() ? "got message" : "end of stream")                     << " new_state=" << StateString(state_);
       }
       if (state_ != State::kPulledFromPipe &&
           state_ != State::kCompletedWhilePulledFromPipe) {
@@ -1079,13 +1052,7 @@ class ClientCallData::PollContext {
       case SendInitialState::kForwarded: {
         // Poll the promise once since we're waiting for it.
         Poll<ServerMetadataHandle> poll = self_->promise_();
-        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-          LOG(INFO) << self_->LogTag()
-                    << " ClientCallData.PollContext.Run: poll="
-                    << PollToString(poll,
-                                    [](const ServerMetadataHandle& h) {
-                                      return h->DebugString();
-                                    })
+      GRPC_TRACE_LOG(channel, INFO)  << self_->LogTag()                     << " ClientCallData.PollContext.Run: poll="                     << PollToString(poll,                                     [](const ServerMetadataHandle& h) {                                       return h->DebugString();)
                     << "; " << self_->DebugString();
         }
         if (auto* r = poll.value_if_ready()) {
@@ -1749,12 +1716,7 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    LOG(INFO) << LogTag() << " ClientCallData.RecvTrailingMetadataReady "
-              << "recv_trailing_state=" << StateString(recv_trailing_state_)
-              << " error=" << error
-              << " md=" << recv_trailing_metadata_->DebugString();
-  }
+GRPC_TRACE_LOG(channel, INFO)  << LogTag() << " ClientCallData.RecvTrailingMetadataReady "               << "recv_trailing_state=" << StateString(recv_trailing_state_)               << " error=" << error               << " md=" << recv_trailing_metadata_->DebugString();
   // If we were cancelled prior to receiving this callback, we should simply
   // forward the callback up with the same error.
   if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
@@ -2422,12 +2384,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
-    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-      LOG(INFO) << LogTag() << ": WakeInsideCombiner poll="
-                << PollToString(poll,
-                                [](const ServerMetadataHandle& h) {
-                                  return h->DebugString();
-                                })
+  GRPC_TRACE_LOG(channel, INFO)  << LogTag() << ": WakeInsideCombiner poll="                 << PollToString(poll,                                 [](const ServerMetadataHandle& h) {                                   return h->DebugString();)
                        .c_str()
                 << "; send_initial_metadata="
                 << (send_initial_metadata_ == nullptr
@@ -2442,13 +2399,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
             SendInitialMetadata::kQueuedAndPushedToPipe) {
       CHECK(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
-      if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-        LOG(INFO) << LogTag()
-                  << ": WakeInsideCombiner send_initial_metadata poll="
-                  << PollToString(
-                         p, [](const NextResult<ServerMetadataHandle>& h) {
-                           return (*h)->DebugString();
-                         });
+    GRPC_TRACE_LOG(channel, INFO)  << LogTag()                   << ": WakeInsideCombiner send_initial_metadata poll="                   << PollToString(                          p, [](const NextResult<ServerMetadataHandle>& h) {                            return (*h)->DebugString(););
       }
       if (auto* nr = p.value_if_ready()) {
         ServerMetadataHandle md = std::move(nr->value());
