@@ -24,6 +24,7 @@ from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestIterableType
+from ._typing import RequestIteratorType
 from ._typing import SerializingFunction
 from ._typing import NullaryCallbackType
 from grpc._typing import InterceptorType
@@ -486,7 +487,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def __call__(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -505,7 +506,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def _with_call(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -555,7 +556,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def with_call(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -573,7 +574,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def future(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -591,7 +592,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
         def continuation(
             new_details: grpc.ClientCallDetails,
-            request_iterator: RequestIterableType,
+            request_iterator: RequestIteratorType,
         ) -> Any:
             (
                 new_method,
@@ -635,7 +636,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
     def __call__(
         self,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -653,7 +654,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
         def continuation(
             new_details: grpc.ClientCallDetails,
-            request_iterator: RequestIterableType,
+            request_iterator: RequestIteratorType,
         ) -> Any:
             (
                 new_method,
@@ -693,7 +694,7 @@ class _Channel(grpc.Channel):
         self._interceptor = interceptor
 
     def subscribe(
-        self, callback: Callable, try_to_connect: Optional[bool] = False
+        self, callback: Callable, try_to_connect: bool = False
     ):
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 

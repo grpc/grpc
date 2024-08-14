@@ -47,7 +47,6 @@ from grpc._typing import InterceptorType
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestIteratorType
-from grpc._typing import RequestIterableType
 from grpc._typing import RequestType
 from grpc._typing import SerializingFunction
 from grpc._typing import ArityAgnosticMethodHandler
@@ -564,9 +563,9 @@ class StreamUnaryClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_stream_unary(
         self,
-        continuation: Callable[[ClientCallDetails, RequestIterableType], Any],
+        continuation: Callable[[ClientCallDetails, RequestIteratorType], Any],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
     ) -> Any:
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -604,9 +603,9 @@ class StreamStreamClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_stream_stream(
         self,
-        continuation: Callable[[ClientCallDetails, RequestIterableType], Any],
+        continuation: Callable[[ClientCallDetails, RequestIteratorType], Any],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIteratorType,
     ) -> Any:
         """Intercepts a stream-stream invocation.
 
@@ -1045,7 +1044,7 @@ class Channel(abc.ABC):
     def subscribe(
         self,
         callback: Callable[[ChannelConnectivity], None],
-        try_to_connect: Optional[bool] = False,
+        try_to_connect: bool = False,
     ) -> None:
         """Subscribe to this Channel's connectivity state machine.
 
