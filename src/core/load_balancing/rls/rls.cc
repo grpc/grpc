@@ -512,13 +512,16 @@ class RlsLb final : public LoadBalancingPolicy {
       // Moves entry to the end of the LRU list.
       void MarkUsed() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-      // Clears child_policy_wrappers_. The returned list should be destroyed
-      // after releasing the lock.
-      std::vector<RefCountedPtr<ChildPolicyWrapper>> ClearChildPolicyWrappers()
+      // Takes entries from child_policy_wrappers_ and appends them to the end
+      // of \a child_policy_wrappers.
+      void TakeChildPolicyWrappers(
+          std::vector<RefCountedPtr<ChildPolicyWrapper>>* child_policy_wrappers)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
-        auto child_policy_wrappers = std::move(child_policy_wrappers_);
+        child_policy_wrappers->insert(
+            child_policy_wrappers->end(),
+            std::make_move_iterator(child_policy_wrappers_.begin()),
+            std::make_move_iterator(child_policy_wrappers_.end()));
         child_policy_wrappers_.clear();
-        return child_policy_wrappers;
       }
 
      private:
@@ -1224,9 +1227,8 @@ void RlsLb::Cache::Entry::Orphan() {
       << lru_iterator_->ToString() << ": cache entry evicted";
   is_shutdown_ = true;
   lb_policy_->cache_.lru_list_.erase(lru_iterator_);
-  lru_iterator_ = lb_policy_->cache_.lru_list_.end();
+  lru_iterator_ = lb_policy_->cache_.lru_list_.end();  // Just in case.
   CHECK(child_policy_wrappers_.empty());
-  // Just in case.
   backoff_state_.reset();
   if (backoff_timer_ != nullptr) {
     backoff_timer_.reset();
@@ -1454,11 +1456,7 @@ void RlsLb::Cache::ResetAllBackoff() {
 std::vector<RefCountedPtr<RlsLb::ChildPolicyWrapper>> RlsLb::Cache::Shutdown() {
   std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policies_to_delete;
   for (auto& entry : map_) {
-    auto child_policies = entry.second->ClearChildPolicyWrappers();
-    child_policies_to_delete.insert(
-        child_policies_to_delete.end(),
-        std::make_move_iterator(child_policies.begin()),
-        std::make_move_iterator(child_policies.end()));
+    entry.second->TakeChildPolicyWrappers(&child_policies_to_delete);
   }
   map_.clear();
   lru_list_.clear();
@@ -1512,7 +1510,7 @@ void RlsLb::Cache::OnCleanupTimer() {
   for (auto it = map_.begin(); it != map_.end();) {
     if (GPR_UNLIKELY(it->second->ShouldRemove() && it->second->CanEvict())) {
       size_ -= it->second->Size();
-      child_policies_to_delete = it->second->ClearChildPolicyWrappers();
+      it->second->TakeChildPolicyWrappers(&child_policies_to_delete);
       it = map_.erase(it);
     } else {
       ++it;
@@ -1539,11 +1537,7 @@ void RlsLb::Cache::MaybeShrinkSize(
         << "[rlslb " << lb_policy_ << "] LRU eviction: removing entry "
         << map_it->second.get() << " " << lru_it->ToString();
     size_ -= map_it->second->Size();
-    auto child_policies = map_it->second->ClearChildPolicyWrappers();
-    child_policies_to_delete->insert(
-        child_policies_to_delete->end(),
-        std::make_move_iterator(child_policies.begin()),
-        std::make_move_iterator(child_policies.end()));
+    map_it->second->TakeChildPolicyWrappers(child_policies_to_delete);
     map_.erase(map_it);
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -2150,17 +2144,16 @@ void RlsLb::ShutdownLocked() {
   RefCountedPtr<ChildPolicyWrapper> child_policy_to_delete;
   std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policies_to_delete;
   OrphanablePtr<RlsChannel> rls_channel_to_delete;
-  ChannelArgs channel_args_to_delete;
   {
     MutexLock lock(&mu_);
     is_shutdown_ = true;
     config_.reset(DEBUG_LOCATION, "ShutdownLocked");
-    channel_args_to_delete = std::move(channel_args_);
     child_policies_to_delete = cache_.Shutdown();
     request_map_.clear();
     rls_channel_to_delete = std::move(rls_channel_);
     child_policy_to_delete = std::move(default_child_policy_);
   }
+  channel_args_ = ChannelArgs();
 }
 
 void RlsLb::UpdatePickerAsync() {
