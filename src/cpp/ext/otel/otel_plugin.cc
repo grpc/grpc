@@ -164,13 +164,6 @@ OpenTelemetryPluginBuilderImpl::SetMeterProvider(
   return *this;
 }
 
-OpenTelemetryPluginBuilderImpl&
-OpenTelemetryPluginBuilderImpl::SetLoggerProvider(
-    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider) {
-  logger_provider_ = std::move(logger_provider);
-  return *this;
-}
-
 OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::EnableMetrics(
     absl::Span<const absl::string_view> metric_names) {
   for (const auto& metric_name : metric_names) {
@@ -241,13 +234,27 @@ OpenTelemetryPluginBuilderImpl::SetChannelScopeFilter(
   return *this;
 }
 
+OpenTelemetryPluginBuilderImpl&
+OpenTelemetryPluginBuilderImpl::SetLoggerProvider(
+    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider) {
+  logger_provider_ = std::move(logger_provider);
+  return *this;
+}
+
+OpenTelemetryPluginBuilderImpl&
+OpenTelemetryPluginBuilderImpl::AddRpcEventConfig(
+    const grpc::OpenTelemetryPluginBuilder::RpcEventConfig& rpc_event_config) {
+  rpc_event_configs_.push_back(rpc_event_config);
+  return *this;
+}
+
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   auto otel_plugin = std::make_shared<OpenTelemetryPluginImpl>(
       metrics_, std::move(meter_provider_), std::move(logger_provider_),
       std::move(target_attribute_filter_),
       std::move(generic_method_attribute_filter_), std::move(server_selector_),
       std::move(plugin_options_), std::move(optional_label_keys_),
-      std::move(channel_scope_filter_));
+      std::move(channel_scope_filter_), std::move(rpc_event_configs_));
   if (meter_provider_ != nullptr) {
     grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(otel_plugin);
   }
@@ -269,7 +276,7 @@ OpenTelemetryPluginBuilderImpl::Build() {
       std::move(target_attribute_filter_),
       std::move(generic_method_attribute_filter_), std::move(server_selector_),
       std::move(plugin_options_), std::move(optional_label_keys_),
-      std::move(channel_scope_filter_));
+      std::move(channel_scope_filter_), std::move(rpc_event_configs_));
 }
 
 OpenTelemetryPluginImpl::CallbackMetricReporter::CallbackMetricReporter(
@@ -395,7 +402,9 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
     const std::set<absl::string_view>& optional_label_keys,
     absl::AnyInvocable<
         bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
-        channel_scope_filter)
+        channel_scope_filter,
+    std::vector<grpc::OpenTelemetryPluginBuilder::RpcEventConfig>
+        rpc_event_configs)
     : meter_provider_(std::move(meter_provider)),
       logger_provider_(std::move(logger_provider)),
       server_selector_(std::move(server_selector)),
@@ -407,8 +416,9 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
   if (logger_provider_ != nullptr) {
     // Figure out why we need to do this.
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::RegisterLoggingFilter(new LoggingSink(
-        logger_provider_, logger_provider_->GetLogger("otel_plugin_logger")));
+    grpc_core::RegisterLoggingFilter(
+        new LoggingSink(std::move(rpc_event_configs), logger_provider_,
+                        logger_provider_->GetLogger("otel_plugin_logger")));
   }
   if (meter_provider_ == nullptr) {
     return;
@@ -1048,12 +1058,6 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetMeterProvider(
   return *this;
 }
 
-OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLoggerProvider(
-    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider) {
-  impl_->SetLoggerProvider(std::move(logger_provider));
-  return *this;
-}
-
 OpenTelemetryPluginBuilder&
 OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
@@ -1107,6 +1111,18 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetChannelScopeFilter(
     absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
         channel_scope_filter) {
   impl_->SetChannelScopeFilter(std::move(channel_scope_filter));
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLoggerProvider(
+    std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider) {
+  impl_->SetLoggerProvider(std::move(logger_provider));
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddRpcEventConfig(
+    const RpcEventConfig& rpc_event_config) {
+  impl_->AddRpcEventConfig(rpc_event_config);
   return *this;
 }
 

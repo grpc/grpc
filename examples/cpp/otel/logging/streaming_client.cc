@@ -129,8 +129,17 @@ int main(int argc, char** argv) {
   std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider =
       opentelemetry::sdk::logs::LoggerProviderFactory::Create(
           std::move(processor));
+  grpc::OpenTelemetryPluginBuilder::RpcEventConfig config;
+  grpc::OpenTelemetryPluginBuilder::RpcEventConfig::Path path;
+  path.method = "SayHelloBidiStream";
+  path.service = "helloworld.Greeter";
+  config.paths.push_back(path);
+  config.is_client = true;
+  config.max_message_bytes = 1024;
+  config.max_metadata_bytes = 1024;
   auto status = grpc::OpenTelemetryPluginBuilder()
                     .SetLoggerProvider(std::move(logger_provider))
+                    .AddRpcEventConfig(config)
                     .BuildAndRegisterGlobal();
   if (!status.ok()) {
     std::cerr << "Failed to register gRPC OpenTelemetry Plugin: "

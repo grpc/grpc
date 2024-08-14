@@ -172,8 +172,9 @@ class OpenTelemetryPluginBuilder {
   /// TODO(yijiem): add comments
   OpenTelemetryPluginBuilder& SetLoggerProvider(
       std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider);
-  OpenTelemetryPluginBuilder& SetRpcEventConfigs(
-      std::vector<RpcEventConfig> rpc_event_configs);
+  /// If no config is set, logging will be disabled.
+  OpenTelemetryPluginBuilder& AddRpcEventConfig(
+      const RpcEventConfig& rpc_event_config);
 
   /// Builds and registers a global plugin that acts on all channels and
   /// servers running on the process. Must be called no more than once and

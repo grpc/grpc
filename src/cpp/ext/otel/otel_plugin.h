@@ -131,8 +131,6 @@ class OpenTelemetryPluginBuilderImpl {
   // If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilderImpl& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
-  OpenTelemetryPluginBuilderImpl& SetLoggerProvider(
-      std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider);
   // Methods to manipulate which instruments are enabled in the OpenTelemetry
   // Stats Plugin. The default set of instruments are -
   // grpc.client.attempt.started
@@ -182,6 +180,10 @@ class OpenTelemetryPluginBuilderImpl {
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
+  OpenTelemetryPluginBuilderImpl& SetLoggerProvider(
+      std::shared_ptr<opentelemetry::logs::LoggerProvider> logger_provider);
+  OpenTelemetryPluginBuilderImpl& AddRpcEventConfig(
+      const grpc::OpenTelemetryPluginBuilder::RpcEventConfig& rpc_event_config);
   absl::Status BuildAndRegisterGlobal();
   absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
   Build();
@@ -207,6 +209,8 @@ class OpenTelemetryPluginBuilderImpl {
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
+  std::vector<grpc::OpenTelemetryPluginBuilder::RpcEventConfig>
+      rpc_event_configs_;
 };
 
 class OpenTelemetryPluginImpl
@@ -229,7 +233,9 @@ class OpenTelemetryPluginImpl
       const std::set<absl::string_view>& optional_label_keys,
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
-          channel_scope_filter);
+          channel_scope_filter,
+      std::vector<grpc::OpenTelemetryPluginBuilder::RpcEventConfig>
+          rpc_event_configs);
 
  private:
   class ClientCallTracer;
@@ -390,22 +396,46 @@ class OpenTelemetryPluginImpl
   class LoggingSink : public grpc_core::LoggingSink {
    public:
     LoggingSink(
+        std::vector<grpc::OpenTelemetryPluginBuilder::RpcEventConfig>
+            rpc_event_configs,
         opentelemetry::nostd::shared_ptr<opentelemetry::logs::LoggerProvider>
             logger_provider,
         opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger)
-        : logger_provider_(std::move(logger_provider)),
+        : rpc_event_configs_(std::move(rpc_event_configs)),
+          logger_provider_(std::move(logger_provider)),
           logger_(std::move(logger)) {}
 
     Config FindMatch(bool is_client, absl::string_view service,
                      absl::string_view method) override {
-      // TODO(yijiem): lift the config_parser from net/grpc.
-      return Config(std::numeric_limits<uint32_t>::max(),
-                    std::numeric_limits<uint32_t>::max());
+      if (service.empty() || method.empty()) {
+        return LoggingSink::Config();
+      }
+      for (const auto& config : rpc_event_configs_) {
+        if ((is_client && !config.is_client) ||
+            (!is_client && config.is_client)) {
+          continue;
+        }
+        for (const auto& config_method : config.paths) {
+          if ((config_method.service == "*") ||
+              ((service == config_method.service) &&
+               ((config_method.method == "*") ||
+                (method == config_method.method)))) {
+            if (config.exclude) {
+              return LoggingSink::Config();
+            }
+            return LoggingSink::Config(config.max_metadata_bytes,
+                                       config.max_message_bytes);
+          }
+        }
+      }
+      return LoggingSink::Config();
     }
 
     void LogEntry(Entry entry) override;
 
    private:
+    std::vector<grpc::OpenTelemetryPluginBuilder::RpcEventConfig>
+        rpc_event_configs_;
     opentelemetry::nostd::shared_ptr<opentelemetry::logs::LoggerProvider>
         logger_provider_;
     opentelemetry::nostd::shared_ptr<opentelemetry::logs::Logger> logger_;
