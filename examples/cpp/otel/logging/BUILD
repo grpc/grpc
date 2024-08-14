@@ -48,3 +48,34 @@ cc_binary(
         "@io_opentelemetry_cpp//sdk/src/logs",
     ],
 )
+
+cc_binary(
+    name = "streaming_client",
+    srcs = ["streaming_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_otel_plugin",
+        "//examples/cpp/otel:util",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@io_opentelemetry_cpp//exporters/otlp:otlp_grpc_log_record_exporter",
+        "@io_opentelemetry_cpp//sdk/src/logs",
+    ],
+)
+
+cc_binary(
+    name = "streaming_server",
+    srcs = ["streaming_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_otel_plugin",
+        "//examples/cpp/otel:util",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings:str_format",
+        "@io_opentelemetry_cpp//exporters/otlp:otlp_grpc_log_record_exporter",
+        "@io_opentelemetry_cpp//sdk/src/logs",
+    ],
+)
