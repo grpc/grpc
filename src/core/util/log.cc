@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include "absl/log/globals.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
