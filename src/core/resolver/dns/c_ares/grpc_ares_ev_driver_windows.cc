@@ -458,7 +458,7 @@ class GrpcPolledFdWindows final : public GrpcPolledFd {
   void OnTcpConnectLocked(grpc_error_handle error) {
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) fd:" << GetName()
-        << " InnerOnTcpConnectLocked error:" << error
+        << " InnerOnTcpConnectLocked error:" << StatusToString(error)
         << " pending_register_for_readable:"
         << pending_continue_register_for_on_readable_locked_
         << " pending_register_for_writeable:"
@@ -627,7 +627,7 @@ class GrpcPolledFdWindows final : public GrpcPolledFd {
               << "| OnIocpReadableInner winsocket_->read_info.wsa_error "
                  "code:|"
               << winsocket_->read_info.wsa_error << "| msg:|"
-              << StatusToString(error).c_str() << "|";
+              << StatusToString(error) << "|";
         }
       }
     }
@@ -665,7 +665,7 @@ class GrpcPolledFdWindows final : public GrpcPolledFd {
             << "| OnIocpWriteableInner. winsocket_->write_info.wsa_error "
                "code:|"
             << winsocket_->write_info.wsa_error << "| msg:|"
-            << StatusToString(error).c_str() << "|";
+            << StatusToString(error) << "|";
       }
     }
     CHECK(tcp_write_state_ == WRITE_PENDING);
