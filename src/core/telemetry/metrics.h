@@ -461,14 +461,7 @@ class GlobalStatsPluginRegistry {
     template <typename... Args>
     GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
     RegisterCallback(absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
-                     Duration min_interval, Args... args) {
-      AssertIsCallbackGaugeHandle(args...);
-      return std::make_unique<RegisteredMetricCallback>(
-          *this, std::move(callback),
-          std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{
-              args...},
-          min_interval);
-    }
+                     Duration min_interval, Args... args);
 
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
@@ -556,6 +549,18 @@ class RegisteredMetricCallback {
   std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics_;
   Duration min_interval_;
 };
+
+template <typename... Args>
+inline std::unique_ptr<RegisteredMetricCallback>
+GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    Duration min_interval, Args... args) {
+  AssertIsCallbackGaugeHandle(args...);
+  return std::make_unique<RegisteredMetricCallback>(
+      *this, std::move(callback),
+      std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},
+      min_interval);
+}
 
 }  // namespace grpc_core
 

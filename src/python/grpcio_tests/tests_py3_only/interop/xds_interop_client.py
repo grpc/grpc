@@ -45,6 +45,9 @@ from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from src.python.grpcio_tests.tests.fork import native_debug
+
+native_debug.install_failure_signal_handler()
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()

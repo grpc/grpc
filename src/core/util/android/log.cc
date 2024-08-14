@@ -30,17 +30,9 @@
 
 #include "src/core/lib/gprpp/crash.h"
 
-static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
-  switch (severity) {
-    case GPR_LOG_SEVERITY_DEBUG:
-      return ANDROID_LOG_DEBUG;
-    case GPR_LOG_SEVERITY_INFO:
-      return ANDROID_LOG_INFO;
-    case GPR_LOG_SEVERITY_ERROR:
-      return ANDROID_LOG_ERROR;
-  }
-  return ANDROID_LOG_DEFAULT;
-}
+extern int gpr_should_log(gpr_log_severity severity);
+extern void gpr_log_message(const char* file, int line,
+                            gpr_log_severity severity, const char* message);
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {

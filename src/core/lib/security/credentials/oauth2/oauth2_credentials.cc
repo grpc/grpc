@@ -56,7 +56,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -481,8 +480,8 @@ class grpc_compute_engine_token_fetcher_credentials
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved) {
-  GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1,
-                 (reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
@@ -569,11 +568,10 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
     const char* json_refresh_token, void* reserved) {
   grpc_auth_refresh_token token =
       grpc_auth_refresh_token_create_from_string(json_refresh_token);
-  if (GRPC_TRACE_FLAG_ENABLED(api)) {
-    LOG(INFO) << "grpc_refresh_token_credentials_create(json_refresh_token="
-              << create_loggable_refresh_token(&token)
-              << ", reserved=" << reserved << ")";
-  }
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_refresh_token_credentials_create(json_refresh_token="
+      << create_loggable_refresh_token(&token) << ", reserved=" << reserved
+      << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
       .release();
@@ -596,7 +594,7 @@ void MaybeAddToBody(const char* field_name, const char* field,
 grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
   auto slice = LoadFile(path, /*add_null_terminator=*/true);
   if (!slice.ok()) return slice.status();
-  if (slice->length() == 0) {
+  if (slice->empty()) {
     LOG(ERROR) << "Token file " << path << " is empty";
     return GRPC_ERROR_CREATE("Token file is empty.");
   }
@@ -797,10 +795,9 @@ std::string grpc_access_token_credentials::debug_string() {
 
 grpc_call_credentials* grpc_access_token_credentials_create(
     const char* access_token, void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_access_token_credentials_create(access_token=<redacted>, "
-      "reserved=%p)",
-      1, (reserved));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_access_token_credentials_create(access_"
+                               "token=<redacted>, reserved="
+                            << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();

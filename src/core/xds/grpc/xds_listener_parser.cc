@@ -403,10 +403,16 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
     ValidationErrors::ScopedField field(errors, ".common_tls_context");
     downstream_tls_context.common_tls_context =
         CommonTlsContextParse(context, common_tls_context, errors);
-    // Note: We can't be more specific about the field name for this
-    // error, because we don't know which fields they were found in
+    // Note: We can't be more specific about the field names for these
+    // errors, because we don't know which fields they were found in
     // inside of CommonTlsContext, so we make the error message a bit
     // more verbose to compensate.
+    if (absl::holds_alternative<
+            CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
+            downstream_tls_context.common_tls_context
+                .certificate_validation_context.ca_certs)) {
+      errors->AddError("system_root_certs not supported");
+    }
     if (!downstream_tls_context.common_tls_context
              .certificate_validation_context.match_subject_alt_names.empty()) {
       errors->AddError("match_subject_alt_names not supported on servers");
@@ -428,14 +434,19 @@ XdsListenerResource::DownstreamTlsContext DownstreamTlsContextParse(
   if (require_client_certificate != nullptr) {
     downstream_tls_context.require_client_certificate =
         google_protobuf_BoolValue_value(require_client_certificate);
-    if (downstream_tls_context.require_client_certificate &&
-        downstream_tls_context.common_tls_context.certificate_validation_context
-            .ca_certificate_provider_instance.instance_name.empty()) {
-      ValidationErrors::ScopedField field(errors,
-                                          ".require_client_certificate");
-      errors->AddError(
-          "client certificate required but no certificate "
-          "provider instance specified for validation");
+    if (downstream_tls_context.require_client_certificate) {
+      auto* ca_cert_provider =
+          absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+              &downstream_tls_context.common_tls_context
+                   .certificate_validation_context.ca_certs);
+      if (ca_cert_provider == nullptr ||
+          ca_cert_provider->instance_name.empty()) {
+        ValidationErrors::ScopedField field(errors,
+                                            ".require_client_certificate");
+        errors->AddError(
+            "client certificate required but no certificate provider "
+            "instance specified for validation");
+      }
     }
   }
   if (ParseBoolValue(

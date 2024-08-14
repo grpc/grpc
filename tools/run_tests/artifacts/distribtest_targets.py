@@ -220,6 +220,7 @@ class RubyDistribTest(object):
         ruby_version=None,
         source=False,
         presubmit=False,
+        protobuf_version="",
     ):
         self.package_type = "binary"
         if source:
@@ -231,10 +232,13 @@ class RubyDistribTest(object):
             ruby_version or "unspecified",
             self.package_type,
         )
+        if not protobuf_version == "":
+            self.name += "_protobuf_%s" % protobuf_version
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
+        self.protobuf_version = protobuf_version
         self.labels = ["distribtest", "ruby", platform, arch, docker_suffix]
         if presubmit:
             self.labels.append("presubmit")
@@ -261,8 +265,13 @@ class RubyDistribTest(object):
         return create_docker_jobspec(
             self.name,
             dockerfile_name,
-            "test/distrib/ruby/run_distrib_test.sh %s %s %s"
-            % (arch_to_gem_arch[self.arch], self.platform, self.package_type),
+            "test/distrib/ruby/run_distrib_test.sh %s %s %s %s"
+            % (
+                arch_to_gem_arch[self.arch],
+                self.platform,
+                self.package_type,
+                self.protobuf_version,
+            ),
             copy_rel_path="test/distrib",
         )
 
@@ -485,7 +494,14 @@ def targets():
         RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_3", presubmit=True
         ),
-        RubyDistribTest("linux", "x64", "centos7"),
+        RubyDistribTest(
+            "linux",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_3",
+            protobuf_version="3.25",
+            presubmit=True,
+        ),
         RubyDistribTest("linux", "x64", "ubuntu2004"),
         RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
         # PHP7

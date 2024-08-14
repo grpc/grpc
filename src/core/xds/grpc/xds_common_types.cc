@@ -20,25 +20,9 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include "src/core/lib/gprpp/match.h"
+
 namespace grpc_core {
-
-//
-// CommonTlsContext::CertificateValidationContext
-//
-
-std::string CommonTlsContext::CertificateValidationContext::ToString() const {
-  std::vector<std::string> contents;
-  contents.reserve(match_subject_alt_names.size());
-  for (const auto& match : match_subject_alt_names) {
-    contents.push_back(match.ToString());
-  }
-  return absl::StrFormat("{match_subject_alt_names=[%s]}",
-                         absl::StrJoin(contents, ", "));
-}
-
-bool CommonTlsContext::CertificateValidationContext::Empty() const {
-  return match_subject_alt_names.empty();
-}
 
 //
 // CommonTlsContext::CertificateProviderPluginInstance
@@ -59,6 +43,38 @@ std::string CommonTlsContext::CertificateProviderPluginInstance::ToString()
 
 bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
   return instance_name.empty() && certificate_name.empty();
+}
+
+//
+// CommonTlsContext::CertificateValidationContext
+//
+
+std::string CommonTlsContext::CertificateValidationContext::ToString() const {
+  std::vector<std::string> contents;
+  Match(
+      ca_certs, [](const absl::monostate&) {},
+      [&](const CertificateProviderPluginInstance& cert_provider) {
+        contents.push_back(
+            absl::StrCat("ca_certs=cert_provider", cert_provider.ToString()));
+      },
+      [&](const SystemRootCerts&) {
+        contents.push_back("ca_certs=system_root_certs{}");
+      });
+  if (!match_subject_alt_names.empty()) {
+    std::vector<std::string> san_matchers;
+    san_matchers.reserve(match_subject_alt_names.size());
+    for (const auto& match : match_subject_alt_names) {
+      san_matchers.push_back(match.ToString());
+    }
+    contents.push_back(absl::StrCat("match_subject_alt_names=[",
+                                    absl::StrJoin(san_matchers, ", "), "]"));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+bool CommonTlsContext::CertificateValidationContext::Empty() const {
+  return absl::holds_alternative<absl::monostate>(ca_certs) &&
+         match_subject_alt_names.empty();
 }
 
 //

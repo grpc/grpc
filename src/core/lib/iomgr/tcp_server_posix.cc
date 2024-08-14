@@ -177,10 +177,9 @@ static grpc_error_handle CreateEventEngineListener(
                            << addr_uri.status().ToString();
                 return;
               }
-              if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-                LOG(INFO) << "SERVER_CONNECT: incoming external connection: "
-                          << addr_uri->c_str();
-              }
+              GRPC_TRACE_LOG(tcp, INFO) << "SERVER_CONNECT: incoming external "
+                                           "connection: "
+                                        << addr_uri->c_str();
             }
             read_notifier_pollset =
                 (*(s->pollsets))[static_cast<size_t>(
@@ -421,8 +420,9 @@ static void on_read(void* arg, grpc_error_handle err) {
       int64_t dropped_connections_count =
           num_dropped_connections.fetch_add(1, std::memory_order_relaxed) + 1;
       if (dropped_connections_count % 1000 == 1) {
-        LOG(INFO) << "Dropped >= " << dropped_connections_count
-                  << " new connection attempts due to high memory pressure";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "Dropped >= " << dropped_connections_count
+            << " new connection attempts due to high memory pressure";
       }
       close(fd);
       continue;
@@ -459,9 +459,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "SERVER_CONNECT: incoming connection: " << *addr_uri;
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "SERVER_CONNECT: incoming connection: " << *addr_uri;
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
@@ -540,14 +539,14 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   }
   if (*out_port > 0) {
     if (!v6_err.ok()) {
-      LOG(INFO) << "Failed to add :: listener, "
-                << "the environment may not support IPv6: "
-                << grpc_core::StatusToString(v6_err);
+      GRPC_TRACE_LOG(tcp, INFO) << "Failed to add :: listener, "
+                                << "the environment may not support IPv6: "
+                                << grpc_core::StatusToString(v6_err);
     }
     if (!v4_err.ok()) {
-      LOG(INFO) << "Failed to add 0.0.0.0 listener, "
-                << "the environment may not support IPv4: "
-                << grpc_core::StatusToString(v4_err);
+      GRPC_TRACE_LOG(tcp, INFO) << "Failed to add 0.0.0.0 listener, "
+                                << "the environment may not support IPv4: "
+                                << grpc_core::StatusToString(v4_err);
     }
     return absl::OkStatus();
   } else {
@@ -915,10 +914,8 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       return;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "SERVER_CONNECT: incoming external connection: "
-                << *addr_uri;
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "SERVER_CONNECT: incoming external connection: " << *addr_uri;
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
     read_notifier_pollset =

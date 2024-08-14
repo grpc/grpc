@@ -70,7 +70,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/server/server.h"
@@ -587,11 +586,9 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     std::shared_ptr<const XdsListenerResource> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
-    LOG(INFO) << "[ListenerWatcher " << this
-              << "] Received LDS update from xds client " << xds_client_.get()
-              << ": " << listener->ToString();
-  }
+  GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+      << "[ListenerWatcher " << this << "] Received LDS update from xds client "
+      << xds_client_.get() << ": " << listener->ToString();
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&listener->listener);
   if (tcp_listener == nullptr) {
@@ -801,23 +798,21 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   auto it = certificate_providers_map_.find(filter_chain);
   if (it != certificate_providers_map_.end()) return it->second;
   // Configure root cert.
-  absl::string_view root_provider_instance_name =
-      filter_chain->downstream_tls_context.common_tls_context
-          .certificate_validation_context.ca_certificate_provider_instance
-          .instance_name;
-  absl::string_view root_provider_cert_name =
-      filter_chain->downstream_tls_context.common_tls_context
-          .certificate_validation_context.ca_certificate_provider_instance
-          .certificate_name;
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &filter_chain->downstream_tls_context.common_tls_context
+               .certificate_validation_context.ca_certs);
+  absl::string_view root_provider_cert_name;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
-  if (!root_provider_instance_name.empty()) {
+  if (ca_cert_provider != nullptr) {
+    root_provider_cert_name = ca_cert_provider->certificate_name;
     root_cert_provider =
         xds_client_->certificate_provider_store()
-            .CreateOrGetCertificateProvider(root_provider_instance_name);
+            .CreateOrGetCertificateProvider(ca_cert_provider->instance_name);
     if (root_cert_provider == nullptr) {
       return absl::NotFoundError(
           absl::StrCat("Certificate provider instance name: \"",
-                       root_provider_instance_name, "\" not recognized."));
+                       ca_cert_provider->instance_name, "\" not recognized."));
     }
   }
   // Configure identity cert.
@@ -1365,10 +1360,11 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
                                             .channel_args_preconditioning()
                                             .PreconditionChannelArgs(args);
-  GRPC_API_TRACE(
-      "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
-      "update=%p, user_data=%p}, args=%p)",
-      3, (notifier.on_serving_status_update, notifier.user_data, args));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
+         "update="
+      << notifier.on_serving_status_update
+      << ", user_data=" << notifier.user_data << "}, args=" << args << ")";
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
       grpc_core::GrpcXdsClient::kServerKey, channel_args,
       "XdsServerConfigFetcher");

@@ -30,6 +30,12 @@ Duration ScheduleReads(
         mock_endpoint_controller,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
 
+void ScheduleWrites(
+    const fuzzer_input::NetworkInput& network_input,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
+
 Duration ScheduleConnection(
     const fuzzer_input::NetworkInput& network_input,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine,

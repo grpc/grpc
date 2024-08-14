@@ -23,10 +23,10 @@ def grpc_deps():
     if "platforms" not in native.existing_rules():
         http_archive(
             name = "platforms",
-            sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+            sha256 = "218efe8ee736d26a3572663b374a253c012b716d8af0c07e842e82f238a0a7ee",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
-                "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/platforms/releases/download/0.0.10/platforms-0.0.10.tar.gz",
+                "https://github.com/bazelbuild/platforms/releases/download/0.0.10/platforms-0.0.10.tar.gz",
             ],
         )
 
@@ -35,11 +35,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "9f441d72fccb9a3faf96470478c8ccfaaeb8db1cffd4d78b698f782124dad1b0",
-            strip_prefix = "boringssl-b8a2bffc598f230484ff48a247526a9820facfc2",
+            sha256 = "7a35bebd0e1eecbc5bf5bbf5eec03e86686c356802b5540872119bd26f84ecc7",
+            strip_prefix = "boringssl-16c8d3db1af20fcc04b5190b25242aadcb1fbb30",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/b8a2bffc598f230484ff48a247526a9820facfc2.tar.gz",
-                "https://github.com/google/boringssl/archive/b8a2bffc598f230484ff48a247526a9820facfc2.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/16c8d3db1af20fcc04b5190b25242aadcb1fbb30.tar.gz",
+                "https://github.com/google/boringssl/archive/16c8d3db1af20fcc04b5190b25242aadcb1fbb30.tar.gz",
             ],
         )
 
@@ -168,10 +168,10 @@ def grpc_deps():
         http_archive(
             name = "bazel_skylib",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
-                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
+                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
             ],
-            sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
+            sha256 = "bc283cdfcd526a52c3201279cda4bc298652efa898b10b4db0837dc51652756f",
         )
 
     if "bazel_compdb" not in native.existing_rules():
@@ -199,11 +199,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "1ee20b3041a4f093cc393448ab022f770e70b509c8fe8399d6e83017067b2fc3",
-            strip_prefix = "data-plane-api-091cfd044258312a56c632ae1860813b1c0c58bc",
+            sha256 = "e525a6fb6e6ed3eef1eec6bef3da9b5708e471f0f9335a7604df14a4b386231e",
+            strip_prefix = "data-plane-api-f8b75d1efa92bbf534596a013d9ca5873f79dd30",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/091cfd044258312a56c632ae1860813b1c0c58bc.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz",
             ],
         )
 

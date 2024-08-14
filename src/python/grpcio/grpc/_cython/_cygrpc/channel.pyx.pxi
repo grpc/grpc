@@ -72,10 +72,10 @@ cdef class _CallState:
   def __cinit__(self):
     self.due = set()
 
-  cdef void maybe_delete_call_tracer(self) except *:
-    if not self.call_tracer_capsule:
-      return
-    _observability.delete_call_tracer(self.call_tracer_capsule)
+  cdef void delete_call(self) except *:
+    with nogil:
+      grpc_call_unref(self.c_call)
+    self.c_call = NULL
 
   cdef void maybe_save_registered_method(self, bytes method_name) except *:
     with _observability.get_plugin() as plugin:
@@ -291,9 +291,7 @@ cdef void _call(
         grpc_call_credentials_release(c_call_credentials)
         if c_call_error != GRPC_CALL_OK:
           #TODO(xuanwn): Expand the scope of nogil
-          with nogil:
-            grpc_call_unref(call_state.c_call)
-          call_state.c_call = NULL
+          call_state.delete_call()
           _raise_call_error_no_metadata(c_call_error)
       started_tags = set()
       for operations, user_tag in operationses_and_user_tags:
@@ -303,9 +301,7 @@ cdef void _call(
         else:
           grpc_call_cancel(call_state.c_call, NULL)
           #TODO(xuanwn): Expand the scope of nogil
-          with nogil:
-            grpc_call_unref(call_state.c_call)
-          call_state.c_call = NULL
+          call_state.delete_call()
           _raise_call_error(c_call_error, metadata)
       else:
         call_state.due.update(started_tags)
@@ -319,10 +315,7 @@ cdef void _process_integrated_call_tag(
   cdef _CallState call_state = state.integrated_call_states.pop(tag)
   call_state.due.remove(tag)
   if not call_state.due:
-    with nogil:
-      grpc_call_unref(call_state.c_call)
-    call_state.c_call = NULL
-    call_state.maybe_delete_call_tracer()
+    call_state.delete_call()
 
 cdef class IntegratedCall:
 
@@ -362,10 +355,7 @@ cdef object _process_segregated_call_tag(
   call_state.due.remove(tag)
   if not call_state.due:
     #TODO(xuanwn): Expand the scope of nogil
-    with nogil:
-      grpc_call_unref(call_state.c_call)
-    call_state.c_call = NULL
-    call_state.maybe_delete_call_tracer()
+    call_state.delete_call()
     state.segregated_call_states.remove(call_state)
     _destroy_c_completion_queue(c_completion_queue)
     return True
@@ -392,9 +382,7 @@ cdef class SegregatedCall:
         self._channel_state, self._call_state, self._c_completion_queue, tag)
     def on_failure():
       self._call_state.due.clear()
-      with nogil:
-        grpc_call_unref(self._call_state.c_call)
-      self._call_state.c_call = NULL
+      self._call_state.delete_call()
       self._channel_state.segregated_call_states.remove(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(

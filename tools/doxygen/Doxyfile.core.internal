@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 42.0.0
+PROJECT_NUMBER         = 43.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1022,8 +1022,6 @@ src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/legacy_frame.h \
-src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
-src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
@@ -2420,7 +2418,6 @@ src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/README.md \
-src/core/lib/surface/api_trace.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
@@ -2729,6 +2726,7 @@ src/core/util/posix/string.cc \
 src/core/util/posix/sync.cc \
 src/core/util/posix/time.cc \
 src/core/util/posix/tmpfile.cc \
+src/core/util/ring_buffer.h \
 src/core/util/spinlock.h \
 src/core/util/string.cc \
 src/core/util/string.h \
@@ -2738,6 +2736,7 @@ src/core/util/time.cc \
 src/core/util/time_precise.cc \
 src/core/util/time_precise.h \
 src/core/util/tmpfile.h \
+src/core/util/unique_ptr_with_bitset.h \
 src/core/util/upb_utils.h \
 src/core/util/useful.h \
 src/core/util/windows/cpu.cc \

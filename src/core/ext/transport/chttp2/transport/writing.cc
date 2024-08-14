@@ -49,7 +49,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
@@ -260,8 +259,6 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    t_->settings.mutable_local().SetMaxConcurrentStreams(
-        t_->max_concurrent_streams_policy.AdvertiseValue());
     auto update = t_->settings.MaybeSendUpdate();
     if (update.has_value()) {
       grpc_core::Http2Frame frame(std::move(*update));
@@ -280,7 +277,6 @@ class WriteContext {
             });
       }
       t_->flow_control.FlushedSettings();
-      t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }
@@ -677,6 +673,8 @@ class StreamWriteContext {
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
+  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_begin_write");
+
   int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
   ctx.FlushSettings();
@@ -732,11 +730,16 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 
   maybe_initiate_ping(t);
 
+  t->write_flow.Begin(GRPC_LATENT_SEE_METADATA("write"));
+
   return ctx.Result();
 }
 
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
+  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_end_write");
   grpc_chttp2_stream* s;
+
+  t->write_flow.End();
 
   if (t->channelz_socket != nullptr) {
     t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);

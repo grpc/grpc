@@ -35,14 +35,12 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
-void gpr_default_log(gpr_log_func_args* args);
-void gpr_platform_log(gpr_log_func_args* args);
-static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
-
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
                    grpc_core::SourceLocation(file, line));
 }
+
+int absl_vlog2_enabled() { return ABSL_VLOG_IS_ON(2); }
 
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
@@ -63,44 +61,27 @@ int gpr_should_log(gpr_log_severity severity) {
   }
 }
 
-void gpr_default_log(gpr_log_func_args* args) {
-  switch (args->severity) {
-    case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
-      VLOG(2).AtLocation(args->file, args->line) << args->message;
-      return;
-    case GPR_LOG_SEVERITY_INFO:
-      LOG(INFO).AtLocation(args->file, args->line) << args->message;
-      return;
-    case GPR_LOG_SEVERITY_ERROR:
-      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
-      return;
-    default:
-      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << args->severity
-                 << "), using ERROR";
-      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
-  }
-}
-
 void gpr_log_message(const char* file, int line, gpr_log_severity severity,
                      const char* message) {
   if (gpr_should_log(severity) == 0) {
     return;
   }
-
-  gpr_log_func_args lfargs;
-  memset(&lfargs, 0, sizeof(lfargs));
-  lfargs.file = file;
-  lfargs.line = line;
-  lfargs.severity = severity;
-  lfargs.message = message;
-  reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
-}
-
-void gpr_set_log_verbosity(
-    [[maybe_unused]] gpr_log_severity deprecated_setting) {
-  LOG(ERROR)
-      << "This will not be set. Please set this via absl log level settings.";
+  switch (severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(file, line) << message;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      LOG(INFO).AtLocation(file, line) << message;
+      return;
+    case GPR_LOG_SEVERITY_ERROR:
+      LOG(ERROR).AtLocation(file, line) << message;
+      return;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
+                 << "), using ERROR";
+      LOG(ERROR).AtLocation(file, line) << message;
+  }
 }
 
 void gpr_log_verbosity_init(void) {
@@ -113,17 +94,18 @@ void gpr_log_verbosity_init(void) {
   // This setting will change things for other libraries/code that is unrelated
   // to grpc.
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
-  DVLOG(2) << "Log verbosity: " << verbosity;
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
-    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR. "
-                    "However if you see this message in a debug environmenmt "
-                    "or test environmenmt it is safe to ignore this message.";
+    LOG_FIRST_N(WARNING, 1)
+        << "Log level INFO is not suitable for production. Prefer WARNING or "
+           "ERROR. However if you see this message in a debug environmenmt or "
+           "test environmenmt it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
-    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR. "
-                    "However if you see this message in a debug environmenmt "
-                    "or test environmenmt it is safe to ignore this message.";
+    LOG_FIRST_N(WARNING, 1)
+        << "Log level DEBUG is not suitable for production. Prefer WARNING or "
+           "ERROR. However if you see this message in a debug environmenmt or "
+           "test environmenmt it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
@@ -138,11 +120,4 @@ void gpr_log_verbosity_init(void) {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
-}
-
-void gpr_set_log_function([[maybe_unused]] gpr_log_func deprecated_setting) {
-  LOG(ERROR)
-      << "This function is deprecated. This function will be deleted in the "
-         "next gRPC release. You may create a new absl LogSink with similar "
-         "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
 }
