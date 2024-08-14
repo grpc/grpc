@@ -5415,6 +5415,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",

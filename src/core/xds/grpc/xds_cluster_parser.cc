@@ -641,34 +641,49 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     cds_update->override_host_statuses.Add(
         XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
-  // Record telemetry labels (if any).
+  // Parse metadata.
   const envoy_config_core_v3_Metadata* metadata =
       envoy_config_cluster_v3_Cluster_metadata(cluster);
   if (metadata != nullptr) {
-    google_protobuf_Struct* telemetry_labels_struct;
-    if (envoy_config_core_v3_Metadata_filter_metadata_get(
-            metadata,
-            StdStringToUpbString(
-                absl::string_view("com.google.csm.telemetry_labels")),
-            &telemetry_labels_struct)) {
-      size_t iter = kUpb_Map_Begin;
-      const google_protobuf_Struct_FieldsEntry* fields_entry;
-      while ((fields_entry = google_protobuf_Struct_fields_next(
-                  telemetry_labels_struct, &iter)) != nullptr) {
-        // Adds any entry whose value is a string to telemetry_labels.
-        const google_protobuf_Value* value =
-            google_protobuf_Struct_FieldsEntry_value(fields_entry);
-        if (google_protobuf_Value_has_string_value(value)) {
-          if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
-                  fields_entry)) == "service_name") {
-            cds_update->service_telemetry_label = RefCountedStringValue(
-                UpbStringToAbsl(google_protobuf_Value_string_value(value)));
-          } else if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
-                         fields_entry)) == "service_namespace") {
-            cds_update->namespace_telemetry_label = RefCountedStringValue(
-                UpbStringToAbsl(google_protobuf_Value_string_value(value)));
-          }
-        }
+    // First, try typed_filter_metadata.
+    size_t iter = kUpb_Map_Begin;
+    const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry* typed_entry;
+    while (
+        (typed_entry = envoy_config_core_v3_Metadata_typed_filter_metadata_next(
+             metadata, &iter)) != nullptr) {
+      absl::string_view key = UpbStringToAbsl(
+          envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_key(
+              typed_entry));
+      ValidationErrors::ScopedField field(
+          &errors, absl::StrCat(".metadata.typed_filter_metadata[", key, "]"));
+      auto extension = ExtractXdsExtension(
+          context,
+          envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_value(
+              typed_entry),
+          &errors);
+      if (!extension.has_value()) continue;
+      // TODO(roth): If we ever need to support another type here, refactor
+      // this into a separate registry.
+      if (extension->type == "extensions.filters.http.gcp_authn.v3.Audience") {
+        // TODO(roth): In a subsequent PR, add parsing here.
+      }
+    }
+    // Then, try filter_metadata.
+    iter = kUpb_Map_Begin;
+    const envoy_config_core_v3_Metadata_FilterMetadataEntry* entry;
+    while ((entry = envoy_config_core_v3_Metadata_filter_metadata_next(
+                metadata, &iter)) != nullptr) {
+      absl::string_view key = UpbStringToAbsl(
+          envoy_config_core_v3_Metadata_FilterMetadataEntry_key(entry));
+      auto json = ParseProtobufStructToJson(
+          context,
+          envoy_config_core_v3_Metadata_FilterMetadataEntry_value(entry));
+      if (!json.ok()) {
+        ValidationErrors::ScopedField field(
+            &errors, absl::StrCat(".metadata.filter_metadata[", key, "]"));
+        errors.AddError(json.status().message());
+      } else if (!cds_update->metadata.contains(key)) {
+        cds_update->metadata[std::move(key)] = std::move(*json);
       }
     }
   }
