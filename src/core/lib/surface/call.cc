@@ -336,7 +336,9 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-GRPC_TRACE_LOG(call, INFO)  << "[call " << this<< "] UpdateDeadline from=" << deadline_.ToString()<< " to=" << deadline.ToString();
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
+      << " to=" << deadline.ToString();
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
     lock.Release();

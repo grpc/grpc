@@ -1255,7 +1255,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      GRPC_TRACE_FLAG_ENABLED(tcp,ERROR) << "Failed to set timestamping options on the socket.";
+      GRPC_TRACE_FLAG_ENABLED(tcp, ERROR)
+          << "Failed to set timestamping options on the socket.";
       return false;
     }
     tcp->bytes_counter = -1;
@@ -1339,7 +1340,8 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
   cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
-    GRPC_TRACE_FLAG_ENABLED(tcp,ERROR) << "Received timestamp without extended error";
+    GRPC_TRACE_FLAG_ENABLED(tcp, ERROR)
+        << "Received timestamp without extended error";
     return cmsg;
   }
 
@@ -1349,7 +1351,8 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     opt_stats = next_cmsg;
     next_cmsg = CMSG_NXTHDR(msg, opt_stats);
     if (next_cmsg == nullptr) {
-      GRPC_TRACE_FLAG_ENABLED(tcp,ERROR) << "Received timestamp without extended error";
+      GRPC_TRACE_FLAG_ENABLED(tcp, ERROR)
+          << "Received timestamp without extended error";
       return opt_stats;
     }
   }
@@ -1357,7 +1360,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
       !(next_cmsg->cmsg_type == IP_RECVERR ||
         next_cmsg->cmsg_type == IPV6_RECVERR)) {
-    GRPC_TRACE_FLAG_ENABLED(tcp,ERROR) << "Unexpected control message";
+    GRPC_TRACE_FLAG_ENABLED(tcp, ERROR) << "Unexpected control message";
     return cmsg;
   }
 
