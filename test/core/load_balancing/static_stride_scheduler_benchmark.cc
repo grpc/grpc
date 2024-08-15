@@ -27,7 +27,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 
-
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 
