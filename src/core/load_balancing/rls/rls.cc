@@ -829,10 +829,7 @@ void RlsLb::ChildPolicyWrapper::Orphaned() {
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] ChildPolicyWrapper=" << this
       << " [" << target_ << "]: shutdown";
-  {
-    MutexLock lock(&lb_policy_->mu_);
-    is_shutdown_ = true;
-  }
+  is_shutdown_ = true;
   lb_policy_->child_policy_map_.erase(target_);
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
