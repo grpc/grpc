@@ -20,10 +20,9 @@
 
 #include "absl/log/log.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <ostream>
 
 #include "absl/log/check.h"
 #include "absl/log/globals.h"
