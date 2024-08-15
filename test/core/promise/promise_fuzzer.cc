@@ -24,7 +24,6 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"

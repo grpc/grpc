@@ -24,7 +24,6 @@
 #include "absl/log/check.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
