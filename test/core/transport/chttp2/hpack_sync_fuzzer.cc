@@ -27,7 +27,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
