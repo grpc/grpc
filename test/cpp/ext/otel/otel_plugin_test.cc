@@ -1715,8 +1715,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
   EXPECT_FALSE(stats_plugins.IsInstrumentEnabled(counter_handle));
 }
 
-typedef OpenTelemetryPluginNPCMetricsTest
-    OpenTelemetryPluginCallbackMetricsTest;
+using OpenTelemetryPluginCallbackMetricsTest =
+    OpenTelemetryPluginNPCMetricsTest;
 
 // The callback minimal interval is longer than the OT reporting interval, so we
 // expect to collect duplicated (cached) values.
@@ -2056,11 +2056,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
   // Verify that callbacks are invoked
   EXPECT_EQ(report_count_1, kIterations);
   EXPECT_EQ(report_count_2, kIterations);
-  // Reset the global stats plugins
+  // Remove one of the callbacks
   registered_metric_callback_1.reset();
-  registered_metric_callback_2.reset();
-  grpc_core::GlobalStatsPluginRegistryTestPeer::
-      ResetGlobalStatsPluginRegistry();
   MetricsCollectorThread new_collector{
       this,
       grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
@@ -2069,10 +2066,39 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return false; }};
+  new_collector.Stop();
+  EXPECT_EQ(report_count_1, kIterations);      // No change since previous
+  EXPECT_EQ(report_count_2, 2 * kIterations);  // Gets another kIterations
+  // Remove the other callback as well
+  registered_metric_callback_2.reset();
+  MetricsCollectorThread new_new_collector{
+      this,
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      kIterations,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return false; }};
   // We shouldn't get any new callbacks
-  EXPECT_EQ(new_collector.Stop().size(), 0);
+  EXPECT_THAT(new_new_collector.Stop(), ::testing::IsEmpty());
   EXPECT_EQ(report_count_1, kIterations);
-  EXPECT_EQ(report_count_2, kIterations);
+  EXPECT_EQ(report_count_2, 2 * kIterations);
+  // Reset stats plugins as well
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
+  registered_metric_callback_2.reset();
+  MetricsCollectorThread new_new_new_collector{
+      this,
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      kIterations,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return false; }};
+  // Still no new callbacks
+  EXPECT_THAT(new_new_new_collector.Stop(), ::testing::IsEmpty());
+  EXPECT_EQ(report_count_1, kIterations);
+  EXPECT_EQ(report_count_2, 2 * kIterations);
 }
 
 TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
