@@ -135,13 +135,11 @@ void ExternalAccountCredentials::HttpFetchBody::OnHttpResponse(
 // 4. Finish token fetch - Return back the response that contains an access
 // token in FinishTokenFetch().
 ExternalAccountCredentials::ExternalFetchRequest::ExternalFetchRequest(
-    WeakRefCountedPtr<ExternalAccountCredentials> creds, Timestamp deadline,
+    ExternalAccountCredentials* creds, Timestamp deadline,
     absl::AnyInvocable<void(
         absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done)
-    : creds_(std::move(creds)),
-      deadline_(deadline),
-      on_done_(std::move(on_done)) {
+    : creds_(creds), deadline_(deadline), on_done_(std::move(on_done)) {
   fetch_body_ = creds_->RetrieveSubjectToken(
       deadline,
       [self = RefAsSubclass<ExternalFetchRequest>()](
@@ -631,9 +629,7 @@ ExternalAccountCredentials::FetchToken(
     absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
         on_done) {
   return MakeOrphanable<ExternalFetchRequest>(
-// FIXME: does not need to hold a ref, since on_done is holding one
-      WeakRefAsSubclass<ExternalAccountCredentials>(), deadline,
-      std::move(on_done));
+      this, deadline, std::move(on_done));
 }
 
 }  // namespace grpc_core

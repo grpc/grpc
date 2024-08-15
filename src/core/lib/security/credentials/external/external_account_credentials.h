@@ -144,8 +144,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   class ExternalFetchRequest : public FetchRequest {
    public:
     ExternalFetchRequest(
-        WeakRefCountedPtr<ExternalAccountCredentials> creds,
-        Timestamp deadline,
+        ExternalAccountCredentials* creds, Timestamp deadline,
         absl::AnyInvocable<void(
             absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
             on_done);
@@ -171,7 +170,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
     bool MaybeFailLocked(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-    WeakRefCountedPtr<ExternalAccountCredentials> creds_;
+    ExternalAccountCredentials* creds_;
     Timestamp deadline_;
     absl::AnyInvocable<
         void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
