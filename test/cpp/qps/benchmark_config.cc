@@ -21,7 +21,6 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
