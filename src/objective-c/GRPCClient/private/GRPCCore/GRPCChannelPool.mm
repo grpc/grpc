@@ -28,7 +28,6 @@
 #import "GRPCSecureChannelFactory.h"
 #import "GRPCWrappedCall.h"
 
-
 extern const char *kCFStreamVarName;
 
 static GRPCChannelPool *gChannelPool;

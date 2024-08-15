@@ -18,7 +18,6 @@
 
 #import "GRPCChannel.h"
 
-
 #import "../../internal/GRPCCallOptions+Internal.h"
 #import "../GRPCTransport+Private.h"
 #import "ChannelArgsUtil.h"
