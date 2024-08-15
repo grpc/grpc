@@ -231,6 +231,7 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest final
     http_request_ = creds->StartHttpRequest(
         creds->pollent(), deadline, &response_, &on_http_response_);
   }
+
   ~HttpFetchRequest() { grpc_http_response_destroy(&response_); }
 
   void Orphan() override {

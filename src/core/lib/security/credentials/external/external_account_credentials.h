@@ -20,11 +20,13 @@
 #include <stdint.h>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
@@ -66,11 +68,15 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
     std::string workforce_pool_user_project;
   };
 
-  static RefCountedPtr<ExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<ExternalAccountCredentials>> Create(
       const Json& json, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
-  ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
+  ExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
   ~ExternalAccountCredentials() override;
 
  protected:
@@ -104,6 +110,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   class NoOpFetchBody final : public FetchBody {
    public:
     NoOpFetchBody(
+        grpc_event_engine::experimental::EventEngine& event_engine,
         absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
         absl::StatusOr<std::string> result);
 
@@ -118,6 +125,8 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
         absl::FunctionRef<OrphanablePtr<HttpRequest>(
             grpc_http_response*, grpc_closure*)> start_http_request,
         absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done);
+
+    ~HttpFetchBody() override { grpc_http_response_destroy(&response_); }
 
    private:
     void Shutdown() override { http_request_.reset(); }
@@ -178,6 +187,10 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
 
   const absl::string_view audience() const { return options_.audience; }
 
+  grpc_event_engine::experimental::EventEngine& event_engine() const {
+    return *event_engine_;
+  }
+
  private:
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
@@ -193,6 +206,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
       Timestamp deadline,
       absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) = 0;
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Options options_;
   std::vector<std::string> scopes_;
 };

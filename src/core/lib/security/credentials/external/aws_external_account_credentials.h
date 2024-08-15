@@ -38,13 +38,16 @@ namespace grpc_core {
 
 class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<AwsExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<AwsExternalAccountCredentials>> Create(
       Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
-  AwsExternalAccountCredentials(Options options,
-                                std::vector<std::string> scopes,
-                                grpc_error_handle* error);
+  AwsExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      grpc_error_handle* error);
 
   std::string debug_string() override;
 
@@ -61,6 +64,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
    private:
     void Shutdown() override;
 
+    void AsyncFinish(absl::StatusOr<std::string> result);
     bool MaybeFail(absl::Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
     void Start();

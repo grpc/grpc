@@ -98,6 +98,7 @@ AwsExternalAccountCredentials::AwsFetchBody::AwsFetchBody(
   // Do a quick async hop here, so that we can invoke the callback at
   // any time without deadlocking.
   fetch_body_ = MakeOrphanable<NoOpFetchBody>(
+      creds->event_engine(),
       [self = RefAsSubclass<AwsFetchBody>()](
           absl::StatusOr<std::string> /*result*/) {
         self->Start();
@@ -110,14 +111,25 @@ void AwsExternalAccountCredentials::AwsFetchBody::Shutdown() {
   fetch_body_.reset();
 }
 
+void AwsExternalAccountCredentials::AwsFetchBody::AsyncFinish(
+    absl::StatusOr<std::string> result) {
+  creds_->event_engine().Run(
+      [this, self = Ref(), result = std::move(result)]() mutable {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
+        Finish(std::move(result));
+        self.reset();
+      });
+}
+
 bool AwsExternalAccountCredentials::AwsFetchBody::MaybeFail(
     absl::Status status) {
   if (!status.ok()) {
-    Finish(std::move(status));
+    AsyncFinish(std::move(status));
     return true;
   }
   if (fetch_body_ == nullptr) {
-    Finish(
+    AsyncFinish(
         absl::CancelledError("external account credentials fetch cancelled"));
     return true;
   }
@@ -139,7 +151,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::Start() {
 void AwsExternalAccountCredentials::AwsFetchBody::RetrieveImdsV2SessionToken() {
   absl::StatusOr<URI> uri = URI::Parse(creds_->imdsv2_session_token_url_);
   if (!uri.ok()) {
-    Finish(uri.status());
+    AsyncFinish(uri.status());
     return;
   }
   fetch_body_ = MakeOrphanable<HttpFetchBody>(
@@ -196,8 +208,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRegion() {
   }
   absl::StatusOr<URI> uri = URI::Parse(creds_->region_url_);
   if (!uri.ok()) {
-    Finish(GRPC_ERROR_CREATE(absl::StrFormat("Invalid region url. %s",
-                                             uri.status().ToString())));
+    AsyncFinish(GRPC_ERROR_CREATE(absl::StrFormat("Invalid region url. %s",
+                                                  uri.status().ToString())));
     return;
   }
   fetch_body_ = MakeOrphanable<HttpFetchBody>(
@@ -237,8 +249,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRegion() {
 void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRoleName() {
   absl::StatusOr<URI> uri = URI::Parse(creds_->url_);
   if (!uri.ok()) {
-    Finish(GRPC_ERROR_CREATE(
-                absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
+    AsyncFinish(GRPC_ERROR_CREATE(
+        absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
   fetch_body_ = MakeOrphanable<HttpFetchBody>(
@@ -286,14 +298,14 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveSigningKeys() {
     return;
   }
   if (role_name_.empty()) {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE("Missing role name when retrieving signing keys."));
     return;
   }
   std::string url_with_role_name = absl::StrCat(creds_->url_, "/", role_name_);
   absl::StatusOr<URI> uri = URI::Parse(url_with_role_name);
   if (!uri.ok()) {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE(absl::StrFormat("Invalid url with role name: %s.",
                                           uri.status().ToString())));
     return;
@@ -331,14 +343,14 @@ void AwsExternalAccountCredentials::AwsFetchBody::OnRetrieveSigningKeys(
     std::string result) {
   auto json = JsonParse(result);
   if (!json.ok()) {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE(
             absl::StrCat("Invalid retrieve signing keys response: ",
                          json.status().ToString())));
     return;
   }
   if (json->type() != Json::Type::kObject) {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE("Invalid retrieve signing keys response: "
                           "JSON type is not object"));
     return;
@@ -347,7 +359,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::OnRetrieveSigningKeys(
   if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     access_key_id_ = it->second.string();
   } else {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE(absl::StrFormat(
             "Missing or invalid AccessKeyId in %s.", result)));
     return;
@@ -356,7 +368,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::OnRetrieveSigningKeys(
   if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     secret_access_key_ = it->second.string();
   } else {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE(absl::StrFormat(
             "Missing or invalid SecretAccessKey in %s.", result)));
     return;
@@ -365,7 +377,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::OnRetrieveSigningKeys(
   if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     token_ = it->second.string();
   } else {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE(absl::StrFormat("Missing or invalid Token in %s.",
                                           result)));
     return;
@@ -383,7 +395,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::BuildSubjectToken() {
         creds_->cred_verification_url_, region_, "",
         std::map<std::string, std::string>(), &error);
     if (!error.ok()) {
-      Finish(
+      AsyncFinish(
           GRPC_ERROR_CREATE_REFERENCING(
               "Creating aws request signer failed.", &error, 1));
       return;
@@ -391,7 +403,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::BuildSubjectToken() {
   }
   auto signed_headers = creds_->signer_->GetSignedRequestHeaders();
   if (!error.ok()) {
-    Finish(
+    AsyncFinish(
         GRPC_ERROR_CREATE_REFERENCING("Invalid getting signed request headers.",
                                       &error, 1));
     return;
@@ -418,7 +430,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::BuildSubjectToken() {
        {"method", Json::FromString("POST")},
        {"headers", Json::FromArray(headers)}});
   std::string subject_token = UrlEncode(JsonDump(subject_token_json));
-  Finish(std::move(subject_token));
+  AsyncFinish(std::move(subject_token));
 }
 
 void AwsExternalAccountCredentials::AwsFetchBody::AddMetadataRequestHeaders(
@@ -439,22 +451,24 @@ void AwsExternalAccountCredentials::AwsFetchBody::AddMetadataRequestHeaders(
 // AwsExternalAccountCredentials
 //
 
-RefCountedPtr<AwsExternalAccountCredentials>
-AwsExternalAccountCredentials::Create(Options options,
-                                      std::vector<std::string> scopes,
-                                      grpc_error_handle* error) {
+absl::StatusOr<RefCountedPtr<AwsExternalAccountCredentials>>
+AwsExternalAccountCredentials::Create(
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  grpc_error_handle error;
   auto creds = MakeRefCounted<AwsExternalAccountCredentials>(
-      std::move(options), std::move(scopes), error);
-  if (error->ok()) {
-    return creds;
-  } else {
-    return nullptr;
-  }
+      std::move(options), std::move(scopes), std::move(event_engine), &error);
+  if (!error.ok()) return error;
+  return creds;
 }
 
 AwsExternalAccountCredentials::AwsExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
-    : ExternalAccountCredentials(options, std::move(scopes)) {
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    grpc_error_handle* error)
+    : ExternalAccountCredentials(options, std::move(scopes),
+                                 std::move(event_engine)) {
   audience_ = options.audience;
   auto it = options.credential_source.object().find("environment_id");
   if (it == options.credential_source.object().end()) {

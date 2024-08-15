@@ -45,8 +45,7 @@ FileExternalAccountCredentials::FileFetchBody::FileFetchBody(
     : FetchBody(std::move(on_done)), creds_(creds) {
   // Start work asynchronously, since we can't invoke the callback
   // synchronously without causing a deadlock.
-  // TODO(roth): Allow application to set the EE instance we use.
-  grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+  creds->event_engine().Run(
       [self = RefAsSubclass<FileFetchBody>()]() mutable {
         ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
@@ -91,22 +90,24 @@ void FileExternalAccountCredentials::FileFetchBody::ReadFile() {
 // FileExternalAccountCredentials
 //
 
-RefCountedPtr<FileExternalAccountCredentials>
-FileExternalAccountCredentials::Create(Options options,
-                                       std::vector<std::string> scopes,
-                                       grpc_error_handle* error) {
+absl::StatusOr<RefCountedPtr<FileExternalAccountCredentials>>
+FileExternalAccountCredentials::Create(
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  grpc_error_handle error;
   auto creds = MakeRefCounted<FileExternalAccountCredentials>(
-      std::move(options), std::move(scopes), error);
-  if (error->ok()) {
-    return creds;
-  } else {
-    return nullptr;
-  }
+      std::move(options), std::move(scopes), std::move(event_engine), &error);
+  if (!error.ok()) return error;
+  return creds;
 }
 
 FileExternalAccountCredentials::FileExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
-    : ExternalAccountCredentials(options, std::move(scopes)) {
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    grpc_error_handle* error)
+    : ExternalAccountCredentials(options, std::move(scopes),
+                                 std::move(event_engine)) {
   auto it = options.credential_source.object().find("file");
   if (it == options.credential_source.object().end()) {
     *error = GRPC_ERROR_CREATE("file field not present.");

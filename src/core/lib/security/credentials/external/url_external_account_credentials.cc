@@ -47,22 +47,24 @@
 
 namespace grpc_core {
 
-RefCountedPtr<UrlExternalAccountCredentials>
-UrlExternalAccountCredentials::Create(Options options,
-                                      std::vector<std::string> scopes,
-                                      grpc_error_handle* error) {
+absl::StatusOr<RefCountedPtr<UrlExternalAccountCredentials>>
+UrlExternalAccountCredentials::Create(
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  grpc_error_handle error;
   auto creds = MakeRefCounted<UrlExternalAccountCredentials>(
-      std::move(options), std::move(scopes), error);
-  if (error->ok()) {
-    return creds;
-  } else {
-    return nullptr;
-  }
+      std::move(options), std::move(scopes), std::move(event_engine), &error);
+  if (!error.ok()) return error;
+  return creds;
 }
 
 UrlExternalAccountCredentials::UrlExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
-    : ExternalAccountCredentials(options, std::move(scopes)) {
+    Options options, std::vector<std::string> scopes,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    grpc_error_handle* error)
+    : ExternalAccountCredentials(options, std::move(scopes),
+                                 std::move(event_engine)) {
   auto it = options.credential_source.object().find("url");
   if (it == options.credential_source.object().end()) {
     *error = GRPC_ERROR_CREATE("url field not present.");
@@ -150,7 +152,7 @@ UrlExternalAccountCredentials::RetrieveSubjectToken(
                   {} /* query params */, "" /* fragment */);
   if (!url_for_request.ok()) {
     return MakeOrphanable<NoOpFetchBody>(
-        std::move(on_done),
+        event_engine(), std::move(on_done),
         absl_status_to_grpc_error(url_for_request.status()));
   }
   return MakeOrphanable<HttpFetchBody>(

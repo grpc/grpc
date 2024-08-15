@@ -33,13 +33,16 @@ namespace grpc_core {
 
 class FileExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<FileExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<FileExternalAccountCredentials>> Create(
       Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
 
-  FileExternalAccountCredentials(Options options,
-                                 std::vector<std::string> scopes,
-                                 grpc_error_handle* error);
+  FileExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      grpc_error_handle* error);
 
   std::string debug_string() override;
 
