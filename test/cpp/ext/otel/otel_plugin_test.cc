@@ -2038,35 +2038,34 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
       grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
       integer_gauge_handle, double_gauge_handle);
   constexpr int kIterations = 50;
-  MetricsCollectorThread collector{
-      this,
-      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
-      kIterations,
-      [&](const absl::flat_hash_map<
-          std::string,
-          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-              data) {
-        return !data.contains(kInt64CallbackGaugeMetric) ||
-               !data.contains(kDoubleCallbackGaugeMetric);
-      }};
-  absl::flat_hash_map<
-      std::string,
-      std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
-      data = collector.Stop();
+  {
+    MetricsCollectorThread collector{
+        this,
+        grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+        kIterations,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) {
+          return !data.contains(kInt64CallbackGaugeMetric) ||
+                 !data.contains(kDoubleCallbackGaugeMetric);
+        }};
+  }
   // Verify that callbacks are invoked
   EXPECT_EQ(report_count_1, kIterations);
   EXPECT_EQ(report_count_2, kIterations);
   // Remove one of the callbacks
   registered_metric_callback_1.reset();
-  MetricsCollectorThread new_collector{
-      this,
-      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
-      kIterations,
-      [&](const absl::flat_hash_map<
-          std::string,
-          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-              data) { return false; }};
-  new_collector.Stop();
+  {
+    MetricsCollectorThread new_collector{
+        this,
+        grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+        kIterations,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) { return false; }};
+  }
   EXPECT_EQ(report_count_1, kIterations);      // No change since previous
   EXPECT_EQ(report_count_2, 2 * kIterations);  // Gets another kIterations
   // Remove the other callback as well
