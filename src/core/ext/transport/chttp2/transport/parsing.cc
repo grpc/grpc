@@ -787,9 +787,8 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_stream* s = t->incoming_stream =
         grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
     if (s == nullptr) {
-      GRPC_TRACE_FLAG_ENABLED(http, ERROR)
-          << "Stream " << t->incoming_stream_id
-          << " not found, ignoring WINDOW_UPDATE";
+      GRPC_TRACE_LOG(http, ERROR) << "Stream " << t->incoming_stream_id
+                                  << " not found, ignoring WINDOW_UPDATE";
       return init_non_header_skip_frame_parser(t);
     }
     s->call_tracer_wrapper.RecordIncomingBytes({9, 0, 0});
