@@ -43,7 +43,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
