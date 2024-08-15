@@ -27,7 +27,6 @@
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
