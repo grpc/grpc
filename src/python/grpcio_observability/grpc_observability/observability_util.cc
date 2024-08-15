@@ -27,7 +27,6 @@
 #include "python_observability_context.h"
 #include "server_call_tracer.h"
 
-
 namespace grpc_observability {
 
 std::queue<CensusData>* g_census_data_buffer;

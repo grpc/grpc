@@ -39,7 +39,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
