@@ -4182,6 +4182,7 @@ add_library(grpc++
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/client/xds_credentials.cc
@@ -4465,6 +4466,7 @@ foreach(_hdr
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
+  include/grpcpp/support/global_callback_hook.h
   include/grpcpp/support/interceptor.h
   include/grpcpp/support/message_allocator.h
   include/grpcpp/support/method_handler.h
@@ -4938,6 +4940,7 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
@@ -5209,6 +5212,7 @@ foreach(_hdr
   include/grpcpp/support/client_callback.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
+  include/grpcpp/support/global_callback_hook.h
   include/grpcpp/support/interceptor.h
   include/grpcpp/support/message_allocator.h
   include/grpcpp/support/method_handler.h
@@ -8266,6 +8270,7 @@ add_executable(binder_transport_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
@@ -13405,6 +13410,7 @@ add_executable(endpoint_binder_pool_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
@@ -14260,6 +14266,7 @@ add_executable(fake_binder_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
@@ -32271,6 +32278,7 @@ add_executable(transport_stream_receiver_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
@@ -33157,6 +33165,7 @@ add_executable(wire_reader_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
@@ -33267,6 +33276,7 @@ add_executable(wire_writer_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
@@ -33847,6 +33857,7 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
   src/cpp/util/status.cc
   test/core/xds/xds_client_test.cc
   test/core/xds/xds_transport_fake.cc
@@ -34142,6 +34153,7 @@ add_executable(xds_cluster_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
   src/cpp/util/status.cc
   test/core/xds/xds_cluster_resource_type_test.cc
 )
@@ -35138,6 +35150,7 @@ add_executable(xds_endpoint_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
   src/cpp/util/status.cc
   test/core/xds/xds_endpoint_resource_type_test.cc
 )
