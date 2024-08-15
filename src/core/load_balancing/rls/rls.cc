@@ -1919,14 +1919,7 @@ RlsLb::RlsLb(Args args)
       instance_uuid_(channel_args()
                          .GetOwnedString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID)
                          .value_or(GenerateUUID())),
-      cache_(this),
-      registered_metric_callback_(
-          channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
-              [this](CallbackMetricReporter& reporter) {
-                MutexLock lock(&mu_);
-                cache_.ReportMetricsLocked(reporter);
-              },
-              Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries)) {
+      cache_(this) {
   GRPC_TRACE_LOG(rls_lb, INFO) << "[rlslb " << this << "] policy created";
 }
 
@@ -2054,6 +2047,20 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     }
   }
   update_in_progress_ = false;
+  // On the initial update only, we set the gauge metric callback.  We
+  // can't do this before the initial update, because otherwise the
+  // callback could be invoked before we've set state that we need for
+  // the label values (e.g., we'd add metrics with empty string for the
+  // RLS server name).
+  if (registered_metric_callback_ == nullptr) {
+    registered_metric_callback_ =
+        channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
+            [this](CallbackMetricReporter& reporter) {
+              MutexLock lock(&mu_);
+              cache_.ReportMetricsLocked(reporter);
+            },
+            Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries);
+  }
   // In principle, we need to update the picker here only if the config
   // fields used by the picker have changed.  However, it seems fragile
   // to check individual fields, since the picker logic could change in
