@@ -454,8 +454,8 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
       GRPC_TRACE_LOG(http, ERROR)
           << "Unknown frame type "
           << absl::StrFormat("%02x", t->incoming_frame_type);
+      return init_non_header_skip_frame_parser(t);
   }
-  return init_non_header_skip_frame_parser(t);
 }
 
 static grpc_error_handle skip_parser(void* /*parser*/,
