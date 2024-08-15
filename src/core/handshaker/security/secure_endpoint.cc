@@ -253,6 +253,13 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
   {
     grpc_core::MutexLock l(&ep->read_mu);
+
+    // If we were shut down after this callback was scheduled with OK
+    // status but before it was invoked, we need to treat that as an error.
+    if (ep->wrapped_ep == nullptr && error.ok()) {
+      error = absl::CancelledError("secure endpoint shutdown");
+    }
+
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
@@ -505,8 +512,10 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  ep->read_mu.Lock();
   ep->wrapped_ep.reset();
   ep->memory_owner.Reset();
+  ep->read_mu.Unlock();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
