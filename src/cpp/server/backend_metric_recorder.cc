@@ -26,7 +26,6 @@
 
 #include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 
