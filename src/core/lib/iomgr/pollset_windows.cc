@@ -22,7 +22,6 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"

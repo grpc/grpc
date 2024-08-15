@@ -26,7 +26,6 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
