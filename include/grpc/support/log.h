@@ -28,11 +28,6 @@
 extern "C" {
 #endif
 
-/**
- * Logging functions in this file are deprecated.
- * Please use absl ABSL_LOG instead.
- */
-
 /** The severity of a log message - use the #defines below when calling into
    gpr_log to additionally supply file and line data */
 typedef enum gpr_log_severity {
@@ -46,8 +41,7 @@ typedef enum gpr_log_severity {
 #define GPR_INFO __FILE__, __LINE__, GPR_LOG_SEVERITY_INFO
 #define GPR_ERROR __FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR
 
-/** Log a message. It's advised to use GPR_xxx above to generate the context
- * for each message */
+/** Deprecated. Use absl logging functions instead */
 GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
                     const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 

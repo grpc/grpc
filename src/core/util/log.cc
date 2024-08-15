@@ -23,9 +23,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include "absl/log/globals.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -40,45 +41,20 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
-int gpr_should_log(gpr_log_severity severity) {
-  switch (severity) {
-    case GPR_LOG_SEVERITY_ERROR:
-      return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kError;
-    case GPR_LOG_SEVERITY_INFO:
-      // There is no documentation about how expensive or inexpensive
-      // MinLogLevel is. We could have saved this in a static const variable.
-      // But decided against it just in case anyone programatically sets absl
-      // min log level settings after this has been initialized.
-      // Same holds for ABSL_VLOG_IS_ON(2).
-      return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kInfo;
-    case GPR_LOG_SEVERITY_DEBUG:
-      return ABSL_VLOG_IS_ON(2);
-    default:
-      DLOG(ERROR) << "Invalid gpr_log_severity.";
-      return true;
-  }
-}
-
-void gpr_log_message(const char* file, int line, gpr_log_severity severity,
-                     const char* message) {
-  if (gpr_should_log(severity) == 0) {
-    return;
-  }
+void gpr_log(const char* file, int line, gpr_log_severity severity,
+             const char* format, ...) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
-      VLOG(2).AtLocation(file, line) << message;
+      VLOG(2).AtLocation(file, line) << absl::StrFormat(format, __VA_ARGS__);
       return;
     case GPR_LOG_SEVERITY_INFO:
-      LOG(INFO).AtLocation(file, line) << message;
+      LOG(INFO).AtLocation(file, line) << absl::StrFormat(format, __VA_ARGS__);
       return;
     case GPR_LOG_SEVERITY_ERROR:
-      LOG(ERROR).AtLocation(file, line) << message;
+      LOG(ERROR).AtLocation(file, line) << absl::StrFormat(format, __VA_ARGS__);
       return;
     default:
-      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << severity
-                 << "), using ERROR";
-      LOG(ERROR).AtLocation(file, line) << message;
+      DCHECK(false) << "Invalid severity";
   }
 }
 
