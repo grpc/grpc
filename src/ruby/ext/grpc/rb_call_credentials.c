@@ -65,9 +65,11 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
   VALUE callback_source_info =
       rb_funcall(callback_func, rb_intern("source_location"), 0);
+
   grpc_absl_log_str(
       GPR_DEBUG, "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:",
       StringValueCStr(callback_func_str));
+
   if (callback_source_info != Qnil) {
     VALUE source_filename = rb_ary_entry(callback_source_info, 0);
     VALUE source_line_number =
