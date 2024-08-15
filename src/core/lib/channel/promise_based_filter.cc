@@ -2414,7 +2414,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
-    GRPC_TRACE_FLAG_ENABLED(channel, INFO)
+    GRPC_TRACE_LOG(channel, INFO)
         << LogTag() << ": WakeInsideCombiner poll="
         << PollToString(
                poll,
@@ -2432,7 +2432,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
             SendInitialMetadata::kQueuedAndPushedToPipe) {
       CHECK(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
-      GRPC_TRACE_FLAG_ENABLED(channel, INFO)
+      GRPC_TRACE_LOG(channel, INFO)
           << LogTag() << ": WakeInsideCombiner send_initial_metadata poll="
           << PollToString(p, [](const NextResult<ServerMetadataHandle>& h) {
                return (*h)->DebugString();
