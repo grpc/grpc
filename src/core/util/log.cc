@@ -23,9 +23,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <ostream>
+
 #include "absl/log/check.h"
 #include "absl/log/globals.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
