@@ -254,7 +254,6 @@ gpr_free_aligned_type gpr_free_aligned_import;
 gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 gpr_log_type gpr_log_import;
-absl_vlog2_enabled_type absl_vlog2_enabled_import;
 gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 gpr_format_message_type gpr_format_message_import;
 gpr_strdup_type gpr_strdup_import;
@@ -539,7 +538,6 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_cpu_num_cores_import = (gpr_cpu_num_cores_type) GetProcAddress(library, "gpr_cpu_num_cores");
   gpr_cpu_current_cpu_import = (gpr_cpu_current_cpu_type) GetProcAddress(library, "gpr_cpu_current_cpu");
   gpr_log_import = (gpr_log_type) GetProcAddress(library, "gpr_log");
-  absl_vlog2_enabled_import = (absl_vlog2_enabled_type) GetProcAddress(library, "absl_vlog2_enabled");
   gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
   gpr_format_message_import = (gpr_format_message_type) GetProcAddress(library, "gpr_format_message");
   gpr_strdup_import = (gpr_strdup_type) GetProcAddress(library, "gpr_strdup");
