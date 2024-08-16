@@ -624,8 +624,6 @@ def _call_behavior(
                     argument, context, send_response_callback
                 )
             else:
-                print("*"*100)
-                print(type(behavior))
                 response_or_iterator = behavior(argument, context)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
