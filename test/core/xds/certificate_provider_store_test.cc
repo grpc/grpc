@@ -27,7 +27,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
