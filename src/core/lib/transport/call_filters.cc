@@ -188,10 +188,9 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (push_server_trailing_metadata_ == nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-    VLOG(2).AtLocation(but_where.file(), but_where.line())
-        << "Cancelling due to failed pipe operation: " << DebugString();
-  }
+  GRPC_TRACE_LOG(promise_primitives, 2)
+          .AtLocation(but_where.file(), but_where.line())
+      << "Cancelling due to failed pipe operation: " << DebugString();
   auto status =
       ServerMetadataFromStatus(GRPC_STATUS_CANCELLED, "Failed pipe operation");
   status->Set(GrpcCallWasCancelled(), true);

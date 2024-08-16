@@ -360,9 +360,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
   fork_fd_list_add_grpc_fd(new_fd);
 #ifndef NDEBUG
-  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd << " " << new_fd << " create " << fd_name;
-  }
+  GRPC_TRACE_LOG(fd_refcount, 2)
+      << "FD " << fd << " " << new_fd << " create " << fd_name;
 #endif
 
   struct epoll_event ev;

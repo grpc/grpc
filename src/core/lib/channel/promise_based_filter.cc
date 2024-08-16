@@ -2111,15 +2111,13 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 // Handle cancellation.
 void ServerCallData::Completed(grpc_error_handle error,
                                bool tarpit_cancellation, Flusher* flusher) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-    VLOG(2) << LogTag() << "ServerCallData::Completed: send_trailing_state="
-            << StateString(send_trailing_state_) << " send_initial_state="
-            << (send_initial_metadata_ == nullptr
-                    ? "null"
-                    : SendInitialMetadata::StateString(
-                          send_initial_metadata_->state))
-            << " error=" << error;
-  }
+  GRPC_TRACE_LOG(channel, 2)
+      << LogTag() << "ServerCallData::Completed: send_trailing_state="
+      << StateString(send_trailing_state_) << " send_initial_state="
+      << (send_initial_metadata_ == nullptr
+              ? "null"
+              : SendInitialMetadata::StateString(send_initial_metadata_->state))
+      << " error=" << error;
   // Track the latest reason for cancellation.
   cancelled_error_ = error;
   // Stop running the promise.
@@ -2388,11 +2386,10 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         flusher,
         send_initial_metadata_ == nullptr ||
             send_initial_metadata_->state == SendInitialMetadata::kForwarded);
-    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-      VLOG(2) << LogTag() << ": After send_message WakeInsideCombiner "
-              << DebugString() << " is_idle=" << send_message()->IsIdle()
-              << " is_forwarded=" << send_message()->IsForwarded();
-    }
+    GRPC_TRACE_LOG(channel, 2)
+        << LogTag() << ": After send_message WakeInsideCombiner "
+        << DebugString() << " is_idle=" << send_message()->IsIdle()
+        << " is_forwarded=" << send_message()->IsForwarded();
     if (send_trailing_state_ == SendTrailingState::kQueuedBehindSendMessage &&
         (send_message()->IsIdle() ||
          (send_trailing_metadata_batch_->send_message &&

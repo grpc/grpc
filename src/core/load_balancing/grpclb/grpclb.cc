@@ -851,14 +851,12 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
       parent()->lb_calld_->client_stats() != nullptr) {
     client_stats = parent()->lb_calld_->client_stats()->Ref();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    GRPC_TRACE_LOG(glb, INFO)
-        << "[grpclb " << parent() << " helper " << this
-        << "] state=" << ConnectivityStateName(state) << " ("
-        << status.ToString() << ") wrapping child picker " << picker.get()
-        << " (serverlist=" << serverlist.get()
-        << ", client_stats=" << client_stats.get() << ")";
-  }
+  GRPC_TRACE_LOG(glb, INFO)
+      << "[grpclb " << parent() << " helper " << this
+      << "] state=" << ConnectivityStateName(state) << " (" << status.ToString()
+      << ") wrapping child picker " << picker.get()
+      << " (serverlist=" << serverlist.get()
+      << ", client_stats=" << client_stats.get() << ")";
   parent()->channel_control_helper()->UpdateState(
       state, status,
       MakeRefCounted<Picker>(std::move(serverlist), std::move(picker),

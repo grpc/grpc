@@ -1308,15 +1308,14 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (GRPC_TRACE_FLAG_ENABLED(http)) {
-    LOG(INFO) << "complete_closure_step: t=" << t << " " << closure << " refs="
-              << (closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT)
-              << " flags="
-              << (closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT)
-              << " desc=" << desc << " err=" << grpc_core::StatusToString(error)
-              << " write_state=" << write_state_name(t->write_state)
-              << " whence=" << whence.file() << ":" << whence.line();
-  }
+  GRPC_TRACE_LOG(http, INFO)
+      << "complete_closure_step: t=" << t << " " << closure << " refs="
+      << (closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT)
+      << " flags="
+      << (closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT)
+      << " desc=" << desc << " err=" << grpc_core::StatusToString(error)
+      << " write_state=" << write_state_name(t->write_state)
+      << " whence=" << whence.file() << ":" << whence.line();
 
   if (!error.ok()) {
     grpc_error_handle cl_err =
@@ -2085,11 +2084,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   // Lambda is immediately invoked as a big scoped section that can be
   // exited out of at any point by returning.
   [&]() {
-    if (GRPC_TRACE_FLAG_ENABLED(http)) {
-      VLOG(2) << "maybe_complete_recv_message " << s
-              << " final_metadata_requested=" << s->final_metadata_requested
-              << " seen_error=" << s->seen_error;
-    }
+    GRPC_TRACE_LOG(http, 2)
+        << "maybe_complete_recv_message " << s
+        << " final_metadata_requested=" << s->final_metadata_requested
+        << " seen_error=" << s->seen_error;
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref(&s->frame_storage);
       s->recv_message->reset();
@@ -2100,11 +2098,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
-          if (GRPC_TRACE_FLAG_ENABLED(http)) {
-            VLOG(2) << "Deframe data frame: "
-                    << grpc_core::PollToString(
-                           r, [](absl::Status r) { return r.ToString(); });
-          }
+          GRPC_TRACE_LOG(http, 2)
+              << "Deframe data frame: "
+              << grpc_core::PollToString(
+                     r, [](absl::Status r) { return r.ToString(); });
           if (r.pending()) {
             if (s->read_closed) {
               grpc_slice_buffer_reset_and_unref(&s->frame_storage);
@@ -2155,13 +2152,12 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
   grpc_chttp2_maybe_complete_recv_message(t, s);
-  if (GRPC_TRACE_FLAG_ENABLED(http)) {
-    VLOG(2) << "maybe_complete_recv_trailing_metadata cli=" << t->is_client
-            << " s=" << s << " closure=" << s->recv_trailing_metadata_finished
-            << " read_closed=" << s->read_closed
-            << " write_closed=" << s->write_closed << " "
-            << s->frame_storage.length;
-  }
+  GRPC_TRACE_LOG(http, 2) << "maybe_complete_recv_trailing_metadata cli="
+                          << t->is_client << " s=" << s
+                          << " closure=" << s->recv_trailing_metadata_finished
+                          << " read_closed=" << s->read_closed
+                          << " write_closed=" << s->write_closed << " "
+                          << s->frame_storage.length;
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
     if (s->seen_error || !t->is_client) {
@@ -2365,15 +2361,12 @@ grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, int close_reads,
     int close_writes, grpc_error_handle error) {
   grpc_chttp2_transport::RemovedStreamHandle rsh;
-  if (GRPC_TRACE_FLAG_ENABLED(http)) {
-    VLOG(2) << "MARK_STREAM_CLOSED: t=" << t << " s=" << s << "(id=" << s->id
-            << ") "
-            << ((close_reads && close_writes)
-                    ? "read+write"
-                    : (close_reads ? "read"
-                                   : (close_writes ? "write" : "nothing??")))
-            << " [" << grpc_core::StatusToString(error) << "]";
-  }
+  GRPC_TRACE_LOG(http, 2)
+      << "MARK_STREAM_CLOSED: t=" << t << " s=" << s << "(id=" << s->id << ") "
+      << ((close_reads && close_writes)
+              ? "read+write"
+              : (close_reads ? "read" : (close_writes ? "write" : "nothing??")))
+      << " [" << grpc_core::StatusToString(error) << "]";
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
     grpc_error_handle overall_error = removal_error(error, s, "Stream removed");
