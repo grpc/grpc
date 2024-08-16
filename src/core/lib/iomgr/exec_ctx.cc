@@ -32,7 +32,7 @@
 static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
   closure->scheduled = false;
-  GRPC_TRACE_LOG(closure, 2)
+  GRPC_TRACE_VLOG(closure, 2)
       << "running closure " << closure << ": created [" << closure->file_created
       << ":" << closure->line_created
       << "]: " << (closure->run ? "run" : "scheduled") << " ["
@@ -43,7 +43,7 @@ static void exec_ctx_run(grpc_closure* closure) {
   closure->error_data.error = 0;
   closure->cb(closure->cb_arg, std::move(error));
 #ifndef NDEBUG
-  GRPC_TRACE_LOG(closure, 2) << "closure " << closure << " finished";
+  GRPC_TRACE_VLOG(closure, 2) << "closure " << closure << " finished";
 #endif
 }
 

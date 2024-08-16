@@ -87,7 +87,7 @@ class InterceptorList {
    public:
     RunPromise(size_t memory_required, Map** factory, absl::optional<T> value) {
       if (!value.has_value() || *factory == nullptr) {
-        GRPC_TRACE_LOG(promise_primitives, 2)
+        GRPC_TRACE_VLOG(promise_primitives, 2)
             << "InterceptorList::RunPromise[" << this << "]: create immediate";
         is_immediately_resolved_ = true;
         Construct(&result_, std::move(value));
@@ -98,14 +98,14 @@ class InterceptorList {
                                 async_resolution_.space.get());
         async_resolution_.current_factory = *factory;
         async_resolution_.first_factory = factory;
-        GRPC_TRACE_LOG(promise_primitives, 2)
+        GRPC_TRACE_VLOG(promise_primitives, 2)
             << "InterceptorList::RunPromise[" << this
             << "]: create async; mem=" << async_resolution_.space.get();
       }
     }
 
     ~RunPromise() {
-      GRPC_TRACE_LOG(promise_primitives, 2)
+      GRPC_TRACE_VLOG(promise_primitives, 2)
           << "InterceptorList::RunPromise[" << this << "]: destroy";
       if (is_immediately_resolved_) {
         Destruct(&result_);
@@ -123,7 +123,7 @@ class InterceptorList {
 
     RunPromise(RunPromise&& other) noexcept
         : is_immediately_resolved_(other.is_immediately_resolved_) {
-      GRPC_TRACE_LOG(promise_primitives, 2)
+      GRPC_TRACE_VLOG(promise_primitives, 2)
           << "InterceptorList::RunPromise[" << this << "]: move from "
           << &other;
       if (is_immediately_resolved_) {
@@ -136,7 +136,7 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
-      GRPC_TRACE_LOG(promise_primitives, 2)
+      GRPC_TRACE_VLOG(promise_primitives, 2)
           << "InterceptorList::RunPromise[" << this << "]: " << DebugString();
       if (is_immediately_resolved_) return std::move(result_);
       while (true) {
@@ -152,7 +152,7 @@ class InterceptorList {
           async_resolution_.current_factory =
               async_resolution_.current_factory->next();
           if (!p->has_value()) async_resolution_.current_factory = nullptr;
-          GRPC_TRACE_LOG(promise_primitives, 2)
+          GRPC_TRACE_VLOG(promise_primitives, 2)
               << "InterceptorList::RunPromise[" << this
               << "]: " << DebugString();
           if (async_resolution_.current_factory == nullptr) {

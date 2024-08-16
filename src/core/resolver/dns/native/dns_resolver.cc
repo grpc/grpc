@@ -90,11 +90,11 @@ NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
                           .set_max_backoff(Duration::Milliseconds(
                               GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
                       &dns_resolver_trace) {
-  GRPC_TRACE_LOG(dns_resolver, 2) << "[dns_resolver=" << this << "] created";
+  GRPC_TRACE_VLOG(dns_resolver, 2) << "[dns_resolver=" << this << "] created";
 }
 
 NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
-  GRPC_TRACE_LOG(dns_resolver, 2) << "[dns_resolver=" << this << "] destroyed";
+  GRPC_TRACE_VLOG(dns_resolver, 2) << "[dns_resolver=" << this << "] destroyed";
 }
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
@@ -103,7 +103,7 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this),
       name_to_resolve(), kDefaultSecurePort, kDefaultDNSRequestTimeout,
       interested_parties(), /*name_server=*/"");
-  GRPC_TRACE_LOG(dns_resolver, 2)
+  GRPC_TRACE_VLOG(dns_resolver, 2)
       << "[dns_resolver=" << this << "] starting request="
       << DNSResolver::HandleToString(dns_request_handle);
   return MakeOrphanable<Request>();
@@ -111,7 +111,7 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
 
 void NativeClientChannelDNSResolver::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-  GRPC_TRACE_LOG(dns_resolver, 2)
+  GRPC_TRACE_VLOG(dns_resolver, 2)
       << "[dns_resolver=" << this
       << "] request complete, status=" << addresses_or.status();
   // Convert result from iomgr DNS API into Resolver::Result.

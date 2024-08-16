@@ -35,7 +35,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
   grpc_core::ExecCtx exec_ctx;
 #ifndef NDEBUG
   closure->scheduled = false;
-  GRPC_TRACE_LOG(closure, 2)
+  GRPC_TRACE_VLOG(closure, 2)
       << "EventEngine: running closure " << closure << ": created ["
       << closure->file_created << ":" << closure->line_created
       << "]: " << (closure->run ? "run" : "scheduled") << " ["
@@ -43,7 +43,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
 #endif
   closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-  GRPC_TRACE_LOG(closure, 2)
+  GRPC_TRACE_VLOG(closure, 2)
       << "EventEngine: closure " << closure << " finished";
 #endif
 }

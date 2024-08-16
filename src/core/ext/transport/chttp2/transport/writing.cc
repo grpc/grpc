@@ -204,7 +204,7 @@ static bool update_list(grpc_chttp2_transport* t, int64_t send_bytes,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  GRPC_TRACE_LOG(flowctl, 2)
+  GRPC_TRACE_VLOG(flowctl, 2)
       << t->peer_string.as_string_view() << ":" << t << " stream " << s->id
       << " moved to stalled list by " << staller
       << ". This is FULLY expected to happen in a healthy program that is not "

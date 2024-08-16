@@ -64,7 +64,7 @@ GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
   EvaluateArgs args(&initial_metadata, &per_channel_evaluate_args_);
-  GRPC_TRACE_LOG(grpc_authz_api, 2)
+  GRPC_TRACE_VLOG(grpc_authz_api, 2)
       << "checking request: url_path=" << args.GetPath()
       << ", transport_security_type=" << args.GetTransportSecurityType()
       << ", uri_sans=[" << absl::StrJoin(args.GetUriSans(), ",")
@@ -86,7 +86,7 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
     AuthorizationEngine::Decision decision =
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
-      GRPC_TRACE_LOG(grpc_authz_api, 2)
+      GRPC_TRACE_VLOG(grpc_authz_api, 2)
           << "chand=" << this << ": request allowed by policy "
           << decision.matching_policy_name;
       return true;

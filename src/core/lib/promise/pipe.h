@@ -634,7 +634,7 @@ class Push {
 
   Poll<bool> operator()() {
     if (center_ == nullptr) {
-      GRPC_TRACE_LOG(promise_primitives, 2)
+      GRPC_TRACE_VLOG(promise_primitives, 2)
           << GetContext<Activity>()->DebugTag()
           << " Pipe push has a null center";
       return false;

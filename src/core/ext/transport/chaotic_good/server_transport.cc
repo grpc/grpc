@@ -203,7 +203,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
       Map(SendCallInitialMetadataAndBody(stream_id, outgoing_frames,
                                          call_initiator),
           [stream_id](absl::Status main_body_result) {
-            GRPC_TRACE_LOG(chaotic_good, 2)
+            GRPC_TRACE_VLOG(chaotic_good, 2)
                 << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
                 << " main_body_result=" << main_body_result;
             return Empty{};

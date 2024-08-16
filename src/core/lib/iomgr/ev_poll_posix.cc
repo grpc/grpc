@@ -332,7 +332,7 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                    int line) {
-  GRPC_TRACE_LOG(fd_refcount, 2)
+  GRPC_TRACE_VLOG(fd_refcount, 2)
       << "FD " << fd->fd << " " << fd << "   ref " << n << " "
       << gpr_atm_no_barrier_load(&fd->refst) << " -> "
       << gpr_atm_no_barrier_load(&fd->refst) + n << " [" << reason << "; "
@@ -356,7 +356,7 @@ static void ref_by(grpc_fd* fd, int n) {
 #ifndef NDEBUG
 static void unref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                      int line) {
-  GRPC_TRACE_LOG(fd_refcount, 2)
+  GRPC_TRACE_VLOG(fd_refcount, 2)
       << "FD " << fd->fd << " " << fd << " unref " << n << " "
       << gpr_atm_no_barrier_load(&fd->refst) << " -> "
       << gpr_atm_no_barrier_load(&fd->refst) - n << " [" << reason << "; "

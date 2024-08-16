@@ -95,8 +95,8 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
     // sure that the shutdown error has been initialized properly before us
     // referencing it.
     gpr_atm curr = gpr_atm_acq_load(&state_);
-    GRPC_TRACE_LOG(polling, 2) << "LockfreeEvent::NotifyOn: " << this
-                               << " curr=" << curr << " closure=" << closure;
+    GRPC_TRACE_VLOG(polling, 2) << "LockfreeEvent::NotifyOn: " << this
+                                << " curr=" << curr << " closure=" << closure;
     switch (curr) {
       case kClosureNotReady: {
         // kClosureNotReady -> <closure>.
@@ -161,7 +161,7 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-    GRPC_TRACE_LOG(polling, 2)
+    GRPC_TRACE_VLOG(polling, 2)
         << "LockfreeEvent::SetShutdown: " << &state_ << " curr=" << curr
         << " err=" << StatusToString(shutdown_error);
     switch (curr) {
@@ -209,7 +209,7 @@ void LockfreeEvent::SetReady() {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
-    GRPC_TRACE_LOG(polling, 2)
+    GRPC_TRACE_VLOG(polling, 2)
         << "LockfreeEvent::SetReady: " << &state_ << " curr=" << curr;
 
     switch (curr) {

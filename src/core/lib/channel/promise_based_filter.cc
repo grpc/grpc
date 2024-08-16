@@ -2111,7 +2111,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 // Handle cancellation.
 void ServerCallData::Completed(grpc_error_handle error,
                                bool tarpit_cancellation, Flusher* flusher) {
-  GRPC_TRACE_LOG(channel, 2)
+  GRPC_TRACE_VLOG(channel, 2)
       << LogTag() << "ServerCallData::Completed: send_trailing_state="
       << StateString(send_trailing_state_) << " send_initial_state="
       << (send_initial_metadata_ == nullptr
@@ -2386,7 +2386,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         flusher,
         send_initial_metadata_ == nullptr ||
             send_initial_metadata_->state == SendInitialMetadata::kForwarded);
-    GRPC_TRACE_LOG(channel, 2)
+    GRPC_TRACE_VLOG(channel, 2)
         << LogTag() << ": After send_message WakeInsideCombiner "
         << DebugString() << " is_idle=" << send_message()->IsIdle()
         << " is_forwarded=" << send_message()->IsForwarded();

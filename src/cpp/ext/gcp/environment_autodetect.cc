@@ -63,7 +63,7 @@ std::string GetNamespaceName() {
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
-    GRPC_TRACE_LOG(environment_autodetect, 2)
+    GRPC_TRACE_VLOG(environment_autodetect, 2)
         << "Reading file " << filename
         << " failed: " << grpc_core::StatusToString(namespace_name.status());
     // Fallback on an environment variable
