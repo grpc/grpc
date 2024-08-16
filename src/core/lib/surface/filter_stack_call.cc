@@ -533,15 +533,13 @@ void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
 
-  if (IsCallStatusOverrideOnCancellationEnabled()) {
-    // On the client side, if final call status is already known (i.e if this op
-    // includes recv_trailing_metadata) and if the call status is known to be
-    // OK, then disregard the batch error to ensure call->receiving_buffer_ is
-    // not cleared.
-    if (op_.recv_trailing_metadata && call->is_client() &&
-        call->status_error_.ok()) {
-      error = absl::OkStatus();
-    }
+  // On the client side, if final call status is already known (i.e if this op
+  // includes recv_trailing_metadata) and if the call status is known to be
+  // OK, then disregard the batch error to ensure call->receiving_buffer_ is
+  // not cleared.
+  if (op_.recv_trailing_metadata && call->is_client() &&
+      call->status_error_.ok()) {
+    error = absl::OkStatus();
   }
 
   GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag

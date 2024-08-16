@@ -63,13 +63,11 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/ruby/ext/grpc/rb_server.c",
     ],
     "gpr_should_log(": [
-        "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",
         "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
     ],
     "gpr_log_message(": [
         "./src/core/util/android/log.cc",
@@ -78,14 +76,8 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
     ],
-    "gpr_log_func_args": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
-    "gpr_set_log_function(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
+    "gpr_log_func_args": [],
+    "gpr_set_log_function(": [],
     "GPR_ASSERT": [],
     "gpr_assertion_failed": [],
     "GPR_DEBUG_ASSERT": [],

@@ -45,9 +45,8 @@ class InterActivityLatch {
   auto Wait() {
     return [this]() -> Poll<T> {
       MutexLock lock(&mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        LOG(INFO) << DebugTag() << "PollWait " << StateString();
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
         return std::move(value_);
       } else {
@@ -60,9 +59,8 @@ class InterActivityLatch {
   // Set the latch.
   void Set(T value) {
     MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      LOG(INFO) << DebugTag() << "Set " << StateString();
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     is_set_ = true;
     value_ = std::move(value);
     waiters_.WakeupAsync();
@@ -102,9 +100,8 @@ class InterActivityLatch<void> {
   auto Wait() {
     return [this]() -> Poll<Empty> {
       MutexLock lock(&mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        LOG(INFO) << DebugTag() << "PollWait " << StateString();
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
         return Empty{};
       } else {
@@ -117,9 +114,8 @@ class InterActivityLatch<void> {
   // Set the latch.
   void Set() {
     MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      LOG(INFO) << DebugTag() << "Set " << StateString();
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     is_set_ = true;
     waiters_.WakeupAsync();
   }

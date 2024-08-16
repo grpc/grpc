@@ -37,7 +37,6 @@
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -367,8 +366,7 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
     absl::AnyInvocable<
         bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter)
-    : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
-      meter_provider_(std::move(meter_provider)),
+    : meter_provider_(std::move(meter_provider)),
       server_selector_(std::move(server_selector)),
       target_attribute_filter_(std::move(target_attribute_filter)),
       generic_method_attribute_filter_(
@@ -577,6 +575,7 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
         [](const std::unique_ptr<opentelemetry::metrics::Histogram<double>>&) {
         },
         [](const std::unique_ptr<CallbackGaugeState<int64_t>>& state) {
+          CHECK(state->caches.empty());
           if (state->ot_callback_registered) {
             state->instrument->RemoveCallback(
                 &CallbackGaugeState<int64_t>::CallbackGaugeCallback,
@@ -585,6 +584,7 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
           }
         },
         [](const std::unique_ptr<CallbackGaugeState<double>>& state) {
+          CHECK(state->caches.empty());
           if (state->ot_callback_registered) {
             state->instrument->RemoveCallback(
                 &CallbackGaugeState<double>::CallbackGaugeCallback,
@@ -855,9 +855,6 @@ void OpenTelemetryPluginImpl::AddCallback(
 
 void OpenTelemetryPluginImpl::RemoveCallback(
     grpc_core::RegisteredMetricCallback* callback) {
-  std::vector<
-      absl::variant<CallbackGaugeState<int64_t>*, CallbackGaugeState<double>*>>
-      gauges_that_need_to_remove_callback;
   {
     grpc_core::MutexLock lock(&mu_);
     callback_timestamps_.erase(callback);
@@ -902,6 +899,13 @@ void OpenTelemetryPluginImpl::RemoveCallback(
       }
     }
   }
+  // Note that we are not removing the callback from OpenTelemetry immediately,
+  // and instead remove it when the plugin is destroyed. We just have a single
+  // callback per OpenTelemetry instrument which is a small number. If we decide
+  // to remove the callback immediately at this point, we need to make sure that
+  // 1) the callback is removed without holding mu_ and 2) we make sure that
+  // this does not race against a possible `AddCallback` operation. A potential
+  // way to do this is to use WorkSerializer.
 }
 
 template <typename ValueType>
