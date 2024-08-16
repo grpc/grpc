@@ -142,6 +142,8 @@ grpc_cc_library(
         "util/latent_see.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log",
         "absl/strings",
         "absl/types:optional",

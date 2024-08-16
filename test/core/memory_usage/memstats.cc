@@ -22,8 +22,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-
 long GetMemUsage(absl::optional<int> pid) {
   // Default is getting memory usage for self (calling process)
   std::string path = "/proc/self/stat";

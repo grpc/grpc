@@ -22,8 +22,6 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
