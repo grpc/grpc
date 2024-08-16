@@ -22,7 +22,6 @@
 #include <map>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/support/slice.h>
 
 namespace grpc {

@@ -19,8 +19,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
-
 namespace grpc_core {
 namespace testing {
 
