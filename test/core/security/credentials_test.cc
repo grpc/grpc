@@ -275,7 +275,7 @@ const char
     invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url
         [] = "{\"environment_id\":\"aws1\","
              "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
+             "\"url\":\"https://169.254.169.254:5555/url\","
              "\"regional_cred_verification_url\":\"invalid_regional_cred_"
              "verification_url\"}";
 
@@ -3832,11 +3832,7 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   grpc_error_handle expected_error = GRPC_ERROR_CREATE(
-      "error fetching oauth2 token: "
-      "Missing role name when retrieving signing keys.");
-// FIXME: this was the original expected value, but I think the test
-// wasn't actually checking it, so I'm not sure it's right:
-//  "Creating aws request signer failed.");
+      "error fetching oauth2 token: Creating aws request signer failed.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
