@@ -77,12 +77,6 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(hork): Add a test that checks for proper authority from balancer
 // addresses.
 
-#define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                  \
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_client_channel_resolver)) { \
-    VLOG(2) << "(event_engine client channel resolver) "               \
-            << absl::StrFormat(format, __VA_ARGS__);                   \
-  }
-
 // ----------------------------------------------------------------------------
 // EventEngineClientChannelDNSResolver
 // ----------------------------------------------------------------------------
@@ -221,9 +215,10 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p Starting hostname resolution for %s", resolver_.get(),
-      resolver_->name_to_resolve().c_str());
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::"
+      << resolver_.get() << " Starting hostname resolution for "
+      << resolver_->name_to_resolve();
   is_hostname_inflight_ = true;
   event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
@@ -236,9 +231,10 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       },
       resolver_->name_to_resolve(), kDefaultSecurePort);
   if (resolver_->enable_srv_queries_) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Starting SRV record resolution for %s",
-        resolver_.get(), resolver_->name_to_resolve().c_str());
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting SRV record resolution for "
+        << resolver_->name_to_resolve();
     is_srv_inflight_ = true;
     event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
@@ -252,9 +248,10 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
   }
   if (resolver_->request_service_config_) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Starting TXT record resolution for %s",
-        resolver_.get(), resolver_->name_to_resolve().c_str());
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting TXT record resolution for "
+        << resolver_->name_to_resolve();
     is_txt_inflight_ = true;
     event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
@@ -303,8 +300,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTimeout() {
   MutexLock lock(&on_resolved_mu_);
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE("DNSResolver::%p OnTimeout",
-                                   resolver_.get());
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::"
+      << resolver_.get() << " OnTimeout";
   timeout_handle_.reset();
   event_engine_resolver_.reset();
 }
@@ -368,9 +366,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
-        resolver_.get(), srv_record.host.c_str(), srv_record.port);
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting balancer hostname resolution for "
+        << srv_record.host << ":" << srv_record.port;
     ++number_of_balancer_hostnames_initiated_;
     event_engine_resolver_->LookupHostname(
         [host = srv_record.host,
@@ -446,9 +445,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         // Found a service config record.
         service_config_json_ =
             result->substr(kServiceConfigAttributePrefix.size());
-        GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-            "DNSResolver::%p found service config: %s",
-            event_engine_resolver_.get(), service_config_json_->c_str());
+        GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+            << "(event_engine client channel resolver) DNSResolver::"
+            << event_engine_resolver_.get()
+            << " found service config: " << service_config_json_->c_str();
       } else {
         service_config_json_ = absl::UnavailableError(absl::StrCat(
             "failed to find attribute prefix: ", kServiceConfigAttributePrefix,
@@ -492,9 +492,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     return;
   }
   if (service_config->empty()) return;
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p selected service config choice: %s",
-      event_engine_resolver_.get(), service_config->c_str());
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::"
+      << event_engine_resolver_.get()
+      << " selected service config choice: " << service_config->c_str();
   result->service_config =
       ServiceConfigImpl::Create(resolver_->channel_args(), *service_config);
   if (!result->service_config.ok()) {
@@ -511,20 +512,19 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
   if (is_hostname_inflight_ || is_srv_inflight_ || is_txt_inflight_ ||
       number_of_balancer_hostnames_resolved_ !=
           number_of_balancer_hostnames_initiated_) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p OnResolved() waiting for results (hostname: %s, "
-        "srv: %s, "
-        "txt: %s, "
-        "balancer addresses: %" PRIuPTR "/%" PRIuPTR " complete",
-        this, is_hostname_inflight_ ? "waiting" : "done",
-        is_srv_inflight_ ? "waiting" : "done",
-        is_txt_inflight_ ? "waiting" : "done",
-        number_of_balancer_hostnames_resolved_,
-        number_of_balancer_hostnames_initiated_);
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::" << this
+        << " OnResolved() waiting for results (hostname: "
+        << (is_hostname_inflight_ ? "waiting" : "done")
+        << ", srv: " << (is_srv_inflight_ ? "waiting" : "done")
+        << ", txt: " << (is_txt_inflight_ ? "waiting" : "done")
+        << ", balancer addresses: " << number_of_balancer_hostnames_resolved_
+        << "/" << number_of_balancer_hostnames_initiated_ << " complete";
     return absl::nullopt;
   }
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p OnResolvedLocked() proceeding", this);
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::" << this
+      << " OnResolvedLocked() proceeding";
   Resolver::Result result;
   result.args = resolver_->channel_args();
   // If both addresses and balancer addresses failed, return an error for both
@@ -538,7 +538,8 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
       // return an error. Validation errors may be empty.
       status = absl::UnavailableError("No results from DNS queries");
     }
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) " << status.message().data();
     result.addresses = status;
     result.service_config = status;
     return std::move(result);
