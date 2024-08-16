@@ -367,15 +367,13 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
       data.named_metrics[r.first] = r.second;
     }
   }
-  if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    LOG(INFO) << "[" << this
-              << "] Backend metric data returned: cpu:" << data.cpu_utilization
-              << " mem:" << data.mem_utilization << " qps:" << data.qps
-              << " eps:" << data.eps
-              << " utilization size:" << data.utilization.size()
-              << " request_cost size:" << data.request_cost.size()
-              << "named_metrics size:" << data.named_metrics.size();
-  }
+  GRPC_TRACE_LOG(backend_metric, INFO)
+      << "[" << this
+      << "] Backend metric data returned: cpu:" << data.cpu_utilization
+      << " mem:" << data.mem_utilization << " qps:" << data.qps
+      << " eps:" << data.eps << " utilization size:" << data.utilization.size()
+      << " request_cost size:" << data.request_cost.size()
+      << "named_metrics size:" << data.named_metrics.size();
   return data;
 }
 
