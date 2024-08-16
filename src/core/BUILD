@@ -954,6 +954,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "seq",
+    external_deps = ["absl/log:log"],
     language = "c++",
     public_hdrs = [
         "lib/promise/seq.h",
