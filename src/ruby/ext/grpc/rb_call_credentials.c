@@ -60,30 +60,30 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   VALUE callback_func = rb_ary_entry(args, 0);
   VALUE callback_args = rb_ary_entry(args, 1);
   VALUE md_ary_obj = rb_ary_entry(args, 2);
-  if (absl_vlog2_enabled()) {
-    VALUE callback_func_str = rb_funcall(callback_func, rb_intern("to_s"), 0);
-    VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
-    VALUE callback_source_info =
-        rb_funcall(callback_func, rb_intern("source_location"), 0);
-    if (callback_source_info != Qnil) {
-      VALUE source_filename = rb_ary_entry(callback_source_info, 0);
-      VALUE source_line_number = rb_funcall(
-          rb_ary_entry(callback_source_info, 1), rb_intern("to_s"), 0);
-      gpr_log(GPR_DEBUG,
-              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
-              "source_filename:%s line_number:%s with arguments:|%s|",
-              StringValueCStr(callback_func_str),
-              StringValueCStr(source_filename),
-              StringValueCStr(source_line_number),
-              StringValueCStr(callback_args_str));
-    } else {
-      gpr_log(GPR_DEBUG,
-              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
-              "(failed to get source filename and line) with arguments:|%s|",
-              StringValueCStr(callback_func_str),
-              StringValueCStr(callback_args_str));
-    }
+
+  VALUE callback_func_str = rb_funcall(callback_func, rb_intern("to_s"), 0);
+  VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
+  VALUE callback_source_info =
+      rb_funcall(callback_func, rb_intern("source_location"), 0);
+  if (callback_source_info != Qnil) {
+    VALUE source_filename = rb_ary_entry(callback_source_info, 0);
+    VALUE source_line_number =
+        rb_funcall(rb_ary_entry(callback_source_info, 1), rb_intern("to_s"), 0);
+    gpr_log(GPR_DEBUG,
+            "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
+            "source_filename:%s line_number:%s with arguments:|%s|",
+            StringValueCStr(callback_func_str),
+            StringValueCStr(source_filename),
+            StringValueCStr(source_line_number),
+            StringValueCStr(callback_args_str));
+  } else {
+    gpr_log(GPR_DEBUG,
+            "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
+            "(failed to get source filename and line) with arguments:|%s|",
+            StringValueCStr(callback_func_str),
+            StringValueCStr(callback_args_str));
   }
+
   VALUE metadata =
       rb_funcall(callback_func, rb_intern("call"), 1, callback_args);
   grpc_metadata_array* md_ary = NULL;

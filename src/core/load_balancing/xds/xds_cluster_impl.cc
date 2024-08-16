@@ -740,12 +740,10 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-      LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity: state="
-                << ConnectivityStateName(state_) << " status=(" << status_
-                << ") picker=" << drop_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+        << "[xds_cluster_impl_lb " << this
+        << "] updating connectivity: state=" << ConnectivityStateName(state_)
+        << " status=(" << status_ << ") picker=" << drop_picker.get();
     channel_control_helper()->UpdateState(state_, status_,
                                           std::move(drop_picker));
   }
@@ -840,12 +838,11 @@ void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (parent()->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << parent()
-              << "] child connectivity state update: state="
-              << ConnectivityStateName(state) << " (" << status
-              << ") picker=" << picker.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << parent()
+      << "] child connectivity state update: state="
+      << ConnectivityStateName(state) << " (" << status
+      << ") picker=" << picker.get();
   // Save the state and picker.
   parent()->state_ = state;
   parent()->status_ = status;

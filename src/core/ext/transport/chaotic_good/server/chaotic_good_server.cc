@@ -300,12 +300,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           },
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
-            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-              LOG(INFO) << self->connection_.get()
-                        << " Data endpoint setup done: shutdown="
-                        << (self->connection_->listener_->shutdown_ ? "true"
-                                                                    : "false");
-            }
+            GRPC_TRACE_LOG(chaotic_good, INFO)
+                << self->connection_.get()
+                << " Data endpoint setup done: shutdown="
+                << (self->connection_->listener_->shutdown_ ? "true" : "false");
             if (self->connection_->listener_->shutdown_) {
               return absl::UnavailableError("Server shutdown");
             }

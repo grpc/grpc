@@ -187,12 +187,11 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
-        if (GRPC_TRACE_FLAG_ENABLED(http)) {
-          LOG(INFO) << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
-                    << t->peer_string.as_string_view() << ": got setting "
-                    << grpc_core::Http2Settings::WireIdToName(parser->id)
-                    << " = " << parser->value;
-        }
+        GRPC_TRACE_LOG(http, INFO)
+            << "CHTTP2:" << (t->is_client ? "CLI" : "SVR") << ":"
+            << t->peer_string.as_string_view() << ": got setting "
+            << grpc_core::Http2Settings::WireIdToName(parser->id) << " = "
+            << parser->value;
       } break;
     }
   }

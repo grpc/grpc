@@ -20,7 +20,6 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/server/server.h"

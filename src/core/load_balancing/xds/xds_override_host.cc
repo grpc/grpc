@@ -759,13 +759,10 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   args_ = std::move(args.args);
   override_host_status_set_ = it->second->cluster->override_host_statuses;
   connection_idle_timeout_ = it->second->cluster->connection_idle_timeout;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] override host status set: "
-              << override_host_status_set_.ToString()
-              << " connection idle timeout: "
-              << connection_idle_timeout_.ToString();
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this
+      << "] override host status set: " << override_host_status_set_.ToString()
+      << " connection idle timeout: " << connection_idle_timeout_.ToString();
   // Update address map and wrap endpoint iterator for child policy.
   if (args.addresses.ok()) {
     UpdateAddressMap(**args.addresses);
@@ -796,12 +793,11 @@ void XdsOverrideHostLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
     auto xds_override_host_picker = MakeRefCounted<Picker>(
         RefAsSubclass<XdsOverrideHostLb>(), picker_, override_host_status_set_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb " << this
-                << "] updating connectivity: state="
-                << ConnectivityStateName(state_) << " status=(" << status_
-                << ") picker=" << xds_override_host_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb " << this
+        << "] updating connectivity: state=" << ConnectivityStateName(state_)
+        << " status=(" << status_
+        << ") picker=" << xds_override_host_picker.get();
     channel_control_helper()->UpdateState(state_, status_,
                                           std::move(xds_override_host_picker));
   }
@@ -843,12 +839,11 @@ void XdsOverrideHostLb::UpdateAddressMap(
     // Skip draining hosts if not in the override status set.
     if (status.status() == XdsHealthStatus::kDraining &&
         !override_host_status_set_.Contains(status)) {
-      if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-        LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                  << endpoint.ToString()
-                  << ": draining but not in override_host_status set -- "
-                     "ignoring";
-      }
+      GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+          << "[xds_override_host_lb " << this << "] endpoint "
+          << endpoint.ToString()
+          << ": draining but not in override_host_status set -- "
+             "ignoring";
       return;
     }
     std::vector<std::string> addresses;
@@ -905,13 +900,11 @@ void XdsOverrideHostLb::UpdateAddressMap(
         it = subchannel_map_.emplace(address, MakeRefCounted<SubchannelEntry>())
                  .first;
       }
-      if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-        LOG(INFO) << "[xds_override_host_lb " << this << "] map key " << address
-                  << ": setting "
-                  << "eds_health_status="
-                  << address_info.eds_health_status.ToString()
-                  << " address_list=" << address_info.address_list.c_str();
-      }
+      GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+          << "[xds_override_host_lb " << this << "] map key " << address
+          << ": setting "
+          << "eds_health_status=" << address_info.eds_health_status.ToString()
+          << " address_list=" << address_info.address_list.c_str();
       it->second->set_eds_health_status(address_info.eds_health_status);
       it->second->set_address_list(std::move(address_info.address_list));
       // Check the entry's last_used_time to determine the next time at
