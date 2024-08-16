@@ -966,6 +966,7 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr_platform",
     ],
+    external_deps = ["absl/log:log"],
 )
 
 grpc_cc_library(
