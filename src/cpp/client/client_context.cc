@@ -32,7 +32,6 @@
 #include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>

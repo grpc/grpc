@@ -18,7 +18,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {

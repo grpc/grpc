@@ -24,7 +24,6 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/support/channel_arguments.h>
