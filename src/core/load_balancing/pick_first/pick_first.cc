@@ -790,22 +790,21 @@ PickFirst::SubchannelList::SubchannelData::SubchannelData(
 void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
   PickFirst* p = subchannel_list_->policy_.get();
-  if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    LOG(INFO) << "[PF " << p << "] subchannel list " << subchannel_list_
-              << " index " << index_ << " of " << subchannel_list_->size()
-              << " (subchannel_state " << subchannel_state_.get()
-              << "): connectivity changed: old_state="
-              << (connectivity_state_.has_value()
-                      ? ConnectivityStateName(*connectivity_state_)
-                      : "N/A")
-              << ", new_state=" << ConnectivityStateName(new_state)
-              << ", status=" << status
-              << ", seen_transient_failure=" << seen_transient_failure_
-              << ", p->selected_=" << p->selected_.get()
-              << ", p->subchannel_list_=" << p->subchannel_list_.get()
-              << ", p->subchannel_list_->shutting_down_="
-              << p->subchannel_list_->shutting_down_;
-  }
+  GRPC_TRACE_LOG(pick_first, INFO)
+      << "[PF " << p << "] subchannel list " << subchannel_list_ << " index "
+      << index_ << " of " << subchannel_list_->size() << " (subchannel_state "
+      << subchannel_state_.get() << "): connectivity changed: old_state="
+      << (connectivity_state_.has_value()
+              ? ConnectivityStateName(*connectivity_state_)
+              : "N/A")
+      << ", new_state=" << ConnectivityStateName(new_state)
+      << ", status=" << status
+      << ", seen_transient_failure=" << seen_transient_failure_
+      << ", p->selected_=" << p->selected_.get()
+      << ", p->subchannel_list_=" << p->subchannel_list_.get()
+      << ", p->subchannel_list_->shutting_down_="
+      << p->subchannel_list_->shutting_down_;
+
   if (subchannel_list_->shutting_down_) return;
   // The notification must be for a subchannel in the current list.
   CHECK(subchannel_list_ == p->subchannel_list_.get());
@@ -1596,24 +1595,23 @@ void OldPickFirst::SubchannelList::SubchannelData::ShutdownLocked() {
 void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     grpc_connectivity_state new_state, absl::Status status) {
   OldPickFirst* p = subchannel_list_->policy_.get();
-  if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    LOG(INFO) << "[PF " << p << "] subchannel list " << subchannel_list_
-              << " index " << index_ << " of " << subchannel_list_->size()
-              << " (subchannel " << subchannel_.get()
-              << "): connectivity changed: old_state="
-              << (connectivity_state_.has_value()
-                      ? ConnectivityStateName(*connectivity_state_)
-                      : "N/A")
-              << ", new_state=" << ConnectivityStateName(new_state)
-              << ", status=" << status
-              << ", shutting_down=" << subchannel_list_->shutting_down_
-              << ", pending_watcher=" << pending_watcher_
-              << ", seen_transient_failure=" << seen_transient_failure_
-              << ", p->selected_=" << p->selected_
-              << ", p->subchannel_list_=" << p->subchannel_list_.get()
-              << ", p->latest_pending_subchannel_list_="
-              << p->latest_pending_subchannel_list_.get();
-  }
+  GRPC_TRACE_LOG(pick_first, INFO)
+      << "[PF " << p << "] subchannel list " << subchannel_list_ << " index "
+      << index_ << " of " << subchannel_list_->size() << " (subchannel "
+      << subchannel_.get() << "): connectivity changed: old_state="
+      << (connectivity_state_.has_value()
+              ? ConnectivityStateName(*connectivity_state_)
+              : "N/A")
+      << ", new_state=" << ConnectivityStateName(new_state)
+      << ", status=" << status
+      << ", shutting_down=" << subchannel_list_->shutting_down_
+      << ", pending_watcher=" << pending_watcher_
+      << ", seen_transient_failure=" << seen_transient_failure_
+      << ", p->selected_=" << p->selected_
+      << ", p->subchannel_list_=" << p->subchannel_list_.get()
+      << ", p->latest_pending_subchannel_list_="
+      << p->latest_pending_subchannel_list_.get();
+
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
   auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
                             ->GetStatsPluginGroup();
