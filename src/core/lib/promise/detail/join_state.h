@@ -103,8 +103,9 @@ struct JoinState<Traits, P0, P1> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/2 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/2 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -124,8 +125,9 @@ struct JoinState<Traits, P0, P1> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/2 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/2 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1));
@@ -214,8 +216,9 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/3 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/3 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -235,8 +238,9 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/3 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/3 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -256,8 +260,9 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/3 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/3 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1),
@@ -362,8 +367,9 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/4 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/4 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -383,8 +389,9 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/4 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/4 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -404,8 +411,9 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/4 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/4 already ready";
     }
     if (!ready.is_set(3)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -425,8 +433,9 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 4/4 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 4/4 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1),
@@ -546,8 +555,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/5 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/5 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -567,8 +577,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/5 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/5 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -588,8 +599,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/5 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/5 already ready";
     }
     if (!ready.is_set(3)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -609,8 +621,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 4/5 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 4/5 already ready";
     }
     if (!ready.is_set(4)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -630,8 +643,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 5/5 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 5/5 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1),
@@ -766,8 +780,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/6 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/6 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -787,8 +802,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/6 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/6 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -808,8 +824,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/6 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/6 already ready";
     }
     if (!ready.is_set(3)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -829,8 +846,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 4/6 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 4/6 already ready";
     }
     if (!ready.is_set(4)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -850,8 +868,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 5/6 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 5/6 already ready";
     }
     if (!ready.is_set(5)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -871,8 +890,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 6/6 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 6/6 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1),
@@ -1022,8 +1042,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/7 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1043,8 +1064,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/7 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1064,8 +1086,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/7 already ready";
     }
     if (!ready.is_set(3)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1085,8 +1108,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 4/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 4/7 already ready";
     }
     if (!ready.is_set(4)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1106,8 +1130,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 5/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 5/7 already ready";
     }
     if (!ready.is_set(5)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1127,8 +1152,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 6/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 6/7 already ready";
     }
     if (!ready.is_set(6)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1148,8 +1174,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 7/7 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 7/7 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1),
@@ -1314,8 +1341,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/8 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1335,8 +1363,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/8 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1356,8 +1385,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/8 already ready";
     }
     if (!ready.is_set(3)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1377,8 +1407,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 4/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 4/8 already ready";
     }
     if (!ready.is_set(4)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1398,8 +1429,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 5/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 5/8 already ready";
     }
     if (!ready.is_set(5)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1419,8 +1451,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 6/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 6/8 already ready";
     }
     if (!ready.is_set(6)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1440,8 +1473,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 7/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 7/8 already ready";
     }
     if (!ready.is_set(7)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1461,8 +1495,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 8/8 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 8/8 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(std::move(result0), std::move(result1),
@@ -1642,8 +1677,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 1/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 1/9 already ready";
     }
     if (!ready.is_set(1)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1663,8 +1699,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 2/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 2/9 already ready";
     }
     if (!ready.is_set(2)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1684,8 +1721,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 3/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 3/9 already ready";
     }
     if (!ready.is_set(3)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1705,8 +1743,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 4/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 4/9 already ready";
     }
     if (!ready.is_set(4)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1726,8 +1765,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 5/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 5/9 already ready";
     }
     if (!ready.is_set(5)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1747,8 +1787,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 6/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 6/9 already ready";
     }
     if (!ready.is_set(6)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1768,8 +1809,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 7/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 7/9 already ready";
     }
     if (!ready.is_set(7)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1789,8 +1831,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 8/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 8/9 already ready";
     }
     if (!ready.is_set(8)) {
       GRPC_TRACE_VLOG(promise_primitives, 2)
@@ -1810,8 +1853,9 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      VLOG(2) << "join[" << this << "]: joint 9/9 already ready";
+    } else {
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "join[" << this << "]: joint 9/9 already ready";
     }
     if (ready.all()) {
       return Traits::FinalReturn(
