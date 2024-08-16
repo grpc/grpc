@@ -21,7 +21,6 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
