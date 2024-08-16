@@ -476,7 +476,7 @@ class _Context(grpc.ServicerContext):
             self._state.aborted = True
             raise Exception()
 
-    def abort_with_status(self, status: grpc.Status) -> NoReturn:
+    def abort_with_status(self, status: grpc.Status) -> None:
         self._state.trailing_metadata = status.trailing_metadata
         self.abort(status.code, status.details)
 
@@ -620,11 +620,13 @@ def _call_behavior(
         try:
             response_or_iterator = None
             if send_response_callback is not None:
-                response_or_iterator = behavior(  # type: ignore[call-arg]
+                response_or_iterator = behavior(  # type: ignore
                     argument, context, send_response_callback
                 )
             else:
-                response_or_iterator = behavior(argument, context)  # type: ignore[call-arg]
+                print("*"*100)
+                print(type(behavior))
+                response_or_iterator = behavior(argument, context)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -920,13 +922,13 @@ def _handle_unary_unary(
     )
     return thread_pool.submit(
         state.context.run,
-        _unary_response_in_pool,  # type: ignore[arg-type]
+        _unary_response_in_pool,  # type: ignore
         rpc_event,
-        state,  # type: ignore[arg-type]
-        method_handler.unary_unary,  # type: ignore[arg-type]
-        unary_request,  # type: ignore[arg-type]
-        method_handler.request_deserializer,  # type: ignore[arg-type]
-        method_handler.response_serializer,  # type: ignore[arg-type]
+        state,  # type: ignore
+        method_handler.unary_unary,  # type: ignore
+        unary_request,  # type: ignore
+        method_handler.request_deserializer,  # type: ignore
+        method_handler.response_serializer,  # type: ignore
     )
 
 
@@ -944,13 +946,13 @@ def _handle_unary_stream(
     )
     return thread_pool.submit(
         state.context.run,
-        _stream_response_in_pool,  # type: ignore[arg-type]
+        _stream_response_in_pool,  # type: ignore
         rpc_event,
-        state,  # type: ignore[arg-type]
-        method_handler.unary_stream,  # type: ignore[arg-type]
-        unary_request,  # type: ignore[arg-type]
-        method_handler.request_deserializer,  # type: ignore[arg-type]
-        method_handler.response_serializer,  # type: ignore[arg-type]
+        state,  # type: ignore
+        method_handler.unary_stream,  # type: ignore
+        unary_request,  # type: ignore
+        method_handler.request_deserializer,  # type: ignore
+        method_handler.response_serializer,  # type: ignore
     )
 
 
@@ -968,13 +970,13 @@ def _handle_stream_unary(
     )
     return thread_pool.submit(
         state.context.run,
-        _unary_response_in_pool,  # type: ignore[arg-type]
+        _unary_response_in_pool,  # type: ignore
         rpc_event,
-        state,  # type: ignore[arg-type]
-        method_handler.stream_unary,  # type: ignore[arg-type]
-        lambda: request_iterator,  # type: ignore[arg-type]
-        method_handler.request_deserializer,  # type: ignore[arg-type]
-        method_handler.response_serializer,  # type: ignore[arg-type]
+        state,  # type: ignore
+        method_handler.stream_unary,  # type: ignore
+        lambda: request_iterator,  # type: ignore
+        method_handler.request_deserializer,  # type: ignore
+        method_handler.response_serializer,  # type: ignore
     )
 
 
@@ -992,13 +994,13 @@ def _handle_stream_stream(
     )
     return thread_pool.submit(
         state.context.run,
-        _stream_response_in_pool,  # type: ignore[arg-type]
+        _stream_response_in_pool,  # type: ignore
         rpc_event,
-        state,  # type: ignore[arg-type]
-        method_handler.stream_stream,  # type: ignore[arg-type]
-        lambda: request_iterator,  # type: ignore[arg-type]
-        method_handler.request_deserializer,  # type: ignore[arg-type]
-        method_handler.response_serializer,  # type: ignore[arg-type]
+        state,  # type: ignore
+        method_handler.stream_stream,  # type: ignore
+        lambda: request_iterator,  # type: ignore
+        method_handler.request_deserializer,  # type: ignore
+        method_handler.response_serializer,  # type: ignore
     )
 
 
@@ -1292,11 +1294,11 @@ def _process_event_and_continue(
                 state.registered_method_handlers.get(
                     registered_method_name, None
                 ),
-            )  # type: ignore
+            )
         else:
-            method_with_handler = _GenericMethod(
+            method_with_handler = _GenericMethod(  # type: ignore
                 state.generic_handlers,
-            )  # type: ignore
+            )
         with state.lock:
             state.due.remove(event.tag)
             concurrency_exceeded = (

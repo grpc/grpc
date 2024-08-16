@@ -23,7 +23,6 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
-    Iterator,
     Generic,
     List,
     Optional,

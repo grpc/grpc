@@ -44,7 +44,6 @@ from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
-from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
@@ -498,7 +497,8 @@ class Channel(_base_channel.Channel):
 
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
-    def _get_registered_call_handle(self, method: str) -> int:
+    # pylint: disable=no-self-use
+    def _get_registered_call_handle(self, _: str) -> int:
         return 0
 
     # TODO(xuanwn): Implement _registered_method after we have

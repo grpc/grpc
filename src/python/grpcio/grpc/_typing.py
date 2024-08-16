@@ -25,6 +25,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    List,
 )
 
 from grpc._cython import cygrpc
@@ -92,6 +93,7 @@ ArityAgnosticMethodHandler = Union[
     Callable[[RequestType, "_Context"], Iterator[ResponseType]],
     Callable[[Iterator[RequestType], "_Context"], ResponseType],
     Callable[[Iterator[RequestType], "_Context"], Iterator[ResponseType]],
+    Callable[[], ResponseType],
 ]
 InterceptorType = Union[
     "UnaryUnaryClientInterceptor",

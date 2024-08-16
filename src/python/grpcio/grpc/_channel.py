@@ -33,11 +33,11 @@ from typing import (
     Union,
 )
 
-import grpc 
-from grpc import _common  
-from grpc import _compression  
-from grpc import _grpcio_metadata  
-from grpc import _observability  
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
+from grpc import _observability
 from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
@@ -48,7 +48,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
 from grpc._typing import RequestIterableType
-import grpc.experimental  
+import grpc.experimental
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -271,6 +271,7 @@ def _consume_request_iterator(
     def consume_request_iterator():  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
         # condition is encountered.
+
         while True:
             return_from_user_request_generator_invoked = False
             try:
@@ -442,23 +443,19 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def time_remaining(self) -> Optional[float]:
         return None
 
-    def add_callback(self, callback: NullaryCallbackType) -> bool:
+    def add_callback(self, _: NullaryCallbackType) -> bool:
         return False
 
-    def result(
-        self, _: Optional[float] = None
-    ) -> Any:  
+    def result(self, _: Optional[float] = None) -> Any:
         """See grpc.Future.result."""
         raise self
 
-    def exception(
-        self, _: Optional[float] = None  
-    ) -> Optional[Exception]:
+    def exception(self, _: Optional[float] = None) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
-        self, _: Optional[float] = None  
+        self, _: Optional[float] = None
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -1156,7 +1153,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous  # type: ignore[misc]
+            # pylint: disable=raising-bad-type
+            raise rendezvous  # type: ignore
         else:
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
@@ -1228,20 +1226,21 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous # type: ignore[misc]
+            # pylint: disable=raising-bad-type
+            raise rendezvous  # type: ignore
         else:
             event_handler = _event_handler(state, self._response_deserializer)
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
             state.target = _common.decode(self._target)
-            call = self._managed_call(  # type: ignore[arg-type]
+            call = self._managed_call(  # type: ignore
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
                 None,
                 deadline,
                 metadata,
                 None if credentials is None else credentials._credentials,
-                (operations,), # type: ignore[arg-type] 
+                (operations,),  # type: ignore
                 event_handler,
                 self._context,
                 self._registered_call_handle,
@@ -1407,7 +1406,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready
         )
         if serialized_request is None:
-            raise rendezvous  # type: ignore[misc]
+            # pylint: disable=raising-bad-type
+            raise rendezvous  # type: ignore
         else:
             augmented_metadata = _compression.augment_metadata(
                 metadata, compression

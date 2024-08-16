@@ -16,7 +16,7 @@
 import collections
 import sys
 import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Sequence, Tuple
 
 import grpc
 
@@ -692,9 +692,7 @@ class _Channel(grpc.Channel):
         self._channel = channel
         self._interceptor = interceptor
 
-    def subscribe(
-        self, callback: Callable, try_to_connect: bool = False
-    ):
+    def subscribe(self, callback: Callable, try_to_connect: bool = False):
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
     def unsubscribe(self, callback: Callable):

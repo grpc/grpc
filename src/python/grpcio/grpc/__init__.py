@@ -453,6 +453,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 ##############  Invocation-Side Interceptor Interfaces & Classes  ##############
 
 
+# pylint: disable=used-before-assignment
 class ClientCallDetails(abc.ABC):
     method: bytes
     timeout: Optional[float]
@@ -2295,16 +2296,15 @@ def secure_channel(
     """
     from grpc import _channel  # pylint: disable=cyclic-import
     from grpc.experimental import _insecure_channel_credentials
-
-    if credentials._credentials is _insecure_channel_credentials:  # type: ignore[union-attr]
+    if credentials._credentials is _insecure_channel_credentials: # type: ignore
         raise ValueError(
             "secure_channel cannot be called with insecure credentials."
             + " Call insecure_channel instead."
         )
     return _channel.Channel(
         target,
-        () if options is None else options,
-        credentials._credentials,  # type: ignore[union-attr]
+        () if options is None else options,   
+        credentials._credentials, # type: ignore
         compression,
     )
 
