@@ -417,12 +417,11 @@ class Subchannel::ConnectedSubchannelStateWatcher final
       if (c->connected_subchannel_ == nullptr) return;
       if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
           new_state == GRPC_CHANNEL_SHUTDOWN) {
-        if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-          LOG(INFO) << "subchannel " << c << " " << c->key_.ToString()
-                    << ": Connected subchannel "
-                    << c->connected_subchannel_.get() << " reports "
-                    << ConnectivityStateName(new_state) << ": " << status;
-        }
+        GRPC_TRACE_LOG(subchannel, INFO)
+            << "subchannel " << c << " " << c->key_.ToString()
+            << ": Connected subchannel " << c->connected_subchannel_.get()
+            << " reports " << ConnectivityStateName(new_state) << ": "
+            << status;
         c->connected_subchannel_.reset();
         if (c->channelz_node() != nullptr) {
           c->channelz_node()->SetChildSocket(nullptr);
@@ -803,12 +802,10 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - Timestamp::Now();
-    if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-      LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-                << ": connect failed (" << StatusToString(error)
-                << "), backing off for " << time_until_next_attempt.millis()
-                << " ms";
-    }
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << this << " " << key_.ToString()
+        << ": connect failed (" << StatusToString(error)
+        << "), backing off for " << time_until_next_attempt.millis() << " ms";
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = event_engine_->RunAfter(

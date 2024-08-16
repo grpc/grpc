@@ -248,14 +248,12 @@ class EnvironmentAutoDetectHelper
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, absl::StatusOr<std::string> result) {
-            if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-              LOG(INFO) << "Environment AutoDetect: Attribute: \"" << attribute
-                        << "\" Result: \""
-                        << (result.ok()
-                                ? result.value()
+            GRPC_TRACE_LOG(environment_autodetect, INFO)
+                << "Environment AutoDetect: Attribute: \"" << attribute
+                << "\" Result: \""
+                << (result.ok() ? result.value()
                                 : grpc_core::StatusToString(result.status()))
-                        << "\"";
-            }
+                << "\"";
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);

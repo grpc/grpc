@@ -21,7 +21,6 @@
 
 #include "absl/flags/flag.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/gprpp/crash.h"

@@ -185,12 +185,11 @@ RoundRobin::Picker::Picker(
   // the picker, see https://github.com/grpc/grpc-go/issues/2580.
   size_t index = absl::Uniform<size_t>(parent->bit_gen_, 0, pickers_.size());
   last_picked_index_.store(index, std::memory_order_relaxed);
-  if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-    LOG(INFO) << "[RR " << parent_ << " picker " << this
-              << "] created picker from endpoint_list="
-              << parent_->endpoint_list_.get() << " with " << pickers_.size()
-              << " READY children; last_picked_index_=" << index;
-  }
+  GRPC_TRACE_LOG(round_robin, INFO)
+      << "[RR " << parent_ << " picker " << this
+      << "] created picker from endpoint_list=" << parent_->endpoint_list_.get()
+      << " with " << pickers_.size()
+      << " READY children; last_picked_index_=" << index;
 }
 
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
@@ -292,16 +291,13 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* rr_endpoint_list = endpoint_list<RoundRobinEndpointList>();
   auto* round_robin = policy<RoundRobin>();
-  if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-    LOG(INFO) << "[RR " << round_robin << "] connectivity changed for child "
-              << this << ", endpoint_list " << rr_endpoint_list << " (index "
-              << Index() << " of " << rr_endpoint_list->size()
-              << "): prev_state="
-              << (old_state.has_value() ? ConnectivityStateName(*old_state)
-                                        : "N/A")
-              << " new_state=" << ConnectivityStateName(new_state) << " ("
-              << status << ")";
-  }
+  GRPC_TRACE_LOG(round_robin, INFO)
+      << "[RR " << round_robin << "] connectivity changed for child " << this
+      << ", endpoint_list " << rr_endpoint_list << " (index " << Index()
+      << " of " << rr_endpoint_list->size() << "): prev_state="
+      << (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A")
+      << " new_state=" << ConnectivityStateName(new_state) << " (" << status
+      << ")";
   if (new_state == GRPC_CHANNEL_IDLE) {
     GRPC_TRACE_LOG(round_robin, INFO)
         << "[RR " << round_robin << "] child " << this

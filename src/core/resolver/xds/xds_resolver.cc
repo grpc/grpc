@@ -1076,12 +1076,11 @@ void XdsResolver::GenerateResult() {
   Result result;
   result.addresses.emplace();
   result.service_config = CreateServiceConfig();
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[xds_resolver " << this << "] generated service config: "
-              << (result.service_config.ok()
-                      ? ((*result.service_config)->json_string())
-                      : result.service_config.status().ToString());
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[xds_resolver " << this << "] generated service config: "
+      << (result.service_config.ok()
+              ? ((*result.service_config)->json_string())
+              : result.service_config.status().ToString());
   result.args =
       args_.SetObject(xds_client_.Ref(DEBUG_LOCATION, "xds resolver result"))
           .SetObject(config_selector)
