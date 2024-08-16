@@ -21,7 +21,6 @@
 
 #include "absl/log/absl_check.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server_interface.h>

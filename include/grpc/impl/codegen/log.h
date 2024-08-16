@@ -24,6 +24,5 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 /// TODO(chengyuc): Remove this file after solving compatibility.
-#include <grpc/support/log.h>
 
 #endif /* GRPC_IMPL_CODEGEN_LOG_H */
