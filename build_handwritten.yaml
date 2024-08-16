@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gnarly
   protobuf_version: 3.26.1
-  version: 1.65.4
+  version: 1.65.5
 configs:
   asan:
     CC: clang
