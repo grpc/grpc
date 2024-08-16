@@ -33,11 +33,11 @@ from typing import (
     Union,
 )
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _grpcio_metadata  # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
+import grpc 
+from grpc import _common  
+from grpc import _compression  
+from grpc import _grpcio_metadata  
+from grpc import _observability  
 from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
@@ -48,8 +48,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
 from grpc._typing import RequestIterableType
-from grpc._typing import RequestIteratorType
-import grpc.experimental  # pytype: disable=pyi-error
+import grpc.experimental  
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -260,13 +259,14 @@ def _event_handler(
 # TODO(xuanwn): Create a base class for IntegratedCall and SegregatedCall.
 # pylint: disable=too-many-statements
 def _consume_request_iterator(
-    request_iterator: RequestIteratorType,
+    request_iterator: RequestIterableType,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
     request_serializer: Optional[SerializingFunction],
     event_handler: Optional[UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
+    request_iterator = iter(request_iterator)
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
@@ -446,19 +446,19 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return False
 
     def result(
-        self, timeout: Optional[float] = None
-    ) -> Any:  # pylint: disable=unused-argument
+        self, _: Optional[float] = None
+    ) -> Any:  
         """See grpc.Future.result."""
         raise self
 
     def exception(
-        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self, _: Optional[float] = None  
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
-        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self, _: Optional[float] = None  
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -469,7 +469,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def add_done_callback(
         self,
         fn: Callable[[grpc.Future], None],
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument
+        _: Optional[float] = None,
     ) -> None:
         """See grpc.Future.add_done_callback."""
         fn(self)
@@ -1228,20 +1228,20 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous  # type: ignore[misc]
+            raise rendezvous # type: ignore[misc]
         else:
             event_handler = _event_handler(state, self._response_deserializer)
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
             state.target = _common.decode(self._target)
-            call = self._managed_call(  # type: ignore
+            call = self._managed_call(  # type: ignore[arg-type]
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
                 None,
                 deadline,
                 metadata,
                 None if credentials is None else credentials._credentials,
-                (operations,),  # type: ignore
+                (operations,), # type: ignore[arg-type] 
                 event_handler,
                 self._context,
                 self._registered_call_handle,
@@ -1488,7 +1488,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def _blocking(
         self,
-        request_iterator: RequestIteratorType,
+        request_iterator: RequestIterableType,
         timeout: Optional[float],
         metadata: Optional[MetadataType],
         credentials: Optional[grpc.CallCredentials],
@@ -1533,7 +1533,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def __call__(
         self,
-        request_iterator: RequestIteratorType,
+        request_iterator: RequestIterableType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -1555,7 +1555,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def with_call(
         self,
-        request_iterator: RequestIteratorType,
+        request_iterator: RequestIterableType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -1577,7 +1577,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
     def future(
         self,
-        request_iterator: RequestIteratorType,
+        request_iterator: RequestIterableType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -1664,7 +1664,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
     def __call__(
         self,
-        request_iterator: RequestIteratorType,
+        request_iterator: RequestIterableType,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
