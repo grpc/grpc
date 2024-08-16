@@ -98,9 +98,8 @@ class Oauth2Token : public TokenFetcherCredentials::Token {
   Timestamp ExpirationTime() override { return expiration_; }
 
   void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
-    metadata.Append(
-        GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
-        [](absl::string_view, const grpc_core::Slice&) { abort(); });
+    metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
+                    [](absl::string_view, const Slice&) { abort(); });
   }
 
  private:
@@ -114,7 +113,7 @@ class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
  public:
   std::string debug_string() override;
 
-  grpc_core::UniqueTypeName type() const override;
+  UniqueTypeName type() const override;
 
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,

@@ -2508,7 +2508,9 @@ using grpc_event_engine::experimental::FuzzingEventEngine;
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
-  ~ExternalAccountCredentialsTest() { event_engine_->UnsetGlobalHooks(); }
+  ~ExternalAccountCredentialsTest() override {
+    event_engine_->UnsetGlobalHooks();
+  }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_ =
       std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
@@ -2535,7 +2537,7 @@ TEST_F(ExternalAccountCredentialsTest, Success) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
   // Check security level.
   EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
@@ -2584,7 +2586,7 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithUrlEncode) {
       "client_secret",                          // client_secret;
       "",                                       // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
@@ -2618,7 +2620,7 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithServiceAccountImpersonation) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>{"scope_1", "scope_2"}, event_engine_);
   // Check security level.
   EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
@@ -2657,7 +2659,7 @@ TEST_F(ExternalAccountCredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>{"scope_1", "scope_2"}, event_engine_);
   // Check security level.
   EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
@@ -2742,7 +2744,7 @@ TEST_F(ExternalAccountCredentialsTest, FailureInvalidTokenUrl) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
@@ -2780,7 +2782,7 @@ TEST_F(ExternalAccountCredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
@@ -2819,7 +2821,7 @@ TEST_F(ExternalAccountCredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  auto creds = grpc_core::MakeRefCounted<TestExternalAccountCredentials>(
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
   HttpRequest::SetOverride(
       httpcli_get_should_not_be_called,

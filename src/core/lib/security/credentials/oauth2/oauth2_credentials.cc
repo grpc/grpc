@@ -228,7 +228,7 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest final
                                             &response_, &on_http_response_);
   }
 
-  ~HttpFetchRequest() { grpc_http_response_destroy(&response_); }
+  ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
 
   void Orphan() override {
     http_request_.reset();
@@ -455,8 +455,7 @@ grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
   return absl::OkStatus();
 }
 
-class StsTokenFetcherCredentials
-    : public grpc_core::Oauth2TokenFetcherCredentials {
+class StsTokenFetcherCredentials : public Oauth2TokenFetcherCredentials {
  public:
   StsTokenFetcherCredentials(URI sts_url,
                              const grpc_sts_credentials_options* options)
@@ -473,13 +472,12 @@ class StsTokenFetcherCredentials
   std::string debug_string() override {
     return absl::StrFormat(
         "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_.path(),
-        sts_url_.authority(),
-        grpc_core::Oauth2TokenFetcherCredentials::debug_string());
+        sts_url_.authority(), Oauth2TokenFetcherCredentials::debug_string());
   }
 
  private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+  OrphanablePtr<HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));

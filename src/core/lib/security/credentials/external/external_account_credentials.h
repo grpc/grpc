@@ -183,7 +183,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
 
   std::string MetricsHeaderValue();
 
-  const absl::string_view audience() const { return options_.audience; }
+  absl::string_view audience() const { return options_.audience; }
 
   grpc_event_engine::experimental::EventEngine& event_engine() const {
     return *event_engine_;
