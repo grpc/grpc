@@ -25,8 +25,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"

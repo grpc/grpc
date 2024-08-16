@@ -1073,6 +1073,7 @@ include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
 include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
+include/grpcpp/support/global_callback_hook.h \
 include/grpcpp/support/interceptor.h \
 include/grpcpp/support/message_allocator.h \
 include/grpcpp/support/method_handler.h \

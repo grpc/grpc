@@ -36,7 +36,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
