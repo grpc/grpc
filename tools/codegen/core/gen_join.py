@@ -80,7 +80,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
         }
       }
     } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      GRPC_TRACE_VLOG(promise_primitives, 2) << "join[" << this << "]: joint ${i+1}/${n} already ready";
+      VLOG(2) << "join[" << this << "]: joint ${i+1}/${n} already ready";
     }
 % endfor
     if (ready.all()) {
