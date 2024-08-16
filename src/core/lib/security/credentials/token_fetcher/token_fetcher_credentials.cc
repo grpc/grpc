@@ -81,18 +81,17 @@ TokenFetcherCredentials::GetRequestMetadata(
           });
     }
   }
-  return [pending_call = std::move(pending_call)]()
-             -> Poll<absl::StatusOr<ClientMetadataHandle>> {
-           if (!pending_call->done.load(std::memory_order_acquire)) {
-             return Pending{};
-           }
-           if (!pending_call->result.ok()) {
-             return pending_call->result.status();
-           }
-           (*pending_call->result)->AddTokenToClientInitialMetadata(
-               *pending_call->md);
-           return std::move(pending_call->md);
-         };
+  return [pending_call = std::move(
+              pending_call)]() -> Poll<absl::StatusOr<ClientMetadataHandle>> {
+    if (!pending_call->done.load(std::memory_order_acquire)) {
+      return Pending{};
+    }
+    if (!pending_call->result.ok()) {
+      return pending_call->result.status();
+    }
+    (*pending_call->result)->AddTokenToClientInitialMetadata(*pending_call->md);
+    return std::move(pending_call->md);
+  };
 }
 
 void TokenFetcherCredentials::TokenFetchComplete(

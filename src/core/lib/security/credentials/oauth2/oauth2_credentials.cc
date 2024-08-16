@@ -150,8 +150,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
     grpc_core::Duration* token_lifetime) {
   auto json = grpc_core::JsonParse(body);
   if (!json.ok()) {
-    LOG(ERROR) << "Could not parse JSON from " << body << ": "
-               << json.status();
+    LOG(ERROR) << "Could not parse JSON from " << body << ": " << json.status();
     return GRPC_CREDENTIALS_ERROR;
   }
   if (json->type() != Json::Type::kObject) {
@@ -159,22 +158,19 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
     return GRPC_CREDENTIALS_ERROR;
   }
   auto it = json->object().find("access_token");
-  if (it == json->object().end() ||
-      it->second.type() != Json::Type::kString) {
+  if (it == json->object().end() || it->second.type() != Json::Type::kString) {
     LOG(ERROR) << "Missing or invalid access_token in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
   absl::string_view access_token = it->second.string();
   it = json->object().find("token_type");
-  if (it == json->object().end() ||
-      it->second.type() != Json::Type::kString) {
+  if (it == json->object().end() || it->second.type() != Json::Type::kString) {
     LOG(ERROR) << "Missing or invalid token_type in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
   absl::string_view token_type = it->second.string();
   it = json->object().find("expires_in");
-  if (it == json->object().end() ||
-      it->second.type() != Json::Type::kNumber) {
+  if (it == json->object().end() || it->second.type() != Json::Type::kNumber) {
     LOG(ERROR) << "Missing or invalid expires_in in JSON.";
     return GRPC_CREDENTIALS_ERROR;
   }
@@ -222,14 +218,14 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest final
  public:
   HttpFetchRequest(
       Oauth2TokenFetcherCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<void(
-          absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+      absl::AnyInvocable<
+          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done)
       : on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
     Ref().release();  // Ref held by HTTP request callback.
-    http_request_ = creds->StartHttpRequest(
-        creds->pollent(), deadline, &response_, &on_http_response_);
+    http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
+                                            &response_, &on_http_response_);
   }
 
   ~HttpFetchRequest() { grpc_http_response_destroy(&response_); }
@@ -253,20 +249,19 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest final
         grpc_oauth2_token_fetcher_credentials_parse_server_response(
             &self->response_, &access_token_value, &token_lifetime);
     if (status != GRPC_CREDENTIALS_OK) {
-      self->on_done_(
-          absl::UnavailableError("error parsing oauth2 token"));
+      self->on_done_(absl::UnavailableError("error parsing oauth2 token"));
       return;
     }
-    self->on_done_(
-        MakeRefCounted<Oauth2Token>(std::move(*access_token_value),
-                                    Timestamp::Now() + token_lifetime));
+    self->on_done_(MakeRefCounted<Oauth2Token>(
+        std::move(*access_token_value), Timestamp::Now() + token_lifetime));
   }
 
   OrphanablePtr<HttpRequest> http_request_;
   grpc_closure on_http_response_;
   grpc_http_response response_;
   absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)> on_done_;
+      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+      on_done_;
 };
 
 std::string Oauth2TokenFetcherCredentials::debug_string() {
@@ -281,8 +276,8 @@ UniqueTypeName Oauth2TokenFetcherCredentials::type() const {
 OrphanablePtr<TokenFetcherCredentials::FetchRequest>
 Oauth2TokenFetcherCredentials::FetchToken(
     Timestamp deadline,
-    absl::AnyInvocable<void(
-        absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+    absl::AnyInvocable<
+        void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
   return MakeOrphanable<HttpFetchRequest>(this, deadline, std::move(on_done));
 }
@@ -309,8 +304,8 @@ class grpc_compute_engine_token_fetcher_credentials
 
  private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-        grpc_http_response* response, grpc_closure* on_complete) override {
+      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -361,8 +356,8 @@ grpc_google_refresh_token_credentials::
 
 grpc_core::OrphanablePtr<grpc_core::HttpRequest>
 grpc_google_refresh_token_credentials::StartHttpRequest(
-      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) {
+    grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+    grpc_http_response* response, grpc_closure* on_complete) {
   grpc_http_header header = {
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
@@ -484,8 +479,8 @@ class StsTokenFetcherCredentials
 
  private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-        grpc_http_response* response, grpc_closure* on_complete) override {
+      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
     grpc_error_handle err = FillBody(&request.body, &request.body_length);
@@ -509,8 +504,8 @@ class StsTokenFetcherCredentials
       http_request_creds = CreateHttpRequestSSLCredentials();
     }
     auto http_request = HttpRequest::Post(
-        sts_url_, /*args=*/nullptr, pollent, &request, deadline,
-        on_complete, response, std::move(http_request_creds));
+        sts_url_, /*args=*/nullptr, pollent, &request, deadline, on_complete,
+        response, std::move(http_request_creds));
     http_request->Start();
     gpr_free(request.body);
     return http_request;

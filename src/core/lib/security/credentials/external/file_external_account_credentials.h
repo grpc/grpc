@@ -51,9 +51,8 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
  private:
   class FileFetchBody final : public FetchBody {
    public:
-    FileFetchBody(
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
-        FileExternalAccountCredentials* creds);
+    FileFetchBody(absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+                  FileExternalAccountCredentials* creds);
 
    private:
     void Shutdown() override {}

@@ -109,10 +109,9 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   // on_done callback.
   class NoOpFetchBody final : public FetchBody {
    public:
-    NoOpFetchBody(
-        grpc_event_engine::experimental::EventEngine& event_engine,
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
-        absl::StatusOr<std::string> result);
+    NoOpFetchBody(grpc_event_engine::experimental::EventEngine& event_engine,
+                  absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+                  absl::StatusOr<std::string> result);
 
    private:
     void Shutdown() override {}
@@ -122,8 +121,9 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   class HttpFetchBody final : public FetchBody {
    public:
     HttpFetchBody(
-        absl::FunctionRef<OrphanablePtr<HttpRequest>(
-            grpc_http_response*, grpc_closure*)> start_http_request,
+        absl::FunctionRef<OrphanablePtr<HttpRequest>(grpc_http_response*,
+                                                     grpc_closure*)>
+            start_http_request,
         absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done);
 
     ~HttpFetchBody() override { grpc_http_response_destroy(&response_); }
@@ -145,8 +145,8 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
    public:
     ExternalFetchRequest(
         ExternalAccountCredentials* creds, Timestamp deadline,
-        absl::AnyInvocable<void(
-            absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+        absl::AnyInvocable<
+            void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
             on_done);
 
     void Orphan() override;
@@ -160,8 +160,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
     void ExchangeToken(absl::StatusOr<std::string> subject_token);
     void MaybeImpersonateServiceAccount(
         absl::StatusOr<std::string> response_body);
-    void OnImpersonateServiceAccount(
-        absl::StatusOr<std::string> response_body);
+    void OnImpersonateServiceAccount(absl::StatusOr<std::string> response_body);
 
     void FinishTokenFetch(absl::StatusOr<std::string> token);
 
@@ -172,8 +171,8 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
 
     ExternalAccountCredentials* creds_;
     Timestamp deadline_;
-    absl::AnyInvocable<
-        void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+    absl::AnyInvocable<void(
+        absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done_;
 
     Mutex mu_;
@@ -193,8 +192,8 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
  private:
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
-      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
-          on_done) final;
+      absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+      final;
 
   // Subclasses of ExternalAccountCredentials need to override this
   // method to implement the specific-subject token retrieval logic.

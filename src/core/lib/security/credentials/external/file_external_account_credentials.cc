@@ -45,13 +45,12 @@ FileExternalAccountCredentials::FileFetchBody::FileFetchBody(
     : FetchBody(std::move(on_done)), creds_(creds) {
   // Start work asynchronously, since we can't invoke the callback
   // synchronously without causing a deadlock.
-  creds->event_engine().Run(
-      [self = RefAsSubclass<FileFetchBody>()]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
-        ExecCtx exec_ctx;
-        self->ReadFile();
-        self.reset();
-      });
+  creds->event_engine().Run([self = RefAsSubclass<FileFetchBody>()]() mutable {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    self->ReadFile();
+    self.reset();
+  });
 }
 
 void FileExternalAccountCredentials::FileFetchBody::ReadFile() {
@@ -67,11 +66,11 @@ void FileExternalAccountCredentials::FileFetchBody::ReadFile() {
     auto content_json = JsonParse(content);
     if (!content_json.ok() || content_json->type() != Json::Type::kObject) {
       Finish(GRPC_ERROR_CREATE(
-                   "The content of the file is not a valid json object."));
+          "The content of the file is not a valid json object."));
       return;
     }
-    auto content_it = content_json->object().find(
-        creds_->format_subject_token_field_name_);
+    auto content_it =
+        content_json->object().find(creds_->format_subject_token_field_name_);
     if (content_it == content_json->object().end()) {
       Finish(GRPC_ERROR_CREATE("Subject token field not present."));
       return;

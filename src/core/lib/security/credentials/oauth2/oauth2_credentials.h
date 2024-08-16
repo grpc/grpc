@@ -117,14 +117,14 @@ class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
   grpc_core::UniqueTypeName type() const override;
 
   OrphanablePtr<FetchRequest> FetchToken(
-        Timestamp deadline,
-        absl::AnyInvocable<void(
-            absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-            on_done) final;
+      Timestamp deadline,
+      absl::AnyInvocable<
+          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+          on_done) final;
 
   virtual OrphanablePtr<HttpRequest> StartHttpRequest(
-        grpc_polling_entity* pollent, Timestamp deadline,
-        grpc_http_response* response, grpc_closure* on_complete) = 0;
+      grpc_polling_entity* pollent, Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) = 0;
 
  private:
   class HttpFetchRequest;
@@ -155,8 +155,8 @@ class grpc_google_refresh_token_credentials final
 
  private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-        grpc_http_response* response, grpc_closure* on_complete) override;
+      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) override;
 
   grpc_auth_refresh_token refresh_token_;
 };

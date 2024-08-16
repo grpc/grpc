@@ -502,8 +502,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
       grpc_error_get_str(expected_error_, StatusStrProperty::kDescription,
                          &expected_error);
       std::string actual_error;
-      grpc_error_get_str(error, StatusStrProperty::kDescription,
-                         &actual_error);
+      grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
       EXPECT_EQ(expected_error, actual_error);
     }
     md_.Remove(HttpAuthorityMetadata());
@@ -1227,9 +1226,8 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE(
-          "Failed to load file: invalid_path due to "
-          "error(fdopen): No such file or directory"),
+      GRPC_ERROR_CREATE("Failed to load file: invalid_path due to "
+                        "error(fdopen): No such file or directory"),
       {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
@@ -2513,8 +2511,8 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
   ~ExternalAccountCredentialsTest() { event_engine_->UnsetGlobalHooks(); }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_ =
-      std::make_shared<FuzzingEventEngine>(
-          FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
+                                           fuzzing_event_engine::Actions());
 };
 
 TEST_F(ExternalAccountCredentialsTest, Success) {
@@ -2696,8 +2694,7 @@ TEST_F(ExternalAccountCredentialsTest,
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
   auto json = JsonParse(options_string1);
   ASSERT_TRUE(json.ok()) << json.status();
-  auto creds =
-      ExternalAccountCredentials::Create(*json, {"scope1", "scope2"});
+  auto creds = ExternalAccountCredentials::Create(*json, {"scope1", "scope2"});
   std::string actual_error;
   grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
                      &actual_error);
@@ -3305,8 +3302,9 @@ TEST_F(ExternalAccountCredentialsTest,
   UnsetEnv("AWS_SESSION_TOKEN");
 }
 
-TEST_F(ExternalAccountCredentialsTest,
-       AwsImdsv2ExternalAccountCredShouldNotUseMetadataServerOptionalTokenMissing) {
+TEST_F(
+    ExternalAccountCredentialsTest,
+    AwsImdsv2ExternalAccountCredShouldNotUseMetadataServerOptionalTokenMissing) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
   SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");

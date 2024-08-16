@@ -57,9 +57,8 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   // A FetchBody impl that itself performs a sequence of FetchBody operations.
   class AwsFetchBody : public FetchBody {
    public:
-    AwsFetchBody(
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
-        AwsExternalAccountCredentials* creds, Timestamp deadline);
+    AwsFetchBody(absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+                 AwsExternalAccountCredentials* creds, Timestamp deadline);
 
    private:
     void Shutdown() override;

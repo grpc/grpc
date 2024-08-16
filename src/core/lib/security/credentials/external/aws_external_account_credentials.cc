@@ -100,9 +100,7 @@ AwsExternalAccountCredentials::AwsFetchBody::AwsFetchBody(
   fetch_body_ = MakeOrphanable<NoOpFetchBody>(
       creds->event_engine(),
       [self = RefAsSubclass<AwsFetchBody>()](
-          absl::StatusOr<std::string> /*result*/) {
-        self->Start();
-      },
+          absl::StatusOr<std::string> /*result*/) { self->Start(); },
       "");
 }
 
@@ -179,8 +177,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveImdsV2SessionToken() {
         grpc_http_request_destroy(&request);
         return http_request;
       },
-      [self = RefAsSubclass<AwsFetchBody>()](
-          absl::StatusOr<std::string> result) {
+      [self =
+           RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
         MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         self->imdsv2_session_token_ = std::move(*result);
@@ -208,8 +206,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRegion() {
   }
   absl::StatusOr<URI> uri = URI::Parse(creds_->region_url_);
   if (!uri.ok()) {
-    AsyncFinish(GRPC_ERROR_CREATE(absl::StrFormat("Invalid region url. %s",
-                                                  uri.status().ToString())));
+    AsyncFinish(GRPC_ERROR_CREATE(
+        absl::StrFormat("Invalid region url. %s", uri.status().ToString())));
     return;
   }
   fetch_body_ = MakeOrphanable<HttpFetchBody>(
@@ -232,8 +230,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRegion() {
         grpc_http_request_destroy(&request);
         return http_request;
       },
-      [self = RefAsSubclass<AwsFetchBody>()](
-          absl::StatusOr<std::string> result) {
+      [self =
+           RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
         MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         // Remove the last letter of availability zone to get pure region
@@ -274,8 +272,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveRoleName() {
         grpc_http_request_destroy(&request);
         return http_request;
       },
-      [self = RefAsSubclass<AwsFetchBody>()](
-          absl::StatusOr<std::string> result) {
+      [self =
+           RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
         MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         self->role_name_ = std::move(*result);
@@ -305,9 +303,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveSigningKeys() {
   std::string url_with_role_name = absl::StrCat(creds_->url_, "/", role_name_);
   absl::StatusOr<URI> uri = URI::Parse(url_with_role_name);
   if (!uri.ok()) {
-    AsyncFinish(
-        GRPC_ERROR_CREATE(absl::StrFormat("Invalid url with role name: %s.",
-                                          uri.status().ToString())));
+    AsyncFinish(GRPC_ERROR_CREATE(absl::StrFormat(
+        "Invalid url with role name: %s.", uri.status().ToString())));
     return;
   }
   fetch_body_ = MakeOrphanable<HttpFetchBody>(
@@ -331,8 +328,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveSigningKeys() {
         grpc_http_request_destroy(&request);
         return http_request;
       },
-      [self = RefAsSubclass<AwsFetchBody>()](
-          absl::StatusOr<std::string> result) {
+      [self =
+           RefAsSubclass<AwsFetchBody>()](absl::StatusOr<std::string> result) {
         MutexLock lock(&self->mu_);
         if (self->MaybeFail(result.status())) return;
         self->OnRetrieveSigningKeys(std::move(*result));
@@ -343,10 +340,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::OnRetrieveSigningKeys(
     std::string result) {
   auto json = JsonParse(result);
   if (!json.ok()) {
-    AsyncFinish(
-        GRPC_ERROR_CREATE(
-            absl::StrCat("Invalid retrieve signing keys response: ",
-                         json.status().ToString())));
+    AsyncFinish(GRPC_ERROR_CREATE(absl::StrCat(
+        "Invalid retrieve signing keys response: ", json.status().ToString())));
     return;
   }
   if (json->type() != Json::Type::kObject) {
@@ -359,27 +354,24 @@ void AwsExternalAccountCredentials::AwsFetchBody::OnRetrieveSigningKeys(
   if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     access_key_id_ = it->second.string();
   } else {
-    AsyncFinish(
-        GRPC_ERROR_CREATE(absl::StrFormat(
-            "Missing or invalid AccessKeyId in %s.", result)));
+    AsyncFinish(GRPC_ERROR_CREATE(
+        absl::StrFormat("Missing or invalid AccessKeyId in %s.", result)));
     return;
   }
   it = json->object().find("SecretAccessKey");
   if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     secret_access_key_ = it->second.string();
   } else {
-    AsyncFinish(
-        GRPC_ERROR_CREATE(absl::StrFormat(
-            "Missing or invalid SecretAccessKey in %s.", result)));
+    AsyncFinish(GRPC_ERROR_CREATE(
+        absl::StrFormat("Missing or invalid SecretAccessKey in %s.", result)));
     return;
   }
   it = json->object().find("Token");
   if (it != json->object().end() && it->second.type() == Json::Type::kString) {
     token_ = it->second.string();
   } else {
-    AsyncFinish(
-        GRPC_ERROR_CREATE(absl::StrFormat("Missing or invalid Token in %s.",
-                                          result)));
+    AsyncFinish(GRPC_ERROR_CREATE(
+        absl::StrFormat("Missing or invalid Token in %s.", result)));
     return;
   }
   BuildSubjectToken();
@@ -395,17 +387,15 @@ void AwsExternalAccountCredentials::AwsFetchBody::BuildSubjectToken() {
         creds_->cred_verification_url_, region_, "",
         std::map<std::string, std::string>(), &error);
     if (!error.ok()) {
-      AsyncFinish(
-          GRPC_ERROR_CREATE_REFERENCING(
-              "Creating aws request signer failed.", &error, 1));
+      AsyncFinish(GRPC_ERROR_CREATE_REFERENCING(
+          "Creating aws request signer failed.", &error, 1));
       return;
     }
   }
   auto signed_headers = creds_->signer_->GetSignedRequestHeaders();
   if (!error.ok()) {
-    AsyncFinish(
-        GRPC_ERROR_CREATE_REFERENCING("Invalid getting signed request headers.",
-                                      &error, 1));
+    AsyncFinish(GRPC_ERROR_CREATE_REFERENCING(
+        "Invalid getting signed request headers.", &error, 1));
     return;
   }
   // Construct subject token

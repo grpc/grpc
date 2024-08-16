@@ -1603,6 +1603,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_utils.cc )
   s.files += %w( src/core/lib/security/credentials/tls/tls_utils.h )
+  s.files += %w( src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc )
+  s.files += %w( src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h )
   s.files += %w( src/core/lib/security/credentials/xds/xds_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/xds/xds_credentials.h )
   s.files += %w( src/core/lib/security/security_connector/alts/alts_security_connector.cc )

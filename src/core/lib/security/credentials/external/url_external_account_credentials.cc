@@ -178,10 +178,10 @@ UrlExternalAccountCredentials::RetrieveSubjectToken(
         } else {
           http_request_creds = CreateHttpRequestSSLCredentials();
         }
-        auto http_request = HttpRequest::Get(
-            std::move(*url_for_request), /*args=*/nullptr, pollent(),
-            &request, deadline, on_http_response, response,
-            std::move(http_request_creds));
+        auto http_request =
+            HttpRequest::Get(std::move(*url_for_request), /*args=*/nullptr,
+                             pollent(), &request, deadline, on_http_response,
+                             response, std::move(http_request_creds));
         http_request->Start();
         grpc_http_request_destroy(&request);
         return http_request;

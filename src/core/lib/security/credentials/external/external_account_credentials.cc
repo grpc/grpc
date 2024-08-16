@@ -79,13 +79,12 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
     absl::StatusOr<std::string> result)
     : FetchBody(std::move(on_done)) {
-  event_engine.Run(
-      [self = RefAsSubclass<NoOpFetchBody>(), result = std::move(result)]()
-          mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
-        ExecCtx exec_ctx;
-        self->Finish(std::move(result));
-      });
+  event_engine.Run([self = RefAsSubclass<NoOpFetchBody>(),
+                    result = std::move(result)]() mutable {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    self->Finish(std::move(result));
+  });
 }
 
 //
@@ -93,8 +92,9 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
 //
 
 ExternalAccountCredentials::HttpFetchBody::HttpFetchBody(
-    absl::FunctionRef<OrphanablePtr<HttpRequest>(
-        grpc_http_response*, grpc_closure*)> start_http_request,
+    absl::FunctionRef<OrphanablePtr<HttpRequest>(grpc_http_response*,
+                                                 grpc_closure*)>
+        start_http_request,
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done)
     : FetchBody(std::move(on_done)) {
   GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
@@ -112,9 +112,9 @@ void ExternalAccountCredentials::HttpFetchBody::OnHttpResponse(
   absl::string_view response_body(self->response_.body,
                                   self->response_.body_length);
   if (self->response_.status != 200) {
-    self->Finish(absl::UnavailableError(absl::StrCat(
-        "Call to HTTP server ended with status ", self->response_.status,
-        " [", response_body, "]")));
+    self->Finish(absl::UnavailableError(
+        absl::StrCat("Call to HTTP server ended with status ",
+                     self->response_.status, " [", response_body, "]")));
     return;
   }
   self->Finish(std::string(response_body));
@@ -136,14 +136,13 @@ void ExternalAccountCredentials::HttpFetchBody::OnHttpResponse(
 // token in FinishTokenFetch().
 ExternalAccountCredentials::ExternalFetchRequest::ExternalFetchRequest(
     ExternalAccountCredentials* creds, Timestamp deadline,
-    absl::AnyInvocable<void(
-        absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+    absl::AnyInvocable<
+        void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done)
     : creds_(creds), deadline_(deadline), on_done_(std::move(on_done)) {
   fetch_body_ = creds_->RetrieveSubjectToken(
-      deadline,
-      [self = RefAsSubclass<ExternalFetchRequest>()](
-          absl::StatusOr<std::string> result) {
+      deadline, [self = RefAsSubclass<ExternalFetchRequest>()](
+                    absl::StatusOr<std::string> result) {
         self->ExchangeToken(std::move(result));
       });
 }
@@ -186,8 +185,8 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
   absl::StatusOr<URI> uri = URI::Parse(options().token_url);
   if (!uri.ok()) {
     return FinishTokenFetch(GRPC_ERROR_CREATE(
-        absl::StrFormat("Invalid token url: %s. Error: %s",
-                        options().token_url, uri.status().ToString())));
+        absl::StrFormat("Invalid token url: %s. Error: %s", options().token_url,
+                        uri.status().ToString())));
   }
   // Start HTTP request.
   fetch_body_ = MakeOrphanable<HttpFetchBody>(
@@ -204,8 +203,8 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
         headers[1].key = gpr_strdup("x-goog-api-client");
         headers[1].value = gpr_strdup(creds_->MetricsHeaderValue().c_str());
         if (add_authorization_header) {
-          std::string raw_cred = absl::StrFormat(
-              "%s:%s", options().client_id, options().client_secret);
+          std::string raw_cred = absl::StrFormat("%s:%s", options().client_id,
+                                                 options().client_secret);
           std::string str =
               absl::StrFormat("Basic %s", absl::Base64Escape(raw_cred));
           headers[2].key = gpr_strdup("Authorization");
@@ -222,9 +221,9 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
             "requested_token_type=%s",
             UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_REQUESTED_TOKEN_TYPE)
                 .c_str()));
-        body_parts.push_back(absl::StrFormat(
-            "subject_token_type=%s",
-            UrlEncode(options().subject_token_type).c_str()));
+        body_parts.push_back(
+            absl::StrFormat("subject_token_type=%s",
+                            UrlEncode(options().subject_token_type).c_str()));
         body_parts.push_back(absl::StrFormat(
             "subject_token=%s", UrlEncode(*subject_token).c_str()));
         std::string scope = GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE;
@@ -266,10 +265,8 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
       });
 }
 
-void
-ExternalAccountCredentials::ExternalFetchRequest::
-    MaybeImpersonateServiceAccount(
-    absl::StatusOr<std::string> response_body) {
+void ExternalAccountCredentials::ExternalFetchRequest::
+    MaybeImpersonateServiceAccount(absl::StatusOr<std::string> response_body) {
   MutexLock lock(&mu_);
   if (MaybeFailLocked(response_body.status())) return;
   // If not doing impersonation, response_body contains oauth token.
@@ -350,8 +347,7 @@ ExternalAccountCredentials::ExternalFetchRequest::
 }
 
 void ExternalAccountCredentials::ExternalFetchRequest::
-    OnImpersonateServiceAccount(
-    absl::StatusOr<std::string> response_body) {
+    OnImpersonateServiceAccount(absl::StatusOr<std::string> response_body) {
   MutexLock lock(&mu_);
   if (MaybeFailLocked(response_body.status())) return;
   auto json = JsonParse(*response_body);
@@ -407,21 +403,20 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
     absl::optional<grpc_core::Slice> token_value;
     grpc_core::Duration token_lifetime;
     if (grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
-            *response_body, &token_value, &token_lifetime)
-        != GRPC_CREDENTIALS_OK) {
+            *response_body, &token_value, &token_lifetime) !=
+        GRPC_CREDENTIALS_OK) {
       result = GRPC_ERROR_CREATE("Could not parse oauth token");
     } else {
-      result = MakeRefCounted<Oauth2Token>(
-          std::move(*token_value), Timestamp::Now() + token_lifetime);
+      result = MakeRefCounted<Oauth2Token>(std::move(*token_value),
+                                           Timestamp::Now() + token_lifetime);
     }
   }
-  creds_->event_engine().Run(
-      [on_done = std::exchange(on_done_, nullptr),
-       result = std::move(result)]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
-        ExecCtx exec_ctx;
-        std::exchange(on_done, nullptr)(std::move(result));
-      });
+  creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
+                              result = std::move(result)]() mutable {
+    ApplicationCallbackExecCtx application_exec_ctx;
+    ExecCtx exec_ctx;
+    std::exchange(on_done, nullptr)(std::move(result));
+  });
 }
 
 bool ExternalAccountCredentials::ExternalFetchRequest::MaybeFailLocked(
@@ -626,10 +621,9 @@ absl::string_view ExternalAccountCredentials::CredentialSourceType() {
 OrphanablePtr<ExternalAccountCredentials::FetchRequest>
 ExternalAccountCredentials::FetchToken(
     Timestamp deadline,
-    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
-        on_done) {
-  return MakeOrphanable<ExternalFetchRequest>(
-      this, deadline, std::move(on_done));
+    absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done) {
+  return MakeOrphanable<ExternalFetchRequest>(this, deadline,
+                                              std::move(on_done));
 }
 
 }  // namespace grpc_core
@@ -643,8 +637,8 @@ grpc_call_credentials* grpc_external_account_credentials_create(
     return nullptr;
   }
   std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
-  auto creds = grpc_core::ExternalAccountCredentials::Create(
-                   *json, std::move(scopes));
+  auto creds =
+      grpc_core::ExternalAccountCredentials::Create(*json, std::move(scopes));
   if (!creds.ok()) {
     LOG(ERROR) << "External account credentials creation failed. Error: "
                << grpc_core::StatusToString(creds.status());
