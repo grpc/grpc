@@ -37,11 +37,6 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    "absl_vlog2_enabled(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-    ],
     "gpr_log_severity": [
         "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",

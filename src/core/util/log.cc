@@ -40,8 +40,6 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
-int absl_vlog2_enabled() { return ABSL_VLOG_IS_ON(2); }
-
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
@@ -85,10 +83,6 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
 }
 
 void gpr_log_verbosity_init(void) {
-// This is enabled in Github only.
-// This ifndef is converted to ifdef internally by copybara.
-// Internally grpc verbosity is managed using absl settings.
-// So internally we avoid setting it like this.
 #ifndef GRPC_VERBOSITY_MACRO
   // SetMinLogLevel sets the value for the entire binary, not just gRPC.
   // This setting will change things for other libraries/code that is unrelated
