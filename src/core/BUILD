@@ -4349,6 +4349,50 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gcp_service_account_identity_credentials",
+    srcs = [
+        "lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc",
+    ],
+    hdrs = [
+        "lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena_promise",
+        "closure",
+        "error",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "metadata",
+        "pollset_set",
+        "ref_counted",
+        "slice",
+        "time",
+        "token_fetcher_credentials",
+        "unique_type_name",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:iomgr",
+        "//:orphanable",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//:uri_parser",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_oauth2_credentials",
     srcs = [
         "lib/security/credentials/oauth2/oauth2_credentials.cc",
