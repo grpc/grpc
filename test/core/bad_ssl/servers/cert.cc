@@ -22,7 +22,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/bad_ssl/server_common.h"

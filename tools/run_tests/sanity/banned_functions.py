@@ -37,11 +37,6 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    "absl_vlog2_enabled(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-    ],
     "gpr_log_severity": [
         "./include/grpc/support/log.h",
         "./src/core/util/android/log.cc",
@@ -93,10 +88,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
 errors = 0
 num_files = 0
 for root, dirs, files in os.walk("."):
-    if root.startswith(
-        "./tools/distrib/python/grpcio_tools"
-    ) or root.startswith("./src/python"):
-        continue
     for filename in files:
         num_files += 1
         path = os.path.join(root, filename)
@@ -112,7 +103,7 @@ for root, dirs, files in os.walk("."):
             if deprecated in text:
                 print(
                     (
-                        'Illegal use of "%s" in %s . Use absl functions instead.'
+                        'Illegal use of "%s" in %s. Use absl functions instead.'
                         % (deprecated, path)
                     )
                 )

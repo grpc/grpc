@@ -3836,6 +3836,7 @@ libs:
   - include/grpcpp/support/client_callback.h
   - include/grpcpp/support/client_interceptor.h
   - include/grpcpp/support/config.h
+  - include/grpcpp/support/global_callback_hook.h
   - include/grpcpp/support/interceptor.h
   - include/grpcpp/support/message_allocator.h
   - include/grpcpp/support/method_handler.h
@@ -3915,6 +3916,7 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/client/xds_credentials.cc
@@ -4267,6 +4269,7 @@ libs:
   - include/grpcpp/support/client_callback.h
   - include/grpcpp/support/client_interceptor.h
   - include/grpcpp/support/config.h
+  - include/grpcpp/support/global_callback_hook.h
   - include/grpcpp/support/interceptor.h
   - include/grpcpp/support/message_allocator.h
   - include/grpcpp/support/method_handler.h
@@ -4303,6 +4306,7 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
@@ -6182,6 +6186,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -9668,6 +9673,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -10143,6 +10149,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -20379,6 +20386,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -20798,6 +20806,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -20909,6 +20918,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -21232,6 +21242,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/util/status.cc
   - test/core/xds/xds_client_test.cc
   - test/core/xds/xds_transport_fake.cc
@@ -21329,6 +21340,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/proto/grpc/testing/xds/v3/typed_struct.proto
   - src/proto/grpc/testing/xds/v3/wrr_locality.proto
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/util/status.cc
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
@@ -21676,6 +21688,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/endpoint.proto
   - src/proto/grpc/testing/xds/v3/health_check.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/client/global_callback_hook.cc
   - src/cpp/util/status.cc
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:

@@ -231,7 +231,6 @@ EXPORTS
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
     gpr_log
-    absl_vlog2_enabled
     gpr_log_verbosity_init
     gpr_format_message
     gpr_strdup

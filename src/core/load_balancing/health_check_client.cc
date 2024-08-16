@@ -458,12 +458,11 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   if (created) producer_->Start(subchannel->Ref());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthWatcher " << this << ": registered with producer "
-              << producer_.get() << " (created=" << created
-              << ", health_check_service_name=\""
-              << health_check_service_name_.value_or("N/A") << "\")";
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthWatcher " << this << ": registered with producer "
+      << producer_.get() << " (created=" << created
+      << ", health_check_service_name=\""
+      << health_check_service_name_.value_or("N/A") << "\")";
 }
 
 void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {

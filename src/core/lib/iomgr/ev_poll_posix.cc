@@ -1062,12 +1062,11 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
             }
             fd_end_poll(&watchers[i], 0, 0);
           } else {
-            if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-              LOG(INFO) << pollset << " got_event: " << pfds[i].fd
-                        << " r:" << ((pfds[i].revents & POLLIN_CHECK) != 0)
-                        << " w:" << ((pfds[i].revents & POLLOUT_CHECK) != 0)
-                        << " [" << pfds[i].revents << "]";
-            }
+            GRPC_TRACE_LOG(polling, INFO)
+                << pollset << " got_event: " << pfds[i].fd
+                << " r:" << ((pfds[i].revents & POLLIN_CHECK) != 0)
+                << " w:" << ((pfds[i].revents & POLLOUT_CHECK) != 0) << " ["
+                << pfds[i].revents << "]";
             // This is a mitigation to prevent poll() from spinning on a
             //* POLLHUP https://github.com/grpc/grpc/pull/13665
             //
