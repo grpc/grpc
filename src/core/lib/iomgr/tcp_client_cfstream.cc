@@ -78,10 +78,8 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    VLOG(2) << "CLIENT_CONNECT :" << connect
-            << " OnAlarm, error:" << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CLIENT_CONNECT :" << connect << " OnAlarm, error:"
+                          << grpc_core::StatusToString(error);
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
   connect->closure = nil;
@@ -99,10 +97,8 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
 
 static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    VLOG(2) << "CLIENT_CONNECT :" << connect
-            << " OnOpen, error:" << grpc_core::StatusToString(error);
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CLIENT_CONNECT :" << connect << " OnOpen, error:"
+                          << grpc_core::StatusToString(error);
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
   grpc_closure* closure = connect->closure;
@@ -173,10 +169,9 @@ static int64_t CFStreamClientConnect(
   gpr_ref_init(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
 
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    VLOG(2) << "CLIENT_CONNECT: " << connect << ", " << connect->addr_name
-            << ": asynchronously connecting";
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CLIENT_CONNECT: " << connect << ", "
+                          << connect->addr_name
+                          << ": asynchronously connecting";
 
   CFReadStreamRef read_stream;
   CFWriteStreamRef write_stream;

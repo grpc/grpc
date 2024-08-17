@@ -71,14 +71,12 @@ static void start_destroy(grpc_core::Combiner* lock) {
 }
 
 #ifndef NDEBUG
-#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                            \
-  if (GRPC_TRACE_FLAG_ENABLED(combiner)) {                             \
-    VLOG(2).AtLocation(file, line)                                     \
-        << "C:" << lock << " " << (op) << " "                          \
-        << gpr_atm_no_barrier_load(&lock->refs.count) << " --> "       \
-        << gpr_atm_no_barrier_load(&lock->refs.count) + (delta) << " " \
-        << reason;                                                     \
-  }
+#define GRPC_COMBINER_DEBUG_SPAM(op, delta)                          \
+  GRPC_TRACE_VLOG(combiner, 2).AtLocation(file, line)                \
+      << "C:" << lock << " " << (op) << " "                          \
+      << gpr_atm_no_barrier_load(&lock->refs.count) << " --> "       \
+      << gpr_atm_no_barrier_load(&lock->refs.count) + (delta) << " " \
+      << reason;
 #else
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)
 #endif
