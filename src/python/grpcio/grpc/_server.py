@@ -476,7 +476,7 @@ class _Context(grpc.ServicerContext):
             self._state.aborted = True
             raise Exception()
 
-    def abort_with_status(self, status: grpc.Status) -> None:
+    def abort_with_status(self, status: grpc.Status) -> NoReturn:
         self._state.trailing_metadata = status.trailing_metadata
         self.abort(status.code, status.details)
 
@@ -624,7 +624,7 @@ def _call_behavior(
                     argument, context, send_response_callback
                 )
             else:
-                response_or_iterator = behavior(argument, context)
+                response_or_iterator = behavior(argument, context) # type: ignore
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
