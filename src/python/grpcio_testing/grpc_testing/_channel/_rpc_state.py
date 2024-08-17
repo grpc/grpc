@@ -28,7 +28,7 @@ class State(_common.ChannelRpcHandler):
     _initial_metadata: Optional[MetadataType]
     _responses: List
     _trailing_metadata: Optional[MetadataType]
-    _code: Optional[grpc.statusCode]
+    _code: Optional[grpc.StatusCode]
     _details: Optional[str]
 
     def __init__(
