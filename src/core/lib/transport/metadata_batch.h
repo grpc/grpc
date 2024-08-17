@@ -36,7 +36,6 @@
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/compression/compression_internal.h"
