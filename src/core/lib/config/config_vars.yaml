@@ -120,3 +120,7 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
+- name: cpp_enable_reflection
+  type: bool
+  description: Whether to automatically add a reflection handler.
+  default: true

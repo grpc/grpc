@@ -72,6 +72,8 @@ ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
           "A colon separated list of cipher suites to use with OpenSSL");
+ABSL_FLAG(absl::optional<bool>, grpc_cpp_enable_reflection, {},
+          "Whether to automatically add a reflection handler.");
 
 namespace grpc_core {
 
@@ -89,6 +91,9 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       not_use_system_ssl_roots_(LoadConfig(
           FLAGS_grpc_not_use_system_ssl_roots, "GRPC_NOT_USE_SYSTEM_SSL_ROOTS",
           overrides.not_use_system_ssl_roots, false)),
+      cpp_enable_reflection_(LoadConfig(FLAGS_grpc_cpp_enable_reflection,
+                                        "GRPC_CPP_ENABLE_REFLECTION",
+                                        overrides.cpp_enable_reflection, true)),
       dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, "GRPC_DNS_RESOLVER",
                                overrides.dns_resolver, "")),
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, "GRPC_VERBOSITY",
@@ -136,7 +141,8 @@ std::string ConfigVars::ToString() const {
       "\"", ", default_ssl_roots_file_path: ", "\"",
       absl::CEscape(DefaultSslRootsFilePath()), "\"",
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
-      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"");
+      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
+      ", cpp_enable_reflection: ", CppEnableReflection() ? "true" : "false");
 }
 
 }  // namespace grpc_core

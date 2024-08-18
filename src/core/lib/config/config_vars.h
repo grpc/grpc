@@ -38,6 +38,7 @@ class GPR_DLL ConfigVars {
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> not_use_system_ssl_roots;
+    absl::optional<bool> cpp_enable_reflection;
     absl::optional<std::string> dns_resolver;
     absl::optional<std::string> verbosity;
     absl::optional<std::string> poll_strategy;
@@ -97,6 +98,8 @@ class GPR_DLL ConfigVars {
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
+  // Whether to automatically add a reflection handler.
+  bool CppEnableReflection() const { return cpp_enable_reflection_; }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
@@ -106,6 +109,7 @@ class GPR_DLL ConfigVars {
   bool enable_fork_support_;
   bool abort_on_leaks_;
   bool not_use_system_ssl_roots_;
+  bool cpp_enable_reflection_;
   std::string dns_resolver_;
   std::string verbosity_;
   std::string poll_strategy_;
