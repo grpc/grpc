@@ -45,7 +45,7 @@ void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
   // We cannot simply keep the plugin from being unregistered because this must
   // happen at static initialization time, whereas flag configuration that
   // controls this is not received until later.
-  if (grpc_core::ConfigVars::Get().CppEnableReflection()) {
+  if (!grpc_core::ConfigVars::Get().CppExperimentalDisableReflection()) {
     si->RegisterService(reflection_service_v1_);
     si->RegisterService(reflection_service_v1alpha_);
   }
@@ -59,7 +59,7 @@ void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
                                                   void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
-  if (grpc_core::ConfigVars::Get().CppEnableReflection()) {
+  if (!grpc_core::ConfigVars::Get().CppExperimentalDisableReflection()) {
     return (reflection_service_v1_ &&
             reflection_service_v1_->has_synchronous_methods()) ||
            (reflection_service_v1alpha_ &&
@@ -69,7 +69,7 @@ bool ProtoServerReflectionPlugin::has_sync_methods() const {
 }
 
 bool ProtoServerReflectionPlugin::has_async_methods() const {
-  if (grpc_core::ConfigVars::Get().CppEnableReflection()) {
+  if (!grpc_core::ConfigVars::Get().CppExperimentalDisableReflection()) {
     return (reflection_service_v1_ &&
             reflection_service_v1_->has_async_methods()) ||
            (reflection_service_v1alpha_ &&
