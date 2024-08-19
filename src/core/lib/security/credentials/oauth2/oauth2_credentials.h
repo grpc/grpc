@@ -89,24 +89,6 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 
 namespace grpc_core {
 
-// An oauth2 token.
-class Oauth2Token : public TokenFetcherCredentials::Token {
- public:
-  Oauth2Token(Slice token, Timestamp expiration)
-      : token_(std::move(token)), expiration_(expiration) {}
-
-  Timestamp ExpirationTime() override { return expiration_; }
-
-  void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
-    metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
-                    [](absl::string_view, const Slice&) { abort(); });
-  }
-
- private:
-  Slice token_;
-  Timestamp expiration_;
-};
-
 // A base class for oauth2 token fetching credentials.
 // Subclasses must implement StartHttpRequest().
 class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {

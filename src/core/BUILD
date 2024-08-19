@@ -4332,12 +4332,14 @@ grpc_cc_library(
     deps = [
         "arena_promise",
         "context",
+        "default_event_engine",
         "metadata",
         "poll",
         "pollset_set",
         "ref_counted",
         "time",
         "useful",
+        "//:backoff",
         "//:gpr",
         "//:grpc_security_base",
         "//:httpcli",
@@ -4433,7 +4435,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "closure",
-        "default_event_engine",
         "env",
         "error",
         "error_utils",
