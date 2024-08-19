@@ -624,7 +624,7 @@ def _call_behavior(
                     argument, context, send_response_callback
                 )
             else:
-                response_or_iterator = behavior(argument, context) # type: ignore
+                response_or_iterator = behavior(argument, context)  # type: ignore
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:

@@ -25,7 +25,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    List,
 )
 
 from grpc._cython import cygrpc

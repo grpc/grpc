@@ -266,7 +266,6 @@ def _consume_request_iterator(
     event_handler: Optional[UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
-    request_iterator = iter(request_iterator)
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
@@ -277,7 +276,7 @@ def _consume_request_iterator(
             try:
                 # The thread may die in user-code. Do not block fork for this.
                 cygrpc.enter_user_request_generator()
-                request = next(request_iterator)
+                request = next(request_iterator)  # type: ignore
             except StopIteration:
                 break
             except Exception:  # pylint: disable=broad-except

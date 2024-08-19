@@ -13,7 +13,7 @@
 # limitations under the License.
 """Base implementation of reflection servicer."""
 
-from typing import Any, Iterable, Optional, Sequence
+from typing import Iterable, Optional, Sequence
 
 from google.protobuf import descriptor_pb2  # pytype: disable=pyi-error
 from google.protobuf import descriptor_pool
