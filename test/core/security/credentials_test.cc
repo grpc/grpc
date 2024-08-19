@@ -2509,6 +2509,7 @@ using grpc_event_engine::experimental::FuzzingEventEngine;
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
   ~ExternalAccountCredentialsTest() override {
+    event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
   }
 
