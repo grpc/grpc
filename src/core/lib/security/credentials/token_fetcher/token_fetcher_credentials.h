@@ -47,11 +47,18 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   // Represents a token.
   class Token : public RefCounted<Token> {
    public:
+    Token(Slice token, Timestamp expiration)
+        : token_(std::move(token)), expiration_(expiration) {}
+
     // Returns the token's expiration time.
-    virtual Timestamp ExpirationTime() = 0;
+    Timestamp ExpirationTime() const { return expiration_; }
 
     // Adds the token to the call's client initial metadata.
-    virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata) = 0;
+    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) const;
+
+   private:
+    Slice token_;
+    Timestamp expiration_;
   };
 
   ~TokenFetcherCredentials() override;

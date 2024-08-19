@@ -407,8 +407,8 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
         GRPC_CREDENTIALS_OK) {
       result = GRPC_ERROR_CREATE("Could not parse oauth token");
     } else {
-      result = MakeRefCounted<Oauth2Token>(std::move(*token_value),
-                                           Timestamp::Now() + token_lifetime);
+      result = MakeRefCounted<Token>(std::move(*token_value),
+                                     Timestamp::Now() + token_lifetime);
     }
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),

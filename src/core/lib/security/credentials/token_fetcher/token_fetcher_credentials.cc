@@ -34,6 +34,20 @@ constexpr Duration kTokenRefreshDuration = Duration::Seconds(60);
 
 }  // namespace
 
+//
+// TokenFetcherCredentials::Token
+//
+
+void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
+    ClientMetadata& metadata) const {
+  metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
+                  [](absl::string_view, const Slice&) { abort(); });
+}
+
+//
+// TokenFetcherCredentials
+//
+
 TokenFetcherCredentials::TokenFetcherCredentials()
     : pollent_(grpc_polling_entity_create_from_pollset_set(
           grpc_pollset_set_create())) {}
