@@ -118,9 +118,7 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
     }
     gpr_timespec ts = gpr_time_0(GPR_CLOCK_REALTIME);
     ts.tv_sec = parsed_payload->exp;
-    // Set the expiration time 1m early to account for clock skew.
-    Timestamp expiration_time =
-        Timestamp::FromTimespecRoundDown(ts) - Duration::Minutes(1);
+    Timestamp expiration_time = Timestamp::FromTimespecRoundDown(ts);
     // Return token object.
     self->on_done_(MakeRefCounted<Token>(
         Slice::FromCopiedString(absl::StrCat("Bearer ", body)),
