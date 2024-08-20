@@ -148,7 +148,7 @@ SymSet AllSyms() {
   return syms;
 }
 
-// What whould we do after reading a set of bits?
+// What would we do after reading a set of bits?
 struct ReadActions {
   // Emit these symbols
   std::vector<int> emit;

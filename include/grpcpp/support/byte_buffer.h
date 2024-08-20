@@ -58,7 +58,7 @@ class GrpcByteBufferPeer;
 /// A sequence of bytes.
 class ByteBuffer final {
  public:
-  /// Constuct an empty buffer.
+  /// Construct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}
 
   /// Construct buffer from \a slices, of which there are \a nslices.
