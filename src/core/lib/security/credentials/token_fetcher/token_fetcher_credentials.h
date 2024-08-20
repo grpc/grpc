@@ -26,6 +26,9 @@
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -47,11 +50,17 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   // Represents a token.
   class Token : public RefCounted<Token> {
    public:
+    Token(Slice token, Timestamp expiration);
+
     // Returns the token's expiration time.
-    virtual Timestamp ExpirationTime() = 0;
+    Timestamp ExpirationTime() const { return expiration_; }
 
     // Adds the token to the call's client initial metadata.
-    virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata) = 0;
+    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) const;
+
+   private:
+    Slice token_;
+    Timestamp expiration_;
   };
 
   ~TokenFetcherCredentials() override;
@@ -66,7 +75,10 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   // Base class for fetch requests.
   class FetchRequest : public InternallyRefCounted<FetchRequest> {};
 
-  TokenFetcherCredentials();
+  explicit TokenFetcherCredentials(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr,
+      bool test_only_use_backoff_jitter = true);
 
   // Fetches a token.  The on_done callback will be invoked when complete.
   virtual OrphanablePtr<FetchRequest> FetchToken(
@@ -74,11 +86,15 @@ class TokenFetcherCredentials : public grpc_call_credentials {
       absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
           on_done) = 0;
 
+  grpc_event_engine::experimental::EventEngine& event_engine() const {
+    return *event_engine_;
+  }
+
   grpc_polling_entity* pollent() { return &pollent_; }
 
  private:
   // A call that is waiting for a token fetch request to complete.
-  struct PendingCall : public RefCounted<PendingCall> {
+  struct QueuedCall : public RefCounted<QueuedCall> {
     std::atomic<bool> done{false};
     Waker waker;
     grpc_polling_entity* pollent;
@@ -86,20 +102,72 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     absl::StatusOr<RefCountedPtr<Token>> result;
   };
 
+  class FetchState : public InternallyRefCounted<FetchState> {
+   public:
+    explicit FetchState(WeakRefCountedPtr<TokenFetcherCredentials> creds)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
+
+    // Disabling thread safety annotations, since Orphan() is called
+    // by OrpahanablePtr<>, which does not have the right lock
+    // annotations.
+    void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+    RefCountedPtr<QueuedCall> QueueCall(ClientMetadataHandle initial_metadata)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
+
+   private:
+    class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
+     public:
+      explicit BackoffTimer(RefCountedPtr<FetchState> fetch_state)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
+
+      // Disabling thread safety annotations, since Orphan() is called
+      // by OrpahanablePtr<>, which does not have the right lock
+      // annotations.
+      void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
+
+     private:
+      void OnTimer();
+
+      RefCountedPtr<FetchState> fetch_state_;
+      absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+          timer_handle_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
+    };
+
+    struct Shutdown {};
+
+    void StartFetchAttempt()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
+    void TokenFetchComplete(absl::StatusOr<RefCountedPtr<Token>> token);
+    void ResumeQueuedCalls(absl::StatusOr<RefCountedPtr<Token>> token)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
+
+    WeakRefCountedPtr<TokenFetcherCredentials> creds_;
+    // Pending token-fetch request or backoff timer, if any.
+    absl::variant<OrphanablePtr<FetchRequest>, OrphanablePtr<BackoffTimer>,
+                  Shutdown>
+        state_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
+    // Calls that are queued up waiting for the token.
+    absl::flat_hash_set<RefCountedPtr<QueuedCall>> queued_calls_
+        ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
+    // Backoff state.
+    BackOff backoff_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
+  };
+
   int cmp_impl(const grpc_call_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
     return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
   }
 
-  void TokenFetchComplete(absl::StatusOr<RefCountedPtr<Token>> token);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  const bool test_only_use_backoff_jitter_;
 
   Mutex mu_;
-  // Either the cached token or a pending request to fetch the token.
-  absl::variant<RefCountedPtr<Token>, OrphanablePtr<FetchRequest>> token_
-      ABSL_GUARDED_BY(&mu_);
-  // Calls that are queued up waiting for the token.
-  absl::flat_hash_set<RefCountedPtr<PendingCall>> pending_calls_
-      ABSL_GUARDED_BY(&mu_);
+  // Cached token, if any.
+  RefCountedPtr<Token> token_ ABSL_GUARDED_BY(&mu_);
+  // Fetch state, if any.
+  OrphanablePtr<FetchState> fetch_state_ ABSL_GUARDED_BY(&mu_);
+
   grpc_polling_entity pollent_ ABSL_GUARDED_BY(&mu_);
 };
 

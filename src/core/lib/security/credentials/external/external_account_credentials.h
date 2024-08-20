@@ -162,7 +162,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
         absl::StatusOr<std::string> response_body);
     void OnImpersonateServiceAccount(absl::StatusOr<std::string> response_body);
 
-    void FinishTokenFetch(absl::StatusOr<std::string> token);
+    void FinishTokenFetch(absl::StatusOr<std::string> response_body);
 
     // If status is non-OK or we've been shut down, calls FinishTokenFetch()
     // and returns true.
@@ -185,10 +185,6 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
 
   absl::string_view audience() const { return options_.audience; }
 
-  grpc_event_engine::experimental::EventEngine& event_engine() const {
-    return *event_engine_;
-  }
-
  private:
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
@@ -204,7 +200,6 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
       Timestamp deadline,
       absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) = 0;
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   Options options_;
   std::vector<std::string> scopes_;
 };

@@ -252,8 +252,8 @@ class Oauth2TokenFetcherCredentials::HttpFetchRequest final
       self->on_done_(absl::UnavailableError("error parsing oauth2 token"));
       return;
     }
-    self->on_done_(MakeRefCounted<Oauth2Token>(
-        std::move(*access_token_value), Timestamp::Now() + token_lifetime));
+    self->on_done_(MakeRefCounted<Token>(std::move(*access_token_value),
+                                         Timestamp::Now() + token_lifetime));
   }
 
   OrphanablePtr<HttpRequest> http_request_;
