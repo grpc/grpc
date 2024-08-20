@@ -77,6 +77,7 @@
 
 namespace grpc_core {
 
+using grpc_event_engine::experimental::FuzzingEventEngine;
 using internal::grpc_flush_cached_google_default_credentials;
 using internal::set_gce_tenancy_checker_for_testing;
 
@@ -2390,6 +2391,125 @@ int aws_external_account_creds_httpcli_post_success(
   return 1;
 }
 
+class TokenFetcherCredentialsTest : public ::testing::Test {
+ protected:
+  class TestTokenFetcherCredentials final : public TokenFetcherCredentials {
+   public:
+    explicit TestTokenFetcherCredentials(
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine = nullptr)
+        : TokenFetcherCredentials(std::move(event_engine)) {}
+
+    ~TestTokenFetcherCredentials() override {
+      CHECK_EQ(queue_.size(), 0);
+    }
+
+    void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
+      MutexLock lock(&mu_);
+      queue_.push_front(std::move(result));
+    }
+
+    size_t num_fetches() const { return num_fetches_; }
+
+   private:
+    class TestFetchRequest final : public FetchRequest {
+     public:
+      TestFetchRequest(
+          grpc_event_engine::experimental::EventEngine& event_engine,
+          absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
+              on_done,
+          absl::StatusOr<RefCountedPtr<Token>> result) {
+        event_engine.Run([on_done = std::move(on_done),
+                          result = std::move(result)]() mutable {
+          ApplicationCallbackExecCtx application_exec_ctx;
+          ExecCtx exec_ctx;
+          std::exchange(on_done, nullptr)(std::move(result));
+        });
+      }
+
+      void Orphan() override { Unref(); }
+    };
+
+    OrphanablePtr<FetchRequest> FetchToken(
+        Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
+            on_done) override {
+      absl::StatusOr<RefCountedPtr<Token>> result;
+      {
+        MutexLock lock(&mu_);
+        CHECK(!queue_.empty());
+        result = std::move(queue_.back());
+        queue_.pop_back();
+      }
+      num_fetches_.fetch_add(1);
+      return MakeOrphanable<TestFetchRequest>(
+          event_engine(), std::move(on_done), std::move(result));
+    }
+
+    std::string debug_string() override {
+      return "TestTokenFetcherCredentials";
+    }
+
+    UniqueTypeName type() const override {
+      static UniqueTypeName::Factory kFactory("TestTokenFetcherCredentials");
+      return kFactory.Create();
+    }
+
+    Mutex mu_;
+    std::deque<absl::StatusOr<RefCountedPtr<Token>>> queue_
+        ABSL_GUARDED_BY(&mu_);
+
+    std::atomic<size_t> num_fetches_{0};
+  };
+
+  ~TokenFetcherCredentialsTest() override {
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+  }
+
+  static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
+      absl::string_view token,
+      Timestamp expiration = Timestamp::InfFuture()) {
+    return MakeRefCounted<TokenFetcherCredentials::Token>(
+        Slice::FromCopiedString(token), expiration);
+  }
+
+  std::shared_ptr<FuzzingEventEngine> event_engine_ =
+      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
+                                           fuzzing_event_engine::Actions());
+  RefCountedPtr<TestTokenFetcherCredentials> creds_ =
+      MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
+};
+
+TEST_F(TokenFetcherCredentialsTest, Basic) {
+  ExecCtx exec_ctx;
+  creds_->AddResult(MakeToken("foo", Timestamp::Now() + Duration::Hours(1)));
+  // First request will trigger a fetch.
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo");
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  event_engine_->TickUntilIdle();
+  // Second request will be served from cache.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo");
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Advance time to cache expiration.
+  exec_ctx.TestOnlySetNow(Timestamp::Now() + Duration::Hours(1));
+  // No new fetch yet.
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Third request will trigger a new fetch.
+  creds_->AddResult(MakeToken("bar"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: bar");
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
 // The subclass of ExternalAccountCredentials for testing.
 // ExternalAccountCredentials is an abstract class so we can't directly test
 // against it.
@@ -2503,8 +2623,6 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
                       "sa-impersonation/true config-lifetime/true",
                       grpc_version_string()));
 }
-
-using grpc_event_engine::experimental::FuzzingEventEngine;
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
