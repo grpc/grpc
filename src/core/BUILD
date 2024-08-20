@@ -4342,6 +4342,7 @@ grpc_cc_library(
         "//:backoff",
         "//:gpr",
         "//:grpc_security_base",
+        "//:grpc_trace",
         "//:httpcli",
         "//:iomgr",
         "//:orphanable",

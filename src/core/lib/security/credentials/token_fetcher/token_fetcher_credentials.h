@@ -77,7 +77,8 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   explicit TokenFetcherCredentials(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine = nullptr);
+          event_engine = nullptr,
+      bool test_only_use_backoff_jitter = true);
 
   // Fetches a token.  The on_done callback will be invoked when complete.
   virtual OrphanablePtr<FetchRequest> FetchToken(
@@ -151,7 +152,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
         ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     // Backoff state.
     BackOff backoff_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
-    Timestamp next_attempt_time_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
   };
 
   int cmp_impl(const grpc_call_credentials* other) const override {
@@ -160,6 +160,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   }
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  const bool test_only_use_backoff_jitter_;
 
   Mutex mu_;
   // Cached token, if any.

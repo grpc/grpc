@@ -308,6 +308,9 @@ timer:
 timer_check:
   default: false
   description: more detailed trace of timer logic in grpc internals.
+token_fetcher_credentials:
+  default: false
+  description: Token fetcher call credentials framework, used for (e.g.) oauth2 token fetcher credentials.
 tsi:
   default: false
   description: TSI transport security.
