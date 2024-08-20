@@ -60,8 +60,8 @@ class JwtTokenFetcherCallCredentials : public TokenFetcherCredentials {
 class GcpServiceAccountIdentityCallCredentials
     : public JwtTokenFetcherCallCredentials {
  public:
-  explicit GcpServiceAccountIdentityCallCredentials(std::string audience)
-      : audience_(std::move(audience)) {}
+  explicit GcpServiceAccountIdentityCallCredentials(absl::string_view audience)
+      : audience_(audience) {}
 
   std::string debug_string() override;
 

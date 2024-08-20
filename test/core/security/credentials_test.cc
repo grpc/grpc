@@ -59,6 +59,7 @@
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
@@ -4480,6 +4481,66 @@ TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
   grpc_channel_credentials_release(fake_creds);
   grpc_channel_credentials_release(xds_creds_1);
   grpc_channel_credentials_release(xds_creds_2);
+}
+
+class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
+ protected:
+  static int HttpGetOverride(
+      const grpc_http_request* request, const char* host, const char* path,
+      Timestamp /*deadline*/, grpc_closure* on_done,
+      grpc_http_response* response) {
+    // Validate request.
+    EXPECT_EQ(absl::string_view(host), "metadata.google.internal.");
+    EXPECT_EQ(
+        absl::string_view(path),
+        "/computeMetadata/v1/instance/service-accounts/default/identity");
+// FIXME
+#if 0
+    EXPECT_THAT(
+        uri.query_parameter_map(),
+        ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
+#endif
+    EXPECT_EQ(request->hdr_count, 1);
+    if (request->hdr_count > 1) {
+      EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
+      EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
+    }
+    // Generate response.
+    CHECK_NE(g_token, nullptr);
+    *response = http_response(200, g_token);
+    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+    return 1;
+  }
+
+  // Constructs a synthetic JWT token that's just valid enough for the
+  // call creds to extract the expiration date.
+  static std::string MakeToken(Timestamp expiration) {
+    gpr_timespec ts = expiration.as_timespec(GPR_CLOCK_REALTIME);
+    std::string json = absl::StrCat("{\"exp\":", ts.tv_sec, "}");
+    return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
+  }
+
+  static absl::string_view g_audience;
+  static const char* g_token;
+};
+
+absl::string_view GcpServiceAccountIdentityCredentialsTest::g_audience;
+const char* GcpServiceAccountIdentityCredentialsTest::g_token = nullptr;
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
+  g_audience = "CV-6";
+  auto token = MakeToken(Timestamp::Now() + Duration::Hours(1));
+  g_token = token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), g_token);
+  HttpRequest::SetOverride(HttpGetOverride, httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
 }
 
 }  // namespace

@@ -182,7 +182,7 @@ GcpServiceAccountIdentityCallCredentials::StartHttpRequest(
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
   auto uri = grpc_core::URI::Create(
-      "http", "metadata.google.internal",
+      "http", "metadata.google.internal.",
       "/computeMetadata/v1/instance/service-accounts/default/identity",
       {{"audience", audience_}}, /*fragment=*/"");
   CHECK_OK(uri);  // params are hardcoded
