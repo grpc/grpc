@@ -73,6 +73,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -2466,6 +2467,8 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
   }
 
   static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
@@ -2631,6 +2634,8 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_ =
