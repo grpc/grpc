@@ -122,7 +122,7 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
     Timestamp expiration_time =
         Timestamp::FromTimespecRoundDown(ts) - Duration::Minutes(1);
     // Return token object.
-    self->on_done_(MakeRefCounted<JwtToken>(
+    self->on_done_(MakeRefCounted<Token>(
         Slice::FromCopiedString(absl::StrCat("Bearer ", body)),
         expiration_time));
   }

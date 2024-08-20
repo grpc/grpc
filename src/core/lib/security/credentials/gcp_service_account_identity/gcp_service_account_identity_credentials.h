@@ -38,24 +38,6 @@
 
 namespace grpc_core {
 
-// A JWT token.
-class JwtToken : public TokenFetcherCredentials::Token {
- public:
-  JwtToken(Slice token, Timestamp expiration)
-      : token_(std::move(token)), expiration_(expiration) {}
-
-  Timestamp ExpirationTime() override { return expiration_; }
-
-  void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
-    metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
-                    [](absl::string_view, const Slice&) { abort(); });
-  }
-
- private:
-  Slice token_;
-  Timestamp expiration_;
-};
-
 // A base class for JWT token fetching credentials.
 // Subclasses must implement StartHttpRequest().
 class JwtTokenFetcherCallCredentials : public TokenFetcherCredentials {
