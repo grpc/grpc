@@ -1276,6 +1276,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \
     src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
     src/core/lib/security/credentials/iam/iam_credentials.cc \

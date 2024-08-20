@@ -4379,6 +4379,8 @@ grpc_cc_library(
         "pollset_set",
         "ref_counted",
         "slice",
+        "status_conversion",
+        "status_helper",
         "time",
         "token_fetcher_credentials",
         "unique_type_name",

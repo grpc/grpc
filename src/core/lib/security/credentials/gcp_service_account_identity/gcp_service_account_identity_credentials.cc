@@ -27,8 +27,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -68,13 +70,23 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
   static void OnHttpResponse(void* arg, grpc_error_handle error) {
     RefCountedPtr<HttpFetchRequest> self(static_cast<HttpFetchRequest*>(arg));
     if (!error.ok()) {
-      self->on_done_(std::move(error));
+      // TODO(roth): It shouldn't be necessary to explicitly set the
+      // status to UNAVAILABLE here.  Once the HTTP client code is
+      // migrated to stop using legacy grpc_error APIs to create
+      // statuses, we should be able to just propagate the status as-is.
+      self->on_done_(absl::UnavailableError(StatusToString(error)));
       return;
     }
     if (self->response_.status != 200) {
+      grpc_status_code status_code =
+          grpc_http2_status_to_grpc_status(self->response_.status);
+      if (status_code != GRPC_STATUS_UNAVAILABLE) {
+        status_code = GRPC_STATUS_UNAUTHENTICATED;
+      }
       self->on_done_(
-          absl::UnavailableError(absl::StrCat(
-              "JWT fetch failed with status ", self->response_.status)));
+          absl::Status(static_cast<absl::StatusCode>(status_code),
+                       absl::StrCat("JWT fetch failed with status ",
+                                    self->response_.status)));
       return;
     }
     absl::string_view body(self->response_.body, self->response_.body_length);
@@ -84,19 +96,19 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
     // First, split the 3 '.'-delimited parts.
     std::vector<absl::string_view> parts = absl::StrSplit(body, '.');
     if (parts.size() != 3) {
-      self->on_done_(absl::UnavailableError("error parsing JWT token"));
+      self->on_done_(absl::UnauthenticatedError("error parsing JWT token"));
       return;
     }
     // Base64-decode the payload.
     std::string payload;
     if (!absl::WebSafeBase64Unescape(parts[1], &payload)) {
-      self->on_done_(absl::UnavailableError("error parsing JWT token"));
+      self->on_done_(absl::UnauthenticatedError("error parsing JWT token"));
       return;
     }
     // Parse as JSON.
     auto json = JsonParse(payload);
     if (!json.ok()) {
-      self->on_done_(absl::UnavailableError("error parsing JWT token"));
+      self->on_done_(absl::UnauthenticatedError("error parsing JWT token"));
       return;
     }
     // Extract "exp" field.
@@ -113,7 +125,7 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
     };
     auto parsed_payload = LoadFromJson<ParsedPayload>(*json, JsonArgs(), "");
     if (!parsed_payload.ok()) {
-      self->on_done_(absl::UnavailableError("error parsing JWT token"));
+      self->on_done_(absl::UnauthenticatedError("error parsing JWT token"));
       return;
     }
     gpr_timespec ts = gpr_time_0(GPR_CLOCK_REALTIME);
