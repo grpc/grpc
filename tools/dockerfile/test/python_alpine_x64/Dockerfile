@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.17
+FROM alpine:3.15
 
 # Install Git and basic packages.
 RUN apk update && apk add   autoconf   automake   bzip2   build-base   cmake   ccache   curl   gcc   git   libtool   linux-headers   make   perl   strace   python3-dev   py3-pip   unzip   wget   zip
@@ -24,6 +24,9 @@ RUN apk update && apk add   autoconf   automake   bzip2   build-base   cmake   c
 
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
+
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Install Python packages from PyPI
 RUN python3 -m pip install --upgrade pip==19.3.1
