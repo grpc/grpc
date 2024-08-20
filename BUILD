@@ -2649,6 +2649,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/reflection/v1:reflection_proto",
