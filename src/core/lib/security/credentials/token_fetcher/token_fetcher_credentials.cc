@@ -64,12 +64,11 @@ TokenFetcherCredentials::FetchState::BackoffTimer::BackoffTimer(
   const Duration duration = next_attempt_time - Timestamp::Now();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
       << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-      << "]: fetch_state=" << fetch_state_.get() << " backoff_timer="
-      << this << ": starting backoff timer for "
-      << next_attempt_time << " (" << duration << " from now)";
+      << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
+      << ": starting backoff timer for " << next_attempt_time << " ("
+      << duration << " from now)";
   timer_handle_ = fetch_state_->creds_->event_engine().RunAfter(
-      duration,
-      [self = Ref()]() mutable {
+      duration, [self = Ref()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnTimer();
@@ -80,13 +79,13 @@ TokenFetcherCredentials::FetchState::BackoffTimer::BackoffTimer(
 void TokenFetcherCredentials::FetchState::BackoffTimer::Orphan() {
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
       << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-      << "]: fetch_state=" << fetch_state_.get() << " backoff_timer="
-      << this << ": backoff timer shut down";
+      << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
+      << ": backoff timer shut down";
   if (timer_handle_.has_value()) {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
         << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer="
-        << this << ": cancelling timer";
+        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
+        << ": cancelling timer";
     fetch_state_->creds_->event_engine().Cancel(*timer_handle_);
     timer_handle_.reset();
     fetch_state_->ResumeQueuedCalls(
@@ -101,8 +100,8 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
   timer_handle_.reset();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
       << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-      << "]: fetch_state=" << fetch_state_.get() << " backoff_timer="
-      << this << ": backoff timer fired";
+      << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
+      << ": backoff timer fired";
   if (fetch_state_->queued_calls_.empty()) {
     // If there are no pending calls when the timer fires, then orphan
     // the FetchState object.  Note that this drops the backoff state,
@@ -111,15 +110,15 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
     // immediately now either.
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
         << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer="
-        << this << ": no pending calls, clearing state";
+        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
+        << ": no pending calls, clearing state";
     fetch_state_->creds_->fetch_state_.reset();
   } else {
     // If there are pending calls, then start a new fetch attempt.
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
         << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
-        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer="
-        << this << ": starting new fetch attempt";
+        << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
+        << ": starting new fetch attempt";
     fetch_state_->StartFetchAttempt();
   }
 }
@@ -141,8 +140,8 @@ TokenFetcherCredentials::FetchState::FetchState(
 
 void TokenFetcherCredentials::FetchState::Orphan() {
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-      << "[TokenFetcherCredentials " << creds_.get() << "]: fetch_state="
-      << this << ": shutting down";
+      << "[TokenFetcherCredentials " << creds_.get()
+      << "]: fetch_state=" << this << ": shutting down";
   // Cancels fetch or backoff timer, if any.
   state_ = Shutdown{};
   Unref();
@@ -150,8 +149,8 @@ void TokenFetcherCredentials::FetchState::Orphan() {
 
 void TokenFetcherCredentials::FetchState::StartFetchAttempt() {
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-      << "[TokenFetcherCredentials " << creds_.get() << "]: fetch_state="
-      << this << ": starting fetch";
+      << "[TokenFetcherCredentials " << creds_.get()
+      << "]: fetch_state=" << this << ": starting fetch";
   state_ = creds_->FetchToken(
       /*deadline=*/Timestamp::Now() + kTokenRefreshDuration,
       [self = Ref()](absl::StatusOr<RefCountedPtr<Token>> token) mutable {
@@ -166,22 +165,24 @@ void TokenFetcherCredentials::FetchState::TokenFetchComplete(
   if (absl::holds_alternative<Shutdown>(state_)) {
     if (token.ok()) token = absl::CancelledError("credentials shutdown");
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get() << "]: fetch_state="
-        << this << ": shut down before fetch completed: " << token.status();
+        << "[TokenFetcherCredentials " << creds_.get()
+        << "]: fetch_state=" << this
+        << ": shut down before fetch completed: " << token.status();
     ResumeQueuedCalls(std::move(token));
     return;
   }
   // If succeeded, update cache in creds object.
   if (token.ok()) {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get() << "]: fetch_state="
-        << this << ": token fetch succeeded";
+        << "[TokenFetcherCredentials " << creds_.get()
+        << "]: fetch_state=" << this << ": token fetch succeeded";
     creds_->token_ = *token;
     creds_->fetch_state_.reset();  // Orphan ourselves.
   } else {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get() << "]: fetch_state="
-        << this << ": token fetch failed: " << token.status();
+        << "[TokenFetcherCredentials " << creds_.get()
+        << "]: fetch_state=" << this
+        << ": token fetch failed: " << token.status();
     // If failed, start backoff timer.
     state_ = OrphanablePtr<BackoffTimer>(new BackoffTimer(Ref()));
   }
@@ -252,8 +253,8 @@ TokenFetcherCredentials::GetRequestMetadata(
                                   kTokenRefreshDuration) &&
         fetch_state_ == nullptr) {
       GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-          << "[TokenFetcherCredentials " << this << "]: "
-          << GetContext<Activity>()->DebugTag()
+          << "[TokenFetcherCredentials " << this
+          << "]: " << GetContext<Activity>()->DebugTag()
           << " triggering new token fetch";
       fetch_state_ = OrphanablePtr<FetchState>(
           new FetchState(WeakRefAsSubclass<TokenFetcherCredentials>()));
@@ -262,34 +263,34 @@ TokenFetcherCredentials::GetRequestMetadata(
     if (token_ != nullptr &&
         (token_->ExpirationTime() - Timestamp::Now()) > Duration::Zero()) {
       GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-          << "[TokenFetcherCredentials " << this << "]: "
-          << GetContext<Activity>()->DebugTag()
+          << "[TokenFetcherCredentials " << this
+          << "]: " << GetContext<Activity>()->DebugTag()
           << " using cached token";
       token_->AddTokenToClientInitialMetadata(*initial_metadata);
       return Immediate(std::move(initial_metadata));
     }
     // If we don't have a cached token, this call will need to be queued.
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << this << "]: "
-        << GetContext<Activity>()->DebugTag()
+        << "[TokenFetcherCredentials " << this
+        << "]: " << GetContext<Activity>()->DebugTag()
         << " no cached token; queuing call";
     queued_call = fetch_state_->QueueCall(std::move(initial_metadata));
   }
-  return [this, queued_call = std::move(
-              queued_call)]() -> Poll<absl::StatusOr<ClientMetadataHandle>> {
+  return [this, queued_call = std::move(queued_call)]()
+             -> Poll<absl::StatusOr<ClientMetadataHandle>> {
     if (!queued_call->done.load(std::memory_order_acquire)) {
       return Pending{};
     }
     if (!queued_call->result.ok()) {
       GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-          << "[TokenFetcherCredentials " << this << "]: "
-          << GetContext<Activity>()->DebugTag()
+          << "[TokenFetcherCredentials " << this
+          << "]: " << GetContext<Activity>()->DebugTag()
           << " token fetch failed; failing call";
       return queued_call->result.status();
     }
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << this << "]: "
-        << GetContext<Activity>()->DebugTag()
+        << "[TokenFetcherCredentials " << this
+        << "]: " << GetContext<Activity>()->DebugTag()
         << " token fetch complete; resuming call";
     (*queued_call->result)->AddTokenToClientInitialMetadata(*queued_call->md);
     return std::move(queued_call->md);

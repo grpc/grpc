@@ -73,8 +73,8 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
-#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -2413,9 +2413,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
         : TokenFetcherCredentials(std::move(event_engine),
                                   /*test_only_use_backoff_jitter=*/false) {}
 
-    ~TestTokenFetcherCredentials() override {
-      CHECK_EQ(queue_.size(), 0);
-    }
+    ~TestTokenFetcherCredentials() override { CHECK_EQ(queue_.size(), 0); }
 
     void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
       MutexLock lock(&mu_);
@@ -2445,8 +2443,8 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
 
     OrphanablePtr<FetchRequest> FetchToken(
         Timestamp deadline,
-        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
-            on_done) override {
+        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+        override {
       absl::StatusOr<RefCountedPtr<Token>> result;
       {
         MutexLock lock(&mu_);
@@ -2485,8 +2483,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
   }
 
   static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
-      absl::string_view token,
-      Timestamp expiration = Timestamp::InfFuture()) {
+      absl::string_view token, Timestamp expiration = Timestamp::InfFuture()) {
     return MakeRefCounted<TokenFetcherCredentials::Token>(
         Slice::FromCopiedString(token), expiration);
   }
@@ -2580,8 +2577,8 @@ TEST_F(TokenFetcherCredentialsTest, FetchFails) {
   ExecCtx exec_ctx;
   creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(
-      kExpectedError, "", /*expect_delay=*/true);
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
@@ -2618,8 +2615,8 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   ExecCtx exec_ctx;
   creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(
-      kExpectedError, "", /*expect_delay=*/true);
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
@@ -2629,8 +2626,8 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   run_after_duration.reset();
   // Start a new call now, which will be queued and then eventually
   // resumed when the next fetch happens.
-  state = RequestMetadataState::NewInstance(
-      kExpectedError, "", /*expect_delay=*/true);
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   // Tick until the next fetch fails and the backoff timer starts again.
@@ -2643,8 +2640,8 @@ TEST_F(TokenFetcherCredentialsTest, Backoff) {
   run_after_duration.reset();
   // Start another new call to trigger another new fetch once the
   // backoff expires.
-  state = RequestMetadataState::NewInstance(
-      kExpectedError, "", /*expect_delay=*/true);
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   // Tick until the next fetch starts.
@@ -2666,8 +2663,8 @@ TEST_F(TokenFetcherCredentialsTest, FetchNotStartedAfterBackoffWithoutRpc) {
   ExecCtx exec_ctx;
   creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(
-      kExpectedError, "", /*expect_delay=*/true);
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
@@ -2697,8 +2694,8 @@ TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
   ExecCtx exec_ctx;
   creds_->AddResult(kExpectedError);
   // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(
-      kExpectedError, "", /*expect_delay=*/true);
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 1);
