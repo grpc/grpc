@@ -2463,6 +2463,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
   };
 
   ~TokenFetcherCredentialsTest() override {
+    event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
   }
@@ -2627,6 +2628,7 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
   ~ExternalAccountCredentialsTest() override {
+    event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
   }

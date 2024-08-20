@@ -162,7 +162,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
         absl::StatusOr<std::string> response_body);
     void OnImpersonateServiceAccount(absl::StatusOr<std::string> response_body);
 
-    void FinishTokenFetch(absl::StatusOr<std::string> token);
+    void FinishTokenFetch(absl::StatusOr<std::string> response_body);
 
     // If status is non-OK or we've been shut down, calls FinishTokenFetch()
     // and returns true.
