@@ -61,10 +61,10 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(roth): Remove this once dualstack support is stable.
+// TODO(roth): Remove this after 1.67 is released.
 bool XdsDualstackEndpointsEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
-  if (!value.has_value()) return false;
+  if (!value.has_value()) return true;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
