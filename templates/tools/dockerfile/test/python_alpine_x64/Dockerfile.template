@@ -20,6 +20,7 @@
   RUN apk update && apk add \
     autoconf \
     automake \
+    bash ${'\\'}
     bzip2 \
     build-base \
     cmake \

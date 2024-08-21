@@ -18,6 +18,7 @@ FROM alpine:3.17
 RUN apk update && apk add \
   autoconf \
   automake \
+  bash \
   bzip2 \
   build-base \
   cmake \
