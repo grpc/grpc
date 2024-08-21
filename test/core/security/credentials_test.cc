@@ -511,12 +511,13 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     if (expected_error_.ok()) {
       ASSERT_TRUE(error.ok()) << error;
     } else {
-      std::string expected_error;
-      grpc_error_get_str(expected_error_, StatusStrProperty::kDescription,
-                         &expected_error);
-      std::string actual_error;
-      grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
-      EXPECT_EQ(expected_error, actual_error);
+      grpc_status_code actual_code;
+      std::string actual_message;
+      grpc_error_get_status(error, Timestamp::InfFuture(), &actual_code,
+                            &actual_message, nullptr, nullptr);
+      EXPECT_EQ(absl::Status(static_cast<absl::StatusCode>(actual_code),
+                             actual_message),
+                expected_error_);
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());
@@ -805,7 +806,8 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
@@ -899,7 +901,8 @@ TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -1161,7 +1164,8 @@ TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE(
+      // TODO(roth): This should return UNAVAILABLE.
+      absl::InternalError(
           "Failed to load file: /some/completely/random/path due to "
           "error(fdopen): No such file or directory"),
       {});
@@ -1232,8 +1236,9 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Failed to load file: invalid_path due to "
-                        "error(fdopen): No such file or directory"),
+      // TODO(roth): This should return UNAVAILABLE.
+      absl::InternalError("Failed to load file: invalid_path due to "
+                          "error(fdopen): No such file or directory"),
       {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
@@ -1267,7 +1272,8 @@ TEST(CredentialsTest, TestStsCredsHttpFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1464,7 +1470,7 @@ TEST(CredentialsTest, TestJwtCredsSigningFailure) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Could not generate JWT."), {});
+      absl::UnauthenticatedError("Could not generate JWT."), {});
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -1921,7 +1927,8 @@ TEST(CredentialsTest, TestMetadataPluginFailure) {
   grpc_metadata_credentials_plugin plugin;
   ExecCtx exec_ctx;
   auto md_state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE(
+      // TODO(roth): Is this the right status to use here?
+      absl::UnavailableError(
           absl::StrCat("Getting metadata from plugin failed with error: ",
                        plugin_error_details)),
       {});
@@ -3045,7 +3052,8 @@ TEST_F(ExternalAccountCredentialsTest, FailureInvalidTokenUrl) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
       "error fetching oauth2 token: Invalid token url: "
       "invalid_token_url. Error: INVALID_ARGUMENT: Could not parse "
       "'scheme' from uri 'invalid_token_url'. Scheme not found.");
@@ -3083,7 +3091,8 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
       "error fetching oauth2 token: Invalid service account impersonation url: "
       "invalid_service_account_impersonation_url. Error: INVALID_ARGUMENT: "
       "Could not parse 'scheme' from uri "
@@ -3123,7 +3132,8 @@ TEST_F(ExternalAccountCredentialsTest,
       httpcli_get_should_not_be_called,
       external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token,
       httpcli_put_should_not_be_called);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
       "error fetching oauth2 token: Missing or invalid access_token in "
       "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599, "
       "\"token_type\":\"Bearer\"}.");
@@ -3411,7 +3421,8 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAVAILABLE.
+  grpc_error_handle expected_error = absl::InternalError(
       "error fetching oauth2 token: Failed to load file: "
       "non_exisiting_file due to error(fdopen): No such file or directory");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -3461,7 +3472,8 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
       "error fetching oauth2 token: The content of the file is not a "
       "valid json object.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -4127,7 +4139,8 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_TRUE(creds.ok()) << creds.status();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
       "error fetching oauth2 token: Creating aws request signer failed.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -4168,7 +4181,8 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_TRUE(creds.ok()) << creds.status();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
       "error fetching oauth2 token: "
       "Missing role name when retrieving signing keys.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -4462,11 +4476,21 @@ TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
 
 class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
  protected:
-  static int HttpGetOverride(
-      const grpc_http_request* request, const grpc_core::URI& uri,
-      Timestamp /*deadline*/, grpc_closure* on_done,
-      grpc_http_response* response) {
-    // Validate request.
+  void SetUp() override {
+    g_http_status = 200;
+    g_audience = "";
+    g_token = nullptr;
+    g_on_http_request_error = nullptr;
+    HttpRequest::SetOverride(HttpGetOverride, httpcli_post_should_not_be_called,
+                             httpcli_put_should_not_be_called);
+  }
+
+  void TearDown() override {
+    HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  }
+
+  static void ValidateHttpRequest(const grpc_http_request* request,
+                                  const grpc_core::URI& uri) {
     EXPECT_EQ(uri.authority(), "metadata.google.internal.");
     EXPECT_EQ(
         uri.path(),
@@ -4474,15 +4498,24 @@ class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
     EXPECT_THAT(
         uri.query_parameter_map(),
         ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
-    EXPECT_EQ(request->hdr_count, 1);
-    if (request->hdr_count > 1) {
-      EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
-      EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
-    }
+    ASSERT_EQ(request->hdr_count, 1);
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
+  }
+
+  static int HttpGetOverride(
+      const grpc_http_request* request, const grpc_core::URI& uri,
+      Timestamp /*deadline*/, grpc_closure* on_done,
+      grpc_http_response* response) {
+    // Validate request.
+    ValidateHttpRequest(request, uri);
     // Generate response.
-    CHECK_NE(g_token, nullptr);
-    *response = http_response(200, g_token);
-    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+    *response =
+        http_response(g_http_status, g_token == nullptr ? "" : g_token);
+    ExecCtx::Run(DEBUG_LOCATION, on_done,
+                 g_on_http_request_error == nullptr
+                     ? absl::OkStatus()
+                     : *g_on_http_request_error);
     return 1;
   }
 
@@ -4494,12 +4527,16 @@ class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
     return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
   }
 
+  static int g_http_status;
   static absl::string_view g_audience;
   static const char* g_token;
+  static absl::Status* g_on_http_request_error;
 };
 
+int GcpServiceAccountIdentityCredentialsTest::g_http_status;
 absl::string_view GcpServiceAccountIdentityCredentialsTest::g_audience;
-const char* GcpServiceAccountIdentityCredentialsTest::g_token = nullptr;
+const char* GcpServiceAccountIdentityCredentialsTest::g_token;
+absl::Status* GcpServiceAccountIdentityCredentialsTest::g_on_http_request_error;
 
 TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
   g_audience = "CV-6";
@@ -4510,8 +4547,20 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), g_token);
-  HttpRequest::SetOverride(HttpGetOverride, httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
+  g_audience = "CV-6";
+  g_http_status = 429;
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnavailableError("JWT fetch failed with status 429"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
