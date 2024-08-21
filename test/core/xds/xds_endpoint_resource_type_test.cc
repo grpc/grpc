@@ -672,8 +672,8 @@ TEST_F(XdsEndpointTest, AdditionalAddressesInvalidAddress) {
 }
 
 TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenDisabled) {
-  testing::ScopedEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS", "false");
+  testing::ScopedEnvVar env("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS",
+                            "false");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
