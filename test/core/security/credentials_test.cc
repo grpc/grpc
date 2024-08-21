@@ -4463,20 +4463,17 @@ TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
 class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
  protected:
   static int HttpGetOverride(
-      const grpc_http_request* request, const char* host, const char* path,
+      const grpc_http_request* request, const grpc_core::URI& uri,
       Timestamp /*deadline*/, grpc_closure* on_done,
       grpc_http_response* response) {
     // Validate request.
-    EXPECT_EQ(absl::string_view(host), "metadata.google.internal.");
+    EXPECT_EQ(uri.authority(), "metadata.google.internal.");
     EXPECT_EQ(
-        absl::string_view(path),
+        uri.path(),
         "/computeMetadata/v1/instance/service-accounts/default/identity");
-// FIXME
-#if 0
     EXPECT_THAT(
         uri.query_parameter_map(),
         ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
-#endif
     EXPECT_EQ(request->hdr_count, 1);
     if (request->hdr_count > 1) {
       EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
