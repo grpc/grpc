@@ -707,7 +707,7 @@ TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 }
 
 void validate_compute_engine_http_request(const grpc_http_request* request,
-                                          const grpc_core::URI& uri) {
+                                          const URI& uri) {
   EXPECT_EQ(uri.authority(), "metadata.google.internal.");
   EXPECT_EQ(uri.path(),
             "/computeMetadata/v1/instance/service-accounts/default/token");
@@ -717,9 +717,8 @@ void validate_compute_engine_http_request(const grpc_http_request* request,
 }
 
 int compute_engine_httpcli_get_success_override(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
   validate_compute_engine_http_request(request, uri);
   *response = http_response(200, valid_oauth2_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
@@ -727,9 +726,8 @@ int compute_engine_httpcli_get_success_override(
 }
 
 int compute_engine_httpcli_get_failure_override(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
   validate_compute_engine_http_request(request, uri);
   *response = http_response(403, "Not Authorized.");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
@@ -737,7 +735,7 @@ int compute_engine_httpcli_get_failure_override(
 }
 
 int httpcli_post_should_not_be_called(const grpc_http_request* /*request*/,
-                                      const grpc_core::URI& /*uri*/,
+                                      const URI& /*uri*/,
                                       absl::string_view /*body*/,
                                       Timestamp /*deadline*/,
                                       grpc_closure* /*on_done*/,
@@ -747,8 +745,7 @@ int httpcli_post_should_not_be_called(const grpc_http_request* /*request*/,
 }
 
 int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
-                                     const grpc_core::URI& /*uri*/,
-                                     Timestamp /*deadline*/,
+                                     const URI& /*uri*/, Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
   CHECK(false) << "HTTP GET should not be called";
@@ -756,7 +753,7 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
 }
 
 int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
-                                     const grpc_core::URI& /*uri*/,
+                                     const URI& /*uri*/,
                                      absl::string_view /*body*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
@@ -822,7 +819,7 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
 }
 
 void validate_refresh_token_http_request(const grpc_http_request* request,
-                                         const grpc_core::URI& uri,
+                                         const URI& uri,
                                          absl::string_view body) {
   // The content of the assertion is tested extensively in json_token_test.
   EXPECT_EQ(body, absl::StrFormat(GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
@@ -838,8 +835,7 @@ void validate_refresh_token_http_request(const grpc_http_request* request,
 }
 
 int refresh_token_httpcli_post_success(const grpc_http_request* request,
-                                       const grpc_core::URI& uri,
-                                       absl::string_view body,
+                                       const URI& uri, absl::string_view body,
                                        Timestamp /*deadline*/,
                                        grpc_closure* on_done,
                                        grpc_http_response* response) {
@@ -850,8 +846,7 @@ int refresh_token_httpcli_post_success(const grpc_http_request* request,
 }
 
 int token_httpcli_post_failure(const grpc_http_request* /*request*/,
-                               const grpc_core::URI& /*uri*/,
-                               absl::string_view /*body*/,
+                               const URI& /*uri*/, absl::string_view /*body*/,
                                Timestamp /*deadline*/, grpc_closure* on_done,
                                grpc_http_response* response) {
   *response = http_response(403, "Not Authorized.");
@@ -1022,8 +1017,7 @@ void assert_query_parameters(const URI& uri, absl::string_view expected_key,
 }
 
 void validate_sts_token_http_request(const grpc_http_request* request,
-                                     const grpc_core::URI& uri,
-                                     absl::string_view body,
+                                     const URI& uri, absl::string_view body,
                                      bool expect_actor_token) {
   // Check that the body is constructed properly.
   std::string get_url_equivalent =
@@ -1061,8 +1055,7 @@ void validate_sts_token_http_request(const grpc_http_request* request,
 }
 
 int sts_token_httpcli_post_success(const grpc_http_request* request,
-                                   const grpc_core::URI& uri,
-                                   absl::string_view body,
+                                   const URI& uri, absl::string_view body,
                                    Timestamp /*deadline*/,
                                    grpc_closure* on_done,
                                    grpc_http_response* response) {
@@ -1073,8 +1066,8 @@ int sts_token_httpcli_post_success(const grpc_http_request* request,
 }
 
 int sts_token_httpcli_post_success_no_actor_token(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   validate_sts_token_http_request(request, uri, body, false);
   *response = http_response(200, valid_sts_json_response);
@@ -1613,7 +1606,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
 }
 
 int default_creds_metadata_server_detection_httpcli_get_success_override(
-    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, "");
@@ -1701,7 +1694,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
 }
 
 int default_creds_gce_detection_httpcli_get_failure_override(
-    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   // No magic header.
@@ -2119,7 +2112,7 @@ TEST(CredentialsTest, TestAuthMetadataContext) {
 }
 
 void validate_external_account_creds_token_exchage_request(
-    const grpc_http_request* request, const grpc_core::URI& request_uri,
+    const grpc_http_request* request, const URI& request_uri,
     absl::string_view body) {
   // Check that the body is constructed properly.
   std::string get_url_equivalent =
@@ -2151,8 +2144,7 @@ void validate_external_account_creds_token_exchage_request(
 }
 
 void validate_external_account_creds_token_exchage_request_with_url_encode(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
   EXPECT_EQ(
       body,
@@ -2175,8 +2167,7 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
 }
 
 void validate_external_account_creds_service_account_impersonation_request(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
   EXPECT_EQ(body, "scope=scope_1%20scope_2&lifetime=3600s");
   // Check the rest of the request.
@@ -2192,8 +2183,7 @@ void validate_external_account_creds_service_account_impersonation_request(
 }
 
 void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
   EXPECT_EQ(body, "scope=scope_1%20scope_2&lifetime=1800s");
   // Check the rest of the request.
@@ -2209,8 +2199,8 @@ void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
 }
 
 int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
     validate_external_account_creds_token_exchage_request(request, uri, body);
@@ -2228,8 +2218,8 @@ int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
 }
 
 int external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
     validate_external_account_creds_token_exchage_request(request, uri, body);
@@ -2252,7 +2242,7 @@ int external_account_creds_httpcli_post_success(
 }
 
 int external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
+    const grpc_http_request* /*request*/, const URI& uri,
     absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
@@ -2270,7 +2260,7 @@ int external_account_creds_httpcli_post_failure_token_exchange_response_missing_
 }
 
 int url_external_account_creds_httpcli_get_success(
-    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/generate_subject_token_format_text") {
@@ -2291,7 +2281,7 @@ int url_external_account_creds_httpcli_get_success(
 }
 
 void validate_aws_external_account_creds_token_exchage_request(
-    const grpc_http_request* request, const grpc_core::URI& request_uri,
+    const grpc_http_request* request, const URI& request_uri,
     absl::string_view body) {
   // Check that the regional_cred_verification_url got constructed
   // with the correct AWS Region ("test_regionz" or "test_region").
@@ -2327,7 +2317,7 @@ void validate_aws_external_account_creds_token_exchage_request(
 }
 
 int aws_external_account_creds_httpcli_get_success(
-    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/region_url") {
@@ -2345,8 +2335,8 @@ int aws_external_account_creds_httpcli_get_success(
 }
 
 int aws_imdsv2_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response) {
+    const grpc_http_request* request, const URI& uri, Timestamp deadline,
+    grpc_closure* on_done, grpc_http_response* response) {
   EXPECT_EQ(request->hdr_count, 1);
   if (request->hdr_count == 1) {
     EXPECT_EQ(absl::string_view(request->hdrs[0].key),
@@ -2359,7 +2349,7 @@ int aws_imdsv2_external_account_creds_httpcli_get_success(
 }
 
 int aws_imdsv2_external_account_creds_httpcli_put_success(
-    const grpc_http_request* request, const grpc_core::URI& uri,
+    const grpc_http_request* request, const URI& uri,
     absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   EXPECT_EQ(request->hdr_count, 1);
@@ -2375,8 +2365,8 @@ int aws_imdsv2_external_account_creds_httpcli_put_success(
 }
 
 int aws_external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const grpc_core::URI& uri,
-    absl::string_view body, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
     validate_aws_external_account_creds_token_exchage_request(request, uri,
