@@ -24,7 +24,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E03280
     && apt clean
 
 # Install dotnet SDK
-RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb \
+RUN wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb \
     && dpkg -i packages-microsoft-prod.deb \
     && apt update \
     && apt install -y dotnet-sdk-3.1 \

@@ -21,7 +21,8 @@ RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool 
 RUN apt-get update && apt-get install -y git && apt-get clean
 
 # aarch cross-compiler
-RUN apt-get update && apt-get install -y g++-8-aarch64-linux-gnu
+RUN dpkg --add-architecture arm64
+RUN apt-get update && apt-get install -y g++-10-aarch64-linux-gnu
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global protocol.file.allow always
