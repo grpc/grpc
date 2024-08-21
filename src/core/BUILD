@@ -5110,6 +5110,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lru_cache",
+    hdrs = [
+        "util/lru_cache.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/types:optional",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "upb_utils",
     hdrs = [
         "util/upb_utils.h",
