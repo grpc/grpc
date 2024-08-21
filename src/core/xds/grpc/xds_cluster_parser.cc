@@ -683,7 +683,8 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
             &errors, absl::StrCat(".metadata.filter_metadata[", key, "]"));
         errors.AddError(json.status().message());
       } else if (!cds_update->metadata.contains(key)) {
-        cds_update->metadata[key] = std::move(*json);
+        cds_update->metadata[key] =
+            {"google.protobuf.Struct", std::move(*json)};
       }
     }
   }

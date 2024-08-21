@@ -650,8 +650,9 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   cluster_resource_ = new_cluster_config.cluster;
   auto it2 =
       cluster_resource_->metadata.find("com.google.csm.telemetry_labels");
-  if (it2 != cluster_resource_->metadata.end()) {
-    auto& json_object = it2->second.object();
+  if (it2 != cluster_resource_->metadata.end() &&
+      it2->second.type == "google.protobuf.Struct") {
+    auto& json_object = it2->second.json.object();
     auto it3 = json_object.find("service_name");
     if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
       service_telemetry_label_ = RefCountedStringValue(it3->second.string());

@@ -87,7 +87,15 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  absl::flat_hash_map<std::string, Json> metadata;
+  struct MetadataEntry {
+    std::string type;  // Protobuf type.
+    Json json;
+
+    bool operator==(const MetadataEntry& other) const {
+      return type == other.type && json == other.json;
+    }
+  };
+  absl::flat_hash_map<std::string, MetadataEntry> metadata;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&

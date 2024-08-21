@@ -68,8 +68,9 @@ std::string XdsClusterResource::ToString() const {
   if (!metadata.empty()) {
     std::vector<std::string> metadata_entries;
     for (const auto& p : metadata) {
-      metadata_entries.push_back(
-          absl::StrCat(p.first, "=", JsonDump(p.second)));
+      metadata_entries.push_back(absl::StrCat(
+          p.first, "={type=\"", p.second.type, "\", json=",
+          JsonDump(p.second.json), "}"));
     }
     contents.push_back(
         absl::StrCat("metadata={", absl::StrJoin(metadata_entries, ", "), "}"));
