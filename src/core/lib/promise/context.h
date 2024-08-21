@@ -20,7 +20,6 @@
 #include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/down_cast.h"

@@ -87,10 +87,8 @@ class InterceptorList {
    public:
     RunPromise(size_t memory_required, Map** factory, absl::optional<T> value) {
       if (!value.has_value() || *factory == nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          VLOG(2) << "InterceptorList::RunPromise[" << this
-                  << "]: create immediate";
-        }
+        GRPC_TRACE_VLOG(promise_primitives, 2)
+            << "InterceptorList::RunPromise[" << this << "]: create immediate";
         is_immediately_resolved_ = true;
         Construct(&result_, std::move(value));
       } else {
@@ -100,17 +98,15 @@ class InterceptorList {
                                 async_resolution_.space.get());
         async_resolution_.current_factory = *factory;
         async_resolution_.first_factory = factory;
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          VLOG(2) << "InterceptorList::RunPromise[" << this
-                  << "]: create async; mem=" << async_resolution_.space.get();
-        }
+        GRPC_TRACE_VLOG(promise_primitives, 2)
+            << "InterceptorList::RunPromise[" << this
+            << "]: create async; mem=" << async_resolution_.space.get();
       }
     }
 
     ~RunPromise() {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        VLOG(2) << "InterceptorList::RunPromise[" << this << "]: destroy";
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "InterceptorList::RunPromise[" << this << "]: destroy";
       if (is_immediately_resolved_) {
         Destruct(&result_);
       } else {
@@ -127,10 +123,9 @@ class InterceptorList {
 
     RunPromise(RunPromise&& other) noexcept
         : is_immediately_resolved_(other.is_immediately_resolved_) {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        VLOG(2) << "InterceptorList::RunPromise[" << this << "]: move from "
-                << &other;
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "InterceptorList::RunPromise[" << this << "]: move from "
+          << &other;
       if (is_immediately_resolved_) {
         Construct(&result_, std::move(other.result_));
       } else {
@@ -141,10 +136,8 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        VLOG(2) << "InterceptorList::RunPromise[" << this
-                << "]: " << DebugString();
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << "InterceptorList::RunPromise[" << this << "]: " << DebugString();
       if (is_immediately_resolved_) return std::move(result_);
       while (true) {
         if (*async_resolution_.first_factory == nullptr) {
@@ -159,10 +152,9 @@ class InterceptorList {
           async_resolution_.current_factory =
               async_resolution_.current_factory->next();
           if (!p->has_value()) async_resolution_.current_factory = nullptr;
-          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            VLOG(2) << "InterceptorList::RunPromise[" << this
-                    << "]: " << DebugString();
-          }
+          GRPC_TRACE_VLOG(promise_primitives, 2)
+              << "InterceptorList::RunPromise[" << this
+              << "]: " << DebugString();
           if (async_resolution_.current_factory == nullptr) {
             return std::move(*p);
           }

@@ -148,7 +148,7 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/09/01
+  expiry: 2024/09/09
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: work_serializer_clears_time_cache

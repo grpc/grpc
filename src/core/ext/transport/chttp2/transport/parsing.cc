@@ -883,10 +883,8 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   if (GPR_LIKELY(err.ok())) {
     return err;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(http)) {
-    LOG(ERROR) << "INCOMING[" << t << ";" << s << "]: Parse failed with "
-               << err;
-  }
+  GRPC_TRACE_LOG(http, ERROR)
+      << "INCOMING[" << t << ";" << s << "]: Parse failed with " << err;
   if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);

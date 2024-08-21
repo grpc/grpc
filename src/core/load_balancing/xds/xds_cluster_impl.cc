@@ -35,7 +35,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -293,6 +292,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
   // Current config from the resolver.
   RefCountedPtr<XdsClusterImplLbConfig> config_;
   std::shared_ptr<const XdsClusterResource> cluster_resource_;
+  RefCountedStringValue service_telemetry_label_;
+  RefCountedStringValue namespace_telemetry_label_;
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 
   // Current concurrent number of requests.
@@ -397,10 +398,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
-      service_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label),
+      service_telemetry_label_(xds_cluster_impl_lb->service_telemetry_label_),
       namespace_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
+          xds_cluster_impl_lb->namespace_telemetry_label_),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
@@ -648,6 +648,19 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config state, now that we're done comparing old and new fields.
   config_ = std::move(new_config);
   cluster_resource_ = new_cluster_config.cluster;
+  auto it2 =
+      cluster_resource_->metadata.find("com.google.csm.telemetry_labels");
+  if (it2 != cluster_resource_->metadata.end()) {
+    auto& json_object = it2->second.object();
+    auto it3 = json_object.find("service_name");
+    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
+      service_telemetry_label_ = RefCountedStringValue(it3->second.string());
+    }
+    it3 = json_object.find("service_namespace");
+    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
+      namespace_telemetry_label_ = RefCountedStringValue(it3->second.string());
+    }
+  }
   drop_config_ = endpoint_config->endpoints != nullptr
                      ? endpoint_config->endpoints->drop_config
                      : nullptr;

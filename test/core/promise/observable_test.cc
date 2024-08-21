@@ -23,6 +23,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"

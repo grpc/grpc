@@ -456,6 +456,7 @@ void ChaoticGoodServerListener::Orphan() {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
     MutexLock lock(&mu_);
     connection_list = std::move(connection_list_);
+    connection_list_.clear();
     shutdown_ = true;
   }
   ee_listener_.reset();
