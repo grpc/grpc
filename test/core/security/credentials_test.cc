@@ -4542,8 +4542,10 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
   ExecCtx::Get()->Flush();
 }
 
+// HTTP status 429 is mapped to UNAVAILABLE as per
+// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
 TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
-  g_audience = "CV-6";
+  g_audience = "CV-5_Midway";
   g_http_status = 429;
   ExecCtx exec_ctx;
   auto creds =
@@ -4551,6 +4553,100 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnavailableError("JWT fetch failed with status 429"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+// HTTP status 400 is mapped to INTERNAL as per
+// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md,
+// so it should be rewritten as UNAUTHENTICATED.
+TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus400) {
+  g_audience = "CV-8_SantaCruzIslands";
+  g_http_status = 400;
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("JWT fetch failed with status 400"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpIOError) {
+  g_audience = "CV-2_CoralSea";
+  absl::Status status = absl::InternalError("uh oh");
+  g_on_http_request_error = &status;
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnavailableError("INTERNAL:uh oh"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenHasWrongNumberOfDots) {
+  g_audience = "CV-7_Guadalcanal";
+  std::string bad_token = "foo.bar";
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotBase64) {
+  g_audience = "CVE-56_Makin";
+  std::string bad_token = "foo.&.bar";
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotJson) {
+  g_audience = "CVE-73_Samar";
+  std::string bad_token =
+      absl::StrCat("foo.", absl::WebSafeBase64Escape("xxx"), ".bar");
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
+  g_audience = "CVL-23_Leyte";
+  std::string bad_token = absl::StrCat(
+      "foo.", absl::WebSafeBase64Escape("{\"exp\":\"foo\"}"), ".bar");
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
