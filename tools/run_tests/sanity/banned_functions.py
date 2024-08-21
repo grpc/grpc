@@ -44,7 +44,7 @@ RUBY_PHP_ALLOW_LIST = [
 
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    # These logging functions are only for php and ruby.
+    # These experimental logging functions are only for php and ruby.
     "grpc_absl_log(": RUBY_PHP_ALLOW_LIST,
     "grpc_absl_log_int(": RUBY_PHP_ALLOW_LIST,
     "grpc_absl_log_str(": RUBY_PHP_ALLOW_LIST,
