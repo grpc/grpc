@@ -4908,6 +4908,43 @@ grpc_cc_library(
     ],
 )
 
+# FIXME
+grpc_cc_library(
+    name = "grpc_gcp_auth_filter",
+    srcs = [
+        "ext/filters/gcp_auth/gcp_auth_filter.cc",
+        "ext/filters/gcp_auth/gcp_auth_service_config_parser.cc",
+    ],
+    hdrs = [
+        "ext/filters/gcp_auth/gcp_auth_filter.h",
+        "ext/filters/gcp_auth/gcp_auth_service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "arena",
+        "arena_promise",
+        "channel_args",
+        "channel_fwd",
+        "context",
+        "grpc_service_config",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "service_config_parser",
+        "validation_errors",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+    ],
+)
+
 grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [

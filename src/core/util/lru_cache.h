@@ -37,6 +37,8 @@ class LruCache {
     CHECK_GT(max_size, 0);
   }
 
+// FIXME: allow heterogenous lookups?
+
   // Returns the value for key, or nullopt if not present.
   absl::optional<Value> Get(Key key);
 

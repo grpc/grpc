@@ -665,6 +665,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       // TODO(roth): If we ever need to support another type here, refactor
       // this into a separate registry.
       if (extension->type == "extensions.filters.http.gcp_authn.v3.Audience") {
+// FIXME do this
         // TODO(roth): In a subsequent PR, add parsing here.
       }
     }
