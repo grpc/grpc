@@ -61,3 +61,7 @@ You can find a more detailed tutorial in [gRPC Basics: Ruby][]
 [RVM]:https://www.rvm.io/
 [Install gRPC ruby]:../../src/ruby#installation
 [gRPC Basics: Ruby]:https://grpc.io/docs/languages/ruby/basics
+
+
+cd ./examples/ruby
+bundle exec ./greeter_server.rb 

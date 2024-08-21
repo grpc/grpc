@@ -25,10 +25,19 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 require 'grpc'
 require 'helloworld_services_pb'
 
+# Create an interceptor to just print hello world
+class EchoInterceptor < GRPC::ClientInterceptor
+  def request_response(request: nil, call: nil, method: nil, metadata: nil)
+    GRPC.logger.info "Hello world"
+    raise ArgumentError.new('interceptor failed')
+    yield
+  end
+end
+
 def main
-  user = ARGV.size > 0 ?  ARGV[0] : 'world'
-  hostname = ARGV.size > 1 ?  ARGV[1] : 'localhost:50051'
-  stub = Helloworld::Greeter::Stub.new(hostname, :this_channel_is_insecure)
+  user = ARGV.size > 0 ? ARGV[0] : 'world'
+  hostname = ARGV.size > 1 ? ARGV[1] : 'localhost:50051'
+  stub = Helloworld::Greeter::Stub.new(hostname, :this_channel_is_insecure, interceptors: [EchoInterceptor.new])
   begin
     message = stub.say_hello(Helloworld::HelloRequest.new(name: user)).message
     p "Greeting: #{message}"
