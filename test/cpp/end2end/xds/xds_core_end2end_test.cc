@@ -540,7 +540,7 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
-  // New cluster that points to a non-existant EDS resource.
+  // New cluster that points to a non-existent EDS resource.
   const char* kNewClusterName = "new_cluster_name";
   Cluster cluster = default_cluster_;
   cluster.set_name(kNewClusterName);

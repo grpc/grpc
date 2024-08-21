@@ -135,7 +135,7 @@ TEST_F(XdsClusterTest, Definition) {
   EXPECT_TRUE(resource_type->AllResourcesRequiredInSotW());
 }
 
-TEST_F(XdsClusterTest, UnparseableProto) {
+TEST_F(XdsClusterTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
@@ -585,7 +585,7 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
               ::testing::ElementsAre("bar", "baz", "quux"));
 }
 
-TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
+TEST_F(ClusterTypeTest, AggregateClusterUnparsableProto) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
@@ -1030,7 +1030,7 @@ TEST_F(TlsConfigTest, UnknownTransportSocketType) {
       << decode_result.resource.status();
 }
 
-TEST_F(TlsConfigTest, UnparseableUpstreamTlsContext) {
+TEST_F(TlsConfigTest, UnparsableUpstreamTlsContext) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1274,7 +1274,7 @@ TEST_F(UpstreamConfigTest, UnknownUpstreamConfigType) {
       << decode_result.resource.status();
 }
 
-TEST_F(UpstreamConfigTest, UnparseableHttpProtocolOptions) {
+TEST_F(UpstreamConfigTest, UnparsableHttpProtocolOptions) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);

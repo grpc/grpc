@@ -108,7 +108,7 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   const uint32_t kAbortPercentagePerHundred = 100;
   // Create an EDS resource
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;

@@ -207,7 +207,7 @@ const char
         "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
 
 const char
-    valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text
+    valid_url_external_account_creds_options_credential_source_with_query_params_format_text
         [] = "{\"url\":\"https://foo.com:5555/"
              "path/to/url/creds?p1=v1&p2=v2\","
              "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
@@ -2085,7 +2085,7 @@ TEST(CredentialsTest, TestAuthMetadataContext) {
   }
 }
 
-void validate_external_account_creds_token_exchage_request(
+void validate_external_account_creds_token_exchange_request(
     const grpc_http_request* request, const URI& request_uri,
     absl::string_view body) {
   // Check that the body is constructed properly.
@@ -2117,7 +2117,7 @@ void validate_external_account_creds_token_exchage_request(
             "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
-void validate_external_account_creds_token_exchage_request_with_url_encode(
+void validate_external_account_creds_token_exchange_request_with_url_encode(
     const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
   EXPECT_EQ(
@@ -2177,7 +2177,7 @@ int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    validate_external_account_creds_token_exchage_request(request, uri, body);
+    validate_external_account_creds_token_exchange_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   } else if (uri.path() == "/service_account_impersonation") {
@@ -2196,7 +2196,7 @@ int external_account_creds_httpcli_post_success(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    validate_external_account_creds_token_exchage_request(request, uri, body);
+    validate_external_account_creds_token_exchange_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   } else if (uri.path() == "/service_account_impersonation") {
@@ -2206,7 +2206,7 @@ int external_account_creds_httpcli_post_success(
         200,
         valid_external_account_creds_service_account_impersonation_response);
   } else if (uri.path() == "/token_url_encode") {
-    validate_external_account_creds_token_exchage_request_with_url_encode(
+    validate_external_account_creds_token_exchange_request_with_url_encode(
         request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
@@ -2254,7 +2254,7 @@ int url_external_account_creds_httpcli_get_success(
   return 1;
 }
 
-void validate_aws_external_account_creds_token_exchage_request(
+void validate_aws_external_account_creds_token_exchange_request(
     const grpc_http_request* request, const URI& request_uri,
     absl::string_view body) {
   // Check that the regional_cred_verification_url got constructed
@@ -2343,7 +2343,7 @@ int aws_external_account_creds_httpcli_post_success(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    validate_aws_external_account_creds_token_exchage_request(request, uri,
+    validate_aws_external_account_creds_token_exchange_request(request, uri,
                                                               body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
@@ -2809,12 +2809,12 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
 }
 
 TEST(CredentialsTest,
-     TestUrlExternalAccountCredsSuccessWithQureyParamsFormatText) {
+     TestUrlExternalAccountCredsSuccessWithQueryParamsFormatText) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
-      valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text);
+      valid_url_external_account_creds_options_credential_source_with_query_params_format_text);
   CHECK_OK(credential_source);
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -3010,7 +3010,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
-  auto credential_source = JsonParse("{\"file\":\"non_exisiting_file\"}");
+  auto credential_source = JsonParse("{\"file\":\"non_existing_file\"}");
   CHECK_OK(credential_source);
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -4047,7 +4047,7 @@ TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
-TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
+TEST(CredentialsTest, TestXdsCredentialsCompareSuccess) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
   auto* xds_creds_2 = grpc_xds_credentials_create(insecure_creds);

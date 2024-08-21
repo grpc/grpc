@@ -112,7 +112,7 @@ TEST_F(XdsEndpointTest, Definition) {
   EXPECT_FALSE(resource_type->AllResourcesRequiredInSotW());
 }
 
-TEST_F(XdsEndpointTest, UnparseableProto) {
+TEST_F(XdsEndpointTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsEndpointResourceType::Get();
   auto decode_result =
