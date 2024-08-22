@@ -142,6 +142,8 @@ grpc_cc_library(
         "util/latent_see.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log",
         "absl/strings",
         "absl/types:optional",
@@ -952,6 +954,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "seq",
+    external_deps = ["absl/log:log"],
     language = "c++",
     public_hdrs = [
         "lib/promise/seq.h",
@@ -5500,6 +5503,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/strings",
         "absl/types:optional",
         "absl/types:variant",

@@ -25,7 +25,6 @@
 #include "absl/types/span.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"

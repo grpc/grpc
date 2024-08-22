@@ -21,7 +21,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/manual_constructor.h"

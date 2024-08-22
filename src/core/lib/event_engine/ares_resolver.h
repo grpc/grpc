@@ -37,7 +37,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"

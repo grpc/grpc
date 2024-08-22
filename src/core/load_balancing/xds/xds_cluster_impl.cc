@@ -35,7 +35,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -293,6 +292,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
   // Current config from the resolver.
   RefCountedPtr<XdsClusterImplLbConfig> config_;
   std::shared_ptr<const XdsClusterResource> cluster_resource_;
+  RefCountedStringValue service_telemetry_label_;
+  RefCountedStringValue namespace_telemetry_label_;
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 
   // Current concurrent number of requests.
@@ -397,10 +398,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
-      service_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label),
+      service_telemetry_label_(xds_cluster_impl_lb->service_telemetry_label_),
       namespace_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
+          xds_cluster_impl_lb->namespace_telemetry_label_),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
@@ -648,6 +648,19 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config state, now that we're done comparing old and new fields.
   config_ = std::move(new_config);
   cluster_resource_ = new_cluster_config.cluster;
+  auto it2 =
+      cluster_resource_->metadata.find("com.google.csm.telemetry_labels");
+  if (it2 != cluster_resource_->metadata.end()) {
+    auto& json_object = it2->second.object();
+    auto it3 = json_object.find("service_name");
+    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
+      service_telemetry_label_ = RefCountedStringValue(it3->second.string());
+    }
+    it3 = json_object.find("service_namespace");
+    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
+      namespace_telemetry_label_ = RefCountedStringValue(it3->second.string());
+    }
+  }
   drop_config_ = endpoint_config->endpoints != nullptr
                      ? endpoint_config->endpoints->drop_config
                      : nullptr;
@@ -741,12 +754,10 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-      LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity: state="
-                << ConnectivityStateName(state_) << " status=(" << status_
-                << ") picker=" << drop_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+        << "[xds_cluster_impl_lb " << this
+        << "] updating connectivity: state=" << ConnectivityStateName(state_)
+        << " status=(" << status_ << ") picker=" << drop_picker.get();
     channel_control_helper()->UpdateState(state_, status_,
                                           std::move(drop_picker));
   }
@@ -841,12 +852,11 @@ void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (parent()->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << parent()
-              << "] child connectivity state update: state="
-              << ConnectivityStateName(state) << " (" << status
-              << ") picker=" << picker.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << parent()
+      << "] child connectivity state update: state="
+      << ConnectivityStateName(state) << " (" << status
+      << ") picker=" << picker.get();
   // Save the state and picker.
   parent()->state_ = state;
   parent()->status_ = status;

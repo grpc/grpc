@@ -488,7 +488,7 @@ if args.whats_left:
     )
 
 
-# Keeps track of all possible sets of dependencies that could satify the
+# Keeps track of all possible sets of dependencies that could satisfy the
 # problem. (models the list monad in Haskell!)
 class Choices:
     def __init__(self, library, substitutions):

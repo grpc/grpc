@@ -166,12 +166,10 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       error = GRPC_ERROR_CREATE("handshaker shutdown");
       args_.endpoint.reset();
     }
-    if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      LOG(INFO) << "handshake_manager " << this
-                << ": handshaking complete -- scheduling "
-                   "on_handshake_done with error="
-                << error;
-    }
+    GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
+                                     << ": handshaking complete -- scheduling "
+                                        "on_handshake_done with error="
+                                     << error;
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     args_.event_engine->Cancel(deadline_timer_handle_);

@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
@@ -324,7 +325,14 @@ grpc_http_response http_response(int status, const char* body) {
 
 // -- Tests. --
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
+class CredentialsTest : public ::testing::Test {
+ protected:
+  void SetUp() override { grpc_init(); }
+
+  void TearDown() override { grpc_shutdown_blocking(); }
+};
+
+TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -337,7 +345,7 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
   grpc_http_response_destroy(&response);
 }
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
+TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -348,7 +356,7 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
   grpc_http_response_destroy(&response);
 }
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
+TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -359,7 +367,7 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
   grpc_http_response_destroy(&response);
 }
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
+TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -374,7 +382,7 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
   grpc_http_response_destroy(&response);
 }
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
+TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -388,7 +396,7 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
   grpc_http_response_destroy(&response);
 }
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
+TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -403,7 +411,8 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
   grpc_http_response_destroy(&response);
 }
 
-TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
+TEST_F(CredentialsTest,
+       TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -535,7 +544,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
   ActivityPtr activity_;
 };
 
-TEST(CredentialsTest, TestGoogleIamCreds) {
+TEST_F(CredentialsTest, TestGoogleIamCreds) {
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -553,7 +562,7 @@ TEST(CredentialsTest, TestGoogleIamCreds) {
   creds->Unref();
 }
 
-TEST(CredentialsTest, TestAccessTokenCreds) {
+TEST_F(CredentialsTest, TestAccessTokenCreds) {
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(),
                                                  "authorization: Bearer blah");
@@ -593,7 +602,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
   }
 };
 
-TEST(CredentialsTest, TestChannelOauth2CompositeCreds) {
+TEST_F(CredentialsTest, TestChannelOauth2CompositeCreds) {
   ExecCtx exec_ctx;
   ChannelArgs new_args;
   grpc_channel_credentials* channel_creds = new check_channel_oauth2();
@@ -608,7 +617,7 @@ TEST(CredentialsTest, TestChannelOauth2CompositeCreds) {
   grpc_channel_credentials_release(channel_oauth2_creds);
 }
 
-TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
+TEST_F(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -678,7 +687,7 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
   }
 };
 
-TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
+TEST_F(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
   ExecCtx exec_ctx;
   ChannelArgs new_args;
   grpc_channel_credentials* channel_creds =
@@ -762,7 +771,7 @@ int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST(CredentialsTest, TestComputeEngineCredsSuccess) {
+TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   const char expected_creds_debug_string[] =
@@ -797,7 +806,7 @@ TEST(CredentialsTest, TestComputeEngineCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestComputeEngineCredsFailure) {
+TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
       "GoogleComputeEngineTokenFetcherCredentials{"
@@ -854,7 +863,7 @@ int token_httpcli_post_failure(const grpc_http_request* /*request*/,
   return 1;
 }
 
-TEST(CredentialsTest, TestRefreshTokenCredsSuccess) {
+TEST_F(CredentialsTest, TestRefreshTokenCredsSuccess) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   const char expected_creds_debug_string[] =
@@ -890,7 +899,7 @@ TEST(CredentialsTest, TestRefreshTokenCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
+TEST_F(CredentialsTest, TestRefreshTokenCredsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
@@ -912,7 +921,7 @@ TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestValidStsCredsOptions) {
+TEST_F(CredentialsTest, TestValidStsCredsOptions) {
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
       nullptr,                      // resource
@@ -933,7 +942,7 @@ TEST(CredentialsTest, TestValidStsCredsOptions) {
   CHECK(port == "5555");
 }
 
-TEST(CredentialsTest, TestInvalidStsCredsOptions) {
+TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
   grpc_sts_credentials_options invalid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
       nullptr,                     // resource
@@ -1086,7 +1095,7 @@ char* write_tmp_jwt_file(const char* jwt_contents) {
   return path;
 }
 
-TEST(CredentialsTest, TestStsCredsSuccess) {
+TEST_F(CredentialsTest, TestStsCredsSuccess) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   const char expected_creds_debug_string[] =
@@ -1137,7 +1146,7 @@ TEST(CredentialsTest, TestStsCredsSuccess) {
   gpr_free(actor_token_path);
 }
 
-TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
+TEST_F(CredentialsTest, TestStsCredsTokenFileNotFound) {
   ExecCtx exec_ctx;
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,           // sts_endpoint_url
@@ -1174,7 +1183,7 @@ TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
+TEST_F(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   const char expected_creds_debug_string[] =
@@ -1223,7 +1232,7 @@ TEST(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
   gpr_free(subject_token_path);
 }
 
-TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
+TEST_F(CredentialsTest, TestStsCredsLoadTokenFailure) {
   const char expected_creds_debug_string[] =
       "StsTokenFetcherCredentials{Path:/v1/"
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
@@ -1259,7 +1268,7 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
   gpr_free(test_signed_jwt_path);
 }
 
-TEST(CredentialsTest, TestStsCredsHttpFailure) {
+TEST_F(CredentialsTest, TestStsCredsHttpFailure) {
   const char expected_creds_debug_string[] =
       "StsTokenFetcherCredentials{Path:/v1/"
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
@@ -1356,7 +1365,7 @@ grpc_service_account_jwt_access_credentials* creds_as_jwt(
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 
-TEST(CredentialsTest, TestJwtCredsLifetime) {
+TEST_F(CredentialsTest, TestJwtCredsLifetime) {
   char* json_key_string = test_json_key_str();
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
@@ -1403,7 +1412,7 @@ TEST(CredentialsTest, TestJwtCredsLifetime) {
   gpr_free(json_key_string);
 }
 
-TEST(CredentialsTest, TestRemoveServiceFromJwtUri) {
+TEST_F(CredentialsTest, TestRemoveServiceFromJwtUri) {
   const char wrong_uri[] = "hello world";
   CHECK(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
   const char valid_uri[] = "https://foo.com/get/";
@@ -1413,7 +1422,7 @@ TEST(CredentialsTest, TestRemoveServiceFromJwtUri) {
   CHECK_EQ(strcmp(output->c_str(), expected_uri), 0);
 }
 
-TEST(CredentialsTest, TestJwtCredsSuccess) {
+TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
 
@@ -1457,7 +1466,7 @@ TEST(CredentialsTest, TestJwtCredsSuccess) {
   grpc_jwt_encode_and_sign_set_override(nullptr);
 }
 
-TEST(CredentialsTest, TestJwtCredsSigningFailure) {
+TEST_F(CredentialsTest, TestJwtCredsSigningFailure) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
   char* json_key_string = test_json_key_str();
@@ -1502,7 +1511,7 @@ bool test_gce_tenancy_checker(void) {
 
 std::string null_well_known_creds_path_getter(void) { return ""; }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
+TEST_F(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   char* json_key = test_json_key_str();
@@ -1534,7 +1543,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
+TEST_F(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1559,7 +1568,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
+TEST_F(CredentialsTest,
+       TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1582,7 +1592,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
+TEST_F(CredentialsTest,
+       TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1622,7 +1633,7 @@ int default_creds_metadata_server_detection_httpcli_get_success_override(
   return 1;
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsGce) {
+TEST_F(CredentialsTest, TestGoogleDefaultCredsGce) {
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -1658,7 +1669,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsGce) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
+TEST_F(CredentialsTest, TestGoogleDefaultCredsNonGce) {
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -1705,7 +1716,7 @@ int default_creds_gce_detection_httpcli_get_failure_override(
   return 1;
 }
 
-TEST(CredentialsTest, TestNoGoogleDefaultCreds) {
+TEST_F(CredentialsTest, TestNoGoogleDefaultCreds) {
   grpc_flush_cached_google_default_credentials();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(
@@ -1727,7 +1738,7 @@ TEST(CredentialsTest, TestNoGoogleDefaultCreds) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
+TEST_F(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
       "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
@@ -1781,7 +1792,7 @@ struct fake_call_creds : public grpc_call_credentials {
   }
 };
 
-TEST(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
+TEST_F(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), "foo: oof");
   ExecCtx exec_ctx;
   grpc_flush_cached_google_default_credentials();
@@ -1883,7 +1894,7 @@ char* plugin_debug_string(void* state) {
   return ret;
 }
 
-TEST(CredentialsTest, TestMetadataPluginSuccess) {
+TEST_F(CredentialsTest, TestMetadataPluginSuccess) {
   const char expected_creds_debug_string[] =
       "TestPluginCredentials{state:GET_METADATA_CALLED}";
   plugin_state state = PLUGIN_INITIAL_STATE;
@@ -1912,7 +1923,7 @@ TEST(CredentialsTest, TestMetadataPluginSuccess) {
   CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
 }
 
-TEST(CredentialsTest, TestMetadataPluginFailure) {
+TEST_F(CredentialsTest, TestMetadataPluginFailure) {
   const char expected_creds_debug_string[] =
       "TestPluginCredentials{state:GET_METADATA_CALLED}";
 
@@ -1944,7 +1955,7 @@ TEST(CredentialsTest, TestMetadataPluginFailure) {
   CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
 }
 
-TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
+TEST_F(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   auto home = GetEnv("HOME");
   bool restore_home_env = false;
 #if defined(GRPC_BAZEL_BUILD) && \
@@ -1968,7 +1979,7 @@ TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   }
 }
 
-TEST(CredentialsTest, TestChannelCredsDuplicateWithoutCallCreds) {
+TEST_F(CredentialsTest, TestChannelCredsDuplicateWithoutCallCreds) {
   const char expected_creds_debug_string[] =
       "AccessTokenCredentials{Token:present}";
   ExecCtx exec_ctx;
@@ -2048,7 +2059,7 @@ void auth_metadata_context_build(const char* url_scheme,
   gpr_free(host_and_port);
 }
 
-TEST(CredentialsTest, TestAuthMetadataContext) {
+TEST_F(CredentialsTest, TestAuthMetadataContext) {
   auth_metadata_context_test_case test_cases[] = {
       // No service nor method.
       {"https", "www.foo.com", "", "https://www.foo.com", ""},
@@ -2713,7 +2724,7 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
   }
 };
 
-TEST(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
+TEST_F(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -2740,8 +2751,8 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
                       grpc_version_string()));
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
+TEST_F(CredentialsTest,
+       TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -2768,7 +2779,8 @@ TEST(CredentialsTest,
                       grpc_version_string()));
 }
 
-TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
+TEST_F(CredentialsTest,
+       TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -2797,12 +2809,18 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
-  ~ExternalAccountCredentialsTest() override {
+  void SetUp() override {
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  void TearDown() override {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(event_engine_));
+    grpc_shutdown_blocking();
   }
 
   std::shared_ptr<FuzzingEventEngine> event_engine_ =
@@ -4261,7 +4279,7 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_EQ(url_creds, nullptr);
 }
 
-TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {
+TEST_F(CredentialsTest, TestInsecureCredentialsCompareSuccess) {
   auto insecure_creds_1 = grpc_insecure_credentials_create();
   auto insecure_creds_2 = grpc_insecure_credentials_create();
   ASSERT_EQ(insecure_creds_1->cmp(insecure_creds_2), 0);
@@ -4274,7 +4292,7 @@ TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {
   grpc_channel_credentials_release(insecure_creds_2);
 }
 
-TEST(CredentialsTest, TestInsecureCredentialsCompareFailure) {
+TEST_F(CredentialsTest, TestInsecureCredentialsCompareFailure) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_creds = grpc_fake_transport_security_credentials_create();
   ASSERT_NE(insecure_creds->cmp(fake_creds), 0);
@@ -4288,18 +4306,18 @@ TEST(CredentialsTest, TestInsecureCredentialsCompareFailure) {
   grpc_channel_credentials_release(insecure_creds);
 }
 
-TEST(CredentialsTest, TestInsecureCredentialsSingletonCreate) {
+TEST_F(CredentialsTest, TestInsecureCredentialsSingletonCreate) {
   auto* insecure_creds_1 = grpc_insecure_credentials_create();
   auto* insecure_creds_2 = grpc_insecure_credentials_create();
   EXPECT_EQ(insecure_creds_1, insecure_creds_2);
 }
 
-TEST(CredentialsTest, TestFakeCallCredentialsCompareSuccess) {
+TEST_F(CredentialsTest, TestFakeCallCredentialsCompareSuccess) {
   auto call_creds = MakeRefCounted<fake_call_creds>();
   CHECK_EQ(call_creds->cmp(call_creds.get()), 0);
 }
 
-TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
+TEST_F(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   auto fake_creds = MakeRefCounted<fake_call_creds>();
   auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
   CHECK_NE(fake_creds->cmp(md_creds), 0);
@@ -4307,20 +4325,20 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   grpc_call_credentials_release(md_creds);
 }
 
-TEST(CredentialsTest, TestHttpRequestSSLCredentialsCompare) {
+TEST_F(CredentialsTest, TestHttpRequestSSLCredentialsCompare) {
   auto creds_1 = CreateHttpRequestSSLCredentials();
   auto creds_2 = CreateHttpRequestSSLCredentials();
   EXPECT_EQ(creds_1->cmp(creds_2.get()), 0);
   EXPECT_EQ(creds_2->cmp(creds_1.get()), 0);
 }
 
-TEST(CredentialsTest, TestHttpRequestSSLCredentialsSingleton) {
+TEST_F(CredentialsTest, TestHttpRequestSSLCredentialsSingleton) {
   auto creds_1 = CreateHttpRequestSSLCredentials();
   auto creds_2 = CreateHttpRequestSSLCredentials();
   EXPECT_EQ(creds_1, creds_2);
 }
 
-TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
+TEST_F(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto fake_creds = MakeRefCounted<fake_call_creds>();
   auto* composite_creds_1 = grpc_composite_channel_credentials_create(
@@ -4334,7 +4352,7 @@ TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
   grpc_channel_credentials_release(composite_creds_2);
 }
 
-TEST(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
+TEST_F(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto inner_fake_creds = MakeRefCounted<fake_call_creds>();
   auto outer_fake_creds = MakeRefCounted<fake_call_creds>();
@@ -4350,8 +4368,8 @@ TEST(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
   grpc_channel_credentials_release(outer_composite_creds);
 }
 
-TEST(CredentialsTest,
-     TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
+TEST_F(CredentialsTest,
+       TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_channel_creds = grpc_fake_transport_security_credentials_create();
   auto fake_creds = MakeRefCounted<fake_call_creds>();
@@ -4367,8 +4385,8 @@ TEST(CredentialsTest,
   grpc_channel_credentials_release(composite_creds_2);
 }
 
-TEST(CredentialsTest,
-     TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
+TEST_F(CredentialsTest,
+       TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto fake_creds = MakeRefCounted<fake_call_creds>();
   auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
@@ -4384,7 +4402,7 @@ TEST(CredentialsTest,
   grpc_channel_credentials_release(composite_creds_2);
 }
 
-TEST(CredentialsTest, TestTlsCredentialsCompareSuccess) {
+TEST_F(CredentialsTest, TestTlsCredentialsCompareSuccess) {
   auto* tls_creds_1 =
       grpc_tls_credentials_create(grpc_tls_credentials_options_create());
   auto* tls_creds_2 =
@@ -4395,7 +4413,7 @@ TEST(CredentialsTest, TestTlsCredentialsCompareSuccess) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
-TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareSuccess) {
+TEST_F(CredentialsTest, TestTlsCredentialsWithVerifierCompareSuccess) {
   auto* options_1 = grpc_tls_credentials_options_create();
   options_1->set_certificate_verifier(
       MakeRefCounted<HostNameCertificateVerifier>());
@@ -4410,7 +4428,7 @@ TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareSuccess) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
-TEST(CredentialsTest, TestTlsCredentialsCompareFailure) {
+TEST_F(CredentialsTest, TestTlsCredentialsCompareFailure) {
   auto* options_1 = grpc_tls_credentials_options_create();
   options_1->set_check_call_host(true);
   auto* tls_creds_1 = grpc_tls_credentials_create(options_1);
@@ -4423,7 +4441,7 @@ TEST(CredentialsTest, TestTlsCredentialsCompareFailure) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
-TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
+TEST_F(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
   auto* options_1 = grpc_tls_credentials_options_create();
   options_1->set_certificate_verifier(
       MakeRefCounted<HostNameCertificateVerifier>());
@@ -4440,7 +4458,7 @@ TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
-TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
+TEST_F(CredentialsTest, TestXdsCredentialsCompareSucces) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
   auto* xds_creds_2 = grpc_xds_credentials_create(insecure_creds);
@@ -4451,7 +4469,7 @@ TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
   grpc_channel_credentials_release(xds_creds_2);
 }
 
-TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
+TEST_F(CredentialsTest, TestXdsCredentialsCompareFailure) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_creds = grpc_fake_transport_security_credentials_create();
   auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
@@ -4658,8 +4676,6 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
   auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }

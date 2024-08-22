@@ -531,13 +531,12 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked() {
 void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    LOG(INFO) << "[xds_cluster_manager_lb "
-              << xds_cluster_manager_child_->xds_cluster_manager_policy_.get()
-              << "] child " << xds_cluster_manager_child_->name_
-              << ": received update: state=" << ConnectivityStateName(state)
-              << " (" << status << ") picker=" << picker.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
+      << "[xds_cluster_manager_lb "
+      << xds_cluster_manager_child_->xds_cluster_manager_policy_.get()
+      << "] child " << xds_cluster_manager_child_->name_
+      << ": received update: state=" << ConnectivityStateName(state) << " ("
+      << status << ") picker=" << picker.get();
   if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return;
   }

@@ -24,8 +24,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"

@@ -402,13 +402,10 @@ void WeightedTargetLb::UpdateStateLocked() {
       continue;
     }
     auto child_picker = child->picker();
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-      LOG(INFO) << "[weighted_target_lb " << this << "]   child=" << child_name
-                << " state="
-                << ConnectivityStateName(child->connectivity_state())
-                << " weight=" << child->weight()
-                << " picker=" << child_picker.get();
-    }
+    GRPC_TRACE_LOG(weighted_target_lb, INFO)
+        << "[weighted_target_lb " << this << "]   child=" << child_name
+        << " state=" << ConnectivityStateName(child->connectivity_state())
+        << " weight=" << child->weight() << " picker=" << child_picker.get();
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
         CHECK_GT(child->weight(), 0u);
@@ -488,13 +485,11 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
   if (timer_handle_.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-      LOG(INFO) << "[weighted_target_lb "
-                << weighted_child_->weighted_target_policy_.get()
-                << "] WeightedChild " << weighted_child_.get() << " "
-                << weighted_child_->name_
-                << ": cancelling delayed removal timer";
-    }
+    GRPC_TRACE_LOG(weighted_target_lb, INFO)
+        << "[weighted_target_lb "
+        << weighted_child_->weighted_target_policy_.get() << "] WeightedChild "
+        << weighted_child_.get() << " " << weighted_child_->name_
+        << ": cancelling delayed removal timer";
     weighted_child_->weighted_target_policy_->channel_control_helper()
         ->GetEventEngine()
         ->Cancel(*timer_handle_);
@@ -619,13 +614,11 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
     RefCountedPtr<SubchannelPicker> picker) {
   // Cache the picker in the WeightedChild.
   picker_ = std::move(picker);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_target_lb)) {
-    LOG(INFO) << "[weighted_target_lb " << weighted_target_policy_.get()
-              << "] WeightedChild " << this << " " << name_
-              << ": connectivity state update: state="
-              << ConnectivityStateName(state) << " (" << status
-              << ") picker=" << picker_.get();
-  }
+  GRPC_TRACE_LOG(weighted_target_lb, INFO)
+      << "[weighted_target_lb " << weighted_target_policy_.get()
+      << "] WeightedChild " << this << " " << name_
+      << ": connectivity state update: state=" << ConnectivityStateName(state)
+      << " (" << status << ") picker=" << picker_.get();
   // If the child reports IDLE, immediately tell it to exit idle.
   if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();
   // Decide what state to report for aggregation purposes.

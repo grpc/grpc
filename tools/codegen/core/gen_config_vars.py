@@ -39,7 +39,9 @@ for attr in attrs:
         print("config has no name: %r" % attr)
         error = True
         continue
-    if "experiment" in attr["name"] and attr["name"] != "experiments":
+    if (
+        "experiment" in attr["name"] and "experimental" not in attr["name"]
+    ) and attr["name"] != "experiments":
         print("use experiment system for experiments")
         error = True
     if "description" not in attr:

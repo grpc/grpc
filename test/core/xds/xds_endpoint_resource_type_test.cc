@@ -487,8 +487,6 @@ TEST_F(XdsEndpointTest, MissingAddress) {
 }
 
 TEST_F(XdsEndpointTest, MultipleAddressesPerEndpoint) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -543,8 +541,6 @@ TEST_F(XdsEndpointTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesMissingAddress) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -575,8 +571,6 @@ TEST_F(XdsEndpointTest, AdditionalAddressesMissingAddress) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesMissingSocketAddress) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -608,8 +602,6 @@ TEST_F(XdsEndpointTest, AdditionalAddressesMissingSocketAddress) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesInvalidPort) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -645,8 +637,6 @@ TEST_F(XdsEndpointTest, AdditionalAddressesInvalidPort) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesInvalidAddress) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -681,7 +671,9 @@ TEST_F(XdsEndpointTest, AdditionalAddressesInvalidAddress) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenNotEnabled) {
+TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenDisabled) {
+  testing::ScopedEnvVar env("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS",
+                            "false");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();

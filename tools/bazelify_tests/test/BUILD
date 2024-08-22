@@ -72,7 +72,7 @@ grpc_run_tests_harness_test(
     ],
     docker_image_version = "tools/dockerfile/test/ruby_debian11_x64.current_version",
     prepare_script = ":prepare_ruby.sh",
-    use_login_shell = True,  # ruby's docker image uses RVM which wierdly requires login shell
+    use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
 
 grpc_run_tests_harness_test(
@@ -83,7 +83,7 @@ grpc_run_tests_harness_test(
     ],
     docker_image_version = "tools/dockerfile/test/ruby_debian11_x64.current_version",
     prepare_script = ":prepare_ruby.sh",
-    use_login_shell = True,  # ruby's docker image uses RVM which wierdly requires login shell
+    use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
 
 # PHP

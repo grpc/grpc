@@ -21,6 +21,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
+#include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -44,6 +45,10 @@ CommonTlsContext CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     ValidationErrors* errors);
+
+absl::StatusOr<Json> ParseProtobufStructToJson(
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Struct* resource);
 
 absl::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
