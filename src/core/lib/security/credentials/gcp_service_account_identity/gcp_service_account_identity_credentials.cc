@@ -83,10 +83,9 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
       if (status_code != GRPC_STATUS_UNAVAILABLE) {
         status_code = GRPC_STATUS_UNAUTHENTICATED;
       }
-      self->on_done_(
-          absl::Status(static_cast<absl::StatusCode>(status_code),
-                       absl::StrCat("JWT fetch failed with status ",
-                                    self->response_.status)));
+      self->on_done_(absl::Status(static_cast<absl::StatusCode>(status_code),
+                                  absl::StrCat("JWT fetch failed with status ",
+                                               self->response_.status)));
       return;
     }
     absl::string_view body(self->response_.body, self->response_.body_length);
@@ -116,10 +115,9 @@ class JwtTokenFetcherCallCredentials::HttpFetchRequest final
       uint64_t exp = 0;
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-        static const auto kJsonLoader =
-            JsonObjectLoader<ParsedPayload>()
-                .Field("exp", &ParsedPayload::exp)
-                .Finish();
+        static const auto kJsonLoader = JsonObjectLoader<ParsedPayload>()
+                                            .Field("exp", &ParsedPayload::exp)
+                                            .Finish();
         return kJsonLoader;
       }
     };
@@ -159,8 +157,8 @@ JwtTokenFetcherCallCredentials::FetchToken(
 //
 
 std::string GcpServiceAccountIdentityCallCredentials::debug_string() {
-  return absl::StrCat("GcpServiceAccountIdentityCallCredentials(",
-                      audience_, ")");
+  return absl::StrCat("GcpServiceAccountIdentityCallCredentials(", audience_,
+                      ")");
 }
 
 UniqueTypeName GcpServiceAccountIdentityCallCredentials::type() const {
@@ -181,16 +179,16 @@ GcpServiceAccountIdentityCallCredentials::StartHttpRequest(
   // TODO(ctiller): Carry the memory quota in ctx and share it with the host
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
-  auto uri = grpc_core::URI::Create(
+  auto uri = URI::Create(
       "http", "metadata.google.internal.",
       "/computeMetadata/v1/instance/service-accounts/default/identity",
       {{"audience", audience_}}, /*fragment=*/"");
   CHECK_OK(uri);  // params are hardcoded
-  auto http_request = grpc_core::HttpRequest::Get(
-      std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
-      on_complete, response,
-      grpc_core::RefCountedPtr<grpc_channel_credentials>(
-          grpc_insecure_credentials_create()));
+  auto http_request =
+      HttpRequest::Get(std::move(*uri), /*args=*/nullptr, pollent, &request,
+                       deadline, on_complete, response,
+                       RefCountedPtr<grpc_channel_credentials>(
+                           grpc_insecure_credentials_create()));
   http_request->Start();
   return http_request;
 }
