@@ -29,6 +29,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config.h"
@@ -144,7 +145,7 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
     const GcpAuthenticationParsedConfig::Config* filter_config,
-    RefCountedPtr<XdsConfig> xds_config)
+    RefCountedPtr<const XdsConfig> xds_config)
     : filter_config_(filter_config),
       xds_config_(std::move(xds_config)),
       cache_(filter_config->cache_size) {}
@@ -152,10 +153,11 @@ GcpAuthenticationFilter::GcpAuthenticationFilter(
 RefCountedPtr<grpc_call_credentials>
 GcpAuthenticationFilter::GetCallCredentials(const std::string& audience) {
   MutexLock lock(&mu_);
-  cache_.GetOrInsert(
+  return cache_.GetOrInsert(
       audience,
       [](const std::string& audience) {
-        return MakeRefCounted<GcpServiceAccountIdentityCredentials>(audience);
+        return MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(
+            audience);
       });
 }
 

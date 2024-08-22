@@ -5016,6 +5016,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "gcp_service_account_identity_credentials",
         "grpc_resolver_xds_attributes",
         "grpc_service_config",
         "json",

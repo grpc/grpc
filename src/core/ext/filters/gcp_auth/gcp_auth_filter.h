@@ -51,7 +51,7 @@ class GcpAuthenticationFilter
 
   GcpAuthenticationFilter(
       const GcpAuthenticationParsedConfig::Config* filter_config,
-      RefCountedPtr<XdsDependencyManager::XdsConfig> xds_config);
+      RefCountedPtr<const XdsDependencyManager::XdsConfig> xds_config);
 
   class Call {
    public:
@@ -70,7 +70,7 @@ class GcpAuthenticationFilter
       const std::string& audience);
 
   const GcpAuthenticationParsedConfig::Config* filter_config_;
-  const RefCountedPtr<XdsDependencyManager::XdsConfig> xds_config_;
+  const RefCountedPtr<const XdsDependencyManager::XdsConfig> xds_config_;
 
   Mutex mu_;
   LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
