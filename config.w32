@@ -578,9 +578,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\wakeup_fd_pipe.cc " +
     "src\\core\\lib\\iomgr\\wakeup_fd_posix.cc " +
     "src\\core\\lib\\matchers\\matchers.cc " +
-    "src\\core\\lib\\promise\\activity.cc " +
-    "src\\core\\lib\\promise\\party.cc " +
-    "src\\core\\lib\\promise\\sleep.cc " +
     "src\\core\\lib\\resource_quota\\api.cc " +
     "src\\core\\lib\\resource_quota\\arena.cc " +
     "src\\core\\lib\\resource_quota\\connection_quota.cc " +
@@ -811,6 +808,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\util\\posix\\sync.cc " +
     "src\\core\\util\\posix\\time.cc " +
     "src\\core\\util\\posix\\tmpfile.cc " +
+    "src\\core\\util\\promise\\activity.cc " +
+    "src\\core\\util\\promise\\party.cc " +
+    "src\\core\\util\\promise\\sleep.cc " +
     "src\\core\\util\\string.cc " +
     "src\\core\\util\\sync.cc " +
     "src\\core\\util\\sync_abseil.cc " +
@@ -1675,7 +1675,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine_shims");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\promise");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
@@ -1751,6 +1750,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\linux");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\msys");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\posix");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\promise");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\windows");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\xds\\grpc");

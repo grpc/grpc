@@ -1449,39 +1449,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/activity.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/activity.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/all_ok.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/arena_promise.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/cancel_callback.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/detail/basic_seq.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/detail/join_state.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/detail/promise_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/detail/promise_like.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/detail/seq_state.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/detail/status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/exec_ctx_wakeup_scheduler.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/for_each.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/if.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/interceptor_list.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/latch.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/loop.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/map.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/observable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/party.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/party.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/pipe.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/poll.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/prioritized_race.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/promise.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/race.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/seq.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/sleep.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/sleep.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/status_flag.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/try_join.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
@@ -1924,6 +1891,39 @@
     <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/activity.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/activity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/all_ok.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/arena_promise.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/cancel_callback.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/detail/basic_seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/detail/join_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/detail/promise_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/detail/promise_like.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/detail/seq_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/detail/status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/exec_ctx_wakeup_scheduler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/for_each.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/if.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/interceptor_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/latch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/loop.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/observable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/party.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/party.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/pipe.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/poll.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/prioritized_race.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/promise.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/race.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/sleep.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/sleep.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/status_flag.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/try_join.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/string.cc" role="src" />
