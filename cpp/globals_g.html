@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -73,12 +73,6 @@ $(function() {
 </li>
 <li>gpr_asprintf()
 : <a class="el" href="string__util_8h.html#acf4ee571585b7e7785cad0eec91857fa">string_util.h</a>
-</li>
-<li>GPR_ASSERT
-: <a class="el" href="support_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">log.h</a>
-</li>
-<li>gpr_assertion_failed()
-: <a class="el" href="support_2log_8h.html#a5eebbd260cde1ac5050b96c10f41d8e7">log.h</a>
 </li>
 <li>gpr_atm
 : <a class="el" href="support_2atm__gcc__atomic_8h.html#a0a6314f31fcae0666a93961bed98af51">atm_gcc_atomic.h</a>
@@ -139,6 +133,9 @@ $(function() {
 </li>
 <li>gpr_atm_rel_store
 : <a class="el" href="support_2atm__gcc__atomic_8h.html#a42e3982d45ae4cec439a12b8fcd618e9">atm_gcc_atomic.h</a>
+</li>
+<li>GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+: <a class="el" href="support_2port__platform_8h.html#a39d93142a20c22fc61edc6dbbc1c19ff">port_platform.h</a>
 </li>
 <li>GPR_ATTRIBUTE_NO_TSAN
 : <a class="el" href="support_2port__platform_8h.html#ac5d859f207ef029e0f5fc556f8e5876e">port_platform.h</a>
@@ -202,9 +199,6 @@ $(function() {
 </li>
 <li>GPR_DEBUG
 : <a class="el" href="support_2log_8h.html#a3e793245091f13bb7318a18b1166a773">log.h</a>
-</li>
-<li>GPR_DEBUG_ASSERT
-: <a class="el" href="support_2log_8h.html#a4720a11176c735c4456815394edb6bff">log.h</a>
 </li>
 <li>GPR_DLL
 : <a class="el" href="support_2port__platform_8h.html#abf48e6805870434b7f92eb67476b2fdc">port_platform.h</a>
@@ -280,9 +274,6 @@ $(function() {
 </li>
 <li>GPR_LOG_SEVERITY_INFO
 : <a class="el" href="support_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">log.h</a>
-</li>
-<li>gpr_log_severity_string()
-: <a class="el" href="support_2log_8h.html#a48772229c123479748e79b8100cfe596">log.h</a>
 </li>
 <li>gpr_log_verbosity_init()
 : <a class="el" href="support_2log_8h.html#a920f1611251015a9806177ed78931aa5">log.h</a>
@@ -369,10 +360,10 @@ $(function() {
 : <a class="el" href="support_2sync_8h.html#a91472a0360a87654379b3b6eb0fe942e">sync.h</a>
 </li>
 <li>gpr_set_log_function()
-: <a class="el" href="support_2log_8h.html#ae437062e3540eeebb4c95f119fe56be5">log.h</a>
+: <a class="el" href="support_2log_8h.html#ac3b9ceccb877f4240d56db6206968324">log.h</a>
 </li>
 <li>gpr_set_log_verbosity()
-: <a class="el" href="support_2log_8h.html#aec0c537cb1e244060c65d9d9d153979f">log.h</a>
+: <a class="el" href="support_2log_8h.html#ac328dcacd5bdbdf50ccd6f5ec3b73730">log.h</a>
 </li>
 <li>gpr_should_log()
 : <a class="el" href="support_2log_8h.html#a7fb54337c9f6a34074ab181eb98ace47">log.h</a>
@@ -586,6 +577,9 @@ $(function() {
 </li>
 <li>GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE
 : <a class="el" href="group__grpc__arg__keys.html#ga4450fc268fe8e95e15af8f7d354c37ab">channel_arg_names.h</a>
+</li>
+<li>GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS
+: <a class="el" href="group__grpc__arg__keys.html#gab23d854a0107f74d73e3ab3af604e841">channel_arg_names.h</a>
 </li>
 <li>GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS
 : <a class="el" href="group__grpc__arg__keys.html#ga1768735fceeb8108a2f1eb12ea0a894e">channel_arg_names.h</a>
@@ -1369,6 +1363,9 @@ $(function() {
 <li>grpc_google_refresh_token_credentials_create()
 : <a class="el" href="grpc_2credentials_8h.html#aa2108431aea25ab0e9bef17becff7357">credentials.h</a>
 </li>
+<li>GRPC_HAS_BUILTIN
+: <a class="el" href="support_2port__platform_8h.html#a735393a54d4c5fb37c6bc207d87dbd7a">port_platform.h</a>
+</li>
 <li>grpc_header_key_is_legal()
 : <a class="el" href="grpc_8h.html#a25a24cbee66233b54eecb26ba3cd44ae">grpc.h</a>
 </li>
@@ -1599,6 +1596,9 @@ $(function() {
 </li>
 <li>grpc_server_add_http2_port()
 : <a class="el" href="grpc_8h.html#adb80cf9392873a8f338a78ed7a05483b">grpc.h</a>
+</li>
+<li>grpc_server_add_passive_listener()
+: <a class="el" href="passive__listener_8h.html#a3d908e7fa602554999b0d170df5d5179">passive_listener.h</a>
 </li>
 <li>grpc_server_cancel_all_calls()
 : <a class="el" href="grpc_8h.html#adedae229ffe970c9e4da9595319e0fcb">grpc.h</a>
@@ -2212,7 +2212,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

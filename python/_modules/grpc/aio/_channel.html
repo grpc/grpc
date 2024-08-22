@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python 1.64.0 documentation</title>
+    <title>grpc.aio._channel &#8212; gRPC Python 1.66.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=057799ce"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=e6dd0d7c"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.64.0</p>
+<p class="blurb">1.66.0</p>
 
 
 
@@ -509,7 +509,10 @@
             <span class="c1"># Locate ones created by `aio.Call`.</span>
             <span class="n">frame</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">candidate</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;self&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">candidate</span><span class="p">:</span>
+            <span class="c1"># Explicitly check for a non-null candidate instead of the more pythonic &#39;if candidate:&#39;</span>
+            <span class="c1"># because doing &#39;if candidate:&#39; assumes that the coroutine implements &#39;__bool__&#39; which</span>
+            <span class="c1"># might not always be the case.</span>
+            <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
                     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;_channel&quot;</span><span class="p">):</span>
                         <span class="c1"># For intercepted Call object</span>

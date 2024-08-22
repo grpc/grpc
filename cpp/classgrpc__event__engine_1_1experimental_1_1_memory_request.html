@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -68,7 +68,8 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a>  </div>
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::MemoryRequest Class Reference</div>  </div>
 </div><!--header-->
@@ -94,12 +95,22 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a0ae4bf6f6efa919f6a0f467467c5dcdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2b5a954b783be3bc90a6870ff02843f"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab2b5a954b783be3bc90a6870ff02843f">max</a> () const</td></tr>
 <tr class="separator:ab2b5a954b783be3bc90a6870ff02843f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b059a504ba385ca530db28f27c9c29d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a3b059a504ba385ca530db28f27c9c29d">operator==</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> &amp;other) const</td></tr>
+<tr class="separator:a3b059a504ba385ca530db28f27c9c29d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed87d185271314a7b6124bb9f8bee4fc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aed87d185271314a7b6124bb9f8bee4fc">operator!=</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> &amp;other) const</td></tr>
+<tr class="separator:aed87d185271314a7b6124bb9f8bee4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ab8d74d1b6b325a4cbc5fa7b63cbe9056"><td class="memItemLeft" align="right" valign="top">static constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab8d74d1b6b325a4cbc5fa7b63cbe9056">max_allowed_size</a> ()</td></tr>
 <tr class="memdesc:ab8d74d1b6b325a4cbc5fa7b63cbe9056"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum allowable request size - hard coded to 1GB.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab8d74d1b6b325a4cbc5fa7b63cbe9056">More...</a><br /></td></tr>
 <tr class="separator:ab8d74d1b6b325a4cbc5fa7b63cbe9056"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:aaecc7070df8b7cb0b7380e3fe0a3cb96"><td class="memTemplParams" colspan="2">template&lt;typename Sink &gt; </td></tr>
+<tr class="memitem:aaecc7070df8b7cb0b7380e3fe0a3cb96"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aaecc7070df8b7cb0b7380e3fe0a3cb96">AbslStringify</a> (Sink &amp;s, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> &amp;r)</td></tr>
+<tr class="separator:aaecc7070df8b7cb0b7380e3fe0a3cb96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Reservation request - how much memory do we want to allocate? </p>
@@ -278,13 +289,104 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aed87d185271314a7b6124bb9f8bee4fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aed87d185271314a7b6124bb9f8bee4fc">&#9670;&nbsp;</a></span>operator!=()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc_event_engine::experimental::MemoryRequest::operator!= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> &amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3b059a504ba385ca530db28f27c9c29d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3b059a504ba385ca530db28f27c9c29d">&#9670;&nbsp;</a></span>operator==()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc_event_engine::experimental::MemoryRequest::operator== </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> &amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="aaecc7070df8b7cb0b7380e3fe0a3cb96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaecc7070df8b7cb0b7380e3fe0a3cb96">&#9670;&nbsp;</a></span>AbslStringify</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Sink &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void AbslStringify </td>
+          <td>(</td>
+          <td class="paramtype">Sink &amp;&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> &amp;&#160;</td>
+          <td class="paramname"><em>r</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc/event_engine/<a class="el" href="memory__request_8h_source.html">memory_request.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">41.0.0</span>
+   &#160;<span id="projectnumber">43.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,8 +68,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-attribs">Data Fields</a> &#124;
-<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
-<a href="#friends">Friends</a>  </div>
+<a href="#pub-static-attribs">Static Public Attributes</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::EventEngine::ConnectionHandle Struct Reference</div>  </div>
 </div><!--header-->
@@ -89,91 +88,11 @@ Data Fields</h2></td></tr>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:ab83269652f9ddce74e126e25820f7f4a"><td class="memItemLeft" align="right" valign="top">static const <a class="el" href="support_2port__platform_8h.html#ac800852435dee2834d93a4b5cfe3198a">GRPC_DLL</a> <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html#ab83269652f9ddce74e126e25820f7f4a">kInvalid</a></td></tr>
 <tr class="separator:ab83269652f9ddce74e126e25820f7f4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
-Friends</h2></td></tr>
-<tr class="memitem:a32423afd5af0ed69ef05cd2641643211"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html#a32423afd5af0ed69ef05cd2641643211">operator==</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;lhs, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;rhs)</td></tr>
-<tr class="separator:a32423afd5af0ed69ef05cd2641643211"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c1a17e40a25b21c1e841d7a1e4b5658"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html#a2c1a17e40a25b21c1e841d7a1e4b5658">operator!=</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;lhs, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;rhs)</td></tr>
-<tr class="separator:a2c1a17e40a25b21c1e841d7a1e4b5658"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A handle to a cancellable connection attempt. </p>
 <p>Returned by <em>Connect</em>, and can be passed to <em>CancelConnect</em>. </p>
-</div><h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="a2c1a17e40a25b21c1e841d7a1e4b5658"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c1a17e40a25b21c1e841d7a1e4b5658">&#9670;&nbsp;</a></span>operator!=</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool operator!= </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;&#160;</td>
-          <td class="paramname"><em>lhs</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;&#160;</td>
-          <td class="paramname"><em>rhs</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a32423afd5af0ed69ef05cd2641643211"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a32423afd5af0ed69ef05cd2641643211">&#9670;&nbsp;</a></span>operator==</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool operator== </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;&#160;</td>
-          <td class="paramname"><em>lhs</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> &amp;&#160;</td>
-          <td class="paramname"><em>rhs</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Field Documentation</h2>
+</div><h2 class="groupheader">Field Documentation</h2>
 <a id="a66e5396bb7339bac12cd68191aadb6d2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a66e5396bb7339bac12cd68191aadb6d2">&#9670;&nbsp;</a></span>keys</h2>
 
@@ -216,7 +135,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

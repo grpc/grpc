@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCPP_IMPL_SERVICE_TYPE_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPCPP_IMPL_SERVICE_TYPE_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2log_8h.html">grpc/support/log.h</a>&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2impl_2rpc__service__method_8h.html">grpcpp/impl/rpc_service_method.h</a>&gt;</span></div>
@@ -217,7 +217,7 @@ $(function() {
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="comment">// This does not have to be a hard error, however no one has approached us</span></div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="comment">// with a use case yet. Please file an issue if you believe you have one.</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="keywordtype">size_t</span> idx = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(index);</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    ABSL_CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Cannot mark the method as &#39;async&#39; because it has already been &quot;</span></div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;           <span class="stringliteral">&quot;marked as &#39;generic&#39;.&quot;</span>;</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    methods_[idx]-&gt;SetServerApiType(<a class="code" href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032eabe553330beb7b3d994656e0a4e66cd96">internal::RpcServiceMethod::ApiType::ASYNC</a>);</div>
@@ -227,7 +227,7 @@ $(function() {
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="comment">// This does not have to be a hard error, however no one has approached us</span></div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    <span class="comment">// with a use case yet. Please file an issue if you believe you have one.</span></div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    <span class="keywordtype">size_t</span> idx = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(index);</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    ABSL_CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Cannot mark the method as &#39;raw&#39; because it has already &quot;</span></div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;           <span class="stringliteral">&quot;been marked as &#39;generic&#39;.&quot;</span>;</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    methods_[idx]-&gt;SetServerApiType(<a class="code" href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea633d6abff0a3fc22404347728d195059">internal::RpcServiceMethod::ApiType::RAW</a>);</div>
@@ -237,7 +237,7 @@ $(function() {
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="comment">// This does not have to be a hard error, however no one has approached us</span></div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    <span class="comment">// with a use case yet. Please file an issue if you believe you have one.</span></div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <span class="keywordtype">size_t</span> idx = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(index);</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    CHECK_NE(methods_[idx]-&gt;handler(), <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    ABSL_CHECK_NE(methods_[idx]-&gt;handler(), <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Cannot mark the method as &#39;generic&#39; because it has already been &quot;</span></div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;           <span class="stringliteral">&quot;marked as &#39;async&#39; or &#39;raw&#39;.&quot;</span>;</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    methods_[idx].reset();</div>
@@ -247,7 +247,7 @@ $(function() {
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    <span class="comment">// This does not have to be a hard error, however no one has approached us</span></div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="comment">// with a use case yet. Please file an issue if you believe you have one.</span></div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordtype">size_t</span> idx = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(index);</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    CHECK(methods_[idx] &amp;&amp; methods_[idx]-&gt;handler())</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    ABSL_CHECK(methods_[idx] &amp;&amp; methods_[idx]-&gt;handler())</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Cannot mark an async or generic method Streamed&quot;</span>;</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    methods_[idx]-&gt;SetHandler(streamed_method);</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
@@ -262,7 +262,7 @@ $(function() {
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="comment">// This does not have to be a hard error, however no one has approached us</span></div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="comment">// with a use case yet. Please file an issue if you believe you have one.</span></div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keywordtype">size_t</span> idx = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(index);</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    ABSL_CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Cannot mark the method as &#39;callback&#39; because it has already been &quot;</span></div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;           <span class="stringliteral">&quot;marked as &#39;generic&#39;.&quot;</span>;</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    methods_[idx]-&gt;SetHandler(handler);</div>
@@ -274,7 +274,7 @@ $(function() {
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="comment">// This does not have to be a hard error, however no one has approached us</span></div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    <span class="comment">// with a use case yet. Please file an issue if you believe you have one.</span></div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    <span class="keywordtype">size_t</span> idx = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(index);</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    ABSL_CHECK_NE(methods_[idx].get(), <span class="keyword">nullptr</span>)</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        &lt;&lt; <span class="stringliteral">&quot;Cannot mark the method as &#39;raw callback&#39; because it has already &quot;</span></div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;           <span class="stringliteral">&quot;been marked as &#39;generic&#39;.&quot;</span>;</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    methods_[idx]-&gt;SetHandler(handler);</div>
@@ -345,7 +345,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_service_html_aacae94e74fed99c259fddd89f94536c8"><div class="ttname"><a href="classgrpc_1_1_service.html#aacae94e74fed99c259fddd89f94536c8">grpc::Service::Service</a></div><div class="ttdeci">Service()</div><div class="ttdef"><b>Definition:</b> service_type.h:60</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

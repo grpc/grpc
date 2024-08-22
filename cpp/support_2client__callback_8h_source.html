@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -94,7 +94,7 @@ $(function() {
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;atomic&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;functional&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2impl_2call_8h.html">grpc/impl/call.h</a>&gt;</span></div>
@@ -138,7 +138,7 @@ $(function() {
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                        <span class="keyword">const</span> InputMessage* request, OutputMessage* result,</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                        std::function&lt;<span class="keywordtype">void</span>(<a class="code" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion) {</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq = channel-&gt;CallbackCQ();</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    CHECK_NE(cq, <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    ABSL_CHECK_NE(cq, <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a> call(channel-&gt;CreateCall(method, context, cq));</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keyword">using</span> FullCallOpSet = <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt;</div>
@@ -300,7 +300,7 @@ $(function() {
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160; </div>
 <div class="line"><a name="l00307"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_bidi_reactor.html#a88c169b6b8d9ea5579d152a86b74582c">  307</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_bidi_reactor.html#a88c169b6b8d9ea5579d152a86b74582c">AddHold</a>() { <a class="code" href="classgrpc_1_1_client_bidi_reactor.html#a890e44bcd297489ae49c77d0d6c8cc31">AddMultipleHolds</a>(1); }</div>
 <div class="line"><a name="l00308"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_bidi_reactor.html#a890e44bcd297489ae49c77d0d6c8cc31">  308</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_bidi_reactor.html#a890e44bcd297489ae49c77d0d6c8cc31">AddMultipleHolds</a>(<span class="keywordtype">int</span> holds) {</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    DCHECK_GT(holds, 0);</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    ABSL_DCHECK_GT(holds, 0);</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    stream_-&gt;AddHold(holds);</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  }</div>
 <div class="line"><a name="l00312"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_bidi_reactor.html#af6c5597375914b59db43aabef3c92ddb">  312</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_bidi_reactor.html#af6c5597375914b59db43aabef3c92ddb">RemoveHold</a>() { stream_-&gt;RemoveHold(); }</div>
@@ -331,7 +331,7 @@ $(function() {
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160; </div>
 <div class="line"><a name="l00371"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_read_reactor.html#a64840e64f3e174a6f278f2944b9b76b3">  371</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_read_reactor.html#a64840e64f3e174a6f278f2944b9b76b3">AddHold</a>() { <a class="code" href="classgrpc_1_1_client_read_reactor.html#a5a55187f479c2427a156677de3ab5fc5">AddMultipleHolds</a>(1); }</div>
 <div class="line"><a name="l00372"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_read_reactor.html#a5a55187f479c2427a156677de3ab5fc5">  372</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_read_reactor.html#a5a55187f479c2427a156677de3ab5fc5">AddMultipleHolds</a>(<span class="keywordtype">int</span> holds) {</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    DCHECK_GT(holds, 0);</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    ABSL_DCHECK_GT(holds, 0);</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    reader_-&gt;AddHold(holds);</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  }</div>
 <div class="line"><a name="l00376"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_read_reactor.html#af3df4e412be5ad69ab8310fe7503b52f">  376</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_read_reactor.html#af3df4e412be5ad69ab8310fe7503b52f">RemoveHold</a>() { reader_-&gt;RemoveHold(); }</div>
@@ -361,7 +361,7 @@ $(function() {
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160; </div>
 <div class="line"><a name="l00403"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_write_reactor.html#afc0a554830b7047ac59c1212f4758c12">  403</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_write_reactor.html#afc0a554830b7047ac59c1212f4758c12">AddHold</a>() { <a class="code" href="classgrpc_1_1_client_write_reactor.html#a3b0a8d5db651106ad73a9654771d219f">AddMultipleHolds</a>(1); }</div>
 <div class="line"><a name="l00404"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_write_reactor.html#a3b0a8d5db651106ad73a9654771d219f">  404</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_write_reactor.html#a3b0a8d5db651106ad73a9654771d219f">AddMultipleHolds</a>(<span class="keywordtype">int</span> holds) {</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    DCHECK_GT(holds, 0);</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    ABSL_DCHECK_GT(holds, 0);</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    writer_-&gt;AddHold(holds);</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;  }</div>
 <div class="line"><a name="l00408"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_write_reactor.html#a4f3417ff8e097cc08e6f0b4bede54d00">  408</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_write_reactor.html#a4f3417ff8e097cc08e6f0b4bede54d00">RemoveHold</a>() { writer_-&gt;RemoveHold(); }</div>
@@ -411,7 +411,7 @@ $(function() {
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l00465"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a563fb42e0b9d14af22e9166a46be62a7">  465</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html">ClientCallbackReaderWriterImpl</a>));</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html">ClientCallbackReaderWriterImpl</a>));</div>
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;  }</div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160; </div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -419,7 +419,7 @@ $(function() {
 <div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l00474"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ae391911f8a215a0ad483804db745659d">  474</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l00474"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ae391911f8a215a0ad483804db745659d">  474</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160; </div>
 <div class="line"><a name="l00476"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a83a799961fd846596651478615459a01">  476</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a83a799961fd846596651478615459a01">StartCall</a>() ABSL_LOCKS_EXCLUDED(start_mu_)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;    <span class="comment">// This call initiates two batches, plus any backlog, each with a callback</span></div>
@@ -477,7 +477,7 @@ $(function() {
 <div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;      write_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;    }</div>
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;    <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;    CHECK(write_ops_.SendMessagePtr(msg, options).ok());</div>
+<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options).ok());</div>
 <div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);</div>
 <div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(corked_write_needed_)) {</div>
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;      write_ops_.SendInitialMetadata(&amp;context_-&gt;send_initial_metadata_,</div>
@@ -669,7 +669,7 @@ $(function() {
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l00723"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a626d8cbffd300bea7244c502e192d261">  723</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html">ClientCallbackReaderImpl</a>));</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html">ClientCallbackReaderImpl</a>));</div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;  }</div>
 <div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160; </div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -677,7 +677,7 @@ $(function() {
 <div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l00732"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a61fca01a41c75f612bb48549956a4f8f">  732</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l00732"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a61fca01a41c75f612bb48549956a4f8f">  732</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160; </div>
 <div class="line"><a name="l00734"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a91670b2eaffb5a7f2fcd2463a74df482">  734</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a91670b2eaffb5a7f2fcd2463a74df482">StartCall</a>()<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;    <span class="comment">// This call initiates two batches, plus any backlog, each with a callback</span></div>
@@ -754,7 +754,7 @@ $(function() {
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;      : context_(context), call_(call), reactor_(reactor) {</div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;    this-&gt;BindReactor(reactor);</div>
 <div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;    <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;    CHECK(start_ops_.SendMessagePtr(request).ok());</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;    ABSL_CHECK(start_ops_.SendMessagePtr(request).ok());</div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;    start_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;  }</div>
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160; </div>
@@ -830,7 +830,7 @@ $(function() {
 <div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l00884"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae4ded6a83bf3d37312c5a7bddb2cb698">  884</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">ClientCallbackWriterImpl</a>));</div>
+<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html">ClientCallbackWriterImpl</a>));</div>
 <div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;  }</div>
 <div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160; </div>
 <div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -838,7 +838,7 @@ $(function() {
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l00893"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a85dbbfed50014b6665a54e0517c6aba8">  893</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l00893"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a85dbbfed50014b6665a54e0517c6aba8">  893</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160; </div>
 <div class="line"><a name="l00895"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#af2d943916b76b9999a4cf32f4752b904">  895</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#af2d943916b76b9999a4cf32f4752b904">StartCall</a>() ABSL_LOCKS_EXCLUDED(start_mu_)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;    <span class="comment">// This call initiates two batches, plus any backlog, each with a callback</span></div>
@@ -879,7 +879,7 @@ $(function() {
 <div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;      write_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;    }</div>
 <div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;    <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;    CHECK(write_ops_.SendMessagePtr(msg, options).ok());</div>
+<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options).ok());</div>
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);</div>
 <div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160; </div>
 <div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(corked_write_needed_)) {</div>
@@ -1060,7 +1060,7 @@ $(function() {
 <div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l01114"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#a1a845d65b2939806151aaf3ea54afab8"> 1114</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html">ClientCallbackUnaryImpl</a>));</div>
+<div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html">ClientCallbackUnaryImpl</a>));</div>
 <div class="line"><a name="l01116"></a><span class="lineno"> 1116</span>&#160;  }</div>
 <div class="line"><a name="l01117"></a><span class="lineno"> 1117</span>&#160; </div>
 <div class="line"><a name="l01118"></a><span class="lineno"> 1118</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -1068,7 +1068,7 @@ $(function() {
 <div class="line"><a name="l01120"></a><span class="lineno"> 1120</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l01121"></a><span class="lineno"> 1121</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l01122"></a><span class="lineno"> 1122</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l01123"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#ae6ea0b66f78f0ebd494f3fe32d7dbbcf"> 1123</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l01123"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#ae6ea0b66f78f0ebd494f3fe32d7dbbcf"> 1123</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l01124"></a><span class="lineno"> 1124</span>&#160; </div>
 <div class="line"><a name="l01125"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#affd54994d03a0cd015c3ec7886d7d1c6"> 1125</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#affd54994d03a0cd015c3ec7886d7d1c6">StartCall</a>()<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;    <span class="comment">// This call initiates two batches, each with a callback</span></div>
@@ -1107,7 +1107,7 @@ $(function() {
 <div class="line"><a name="l01159"></a><span class="lineno"> 1159</span>&#160;      : context_(context), call_(call), reactor_(reactor) {</div>
 <div class="line"><a name="l01160"></a><span class="lineno"> 1160</span>&#160;    this-&gt;<a class="code" href="classgrpc_1_1_client_callback_unary.html#a780ac39ed47c68db262f64072fc1ab57">BindReactor</a>(reactor);</div>
 <div class="line"><a name="l01161"></a><span class="lineno"> 1161</span>&#160;    <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;    CHECK(start_ops_.SendMessagePtr(request).ok());</div>
+<div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;    ABSL_CHECK(start_ops_.SendMessagePtr(request).ok());</div>
 <div class="line"><a name="l01163"></a><span class="lineno"> 1163</span>&#160;    start_ops_.ClientSendClose();</div>
 <div class="line"><a name="l01164"></a><span class="lineno"> 1164</span>&#160;    finish_ops_.RecvMessage(response);</div>
 <div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;    finish_ops_.AllowNoMessage();</div>
@@ -1231,7 +1231,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_client_callback_reader_writer_html_a91bc5f726c434a2601f47193a758b5f5"><div class="ttname"><a href="classgrpc_1_1_client_callback_reader_writer.html#a91bc5f726c434a2601f47193a758b5f5">grpc::ClientCallbackReaderWriter::AddHold</a></div><div class="ttdeci">virtual void AddHold(int holds)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_bidi_reactor_html_ad77148d32093f38daeb755e820b70c61"><div class="ttname"><a href="classgrpc_1_1_client_bidi_reactor.html#ad77148d32093f38daeb755e820b70c61">grpc::ClientBidiReactor::OnReadDone</a></div><div class="ttdeci">virtual void OnReadDone(bool)</div><div class="ttdoc">Notifies the application that a StartRead operation completed.</div><div class="ttdef"><b>Definition:</b> client_callback.h:337</div></div>
 <div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:34</div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_a99b5bddfe84f8dc8ee55b35405b8fddd"><div class="ttname"><a href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a></div><div class="ttdeci">#define GPR_UNLIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:828</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_a99b5bddfe84f8dc8ee55b35405b8fddd"><div class="ttname"><a href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a></div><div class="ttdeci">#define GPR_UNLIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:853</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_callback_writer_html_a1fcb234f67a44bf7fa3facce48f4e6f8"><div class="ttname"><a href="classgrpc_1_1_client_callback_writer.html#a1fcb234f67a44bf7fa3facce48f4e6f8">grpc::ClientCallbackWriter::WritesDone</a></div><div class="ttdeci">virtual void WritesDone()=0</div></div>
 <div class="ttc" id="asupport_2log_8h_html"><div class="ttname"><a href="support_2log_8h.html">log.h</a></div></div>
 <div class="ttc" id="agrpc_8h_html_ad94050d59c72fadfb22962ff40110e85"><div class="ttname"><a href="grpc_8h.html#ad94050d59c72fadfb22962ff40110e85">grpc_call_unref</a></div><div class="ttdeci">GRPCAPI void grpc_call_unref(grpc_call *call)</div><div class="ttdoc">Unref a call.</div></div>
@@ -1309,9 +1309,9 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_client_callback_reader_html_a92b24c8cddb636d19570f576fa509d80"><div class="ttname"><a href="classgrpc_1_1_client_callback_reader.html#a92b24c8cddb636d19570f576fa509d80">grpc::ClientCallbackReader::AddHold</a></div><div class="ttdeci">virtual void AddHold(int holds)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_write_reactor_html_a3b0a8d5db651106ad73a9654771d219f"><div class="ttname"><a href="classgrpc_1_1_client_write_reactor.html#a3b0a8d5db651106ad73a9654771d219f">grpc::ClientWriteReactor::AddMultipleHolds</a></div><div class="ttdeci">void AddMultipleHolds(int holds)</div><div class="ttdef"><b>Definition:</b> client_callback.h:404</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_callback_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_callback_reader.html">grpc::ClientCallbackReader</a></div><div class="ttdef"><b>Definition:</b> client_callback.h:171</div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_a518d2d0a7ae17a01e2fa2dee0e2f84df"><div class="ttname"><a href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">GPR_LIKELY</a></div><div class="ttdeci">#define GPR_LIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:827</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_a518d2d0a7ae17a01e2fa2dee0e2f84df"><div class="ttname"><a href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">GPR_LIKELY</a></div><div class="ttdeci">#define GPR_LIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:852</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_callback_unary_html_a619855b0e48d170700b55e50d7549370"><div class="ttname"><a href="classgrpc_1_1_client_callback_unary.html#a619855b0e48d170700b55e50d7549370">grpc::ClientCallbackUnary::~ClientCallbackUnary</a></div><div class="ttdeci">virtual ~ClientCallbackUnary()</div><div class="ttdef"><b>Definition:</b> client_callback.h:208</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a449a33a6877ac4710dc40fccaf786c35"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a449a33a6877ac4710dc40fccaf786c35">grpc::internal::CallOpSet::set_core_cq_tag</a></div><div class="ttdeci">void set_core_cq_tag(void *core_cq_tag)</div><div class="ttdoc">set_core_cq_tag is used to provide a different core CQ tag than &quot;this&quot;.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:945</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a449a33a6877ac4710dc40fccaf786c35"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a449a33a6877ac4710dc40fccaf786c35">grpc::internal::CallOpSet::set_core_cq_tag</a></div><div class="ttdeci">void set_core_cq_tag(void *core_cq_tag)</div><div class="ttdoc">set_core_cq_tag is used to provide a different core CQ tag than &quot;this&quot;.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:947</div></div>
 <div class="ttc" id="ap_2impl_2sync_8h_html"><div class="ttname"><a href="p_2impl_2sync_8h.html">sync.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_client_callback_reader_writer_impl_html_ad27f95865c673a8302e3bac88a0466b1"><div class="ttname"><a href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ad27f95865c673a8302e3bac88a0466b1">grpc::internal::ClientCallbackReaderWriterImpl::AddHold</a></div><div class="ttdeci">void AddHold(int holds) override</div><div class="ttdef"><b>Definition:</b> client_callback.h:575</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_write_reactor_html_a4f3417ff8e097cc08e6f0b4bede54d00"><div class="ttname"><a href="classgrpc_1_1_client_write_reactor.html#a4f3417ff8e097cc08e6f0b4bede54d00">grpc::ClientWriteReactor::RemoveHold</a></div><div class="ttdeci">void RemoveHold()</div><div class="ttdef"><b>Definition:</b> client_callback.h:408</div></div>
@@ -1323,7 +1323,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_client_write_reactor_html_a1c1efb0ca48e94cf8bca72393ec27e7f"><div class="ttname"><a href="classgrpc_1_1_client_write_reactor.html#a1c1efb0ca48e94cf8bca72393ec27e7f">grpc::ClientWriteReactor::OnWritesDoneDone</a></div><div class="ttdeci">virtual void OnWritesDoneDone(bool)</div><div class="ttdef"><b>Definition:</b> client_callback.h:413</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

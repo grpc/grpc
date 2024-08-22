@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">41.0.0</span>
+   &#160;<span id="projectnumber">43.0.0</span>
    </div>
   </td>
  </tr>
@@ -146,7 +146,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA</a>&#160;&#160;&#160;&quot;grpc.http2.max_pings_without_data&quot;</td></tr>
-<tr class="memdesc:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many pings can the client send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame)  <a href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">More...</a><br /></td></tr>
+<tr class="memdesc:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many pings can the client send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame).  <a href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">More...</a><br /></td></tr>
 <tr class="separator:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf50a9992745183e14e8c660d954c1d82"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">GRPC_ARG_HTTP2_MAX_PING_STRIKES</a>&#160;&#160;&#160;&quot;grpc.http2.max_ping_strikes&quot;</td></tr>
 <tr class="memdesc:gaf50a9992745183e14e8c660d954c1d82"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many misbehaving pings the server can bear before sending goaway and closing the transport? (0 indicates that the server can bear an infinite number of misbehaving pings)  <a href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">More...</a><br /></td></tr>
@@ -344,6 +344,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gabd42b553fb7664f8a0231bec0268089c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabd42b553fb7664f8a0231bec0268089c">GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS</a>&#160;&#160;&#160;&quot;grpc.max_allowed_incoming_connections&quot;</td></tr>
 <tr class="memdesc:gabd42b553fb7664f8a0231bec0268089c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configure the max number of allowed incoming connections to the server.  <a href="group__grpc__arg__keys.html#gabd42b553fb7664f8a0231bec0268089c">More...</a><br /></td></tr>
 <tr class="separator:gabd42b553fb7664f8a0231bec0268089c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab23d854a0107f74d73e3ab3af604e841"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gab23d854a0107f74d73e3ab3af604e841">GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS</a>&#160;&#160;&#160;&quot;grpc.experimental.stats_plugins&quot;</td></tr>
+<tr class="memdesc:gab23d854a0107f74d73e3ab3af604e841"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configure per-channel or per-server stats plugins.  <a href="group__grpc__arg__keys.html#gab23d854a0107f74d73e3ab3af604e841">More...</a><br /></td></tr>
+<tr class="separator:gab23d854a0107f74d73e3ab3af604e841"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM</a>&#160;&#160;&#160;&quot;grpc.default_compression_algorithm&quot;</td></tr>
 <tr class="memdesc:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default compression algorithm for the channel.  <a href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">More...</a><br /></td></tr>
 <tr class="separator:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -789,6 +792,22 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="gab23d854a0107f74d73e3ab3af604e841"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gab23d854a0107f74d73e3ab3af604e841">&#9670;&nbsp;</a></span>GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS&#160;&#160;&#160;&quot;grpc.experimental.stats_plugins&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Configure per-channel or per-server stats plugins. </p>
+
+</div>
+</div>
 <a id="ga1768735fceeb8108a2f1eb12ea0a894e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga1768735fceeb8108a2f1eb12ea0a894e">&#9670;&nbsp;</a></span>GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS</h2>
 
@@ -962,7 +981,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>How many pings can the client send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame) </p>
+<p>How many pings can the client send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame). </p>
+<p>If experiment "max_pings_wo_data_throttle" is enabled, instead of pings being completely blocked, they are throttled. </p>
 
 </div>
 </div>
@@ -1949,7 +1969,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

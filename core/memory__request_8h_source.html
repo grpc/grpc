@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">41.0.0</span>
+   &#160;<span id="projectnumber">43.0.0</span>
    </div>
   </td>
  </tr>
@@ -110,20 +110,41 @@ $(function() {
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a0ae4bf6f6efa919f6a0f467467c5dcdf">   46</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a0ae4bf6f6efa919f6a0f467467c5dcdf">min</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> min_; }</div>
 <div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab2b5a954b783be3bc90a6870ff02843f">   47</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab2b5a954b783be3bc90a6870ff02843f">max</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> max_; }</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keywordtype">size_t</span> min_;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keywordtype">size_t</span> max_;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;};</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_MEMORY_REQUEST_H</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a3b059a504ba385ca530db28f27c9c29d">   49</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a3b059a504ba385ca530db28f27c9c29d">operator==</a>(<span class="keyword">const</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a>&amp; other)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordflow">return</span> min_ == other.min_ &amp;&amp; max_ == other.max_;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  }</div>
+<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aed87d185271314a7b6124bb9f8bee4fc">   52</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aed87d185271314a7b6124bb9f8bee4fc">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a>&amp; other)<span class="keyword"> const </span>{</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keywordflow">return</span> !(*<span class="keyword">this</span> == other);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  }</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Sink&gt;</div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aaecc7070df8b7cb0b7380e3fe0a3cb96">   57</a></span>&#160;  <span class="keyword">friend</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aaecc7070df8b7cb0b7380e3fe0a3cb96">AbslStringify</a>(Sink&amp; s, <span class="keyword">const</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a>&amp; r) {</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keywordflow">if</span> (r.min_ == r.max_) {</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;      s.Append(r.min_);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;      s.Append(r.min_);</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;      s.Append(<span class="stringliteral">&quot;..&quot;</span>);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;      s.Append(r.max_);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    }</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  }</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="keywordtype">size_t</span> min_;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">size_t</span> max_;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;};</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_MEMORY_REQUEST_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_ab2b5a954b783be3bc90a6870ff02843f"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab2b5a954b783be3bc90a6870ff02843f">grpc_event_engine::experimental::MemoryRequest::max</a></div><div class="ttdeci">size_t max() const</div><div class="ttdef"><b>Definition:</b> memory_request.h:47</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_a4b865723f0e2c15af381ab516cad5d1d"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a4b865723f0e2c15af381ab516cad5d1d">grpc_event_engine::experimental::MemoryRequest::MemoryRequest</a></div><div class="ttdeci">MemoryRequest(size_t min, size_t max)</div><div class="ttdoc">Request a range of memory.</div><div class="ttdef"><b>Definition:</b> memory_request.h:35</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_aed87d185271314a7b6124bb9f8bee4fc"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aed87d185271314a7b6124bb9f8bee4fc">grpc_event_engine::experimental::MemoryRequest::operator!=</a></div><div class="ttdeci">bool operator!=(const MemoryRequest &amp;other) const</div><div class="ttdef"><b>Definition:</b> memory_request.h:52</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">grpc_event_engine::experimental::MemoryRequest</a></div><div class="ttdoc">Reservation request - how much memory do we want to allocate?</div><div class="ttdef"><b>Definition:</b> memory_request.h:27</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_a63a2c7255efde882b3c6d0e501ee5256"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a63a2c7255efde882b3c6d0e501ee5256">grpc_event_engine::experimental::MemoryRequest::Increase</a></div><div class="ttdeci">MemoryRequest Increase(size_t amount) const</div><div class="ttdoc">Increase the size by amount.</div><div class="ttdef"><b>Definition:</b> memory_request.h:42</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_aaecc7070df8b7cb0b7380e3fe0a3cb96"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#aaecc7070df8b7cb0b7380e3fe0a3cb96">grpc_event_engine::experimental::MemoryRequest::AbslStringify</a></div><div class="ttdeci">friend void AbslStringify(Sink &amp;s, const MemoryRequest &amp;r)</div><div class="ttdef"><b>Definition:</b> memory_request.h:57</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_a3b059a504ba385ca530db28f27c9c29d"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a3b059a504ba385ca530db28f27c9c29d">grpc_event_engine::experimental::MemoryRequest::operator==</a></div><div class="ttdeci">bool operator==(const MemoryRequest &amp;other) const</div><div class="ttdef"><b>Definition:</b> memory_request.h:49</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_a0ae4bf6f6efa919f6a0f467467c5dcdf"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a0ae4bf6f6efa919f6a0f467467c5dcdf">grpc_event_engine::experimental::MemoryRequest::min</a></div><div class="ttdeci">size_t min() const</div><div class="ttdef"><b>Definition:</b> memory_request.h:46</div></div>
 <div class="ttc" id="anamespacegrpc__event__engine_html"><div class="ttname"><a href="namespacegrpc__event__engine.html">grpc_event_engine</a></div><div class="ttdef"><b>Definition:</b> endpoint_config.h:24</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_request_html_a2502ca8932ee81cf8015db45bc5188c6"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#a2502ca8932ee81cf8015db45bc5188c6">grpc_event_engine::experimental::MemoryRequest::MemoryRequest</a></div><div class="ttdeci">MemoryRequest(size_t n)</div><div class="ttdoc">Request a fixed amount of memory.</div><div class="ttdef"><b>Definition:</b> memory_request.h:31</div></div>
@@ -131,7 +152,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

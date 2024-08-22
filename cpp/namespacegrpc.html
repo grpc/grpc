@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -347,6 +347,9 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html">TemplatedGenericStub</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generic stubs provide a type-unaware interface to call gRPC methods by name.  <a href="classgrpc_1_1_templated_generic_stub.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub_callback.html">TemplatedGenericStubCallback</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generic stubs provide a type-unaware interface to call gRPC methods by name.  <a href="classgrpc_1_1_templated_generic_stub_callback.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_time_point.html">TimePoint</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">If you are trying to use <a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4" title="Read from the queue, blocking up to deadline (or the queue&#39;s shutdown).">CompletionQueue::AsyncNext</a> with a time class that isn't either <a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec.">gpr_timespec</a> or std::chrono::system_clock::time_point, you will most likely be looking at this comment as your compiler will have fired an error below.  <a href="classgrpc_1_1_time_point.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -381,6 +384,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a7ee9bd108774bc00defacc5b4fb695df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac44a8983b461983cc7a1d67119a606ac"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_templated_generic_stub.html">TemplatedGenericStub</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac44a8983b461983cc7a1d67119a606ac">GenericStub</a></td></tr>
 <tr class="separator:ac44a8983b461983cc7a1d67119a606ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fa3757db70dbeb60ae198672e8faa82"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_templated_generic_stub_callback.html">TemplatedGenericStubCallback</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a3fa3757db70dbeb60ae198672e8faa82">GenericStubCallback</a></td></tr>
+<tr class="separator:a3fa3757db70dbeb60ae198672e8faa82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab23a7f74e4fef64035c11941ba6c57c6"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab23a7f74e4fef64035c11941ba6c57c6">AuthProperty</a></td></tr>
 <tr class="separator:ab23a7f74e4fef64035c11941ba6c57c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -646,6 +651,20 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef <a class="el" href="classgrpc_1_1_templated_generic_stub.html">TemplatedGenericStub</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#ac44a8983b461983cc7a1d67119a606ac">grpc::GenericStub</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3fa3757db70dbeb60ae198672e8faa82"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fa3757db70dbeb60ae198672e8faa82">&#9670;&nbsp;</a></span>GenericStubCallback</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef <a class="el" href="classgrpc_1_1_templated_generic_stub_callback.html">TemplatedGenericStubCallback</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#a3fa3757db70dbeb60ae198672e8faa82">grpc::GenericStubCallback</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1976,7 +1995,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -99,7 +99,7 @@ $(function() {
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &lt;mutex&gt;</span></div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &quot;absl/synchronization/mutex.h&quot;</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2log_8h.html">grpc/support/log.h</a>&gt;</span></div>
@@ -178,7 +178,7 @@ $(function() {
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html">ReleasableMutexLock</a>&amp; operator=(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html">ReleasableMutexLock</a>&amp;) = <span class="keyword">delete</span>;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
 <div class="line"><a name="l00108"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#ab83f8ce3b17744474963dd4031c53128">  108</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#ab83f8ce3b17744474963dd4031c53128">Release</a>() ABSL_UNLOCK_FUNCTION() {</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    DCHECK(!released_);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    ABSL_DCHECK(!released_);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    released_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    mu_-&gt;Unlock();</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;  }</div>
@@ -264,7 +264,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

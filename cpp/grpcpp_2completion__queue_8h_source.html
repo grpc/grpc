@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -93,7 +93,7 @@ $(function() {
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#include &lt;list&gt;</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2atm_8h.html">grpc/support/atm.h</a>&gt;</span></div>
@@ -277,7 +277,7 @@ $(function() {
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;      <span class="keywordtype">bool</span> ok = ev.success != 0;</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;      <span class="keywordtype">void</span>* ignored = tag;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;      <span class="keywordflow">if</span> (tag-&gt;<a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a>(&amp;ignored, &amp;ok)) {</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        CHECK(ignored == tag);</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        ABSL_CHECK(ignored == tag);</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keywordflow">return</span> ok;</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;      }</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    }</div>
@@ -290,7 +290,7 @@ $(function() {
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    <span class="keywordtype">bool</span> ok = ev.success != 0;</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    <span class="keywordtype">void</span>* ignored = tag;</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    <span class="comment">// the tag must be swallowed if using TryPluck</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    CHECK(!tag-&gt;<a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a>(&amp;ignored, &amp;ok));</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    ABSL_CHECK(!tag-&gt;<a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a>(&amp;ignored, &amp;ok));</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  }</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160; </div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="keywordtype">void</span> TryPluck(<a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html">grpc::internal::CompletionQueueTag</a>* tag,</div>
@@ -302,7 +302,7 @@ $(function() {
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keywordtype">bool</span> ok = ev.success != 0;</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    <span class="keywordtype">void</span>* ignored = tag;</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    CHECK(!tag-&gt;<a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a>(&amp;ignored, &amp;ok));</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    ABSL_CHECK(!tag-&gt;<a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a>(&amp;ignored, &amp;ok));</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  }</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;  <span class="keywordtype">void</span> InitialAvalanching() {</div>
@@ -448,7 +448,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_mutex_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_mutex.html">grpc::internal::Mutex</a></div><div class="ttdef"><b>Definition:</b> sync.h:58</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method.</div><div class="ttdef"><b>Definition:</b> rpc_method.h:29</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_completion_queue_html_a1706983733b2a91c8df6712729cd6721"><div class="ttname"><a href="classgrpc_1_1_server_completion_queue.html#a1706983733b2a91c8df6712729cd6721">grpc::ServerCompletionQueue::ServerCompletionQueue</a></div><div class="ttdeci">ServerCompletionQueue()</div><div class="ttdoc">Default constructor.</div><div class="ttdef"><b>Definition:</b> completion_queue.h:433</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_builder_html"><div class="ttname"><a href="classgrpc_1_1_server_builder.html">grpc::ServerBuilder</a></div><div class="ttdoc">A builder class for the creation and startup of grpc::Server instances.</div><div class="ttdef"><b>Definition:</b> server_builder.h:84</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_builder_html"><div class="ttname"><a href="classgrpc_1_1_server_builder.html">grpc::ServerBuilder</a></div><div class="ttdoc">A builder class for the creation and startup of grpc::Server instances.</div><div class="ttdef"><b>Definition:</b> server_builder.h:88</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_interface_html"><div class="ttname"><a href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></div><div class="ttdef"><b>Definition:</b> server_interface.h:61</div></div>
 <div class="ttc" id="asupport_2atm_8h_html"><div class="ttname"><a href="support_2atm_8h.html">atm.h</a></div></div>
 <div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> time.h:48</div></div>
@@ -463,7 +463,7 @@ $(function() {
 <div class="ttc" id="asupport_2atm__gcc__atomic_8h_html_ae337dc477a6a45ac3d91e41e8f3f2f8c"><div class="ttname"><a href="support_2atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add</a></div><div class="ttdeci">#define gpr_atm_no_barrier_fetch_add(p, delta)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:45</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
