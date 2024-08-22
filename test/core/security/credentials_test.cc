@@ -714,49 +714,45 @@ TEST_F(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 }
 
 void validate_compute_engine_http_request(const grpc_http_request* request,
-                                          const char* host, const char* path) {
-  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
-  CHECK_EQ(
-      strcmp(path,
-             "/computeMetadata/v1/instance/service-accounts/default/token"),
-      0);
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Metadata-Flavor"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "Google"), 0);
+                                          const URI& uri) {
+  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
+  EXPECT_EQ(uri.path(),
+            "/computeMetadata/v1/instance/service-accounts/default/token");
+  ASSERT_EQ(request->hdr_count, 1);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
 }
 
 int compute_engine_httpcli_get_success_override(
-    const grpc_http_request* request, const char* host, const char* path,
-    Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
-  validate_compute_engine_http_request(request, host, path);
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  validate_compute_engine_http_request(request, uri);
   *response = http_response(200, valid_oauth2_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int compute_engine_httpcli_get_failure_override(
-    const grpc_http_request* request, const char* host, const char* path,
-    Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
-  validate_compute_engine_http_request(request, host, path);
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  validate_compute_engine_http_request(request, uri);
   *response = http_response(403, "Not Authorized.");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
-int httpcli_post_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+int httpcli_post_should_not_be_called(const grpc_http_request* /*request*/,
+                                      const URI& /*uri*/,
+                                      absl::string_view /*body*/,
+                                      Timestamp /*deadline*/,
+                                      grpc_closure* /*on_done*/,
+                                      grpc_http_response* /*response*/) {
   CHECK(false) << "HTTP POST should not be called";
   return 1;
 }
 
 int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
-                                     const char* /*host*/, const char* /*path*/,
-                                     Timestamp /*deadline*/,
+                                     const URI& /*uri*/, Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
   CHECK(false) << "HTTP GET should not be called";
@@ -764,9 +760,8 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
 }
 
 int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
-                                     const char* /*host*/, const char* /*path*/,
-                                     const char* /*body_bytes*/,
-                                     size_t /*body_size*/,
+                                     const URI& /*uri*/,
+                                     absl::string_view /*body*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
@@ -830,40 +825,34 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
 }
 
 void validate_refresh_token_http_request(const grpc_http_request* request,
-                                         const char* host, const char* path,
-                                         const char* body, size_t body_size) {
+                                         const URI& uri,
+                                         absl::string_view body) {
   // The content of the assertion is tested extensively in json_token_test.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  std::string expected_body = absl::StrFormat(
-      GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
-      "32555999999.apps.googleusercontent.com", "EmssLNjJy1332hD4KFsecret",
-      "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
-  CHECK_EQ(expected_body.size(), body_size);
-  CHECK_EQ(memcmp(expected_body.data(), body, body_size), 0);
-  CHECK_EQ(strcmp(host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST), 0);
-  CHECK_EQ(strcmp(path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH), 0);
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
+  EXPECT_EQ(body, absl::StrFormat(GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
+                                  "32555999999.apps.googleusercontent.com",
+                                  "EmssLNjJy1332hD4KFsecret",
+                                  "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42"));
+  EXPECT_EQ(uri.authority(), GRPC_GOOGLE_OAUTH2_SERVICE_HOST);
+  EXPECT_EQ(uri.path(), GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
+  ASSERT_EQ(request->hdr_count, 1);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
 }
 
 int refresh_token_httpcli_post_success(const grpc_http_request* request,
-                                       const char* host, const char* path,
-                                       const char* body, size_t body_size,
+                                       const URI& uri, absl::string_view body,
                                        Timestamp /*deadline*/,
                                        grpc_closure* on_done,
                                        grpc_http_response* response) {
-  validate_refresh_token_http_request(request, host, path, body, body_size);
+  validate_refresh_token_http_request(request, uri, body);
   *response = http_response(200, valid_oauth2_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int token_httpcli_post_failure(const grpc_http_request* /*request*/,
-                               const char* /*host*/, const char* /*path*/,
-                               const char* /*body*/, size_t /*body_size*/,
+                               const URI& /*uri*/, absl::string_view /*body*/,
                                Timestamp /*deadline*/, grpc_closure* on_done,
                                grpc_http_response* response) {
   *response = http_response(403, "Not Authorized.");
@@ -1033,12 +1022,9 @@ void assert_query_parameters(const URI& uri, absl::string_view expected_key,
 }
 
 void validate_sts_token_http_request(const grpc_http_request* request,
-                                     const char* host, const char* path,
-                                     const char* body, size_t body_size,
+                                     const URI& uri, absl::string_view body,
                                      bool expect_actor_token) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   absl::StatusOr<URI> url = URI::Parse(get_url_equivalent);
@@ -1065,31 +1051,30 @@ void validate_sts_token_http_request(const grpc_http_request* request,
   }
 
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/v1/token-exchange"), 0);
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/v1/token-exchange");
+  ASSERT_EQ(request->hdr_count, 1);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
 }
 
 int sts_token_httpcli_post_success(const grpc_http_request* request,
-                                   const char* host, const char* path,
-                                   const char* body, size_t body_size,
+                                   const URI& uri, absl::string_view body,
                                    Timestamp /*deadline*/,
                                    grpc_closure* on_done,
                                    grpc_http_response* response) {
-  validate_sts_token_http_request(request, host, path, body, body_size, true);
+  validate_sts_token_http_request(request, uri, body, true);
   *response = http_response(200, valid_sts_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int sts_token_httpcli_post_success_no_actor_token(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  validate_sts_token_http_request(request, host, path, body, body_size, false);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  validate_sts_token_http_request(request, uri, body, false);
   *response = http_response(200, valid_sts_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -1625,7 +1610,7 @@ TEST_F(CredentialsTest,
 }
 
 int default_creds_metadata_server_detection_httpcli_get_success_override(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, "");
@@ -1635,8 +1620,8 @@ int default_creds_metadata_server_detection_httpcli_get_success_override(
   headers[0].value = gpr_strdup("Google");
   response->hdr_count = 1;
   response->hdrs = headers;
-  CHECK_EQ(strcmp(path, "/"), 0);
-  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
+  EXPECT_EQ(uri.path(), "/");
+  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -1713,12 +1698,12 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNonGce) {
 }
 
 int default_creds_gce_detection_httpcli_get_failure_override(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   // No magic header.
-  CHECK_EQ(strcmp(path, "/"), 0);
-  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
+  EXPECT_EQ(uri.path(), "/");
+  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
   *response = http_response(200, "");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -2130,11 +2115,9 @@ TEST_F(CredentialsTest, TestAuthMetadataContext) {
 }
 
 void validate_external_account_creds_token_exchage_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& request_uri,
+    absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
@@ -2151,100 +2134,84 @@ void validate_external_account_creds_token_exchage_request(
   assert_query_parameters(*uri, "subject_token_type", "subject_token_type");
   assert_query_parameters(*uri, "scope",
                           "https://www.googleapis.com/auth/cloud-platform");
-
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/token"), 0);
-  CHECK_EQ(request->hdr_count, 3);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK_EQ(
-      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
-      0);
+  EXPECT_EQ(request_uri.authority(), "foo.com:5555");
+  EXPECT_EQ(request_uri.path(), "/token");
+  ASSERT_EQ(request->hdr_count, 3);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].value),
+            "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
 void validate_external_account_creds_token_exchage_request_with_url_encode(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  CHECK_EQ(
-      strcmp(
-          std::string(body, body_size).c_str(),
-          "audience=audience_!%40%23%24&grant_type=urn%3Aietf%3Aparams%3Aoauth%"
-          "3Agrant-type%3Atoken-exchange&requested_token_type=urn%3Aietf%"
-          "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
-          "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
-          "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&"
-          "options=%7B%7D"),
-      0);
-
+  EXPECT_EQ(
+      body,
+      "audience=audience_!%40%23%24&grant_type=urn%3Aietf%3Aparams%3Aoauth%"
+      "3Agrant-type%3Atoken-exchange&requested_token_type=urn%3Aietf%"
+      "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
+      "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
+      "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&"
+      "options=%7B%7D");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/token_url_encode"), 0);
-  CHECK_EQ(request->hdr_count, 3);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK_EQ(
-      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
-      0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/token_url_encode");
+  ASSERT_EQ(request->hdr_count, 3);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].value),
+            "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
 void validate_external_account_creds_service_account_impersonation_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=3600s"), 0);
+  EXPECT_EQ(body, "scope=scope_1%20scope_2&lifetime=3600s");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
-  CHECK_EQ(request->hdr_count, 2);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
-  CHECK_EQ(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token"),
-           0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/service_account_impersonation");
+  ASSERT_EQ(request->hdr_count, 2);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].value),
+            "Bearer token_exchange_access_token");
 }
 
 void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=1800s"), 0);
+  EXPECT_EQ(body, "scope=scope_1%20scope_2&lifetime=1800s");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
-  CHECK_EQ(request->hdr_count, 2);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
-  CHECK_EQ(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token"),
-           0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/service_account_impersonation");
+  ASSERT_EQ(request->hdr_count, 2);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].value),
+            "Bearer token_exchange_access_token");
 }
 
 int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
-    validate_external_account_creds_token_exchage_request(
-        request, host, path, body, body_size, true);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    validate_external_account_creds_token_exchage_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
-  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+  } else if (uri.path() == "/service_account_impersonation") {
     validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
-        request, host, path, body, body_size, true);
+        request, uri, body);
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
@@ -2254,23 +2221,22 @@ int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
 }
 
 int external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
-    validate_external_account_creds_token_exchage_request(
-        request, host, path, body, body_size, true);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    validate_external_account_creds_token_exchage_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
-  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+  } else if (uri.path() == "/service_account_impersonation") {
     validate_external_account_creds_service_account_impersonation_request(
-        request, host, path, body, body_size, true);
+        request, uri, body);
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
-  } else if (strcmp(path, "/token_url_encode") == 0) {
+  } else if (uri.path() == "/token_url_encode") {
     validate_external_account_creds_token_exchage_request_with_url_encode(
-        request, host, path, body, body_size, true);
+        request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }
@@ -2279,16 +2245,15 @@ int external_account_creds_httpcli_post_success(
 }
 
 int external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* path, const char* /*body*/, size_t /*body_size*/,
-    Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* /*request*/, const URI& uri,
+    absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
+  if (uri.path() == "/token") {
     *response = http_response(200,
                               "{\"not_access_token\":\"not_access_token\","
                               "\"expires_in\":3599,"
                               " \"token_type\":\"Bearer\"}");
-  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+  } else if (uri.path() == "/service_account_impersonation") {
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
@@ -2298,18 +2263,18 @@ int external_account_creds_httpcli_post_failure_token_exchange_response_missing_
 }
 
 int url_external_account_creds_httpcli_get_success(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* path, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  if (strcmp(path, "/generate_subject_token_format_text") == 0) {
+  if (uri.path() == "/generate_subject_token_format_text") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (strcmp(path, "/path/to/url/creds?p1=v1&p2=v2") == 0) {
+  } else if (uri.path() == "/path/to/url/creds?p1=v1&p2=v2") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (strcmp(path, "/generate_subject_token_format_json") == 0) {
+  } else if (uri.path() == "/generate_subject_token_format_json") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_json);
@@ -2319,14 +2284,11 @@ int url_external_account_creds_httpcli_get_success(
 }
 
 void validate_aws_external_account_creds_token_exchage_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
-  // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
+    const grpc_http_request* request, const URI& request_uri,
+    absl::string_view body) {
   // Check that the regional_cred_verification_url got constructed
   // with the correct AWS Region ("test_regionz" or "test_region").
-  CHECK(strstr(body, "regional_cred_verification_url_test_region"));
+  EXPECT_NE(body.find("regional_cred_verification_url_test_region"), body.npos);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
@@ -2340,35 +2302,34 @@ void validate_aws_external_account_creds_token_exchage_request(
   assert_query_parameters(*uri, "scope",
                           "https://www.googleapis.com/auth/cloud-platform");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/token"), 0);
-  CHECK_EQ(request->hdr_count, 3);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[1].key, "x-goog-api-client"), 0);
+  EXPECT_EQ(request_uri.authority(), "foo.com:5555");
+  EXPECT_EQ(request_uri.path(), "/token");
+  ASSERT_EQ(request->hdr_count, 3);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].key), "x-goog-api-client");
   EXPECT_EQ(
-      request->hdrs[1].value,
+      absl::string_view(request->hdrs[1].value),
       absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
                       "sa-impersonation/false config-lifetime/false",
                       grpc_version_string()));
-  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK_EQ(
-      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
-      0);
+  EXPECT_EQ(absl::string_view(request->hdrs[2].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].value),
+            "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
 int aws_external_account_creds_httpcli_get_success(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* path, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  if (strcmp(path, "/region_url") == 0) {
+  if (uri.path() == "/region_url") {
     *response = http_response(200, "test_regionz");
-  } else if (strcmp(path, "/url") == 0) {
+  } else if (uri.path() == "/url") {
     *response = http_response(200, "test_role_name");
-  } else if (strcmp(path, "/url_no_role_name") == 0) {
+  } else if (uri.path() == "/url_no_role_name") {
     *response = http_response(200, "");
-  } else if (strcmp(path, "/url/test_role_name") == 0) {
+  } else if (uri.path() == "/url/test_role_name") {
     *response = http_response(
         200, valid_aws_external_account_creds_retrieve_signing_keys_response);
   }
@@ -2377,36 +2338,42 @@ int aws_external_account_creds_httpcli_get_success(
 }
 
 int aws_imdsv2_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response) {
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, aws_imdsv2_session_token), 0);
-  return aws_external_account_creds_httpcli_get_success(
-      request, host, path, deadline, on_done, response);
+    const grpc_http_request* request, const URI& uri, Timestamp deadline,
+    grpc_closure* on_done, grpc_http_response* response) {
+  EXPECT_EQ(request->hdr_count, 1);
+  if (request->hdr_count == 1) {
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key),
+              "x-aws-ec2-metadata-token");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+              aws_imdsv2_session_token);
+  }
+  return aws_external_account_creds_httpcli_get_success(request, uri, deadline,
+                                                        on_done, response);
 }
 
 int aws_imdsv2_external_account_creds_httpcli_put_success(
-    const grpc_http_request* request, const char* /*host*/, const char* path,
-    const char* /*body*/, size_t /*body_size*/, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token-ttl-seconds"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "300"), 0);
-  CHECK_EQ(strcmp(path, "/imdsv2_session_token_url"), 0);
+    const grpc_http_request* request, const URI& uri,
+    absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  EXPECT_EQ(request->hdr_count, 1);
+  if (request->hdr_count == 1) {
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key),
+              "x-aws-ec2-metadata-token-ttl-seconds");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value), "300");
+  }
+  EXPECT_EQ(uri.path(), "/imdsv2_session_token_url");
   *response = http_response(200, aws_imdsv2_session_token);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int aws_external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
-    validate_aws_external_account_creds_token_exchage_request(
-        request, host, path, body, body_size, true);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    validate_aws_external_account_creds_token_exchage_request(request, uri,
+                                                              body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }

@@ -20,7 +20,6 @@
 
 #ifdef GPR_WINDOWS
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 

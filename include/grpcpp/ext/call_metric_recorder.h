@@ -33,7 +33,7 @@ namespace experimental {
 
 /// Records call metrics for the purpose of load balancing.
 /// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder()
-/// method to retrive the recorder for the current call.
+/// method to retrieve the recorder for the current call.
 class CallMetricRecorder {
  public:
   virtual ~CallMetricRecorder() = default;

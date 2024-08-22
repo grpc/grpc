@@ -360,9 +360,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name.c_str());
   fork_fd_list_add_grpc_fd(new_fd);
 #ifndef NDEBUG
-  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
-    VLOG(2) << "FD " << fd << " " << new_fd << " create " << fd_name;
-  }
+  GRPC_TRACE_VLOG(fd_refcount, 2)
+      << "FD " << fd << " " << new_fd << " create " << fd_name;
 #endif
 
   struct epoll_event ev;
@@ -831,12 +830,11 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     grpc_core::ExecCtx::Get()->InvalidateNow();
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(polling)) {
-    LOG(INFO) << "PS:" << pollset << " BEGIN_DONE:" << worker
-              << " kick_state=" << kick_state_string(worker->state)
-              << " shutdown=" << pollset->shutting_down
-              << " kicked_without_poller: " << pollset->kicked_without_poller;
-  }
+  GRPC_TRACE_LOG(polling, INFO)
+      << "PS:" << pollset << " BEGIN_DONE:" << worker
+      << " kick_state=" << kick_state_string(worker->state)
+      << " shutdown=" << pollset->shutting_down
+      << " kicked_without_poller: " << pollset->kicked_without_poller;
 
   // We release pollset lock in this function at a couple of places:
   //   1. Briefly when assigning pollset to a neighborhood
