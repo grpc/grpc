@@ -2459,13 +2459,19 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
     std::atomic<size_t> num_fetches_{0};
   };
 
-  ~TokenFetcherCredentialsTest() override {
+  void SetUp() override {
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  void TearDown() override {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
-// FIXME
-//    grpc_event_engine::experimental::WaitForSingleOwner(
-//        std::move(event_engine_));
+    creds_.reset();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    grpc_shutdown_blocking();
   }
 
   static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
