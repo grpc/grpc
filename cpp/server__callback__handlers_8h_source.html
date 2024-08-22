@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -90,7 +90,7 @@ $(function() {
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#ifndef GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2impl_2call_8h.html">grpc/impl/call.h</a>&gt;</span></div>
@@ -220,7 +220,7 @@ $(function() {
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    }</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;      CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;      ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;      this-&gt;<a class="code" href="classgrpc_1_1internal_1_1_server_callback_call.html#abf7d5b632ff79a688b342b235275be72">Ref</a>();</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;      <span class="comment">// The callback for this function should not be marked inline because it</span></div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;      <span class="comment">// is directly invoking a user-controlled reaction</span></div>
@@ -404,7 +404,7 @@ $(function() {
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    }</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160; </div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;      CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;      ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      this-&gt;<a class="code" href="classgrpc_1_1internal_1_1_server_callback_call.html#abf7d5b632ff79a688b342b235275be72">Ref</a>();</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
@@ -608,7 +608,7 @@ $(function() {
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;    }</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160; </div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;      CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;      ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;      this-&gt;Ref();</div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
@@ -646,7 +646,7 @@ $(function() {
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;        ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;      }</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;      <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;      CHECK(write_ops_.SendMessagePtr(resp, options).ok());</div>
+<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;      ABSL_CHECK(write_ops_.SendMessagePtr(resp, options).ok());</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;      call_.PerformOps(&amp;write_ops_);</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;    }</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160; </div>
@@ -654,7 +654,7 @@ $(function() {
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;                        <a class="code" href="classgrpc_1_1_status.html">grpc::Status</a> s)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;      <span class="comment">// This combines the write into the finish callback</span></div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;      <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;      CHECK(finish_ops_.SendMessagePtr(resp, options).ok());</div>
+<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;      ABSL_CHECK(finish_ops_.SendMessagePtr(resp, options).ok());</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;      Finish(std::move(s));</div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;    }</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160; </div>
@@ -820,7 +820,7 @@ $(function() {
 <div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;    }</div>
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160; </div>
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;      CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;      ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;      this-&gt;Ref();</div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
@@ -858,14 +858,14 @@ $(function() {
 <div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;        ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;      }</div>
 <div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;      <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;      CHECK(write_ops_.SendMessagePtr(resp, options).ok());</div>
+<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;      ABSL_CHECK(write_ops_.SendMessagePtr(resp, options).ok());</div>
 <div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;      call_.PerformOps(&amp;write_ops_);</div>
 <div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;    }</div>
 <div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160; </div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;    <span class="keywordtype">void</span> WriteAndFinish(<span class="keyword">const</span> ResponseType* resp, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options,</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;                        <a class="code" href="classgrpc_1_1_status.html">grpc::Status</a> s)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;      <span class="comment">// TODO(vjpai): don&#39;t assert</span></div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;      CHECK(finish_ops_.SendMessagePtr(resp, options).ok());</div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;      ABSL_CHECK(finish_ops_.SendMessagePtr(resp, options).ok());</div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;      Finish(std::move(s));</div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;    }</div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160; </div>
@@ -1042,7 +1042,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_unary_handler_html_a646b7d063c74f4bce30ad27eb4c18b1e"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a646b7d063c74f4bce30ad27eb4c18b1e">grpc::internal::CallbackUnaryHandler::Deserialize</a></div><div class="ttdeci">void * Deserialize(grpc_call *call, grpc_byte_buffer *req, grpc::Status *status, void **handler_data) final</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:84</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

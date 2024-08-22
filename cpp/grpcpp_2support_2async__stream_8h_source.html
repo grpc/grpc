@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCPP_SUPPORT_ASYNC_STREAM_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPCPP_SUPPORT_ASYNC_STREAM_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_8h.html">grpc/grpc.h</a>&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2log_8h.html">grpc/support/log.h</a>&gt;</span></div>
@@ -167,7 +167,7 @@ $(function() {
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l00204"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#a0329060b6c6cb6f010de2191fad1eea3">  204</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1_client_async_reader.html">ClientAsyncReader</a>));</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1_client_async_reader.html">ClientAsyncReader</a>));</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;  }</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -175,17 +175,17 @@ $(function() {
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#a0b8164b237c98df53d2f9ff3590887b7">  213</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#a0b8164b237c98df53d2f9ff3590887b7">  213</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160; </div>
 <div class="line"><a name="l00215"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#a1afd3a30d2d6182ebf13941089b683d6">  215</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader.html#a1afd3a30d2d6182ebf13941089b683d6">StartCall</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    CHECK(!started_);</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    ABSL_CHECK(!started_);</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    started_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    StartCallInternal(tag);</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;  }</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160; </div>
 <div class="line"><a name="l00229"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#a66e76c15ee94cf0c2892def9041210d1">  229</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader.html#a66e76c15ee94cf0c2892def9041210d1">ReadInitialMetadata</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    CHECK(started_);</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    CHECK(!context_-&gt;initial_metadata_received_);</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    ABSL_CHECK(started_);</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    ABSL_CHECK(!context_-&gt;initial_metadata_received_);</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160; </div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    meta_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    meta_ops_.RecvInitialMetadata(context_);</div>
@@ -193,7 +193,7 @@ $(function() {
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;  }</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
 <div class="line"><a name="l00238"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#a309d69e7e6ab1491b2e93d3716d0f680">  238</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader.html#a309d69e7e6ab1491b2e93d3716d0f680">Read</a>(R* msg, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    read_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    <span class="keywordflow">if</span> (!context_-&gt;initial_metadata_received_) {</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;      read_ops_.RecvInitialMetadata(context_);</div>
@@ -203,7 +203,7 @@ $(function() {
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  }</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
 <div class="line"><a name="l00253"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader.html#ac182cb074145e5a41899abd5bb52c9b0">  253</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader.html#ac182cb074145e5a41899abd5bb52c9b0">Finish</a>(<a class="code" href="classgrpc_1_1_status.html">grpc::Status</a>* status, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    finish_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    <span class="keywordflow">if</span> (!context_-&gt;initial_metadata_received_) {</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;      finish_ops_.RecvInitialMetadata(context_);</div>
@@ -219,12 +219,12 @@ $(function() {
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                    <span class="keyword">const</span> W&amp; request, <span class="keywordtype">bool</span> start, <span class="keywordtype">void</span>* tag)</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;      : context_(context), call_(call), started_(start) {</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    CHECK(init_ops_.SendMessage(request).ok());</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    ABSL_CHECK(init_ops_.SendMessage(request).ok());</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    init_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keywordflow">if</span> (start) {</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;      StartCallInternal(tag);</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;      CHECK(tag == <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;      ABSL_CHECK(tag == <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    }</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;  }</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160; </div>
@@ -283,7 +283,7 @@ $(function() {
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l00352"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a32b7fa49be4fec698a9672d4a69b011f">  352</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1_client_async_writer.html">ClientAsyncWriter</a>));</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1_client_async_writer.html">ClientAsyncWriter</a>));</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  }</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160; </div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -291,17 +291,17 @@ $(function() {
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l00361"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a84a5a3dcfe4727183cd023aa1f7abe43">  361</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l00361"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a84a5a3dcfe4727183cd023aa1f7abe43">  361</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160; </div>
 <div class="line"><a name="l00363"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a42b8329c9a8bf18528fee8a3776db3d6">  363</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_writer.html#a42b8329c9a8bf18528fee8a3776db3d6">StartCall</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    CHECK(!started_);</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    ABSL_CHECK(!started_);</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    started_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    StartCallInternal(tag);</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  }</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160; </div>
 <div class="line"><a name="l00376"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a02f613eaaed4177f1682da3f5eebbdeb">  376</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_writer.html#a02f613eaaed4177f1682da3f5eebbdeb">ReadInitialMetadata</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;    CHECK(started_);</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;    CHECK(!context_-&gt;initial_metadata_received_);</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;    ABSL_CHECK(started_);</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;    ABSL_CHECK(!context_-&gt;initial_metadata_received_);</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160; </div>
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    meta_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    meta_ops_.RecvInitialMetadata(context_);</div>
@@ -309,34 +309,34 @@ $(function() {
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  }</div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160; </div>
 <div class="line"><a name="l00385"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a0e981b6dcce663e655edf305573f2f30">  385</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_writer.html#a0e981b6dcce663e655edf305573f2f30">Write</a>(<span class="keyword">const</span> W&amp; msg, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    CHECK(write_ops_.SendMessage(msg).ok());</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg).ok());</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  }</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160; </div>
 <div class="line"><a name="l00393"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#a0087fecc30542ac3091f0fc1829b5366">  393</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_writer.html#a0087fecc30542ac3091f0fc1829b5366">Write</a>(<span class="keyword">const</span> W&amp; msg, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <span class="keywordflow">if</span> (options.<a class="code" href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">is_last_message</a>()) {</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;      options.<a class="code" href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">set_buffer_hint</a>();</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;      write_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    }</div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    CHECK(write_ops_.SendMessage(msg, options).ok());</div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg, options).ok());</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  }</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
 <div class="line"><a name="l00405"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#ab9fd5cd7dedd73d878a86de84c58e8ff">  405</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_writer.html#ab9fd5cd7dedd73d878a86de84c58e8ff">WritesDone</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    write_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;  }</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160; </div>
 <div class="line"><a name="l00419"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_writer.html#adfe9769133dd6b3ad7bf88e438b5d89a">  419</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_writer.html#adfe9769133dd6b3ad7bf88e438b5d89a">Finish</a>(<a class="code" href="classgrpc_1_1_status.html">grpc::Status</a>* status, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    finish_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;    <span class="keywordflow">if</span> (!context_-&gt;initial_metadata_received_) {</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;      finish_ops_.RecvInitialMetadata(context_);</div>
@@ -356,7 +356,7 @@ $(function() {
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;    <span class="keywordflow">if</span> (start) {</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;      StartCallInternal(tag);</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;      CHECK(tag == <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;      ABSL_CHECK(tag == <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    }</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;  }</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160; </div>
@@ -418,7 +418,7 @@ $(function() {
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;  <span class="comment">// always allocated against a call arena, no memory free required</span></div>
 <div class="line"><a name="l00519"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#afd8442aa5ae6c46af74da8fac5d9ff61">  519</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>* <span class="comment">/*ptr*/</span>, std::size_t size) {</div>
-<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a>));</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    ABSL_CHECK_EQ(size, <span class="keyword">sizeof</span>(<a class="code" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a>));</div>
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;  }</div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160; </div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;  <span class="comment">// This operator should never be called as the memory should be freed as part</span></div>
@@ -426,17 +426,17 @@ $(function() {
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;  <span class="comment">// delete to the operator new so that some compilers will not complain (see</span></div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;  <span class="comment">// https://github.com/grpc/grpc/issues/11301) Note at the time of adding this</span></div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;  <span class="comment">// there are no tests catching the compiler warning.</span></div>
-<div class="line"><a name="l00528"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#a3936dd1cafdd249a73f3393210b9f4ea">  528</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { CHECK(<span class="keyword">false</span>); }</div>
+<div class="line"><a name="l00528"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#a3936dd1cafdd249a73f3393210b9f4ea">  528</a></span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> <span class="keyword">operator</span> <span class="keyword">delete</span>(<span class="keywordtype">void</span>*, <span class="keywordtype">void</span>*) { ABSL_CHECK(<span class="keyword">false</span>); }</div>
 <div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160; </div>
 <div class="line"><a name="l00530"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#ae72f68c240ac2cbca98b524e723bd05b">  530</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#ae72f68c240ac2cbca98b524e723bd05b">StartCall</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;    CHECK(!started_);</div>
+<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;    ABSL_CHECK(!started_);</div>
 <div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;    started_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;    StartCallInternal(tag);</div>
 <div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;  }</div>
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160; </div>
 <div class="line"><a name="l00543"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#a169a2eb8bedfd7281b37c79fdd307eb2">  543</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#a169a2eb8bedfd7281b37c79fdd307eb2">ReadInitialMetadata</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;    CHECK(started_);</div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;    CHECK(!context_-&gt;initial_metadata_received_);</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;    ABSL_CHECK(started_);</div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;    ABSL_CHECK(!context_-&gt;initial_metadata_received_);</div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160; </div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;    meta_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;    meta_ops_.RecvInitialMetadata(context_);</div>
@@ -444,7 +444,7 @@ $(function() {
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;  }</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160; </div>
 <div class="line"><a name="l00552"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#a2f2c91734a7de5affdd427fb88ee6167">  552</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#a2f2c91734a7de5affdd427fb88ee6167">Read</a>(R* msg, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;    read_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;    <span class="keywordflow">if</span> (!context_-&gt;initial_metadata_received_) {</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;      read_ops_.RecvInitialMetadata(context_);</div>
@@ -454,34 +454,34 @@ $(function() {
 <div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;  }</div>
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160; </div>
 <div class="line"><a name="l00562"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#a07bcc3a0737c3bee3ef50def89af5fc7">  562</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#a07bcc3a0737c3bee3ef50def89af5fc7">Write</a>(<span class="keyword">const</span> W&amp; msg, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;    CHECK(write_ops_.SendMessage(msg).ok());</div>
+<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg).ok());</div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;  }</div>
 <div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160; </div>
 <div class="line"><a name="l00570"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#a1fcfdafd13485034fd92bd5967037d25">  570</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#a1fcfdafd13485034fd92bd5967037d25">Write</a>(<span class="keyword">const</span> W&amp; msg, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;    <span class="keywordflow">if</span> (options.<a class="code" href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">is_last_message</a>()) {</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;      options.<a class="code" href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">set_buffer_hint</a>();</div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;      write_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;    }</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;    CHECK(write_ops_.SendMessage(msg, options).ok());</div>
+<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg, options).ok());</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;  }</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160; </div>
 <div class="line"><a name="l00582"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">  582</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">WritesDone</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;    write_ops_.ClientSendClose();</div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;  }</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160; </div>
 <div class="line"><a name="l00593"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">  593</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">Finish</a>(<a class="code" href="classgrpc_1_1_status.html">grpc::Status</a>* status, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    CHECK(started_);</div>
+<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    ABSL_CHECK(started_);</div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;    finish_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;    <span class="keywordflow">if</span> (!context_-&gt;initial_metadata_received_) {</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;      finish_ops_.RecvInitialMetadata(context_);</div>
@@ -498,7 +498,7 @@ $(function() {
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;    <span class="keywordflow">if</span> (start) {</div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;      StartCallInternal(tag);</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;      CHECK(tag == <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;      ABSL_CHECK(tag == <span class="keyword">nullptr</span>);</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;    }</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;  }</div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160; </div>
@@ -547,7 +547,7 @@ $(function() {
 <div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}</div>
 <div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160; </div>
 <div class="line"><a name="l00710"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_async_reader.html#a3158928c9f07d695b3deeb39e5dd0982">  710</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_async_reader.html#a3158928c9f07d695b3deeb39e5dd0982">SendInitialMetadata</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;    CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;    ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160; </div>
 <div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;    meta_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;    meta_ops_.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -586,7 +586,7 @@ $(function() {
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;  }</div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160; </div>
 <div class="line"><a name="l00769"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_async_reader.html#a1256765d1f690c327fd0c5ef756cb8d4">  769</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_async_reader.html#a1256765d1f690c327fd0c5ef756cb8d4">FinishWithError</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_status.html">grpc::Status</a>&amp; status, <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;    CHECK(!status.<a class="code" href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">ok</a>());</div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;    ABSL_CHECK(!status.<a class="code" href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">ok</a>());</div>
 <div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;    finish_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;    <span class="keywordflow">if</span> (!ctx_-&gt;sent_initial_metadata_) {</div>
 <div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;      finish_ops_.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -632,7 +632,7 @@ $(function() {
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}</div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160; </div>
 <div class="line"><a name="l00859"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_async_writer.html#adbefffa0dd7ae810ed1c2bf877d46f96">  859</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_async_writer.html#adbefffa0dd7ae810ed1c2bf877d46f96">SendInitialMetadata</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;    CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;    ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160; </div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;    meta_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;    meta_ops_.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -648,7 +648,7 @@ $(function() {
 <div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    EnsureInitialMetadataSent(&amp;write_ops_);</div>
 <div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;    CHECK(write_ops_.SendMessage(msg).ok());</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg).ok());</div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;  }</div>
 <div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160; </div>
@@ -660,7 +660,7 @@ $(function() {
 <div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160; </div>
 <div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;    EnsureInitialMetadataSent(&amp;write_ops_);</div>
 <div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;    CHECK(write_ops_.SendMessage(msg, options).ok());</div>
+<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg, options).ok());</div>
 <div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;  }</div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160; </div>
@@ -669,7 +669,7 @@ $(function() {
 <div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;    EnsureInitialMetadataSent(&amp;write_ops_);</div>
 <div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;    options.<a class="code" href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">set_buffer_hint</a>();</div>
-<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;    CHECK(write_ops_.SendMessage(msg, options).ok());</div>
+<div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg, options).ok());</div>
 <div class="line"><a name="l00908"></a><span class="lineno">  908</span>&#160;    write_ops_.ServerSendStatus(&amp;ctx_-&gt;trailing_metadata_, status);</div>
 <div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;  }</div>
@@ -729,7 +729,7 @@ $(function() {
 <div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}</div>
 <div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160; </div>
 <div class="line"><a name="l01025"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_async_reader_writer.html#a1c8e237a99a177ef68c37ad0de100499"> 1025</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_async_reader_writer.html#a1c8e237a99a177ef68c37ad0de100499">SendInitialMetadata</a>(<span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;    CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;    ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160; </div>
 <div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;    meta_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;    meta_ops_.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -751,7 +751,7 @@ $(function() {
 <div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;    EnsureInitialMetadataSent(&amp;write_ops_);</div>
 <div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;    CHECK(write_ops_.SendMessage(msg).ok());</div>
+<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg).ok());</div>
 <div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;  }</div>
 <div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160; </div>
@@ -761,7 +761,7 @@ $(function() {
 <div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;      options.<a class="code" href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">set_buffer_hint</a>();</div>
 <div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;    }</div>
 <div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;    EnsureInitialMetadataSent(&amp;write_ops_);</div>
-<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;    CHECK(write_ops_.SendMessage(msg, options).ok());</div>
+<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg, options).ok());</div>
 <div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;  }</div>
 <div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160; </div>
@@ -771,7 +771,7 @@ $(function() {
 <div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;    write_ops_.<a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a>(tag);</div>
 <div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;    EnsureInitialMetadataSent(&amp;write_ops_);</div>
 <div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160;    options.<a class="code" href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">set_buffer_hint</a>();</div>
-<div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;    CHECK(write_ops_.SendMessage(msg, options).ok());</div>
+<div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;    ABSL_CHECK(write_ops_.SendMessage(msg, options).ok());</div>
 <div class="line"><a name="l01079"></a><span class="lineno"> 1079</span>&#160;    write_ops_.ServerSendStatus(&amp;ctx_-&gt;trailing_metadata_, status);</div>
 <div class="line"><a name="l01080"></a><span class="lineno"> 1080</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;write_ops_);</div>
 <div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160;  }</div>
@@ -898,7 +898,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_async_reader_html_a1256765d1f690c327fd0c5ef756cb8d4"><div class="ttname"><a href="classgrpc_1_1_server_async_reader.html#a1256765d1f690c327fd0c5ef756cb8d4">grpc::ServerAsyncReader::FinishWithError</a></div><div class="ttdeci">void FinishWithError(const grpc::Status &amp;status, void *tag) override</div><div class="ttdoc">See the ServerAsyncReaderInterface.Read method for semantics.</div><div class="ttdef"><b>Definition:</b> async_stream.h:769</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_async_writer_html_a26afb06eab6ba1c4b045aadf9881131a"><div class="ttname"><a href="classgrpc_1_1_server_async_writer.html#a26afb06eab6ba1c4b045aadf9881131a">grpc::ServerAsyncWriter::WriteAndFinish</a></div><div class="ttdeci">void WriteAndFinish(const W &amp;msg, grpc::WriteOptions options, const grpc::Status &amp;status, void *tag) override</div><div class="ttdoc">See the ServerAsyncWriterInterface.WriteAndFinish method for semantics.</div><div class="ttdef"><b>Definition:</b> async_stream.h:902</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_async_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_writer.html">grpc::ClientAsyncWriter</a></div><div class="ttdoc">Async API on the client side for doing client-streaming RPCs, where the outgoing message stream going...</div><div class="ttdef"><b>Definition:</b> client_context.h:89</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a626c528eb250e4811aa9c98b87a994ce"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">grpc::internal::CallOpSet::set_output_tag</a></div><div class="ttdeci">void set_output_tag(void *return_tag)</div><div class="ttdef"><b>Definition:</b> call_op_set.h:937</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a626c528eb250e4811aa9c98b87a994ce"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">grpc::internal::CallOpSet::set_output_tag</a></div><div class="ttdeci">void set_output_tag(void *return_tag)</div><div class="ttdef"><b>Definition:</b> call_op_set.h:939</div></div>
 <div class="ttc" id="aclassgrpc_1_1_write_options_html"><div class="ttname"><a href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a></div><div class="ttdoc">Per-message write options.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:80</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_async_writer_interface_html_a3055aa0c0b7af061252e198ecad79c74"><div class="ttname"><a href="classgrpc_1_1_server_async_writer_interface.html#a3055aa0c0b7af061252e198ecad79c74">grpc::ServerAsyncWriterInterface::Finish</a></div><div class="ttdeci">virtual void Finish(const grpc::Status &amp;status, void *tag)=0</div><div class="ttdoc">Indicate that the stream is to be finished with a certain status code.</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_async_reader_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_async_reader_interface.html">grpc::internal::AsyncReaderInterface</a></div><div class="ttdoc">An interface that yields a sequence of messages of type R.</div><div class="ttdef"><b>Definition:</b> async_stream.h:85</div></div>
@@ -932,7 +932,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_async_reader_writer_interface_html_ae63d347d413c401b1e976f165efde50b"><div class="ttname"><a href="classgrpc_1_1_server_async_reader_writer_interface.html#ae63d347d413c401b1e976f165efde50b">grpc::ServerAsyncReaderWriterInterface::Finish</a></div><div class="ttdeci">virtual void Finish(const grpc::Status &amp;status, void *tag)=0</div><div class="ttdoc">Indicate that the stream is to be finished with a certain status code.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

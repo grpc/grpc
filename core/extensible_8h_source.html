@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">41.0.0</span>
+   &#160;<span id="projectnumber">43.0.0</span>
    </div>
   </td>
  </tr>
@@ -97,20 +97,24 @@ $(function() {
 <div class="line"><a name="l00025"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html">   25</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html">Extensible</a> {</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a9ef86c254e301ff8239d2f78c06be3c5">   62</a></span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span>* <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a9ef86c254e301ff8239d2f78c06be3c5">QueryExtension</a>(absl::string_view <span class="comment">/*id*/</span>) { <span class="keywordflow">return</span> <span class="keyword">nullptr</span>; }</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;};</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; <span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a346ea689ae76c3832139606709c37f18">~Extensible</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;};</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_EXTENSIBLE_H</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_EXTENSIBLE_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_extensible_html_a9ef86c254e301ff8239d2f78c06be3c5"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a9ef86c254e301ff8239d2f78c06be3c5">grpc_event_engine::experimental::Extensible::QueryExtension</a></div><div class="ttdeci">virtual void * QueryExtension(absl::string_view)</div><div class="ttdoc">A method which allows users to query whether an implementation supports a specified extension.</div><div class="ttdef"><b>Definition:</b> extensible.h:62</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_extensible_html_a346ea689ae76c3832139606709c37f18"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a346ea689ae76c3832139606709c37f18">grpc_event_engine::experimental::Extensible::~Extensible</a></div><div class="ttdeci">~Extensible()=default</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_extensible_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_extensible.html">grpc_event_engine::experimental::Extensible</a></div><div class="ttdef"><b>Definition:</b> extensible.h:25</div></div>
 <div class="ttc" id="anamespacegrpc__event__engine_html"><div class="ttname"><a href="namespacegrpc__event__engine.html">grpc_event_engine</a></div><div class="ttdef"><b>Definition:</b> endpoint_config.h:24</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

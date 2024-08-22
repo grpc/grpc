@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -93,7 +93,7 @@ $(function() {
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;type_traits&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;absl/strings/cord.h&quot;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2byte__buffer_8h.html">grpc/byte_buffer.h</a>&gt;</span></div>
@@ -123,7 +123,7 @@ $(function() {
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        total_size_(total_size),</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        byte_count_(0),</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        have_backup_(false) {</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    CHECK(!byte_buffer-&gt;<a class="code" href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">Valid</a>());</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    ABSL_CHECK(!byte_buffer-&gt;<a class="code" href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">Valid</a>());</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <a class="code" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a>* bp = <a class="code" href="grpc_2byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">grpc_raw_byte_buffer_create</a>(<span class="keyword">nullptr</span>, 0);</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    byte_buffer-&gt;set_buffer(bp);</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    slice_buffer_ = &amp;bp-&gt;<a class="code" href="structgrpc__byte__buffer.html#a3bf95e73510f5a401cd97c26144c1628">data</a>.<a class="code" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#aac38c706315d24458e43986d153f0bf8">raw</a>.<a class="code" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a89f407381d073054e2227572dd920f37">slice_buffer</a>;</div>
@@ -137,7 +137,7 @@ $(function() {
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
 <div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_writer.html#ad71ffbb8f1f6e5bfedba73fb8bcde0ff">   83</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_proto_buffer_writer.html#ad71ffbb8f1f6e5bfedba73fb8bcde0ff">Next</a>(<span class="keywordtype">void</span>** data, <span class="keywordtype">int</span>* size)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="comment">// Protobuf should not ask for more memory than total_size_.</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    CHECK_LT(byte_count_, total_size_);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    ABSL_CHECK_LT(byte_count_, total_size_);</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="comment">// 1. Use the remaining backup slice if we have one</span></div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="comment">// 2. Otherwise allocate a slice, up to the remaining length needed</span></div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="comment">//    or our maximum allocation size</span></div>
@@ -161,7 +161,7 @@ $(function() {
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    }</div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    *data = <a class="code" href="slice__type_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a>(slice_);</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="comment">// On win x64, int is only 32bit</span></div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    CHECK(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_) &lt;= <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(INT_MAX));</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    ABSL_CHECK(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_) &lt;= <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(INT_MAX));</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    byte_count_ += * size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_));</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="comment">// Using grpc_slice_buffer_add could modify slice_ and merge it with the</span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="comment">// previous slice. Therefore, use grpc_slice_buffer_add_indexed method to</span></div>
@@ -179,7 +179,7 @@ $(function() {
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="comment">// below is not robust against count == 0 invocations, so directly return.</span></div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordflow">if</span> (count == 0) <span class="keywordflow">return</span>;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    CHECK_LE(count, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_)));</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    ABSL_CHECK_LE(count, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_)));</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <a class="code" href="slice__buffer_8h.html#a67bfa3c38bffb8aca49f9d0fc01f4441">grpc_slice_buffer_pop</a>(slice_buffer_);</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordflow">if</span> (<span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(count) == <a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(slice_)) {</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;      backup_slice_ = slice_;</div>
@@ -308,7 +308,7 @@ $(function() {
 <div class="ttc" id="agrpc_2byte__buffer_8h_html_a5ab72d6615ee89c975c46ad4e50c1387"><div class="ttname"><a href="grpc_2byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">grpc_raw_byte_buffer_create</a></div><div class="ttdeci">GRPCAPI grpc_byte_buffer * grpc_raw_byte_buffer_create(grpc_slice *slices, size_t nslices)</div><div class="ttdoc">Returns a RAW byte buffer instance over the given slices (up to nslices).</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

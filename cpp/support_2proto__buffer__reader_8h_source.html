@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -93,7 +93,7 @@ $(function() {
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;type_traits&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;absl/strings/cord.h&quot;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2byte__buffer_8h.html">grpc/byte_buffer.h</a>&gt;</span></div>
@@ -133,7 +133,7 @@ $(function() {
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordflow">if</span> (backup_count_ &gt; 0) {</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;      *data = <a class="code" href="slice__type_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a>(*slice_) + <a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*slice_) -</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;              backup_count_;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;      CHECK_LE(backup_count_, INT_MAX);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;      ABSL_CHECK_LE(backup_count_, INT_MAX);</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      *size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(backup_count_);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;      backup_count_ = 0;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;      <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
@@ -143,7 +143,7 @@ $(function() {
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    }</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    *data = <a class="code" href="slice__type_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a>(*slice_);</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="comment">// On win x64, int is only 32bit</span></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    CHECK_LE(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*slice_), <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(INT_MAX));</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    ABSL_CHECK_LE(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*slice_), <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(INT_MAX));</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    byte_count_ += * size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*slice_));</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  }</div>
@@ -151,7 +151,7 @@ $(function() {
 <div class="line"><a name="l00096"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_reader.html#a50b5c353ac2d915b09e68bf9c1f7136e">   96</a></span>&#160;  <a class="code" href="classgrpc_1_1_status.html">Status</a> <a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a50b5c353ac2d915b09e68bf9c1f7136e">status</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> status_; }</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
 <div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="classgrpc_1_1_proto_buffer_reader.html#adb77905f9cecd961c6066dc78d93a60c">  101</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_proto_buffer_reader.html#adb77905f9cecd961c6066dc78d93a60c">BackUp</a>(<span class="keywordtype">int</span> count)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    CHECK_LE(count, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*slice_)));</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    ABSL_CHECK_LE(count, <span class="keyword">static_cast&lt;</span><span class="keywordtype">int</span><span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*slice_)));</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    backup_count_ = count;</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;  }</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
@@ -223,7 +223,7 @@ $(function() {
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;      }</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    }</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    CHECK_EQ(count, 0);</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    ABSL_CHECK_EQ(count, 0);</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  }</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="preprocessor">#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</span></div>
@@ -316,7 +316,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html_aff1730578c90160528f6a8d67ef5c43ba0ae30536146394965fd8ad64c2d414f3"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba0ae30536146394965fd8ad64c2d414f3">grpc::INTERNAL</a></div><div class="ttdeci">@ INTERNAL</div><div class="ttdoc">Internal errors.</div><div class="ttdef"><b>Definition:</b> status_code_enum.h:121</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

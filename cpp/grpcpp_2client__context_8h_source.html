@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -96,7 +96,7 @@ $(function() {
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="compression__types_8h.html">grpc/impl/compression_types.h</a>&gt;</span></div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="propagation__bits_8h.html">grpc/impl/propagation_bits.h</a>&gt;</span></div>
@@ -245,7 +245,7 @@ $(function() {
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;  <span class="keyword">const</span> std::multimap&lt;grpc::string_ref, grpc::string_ref&gt;&amp;</div>
 <div class="line"><a name="l00250"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_context.html#a068592f22fe0866293c8d1e5ac22ed20">  250</a></span>&#160;  <a class="code" href="classgrpc_1_1_client_context.html#a068592f22fe0866293c8d1e5ac22ed20">GetServerInitialMetadata</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    CHECK(initial_metadata_received_);</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    ABSL_CHECK(initial_metadata_received_);</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keywordflow">return</span> *recv_initial_metadata_.<a class="code" href="classgrpc_1_1internal_1_1_metadata_map.html#a5d49b2a33d69089d2612f4bd249cd3e8">map</a>();</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;  }</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160; </div>
@@ -526,7 +526,7 @@ $(function() {
 <div class="ttc" id="apropagation__bits_8h_html_aa87041a20c89c31d27217b22ef79d066"><div class="ttname"><a href="propagation__bits_8h.html#aa87041a20c89c31d27217b22ef79d066">GRPC_PROPAGATE_CANCELLATION</a></div><div class="ttdeci">#define GRPC_PROPAGATE_CANCELLATION</div><div class="ttdoc">Propagate cancellation.</div><div class="ttdef"><b>Definition:</b> propagation_bits.h:38</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

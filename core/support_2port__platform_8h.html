@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">41.0.0</span>
+   &#160;<span id="projectnumber">43.0.0</span>
    </div>
   </td>
  </tr>
@@ -133,6 +133,8 @@ Macros</h2></td></tr>
 <tr class="separator:a237f93b6124a494f4aac2d7abc9f1e48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab83587850217119f977454604236a0e6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#ab83587850217119f977454604236a0e6">GPR_ATTRIBUTE_NOINLINE</a></td></tr>
 <tr class="separator:ab83587850217119f977454604236a0e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39d93142a20c22fc61edc6dbbc1c19ff"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a39d93142a20c22fc61edc6dbbc1c19ff">GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION</a></td></tr>
+<tr class="separator:a39d93142a20c22fc61edc6dbbc1c19ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70b25734869fa577e3db64392b6ba0c8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a70b25734869fa577e3db64392b6ba0c8">GPR_NO_UNIQUE_ADDRESS</a></td></tr>
 <tr class="separator:a70b25734869fa577e3db64392b6ba0c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b73ca15c9e24b43959f202f094ea7b6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a5b73ca15c9e24b43959f202f094ea7b6">GPR_ATTRIBUTE_WEAK</a></td></tr>
@@ -141,6 +143,8 @@ Macros</h2></td></tr>
 <tr class="separator:ac5d859f207ef029e0f5fc556f8e5876e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30c4ae5cdf0ec0d72fd9e08e0d06370a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a30c4ae5cdf0ec0d72fd9e08e0d06370a">GRPC_ALLOW_EXCEPTIONS</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a30c4ae5cdf0ec0d72fd9e08e0d06370a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a735393a54d4c5fb37c6bc207d87dbd7a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a735393a54d4c5fb37c6bc207d87dbd7a">GRPC_HAS_BUILTIN</a>(a)&#160;&#160;&#160;0</td></tr>
+<tr class="separator:a735393a54d4c5fb37c6bc207d87dbd7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a518d2d0a7ae17a01e2fa2dee0e2f84df"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">GPR_LIKELY</a>(x)&#160;&#160;&#160;(x)</td></tr>
 <tr class="separator:a518d2d0a7ae17a01e2fa2dee0e2f84df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99b5bddfe84f8dc8ee55b35405b8fddd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(x)&#160;&#160;&#160;(x)</td></tr>
@@ -212,6 +216,20 @@ Functions</h2></td></tr>
           <td class="paramtype">&#160;</td>
           <td class="paramname">n</td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a39d93142a20c22fc61edc6dbbc1c19ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39d93142a20c22fc61edc6dbbc1c19ff">&#9670;&nbsp;</a></span>GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -614,6 +632,24 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a735393a54d4c5fb37c6bc207d87dbd7a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a735393a54d4c5fb37c6bc207d87dbd7a">&#9670;&nbsp;</a></span>GRPC_HAS_BUILTIN</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_HAS_BUILTIN</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">a</td><td>)</td>
+          <td>&#160;&#160;&#160;0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aa642fae320ed450c1979f5f707402b3c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa642fae320ed450c1979f5f707402b3c">&#9670;&nbsp;</a></span>GRPC_IF_NAMETOINDEX</h2>
 
@@ -750,7 +786,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

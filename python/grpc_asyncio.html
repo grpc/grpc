@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.64.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.66.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=057799ce"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=e6dd0d7c"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.64.0</p>
+<p class="blurb">1.66.0</p>
 
 
 
@@ -652,7 +652,7 @@ or not specified in the address, then the gRPC runtime will choose a port.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc.aio.Server.add_registered_method_handlers">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_registered_method_handlers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_handlers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#Server.add_registered_method_handlers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Server.add_registered_method_handlers" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">add_registered_method_handlers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_handlers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#Server.add_registered_method_handlers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.Server.add_registered_method_handlers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers GenericRpcHandlers with this Server.</p>
 <p>This method is only safe to call before the server is started.</p>
 <dl class="field-list simple">
@@ -1488,7 +1488,7 @@ server creation or set on the call.</p>
 <dd class="field-odd"><p>The invocation <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a> | None</p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a> | <em>Sequence</em>[<em>Tuple</em>[str, str | bytes]] | None</p>
 </dd>
 </dl>
 </dd></dl>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -80,8 +80,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac304d65b478ea61991aa3e65430315cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html#ac304d65b478ea61991aa3e65430315cb">TemplatedGenericStub</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> &gt; channel)</td></tr>
-<tr class="separator:ac304d65b478ea61991aa3e65430315cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19737a9fe9dffdd0ac67f532f38d900f"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a>&lt; RequestType, ResponseType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html#a19737a9fe9dffdd0ac67f532f38d900f">PrepareCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq)</td></tr>
 <tr class="memdesc:a19737a9fe9dffdd0ac67f532f38d900f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a call to a named method <em>method</em> using <em>context</em>, but don't start it.  <a href="classgrpc_1_1_templated_generic_stub.html#a19737a9fe9dffdd0ac67f532f38d900f">More...</a><br /></td></tr>
 <tr class="separator:a19737a9fe9dffdd0ac67f532f38d900f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -91,15 +89,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8c868713afa718beb61f2cb79dfb8fa6"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a>&lt; RequestType, ResponseType &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html#a8c868713afa718beb61f2cb79dfb8fa6">Call</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, void *tag)</td></tr>
 <tr class="memdesc:a8c868713afa718beb61f2cb79dfb8fa6"><td class="mdescLeft">&#160;</td><td class="mdescRight">DEPRECATED for multi-threaded use Begin a call to a named method <em>method</em> using <em>context</em>.  <a href="classgrpc_1_1_templated_generic_stub.html#a8c868713afa718beb61f2cb79dfb8fa6">More...</a><br /></td></tr>
 <tr class="separator:a8c868713afa718beb61f2cb79dfb8fa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeeb347bd31f2f5245227bac977b308bb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html#aeeb347bd31f2f5245227bac977b308bb">UnaryCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a> options, const RequestType *request, ResponseType *response, std::function&lt; void(<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion)</td></tr>
-<tr class="memdesc:aeeb347bd31f2f5245227bac977b308bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup and start a unary call to a named method <em>method</em> using <em>context</em> and specifying the <em>request</em> and <em>response</em> buffers.  <a href="classgrpc_1_1_templated_generic_stub.html#aeeb347bd31f2f5245227bac977b308bb">More...</a><br /></td></tr>
-<tr class="separator:aeeb347bd31f2f5245227bac977b308bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7070aa80618833c3aaac58659eb80cdf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html#a7070aa80618833c3aaac58659eb80cdf">PrepareUnaryCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a> options, const RequestType *request, ResponseType *response, <a class="el" href="classgrpc_1_1_client_unary_reactor.html">ClientUnaryReactor</a> *reactor)</td></tr>
-<tr class="memdesc:a7070aa80618833c3aaac58659eb80cdf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a unary call to a named method <em>method</em> using <em>context</em> and specifying the <em>request</em> and <em>response</em> buffers.  <a href="classgrpc_1_1_templated_generic_stub.html#a7070aa80618833c3aaac58659eb80cdf">More...</a><br /></td></tr>
-<tr class="separator:a7070aa80618833c3aaac58659eb80cdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1043b3236bca92cf95ca165a66b105a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_templated_generic_stub.html#ac1043b3236bca92cf95ca165a66b105a">PrepareBidiStreamingCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a> options, <a class="el" href="classgrpc_1_1_client_bidi_reactor.html">ClientBidiReactor</a>&lt; RequestType, ResponseType &gt; *reactor)</td></tr>
-<tr class="memdesc:ac1043b3236bca92cf95ca165a66b105a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a call to a named method <em>method</em> using <em>context</em> and tied to <em>reactor</em> .  <a href="classgrpc_1_1_templated_generic_stub.html#ac1043b3236bca92cf95ca165a66b105a">More...</a><br /></td></tr>
-<tr class="separator:ac1043b3236bca92cf95ca165a66b105a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html">grpc::internal::TemplatedGenericStubCallbackInternal&lt; RequestType, ResponseType &gt;</a></td></tr>
+<tr class="memitem:a5829085dcae8a8d553c3d0f8dbbb3387 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#a5829085dcae8a8d553c3d0f8dbbb3387">TemplatedGenericStubCallbackInternal</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> &gt; channel)</td></tr>
+<tr class="separator:a5829085dcae8a8d553c3d0f8dbbb3387 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7babe7b770111b3235eb15347e99f7f inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#ae7babe7b770111b3235eb15347e99f7f">UnaryCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a> options, const RequestType *request, ResponseType *response, std::function&lt; void(<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt; on_completion)</td></tr>
+<tr class="memdesc:ae7babe7b770111b3235eb15347e99f7f inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup and start a unary call to a named method <em>method</em> using <em>context</em> and specifying the <em>request</em> and <em>response</em> buffers.  <a href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#ae7babe7b770111b3235eb15347e99f7f">More...</a><br /></td></tr>
+<tr class="separator:ae7babe7b770111b3235eb15347e99f7f inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06f7174c8eae4d6110e2f6230c285e39 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#a06f7174c8eae4d6110e2f6230c285e39">PrepareUnaryCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a> options, const RequestType *request, ResponseType *response, <a class="el" href="classgrpc_1_1_client_unary_reactor.html">ClientUnaryReactor</a> *reactor)</td></tr>
+<tr class="memdesc:a06f7174c8eae4d6110e2f6230c285e39 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a unary call to a named method <em>method</em> using <em>context</em> and specifying the <em>request</em> and <em>response</em> buffers.  <a href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#a06f7174c8eae4d6110e2f6230c285e39">More...</a><br /></td></tr>
+<tr class="separator:a06f7174c8eae4d6110e2f6230c285e39 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47eb8ade49c4c3c86074665b4b0e4f66 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#a47eb8ade49c4c3c86074665b4b0e4f66">PrepareBidiStreamingCall</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const std::string &amp;method, <a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a> options, <a class="el" href="classgrpc_1_1_client_bidi_reactor.html">ClientBidiReactor</a>&lt; RequestType, ResponseType &gt; *reactor)</td></tr>
+<tr class="memdesc:a47eb8ade49c4c3c86074665b4b0e4f66 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a call to a named method <em>method</em> using <em>context</em> and tied to <em>reactor</em> .  <a href="classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal.html#a47eb8ade49c4c3c86074665b4b0e4f66">More...</a><br /></td></tr>
+<tr class="separator:a47eb8ade49c4c3c86074665b4b0e4f66 inherit pub_methods_classgrpc_1_1internal_1_1_templated_generic_stub_callback_internal"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class RequestType, class ResponseType&gt;<br />
@@ -107,36 +108,7 @@ class grpc::TemplatedGenericStub&lt; RequestType, ResponseType &gt;</h3>
 
 <p>Generic stubs provide a type-unaware interface to call gRPC methods by name. </p>
 <p>In practice, the Request and Response types should be basic types like <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes.">grpc::ByteBuffer</a> or proto::MessageLite (the base protobuf). </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ac304d65b478ea61991aa3e65430315cb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac304d65b478ea61991aa3e65430315cb">&#9670;&nbsp;</a></span>TemplatedGenericStub()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_templated_generic_stub.html">grpc::TemplatedGenericStub</a>&lt; RequestType, ResponseType &gt;::<a class="el" href="classgrpc_1_1_templated_generic_stub.html">TemplatedGenericStub</a> </td>
-          <td>(</td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a> &gt;&#160;</td>
-          <td class="paramname"><em>channel</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a8c868713afa718beb61f2cb79dfb8fa6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8c868713afa718beb61f2cb79dfb8fa6">&#9670;&nbsp;</a></span>Call()</h2>
 
@@ -190,59 +162,6 @@ template&lt;class RequestType , class ResponseType &gt; </div>
 
 </div>
 </div>
-<a id="ac1043b3236bca92cf95ca165a66b105a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac1043b3236bca92cf95ca165a66b105a">&#9670;&nbsp;</a></span>PrepareBidiStreamingCall()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classgrpc_1_1_templated_generic_stub.html">grpc::TemplatedGenericStub</a>&lt; RequestType, ResponseType &gt;::PrepareBidiStreamingCall </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *&#160;</td>
-          <td class="paramname"><em>context</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>method</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a>&#160;</td>
-          <td class="paramname"><em>options</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_bidi_reactor.html">ClientBidiReactor</a>&lt; RequestType, ResponseType &gt; *&#160;</td>
-          <td class="paramname"><em>reactor</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Setup a call to a named method <em>method</em> using <em>context</em> and tied to <em>reactor</em> . </p>
-<p>Like any other bidi streaming RPC, it will not be activated until StartCall is invoked on its reactor. </p>
-
-</div>
-</div>
 <a id="a19737a9fe9dffdd0ac67f532f38d900f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a19737a9fe9dffdd0ac67f532f38d900f">&#9670;&nbsp;</a></span>PrepareCall()</h2>
 
@@ -291,7 +210,7 @@ template&lt;class RequestType , class ResponseType &gt; </div>
 </div>
 </div>
 <a id="aee40f32f1aca95867d805205a17e6ffc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aee40f32f1aca95867d805205a17e6ffc">&#9670;&nbsp;</a></span>PrepareUnaryCall() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aee40f32f1aca95867d805205a17e6ffc">&#9670;&nbsp;</a></span>PrepareUnaryCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -343,142 +262,13 @@ template&lt;class RequestType , class ResponseType &gt; </div>
 
 </div>
 </div>
-<a id="a7070aa80618833c3aaac58659eb80cdf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7070aa80618833c3aaac58659eb80cdf">&#9670;&nbsp;</a></span>PrepareUnaryCall() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classgrpc_1_1_templated_generic_stub.html">grpc::TemplatedGenericStub</a>&lt; RequestType, ResponseType &gt;::PrepareUnaryCall </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *&#160;</td>
-          <td class="paramname"><em>context</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>method</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a>&#160;</td>
-          <td class="paramname"><em>options</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const RequestType *&#160;</td>
-          <td class="paramname"><em>request</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">ResponseType *&#160;</td>
-          <td class="paramname"><em>response</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_unary_reactor.html">ClientUnaryReactor</a> *&#160;</td>
-          <td class="paramname"><em>reactor</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Setup a unary call to a named method <em>method</em> using <em>context</em> and specifying the <em>request</em> and <em>response</em> buffers. </p>
-<p>Like any other reactor-based RPC, it will not be activated until StartCall is invoked on its reactor. </p>
-
-</div>
-</div>
-<a id="aeeb347bd31f2f5245227bac977b308bb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aeeb347bd31f2f5245227bac977b308bb">&#9670;&nbsp;</a></span>UnaryCall()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class RequestType , class ResponseType &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void <a class="el" href="classgrpc_1_1_templated_generic_stub.html">grpc::TemplatedGenericStub</a>&lt; RequestType, ResponseType &gt;::UnaryCall </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *&#160;</td>
-          <td class="paramname"><em>context</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>method</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_stub_options.html">StubOptions</a>&#160;</td>
-          <td class="paramname"><em>options</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const RequestType *&#160;</td>
-          <td class="paramname"><em>request</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">ResponseType *&#160;</td>
-          <td class="paramname"><em>response</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::function&lt; void(<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>)&gt;&#160;</td>
-          <td class="paramname"><em>on_completion</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Setup and start a unary call to a named method <em>method</em> using <em>context</em> and specifying the <em>request</em> and <em>response</em> buffers. </p>
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/generic/<a class="el" href="grpcpp_2generic_2generic__stub_8h_source.html">generic_stub.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

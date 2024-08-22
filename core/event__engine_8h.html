@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">41.0.0</span>
+   &#160;<span id="projectnumber">43.0.0</span>
    </div>
   </td>
  </tr>
@@ -132,6 +132,8 @@ Namespaces</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacegrpc__event__engine_1_1experimental"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html">grpc_event_engine::experimental</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacegrpc__event__engine_1_1experimental_1_1detail"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1detail.html">grpc_event_engine::experimental::detail</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -144,11 +146,31 @@ Functions</h2></td></tr>
 <tr class="memitem:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; EventEngine &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">grpc_event_engine::experimental::CreateEventEngine</a> ()</td></tr>
 <tr class="memdesc:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> using the default factory.  <a href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">More...</a><br /></td></tr>
 <tr class="separator:a89b1b9fe77b7e8b8aa7f31c30039a1c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5cc504f6ae2823c80a48a3942dba875"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#ad5cc504f6ae2823c80a48a3942dba875">grpc_event_engine::experimental::operator==</a> (const EventEngine::TaskHandle &amp;lhs, const EventEngine::TaskHandle &amp;rhs)</td></tr>
+<tr class="separator:ad5cc504f6ae2823c80a48a3942dba875"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a302622e3e57a94af2f58101603f3ffbd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a302622e3e57a94af2f58101603f3ffbd">grpc_event_engine::experimental::operator!=</a> (const EventEngine::TaskHandle &amp;lhs, const EventEngine::TaskHandle &amp;rhs)</td></tr>
+<tr class="separator:a302622e3e57a94af2f58101603f3ffbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add8391a2ed2f79636481506fa977ac6a"><td class="memItemLeft" align="right" valign="top">std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#add8391a2ed2f79636481506fa977ac6a">grpc_event_engine::experimental::operator&lt;&lt;</a> (std::ostream &amp;out, const EventEngine::TaskHandle &amp;handle)</td></tr>
+<tr class="separator:add8391a2ed2f79636481506fa977ac6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a407d7a38b9ad8253c0e4117dd88cc2ba"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a407d7a38b9ad8253c0e4117dd88cc2ba">grpc_event_engine::experimental::operator==</a> (const EventEngine::ConnectionHandle &amp;lhs, const EventEngine::ConnectionHandle &amp;rhs)</td></tr>
+<tr class="separator:a407d7a38b9ad8253c0e4117dd88cc2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2f3c465b0358914124f437ae86e2ac9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#aa2f3c465b0358914124f437ae86e2ac9">grpc_event_engine::experimental::operator!=</a> (const EventEngine::ConnectionHandle &amp;lhs, const EventEngine::ConnectionHandle &amp;rhs)</td></tr>
+<tr class="separator:aa2f3c465b0358914124f437ae86e2ac9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a953be0492900ac5bc6b0c78c2d16e4df"><td class="memItemLeft" align="right" valign="top">std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a953be0492900ac5bc6b0c78c2d16e4df">grpc_event_engine::experimental::operator&lt;&lt;</a> (std::ostream &amp;out, const EventEngine::ConnectionHandle &amp;handle)</td></tr>
+<tr class="separator:a953be0492900ac5bc6b0c78c2d16e4df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd99594b38a3f63645259db6fef932f5"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1detail.html#acd99594b38a3f63645259db6fef932f5">grpc_event_engine::experimental::detail::FormatHandleString</a> (uint64_t key1, uint64_t key2)</td></tr>
+<tr class="separator:acd99594b38a3f63645259db6fef932f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a272eb5df1f70a9691ae6ada9d296a2be"><td class="memTemplParams" colspan="2">template&lt;typename Sink &gt; </td></tr>
+<tr class="memitem:a272eb5df1f70a9691ae6ada9d296a2be"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a272eb5df1f70a9691ae6ada9d296a2be">grpc_event_engine::experimental::AbslStringify</a> (Sink &amp;out, const EventEngine::ConnectionHandle &amp;handle)</td></tr>
+<tr class="separator:a272eb5df1f70a9691ae6ada9d296a2be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63b311e6a61a5abd34c9ba4d410c4cd5"><td class="memTemplParams" colspan="2">template&lt;typename Sink &gt; </td></tr>
+<tr class="memitem:a63b311e6a61a5abd34c9ba4d410c4cd5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a63b311e6a61a5abd34c9ba4d410c4cd5">grpc_event_engine::experimental::AbslStringify</a> (Sink &amp;out, const EventEngine::TaskHandle &amp;handle)</td></tr>
+<tr class="separator:a63b311e6a61a5abd34c9ba4d410c4cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.64.0</span>
+   &#160;<span id="projectnumber">1.66.0</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPCPP_SUPPORT_SYNC_STREAM_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPCPP_SUPPORT_SYNC_STREAM_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/log/check.h&quot;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;absl/log/absl_check.h&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2log_8h.html">grpc/support/log.h</a>&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpcpp_2client__context_8h.html">grpcpp/client_context.h</a>&gt;</span></div>
@@ -171,7 +171,7 @@ $(function() {
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;  <span class="comment">//  Side effect:</span></div>
 <div class="line"><a name="l00188"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_reader.html#a8fd52f51ae4f67cc86c36419acc505c5">  188</a></span>&#160;<span class="comment"></span>  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_reader.html#a8fd52f51ae4f67cc86c36419acc505c5">WaitForInitialMetadata</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    CHECK(!context_-&gt;initial_metadata_received_);</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    ABSL_CHECK(!context_-&gt;initial_metadata_received_);</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160; </div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt;grpc::internal::CallOpRecvInitialMetadata&gt;</a> ops;</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    ops.RecvInitialMetadata(context_);</div>
@@ -207,7 +207,7 @@ $(function() {
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <a class="code" href="classgrpc_1_1_status.html">grpc::Status</a> status;</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    ops.ClientRecvStatus(context_, &amp;status);</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;ops);</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    CHECK(cq_.Pluck(&amp;ops));</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    ABSL_CHECK(cq_.Pluck(&amp;ops));</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <span class="keywordflow">return</span> status;</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;  }</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
@@ -233,7 +233,7 @@ $(function() {
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    ops.SendInitialMetadata(&amp;context-&gt;send_initial_metadata_,</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                            context-&gt;initial_metadata_flags());</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="comment">// TODO(ctiller): don&#39;t assert</span></div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    CHECK(ops.SendMessagePtr(&amp;request).ok());</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    ABSL_CHECK(ops.SendMessagePtr(&amp;request).ok());</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    ops.ClientSendClose();</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;ops);</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    cq_.Pluck(&amp;ops);</div>
@@ -265,7 +265,7 @@ $(function() {
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  <span class="comment">//  Side effect:</span></div>
 <div class="line"><a name="l00310"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_writer.html#a814a24b9a0348055195b3d9e837ae0a1">  310</a></span>&#160;<span class="comment"></span>  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_writer.html#a814a24b9a0348055195b3d9e837ae0a1">WaitForInitialMetadata</a>() {</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    CHECK(!context_-&gt;initial_metadata_received_);</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    ABSL_CHECK(!context_-&gt;initial_metadata_received_);</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt;grpc::internal::CallOpRecvInitialMetadata&gt;</a> ops;</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    ops.RecvInitialMetadata(context_);</div>
@@ -311,7 +311,7 @@ $(function() {
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    }</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    finish_ops_.ClientRecvStatus(context_, &amp;status);</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;finish_ops_);</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    CHECK(cq_.Pluck(&amp;finish_ops_));</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    ABSL_CHECK(cq_.Pluck(&amp;finish_ops_));</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    <span class="keywordflow">return</span> status;</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  }</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160; </div>
@@ -374,7 +374,7 @@ $(function() {
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;<span class="keyword">class </span>ClientReaderWriter final : <span class="keyword">public</span> ClientReaderWriterInterface&lt;W, R&gt; {</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00459"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_reader_writer.html#ab6f436ca034fbc2e5e8035e637f7f5fc">  459</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_client_reader_writer.html#ab6f436ca034fbc2e5e8035e637f7f5fc">WaitForInitialMetadata</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;    CHECK(!context_-&gt;initial_metadata_received_);</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;    ABSL_CHECK(!context_-&gt;initial_metadata_received_);</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160; </div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt;grpc::internal::CallOpRecvInitialMetadata&gt;</a> ops;</div>
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    ops.RecvInitialMetadata(context_);</div>
@@ -441,7 +441,7 @@ $(function() {
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;    <a class="code" href="classgrpc_1_1_status.html">grpc::Status</a> status;</div>
 <div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;    ops.ClientRecvStatus(context_, &amp;status);</div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;    call_.<a class="code" href="classgrpc_1_1internal_1_1_call.html#a1f4ef57973eacb5e6f11e6193f2b3f7f">PerformOps</a>(&amp;ops);</div>
-<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;    CHECK(cq_.Pluck(&amp;ops));</div>
+<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;    ABSL_CHECK(cq_.Pluck(&amp;ops));</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;    <span class="keywordflow">return</span> status;</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;  }</div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160; </div>
@@ -478,7 +478,7 @@ $(function() {
 <div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_server_reader.html">ServerReader</a> final : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_server_reader_interface.html">ServerReaderInterface</a>&lt;R&gt; {</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00587"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_reader.html#a9485c2aa06bad8ca0650bfeafa35e2e4">  587</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_reader.html#a9485c2aa06bad8ca0650bfeafa35e2e4">SendInitialMetadata</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;    CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;    ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160; </div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt;grpc::internal::CallOpSendInitialMetadata&gt;</a> ops;</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;    ops.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -527,7 +527,7 @@ $(function() {
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_server_writer.html">ServerWriter</a> final : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_server_writer_interface.html">ServerWriterInterface</a>&lt;W&gt; {</div>
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00644"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_writer.html#a29dfe2774aa23975c5372031ce4bcda1">  644</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_server_writer.html#a29dfe2774aa23975c5372031ce4bcda1">SendInitialMetadata</a>()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;    CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;    ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160; </div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt;grpc::internal::CallOpSendInitialMetadata&gt;</a> ops;</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;    ops.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -593,7 +593,7 @@ $(function() {
 <div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;      : call_(call), ctx_(ctx) {}</div>
 <div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160; </div>
 <div class="line"><a name="l00717"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_server_reader_writer_body.html#a65f17fbf56344687cdbb80699d2f3b3f">  717</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1internal_1_1_server_reader_writer_body.html#a65f17fbf56344687cdbb80699d2f3b3f">SendInitialMetadata</a>() {</div>
-<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;    CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;    ABSL_CHECK(!ctx_-&gt;sent_initial_metadata_);</div>
 <div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160; </div>
 <div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;    <a class="code" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt;grpc::internal::CallOpSendInitialMetadata&gt;</a> ops;</div>
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;    ops.SendInitialMetadata(&amp;ctx_-&gt;initial_metadata_,</div>
@@ -879,7 +879,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_reader_html_aefba84a0fc0d5cef5be843e0fb08e1d5"><div class="ttname"><a href="classgrpc_1_1_server_reader.html#aefba84a0fc0d5cef5be843e0fb08e1d5">grpc::ServerReader::Read</a></div><div class="ttdeci">bool Read(R *msg) override</div><div class="ttdef"><b>Definition:</b> sync_stream.h:607</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Aug 22 2024 20:29:48 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
