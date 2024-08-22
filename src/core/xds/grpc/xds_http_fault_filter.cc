@@ -195,12 +195,12 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     }
   }
   // Section 3: Parse the maximum active faults
-  const auto* max_fault_wrapper =
+  auto max_fault_wrapper = ParseUInt32Value(
       envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
-          http_fault);
-  if (max_fault_wrapper != nullptr) {
+          http_fault));
+  if (max_fault_wrapper.has_value()) {
     fault_injection_policy_json["maxFaults"] =
-        Json::FromNumber(google_protobuf_UInt32Value_value(max_fault_wrapper));
+        Json::FromNumber(*max_fault_wrapper);
   }
   return FilterConfig{ConfigProtoName(),
                       Json::FromObject(std::move(fault_injection_policy_json))};
