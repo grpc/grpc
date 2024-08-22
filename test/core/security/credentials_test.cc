@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
