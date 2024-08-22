@@ -30,14 +30,13 @@ namespace grpc_core {
 
 // A simple LRU cache.  Retains at most max_size entries.
 // Caller is responsible for synchronization.
+// TODO(roth): Support heterogenous lookups.
 template<typename Key, typename Value>
 class LruCache {
  public:
   explicit LruCache(size_t max_size) : max_size_(max_size) {
     CHECK_GT(max_size, 0);
   }
-
-// FIXME: allow heterogenous lookups?
 
   // Returns the value for key, or nullopt if not present.
   absl::optional<Value> Get(Key key);
