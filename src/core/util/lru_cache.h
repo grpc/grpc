@@ -45,7 +45,7 @@ class LruCache {
   // Otherwise, inserts a new entry in the map, calling create() to
   // construct the new value.  If inserting a new entry causes the cache
   // to be too large, removes the least recently used entry.
-  Value GetOrInsert(Key key, absl::AnyInvocable<Value(Key)> create);
+  Value GetOrInsert(Key key, absl::AnyInvocable<Value(const Key&)> create);
 
  private:
   struct CacheEntry {
@@ -78,7 +78,7 @@ absl::optional<Value> LruCache<Key, Value>::Get(Key key) {
 
 template<typename Key, typename Value>
 Value LruCache<Key, Value>::GetOrInsert(
-    Key key, absl::AnyInvocable<Value(Key)> create) {
+    Key key, absl::AnyInvocable<Value(const Key&)> create) {
   auto value = Get(key);
   if (value.has_value()) return std::move(*value);
   // Entry not found.  We'll need to insert a new entry.
@@ -96,7 +96,7 @@ Value LruCache<Key, Value>::GetOrInsert(
                            std::forward_as_tuple(key),
                            std::forward_as_tuple(create(key)))
                 .first;
-  it->second.lru_iterator = lru_list_.insert(lru_list_.end(), key);
+  it->second.lru_iterator = lru_list_.insert(lru_list_.end(), std::move(key));
   return it->second.value;
 }
 
