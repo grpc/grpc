@@ -352,6 +352,14 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "gcp_authn_proto",
+    srcs = [
+        "gcp_authn.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
     name = "metadata_proto",
     srcs = [
         "metadata.proto",

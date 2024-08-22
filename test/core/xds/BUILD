@@ -315,6 +315,7 @@ grpc_cc_test(
         "//src/core:xds_health_status",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
         "//src/proto/grpc/testing/xds/v3:http_protocol_options_proto",
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",

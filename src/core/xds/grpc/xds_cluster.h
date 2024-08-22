@@ -34,6 +34,9 @@
 
 namespace grpc_core {
 
+constexpr absl::string_view kXdsAudienceClusterMetadataType =
+    "envoy.extensions.filters.http.gcp_authn.v3.Audience";
+
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
     // If empty, defaults to the cluster name.
@@ -88,7 +91,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   XdsHealthStatusSet override_host_statuses;
 
   struct MetadataEntry {
-    std::string type;  // Protobuf type.
+    absl::string_view type;  // Protobuf type.
     Json json;
 
     bool operator==(const MetadataEntry& other) const {

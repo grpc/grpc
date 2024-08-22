@@ -38,6 +38,8 @@
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -49,6 +51,7 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -60,6 +63,15 @@
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 
 namespace grpc_core {
+
+// TODO(roth): Remove this once GCP auth filter support is stable.
+bool XdsGcpAuthFilterEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 namespace {
 
@@ -664,9 +676,43 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       if (!extension.has_value()) continue;
       // TODO(roth): If we ever need to support another type here, refactor
       // this into a separate registry.
-      if (extension->type == "extensions.filters.http.gcp_authn.v3.Audience") {
-// FIXME do this
-        // TODO(roth): In a subsequent PR, add parsing here.
+      if (XdsGcpAuthFilterEnabled() &&
+          extension->type == kXdsAudienceClusterMetadataType) {
+        absl::string_view* serialized_proto =
+            absl::get_if<absl::string_view>(&extension->value);
+        if (serialized_proto == nullptr) {
+          errors.AddError("could not parse audience metadata");
+          continue;
+        }
+        auto* proto =
+            envoy_extensions_filters_http_gcp_authn_v3_Audience_parse(
+                serialized_proto->data(), serialized_proto->size(),
+                context.arena);
+        if (proto == nullptr) {
+          errors.AddError("could not parse audience metadata");
+          continue;
+        }
+        if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
+            ABSL_VLOG_IS_ON(2)) {
+          const upb_MessageDef* msg_type =
+              envoy_extensions_filters_http_gcp_authn_v3_Audience_getmsgdef(
+                  context.symtab);
+          char buf[10240];
+          upb_TextEncode(reinterpret_cast<const upb_Message*>(proto),
+                         msg_type, nullptr, 0, buf, sizeof(buf));
+          VLOG(2) << "[xds_client " << context.client
+                  << "] cluster metadata Audience: " << buf;
+        }
+        std::string url = UpbStringToStdString(
+            envoy_extensions_filters_http_gcp_authn_v3_Audience_url(proto));
+        if (url.empty()) {
+          ValidationErrors::ScopedField field(&errors, ".url");
+          errors.AddError("must be non-empty");
+          continue;
+        }
+        cds_update->metadata[key] =
+            {kXdsAudienceClusterMetadataType,
+             Json::FromObject({{"url", Json::FromString(std::move(url))}})};
       }
     }
     // Then, try filter_metadata.

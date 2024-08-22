@@ -58,6 +58,7 @@
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/gcp_authn.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_protocol_options.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
@@ -70,6 +71,7 @@
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using envoy::extensions::filters::http::gcp_authn::v3::Audience;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
 using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
@@ -1659,7 +1661,7 @@ MATCHER_P2(MetadataEntryEq, type, json_matcher, "") {
   return ok;
 }
 
-TEST_F(MetadataTest, MetadataSet) {
+TEST_F(MetadataTest, UntypedMetadata) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
@@ -1696,6 +1698,132 @@ TEST_F(MetadataTest, MetadataSet) {
                              "\"string_value\":\"abc\","
                              "\"struct_value\":{\"bool_value\":false}"
                              "}")))));
+}
+
+TEST_F(MetadataTest, TypedMetadataTakesPrecendenceOverUntyped) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map = *filter_map["filter_key"].mutable_fields();
+  *label_map["string_value"].mutable_string_value() = "abc";
+  Audience audience_proto;
+  audience_proto.set_url("foo");
+  auto& typed_filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  typed_filter_map["filter_key"].PackFrom(audience_proto);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.metadata,
+              ::testing::ElementsAre(::testing::Pair(
+                  "filter_key", MetadataEntryEq(
+                      kXdsAudienceClusterMetadataType,
+                      JsonEq("{\"url\":\"foo\"}")))));
+}
+
+TEST_F(MetadataTest, AudienceMetadata) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  Audience audience_proto;
+  audience_proto.set_url("foo");
+  auto& filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  filter_map["filter_key"].PackFrom(audience_proto);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.metadata,
+              ::testing::ElementsAre(::testing::Pair(
+                  "filter_key", MetadataEntryEq(
+                      kXdsAudienceClusterMetadataType,
+                      JsonEq("{\"url\":\"foo\"}")))));
+}
+
+TEST_F(MetadataTest, AudienceMetadataUnparseable) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  auto& entry = filter_map["filter_key"];
+  entry.PackFrom(Audience());
+  entry.set_value(std::string("\0", 1));
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:metadata.typed_filter_metadata[filter_key].value["
+            "envoy.extensions.filters.http.gcp_authn.v3.Audience] "
+            "error:could not parse audience metadata]")
+      << decode_result.resource.status();
+}
+
+TEST_F(MetadataTest, AudienceMetadataMissingUrl) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  Audience audience_proto;
+  auto& filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  filter_map["filter_key"].PackFrom(audience_proto);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:metadata.typed_filter_metadata[filter_key].value["
+            "envoy.extensions.filters.http.gcp_authn.v3.Audience].url "
+            "error:must be non-empty]")
+      << decode_result.resource.status();
+}
+
+TEST_F(MetadataTest, AudienceIgnoredIfNotEnabled) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  Audience audience_proto;
+  audience_proto.set_url("foo");
+  auto& filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  filter_map["filter_key"].PackFrom(audience_proto);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.metadata, ::testing::ElementsAre());
 }
 
 TEST_F(MetadataTest, MetadataUnset) {
