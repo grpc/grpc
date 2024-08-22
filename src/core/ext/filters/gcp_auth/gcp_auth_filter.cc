@@ -79,21 +79,9 @@ struct Audience {
 
 absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
     ClientMetadata& /*md*/, GcpAuthenticationFilter* filter) {
-
-// FIXME: this needs to move to channel init time
-  // Get filter config.
+  // Get the cluster name chosen for this RPC.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
-  ServiceConfig* service_config = service_config_call_data->service_config();
-  CHECK_NE(service_config, nullptr);
-  auto* filter_config = static_cast<GcpAuthenticationParsedConfig*>(
-      service_config->GetGlobalParsedConfig(
-          filter->service_config_parser_index_));
-  CHECK_NE(filter_config, nullptr);
-  auto* filter_instance_config = filter_config->GetConfig(filter->index_);
-  CHECK_NE(filter_instance_config, nullptr);
-
-  // Get the cluster name chosen for this RPC.
   auto cluster_attribute =
       service_config_call_data->GetCallAttribute<XdsClusterAttribute>();
   CHECK_NE(cluster_attribute, nullptr);
@@ -103,14 +91,16 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   CHECK(it != filter->xds_config_.end());
   CHECK(it->second.cluster != nullptr);
   auto md_it = it->second.cluster->metadata.find(
-      filter_instance_config->filter_instance_name);
+      filter->filter_config_->filter_instance_name);
   // If no audience in the cluster, then no need to add call creds.
   if (md_it == it->second.cluster->metadata.end()) return absl::OkStatus();
   // If the entry is present but the wrong type, fail the RPC.
-  if (md_it->second.type != "extensions.filters.http.gcp_authn.v3.Audience") {
+  if (md_it->second.type != kXdsAudienceClusterMetadataType) {
     return absl::UnavailableError(absl::StrCat(
-        "audience configuration in wrong format for cluster ", cluster_name));
+        "audience metadata in wrong format for cluster ", cluster_name));
   }
+// FIXME: store metadata in parsed form so we don't need to validate
+// JSON on a per-call basis
   auto audience = LoadFromJson<Audience>(md_it->second.json);
   if (!audience.ok()) {
     return absl::UnavailableError(absl::StrCat(
@@ -140,17 +130,37 @@ const grpc_channel_filter GcpAuthenticationFilter::kFilter =
 absl::StatusOr<std::unique_ptr<GcpAuthenticationFilter>>
 GcpAuthenticationFilter::Create(const ChannelArgs& args,
                                 ChannelFilter::Args filter_args) {
-  return std::make_unique<GcpAuthenticationFilter>(args, filter_args);
+  auto* service_config = args.GetObject<ServiceConfig>();
+  if (service_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "gcp_auth: no service config in channel args");
+  }
+  auto* config = static_cast<const GcpAuthenticationParsedConfig*>(
+      service_config->GetGlobalParsedConfig(
+          GcpAuthenticationServiceConfigParser::ParserIndex()));
+  if (config == nullptr) {
+    return absl::InvalidArgumentError("gcp_auth: parsed config not found");
+  }
+  auto* filter_config = config->GetConfig(filter_args.instance_id());
+  if (filter_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "gcp_auth: filter instance ID not found in filter config");
+  }
+  auto xds_config = args.GetObjectRef<XdsConfig>();
+  if (xds_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "gcp_auth: xds config not found in channel args");
+  }
+  return std::make_unique<GcpAuthenticationFilter>(
+      filter_config, std::move(xds_config));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
-    const ChannelArgs& args, ChannelFilter::Args filter_args)
-    : index_(filter_args.instance_id()),
-      service_config_parser_index_(
-          GcpAuthenticationServiceConfigParser::ParserIndex()),
-      xds_config_(args.GetObjectRef<XdsConfig>()),
-      // FIXME: need to configure cache max size from service config
-      cache_(10) {}
+    GcpAuthenticationParsedConfig::Config* filter_config,
+    RefCountedPtr<XdsConfig> xds_config)
+    : filter_config_(filter_config),
+      xds_config_(std::move(xds_config)),
+      cache_(filter_config->cache_size) {}
 
 RefCountedPtr<grpc_call_credentials>
 GcpAuthenticationFilter::GetCallCredentials(const std::string& audience) {

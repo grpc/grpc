@@ -50,8 +50,9 @@ class GcpAuthenticationFilter
   static absl::StatusOr<std::unique_ptr<GcpAuthenticationFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  GcpAuthenticationFilter(const ChannelArgs& args,
-                          ChannelFilter::Args filter_args);
+  GcpAuthenticationFilter(
+      GcpAuthenticationParsedConfig::Config* filter_config,
+      RefCountedPtr<XdsDependencyManager::XdsConfig> xds_config);
 
   class Call {
    public:
@@ -69,11 +70,7 @@ class GcpAuthenticationFilter
   RefCountedPtr<grpc_call_credentials> GetCallCredentials(
       const std::string& audience);
 
-  // The relative index of instances of the same filter.
-  const size_t index_;
-  // Index of the service config parser.
-  const size_t service_config_parser_index_;
-  // XdsConfig from channel args.
+  const GcpAuthenticationParsedConfig::Config* filter_config_;
   const RefCountedPtr<XdsDependencyManager::XdsConfig> xds_config_;
 
   Mutex mu_;
