@@ -690,6 +690,7 @@ grpc_cc_library(
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
         "//src/core:forkable",
+        "//src/core:gcp_service_account_identity_credentials",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",

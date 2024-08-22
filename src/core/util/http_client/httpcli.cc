@@ -77,8 +77,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
       // Note that capturing request here assumes it will remain alive
       // until after Start is called. This avoids making a copy as this
       // code path is only used for test mocks.
-      g_get_override(request, uri.authority().c_str(), uri.path().c_str(),
-                     deadline, on_done, response);
+      g_get_override(request, uri, deadline, on_done, response);
     };
   }
   std::string name =
@@ -100,9 +99,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
   if (g_post_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
-      g_post_override(request, uri.authority().c_str(), uri.path().c_str(),
-                      request->body, request->body_length, deadline, on_done,
-                      response);
+      g_post_override(request, uri,
+                      absl::string_view(request->body, request->body_length),
+                      deadline, on_done, response);
     };
   }
   std::string name =
@@ -124,9 +123,9 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
   if (g_put_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
-      g_put_override(request, uri.authority().c_str(), uri.path().c_str(),
-                     request->body, request->body_length, deadline, on_done,
-                     response);
+      g_put_override(request, uri,
+                     absl::string_view(request->body, request->body_length),
+                     deadline, on_done, response);
     };
   }
   std::string name =

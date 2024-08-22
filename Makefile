@@ -1278,6 +1278,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/external/file_external_account_credentials.cc \
     src/core/lib/security/credentials/external/url_external_account_credentials.cc \
     src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
     src/core/lib/security/credentials/google_default/credentials_generic.cc \
     src/core/lib/security/credentials/google_default/google_default_credentials.cc \
     src/core/lib/security/credentials/iam/iam_credentials.cc \
@@ -1297,6 +1298,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
+    src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \

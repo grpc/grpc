@@ -33,18 +33,38 @@ namespace grpc_core {
 
 class FileExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<FileExternalAccountCredentials> Create(
+  static absl::StatusOr<RefCountedPtr<FileExternalAccountCredentials>> Create(
       Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr);
+
+  FileExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
       grpc_error_handle* error);
 
-  FileExternalAccountCredentials(Options options,
-                                 std::vector<std::string> scopes,
-                                 grpc_error_handle* error);
+  std::string debug_string() override;
+
+  UniqueTypeName type() const override;
 
  private:
-  void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) override;
+  class FileFetchBody final : public FetchBody {
+   public:
+    FileFetchBody(absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
+                  FileExternalAccountCredentials* creds);
+
+   private:
+    void Shutdown() override {}
+
+    void ReadFile();
+
+    FileExternalAccountCredentials* creds_;
+  };
+
+  OrphanablePtr<FetchBody> RetrieveSubjectToken(
+      Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) override;
 
   absl::string_view CredentialSourceType() override;
 

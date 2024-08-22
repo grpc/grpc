@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -58,6 +59,7 @@
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
@@ -72,10 +74,13 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 
+using grpc_event_engine::experimental::FuzzingEventEngine;
 using internal::grpc_flush_cached_google_default_credentials;
 using internal::set_gce_tenancy_checker_for_testing;
 
@@ -274,7 +279,7 @@ const char
     invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url
         [] = "{\"environment_id\":\"aws1\","
              "\"region_url\":\"https://169.254.169.254:5555/region_url\","
-             "\"url\":\"https://169.254.169.254:5555/url_no_role_name\","
+             "\"url\":\"https://169.254.169.254:5555/url\","
              "\"regional_cred_verification_url\":\"invalid_regional_cred_"
              "verification_url\"}";
 
@@ -415,16 +420,19 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
 class RequestMetadataState : public RefCounted<RequestMetadataState> {
  public:
   static RefCountedPtr<RequestMetadataState> NewInstance(
-      grpc_error_handle expected_error, std::string expected) {
+      grpc_error_handle expected_error, std::string expected,
+      absl::optional<bool> expect_delay = absl::nullopt) {
     return MakeRefCounted<RequestMetadataState>(
-        expected_error, std::move(expected),
+        expected_error, std::move(expected), expect_delay,
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
   }
 
   RequestMetadataState(grpc_error_handle expected_error, std::string expected,
+                       absl::optional<bool> expect_delay,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
         expected_(std::move(expected)),
+        expect_delay_(expect_delay),
         pollent_(pollent) {}
 
   ~RequestMetadataState() override {
@@ -442,12 +450,18 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     activity_ = MakeActivity(
         [this, creds] {
           return Seq(
-              creds->GetRequestMetadata(
+              CheckDelayed(creds->GetRequestMetadata(
                   ClientMetadataHandle(&md_, Arena::PooledDeleter(nullptr)),
-                  &get_request_metadata_args_),
-              [this](absl::StatusOr<ClientMetadataHandle> metadata) {
+                  &get_request_metadata_args_)),
+              [this](std::tuple<absl::StatusOr<ClientMetadataHandle>, bool>
+                         metadata_and_delayed) {
+                auto& metadata = std::get<0>(metadata_and_delayed);
+                const bool delayed = std::get<1>(metadata_and_delayed);
+                if (expect_delay_.has_value()) {
+                  EXPECT_EQ(delayed, *expect_delay_);
+                }
                 if (metadata.ok()) {
-                  CHECK(metadata->get() == &md_);
+                  EXPECT_EQ(metadata->get(), &md_);
                 }
                 return metadata.status();
               });
@@ -494,18 +508,16 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
   };
 
   void CheckRequestMetadata(grpc_error_handle error) {
-    LOG(INFO) << "expected_error: " << StatusToString(expected_error_);
-    LOG(INFO) << "actual_error: " << StatusToString(error);
     if (expected_error_.ok()) {
-      CHECK_OK(error);
+      ASSERT_TRUE(error.ok()) << error;
     } else {
-      std::string expected_error;
-      CHECK(grpc_error_get_str(expected_error_, StatusStrProperty::kDescription,
-                               &expected_error));
-      std::string actual_error;
-      CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                               &actual_error));
-      CHECK(expected_error == actual_error);
+      grpc_status_code actual_code;
+      std::string actual_message;
+      grpc_error_get_status(error, Timestamp::InfFuture(), &actual_code,
+                            &actual_message, nullptr, nullptr);
+      EXPECT_EQ(absl::Status(static_cast<absl::StatusCode>(actual_code),
+                             actual_message),
+                expected_error_);
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());
@@ -515,6 +527,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
+  absl::optional<bool> expect_delay_;
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
@@ -694,49 +707,45 @@ TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 }
 
 void validate_compute_engine_http_request(const grpc_http_request* request,
-                                          const char* host, const char* path) {
-  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
-  CHECK_EQ(
-      strcmp(path,
-             "/computeMetadata/v1/instance/service-accounts/default/token"),
-      0);
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Metadata-Flavor"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "Google"), 0);
+                                          const URI& uri) {
+  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
+  EXPECT_EQ(uri.path(),
+            "/computeMetadata/v1/instance/service-accounts/default/token");
+  ASSERT_EQ(request->hdr_count, 1);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
 }
 
 int compute_engine_httpcli_get_success_override(
-    const grpc_http_request* request, const char* host, const char* path,
-    Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
-  validate_compute_engine_http_request(request, host, path);
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  validate_compute_engine_http_request(request, uri);
   *response = http_response(200, valid_oauth2_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int compute_engine_httpcli_get_failure_override(
-    const grpc_http_request* request, const char* host, const char* path,
-    Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
-  validate_compute_engine_http_request(request, host, path);
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  validate_compute_engine_http_request(request, uri);
   *response = http_response(403, "Not Authorized.");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
-int httpcli_post_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+int httpcli_post_should_not_be_called(const grpc_http_request* /*request*/,
+                                      const URI& /*uri*/,
+                                      absl::string_view /*body*/,
+                                      Timestamp /*deadline*/,
+                                      grpc_closure* /*on_done*/,
+                                      grpc_http_response* /*response*/) {
   CHECK(false) << "HTTP POST should not be called";
   return 1;
 }
 
 int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
-                                     const char* /*host*/, const char* /*path*/,
-                                     Timestamp /*deadline*/,
+                                     const URI& /*uri*/, Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
   CHECK(false) << "HTTP GET should not be called";
@@ -744,9 +753,8 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
 }
 
 int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
-                                     const char* /*host*/, const char* /*path*/,
-                                     const char* /*body_bytes*/,
-                                     size_t /*body_size*/,
+                                     const URI& /*uri*/,
+                                     absl::string_view /*body*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
@@ -795,7 +803,8 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
@@ -810,40 +819,34 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
 }
 
 void validate_refresh_token_http_request(const grpc_http_request* request,
-                                         const char* host, const char* path,
-                                         const char* body, size_t body_size) {
+                                         const URI& uri,
+                                         absl::string_view body) {
   // The content of the assertion is tested extensively in json_token_test.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  std::string expected_body = absl::StrFormat(
-      GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
-      "32555999999.apps.googleusercontent.com", "EmssLNjJy1332hD4KFsecret",
-      "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
-  CHECK_EQ(expected_body.size(), body_size);
-  CHECK_EQ(memcmp(expected_body.data(), body, body_size), 0);
-  CHECK_EQ(strcmp(host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST), 0);
-  CHECK_EQ(strcmp(path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH), 0);
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
+  EXPECT_EQ(body, absl::StrFormat(GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
+                                  "32555999999.apps.googleusercontent.com",
+                                  "EmssLNjJy1332hD4KFsecret",
+                                  "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42"));
+  EXPECT_EQ(uri.authority(), GRPC_GOOGLE_OAUTH2_SERVICE_HOST);
+  EXPECT_EQ(uri.path(), GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
+  ASSERT_EQ(request->hdr_count, 1);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
 }
 
 int refresh_token_httpcli_post_success(const grpc_http_request* request,
-                                       const char* host, const char* path,
-                                       const char* body, size_t body_size,
+                                       const URI& uri, absl::string_view body,
                                        Timestamp /*deadline*/,
                                        grpc_closure* on_done,
                                        grpc_http_response* response) {
-  validate_refresh_token_http_request(request, host, path, body, body_size);
+  validate_refresh_token_http_request(request, uri, body);
   *response = http_response(200, valid_oauth2_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int token_httpcli_post_failure(const grpc_http_request* /*request*/,
-                               const char* /*host*/, const char* /*path*/,
-                               const char* /*body*/, size_t /*body_size*/,
+                               const URI& /*uri*/, absl::string_view /*body*/,
                                Timestamp /*deadline*/, grpc_closure* on_done,
                                grpc_http_response* response) {
   *response = http_response(403, "Not Authorized.");
@@ -893,7 +896,8 @@ TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -1013,12 +1017,9 @@ void assert_query_parameters(const URI& uri, absl::string_view expected_key,
 }
 
 void validate_sts_token_http_request(const grpc_http_request* request,
-                                     const char* host, const char* path,
-                                     const char* body, size_t body_size,
+                                     const URI& uri, absl::string_view body,
                                      bool expect_actor_token) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   absl::StatusOr<URI> url = URI::Parse(get_url_equivalent);
@@ -1045,31 +1046,30 @@ void validate_sts_token_http_request(const grpc_http_request* request,
   }
 
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/v1/token-exchange"), 0);
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/v1/token-exchange");
+  ASSERT_EQ(request->hdr_count, 1);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
 }
 
 int sts_token_httpcli_post_success(const grpc_http_request* request,
-                                   const char* host, const char* path,
-                                   const char* body, size_t body_size,
+                                   const URI& uri, absl::string_view body,
                                    Timestamp /*deadline*/,
                                    grpc_closure* on_done,
                                    grpc_http_response* response) {
-  validate_sts_token_http_request(request, host, path, body, body_size, true);
+  validate_sts_token_http_request(request, uri, body, true);
   *response = http_response(200, valid_sts_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int sts_token_httpcli_post_success_no_actor_token(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  validate_sts_token_http_request(request, host, path, body, body_size, false);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  validate_sts_token_http_request(request, uri, body, false);
   *response = http_response(200, valid_sts_json_response);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -1157,7 +1157,11 @@ TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      // TODO(roth): This should return UNAVAILABLE.
+      absl::InternalError(
+          "Failed to load file: /some/completely/random/path due to "
+          "error(fdopen): No such file or directory"),
+      {});
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1225,7 +1229,10 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      // TODO(roth): This should return UNAVAILABLE.
+      absl::InternalError("Failed to load file: invalid_path due to "
+                          "error(fdopen): No such file or directory"),
+      {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1258,7 +1265,8 @@ TEST(CredentialsTest, TestStsCredsHttpFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1455,7 +1463,7 @@ TEST(CredentialsTest, TestJwtCredsSigningFailure) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE("Could not generate JWT."), {});
+      absl::UnauthenticatedError("Could not generate JWT."), {});
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -1598,7 +1606,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
 }
 
 int default_creds_metadata_server_detection_httpcli_get_success_override(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, "");
@@ -1608,8 +1616,8 @@ int default_creds_metadata_server_detection_httpcli_get_success_override(
   headers[0].value = gpr_strdup("Google");
   response->hdr_count = 1;
   response->hdrs = headers;
-  CHECK_EQ(strcmp(path, "/"), 0);
-  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
+  EXPECT_EQ(uri.path(), "/");
+  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -1686,12 +1694,12 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
 }
 
 int default_creds_gce_detection_httpcli_get_failure_override(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   // No magic header.
-  CHECK_EQ(strcmp(path, "/"), 0);
-  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
+  EXPECT_EQ(uri.path(), "/");
+  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
   *response = http_response(200, "");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -1751,6 +1759,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
 
 struct fake_call_creds : public grpc_call_credentials {
  public:
+  void Orphaned() override {}
+
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
       const grpc_call_credentials::GetRequestMetadataArgs*) override {
@@ -1910,7 +1920,8 @@ TEST(CredentialsTest, TestMetadataPluginFailure) {
   grpc_metadata_credentials_plugin plugin;
   ExecCtx exec_ctx;
   auto md_state = RequestMetadataState::NewInstance(
-      GRPC_ERROR_CREATE(
+      // TODO(roth): Is this the right status to use here?
+      absl::UnavailableError(
           absl::StrCat("Getting metadata from plugin failed with error: ",
                        plugin_error_details)),
       {});
@@ -2101,11 +2112,9 @@ TEST(CredentialsTest, TestAuthMetadataContext) {
 }
 
 void validate_external_account_creds_token_exchage_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& request_uri,
+    absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
@@ -2122,100 +2131,84 @@ void validate_external_account_creds_token_exchage_request(
   assert_query_parameters(*uri, "subject_token_type", "subject_token_type");
   assert_query_parameters(*uri, "scope",
                           "https://www.googleapis.com/auth/cloud-platform");
-
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/token"), 0);
-  CHECK_EQ(request->hdr_count, 3);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK_EQ(
-      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
-      0);
+  EXPECT_EQ(request_uri.authority(), "foo.com:5555");
+  EXPECT_EQ(request_uri.path(), "/token");
+  ASSERT_EQ(request->hdr_count, 3);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].value),
+            "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
 void validate_external_account_creds_token_exchage_request_with_url_encode(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  CHECK_EQ(
-      strcmp(
-          std::string(body, body_size).c_str(),
-          "audience=audience_!%40%23%24&grant_type=urn%3Aietf%3Aparams%3Aoauth%"
-          "3Agrant-type%3Atoken-exchange&requested_token_type=urn%3Aietf%"
-          "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
-          "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
-          "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&"
-          "options=%7B%7D"),
-      0);
-
+  EXPECT_EQ(
+      body,
+      "audience=audience_!%40%23%24&grant_type=urn%3Aietf%3Aparams%3Aoauth%"
+      "3Agrant-type%3Atoken-exchange&requested_token_type=urn%3Aietf%"
+      "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
+      "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
+      "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&"
+      "options=%7B%7D");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/token_url_encode"), 0);
-  CHECK_EQ(request->hdr_count, 3);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK_EQ(
-      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
-      0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/token_url_encode");
+  ASSERT_EQ(request->hdr_count, 3);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].value),
+            "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
 void validate_external_account_creds_service_account_impersonation_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=3600s"), 0);
+  EXPECT_EQ(body, "scope=scope_1%20scope_2&lifetime=3600s");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
-  CHECK_EQ(request->hdr_count, 2);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
-  CHECK_EQ(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token"),
-           0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/service_account_impersonation");
+  ASSERT_EQ(request->hdr_count, 2);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].value),
+            "Bearer token_exchange_access_token");
 }
 
 void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
+    const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
-  CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=1800s"), 0);
+  EXPECT_EQ(body, "scope=scope_1%20scope_2&lifetime=1800s");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
-  CHECK_EQ(request->hdr_count, 2);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
-  CHECK_EQ(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token"),
-           0);
+  EXPECT_EQ(uri.authority(), "foo.com:5555");
+  EXPECT_EQ(uri.path(), "/service_account_impersonation");
+  ASSERT_EQ(request->hdr_count, 2);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].value),
+            "Bearer token_exchange_access_token");
 }
 
 int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
-    validate_external_account_creds_token_exchage_request(
-        request, host, path, body, body_size, true);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    validate_external_account_creds_token_exchage_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
-  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+  } else if (uri.path() == "/service_account_impersonation") {
     validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
-        request, host, path, body, body_size, true);
+        request, uri, body);
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
@@ -2225,23 +2218,22 @@ int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
 }
 
 int external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
-    validate_external_account_creds_token_exchage_request(
-        request, host, path, body, body_size, true);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    validate_external_account_creds_token_exchage_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
-  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+  } else if (uri.path() == "/service_account_impersonation") {
     validate_external_account_creds_service_account_impersonation_request(
-        request, host, path, body, body_size, true);
+        request, uri, body);
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
-  } else if (strcmp(path, "/token_url_encode") == 0) {
+  } else if (uri.path() == "/token_url_encode") {
     validate_external_account_creds_token_exchage_request_with_url_encode(
-        request, host, path, body, body_size, true);
+        request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }
@@ -2250,16 +2242,15 @@ int external_account_creds_httpcli_post_success(
 }
 
 int external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* path, const char* /*body*/, size_t /*body_size*/,
-    Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* /*request*/, const URI& uri,
+    absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
+  if (uri.path() == "/token") {
     *response = http_response(200,
                               "{\"not_access_token\":\"not_access_token\","
                               "\"expires_in\":3599,"
                               " \"token_type\":\"Bearer\"}");
-  } else if (strcmp(path, "/service_account_impersonation") == 0) {
+  } else if (uri.path() == "/service_account_impersonation") {
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
@@ -2269,18 +2260,18 @@ int external_account_creds_httpcli_post_failure_token_exchange_response_missing_
 }
 
 int url_external_account_creds_httpcli_get_success(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* path, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  if (strcmp(path, "/generate_subject_token_format_text") == 0) {
+  if (uri.path() == "/generate_subject_token_format_text") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (strcmp(path, "/path/to/url/creds?p1=v1&p2=v2") == 0) {
+  } else if (uri.path() == "/path/to/url/creds?p1=v1&p2=v2") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (strcmp(path, "/generate_subject_token_format_json") == 0) {
+  } else if (uri.path() == "/generate_subject_token_format_json") {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_json);
@@ -2290,14 +2281,11 @@ int url_external_account_creds_httpcli_get_success(
 }
 
 void validate_aws_external_account_creds_token_exchage_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, bool /*expect_actor_token*/) {
-  // Check that the body is constructed properly.
-  CHECK_NE(body, nullptr);
-  CHECK_NE(body_size, 0);
+    const grpc_http_request* request, const URI& request_uri,
+    absl::string_view body) {
   // Check that the regional_cred_verification_url got constructed
   // with the correct AWS Region ("test_regionz" or "test_region").
-  CHECK(strstr(body, "regional_cred_verification_url_test_region"));
+  EXPECT_NE(body.find("regional_cred_verification_url_test_region"), body.npos);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
@@ -2311,35 +2299,34 @@ void validate_aws_external_account_creds_token_exchage_request(
   assert_query_parameters(*uri, "scope",
                           "https://www.googleapis.com/auth/cloud-platform");
   // Check the rest of the request.
-  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
-  CHECK_EQ(strcmp(path, "/token"), 0);
-  CHECK_EQ(request->hdr_count, 3);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[1].key, "x-goog-api-client"), 0);
+  EXPECT_EQ(request_uri.authority(), "foo.com:5555");
+  EXPECT_EQ(request_uri.path(), "/token");
+  ASSERT_EQ(request->hdr_count, 3);
+  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Content-Type");
+  EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+            "application/x-www-form-urlencoded");
+  EXPECT_EQ(absl::string_view(request->hdrs[1].key), "x-goog-api-client");
   EXPECT_EQ(
-      request->hdrs[1].value,
+      absl::string_view(request->hdrs[1].value),
       absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
                       "sa-impersonation/false config-lifetime/false",
                       grpc_version_string()));
-  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK_EQ(
-      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
-      0);
+  EXPECT_EQ(absl::string_view(request->hdrs[2].key), "Authorization");
+  EXPECT_EQ(absl::string_view(request->hdrs[2].value),
+            "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
 int aws_external_account_creds_httpcli_get_success(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* path, Timestamp /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  if (strcmp(path, "/region_url") == 0) {
+  if (uri.path() == "/region_url") {
     *response = http_response(200, "test_regionz");
-  } else if (strcmp(path, "/url") == 0) {
+  } else if (uri.path() == "/url") {
     *response = http_response(200, "test_role_name");
-  } else if (strcmp(path, "/url_no_role_name") == 0) {
+  } else if (uri.path() == "/url_no_role_name") {
     *response = http_response(200, "");
-  } else if (strcmp(path, "/url/test_role_name") == 0) {
+  } else if (uri.path() == "/url/test_role_name") {
     *response = http_response(
         200, valid_aws_external_account_creds_retrieve_signing_keys_response);
   }
@@ -2348,36 +2335,42 @@ int aws_external_account_creds_httpcli_get_success(
 }
 
 int aws_imdsv2_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response) {
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token"), 0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, aws_imdsv2_session_token), 0);
-  return aws_external_account_creds_httpcli_get_success(
-      request, host, path, deadline, on_done, response);
+    const grpc_http_request* request, const URI& uri, Timestamp deadline,
+    grpc_closure* on_done, grpc_http_response* response) {
+  EXPECT_EQ(request->hdr_count, 1);
+  if (request->hdr_count == 1) {
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key),
+              "x-aws-ec2-metadata-token");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value),
+              aws_imdsv2_session_token);
+  }
+  return aws_external_account_creds_httpcli_get_success(request, uri, deadline,
+                                                        on_done, response);
 }
 
 int aws_imdsv2_external_account_creds_httpcli_put_success(
-    const grpc_http_request* request, const char* /*host*/, const char* path,
-    const char* /*body*/, size_t /*body_size*/, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  CHECK_EQ(request->hdr_count, 1);
-  CHECK_EQ(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token-ttl-seconds"),
-           0);
-  CHECK_EQ(strcmp(request->hdrs[0].value, "300"), 0);
-  CHECK_EQ(strcmp(path, "/imdsv2_session_token_url"), 0);
+    const grpc_http_request* request, const URI& uri,
+    absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  EXPECT_EQ(request->hdr_count, 1);
+  if (request->hdr_count == 1) {
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key),
+              "x-aws-ec2-metadata-token-ttl-seconds");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value), "300");
+  }
+  EXPECT_EQ(uri.path(), "/imdsv2_session_token_url");
   *response = http_response(200, aws_imdsv2_session_token);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 int aws_external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
-    grpc_closure* on_done, grpc_http_response* response) {
-  if (strcmp(path, "/token") == 0) {
-    validate_aws_external_account_creds_token_exchage_request(
-        request, host, path, body, body_size, true);
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    validate_aws_external_account_creds_token_exchage_request(request, uri,
+                                                              body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }
@@ -2385,22 +2378,338 @@ int aws_external_account_creds_httpcli_post_success(
   return 1;
 }
 
+class TokenFetcherCredentialsTest : public ::testing::Test {
+ protected:
+  class TestTokenFetcherCredentials final : public TokenFetcherCredentials {
+   public:
+    explicit TestTokenFetcherCredentials(
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine = nullptr)
+        : TokenFetcherCredentials(std::move(event_engine),
+                                  /*test_only_use_backoff_jitter=*/false) {}
+
+    ~TestTokenFetcherCredentials() override { CHECK_EQ(queue_.size(), 0); }
+
+    void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
+      MutexLock lock(&mu_);
+      queue_.push_front(std::move(result));
+    }
+
+    size_t num_fetches() const { return num_fetches_; }
+
+   private:
+    class TestFetchRequest final : public FetchRequest {
+     public:
+      TestFetchRequest(
+          grpc_event_engine::experimental::EventEngine& event_engine,
+          absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
+              on_done,
+          absl::StatusOr<RefCountedPtr<Token>> result) {
+        event_engine.Run([on_done = std::move(on_done),
+                          result = std::move(result)]() mutable {
+          ApplicationCallbackExecCtx application_exec_ctx;
+          ExecCtx exec_ctx;
+          std::exchange(on_done, nullptr)(std::move(result));
+        });
+      }
+
+      void Orphan() override { Unref(); }
+    };
+
+    OrphanablePtr<FetchRequest> FetchToken(
+        Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+        override {
+      absl::StatusOr<RefCountedPtr<Token>> result;
+      {
+        MutexLock lock(&mu_);
+        CHECK(!queue_.empty());
+        result = std::move(queue_.back());
+        queue_.pop_back();
+      }
+      num_fetches_.fetch_add(1);
+      return MakeOrphanable<TestFetchRequest>(
+          event_engine(), std::move(on_done), std::move(result));
+    }
+
+    std::string debug_string() override {
+      return "TestTokenFetcherCredentials";
+    }
+
+    UniqueTypeName type() const override {
+      static UniqueTypeName::Factory kFactory("TestTokenFetcherCredentials");
+      return kFactory.Create();
+    }
+
+    Mutex mu_;
+    std::deque<absl::StatusOr<RefCountedPtr<Token>>> queue_
+        ABSL_GUARDED_BY(&mu_);
+
+    std::atomic<size_t> num_fetches_{0};
+  };
+
+  ~TokenFetcherCredentialsTest() override {
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+// FIXME
+//    grpc_event_engine::experimental::WaitForSingleOwner(
+//        std::move(event_engine_));
+  }
+
+  static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
+      absl::string_view token, Timestamp expiration = Timestamp::InfFuture()) {
+    return MakeRefCounted<TokenFetcherCredentials::Token>(
+        Slice::FromCopiedString(token), expiration);
+  }
+
+  std::shared_ptr<FuzzingEventEngine> event_engine_ =
+      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
+                                           fuzzing_event_engine::Actions());
+  RefCountedPtr<TestTokenFetcherCredentials> creds_ =
+      MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
+};
+
+TEST_F(TokenFetcherCredentialsTest, Basic) {
+  const auto kExpirationTime = Timestamp::Now() + Duration::Hours(1);
+  ExecCtx exec_ctx;
+  creds_->AddResult(MakeToken("foo", kExpirationTime));
+  // First request will trigger a fetch.
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Second request while fetch is still outstanding will be delayed but
+  // will not trigger a new fetch.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Now tick to finish the fetch.
+  event_engine_->TickUntilIdle();
+  // Next request will be served from cache with no delay.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Advance time to expiration minus expiration adjustment and prefetch time.
+  exec_ctx.TestOnlySetNow(kExpirationTime - Duration::Seconds(90));
+  // No new fetch yet.
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Next request will trigger a new fetch but will still use the
+  // cached token.
+  creds_->AddResult(MakeToken("bar"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  event_engine_->TickUntilIdle();
+  // Next request will use the new data.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: bar", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
+TEST_F(TokenFetcherCredentialsTest, Expires30SecondsEarly) {
+  const auto kExpirationTime = Timestamp::Now() + Duration::Hours(1);
+  ExecCtx exec_ctx;
+  creds_->AddResult(MakeToken("foo", kExpirationTime));
+  // First request will trigger a fetch.
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  event_engine_->TickUntilIdle();
+  // Advance time to expiration minus 30 seconds.
+  exec_ctx.TestOnlySetNow(kExpirationTime - Duration::Seconds(30));
+  // No new fetch yet.
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Next request will trigger a new fetch and will delay the call until
+  // the fetch completes.
+  creds_->AddResult(MakeToken("bar"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: bar", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  event_engine_->TickUntilIdle();
+}
+
+TEST_F(TokenFetcherCredentialsTest, FetchFails) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  // This is 1 second (initial backoff) minus 1ms for the tick needed above.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Start a new call now, which will be queued and then eventually
+  // resumed when the next fetch happens.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  // Tick until the next fetch starts.
+  creds_->AddResult(MakeToken("foo"));
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  // A call started now should use the new cached data.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
+TEST_F(TokenFetcherCredentialsTest, Backoff) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Start a new call now, which will be queued and then eventually
+  // resumed when the next fetch happens.
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  // Tick until the next fetch fails and the backoff timer starts again.
+  creds_->AddResult(kExpectedError);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  // The backoff time should be longer now.  We account for jitter here.
+  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(1600))
+      << "actual: " << run_after_duration->count();
+  run_after_duration.reset();
+  // Start another new call to trigger another new fetch once the
+  // backoff expires.
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  // Tick until the next fetch starts.
+  creds_->AddResult(kExpectedError);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  EXPECT_EQ(creds_->num_fetches(), 3);
+  // Check backoff time again.
+  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(2560))
+      << "actual: " << run_after_duration->count();
+}
+
+TEST_F(TokenFetcherCredentialsTest, FetchNotStartedAfterBackoffWithoutRpc) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Tick until the backoff expires.  No new fetch should be started.
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Now start a new request, which will trigger a new fetch.
+  creds_->AddResult(MakeToken("foo"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
+TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Do nothing else.  Make sure the creds shut down correctly.
+}
+
 // The subclass of ExternalAccountCredentials for testing.
 // ExternalAccountCredentials is an abstract class so we can't directly test
 // against it.
 class TestExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  TestExternalAccountCredentials(Options options,
-                                 std::vector<std::string> scopes)
-      : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
+  TestExternalAccountCredentials(
+      Options options, std::vector<std::string> scopes,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr)
+      : ExternalAccountCredentials(std::move(options), std::move(scopes),
+                                   std::move(event_engine)) {}
 
   std::string GetMetricsValue() { return MetricsHeaderValue(); }
 
- protected:
-  void RetrieveSubjectToken(
-      HTTPRequestContext* /*ctx*/, const Options& /*options*/,
-      std::function<void(std::string, grpc_error_handle)> cb) override {
-    cb("test_subject_token", absl::OkStatus());
+  std::string debug_string() override {
+    return "TestExternalAccountCredentials";
+  }
+
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("TestExternalAccountCredentials");
+    return kFactory.Create();
+  }
+
+ private:
+  OrphanablePtr<FetchBody> RetrieveSubjectToken(
+      Timestamp /*deadline*/,
+      absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) override {
+    return MakeOrphanable<NoOpFetchBody>(event_engine(), std::move(on_done),
+                                         "test_subject_token");
   }
 };
 
@@ -2424,7 +2733,6 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
       "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
-
   EXPECT_EQ(
       creds.GetMetricsValue(),
       absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
@@ -2453,7 +2761,6 @@ TEST(CredentialsTest,
       "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
-
   EXPECT_EQ(
       creds.GetMetricsValue(),
       absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
@@ -2481,7 +2788,6 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
       "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
-
   EXPECT_EQ(
       creds.GetMetricsValue(),
       absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
@@ -2489,7 +2795,22 @@ TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
                       grpc_version_string()));
 }
 
-TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
+class ExternalAccountCredentialsTest : public ::testing::Test {
+ protected:
+  ~ExternalAccountCredentialsTest() override {
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+  }
+
+  std::shared_ptr<FuzzingEventEngine> event_engine_ =
+      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
+                                           fuzzing_event_engine::Actions());
+};
+
+TEST_F(ExternalAccountCredentialsTest, Success) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -2509,31 +2830,34 @@ TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
   // Check security level.
-  CHECK_EQ(creds.min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  // First request: http put should be called.
+  EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  // First request: http post should be called.
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   // Second request: the cached token should be served directly.
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestExternalAccountCredsSuccessWithUrlEncode) {
+TEST_F(ExternalAccountCredentialsTest, SuccessWithUrlEncode) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
@@ -2555,20 +2879,21 @@ TEST(CredentialsTest, TestExternalAccountCredsSuccessWithUrlEncode) {
       "client_secret",                          // client_secret;
       "",                                       // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredsSuccessWithServiceAccountImpersonation) {
+TEST_F(ExternalAccountCredentialsTest, SuccessWithServiceAccountImpersonation) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -2588,9 +2913,10 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>{"scope_1", "scope_2"}, event_engine_);
   // Check security level.
-  CHECK_EQ(creds.min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -2598,15 +2924,15 @@ TEST(CredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(
-    CredentialsTest,
-    TestExternalAccountCredsSuccessWithServiceAccountImpersonationAndCustomTokenLifetime) {
+TEST_F(ExternalAccountCredentialsTest,
+       SuccessWithServiceAccountImpersonationAndCustomTokenLifetime) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -2626,9 +2952,10 @@ TEST(
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>{"scope_1", "scope_2"}, event_engine_);
   // Check security level.
-  CHECK_EQ(creds.min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  EXPECT_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -2637,15 +2964,15 @@ TEST(
       httpcli_get_should_not_be_called,
       external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success,
       httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(
-    CredentialsTest,
-    TestExternalAccountCredsFailureWithServiceAccountImpersonationAndInvalidCustomTokenLifetime) {
+TEST_F(ExternalAccountCredentialsTest,
+       FailureWithServiceAccountImpersonationAndInvalidCustomTokenLifetime) {
   const char* options_string1 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
       "\"subject_token_type\":\"subject_token_type\","
@@ -2660,14 +2987,13 @@ TEST(
       "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
-  grpc_error_handle error1, error2;
-  auto json1 = JsonParse(options_string1);
-  CHECK_OK(json1);
-  ExternalAccountCredentials::Create(*json1, {"scope1", "scope2"}, &error1);
-  std::string actual_error1,
-      expected_error1 = "token_lifetime_seconds must be more than 600s";
-  grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error1);
-  CHECK_EQ(strcmp(actual_error1.c_str(), expected_error1.c_str()), 0);
+  auto json = JsonParse(options_string1);
+  ASSERT_TRUE(json.ok()) << json.status();
+  auto creds = ExternalAccountCredentials::Create(*json, {"scope1", "scope2"});
+  std::string actual_error;
+  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
+                     &actual_error);
+  EXPECT_EQ("token_lifetime_seconds must be more than 600s", actual_error);
 
   const char* options_string2 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
@@ -2683,16 +3009,15 @@ TEST(
       "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
-  auto json2 = JsonParse(options_string2);
-  CHECK_OK(json2);
-  ExternalAccountCredentials::Create(*json2, {"scope1", "scope2"}, &error2);
-  std::string actual_error2,
-      expected_error2 = "token_lifetime_seconds must be less than 43200s";
-  grpc_error_get_str(error2, StatusStrProperty::kDescription, &actual_error2);
-  CHECK_EQ(strcmp(actual_error2.c_str(), expected_error2.c_str()), 0);
+  json = JsonParse(options_string2);
+  ASSERT_TRUE(json.ok()) << json.status();
+  creds = ExternalAccountCredentials::Create(*json, {"scope1", "scope2"});
+  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
+                     &actual_error);
+  EXPECT_EQ("token_lifetime_seconds must be less than 43200s", actual_error);
 }
 
-TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
+TEST_F(ExternalAccountCredentialsTest, FailureInvalidTokenUrl) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -2712,23 +3037,26 @@ TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle error =
-      GRPC_ERROR_CREATE("Invalid token url: invalid_token_url.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
+      "error fetching oauth2 token: Invalid token url: "
+      "invalid_token_url. Error: INVALID_ARGUMENT: Could not parse "
+      "'scheme' from uri 'invalid_token_url'. Scheme not found.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredsFailureInvalidServiceAccountImpersonationUrl) {
+TEST_F(ExternalAccountCredentialsTest,
+       FailureInvalidServiceAccountImpersonationUrl) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -2748,24 +3076,27 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  grpc_error_handle error = GRPC_ERROR_CREATE(
-      "Invalid service account impersonation url: "
-      "invalid_service_account_impersonation_url.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
+      "error fetching oauth2 token: Invalid service account impersonation url: "
+      "invalid_service_account_impersonation_url. Error: INVALID_ARGUMENT: "
+      "Could not parse 'scheme' from uri "
+      "'invalid_service_account_impersonation_url'. Scheme not found.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredsFailureTokenExchangeResponseMissingAccessToken) {
+TEST_F(ExternalAccountCredentialsTest,
+       FailureTokenExchangeResponseMissingAccessToken) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -2785,29 +3116,31 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  TestExternalAccountCredentials creds(options, {});
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
   HttpRequest::SetOverride(
       httpcli_get_should_not_be_called,
       external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token,
       httpcli_put_should_not_be_called);
-  grpc_error_handle error = GRPC_ERROR_CREATE(
-      "Missing or invalid access_token in "
-      "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599,\"token_"
-      "type\":\"Bearer\"}.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
+      "error fetching oauth2 token: Missing or invalid access_token in "
+      "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599, "
+      "\"token_type\":\"Bearer\"}.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
-  state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
+TEST_F(ExternalAccountCredentialsTest,
+       UrlExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_format_text);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -2825,30 +3158,31 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      UrlExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(url_external_account_creds_httpcli_get_success,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestUrlExternalAccountCredsSuccessWithQureyParamsFormatText) {
+TEST_F(ExternalAccountCredentialsTest,
+       UrlExternalAccountCredsSuccessWithQureyParamsFormatText) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -2866,27 +3200,29 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      UrlExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(url_external_account_creds_httpcli_get_success,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
+TEST_F(ExternalAccountCredentialsTest,
+       UrlExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       valid_url_external_account_creds_options_credential_source_format_json);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -2904,27 +3240,28 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      UrlExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(url_external_account_creds_httpcli_get_success,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestUrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
+TEST_F(ExternalAccountCredentialsTest,
+       UrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
   auto credential_source =
       JsonParse(invalid_url_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -2942,22 +3279,23 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds == nullptr);
+  auto creds = UrlExternalAccountCredentials::Create(options, {});
+  ASSERT_FALSE(creds.ok());
   std::string actual_error;
-  CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                           &actual_error));
-  CHECK(absl::StartsWith(actual_error, "Invalid credential source url."));
+  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
+                     &actual_error);
+  EXPECT_THAT(actual_error,
+              ::testing::StartsWith("Invalid credential source url."));
 }
 
-TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
+TEST_F(ExternalAccountCredentialsTest,
+       FileExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
   char* subject_token_path = write_tmp_jwt_file("test_subject_token");
   auto credential_source = JsonParse(absl::StrFormat(
       "{\"file\":\"%s\"}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -2975,24 +3313,26 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      FileExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   gpr_free(subject_token_path);
 }
 
-TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
+TEST_F(ExternalAccountCredentialsTest,
+       FileExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
@@ -3006,7 +3346,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
       "}\n"
       "}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3024,27 +3364,29 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      FileExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   gpr_free(subject_token_path);
 }
 
-TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
+TEST_F(ExternalAccountCredentialsTest,
+       FileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse("{\"file\":\"non_exisiting_file\"}");
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3062,24 +3404,27 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
+  auto creds =
+      FileExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  error = GRPC_ERROR_CREATE("Failed to load file");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  // TODO(roth): This should return UNAVAILABLE.
+  grpc_error_handle expected_error = absl::InternalError(
+      "error fetching oauth2 token: Failed to load file: "
+      "non_exisiting_file due to error(fdopen): No such file or directory");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
+TEST_F(ExternalAccountCredentialsTest,
+       FileExternalAccountCredsFailureInvalidJsonContent) {
   ExecCtx exec_ctx;
   char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
   auto credential_source = JsonParse(absl::StrFormat(
@@ -3092,7 +3437,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
       "}\n"
       "}",
       absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3110,30 +3455,31 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
+  auto creds =
+      FileExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  error =
-      GRPC_ERROR_CREATE("The content of the file is not a valid json object.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
+      "error fetching oauth2 token: The content of the file is not a "
+      "valid json object.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   gpr_free(subject_token_path);
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
+TEST_F(ExternalAccountCredentialsTest, AwsExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3151,27 +3497,28 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
+TEST_F(ExternalAccountCredentialsTest, AwsImdsv2ExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3189,25 +3536,26 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(
       aws_imdsv2_external_account_creds_httpcli_get_success,
       aws_external_account_creds_httpcli_post_success,
       aws_imdsv2_external_account_creds_httpcli_put_success);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestAwsImdsv2ExternalAccountCredShouldNotUseMetadataServer) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsImdsv2ExternalAccountCredShouldNotUseMetadataServer) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
   SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
@@ -3215,7 +3563,7 @@ TEST(CredentialsTest,
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3233,19 +3581,20 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_REGION");
   UnsetEnv("AWS_ACCESS_KEY_ID");
@@ -3253,16 +3602,16 @@ TEST(CredentialsTest,
   UnsetEnv("AWS_SESSION_TOKEN");
 }
 
-TEST(
-    CredentialsTest,
-    TestAwsImdsv2ExternalAccountCredShouldNotUseMetadataServerOptionalTokenMissing) {
+TEST_F(
+    ExternalAccountCredentialsTest,
+    AwsImdsv2ExternalAccountCredShouldNotUseMetadataServerOptionalTokenMissing) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
   SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   auto credential_source = JsonParse(
       valid_aws_imdsv2_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3280,30 +3629,31 @@ TEST(
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_REGION");
   UnsetEnv("AWS_ACCESS_KEY_ID");
   UnsetEnv("AWS_SECRET_ACCESS_KEY");
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
+TEST_F(ExternalAccountCredentialsTest, AwsExternalAccountCredsSuccessIpv6) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       valid_aws_external_account_creds_options_credential_source_ipv6);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3321,29 +3671,31 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(
       aws_imdsv2_external_account_creds_httpcli_get_success,
       aws_external_account_creds_httpcli_post_success,
       aws_imdsv2_external_account_creds_httpcli_put_success);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3361,30 +3713,31 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_REGION");
 }
 
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysUrl) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   SetEnv("AWS_DEFAULT_REGION", "test_regionz");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3402,32 +3755,33 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_DEFAULT_REGION");
 }
 
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsSuccessPathDuplicateRegionEnvKeysUrl) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathDuplicateRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   // Make sure that AWS_REGION gets used over AWS_DEFAULT_REGION
   SetEnv("AWS_REGION", "test_regionz");
   SetEnv("AWS_DEFAULT_REGION", "ERROR_REGION");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3445,32 +3799,34 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_REGION");
   UnsetEnv("AWS_DEFAULT_REGION");
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   ExecCtx exec_ctx;
   SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   SetEnv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3488,26 +3844,28 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_ACCESS_KEY_ID");
   UnsetEnv("AWS_SECRET_ACCESS_KEY");
   UnsetEnv("AWS_SESSION_TOKEN");
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   ExecCtx exec_ctx;
   SetEnv("AWS_REGION", "test_regionz");
   SetEnv("AWS_ACCESS_KEY_ID", "test_access_key_id");
@@ -3515,7 +3873,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3533,19 +3891,20 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_REGION");
   UnsetEnv("AWS_ACCESS_KEY_ID");
@@ -3553,8 +3912,8 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   UnsetEnv("AWS_SESSION_TOKEN");
 }
 
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysEnv) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysEnv) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
@@ -3564,7 +3923,7 @@ TEST(CredentialsTest,
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3582,19 +3941,20 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_DEFAULT_REGION");
   UnsetEnv("AWS_ACCESS_KEY_ID");
@@ -3602,8 +3962,8 @@ TEST(CredentialsTest,
   UnsetEnv("AWS_SESSION_TOKEN");
 }
 
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsSuccessPathDuplicateRegionEnvKeysEnv) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsSuccessPathDuplicateRegionEnvKeysEnv) {
   ExecCtx exec_ctx;
   // Make sure that AWS_REGION gets used over AWS_DEFAULT_REGION
   SetEnv("AWS_REGION", "test_regionz");
@@ -3613,7 +3973,7 @@ TEST(CredentialsTest,
   SetEnv("AWS_SESSION_TOKEN", "test_token");
   auto credential_source =
       JsonParse(valid_aws_external_account_creds_options_credential_source);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3631,19 +3991,20 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   UnsetEnv("AWS_REGION");
   UnsetEnv("AWS_DEFAULT_REGION");
@@ -3652,7 +4013,7 @@ TEST(CredentialsTest,
   UnsetEnv("AWS_SESSION_TOKEN");
 }
 
-TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
+TEST_F(ExternalAccountCredentialsTest, CreateSuccess) {
   // url credentials
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
@@ -3669,7 +4030,7 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   const char* url_scopes_string = "scope1,scope2";
   grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
       url_options_string, url_scopes_string);
-  CHECK_NE(url_creds, nullptr);
+  ASSERT_NE(url_creds, nullptr);
   url_creds->Unref();
   // file credentials
   const char* file_options_string =
@@ -3685,7 +4046,7 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   const char* file_scopes_string = "scope1,scope2";
   grpc_call_credentials* file_creds = grpc_external_account_credentials_create(
       file_options_string, file_scopes_string);
-  CHECK_NE(file_creds, nullptr);
+  ASSERT_NE(file_creds, nullptr);
   file_creds->Unref();
   // aws credentials
   const char* aws_options_string =
@@ -3705,15 +4066,15 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   const char* aws_scopes_string = "scope1,scope2";
   grpc_call_credentials* aws_creds = grpc_external_account_credentials_create(
       aws_options_string, aws_scopes_string);
-  CHECK_NE(aws_creds, nullptr);
+  ASSERT_NE(aws_creds, nullptr);
   aws_creds->Unref();
 }
 
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
   auto credential_source = JsonParse(
       invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3731,22 +4092,21 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds == nullptr);
-  std::string expected_error = "environment_id does not match.";
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_FALSE(creds.ok());
   std::string actual_error;
-  CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
-                           &actual_error));
-  CHECK(expected_error == actual_error);
+  grpc_error_get_str(creds.status(), StatusStrProperty::kDescription,
+                     &actual_error);
+  EXPECT_EQ("environment_id does not match.", actual_error);
 }
 
-TEST(CredentialsTest,
-     TestAwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3764,29 +4124,31 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE("Creating aws request signer failed.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
+      "error fetching oauth2 token: Creating aws request signer failed.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
+TEST_F(ExternalAccountCredentialsTest,
+       AwsExternalAccountCredsFailureMissingRoleName) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
       invalid_aws_external_account_creds_options_credential_source_missing_role_name);
-  CHECK_OK(credential_source);
+  ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
   service_account_impersonation.token_lifetime_seconds = 3600;
@@ -3804,43 +4166,42 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
-  grpc_error_handle error;
-  auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds != nullptr);
-  CHECK_OK(error);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  error = GRPC_ERROR_CREATE("Missing role name when retrieving signing keys.");
-  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
-      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto creds =
+      AwsExternalAccountCredentials::Create(options, {}, event_engine_);
+  ASSERT_TRUE(creds.ok()) << creds.status();
+  ASSERT_NE(*creds, nullptr);
+  EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  // TODO(roth): This should return UNAUTHENTICATED.
+  grpc_error_handle expected_error = absl::UnknownError(
+      "error fetching oauth2 token: "
+      "Missing role name when retrieving signing keys.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
                            aws_external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state->RunRequestMetadataTest(creds->get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredentialsCreateFailureInvalidJsonFormat) {
+TEST_F(ExternalAccountCredentialsTest, CreateFailureInvalidJsonFormat) {
   const char* options_string = "invalid_json";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK(creds == nullptr);
+  EXPECT_EQ(creds, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredentialsCreateFailureInvalidOptionsFormat) {
+TEST_F(ExternalAccountCredentialsTest, CreateFailureInvalidOptionsFormat) {
   const char* options_string = "{\"random_key\":\"random_value\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK(creds == nullptr);
+  EXPECT_EQ(creds, nullptr);
 }
 
-TEST(
-    CredentialsTest,
-    TestExternalAccountCredentialsCreateFailureInvalidOptionsCredentialSource) {
+TEST_F(ExternalAccountCredentialsTest,
+       CreateFailureInvalidOptionsCredentialSource) {
   const char* options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
@@ -3853,11 +4214,10 @@ TEST(
       "secret\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK(creds == nullptr);
+  EXPECT_EQ(creds, nullptr);
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredentialsCreateSuccessWorkforcePool) {
+TEST_F(ExternalAccountCredentialsTest, CreateSuccessWorkforcePool) {
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"//iam.googleapis.com/"
       "locations/location/workforcePools/pool/providers/provider\",\"subject_"
@@ -3875,12 +4235,12 @@ TEST(CredentialsTest,
   const char* url_scopes_string = "scope1,scope2";
   grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
       url_options_string, url_scopes_string);
-  CHECK_NE(url_creds, nullptr);
+  ASSERT_NE(url_creds, nullptr);
   url_creds->Unref();
 }
 
-TEST(CredentialsTest,
-     TestExternalAccountCredentialsCreateFailureInvalidWorkforcePoolAudience) {
+TEST_F(ExternalAccountCredentialsTest,
+       CreateFailureInvalidWorkforcePoolAudience) {
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"invalid_workforce_pool_"
       "audience\",\"subject_"
@@ -3898,7 +4258,7 @@ TEST(CredentialsTest,
   const char* url_scopes_string = "scope1,scope2";
   grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
       url_options_string, url_scopes_string);
-  CHECK_EQ(url_creds, nullptr);
+  ASSERT_EQ(url_creds, nullptr);
 }
 
 TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {
@@ -4102,6 +4462,194 @@ TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
   grpc_channel_credentials_release(fake_creds);
   grpc_channel_credentials_release(xds_creds_1);
   grpc_channel_credentials_release(xds_creds_2);
+}
+
+class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    g_http_status = 200;
+    g_audience = "";
+    g_token = nullptr;
+    g_on_http_request_error = nullptr;
+    HttpRequest::SetOverride(HttpGetOverride, httpcli_post_should_not_be_called,
+                             httpcli_put_should_not_be_called);
+  }
+
+  void TearDown() override {
+    HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  }
+
+  static void ValidateHttpRequest(const grpc_http_request* request,
+                                  const grpc_core::URI& uri) {
+    EXPECT_EQ(uri.authority(), "metadata.google.internal.");
+    EXPECT_EQ(
+        uri.path(),
+        "/computeMetadata/v1/instance/service-accounts/default/identity");
+    EXPECT_THAT(
+        uri.query_parameter_map(),
+        ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
+    ASSERT_EQ(request->hdr_count, 1);
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
+  }
+
+  static int HttpGetOverride(
+      const grpc_http_request* request, const grpc_core::URI& uri,
+      Timestamp /*deadline*/, grpc_closure* on_done,
+      grpc_http_response* response) {
+    // Validate request.
+    ValidateHttpRequest(request, uri);
+    // Generate response.
+    *response =
+        http_response(g_http_status, g_token == nullptr ? "" : g_token);
+    ExecCtx::Run(DEBUG_LOCATION, on_done,
+                 g_on_http_request_error == nullptr
+                     ? absl::OkStatus()
+                     : *g_on_http_request_error);
+    return 1;
+  }
+
+  // Constructs a synthetic JWT token that's just valid enough for the
+  // call creds to extract the expiration date.
+  static std::string MakeToken(Timestamp expiration) {
+    gpr_timespec ts = expiration.as_timespec(GPR_CLOCK_REALTIME);
+    std::string json = absl::StrCat("{\"exp\":", ts.tv_sec, "}");
+    return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
+  }
+
+  static int g_http_status;
+  static absl::string_view g_audience;
+  static const char* g_token;
+  static absl::Status* g_on_http_request_error;
+};
+
+int GcpServiceAccountIdentityCredentialsTest::g_http_status;
+absl::string_view GcpServiceAccountIdentityCredentialsTest::g_audience;
+const char* GcpServiceAccountIdentityCredentialsTest::g_token;
+absl::Status* GcpServiceAccountIdentityCredentialsTest::g_on_http_request_error;
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
+  g_audience = "CV-6";
+  auto token = MakeToken(Timestamp::Now() + Duration::Hours(1));
+  g_token = token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), g_token);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+// HTTP status 429 is mapped to UNAVAILABLE as per
+// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
+TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
+  g_audience = "CV-5_Midway";
+  g_http_status = 429;
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnavailableError("JWT fetch failed with status 429"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+// HTTP status 400 is mapped to INTERNAL as per
+// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md,
+// so it should be rewritten as UNAUTHENTICATED.
+TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus400) {
+  g_audience = "CV-8_SantaCruzIslands";
+  g_http_status = 400;
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("JWT fetch failed with status 400"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpIOError) {
+  g_audience = "CV-2_CoralSea";
+  absl::Status status = absl::InternalError("uh oh");
+  g_on_http_request_error = &status;
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnavailableError("INTERNAL:uh oh"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenHasWrongNumberOfDots) {
+  g_audience = "CV-7_Guadalcanal";
+  std::string bad_token = "foo.bar";
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotBase64) {
+  g_audience = "CVE-56_Makin";
+  std::string bad_token = "foo.&.bar";
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotJson) {
+  g_audience = "CVE-73_Samar";
+  std::string bad_token =
+      absl::StrCat("foo.", absl::WebSafeBase64Escape("xxx"), ".bar");
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
+  g_audience = "CVL-23_Leyte";
+  std::string bad_token = absl::StrCat(
+      "foo.", absl::WebSafeBase64Escape("{\"exp\":\"foo\"}"), ".bar");
+  g_token = bad_token.c_str();
+  ExecCtx exec_ctx;
+  auto creds =
+      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
 }
 
 }  // namespace

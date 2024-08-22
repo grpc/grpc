@@ -40,6 +40,8 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
   grpc_google_iam_credentials(const char* token,
                               const char* authority_selector);
 
+  void Orphaned() override {}
+
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
