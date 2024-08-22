@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +14,13 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
-#define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTH_FILTER_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTH_FILTER_H
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -33,17 +31,17 @@
 
 namespace grpc_core {
 
-class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
+class XdsHttpGcpAuthenticationFilter final : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
-      absl::string_view /*instance_name*/,
+      absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
-      absl::string_view /*instance_name*/,
+      absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   void AddFilter(InterceptionChainBuilder& builder) const override;
@@ -58,4 +56,4 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTH_FILTER_H

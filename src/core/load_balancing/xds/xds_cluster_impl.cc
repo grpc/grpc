@@ -79,8 +79,6 @@ namespace grpc_core {
 
 namespace {
 
-using XdsConfig = XdsDependencyManager::XdsConfig;
-
 //
 // global circuit breaker atomic map
 //

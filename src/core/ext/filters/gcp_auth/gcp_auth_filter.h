@@ -32,7 +32,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/lru_cache.h"
 
 namespace grpc_core {
@@ -51,7 +51,7 @@ class GcpAuthenticationFilter
 
   GcpAuthenticationFilter(
       const GcpAuthenticationParsedConfig::Config* filter_config,
-      RefCountedPtr<const XdsDependencyManager::XdsConfig> xds_config);
+      RefCountedPtr<const XdsConfig> xds_config);
 
   class Call {
    public:
@@ -70,7 +70,7 @@ class GcpAuthenticationFilter
       const std::string& audience);
 
   const GcpAuthenticationParsedConfig::Config* filter_config_;
-  const RefCountedPtr<const XdsDependencyManager::XdsConfig> xds_config_;
+  const RefCountedPtr<const XdsConfig> xds_config_;
 
   Mutex mu_;
   LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>

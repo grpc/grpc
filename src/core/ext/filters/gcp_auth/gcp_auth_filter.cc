@@ -40,8 +40,6 @@
 
 namespace grpc_core {
 
-using XdsConfig = XdsDependencyManager::XdsConfig;
-
 const NoInterceptor GcpAuthenticationFilter::Call::OnClientToServerMessage;
 const NoInterceptor GcpAuthenticationFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor GcpAuthenticationFilter::Call::OnServerInitialMetadata;

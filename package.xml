@@ -165,6 +165,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_auth/gcp_auth_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_auth/gcp_auth_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
@@ -1804,6 +1808,8 @@
     <file baseinstalldir="/" name="src/core/resolver/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver.cc" role="src" />
@@ -1926,6 +1932,7 @@
     <file baseinstalldir="/" name="src/core/util/linux/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/lru_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/msys/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/log.cc" role="src" />
@@ -1986,6 +1993,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_gcp_auth_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_gcp_auth_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_stateful_session_filter.cc" role="src" />

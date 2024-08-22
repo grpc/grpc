@@ -738,8 +738,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   }
   auto new_config = args.config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   // Get xDS config.
-  auto new_xds_config =
-      args.args.GetObjectRef<XdsDependencyManager::XdsConfig>();
+  auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
   if (new_xds_config == nullptr) {
     // Should never happen.
     absl::Status status = absl::InternalError(

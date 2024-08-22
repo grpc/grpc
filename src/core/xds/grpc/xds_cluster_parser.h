@@ -31,6 +31,8 @@
 
 namespace grpc_core {
 
+bool XdsGcpAuthFilterEnabled();
+
 class XdsClusterResourceType
     : public XdsResourceTypeImpl<XdsClusterResourceType, XdsClusterResource> {
  public:

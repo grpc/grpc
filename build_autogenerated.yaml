@@ -255,6 +255,8 @@ libs:
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h
+  - src/core/ext/filters/gcp_auth/gcp_auth_filter.h
+  - src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/compression_filter.h
@@ -1162,6 +1164,7 @@ libs:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/resolver/xds/xds_config.h
   - src/core/resolver/xds/xds_dependency_manager.h
   - src/core/resolver/xds/xds_resolver_attributes.h
   - src/core/server/server.h
@@ -1222,6 +1225,7 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/lru_cache.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/unique_ptr_with_bitset.h
@@ -1243,6 +1247,7 @@ libs:
   - src/core/xds/grpc/xds_http_fault_filter.h
   - src/core/xds/grpc/xds_http_filter.h
   - src/core/xds/grpc/xds_http_filter_registry.h
+  - src/core/xds/grpc/xds_http_gcp_auth_filter.h
   - src/core/xds/grpc/xds_http_rbac_filter.h
   - src/core/xds/grpc/xds_http_stateful_session_filter.h
   - src/core/xds/grpc/xds_lb_policy_registry.h
@@ -1293,6 +1298,8 @@ libs:
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
+  - src/core/ext/filters/gcp_auth/gcp_auth_filter.cc
+  - src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -1987,6 +1994,7 @@ libs:
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/resolver/xds/xds_config.cc
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
   - src/core/server/server.cc
@@ -2057,6 +2065,7 @@ libs:
   - src/core/xds/grpc/xds_health_status.cc
   - src/core/xds/grpc/xds_http_fault_filter.cc
   - src/core/xds/grpc/xds_http_filter_registry.cc
+  - src/core/xds/grpc/xds_http_gcp_auth_filter.cc
   - src/core/xds/grpc/xds_http_rbac_filter.cc
   - src/core/xds/grpc/xds_http_stateful_session_filter.cc
   - src/core/xds/grpc/xds_lb_policy_registry.cc
@@ -21865,6 +21874,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/gcp_authn.proto
   - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/path.proto

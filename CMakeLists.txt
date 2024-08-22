@@ -1880,6 +1880,8 @@ add_library(grpc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
+  src/core/ext/filters/gcp_auth/gcp_auth_filter.cc
+  src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
@@ -2574,6 +2576,7 @@ add_library(grpc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/resolver/xds/xds_config.cc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
   src/core/server/server.cc
@@ -2644,6 +2647,7 @@ add_library(grpc
   src/core/xds/grpc/xds_health_status.cc
   src/core/xds/grpc/xds_http_fault_filter.cc
   src/core/xds/grpc/xds_http_filter_registry.cc
+  src/core/xds/grpc/xds_http_gcp_auth_filter.cc
   src/core/xds/grpc/xds_http_rbac_filter.cc
   src/core/xds/grpc/xds_http_stateful_session_filter.cc
   src/core/xds/grpc/xds_lb_policy_registry.cc
@@ -35639,6 +35643,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/gcp_authn.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/gcp_authn.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/gcp_authn.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/gcp_authn.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h

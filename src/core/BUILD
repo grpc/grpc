@@ -5025,7 +5025,7 @@ grpc_cc_library(
         "lru_cache",
         "service_config_parser",
         "validation_errors",
-        "xds_dependency_manager",
+        "xds_config",
         "//:config",
         "//:gpr",
         "//:grpc_base",
@@ -5616,6 +5616,7 @@ grpc_cc_library(
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
+        "xds/grpc/xds_http_gcp_auth_filter.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_lb_policy_registry.cc",
@@ -5634,6 +5635,7 @@ grpc_cc_library(
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
+        "xds/grpc/xds_http_gcp_auth_filter.h",
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_lb_policy_registry.h",
@@ -5730,6 +5732,7 @@ grpc_cc_library(
         "grpc_audit_logging",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
+        "grpc_gcp_auth_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
@@ -5962,6 +5965,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_cluster",
         "xds_common_types",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
@@ -6027,6 +6031,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_config",
         "xds_credentials",
         "xds_dependency_manager",
         "xds_endpoint",
@@ -6740,6 +6745,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
@@ -7086,6 +7092,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_config",
+    srcs = [
+        "resolver/xds/xds_config.cc",
+    ],
+    hdrs = [
+        "resolver/xds/xds_config.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "match",
+        "ref_counted",
+        "xds_cluster",
+        "xds_endpoint",
+        "xds_listener",
+        "xds_route_config",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_dependency_manager",
     srcs = [
         "resolver/xds/xds_dependency_manager.cc",
@@ -7110,6 +7141,7 @@ grpc_cc_library(
         "xds_endpoint",
         "xds_listener",
         "xds_route_config",
+        "xds_config",
         "//:config",
         "//:gpr",
         "//:grpc_resolver",
@@ -7157,6 +7189,7 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
+        "xds_config",
         "xds_dependency_manager",
         "xds_http_filter",
         "xds_listener",

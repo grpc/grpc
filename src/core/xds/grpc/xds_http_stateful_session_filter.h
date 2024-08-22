@@ -39,9 +39,11 @@ class XdsHttpStatefulSessionFilter final : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   absl::optional<FilterConfig> GenerateFilterConfig(
+      absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   void AddFilter(InterceptionChainBuilder& builder) const override;

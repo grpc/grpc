@@ -80,12 +80,14 @@ class XdsHttpFilterImpl {
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::optional<FilterConfig> GenerateFilterConfig(
+      absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 

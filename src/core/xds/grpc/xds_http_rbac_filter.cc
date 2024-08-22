@@ -515,6 +515,7 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -536,6 +537,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
