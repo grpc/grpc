@@ -4504,11 +4504,10 @@ class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
   }
 
   static void ValidateHttpRequest(const grpc_http_request* request,
-                                  const grpc_core::URI& uri) {
+                                  const URI& uri) {
     EXPECT_EQ(uri.authority(), "metadata.google.internal.");
-    EXPECT_EQ(
-        uri.path(),
-        "/computeMetadata/v1/instance/service-accounts/default/identity");
+    EXPECT_EQ(uri.path(),
+              "/computeMetadata/v1/instance/service-accounts/default/identity");
     EXPECT_THAT(
         uri.query_parameter_map(),
         ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
@@ -4517,19 +4516,16 @@ class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
     EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
   }
 
-  static int HttpGetOverride(
-      const grpc_http_request* request, const grpc_core::URI& uri,
-      Timestamp /*deadline*/, grpc_closure* on_done,
-      grpc_http_response* response) {
+  static int HttpGetOverride(const grpc_http_request* request, const URI& uri,
+                             Timestamp /*deadline*/, grpc_closure* on_done,
+                             grpc_http_response* response) {
     // Validate request.
     ValidateHttpRequest(request, uri);
     // Generate response.
-    *response =
-        http_response(g_http_status, g_token == nullptr ? "" : g_token);
+    *response = http_response(g_http_status, g_token == nullptr ? "" : g_token);
     ExecCtx::Run(DEBUG_LOCATION, on_done,
-                 g_on_http_request_error == nullptr
-                     ? absl::OkStatus()
-                     : *g_on_http_request_error);
+                 g_on_http_request_error == nullptr ? absl::OkStatus()
+                                                    : *g_on_http_request_error);
     return 1;
   }
 
