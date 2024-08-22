@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/gcp_auth/gcp_auth_filter.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
 
 #include <memory>
 #include <string>
@@ -23,7 +23,7 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/context.h"

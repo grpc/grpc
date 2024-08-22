@@ -38,8 +38,8 @@
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
-#include "src/core/ext/filters/gcp_auth/gcp_auth_filter.h"
-#include "src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
@@ -1454,16 +1454,16 @@ TEST_P(XdsStatefulSessionFilterConfigTest, UnparseableSessionState) {
 // GCP auth filter tests
 //
 
-using XdsGcpAuthFilterNotRegisteredTest = XdsHttpFilterTest;
+using XdsGcpAuthnFilterNotRegisteredTest = XdsHttpFilterTest;
 
-TEST_F(XdsGcpAuthFilterNotRegisteredTest, NotPresentWithoutEnvVar) {
+TEST_F(XdsGcpAuthnFilterNotRegisteredTest, NotPresentWithoutEnvVar) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   EXPECT_EQ(GetFilter(extension.type), nullptr);
 }
 
-class XdsGcpAuthFilterTest : public XdsHttpFilterTest {
+class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
  protected:
-  XdsGcpAuthFilterTest() {
+  XdsGcpAuthnFilterTest() {
     // Re-initialize registry with env var set.
     ScopedExperimentalEnvVar env_var(
         "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
@@ -1477,7 +1477,7 @@ class XdsGcpAuthFilterTest : public XdsHttpFilterTest {
   const XdsHttpFilterImpl* filter_;
 };
 
-TEST_F(XdsGcpAuthFilterTest, Accessors) {
+TEST_F(XdsGcpAuthnFilterTest, Accessors) {
   EXPECT_EQ(filter_->ConfigProtoName(),
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig");
   EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
@@ -1487,7 +1487,7 @@ TEST_F(XdsGcpAuthFilterTest, Accessors) {
   EXPECT_FALSE(filter_->IsTerminalFilter());
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigEmpty) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigEmpty) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   auto config = filter_->GenerateFilterConfig("enterprise", decode_context_,
                                               std::move(extension), &errors_);
@@ -1501,7 +1501,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigEmpty) {
       << JsonDump(config->config);
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSizeDefault) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeDefault) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config();
   XdsExtension extension = MakeXdsExtension(proto);
@@ -1518,7 +1518,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSizeDefault) {
       << JsonDump(config->config);
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSize) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSize) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(6);
   XdsExtension extension = MakeXdsExtension(proto);
@@ -1535,7 +1535,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSize) {
       << JsonDump(config->config);
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSizeZero) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(0);
   XdsExtension extension = MakeXdsExtension(proto);
@@ -1554,7 +1554,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSizeZero) {
       << status;
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSizeTooBig) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeTooBig) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(INT64_MAX);
   XdsExtension extension = MakeXdsExtension(proto);
@@ -1573,7 +1573,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigCacheSizeTooBig) {
       << status;
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigTypedStruct) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   extension.value = Json();
   auto config = filter_->GenerateFilterConfig("lexington", decode_context_,
@@ -1590,7 +1590,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigTypedStruct) {
       << status;
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigUnparseable) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigUnparseable) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
@@ -1608,7 +1608,7 @@ TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigUnparseable) {
       << status;
 }
 
-TEST_F(XdsGcpAuthFilterTest, GenerateFilterConfigOverride) {
+TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   auto config = filter_->GenerateFilterConfigOverride(
       "wasp", decode_context_, std::move(extension), &errors_);

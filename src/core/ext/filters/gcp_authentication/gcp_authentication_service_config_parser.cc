@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 
 #include <vector>
 
@@ -58,7 +58,8 @@ std::unique_ptr<ServiceConfigParser::ParsedConfig>
 GcpAuthenticationServiceConfigParser::ParseGlobalParams(
     const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
   // Only parse config if the following channel arg is enabled.
-  if (!args.GetBool(GRPC_ARG_PARSE_GCP_AUTH_METHOD_CONFIG).value_or(false)) {
+  if (!args.GetBool(GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG)
+          .value_or(false)) {
     return nullptr;
   }
   // Parse config from json.

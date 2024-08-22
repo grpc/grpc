@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTH_GCP_AUTH_FILTER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTH_GCP_AUTH_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_FILTER_H
 
 #include <memory>
 #include <string>
@@ -24,7 +24,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -44,7 +44,7 @@ class GcpAuthenticationFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::string_view TypeName() { return "gcp_auth_filter"; }
+  static absl::string_view TypeName() { return "gcp_authentication_filter"; }
 
   static absl::StatusOr<std::unique_ptr<GcpAuthenticationFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
@@ -79,4 +79,4 @@ class GcpAuthenticationFilter
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTH_GCP_AUTH_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_FILTER_H

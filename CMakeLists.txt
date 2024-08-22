@@ -1880,8 +1880,8 @@ add_library(grpc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
-  src/core/ext/filters/gcp_auth/gcp_auth_filter.cc
-  src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.cc
+  src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc
+  src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
@@ -2647,7 +2647,7 @@ add_library(grpc
   src/core/xds/grpc/xds_health_status.cc
   src/core/xds/grpc/xds_http_fault_filter.cc
   src/core/xds/grpc/xds_http_filter_registry.cc
-  src/core/xds/grpc/xds_http_gcp_auth_filter.cc
+  src/core/xds/grpc/xds_http_gcp_authn_filter.cc
   src/core/xds/grpc/xds_http_rbac_filter.cc
   src/core/xds/grpc/xds_http_stateful_session_filter.cc
   src/core/xds/grpc/xds_lb_policy_registry.cc

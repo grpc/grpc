@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTH_GCP_AUTH_SERVICE_CONFIG_PARSER_H
-#define GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTH_GCP_AUTH_SERVICE_CONFIG_PARSER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_SERVICE_CONFIG_PARSER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_SERVICE_CONFIG_PARSER_H
 
 #include <stddef.h>
 
@@ -35,8 +35,8 @@
 #include "src/core/util/json/json_object_loader.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_GCP_AUTH_METHOD_CONFIG \
-  "grpc.internal.parse_gcp_auth_method_config"
+#define GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG \
+  "grpc.internal.parse_gcp_authentication_method_config"
 
 namespace grpc_core {
 
@@ -85,4 +85,4 @@ class GcpAuthenticationServiceConfigParser final
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTH_GCP_AUTH_SERVICE_CONFIG_PARSER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_GCP_AUTHENTICATION_GCP_AUTHENTICATION_SERVICE_CONFIG_PARSER_H

@@ -30,7 +30,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
-#include "src/core/xds/grpc/xds_http_gcp_auth_filter.h"
+#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 
@@ -92,7 +92,7 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     if (XdsGcpAuthFilterEnabled()) {
-      RegisterFilter(std::make_unique<XdsHttpGcpAuthenticationFilter>());
+      RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
     }
   }
 }

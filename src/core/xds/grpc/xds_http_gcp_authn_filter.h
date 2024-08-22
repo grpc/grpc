@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTH_FILTER_H
-#define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTH_FILTER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTHN_FILTER_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTHN_FILTER_H
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-class XdsHttpGcpAuthenticationFilter final : public XdsHttpFilterImpl {
+class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
@@ -56,4 +56,4 @@ class XdsHttpGcpAuthenticationFilter final : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTH_FILTER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_GCP_AUTHN_FILTER_H

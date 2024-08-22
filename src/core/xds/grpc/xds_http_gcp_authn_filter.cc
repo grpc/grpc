@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/xds/grpc/xds_http_gcp_auth_filter.h"
+#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 
 #include <string>
 #include <utility>
@@ -27,8 +27,8 @@
 
 #include <grpc/support/json.h>
 
-#include "src/core/ext/filters/gcp_auth/gcp_auth_filter.h"
-#include "src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
+#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/util/json/json.h"
@@ -39,16 +39,16 @@
 
 namespace grpc_core {
 
-absl::string_view XdsHttpGcpAuthenticationFilter::ConfigProtoName() const {
+absl::string_view XdsHttpGcpAuthnFilter::ConfigProtoName() const {
   return "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig";
 }
 
-absl::string_view XdsHttpGcpAuthenticationFilter::OverrideConfigProtoName()
+absl::string_view XdsHttpGcpAuthnFilter::OverrideConfigProtoName()
     const {
   return "";
 }
 
-void XdsHttpGcpAuthenticationFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpGcpAuthnFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_getmsgdef(
       symtab);
 }
@@ -82,7 +82,7 @@ Json::Object ValidateFilterConfig(
 }  // namespace
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthenticationFilter::GenerateFilterConfig(
+XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -106,7 +106,7 @@ XdsHttpGcpAuthenticationFilter::GenerateFilterConfig(
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthenticationFilter::GenerateFilterConfigOverride(
+XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     XdsExtension /*extension*/, ValidationErrors* errors) const {
@@ -114,23 +114,23 @@ XdsHttpGcpAuthenticationFilter::GenerateFilterConfigOverride(
   return absl::nullopt;
 }
 
-void XdsHttpGcpAuthenticationFilter::AddFilter(
+void XdsHttpGcpAuthnFilter::AddFilter(
     InterceptionChainBuilder& builder) const {
   builder.Add<GcpAuthenticationFilter>();
 }
 
-const grpc_channel_filter* XdsHttpGcpAuthenticationFilter::channel_filter()
+const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter()
     const {
   return &GcpAuthenticationFilter::kFilter;
 }
 
-ChannelArgs XdsHttpGcpAuthenticationFilter::ModifyChannelArgs(
+ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
     const ChannelArgs& args) const {
-  return args.Set(GRPC_ARG_PARSE_GCP_AUTH_METHOD_CONFIG, 1);
+  return args.Set(GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG, 1);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpGcpAuthenticationFilter::GenerateServiceConfig(
+XdsHttpGcpAuthnFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   CHECK_EQ(filter_config_override, nullptr);
