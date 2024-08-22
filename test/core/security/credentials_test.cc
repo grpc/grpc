@@ -2517,6 +2517,7 @@ using grpc_event_engine::experimental::FuzzingEventEngine;
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
 
