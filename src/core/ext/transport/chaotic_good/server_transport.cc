@@ -37,17 +37,17 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/switch.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/util/promise/for_each.h"
+#include "src/core/util/promise/loop.h"
+#include "src/core/util/promise/switch.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 namespace chaotic_good {

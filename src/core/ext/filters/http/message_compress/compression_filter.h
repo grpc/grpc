@@ -34,9 +34,9 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/compression_internal.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/arena_promise.h"
 
 namespace grpc_core {
 

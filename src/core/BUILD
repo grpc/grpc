@@ -560,7 +560,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/poll.h",
+        "util/promise/poll.h",
     ],
     deps = [
         "construct_destruct",
@@ -580,7 +580,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/status_flag.h",
+        "util/promise/status_flag.h",
     ],
     deps = [
         "promise_status",
@@ -597,7 +597,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/map_pipe.h",
+        "util/promise/map_pipe.h",
     ],
     deps = [
         "for_each",
@@ -614,10 +614,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "1999",
     srcs = [
-        "lib/promise/party.cc",
+        "util/promise/party.cc",
     ],
     hdrs = [
-        "lib/promise/party.h",
+        "util/promise/party.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -654,7 +654,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/context.h",
+        "util/promise/context.h",
     ],
     deps = [
         "down_cast",
@@ -665,7 +665,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "map",
     language = "c++",
-    public_hdrs = ["lib/promise/map.h"],
+    public_hdrs = ["util/promise/map.h"],
     deps = [
         "poll",
         "promise_like",
@@ -676,10 +676,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "sleep",
     srcs = [
-        "lib/promise/sleep.cc",
+        "util/promise/sleep.cc",
     ],
     hdrs = [
-        "lib/promise/sleep.h",
+        "util/promise/sleep.h",
     ],
     external_deps = ["absl/status"],
     deps = [
@@ -697,7 +697,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "wait_for_callback",
     hdrs = [
-        "lib/promise/wait_for_callback.h",
+        "util/promise/wait_for_callback.h",
     ],
     external_deps = ["absl/base:core_headers"],
     deps = [
@@ -712,7 +712,7 @@ grpc_cc_library(
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
     public_hdrs = [
-        "lib/promise/arena_promise.h",
+        "util/promise/arena_promise.h",
     ],
     deps = [
         "arena",
@@ -731,7 +731,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/promise_like.h",
+        "util/promise/detail/promise_like.h",
     ],
     deps = [
         "poll",
@@ -743,7 +743,7 @@ grpc_cc_library(
     name = "cancel_callback",
     language = "c++",
     public_hdrs = [
-        "lib/promise/cancel_callback.h",
+        "util/promise/cancel_callback.h",
     ],
     deps = [
         "arena",
@@ -758,7 +758,7 @@ grpc_cc_library(
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/promise_factory.h",
+        "util/promise/detail/promise_factory.h",
     ],
     deps = [
         "promise_like",
@@ -773,7 +773,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
-    public_hdrs = ["lib/promise/if.h"],
+    public_hdrs = ["util/promise/if.h"],
     deps = [
         "construct_destruct",
         "poll",
@@ -786,7 +786,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "switch",
     language = "c++",
-    public_hdrs = ["lib/promise/switch.h"],
+    public_hdrs = ["util/promise/switch.h"],
     deps = [
         "if",
         "promise_factory",
@@ -803,7 +803,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/status.h",
+        "util/promise/detail/status.h",
     ],
     deps = ["//:gpr_platform"],
 )
@@ -811,14 +811,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "race",
     language = "c++",
-    public_hdrs = ["lib/promise/race.h"],
+    public_hdrs = ["util/promise/race.h"],
     deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
     name = "prioritized_race",
     language = "c++",
-    public_hdrs = ["lib/promise/prioritized_race.h"],
+    public_hdrs = ["util/promise/prioritized_race.h"],
     deps = ["//:gpr_platform"],
 )
 
@@ -831,7 +831,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/loop.h",
+        "util/promise/loop.h",
     ],
     deps = [
         "construct_destruct",
@@ -849,7 +849,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/join_state.h",
+        "util/promise/detail/join_state.h",
     ],
     deps = [
         "bitset",
@@ -866,7 +866,7 @@ grpc_cc_library(
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
     public_hdrs = [
-        "lib/promise/join.h",
+        "util/promise/join.h",
     ],
     deps = [
         "join_state",
@@ -885,7 +885,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/try_join.h",
+        "util/promise/try_join.h",
     ],
     deps = [
         "join_state",
@@ -905,7 +905,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/all_ok.h",
+        "util/promise/all_ok.h",
     ],
     deps = [
         "join_state",
@@ -920,7 +920,7 @@ grpc_cc_library(
     name = "basic_seq",
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/basic_seq.h",
+        "util/promise/detail/basic_seq.h",
     ],
     deps = [
         "construct_destruct",
@@ -939,7 +939,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/seq_state.h",
+        "util/promise/detail/seq_state.h",
     ],
     deps = [
         "construct_destruct",
@@ -957,7 +957,7 @@ grpc_cc_library(
     external_deps = ["absl/log:log"],
     language = "c++",
     public_hdrs = [
-        "lib/promise/seq.h",
+        "util/promise/seq.h",
     ],
     deps = [
         "basic_seq",
@@ -979,7 +979,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/try_seq.h",
+        "util/promise/try_seq.h",
     ],
     deps = [
         "basic_seq",
@@ -996,7 +996,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "activity",
     srcs = [
-        "lib/promise/activity.cc",
+        "util/promise/activity.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1008,7 +1008,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/activity.h",
+        "util/promise/activity.h",
     ],
     deps = [
         "atomic_utils",
@@ -1029,7 +1029,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "exec_ctx_wakeup_scheduler",
     hdrs = [
-        "lib/promise/exec_ctx_wakeup_scheduler.h",
+        "util/promise/exec_ctx_wakeup_scheduler.h",
     ],
     external_deps = ["absl/status"],
     language = "c++",
@@ -1045,7 +1045,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_wakeup_scheduler",
     hdrs = [
-        "lib/promise/event_engine_wakeup_scheduler.h",
+        "util/promise/event_engine_wakeup_scheduler.h",
     ],
     external_deps = ["absl/log:check"],
     language = "c++",
@@ -1064,7 +1064,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/wait_set.h",
+        "util/promise/wait_set.h",
     ],
     deps = [
         "activity",
@@ -1082,7 +1082,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/latch.h",
+        "util/promise/latch.h",
     ],
     deps = [
         "activity",
@@ -1101,7 +1101,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/promise/inter_activity_latch.h",
+        "util/promise/inter_activity_latch.h",
     ],
     deps = [
         "activity",
@@ -1115,7 +1115,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "interceptor_list",
     hdrs = [
-        "lib/promise/interceptor_list.h",
+        "util/promise/interceptor_list.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -1138,7 +1138,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "pipe",
     hdrs = [
-        "lib/promise/pipe.h",
+        "util/promise/pipe.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -1166,7 +1166,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "promise_mutex",
     hdrs = [
-        "lib/promise/promise_mutex.h",
+        "util/promise/promise_mutex.h",
     ],
     external_deps = ["absl/log:check"],
     language = "c++",
@@ -1180,7 +1180,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "inter_activity_pipe",
     hdrs = [
-        "lib/promise/inter_activity_pipe.h",
+        "util/promise/inter_activity_pipe.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1199,7 +1199,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "mpsc",
     hdrs = [
-        "lib/promise/mpsc.h",
+        "util/promise/mpsc.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1219,7 +1219,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "observable",
     hdrs = [
-        "lib/promise/observable.h",
+        "util/promise/observable.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1243,7 +1243,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    public_hdrs = ["lib/promise/for_each.h"],
+    public_hdrs = ["util/promise/for_each.h"],
     deps = [
         "activity",
         "construct_destruct",

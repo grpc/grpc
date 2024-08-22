@@ -1238,9 +1238,9 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/matchers/matchers.cc \
-    src/core/lib/promise/activity.cc \
-    src/core/lib/promise/party.cc \
-    src/core/lib/promise/sleep.cc \
+    src/core/util/promise/activity.cc \
+    src/core/util/promise/party.cc \
+    src/core/util/promise/sleep.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/connection_quota.cc \

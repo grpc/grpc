@@ -39,13 +39,13 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/pipe.h"
+#include "src/core/util/promise/promise.h"
 #include "src/core/util/useful.h"
 
 // Avoid some IWYU confusion:

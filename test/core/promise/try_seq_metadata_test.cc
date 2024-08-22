@@ -19,9 +19,9 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 

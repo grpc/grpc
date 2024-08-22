@@ -105,8 +105,8 @@ front_matter = """
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/detail/promise_like.h"
+#include "src/core/util/promise/poll.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include <tuple>
 #include <type_traits>
@@ -150,7 +150,7 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
-with open("src/core/lib/promise/detail/join_state.h", "w") as f:
+with open("src/core/util/promise/detail/join_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 10):

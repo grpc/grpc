@@ -31,14 +31,14 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/cancel_callback.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/cancel_callback.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/pipe.h"
 
 namespace grpc_core {
 

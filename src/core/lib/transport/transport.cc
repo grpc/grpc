@@ -34,11 +34,11 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/promise/for_each.h"
+#include "src/core/util/promise/promise.h"
+#include "src/core/util/promise/try_seq.h"
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
   if ((grpc_core::ExecCtx::Get()->flags() &

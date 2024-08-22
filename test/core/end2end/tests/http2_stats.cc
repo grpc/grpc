@@ -37,8 +37,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -48,6 +46,8 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/context.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 

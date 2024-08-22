@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/latch.h"
+#include "src/core/util/promise/latch.h"
 
 #include <tuple>
 #include <utility>
@@ -21,9 +21,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/seq.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/join.h"
+#include "src/core/util/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;

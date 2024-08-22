@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/loop.h"
+#include "src/core/util/promise/loop.h"
 
 #include <memory>
 #include <utility>
 
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/seq.h"
+#include "src/core/util/promise/seq.h"
 
 namespace grpc_core {
 

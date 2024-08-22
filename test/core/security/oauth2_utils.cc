@@ -33,11 +33,11 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/util/promise/map.h"
 
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {

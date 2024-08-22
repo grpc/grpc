@@ -38,12 +38,12 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/promise/if.h"
+#include "src/core/util/promise/loop.h"
+#include "src/core/util/promise/seq.h"
 #include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
 #include "test/core/transport/chaotic_good/transport_test.h"
 

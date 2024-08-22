@@ -473,7 +473,7 @@ if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
   set(_gRPC_STATIC_WIN32 STATIC)
 endif()
-  
+
 if(BUILD_SHARED_LIBS AND WIN32)
 
 # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -2401,9 +2401,9 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/matchers/matchers.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/promise/sleep.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
+  src/core/util/promise/sleep.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -3196,9 +3196,9 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/promise/sleep.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
+  src/core/util/promise/sleep.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -5416,8 +5416,8 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/matchers/matchers.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -6075,7 +6075,7 @@ add_executable(activity_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/activity_test.cc
 )
@@ -8651,7 +8651,7 @@ add_executable(call_filters_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -8889,7 +8889,7 @@ add_executable(call_state_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/transport/call_state.cc
   src/core/util/latent_see.cc
   test/core/transport/call_state_test.cc
@@ -9143,8 +9143,8 @@ add_executable(call_utils_test
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -9651,7 +9651,7 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -10751,7 +10751,7 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -14054,7 +14054,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -14848,7 +14848,7 @@ add_executable(flow_control_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -14927,7 +14927,7 @@ add_executable(for_each_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -18359,7 +18359,7 @@ add_executable(inter_activity_pipe_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
@@ -18466,7 +18466,7 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -19243,7 +19243,7 @@ add_executable(latch_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/latch_test.cc
 )
@@ -19669,7 +19669,7 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -20598,7 +20598,7 @@ add_executable(mpsc_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/mpsc_test.cc
 )
@@ -21101,7 +21101,7 @@ add_executable(observable_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/observable_test.cc
 )
@@ -22978,7 +22978,7 @@ add_executable(promise_mutex_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/promise_mutex_test.cc
 )
@@ -32818,7 +32818,7 @@ add_executable(wait_for_callback_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
+  src/core/util/promise/activity.cc
   src/core/util/latent_see.cc
   test/core/promise/wait_for_callback_test.cc
 )

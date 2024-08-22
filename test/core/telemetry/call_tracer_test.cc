@@ -26,9 +26,9 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/promise/context.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 

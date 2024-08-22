@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/party.h"
+#include "src/core/util/promise/party.h"
 
 #include <stdio.h>
 
@@ -37,14 +37,14 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/inter_activity_latch.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/inter_activity_latch.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/seq.h"
+#include "src/core/util/promise/sleep.h"
 
 namespace grpc_core {
 

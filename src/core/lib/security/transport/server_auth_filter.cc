@@ -45,11 +45,6 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -58,6 +53,11 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 

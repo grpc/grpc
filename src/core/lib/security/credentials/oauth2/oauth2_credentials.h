@@ -40,8 +40,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
@@ -49,6 +47,8 @@
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/arena_promise.h"
 #include "src/core/util/useful.h"
 
 // Constants.

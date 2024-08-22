@@ -193,9 +193,9 @@ front_matter = """
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/detail/promise_like.h"
+#include "src/core/util/promise/poll.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -274,7 +274,7 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
-with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
+with open("src/core/util/promise/detail/seq_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 14):

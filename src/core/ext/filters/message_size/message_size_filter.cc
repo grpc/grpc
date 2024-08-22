@@ -33,10 +33,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -44,6 +40,10 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/latch.h"
+#include "src/core/util/promise/race.h"
 
 namespace grpc_core {
 

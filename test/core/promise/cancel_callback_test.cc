@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/util/promise/cancel_callback.h"
 
 #include <memory>
 #include <utility>
 
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 

@@ -41,13 +41,13 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/context.h"
 #include "src/core/util/time_precise.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,

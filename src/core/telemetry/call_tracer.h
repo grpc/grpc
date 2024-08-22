@@ -32,12 +32,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/promise/context.h"
 
 namespace grpc_core {
 
