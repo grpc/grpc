@@ -407,7 +407,8 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
   grpc_http_response_destroy(&response);
 }
 
-TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
+TEST_F(CredentialsTest,
+       TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
   ExecCtx exec_ctx;
   absl::optional<Slice> token_value;
   Duration token_lifetime;
@@ -1562,7 +1563,8 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST_F(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
+TEST_F(CredentialsTest,
+       TestGoogleDefaultCredsExternalAccountCredentialsPscSts) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1585,7 +1587,8 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscSts) 
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-TEST_F(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
+TEST_F(CredentialsTest,
+       TestGoogleDefaultCredsExternalAccountCredentialsPscIam) {
   ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -2458,7 +2461,7 @@ TEST_F(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
 }
 
 TEST_F(CredentialsTest,
-     TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
+       TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -2485,7 +2488,8 @@ TEST_F(CredentialsTest,
                       grpc_version_string()));
 }
 
-TEST_F(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
+TEST_F(CredentialsTest,
+       TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -4069,7 +4073,7 @@ TEST_F(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
 }
 
 TEST_F(CredentialsTest,
-     TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
+       TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_channel_creds = grpc_fake_transport_security_credentials_create();
   auto fake_creds = MakeRefCounted<fake_call_creds>();
@@ -4086,7 +4090,7 @@ TEST_F(CredentialsTest,
 }
 
 TEST_F(CredentialsTest,
-     TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
+       TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto fake_creds = MakeRefCounted<fake_call_creds>();
   auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
