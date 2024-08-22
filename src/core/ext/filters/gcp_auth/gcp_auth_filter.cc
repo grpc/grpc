@@ -16,40 +16,26 @@
 
 #include "src/core/ext/filters/gcp_auth/gcp_auth_filter.h"
 
-#include <string.h>
-
-#include <algorithm>
-#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/log/check.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/gcp_auth/gcp_auth_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -87,13 +73,14 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   CHECK_NE(cluster_attribute, nullptr);
   absl::string_view cluster_name = cluster_attribute->cluster();
   // Look up the CDS resource for the cluster.
-  auto it = filter->xds_config_.find(cluster_name);
-  CHECK(it != filter->xds_config_.end());
-  CHECK(it->second.cluster != nullptr);
-  auto md_it = it->second.cluster->metadata.find(
-      filter->filter_config_->filter_instance_name);
+  auto it = filter->xds_config_->clusters.find(cluster_name);
+  CHECK(it != filter->xds_config_->clusters.end());
+  if (!it->second.ok()) return absl::OkStatus();  // Will fail later.
+  CHECK(it->second->cluster != nullptr);
+  auto& metadata_map = it->second->cluster->metadata;
+  auto md_it = metadata_map.find(filter->filter_config_->filter_instance_name);
   // If no audience in the cluster, then no need to add call creds.
-  if (md_it == it->second.cluster->metadata.end()) return absl::OkStatus();
+  if (md_it == metadata_map.end()) return absl::OkStatus();
   // If the entry is present but the wrong type, fail the RPC.
   if (md_it->second.type != kXdsAudienceClusterMetadataType) {
     return absl::UnavailableError(absl::StrCat(
@@ -115,10 +102,10 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   auto* security_ctx = DownCast<grpc_client_security_context*>(
       arena->GetContext<SecurityContext>());
   if (security_ctx == nullptr) {
-    ctx = arena->New<grpc_client_security_context>(std::move(creds));
-    arena->SetContext<grpc_core::SecurityContext>(ctx);
+    security_ctx = arena->New<grpc_client_security_context>(std::move(creds));
+    arena->SetContext<grpc_core::SecurityContext>(security_ctx);
   } else {
-    ctx->creds = std::move(creds);
+    security_ctx->creds = std::move(creds);
   }
   return absl::OkStatus();
 }
@@ -156,7 +143,7 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
-    GcpAuthenticationParsedConfig::Config* filter_config,
+    const GcpAuthenticationParsedConfig::Config* filter_config,
     RefCountedPtr<XdsConfig> xds_config)
     : filter_config_(filter_config),
       xds_config_(std::move(xds_config)),

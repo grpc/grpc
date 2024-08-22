@@ -28,7 +28,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
@@ -72,7 +71,7 @@ class GcpAuthenticationServiceConfigParser final
     : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
-  std::unique_ptr<ParsedConfig> ParseGlobalParams(
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const ChannelArgs& args, const Json& json,
       ValidationErrors* errors) override;
   // Returns the parser index for the parser.
