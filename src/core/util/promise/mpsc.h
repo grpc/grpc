@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
-#define GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_MPSC_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_MPSC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -227,4 +227,4 @@ class MpscReceiver {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_MPSC_H
