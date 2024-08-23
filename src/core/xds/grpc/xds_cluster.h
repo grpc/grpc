@@ -28,14 +28,12 @@
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
 namespace grpc_core {
-
-constexpr absl::string_view kXdsAudienceClusterMetadataType =
-    "envoy.extensions.filters.http.gcp_authn.v3.Audience";
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
@@ -90,15 +88,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  struct MetadataEntry {
-    absl::string_view type;  // Protobuf type.
-    Json json;
-
-    bool operator==(const MetadataEntry& other) const {
-      return type == other.type && json == other.json;
-    }
-  };
-  absl::flat_hash_map<std::string, MetadataEntry> metadata;
+  XdsMetadataMap metadata;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&

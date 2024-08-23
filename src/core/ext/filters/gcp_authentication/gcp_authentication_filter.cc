@@ -34,9 +34,6 @@
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_args.h"
-#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -46,21 +43,6 @@ const NoInterceptor GcpAuthenticationFilter::Call::OnServerInitialMetadata;
 const NoInterceptor GcpAuthenticationFilter::Call::OnServerToClientMessage;
 const NoInterceptor GcpAuthenticationFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor GcpAuthenticationFilter::Call::OnFinalize;
-
-namespace {
-
-struct Audience {
-  std::string url;
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs& args) {
-    static const auto* loader = JsonObjectLoader<Audience>()
-        .Field("a", &Audience::url)
-        .Finish();
-    return loader;
-  }
-};
-
-}  // namespace
 
 absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
     ClientMetadata& /*md*/, GcpAuthenticationFilter* filter) {
@@ -77,24 +59,18 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   if (!it->second.ok()) return absl::OkStatus();  // Will fail later.
   CHECK(it->second->cluster != nullptr);
   auto& metadata_map = it->second->cluster->metadata;
-  auto md_it = metadata_map.find(filter->filter_config_->filter_instance_name);
+  const XdsMetadataValue* metadata_value =
+      metadata_map.Find(filter->filter_config_->filter_instance_name);
   // If no audience in the cluster, then no need to add call creds.
-  if (md_it == metadata_map.end()) return absl::OkStatus();
+  if (metadata_value == nullptr) return absl::OkStatus();
   // If the entry is present but the wrong type, fail the RPC.
-  if (md_it->second.type != kXdsAudienceClusterMetadataType) {
+  if (metadata_value->type() != XdsGcpAuthnAudienceMetadataValue::Type()) {
     return absl::UnavailableError(absl::StrCat(
         "audience metadata in wrong format for cluster ", cluster_name));
   }
-// FIXME: store metadata in parsed form so we don't need to validate
-// JSON on a per-call basis
-  auto audience = LoadFromJson<Audience>(md_it->second.json);
-  if (!audience.ok()) {
-    return absl::UnavailableError(absl::StrCat(
-        "audience configuration invalid for cluster ", cluster_name, ": ",
-        audience.status().message()));
-  }
   // Get the call creds instance.
-  auto creds = filter->GetCallCredentials(audience->url);
+  auto creds = filter->GetCallCredentials(
+      DownCast<const XdsGcpAuthnAudienceMetadataValue*>(metadata_value)->url());
   CHECK(creds != nullptr);
   // Add the call creds instance to the call.
   auto* arena = GetContext<Arena>();

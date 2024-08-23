@@ -28,7 +28,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/util/json/json.h"
-#include "src/core/xds/grpc/xds_cluster_parser.h"
+#include "src/core/xds/grpc/xds_metadata_parser.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
