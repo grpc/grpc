@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -79,6 +80,7 @@
 
 namespace grpc_core {
 
+using grpc_event_engine::experimental::FuzzingEventEngine;
 using internal::grpc_flush_cached_google_default_credentials;
 using internal::set_gce_tenancy_checker_for_testing;
 
@@ -426,16 +428,19 @@ TEST_F(CredentialsTest,
 class RequestMetadataState : public RefCounted<RequestMetadataState> {
  public:
   static RefCountedPtr<RequestMetadataState> NewInstance(
-      grpc_error_handle expected_error, std::string expected) {
+      grpc_error_handle expected_error, std::string expected,
+      absl::optional<bool> expect_delay = absl::nullopt) {
     return MakeRefCounted<RequestMetadataState>(
-        expected_error, std::move(expected),
+        expected_error, std::move(expected), expect_delay,
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
   }
 
   RequestMetadataState(grpc_error_handle expected_error, std::string expected,
+                       absl::optional<bool> expect_delay,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
         expected_(std::move(expected)),
+        expect_delay_(expect_delay),
         pollent_(pollent) {}
 
   ~RequestMetadataState() override {
@@ -453,12 +458,18 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     activity_ = MakeActivity(
         [this, creds] {
           return Seq(
-              creds->GetRequestMetadata(
+              CheckDelayed(creds->GetRequestMetadata(
                   ClientMetadataHandle(&md_, Arena::PooledDeleter(nullptr)),
-                  &get_request_metadata_args_),
-              [this](absl::StatusOr<ClientMetadataHandle> metadata) {
+                  &get_request_metadata_args_)),
+              [this](std::tuple<absl::StatusOr<ClientMetadataHandle>, bool>
+                         metadata_and_delayed) {
+                auto& metadata = std::get<0>(metadata_and_delayed);
+                const bool delayed = std::get<1>(metadata_and_delayed);
+                if (expect_delay_.has_value()) {
+                  EXPECT_EQ(delayed, *expect_delay_);
+                }
                 if (metadata.ok()) {
-                  CHECK(metadata->get() == &md_);
+                  EXPECT_EQ(metadata->get(), &md_);
                 }
                 return metadata.status();
               });
@@ -523,6 +534,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
+  absl::optional<bool> expect_delay_;
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
@@ -2369,6 +2381,315 @@ int aws_external_account_creds_httpcli_post_success(
   return 1;
 }
 
+class TokenFetcherCredentialsTest : public ::testing::Test {
+ protected:
+  class TestTokenFetcherCredentials final : public TokenFetcherCredentials {
+   public:
+    explicit TestTokenFetcherCredentials(
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine = nullptr)
+        : TokenFetcherCredentials(std::move(event_engine),
+                                  /*test_only_use_backoff_jitter=*/false) {}
+
+    ~TestTokenFetcherCredentials() override { CHECK_EQ(queue_.size(), 0); }
+
+    void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
+      MutexLock lock(&mu_);
+      queue_.push_front(std::move(result));
+    }
+
+    size_t num_fetches() const { return num_fetches_; }
+
+   private:
+    class TestFetchRequest final : public FetchRequest {
+     public:
+      TestFetchRequest(
+          grpc_event_engine::experimental::EventEngine& event_engine,
+          absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
+              on_done,
+          absl::StatusOr<RefCountedPtr<Token>> result) {
+        event_engine.Run([on_done = std::move(on_done),
+                          result = std::move(result)]() mutable {
+          ApplicationCallbackExecCtx application_exec_ctx;
+          ExecCtx exec_ctx;
+          std::exchange(on_done, nullptr)(std::move(result));
+        });
+      }
+
+      void Orphan() override { Unref(); }
+    };
+
+    OrphanablePtr<FetchRequest> FetchToken(
+        Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
+        override {
+      absl::StatusOr<RefCountedPtr<Token>> result;
+      {
+        MutexLock lock(&mu_);
+        CHECK(!queue_.empty());
+        result = std::move(queue_.back());
+        queue_.pop_back();
+      }
+      num_fetches_.fetch_add(1);
+      return MakeOrphanable<TestFetchRequest>(
+          event_engine(), std::move(on_done), std::move(result));
+    }
+
+    std::string debug_string() override {
+      return "TestTokenFetcherCredentials";
+    }
+
+    UniqueTypeName type() const override {
+      static UniqueTypeName::Factory kFactory("TestTokenFetcherCredentials");
+      return kFactory.Create();
+    }
+
+    Mutex mu_;
+    std::deque<absl::StatusOr<RefCountedPtr<Token>>> queue_
+        ABSL_GUARDED_BY(&mu_);
+
+    std::atomic<size_t> num_fetches_{0};
+  };
+
+  void SetUp() override {
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  void TearDown() override {
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    creds_.reset();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    grpc_shutdown_blocking();
+  }
+
+  static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
+      absl::string_view token, Timestamp expiration = Timestamp::InfFuture()) {
+    return MakeRefCounted<TokenFetcherCredentials::Token>(
+        Slice::FromCopiedString(token), expiration);
+  }
+
+  std::shared_ptr<FuzzingEventEngine> event_engine_ =
+      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
+                                           fuzzing_event_engine::Actions());
+  RefCountedPtr<TestTokenFetcherCredentials> creds_ =
+      MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
+};
+
+TEST_F(TokenFetcherCredentialsTest, Basic) {
+  const auto kExpirationTime = Timestamp::Now() + Duration::Hours(1);
+  ExecCtx exec_ctx;
+  creds_->AddResult(MakeToken("foo", kExpirationTime));
+  // First request will trigger a fetch.
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Second request while fetch is still outstanding will be delayed but
+  // will not trigger a new fetch.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Now tick to finish the fetch.
+  event_engine_->TickUntilIdle();
+  // Next request will be served from cache with no delay.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Advance time to expiration minus expiration adjustment and prefetch time.
+  exec_ctx.TestOnlySetNow(kExpirationTime - Duration::Seconds(90));
+  // No new fetch yet.
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Next request will trigger a new fetch but will still use the
+  // cached token.
+  creds_->AddResult(MakeToken("bar"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  event_engine_->TickUntilIdle();
+  // Next request will use the new data.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: bar", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
+TEST_F(TokenFetcherCredentialsTest, Expires30SecondsEarly) {
+  const auto kExpirationTime = Timestamp::Now() + Duration::Hours(1);
+  ExecCtx exec_ctx;
+  creds_->AddResult(MakeToken("foo", kExpirationTime));
+  // First request will trigger a fetch.
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  event_engine_->TickUntilIdle();
+  // Advance time to expiration minus 30 seconds.
+  exec_ctx.TestOnlySetNow(kExpirationTime - Duration::Seconds(30));
+  // No new fetch yet.
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Next request will trigger a new fetch and will delay the call until
+  // the fetch completes.
+  creds_->AddResult(MakeToken("bar"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: bar", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  event_engine_->TickUntilIdle();
+}
+
+TEST_F(TokenFetcherCredentialsTest, FetchFails) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  // This is 1 second (initial backoff) minus 1ms for the tick needed above.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Start a new call now, which will be queued and then eventually
+  // resumed when the next fetch happens.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  // Tick until the next fetch starts.
+  creds_->AddResult(MakeToken("foo"));
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  // A call started now should use the new cached data.
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
+TEST_F(TokenFetcherCredentialsTest, Backoff) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Start a new call now, which will be queued and then eventually
+  // resumed when the next fetch happens.
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  // Tick until the next fetch fails and the backoff timer starts again.
+  creds_->AddResult(kExpectedError);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  EXPECT_EQ(creds_->num_fetches(), 2);
+  // The backoff time should be longer now.  We account for jitter here.
+  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(1600))
+      << "actual: " << run_after_duration->count();
+  run_after_duration.reset();
+  // Start another new call to trigger another new fetch once the
+  // backoff expires.
+  state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                            /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  // Tick until the next fetch starts.
+  creds_->AddResult(kExpectedError);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  EXPECT_EQ(creds_->num_fetches(), 3);
+  // Check backoff time again.
+  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(2560))
+      << "actual: " << run_after_duration->count();
+}
+
+TEST_F(TokenFetcherCredentialsTest, FetchNotStartedAfterBackoffWithoutRpc) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Tick until the backoff expires.  No new fetch should be started.
+  event_engine_->TickUntilIdle();
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  // Now start a new request, which will trigger a new fetch.
+  creds_->AddResult(MakeToken("foo"));
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 2);
+}
+
+TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
+  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
+  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
+  event_engine_->SetRunAfterDurationCallback(
+      [&](FuzzingEventEngine::Duration duration) {
+        run_after_duration = duration;
+      });
+  ExecCtx exec_ctx;
+  creds_->AddResult(kExpectedError);
+  // First request will trigger a fetch, which will fail.
+  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
+                                                 /*expect_delay=*/true);
+  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(creds_->num_fetches(), 1);
+  while (!run_after_duration.has_value()) event_engine_->Tick();
+  // Make sure backoff was set for the right period.
+  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
+  run_after_duration.reset();
+  // Do nothing else.  Make sure the creds shut down correctly.
+}
+
 // The subclass of ExternalAccountCredentials for testing.
 // ExternalAccountCredentials is an abstract class so we can't directly test
 // against it.
@@ -2483,8 +2804,6 @@ TEST_F(CredentialsTest,
                       "sa-impersonation/true config-lifetime/true",
                       grpc_version_string()));
 }
-
-using grpc_event_engine::experimental::FuzzingEventEngine;
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
