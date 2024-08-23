@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gladiator
   protobuf_version: 3.27.2
-  version: 1.66.0
+  version: 1.66.1
 configs:
   asan:
     CC: clang
