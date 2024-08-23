@@ -40,10 +40,14 @@ namespace {
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
 CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
+  // The minimum time between subsequent connection attempts helps with cases
+  // where the connection handshake does not realize that the socket is not
+  // working in time. (b/333896115)
   const auto server_args =
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
-          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false)
+          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000);
   InitServer(server_args);
   InitClient(ChannelArgs());
   auto c =
@@ -110,7 +114,9 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server should get the second call.
   auto s2 = RequestCall(201);
   Expect(201, true);
-  Step();
+  // Give enough time for the handshake to timeout, and a new handshake to start
+  // if needed. (b/333896115)
+  Step(Duration::Seconds(30));
   EXPECT_EQ(s2.method(), "/service/method");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
