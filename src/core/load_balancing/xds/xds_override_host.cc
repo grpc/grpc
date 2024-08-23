@@ -77,7 +77,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -738,8 +738,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   }
   auto new_config = args.config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   // Get xDS config.
-  auto new_xds_config =
-      args.args.GetObjectRef<XdsDependencyManager::XdsConfig>();
+  auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
   if (new_xds_config == nullptr) {
     // Should never happen.
     absl::Status status = absl::InternalError(
