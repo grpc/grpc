@@ -121,6 +121,7 @@ grpc_cc_library(
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
         "absl/log:globals",
+        "absl/log:initialize",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
