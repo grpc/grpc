@@ -2118,6 +2118,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/log:initialize
   - grpc
 - name: grpc_test_util_unsecure
   build: private
