@@ -2449,7 +2449,6 @@ add_library(grpc
   src/core/lib/security/credentials/external/file_external_account_credentials.cc
   src/core/lib/security/credentials/external/url_external_account_credentials.cc
   src/core/lib/security/credentials/fake/fake_credentials.cc
-  src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
   src/core/lib/security/credentials/google_default/credentials_generic.cc
   src/core/lib/security/credentials/google_default/google_default_credentials.cc
   src/core/lib/security/credentials/iam/iam_credentials.cc
@@ -30704,6 +30703,7 @@ add_executable(test_core_security_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/credentials_test.cc
