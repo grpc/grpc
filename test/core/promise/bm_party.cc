@@ -18,6 +18,7 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {

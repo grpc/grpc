@@ -66,6 +66,7 @@ grpc_cc_test(
         "test_context",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
         "//src/core:interceptor_list",
         "//src/core:memory_quota",
@@ -92,6 +93,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:cancel_callback",
+        "//src/core:default_event_engine",
         "//src/core:poll",
     ],
 )
@@ -122,6 +124,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:ref_counted_ptr",
         "//src/core:arena_promise",
+        "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
@@ -371,6 +374,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
+        "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:inter_activity_pipe",
@@ -397,6 +401,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
+        "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",
@@ -557,6 +562,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:activity",
+        "//src/core:default_event_engine",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:poll",
     ],
