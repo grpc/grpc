@@ -53,6 +53,7 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
@@ -190,11 +191,10 @@ Json ParseCidrRangeToJson(const envoy_config_core_v3_CidrRange* range) {
   json.emplace("addressPrefix",
                Json::FromString(UpbStringToStdString(
                    envoy_config_core_v3_CidrRange_address_prefix(range))));
-  const auto* prefix_len = envoy_config_core_v3_CidrRange_prefix_len(range);
-  if (prefix_len != nullptr) {
-    json.emplace(
-        "prefixLen",
-        Json::FromNumber(google_protobuf_UInt32Value_value(prefix_len)));
+  auto prefix_len =
+      ParseUInt32Value(envoy_config_core_v3_CidrRange_prefix_len(range));
+  if (prefix_len.has_value()) {
+    json.emplace("prefixLen", Json::FromNumber(*prefix_len));
   }
   return Json::FromObject(std::move(json));
 }
