@@ -124,7 +124,10 @@ void ParseTestArgs(int* argc, char** argv) {
   }
 }
 
+// grpc-oss-only-begin
 std::once_flag log_flag;
+// grpc-oss-only-end
+
 }  // namespace
 
 void grpc_test_init(int* argc, char** argv) {
