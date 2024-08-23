@@ -57,6 +57,7 @@ class JwtTokenFetcherCallCredentials : public TokenFetcherCredentials {
 };
 
 // GCP service account identity call credentials.
+// See gRFC A83 (https://github.com/grpc/proposal/pull/438).
 class GcpServiceAccountIdentityCallCredentials
     : public JwtTokenFetcherCallCredentials {
  public:
