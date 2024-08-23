@@ -393,31 +393,31 @@ def targets():
         # C++
         # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
         # when grpc_distribtest_standalone runs on PRs.
-        CppDistribTest("linux", "x64", "debian10", "dummy", presubmit=True),
-        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=False),
+        CppDistribTest("linux", "x64", "debian11", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian11", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=False
+            "linux", "x64", "debian11", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian10",
+            "debian11",
             "cmake_as_externalproject",
             presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=False
+            "linux", "x64", "debian11", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_module_install", presubmit=False
+            "linux", "x64", "debian11", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=False
+            "linux", "x64", "debian11", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
-            "debian10_aarch64_cross",
+            "debian11_aarch64_cross",
             "cmake_aarch64_cross",
             presubmit=False,
         ),
@@ -436,7 +436,7 @@ def targets():
         ),
         # C#
         CSharpDistribTest(
-            "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
+            "linux", "x64", "debian11", use_dotnet_cli=True, presubmit=True
         ),
         CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
@@ -505,6 +505,6 @@ def targets():
         RubyDistribTest("linux", "x64", "ubuntu2004"),
         RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
         # PHP7
-        PHP7DistribTest("linux", "x64", "debian10", presubmit=True),
+        PHP7DistribTest("linux", "x64", "debian11", presubmit=True),
         PHP7DistribTest("macos", "x64", presubmit=True),
     ]
