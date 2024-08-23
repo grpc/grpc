@@ -106,17 +106,22 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
                "$$metadata, $$options);\n");
   } else {
     if (method->server_streaming()) {
-      vars["return_type_id"] = "\\Grpc\\ServerStreamingCall";
+      out->Print(vars,
+                " * @param \\$input_type_id$ $$argument input argument\n"
+                " * @param array $$metadata metadata\n"
+                " * @param array $$options call options\n"
+                " * @return \\Grpc\\ServerStreamingCall\n */\n"
+                "public function $name$(\\$input_type_id$ $$argument,\n"
+                "  $$metadata = [], $$options = []) {\n");
     } else {
-      vars["return_type_id"] = "\\Grpc\\UnaryCall";
+      out->Print(vars,
+                " * @param \\$input_type_id$ $$argument input argument\n"
+                " * @param array $$metadata metadata\n"
+                " * @param array $$options call options\n"
+                " * @return \\Grpc\\UnaryCall<\\$output_type_id$>\n */\n"
+                "public function $name$(\\$input_type_id$ $$argument,\n"
+                "  $$metadata = [], $$options = []) {\n");
     }
-    out->Print(vars,
-               " * @param \\$input_type_id$ $$argument input argument\n"
-               " * @param array $$metadata metadata\n"
-               " * @param array $$options call options\n"
-               " * @return $return_type_id$\n */\n"
-               "public function $name$(\\$input_type_id$ $$argument,\n"
-               "  $$metadata = [], $$options = []) {\n");
     out->Indent();
     out->Indent();
     if (method->server_streaming()) {
