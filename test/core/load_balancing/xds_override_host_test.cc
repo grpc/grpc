@@ -43,7 +43,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
