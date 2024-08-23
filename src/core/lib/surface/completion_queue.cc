@@ -855,7 +855,7 @@ static void cq_end_op_for_callback(
   //    an ACEC available at the base of the stack).
   auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
   if (((internal || functor->inlineable) &&
-       grpc_core::ApplicationCallbackExecCtx::Available()) ||
+       grpc_core::ApplicationCallbackExecCtx::Get() != nullptr) ||
       grpc_iomgr_is_any_background_poller_thread()) {
     grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, (error.ok()));
     return;

@@ -13,17 +13,13 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/default_event_engine.h"
 
-#include <atomic>
 #include <memory>
-#include <utility>
 
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -89,20 +85,6 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine(
       << location;
   *g_event_engine = engine;
   return engine;
-}
-
-namespace {
-grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
-    grpc_core::ChannelArgs args) {
-  if (args.ContainsObject<EventEngine>()) return args;
-  return args.SetObject<EventEngine>(GetDefaultEventEngine());
-}
-}  // namespace
-
-void RegisterEventEngineChannelArgPreconditioning(
-    grpc_core::CoreConfiguration::Builder* builder) {
-  builder->channel_args_preconditioning()->RegisterStage(
-      grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }
 
 }  // namespace experimental

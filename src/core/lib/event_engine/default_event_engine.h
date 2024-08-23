@@ -20,7 +20,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 
 namespace grpc_event_engine {
@@ -54,11 +53,6 @@ namespace experimental {
 /// the Engine's lifetime is at least as long as you need it to be.
 std::shared_ptr<EventEngine> GetDefaultEventEngine(
     grpc_core::SourceLocation location = grpc_core::SourceLocation());
-
-/// On ingress, ensure that an EventEngine exists in channel args via
-/// preconditioning.
-void RegisterEventEngineChannelArgPreconditioning(
-    grpc_core::CoreConfiguration::Builder* builder);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

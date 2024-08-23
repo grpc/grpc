@@ -2833,11 +2833,27 @@ grpc_cc_library(
         "default_event_engine_factory",
         "no_destruct",
         "thready_event_engine",
-        "//:config",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "default_event_engine_registry",
+    srcs = [
+        "lib/event_engine/default_event_engine_registry.cc",
+    ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
+    deps = [
+        "channel_args",
+        "default_event_engine",
+        "//:config",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
     ],
 )
 
