@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -49,6 +50,10 @@ constexpr const char* kCertName = "cert_name";
 constexpr const char* kRootError = "Unable to get latest root certificates.";
 constexpr const char* kIdentityError =
     "Unable to get latest identity certificates.";
+constexpr const char* kMalformedCertPemPath =
+    "src/core/tsi/test_creds/malformed-cert.pem";
+constexpr const char* kMalformedKeyPemPath =
+    "src/core/tsi/test_creds/malformed-key.pem";
 
 class GrpcTlsCertificateProviderTest : public ::testing::Test {
  protected:
@@ -256,6 +261,58 @@ TEST_F(GrpcTlsCertificateProviderTest,
       ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithGoodPathsAndCredentialValidation) {
+  auto provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.status(), absl::OkStatus());
+  auto cert_provider = *provider;
+
+  // Watcher watching both root and identity certs.
+  WatcherState* watcher_state_1 =
+      MakeWatcher(cert_provider->distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  CancelWatch(watcher_state_1);
+  // Watcher watching only root certs.
+  WatcherState* watcher_state_2 =
+      MakeWatcher(cert_provider->distributor(), kCertName, absl::nullopt);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_2);
+  // Watcher watching only identity certs.
+  WatcherState* watcher_state_3 =
+      MakeWatcher(cert_provider->distributor(), absl::nullopt, kCertName);
+  EXPECT_THAT(
+      watcher_state_3->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithMalformedRootCertificate) {
+  auto provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH_2, SERVER_CERT_PATH_2, kMalformedCertPemPath, 1);
+  EXPECT_EQ(provider.status(), absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithMalformedIdentityCertificate) {
+  auto provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH_2, kMalformedCertPemPath, CA_CERT_PATH_2, 1);
+  EXPECT_EQ(provider.status(), absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithMalformedIdentityKey) {
+  auto provider = FileWatcherCertificateProvider::Create(
+      kMalformedKeyPemPath, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
+  EXPECT_EQ(provider.status(), absl::NotFoundError("No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,

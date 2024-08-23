@@ -18,12 +18,16 @@
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 
 #include <memory>
+#include <string>
 #include <vector>
+
+#include "absl/status/statusor.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {
@@ -88,6 +92,30 @@ class GRPCXX_DLL StaticDataCertificateProvider
 class GRPCXX_DLL FileWatcherCertificateProvider final
     : public CertificateProviderInterface {
  public:
+  // Creates a CertificateProviderInterface instance that periodically reads
+  // from root certificates and identity credentials file paths. Both root
+  // certificates and identity credentials are validated on first read to ensure
+  // that they consist of valid PEM blocks.
+  //
+  // @param private_key_path is the file path of the private key.
+  // @param identity_certificate_path is the file path of the identity
+  // certificate chain.
+  // @param root_cert_path is the file path to the root certificate bundle.
+  // @param refresh_interval_sec is the refreshing interval that we will check
+  // the files for updates.
+  static absl::StatusOr<std::unique_ptr<CertificateProviderInterface>> Create(
+      const std::string& private_key_path,
+      const std::string& identity_certificate_path,
+      const std::string& root_cert_path, unsigned int refresh_interval_sec);
+  static absl::StatusOr<std::unique_ptr<CertificateProviderInterface>> Create(
+      const std::string& private_key_path,
+      const std::string& identity_certificate_path,
+      unsigned int refresh_interval_sec);
+  static absl::StatusOr<std::unique_ptr<CertificateProviderInterface>> Create(
+      const std::string& root_cert_path, unsigned int refresh_interval_sec);
+
+  // Deprecated: Please use the static factory instead (above).
+  //
   // Constructor to get credential updates from root and identity file paths.
   //
   // @param private_key_path is the file path of the private key.
@@ -118,6 +146,9 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
  private:
+  explicit FileWatcherCertificateProvider(
+      grpc_tls_certificate_provider* provider);
+
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 

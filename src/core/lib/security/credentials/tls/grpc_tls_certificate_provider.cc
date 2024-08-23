@@ -26,6 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/credentials.h>
 #include <grpc/slice.h>
@@ -38,10 +39,48 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
 
 namespace grpc_core {
+namespace {
+
+absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
+  absl::StatusOr<std::vector<X509*>> parsed_roots =
+      grpc_core::ParsePemCertificateChain(root_certificates);
+  if (!parsed_roots.ok()) {
+    return parsed_roots.status();
+  }
+  for (X509* x509 : *parsed_roots) {
+    X509_free(x509);
+  }
+  return absl::OkStatus();
+}
+
+absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
+                                    absl::string_view private_key) {
+  // Check that the cert chain consists of valid PEM blocks.
+  absl::StatusOr<std::vector<X509*>> parsed_certs =
+      grpc_core::ParsePemCertificateChain(cert_chain);
+  if (!parsed_certs.ok()) {
+    return parsed_certs.status();
+  }
+  for (X509* x509 : *parsed_certs) {
+    X509_free(x509);
+  }
+  // Check that the private key consists of valid PEM blocks.
+  absl::StatusOr<EVP_PKEY*> parsed_private_key =
+      grpc_core::ParsePemPrivateKey(private_key);
+  if (!parsed_private_key.ok()) {
+    return parsed_private_key.status();
+  }
+  EVP_PKEY_free(*parsed_private_key);
+  return absl::OkStatus();
+}
+
+}  // namespace
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
@@ -112,6 +151,35 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 }  // namespace
 
 static constexpr int64_t kMinimumFileWatcherRefreshIntervalSeconds = 1;
+
+absl::StatusOr<RefCountedPtr<grpc_tls_certificate_provider>>
+FileWatcherCertificateProvider::Create(std::string private_key_path,
+                                       std::string identity_certificate_path,
+                                       std::string root_cert_path,
+                                       int64_t refresh_interval_sec) {
+  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+      std::move(private_key_path), std::move(identity_certificate_path),
+      std::move(root_cert_path), refresh_interval_sec);
+  absl::optional<std::string> root_certificates = provider->root_certificates();
+  if (root_certificates.has_value()) {
+    absl::Status status = ValidateRootCertificates(*root_certificates);
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  absl::optional<PemKeyCertPairList> pem_key_cert_pairs =
+      provider->pem_key_cert_pairs();
+  if (pem_key_cert_pairs.has_value()) {
+    for (const PemKeyCertPair& pair : *pem_key_cert_pairs) {
+      absl::Status status =
+          ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+      if (!status.ok()) {
+        return status;
+      }
+    }
+  }
+  return provider;
+}
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,

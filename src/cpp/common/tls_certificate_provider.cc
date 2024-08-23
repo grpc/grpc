@@ -44,6 +44,37 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
+absl::StatusOr<std::unique_ptr<CertificateProviderInterface>>
+FileWatcherCertificateProvider::Create(
+    const std::string& private_key_path,
+    const std::string& identity_certificate_path,
+    const std::string& root_cert_path, unsigned int refresh_interval_sec) {
+  auto provider = grpc_core::FileWatcherCertificateProvider::Create(
+      private_key_path, identity_certificate_path, root_cert_path,
+      refresh_interval_sec);
+  if (!provider.ok()) {
+    return provider.status();
+  }
+  return absl::WrapUnique(
+      new FileWatcherCertificateProvider(provider->release()));
+}
+
+absl::StatusOr<std::unique_ptr<CertificateProviderInterface>>
+FileWatcherCertificateProvider::Create(
+    const std::string& private_key_path,
+    const std::string& identity_certificate_path,
+    unsigned int refresh_interval_sec) {
+  return Create(private_key_path, identity_certificate_path,
+                /*root_cert_path=*/"", refresh_interval_sec);
+}
+
+absl::StatusOr<std::unique_ptr<CertificateProviderInterface>>
+FileWatcherCertificateProvider::Create(const std::string& root_cert_path,
+                                       unsigned int refresh_interval_sec) {
+  return Create(/*private_key_path=*/"", /*identity_certificate_path=*/"",
+                root_cert_path, refresh_interval_sec);
+}
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     const std::string& private_key_path,
     const std::string& identity_certificate_path,
@@ -53,6 +84,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       root_cert_path.c_str(), refresh_interval_sec);
   CHECK_NE(c_provider_, nullptr);
 };
+
+FileWatcherCertificateProvider::FileWatcherCertificateProvider(
+    grpc_tls_certificate_provider* provider) {
+  CHECK_NE(provider, nullptr);
+  c_provider_ = provider;
+}
 
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);

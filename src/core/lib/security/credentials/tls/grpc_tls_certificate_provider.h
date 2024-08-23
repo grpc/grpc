@@ -134,6 +134,11 @@ class StaticDataCertificateProvider final
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
+  static absl::StatusOr<RefCountedPtr<grpc_tls_certificate_provider>> Create(
+      std::string private_key_path, std::string identity_certificate_path,
+      std::string root_cert_path, int64_t refresh_interval_sec);
+
+  // Deprecated: Please use the static factory instead (above).
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
                                  std::string root_cert_path,
@@ -143,6 +148,18 @@ class FileWatcherCertificateProvider final
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
+  }
+
+  absl::optional<std::string> root_certificates() {
+    MutexLock lock(&mu_);
+    if (root_certificate_.empty()) return absl::nullopt;
+    return root_certificate_;
+  }
+
+  absl::optional<PemKeyCertPairList> pem_key_cert_pairs() {
+    MutexLock lock(&mu_);
+    if (pem_key_cert_pairs_.empty()) return absl::nullopt;
+    return pem_key_cert_pairs_;
   }
 
   UniqueTypeName type() const override;

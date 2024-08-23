@@ -444,6 +444,8 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:malformed-cert.pem",
+        "//src/core/tsi/test_creds:malformed-key.pem",
     ],
     external_deps = [
         "absl/log:check",

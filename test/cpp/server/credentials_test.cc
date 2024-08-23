@@ -42,6 +42,10 @@ constexpr const char* kRootCertContents = "root_cert_contents";
 constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
+constexpr const char* kMalformedCertPemPath =
+    "src/core/tsi/test_creds/malformed-cert.pem";
+constexpr const char* kMalformedKeyPemPath =
+    "src/core/tsi/test_creds/malformed-key.pem";
 
 using ::grpc::experimental::CreateStaticCrlProvider;
 using ::grpc::experimental::ExternalCertificateVerifier;
@@ -114,6 +118,51 @@ TEST(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   CHECK_NE(server_credentials.get(), nullptr);
+}
+
+TEST(CredentialsTest,
+     FileWatcherCertificateProviderValidationSuccessWithAllCredentials) {
+  auto certificate_provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  EXPECT_EQ(certificate_provider.status(), absl::OkStatus());
+  EXPECT_NE(*certificate_provider, nullptr);
+}
+
+TEST(CredentialsTest,
+     FileWatcherCertificateProviderValidationSuccessWithRootOnly) {
+  auto certificate_provider =
+      FileWatcherCertificateProvider::Create(CA_CERT_PATH, 1);
+  EXPECT_EQ(certificate_provider.status(), absl::OkStatus());
+  EXPECT_NE(*certificate_provider, nullptr);
+}
+
+TEST(CredentialsTest,
+     FileWatcherCertificateProviderValidationSuccessWithIdentityOnly) {
+  auto certificate_provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, 1);
+  EXPECT_EQ(certificate_provider.status(), absl::OkStatus());
+  EXPECT_NE(*certificate_provider, nullptr);
+}
+
+TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
+  auto certificate_provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, kMalformedCertPemPath, 1);
+  EXPECT_EQ(certificate_provider.status(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedIdentityCert) {
+  auto certificate_provider = FileWatcherCertificateProvider::Create(
+      SERVER_KEY_PATH, kMalformedCertPemPath, CA_CERT_PATH, 1);
+  EXPECT_EQ(certificate_provider.status(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedIdentityKey) {
+  auto certificate_provider = FileWatcherCertificateProvider::Create(
+      kMalformedKeyPemPath, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  EXPECT_EQ(certificate_provider.status(),
+            absl::NotFoundError("No private key found."));
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {
