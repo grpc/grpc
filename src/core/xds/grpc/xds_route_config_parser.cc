@@ -474,9 +474,10 @@ XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
       }
     }
   }
-  retry_policy.num_retries = ParseUInt32Value(
-      envoy_config_route_v3_RetryPolicy_num_retries(retry_policy_proto))
-      .value_or(1);
+  retry_policy.num_retries =
+      ParseUInt32Value(
+          envoy_config_route_v3_RetryPolicy_num_retries(retry_policy_proto))
+          .value_or(1);
   if (retry_policy.num_retries == 0) {
     ValidationErrors::ScopedField field(errors, ".num_retries");
     errors->AddError("must be greater than 0");

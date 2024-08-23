@@ -653,8 +653,9 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   if (metadata_value != nullptr &&
       metadata_value->type() == XdsStructMetadataValue::Type()) {
     const Json::Object& json_object =
-        DownCast<const XdsStructMetadataValue*>(metadata_value)->json()
-        .object();
+        DownCast<const XdsStructMetadataValue*>(metadata_value)
+            ->json()
+            .object();
     auto it = json_object.find("service_name");
     if (it != json_object.end() && it->second.type() == Json::Type::kString) {
       service_telemetry_label_ = RefCountedStringValue(it->second.string());

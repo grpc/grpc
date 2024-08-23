@@ -131,8 +131,9 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   {
     ValidationErrors::ScopedField field(errors, ".load_balancing_weight");
     weight = ParseUInt32Value(
-        envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint))
-        .value_or(1);
+                 envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(
+                     lb_endpoint))
+                 .value_or(1);
     if (weight == 0) {
       errors->AddError("must be greater than 0");
     }
@@ -210,7 +211,7 @@ absl::optional<ParsedLocality> LocalityParse(
       ParseUInt32Value(
           envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
               locality_lb_endpoints))
-      .value_or(0);
+          .value_or(0);
   if (parsed_locality.locality.lb_weight == 0) return absl::nullopt;
   // locality
   const envoy_config_core_v3_Locality* locality =

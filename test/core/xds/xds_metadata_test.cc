@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/xds/grpc/xds_metadata.h"
+
 #include <string>
 #include <utility>
 
@@ -32,7 +34,6 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
@@ -217,8 +218,7 @@ TEST_F(XdsMetadataTest, AudienceMetadataUnparseable) {
   entry.set_value(std::string("\0", 1));
   // Decode.
   auto metadata_map = Decode(std::move(metadata_proto));
-  EXPECT_EQ(metadata_map.status().code(),
-            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(metadata_map.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(metadata_map.status().message(),
             "validation failed: ["
             "field:typed_filter_metadata[filter_key].value["
@@ -235,8 +235,7 @@ TEST_F(XdsMetadataTest, AudienceMetadataMissingUrl) {
   filter_map["filter_key"].PackFrom(Audience());
   // Decode.
   auto metadata_map = Decode(std::move(metadata_proto));
-  EXPECT_EQ(metadata_map.status().code(),
-            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(metadata_map.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(metadata_map.status().message(),
             "validation failed: ["
             "field:typed_filter_metadata[filter_key].value["

@@ -28,11 +28,10 @@
 
 namespace grpc_core {
 
-void XdsMetadataMap::Insert(
-    absl::string_view key, std::unique_ptr<XdsMetadataValue> value) {
+void XdsMetadataMap::Insert(absl::string_view key,
+                            std::unique_ptr<XdsMetadataValue> value) {
   CHECK(value != nullptr);
-  CHECK(map_.emplace(key, std::move(value)).second)
-      << "duplicate key: " << key;
+  CHECK(map_.emplace(key, std::move(value)).second) << "duplicate key: " << key;
 }
 
 const XdsMetadataValue* XdsMetadataMap::Find(absl::string_view key) const {
