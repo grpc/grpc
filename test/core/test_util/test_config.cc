@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <mutex>
+
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
@@ -121,10 +123,12 @@ void ParseTestArgs(int* argc, char** argv) {
     ++i;
   }
 }
+
+std::once_flag log_flag;
 }  // namespace
 
 void grpc_test_init(int* argc, char** argv) {
-  absl::InitializeLog();
+  std::call_once(log_flag, []() { absl::InitializeLog(); });
   absl::SetGlobalVLogLevel(2);
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
