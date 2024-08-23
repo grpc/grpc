@@ -644,6 +644,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc',
     'src/core/lib/security/credentials/tls/tls_credentials.cc',
     'src/core/lib/security/credentials/tls/tls_utils.cc',
+    'src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc',
     'src/core/lib/security/credentials/xds/xds_credentials.cc',
     'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
     'src/core/lib/security/security_connector/fake/fake_security_connector.cc',

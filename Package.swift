@@ -1601,6 +1601,8 @@ let package = Package(
         "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/credentials/tls/tls_utils.cc",
         "src/core/lib/security/credentials/tls/tls_utils.h",
+        "src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc",
+        "src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",

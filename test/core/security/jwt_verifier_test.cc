@@ -318,33 +318,31 @@ static grpc_http_response http_response(int status, char* body) {
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    absl::string_view /*body*/, grpc_core::Timestamp /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
   EXPECT_EQ("HTTP POST should not be called", nullptr);
   return 1;
 }
 
 static int httpcli_put_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    absl::string_view /*body*/, grpc_core::Timestamp /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
   EXPECT_EQ("HTTP PUT should not be called", nullptr);
   return 1;
 }
 
 static int httpcli_get_google_keys_for_email(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
     grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, good_google_email_keys());
-  EXPECT_STREQ(host, "www.googleapis.com");
-  EXPECT_STREQ(path,
-               "/robot/v1/metadata/x509/"
-               "777-abaslkan11hlb6nmim3bpspl31ud@developer."
-               "gserviceaccount.com");
+  EXPECT_EQ(uri.authority(), "www.googleapis.com");
+  EXPECT_EQ(uri.path(),
+            "/robot/v1/metadata/x509/"
+            "777-abaslkan11hlb6nmim3bpspl31ud@developer."
+            "gserviceaccount.com");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -384,12 +382,12 @@ TEST(JwtVerifierTest, JwtVerifierGoogleEmailIssuerSuccess) {
 }
 
 static int httpcli_get_custom_keys_for_email(
-    const grpc_http_request* /*request*/, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const grpc_core::URI& uri,
     grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
-  EXPECT_STREQ(host, "keys.bar.com");
-  EXPECT_STREQ(path, "/jwk/foo@bar.com");
+  EXPECT_EQ(uri.authority(), "keys.bar.com");
+  EXPECT_EQ(uri.path(), "/jwk/foo@bar.com");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -419,25 +417,25 @@ TEST(JwtVerifierTest, JwtVerifierCustomEmailIssuerSuccess) {
 }
 
 static int httpcli_get_jwk_set(const grpc_http_request* /*request*/,
-                               const char* host, const char* path,
+                               const grpc_core::URI& uri,
                                grpc_core::Timestamp /*deadline*/,
                                grpc_closure* on_done,
                                grpc_http_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
-  EXPECT_STREQ(host, "www.googleapis.com");
-  EXPECT_STREQ(path, "/oauth2/v3/certs");
+  EXPECT_EQ(uri.authority(), "www.googleapis.com");
+  EXPECT_EQ(uri.path(), "/oauth2/v3/certs");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
 static int httpcli_get_openid_config(const grpc_http_request* /*request*/,
-                                     const char* host, const char* path,
+                                     const grpc_core::URI& uri,
                                      grpc_core::Timestamp /*deadline*/,
                                      grpc_closure* on_done,
                                      grpc_http_response* response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
-  EXPECT_STREQ(host, "accounts.google.com");
-  EXPECT_STREQ(path, GRPC_OPENID_CONFIG_URL_SUFFIX);
+  EXPECT_EQ(uri.authority(), "accounts.google.com");
+  EXPECT_EQ(uri.path(), GRPC_OPENID_CONFIG_URL_SUFFIX);
   grpc_core::HttpRequest::SetOverride(httpcli_get_jwk_set,
                                       httpcli_post_should_not_be_called,
                                       httpcli_put_should_not_be_called);
@@ -478,7 +476,7 @@ static void on_verification_key_retrieval_error(void* user_data,
 }
 
 static int httpcli_get_bad_json(const grpc_http_request* /* request */,
-                                const char* /*host*/, const char* /*path*/,
+                                const grpc_core::URI& /*uri*/,
                                 grpc_core::Timestamp /*deadline*/,
                                 grpc_closure* on_done,
                                 grpc_http_response* response) {
@@ -580,9 +578,9 @@ TEST(JwtVerifierTest, JwtVerifierBadSignature) {
 }
 
 static int httpcli_get_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, grpc_core::Timestamp /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_http_response* /*response*/) {
   EXPECT_TRUE(0);
   return 1;
 }
