@@ -21,8 +21,11 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <mutex>
+
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
@@ -120,9 +123,20 @@ void ParseTestArgs(int* argc, char** argv) {
     ++i;
   }
 }
+
+// grpc-oss-only-begin
+std::once_flag log_flag;
+// grpc-oss-only-end
+
 }  // namespace
 
 void grpc_test_init(int* argc, char** argv) {
+  // grpc-oss-only-begin
+  std::call_once(log_flag, []() { absl::InitializeLog(); });
+  absl::SetGlobalVLogLevel(2);
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
+  // grpc-oss-only-end
   gpr_log_verbosity_init();
   ParseTestArgs(argc, argv);
   grpc_core::testing::InitializeStackTracer(argv[0]);
