@@ -1267,6 +1267,7 @@ grpc_cc_library(
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
+        "grpc++_public_hdrs",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_security_base",
