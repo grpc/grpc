@@ -632,8 +632,11 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
   // Parse metadata.
-  cds_update->metadata = ParseXdsMetadataMap(
-      context, envoy_config_cluster_v3_Cluster_metadata(cluster), &errors);
+  {
+    ValidationErrors::ScopedField field(&errors, ".metadata");
+    cds_update->metadata = ParseXdsMetadataMap(
+        context, envoy_config_cluster_v3_Cluster_metadata(cluster), &errors);
+  }
   // Return result.
   if (!errors.ok()) {
     return errors.status(absl::StatusCode::kInvalidArgument,

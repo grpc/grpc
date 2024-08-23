@@ -3029,6 +3029,10 @@ src/core/xds/grpc/xds_listener.cc \
 src/core/xds/grpc/xds_listener.h \
 src/core/xds/grpc/xds_listener_parser.cc \
 src/core/xds/grpc/xds_listener_parser.h \
+src/core/xds/grpc/xds_metadata.cc \
+src/core/xds/grpc/xds_metadata.h \
+src/core/xds/grpc/xds_metadata_parser.cc \
+src/core/xds/grpc/xds_metadata_parser.h \
 src/core/xds/grpc/xds_route_config.cc \
 src/core/xds/grpc/xds_route_config.h \
 src/core/xds/grpc/xds_route_config_parser.cc \

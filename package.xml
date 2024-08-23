@@ -2005,6 +2005,10 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config_parser.cc" role="src" />

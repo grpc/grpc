@@ -112,8 +112,11 @@ XdsMetadataMap ParseXdsMetadataMap(
     // this into a separate registry.
     if (XdsGcpAuthFilterEnabled() &&
         extension->type == XdsGcpAuthnAudienceMetadataValue::Type()) {
-      metadata_map.Insert(
-          key, ParseGcpAuthnAudience(context, std::move(*extension), errors));
+      auto metadata_value =
+          ParseGcpAuthnAudience(context, std::move(*extension), errors);
+      if (metadata_value != nullptr) {
+        metadata_map.Insert(key, std::move(metadata_value));
+      }
     }
   }
   // Then, try filter_metadata.

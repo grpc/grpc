@@ -1512,6 +1512,8 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
     src/core/xds/grpc/xds_listener_parser.cc \
+    src/core/xds/grpc/xds_metadata.cc \
+    src/core/xds/grpc/xds_metadata_parser.cc \
     src/core/xds/grpc/xds_route_config.cc \
     src/core/xds/grpc/xds_route_config_parser.cc \
     src/core/xds/grpc/xds_routing.cc \

@@ -62,6 +62,7 @@ class XdsMetadataMap {
   const XdsMetadataValue* Find(absl::string_view key) const;
 
   bool empty() const { return map_.empty(); }
+  size_t size() const { return map_.size(); }
 
   bool operator==(const XdsMetadataMap& other) const;
 

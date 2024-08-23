@@ -1253,6 +1253,8 @@ libs:
   - src/core/xds/grpc/xds_lb_policy_registry.h
   - src/core/xds/grpc/xds_listener.h
   - src/core/xds/grpc/xds_listener_parser.h
+  - src/core/xds/grpc/xds_metadata.h
+  - src/core/xds/grpc/xds_metadata_parser.h
   - src/core/xds/grpc/xds_route_config.h
   - src/core/xds/grpc/xds_route_config_parser.h
   - src/core/xds/grpc/xds_routing.h
@@ -2071,6 +2073,8 @@ libs:
   - src/core/xds/grpc/xds_lb_policy_registry.cc
   - src/core/xds/grpc/xds_listener.cc
   - src/core/xds/grpc/xds_listener_parser.cc
+  - src/core/xds/grpc/xds_metadata.cc
+  - src/core/xds/grpc/xds_metadata_parser.cc
   - src/core/xds/grpc/xds_route_config.cc
   - src/core/xds/grpc/xds_route_config_parser.cc
   - src/core/xds/grpc/xds_routing.cc
@@ -10889,6 +10893,23 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: gcp_authentication_filter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/filters/filter_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/filters/filter_test.cc
+  - test/core/filters/gcp_authentication_filter_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -21988,6 +22009,26 @@ targets:
   - gtest
   - grpc++
   - protoc
+  - grpc_test_util
+  uses_polling: false
+- name: xds_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/scoped_env_var.h
+  src:
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/gcp_authn.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
+  - test/core/xds/xds_metadata_test.cc
+  deps:
+  - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_outlier_detection_end2end_test
