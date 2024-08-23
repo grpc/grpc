@@ -128,10 +128,12 @@ std::once_flag log_flag;
 }  // namespace
 
 void grpc_test_init(int* argc, char** argv) {
+  // grpc-oss-only-begin
   std::call_once(log_flag, []() { absl::InitializeLog(); });
   absl::SetGlobalVLogLevel(2);
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
+  // grpc-oss-only-end
   gpr_log_verbosity_init();
   ParseTestArgs(argc, argv);
   grpc_core::testing::InitializeStackTracer(argv[0]);
