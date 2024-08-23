@@ -1797,6 +1797,8 @@
     <file baseinstalldir="/" name="src/core/resolver/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver.cc" role="src" />

@@ -1815,6 +1815,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/resolver/resolver_registry.h )
   s.files += %w( src/core/resolver/server_address.h )
   s.files += %w( src/core/resolver/sockaddr/sockaddr_resolver.cc )
+  s.files += %w( src/core/resolver/xds/xds_config.cc )
+  s.files += %w( src/core/resolver/xds/xds_config.h )
   s.files += %w( src/core/resolver/xds/xds_dependency_manager.cc )
   s.files += %w( src/core/resolver/xds/xds_dependency_manager.h )
   s.files += %w( src/core/resolver/xds/xds_resolver.cc )
