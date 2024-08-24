@@ -25,10 +25,13 @@
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "third_party/grpc/src/core/lib/gprpp/crash.h"
+#include "third_party/grpc/src/core/lib/gprpp/orphanable.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
@@ -61,6 +64,8 @@ namespace {
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
 grpc_httpcli_put_override g_put_override;
+absl::AnyInvocable<OrphanablePtr<grpc_endpoint>()> g_endpoint_factory = nullptr;
+
 void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
 }  // namespace
@@ -188,6 +193,11 @@ HttpRequest::HttpRequest(
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
 }
 
+void HttpRequest::TestOnlyInjectEndpointFactory(
+    absl::AnyInvocable<OrphanablePtr<grpc_endpoint>()> factory) {
+  g_endpoint_factory = std::move(factory);
+}
+
 HttpRequest::~HttpRequest() {
   grpc_channel_args_destroy(channel_args_);
   grpc_http_parser_destroy(&parser_);
@@ -203,6 +213,9 @@ void HttpRequest::Start() {
   MutexLock lock(&mu_);
   if (test_only_generate_response_.has_value()) {
     test_only_generate_response_.value()();
+    if (g_endpoint_factory != nullptr) {
+      ep_ = g_endpoint_factory();
+    }
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
