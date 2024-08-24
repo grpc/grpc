@@ -604,8 +604,8 @@ class CLanguage(object):
             )
         elif compiler == "gcc_musl":
             return ("alpine", [])
-        elif compiler == "clang6":
-            return ("clang_6", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang7":
+            return ("clang_7", self._clang_cmake_configure_extra_args())
         elif compiler == "clang17":
             return ("clang_17", self._clang_cmake_configure_extra_args())
         else:
@@ -1672,7 +1672,7 @@ argp.add_argument(
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
-        "clang6",
+        "clang7",
         "clang17",
         # TODO: Automatically populate from supported version
         "python3.7",
