@@ -438,14 +438,14 @@ grpc_cc_test(
     srcs = ["grpc_tls_certificate_provider_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:malformed-cert.pem",
+        "//src/core/tsi/test_creds:malformed-key.pem",
         "//src/core/tsi/test_creds:multi-domain.key",
         "//src/core/tsi/test_creds:multi-domain.pem",
         "//src/core/tsi/test_creds:server0.key",
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
-        "//src/core/tsi/test_creds:malformed-cert.pem",
-        "//src/core/tsi/test_creds:malformed-key.pem",
     ],
     external_deps = [
         "absl/log:check",

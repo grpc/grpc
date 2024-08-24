@@ -69,10 +69,10 @@ grpc_cc_test(
     srcs = ["credentials_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
         "//src/core/tsi/test_creds:malformed-cert.pem",
         "//src/core/tsi/test_creds:malformed-key.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
         "absl/log:check",
