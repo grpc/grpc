@@ -1585,6 +1585,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.cc" role="src" />
@@ -1795,6 +1797,8 @@
     <file baseinstalldir="/" name="src/core/resolver/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver.cc" role="src" />

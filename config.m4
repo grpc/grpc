@@ -670,6 +670,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
+    src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
     src/core/lib/security/credentials/xds/xds_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
@@ -778,6 +779,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/resolver/resolver.cc \
     src/core/resolver/resolver_registry.cc \
     src/core/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/resolver/xds/xds_config.cc \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
     src/core/server/server.cc \
@@ -1557,6 +1559,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/tls)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/token_fetcher)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/alts)

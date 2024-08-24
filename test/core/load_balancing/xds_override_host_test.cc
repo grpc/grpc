@@ -43,7 +43,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
@@ -57,7 +57,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   XdsOverrideHostTest()
       : LoadBalancingPolicyTest("xds_override_host_experimental") {}
 
-  static RefCountedPtr<const XdsDependencyManager::XdsConfig> MakeXdsConfig(
+  static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
       absl::optional<Duration> connection_idle_timeout = absl::nullopt,
@@ -70,7 +70,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     if (connection_idle_timeout.has_value()) {
       cluster_resource->connection_idle_timeout = *connection_idle_timeout;
     }
-    auto xds_config = MakeRefCounted<XdsDependencyManager::XdsConfig>();
+    auto xds_config = MakeRefCounted<XdsConfig>();
     xds_config->clusters[std::move(cluster_name)].emplace(
         std::move(cluster_resource), nullptr, "");
     return xds_config;

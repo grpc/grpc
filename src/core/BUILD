@@ -4318,6 +4318,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "token_fetcher_credentials",
+    srcs = [
+        "lib/security/credentials/token_fetcher/token_fetcher_credentials.cc",
+    ],
+    hdrs = [
+        "lib/security/credentials/token_fetcher/token_fetcher_credentials.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
+        "absl/status:statusor",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "arena_promise",
+        "context",
+        "metadata",
+        "poll",
+        "pollset_set",
+        "ref_counted",
+        "time",
+        "useful",
+        "//:gpr",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:iomgr",
+        "//:orphanable",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_oauth2_credentials",
     srcs = [
         "lib/security/credentials/oauth2/oauth2_credentials.cc",
@@ -4354,6 +4388,7 @@ grpc_cc_library(
         "slice_refcount",
         "status_helper",
         "time",
+        "token_fetcher_credentials",
         "unique_type_name",
         "useful",
         "//:gpr",
@@ -4401,6 +4436,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "closure",
+        "default_event_engine",
         "env",
         "error",
         "error_utils",
@@ -4414,6 +4450,7 @@ grpc_cc_library(
         "slice_refcount",
         "status_helper",
         "time",
+        "token_fetcher_credentials",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_core_credentials_header",
@@ -5819,6 +5856,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_cluster",
         "xds_common_types",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
@@ -5884,8 +5922,8 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_config",
         "xds_credentials",
-        "xds_dependency_manager",
         "xds_endpoint",
         "//:call_tracer",
         "//:config",
@@ -6597,7 +6635,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
-        "xds_dependency_manager",
+        "xds_config",
         "xds_health_status",
         "//:config",
         "//:debug_location",
@@ -6943,6 +6981,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_config",
+    srcs = [
+        "resolver/xds/xds_config.cc",
+    ],
+    hdrs = [
+        "resolver/xds/xds_config.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "match",
+        "ref_counted",
+        "xds_cluster",
+        "xds_endpoint",
+        "xds_listener",
+        "xds_route_config",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_dependency_manager",
     srcs = [
         "resolver/xds/xds_dependency_manager.cc",
@@ -6964,6 +7027,7 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "xds_cluster",
+        "xds_config",
         "xds_endpoint",
         "xds_listener",
         "xds_route_config",
@@ -7014,6 +7078,7 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "time",
+        "xds_config",
         "xds_dependency_manager",
         "xds_http_filter",
         "xds_listener",
