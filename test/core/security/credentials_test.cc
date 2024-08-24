@@ -50,7 +50,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -60,7 +59,6 @@
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
@@ -81,7 +79,6 @@
 
 namespace grpc_core {
 
-using grpc_event_engine::experimental::FuzzingEventEngine;
 using internal::grpc_flush_cached_google_default_credentials;
 using internal::set_gce_tenancy_checker_for_testing;
 
@@ -429,19 +426,16 @@ TEST_F(CredentialsTest,
 class RequestMetadataState : public RefCounted<RequestMetadataState> {
  public:
   static RefCountedPtr<RequestMetadataState> NewInstance(
-      grpc_error_handle expected_error, std::string expected,
-      absl::optional<bool> expect_delay = absl::nullopt) {
+      grpc_error_handle expected_error, std::string expected) {
     return MakeRefCounted<RequestMetadataState>(
-        expected_error, std::move(expected), expect_delay,
+        expected_error, std::move(expected),
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
   }
 
   RequestMetadataState(grpc_error_handle expected_error, std::string expected,
-                       absl::optional<bool> expect_delay,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
         expected_(std::move(expected)),
-        expect_delay_(expect_delay),
         pollent_(pollent) {}
 
   ~RequestMetadataState() override {
@@ -459,18 +453,12 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     activity_ = MakeActivity(
         [this, creds] {
           return Seq(
-              CheckDelayed(creds->GetRequestMetadata(
+              creds->GetRequestMetadata(
                   ClientMetadataHandle(&md_, Arena::PooledDeleter(nullptr)),
-                  &get_request_metadata_args_)),
-              [this](std::tuple<absl::StatusOr<ClientMetadataHandle>, bool>
-                         metadata_and_delayed) {
-                auto& metadata = std::get<0>(metadata_and_delayed);
-                const bool delayed = std::get<1>(metadata_and_delayed);
-                if (expect_delay_.has_value()) {
-                  EXPECT_EQ(delayed, *expect_delay_);
-                }
+                  &get_request_metadata_args_),
+              [this](absl::StatusOr<ClientMetadataHandle> metadata) {
                 if (metadata.ok()) {
-                  EXPECT_EQ(metadata->get(), &md_);
+                  CHECK(metadata->get() == &md_);
                 }
                 return metadata.status();
               });
@@ -520,13 +508,12 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     if (expected_error_.ok()) {
       ASSERT_TRUE(error.ok()) << error;
     } else {
-      grpc_status_code actual_code;
-      std::string actual_message;
-      grpc_error_get_status(error, Timestamp::InfFuture(), &actual_code,
-                            &actual_message, nullptr, nullptr);
-      EXPECT_EQ(absl::Status(static_cast<absl::StatusCode>(actual_code),
-                             actual_message),
-                expected_error_);
+      std::string expected_error;
+      grpc_error_get_str(expected_error_, StatusStrProperty::kDescription,
+                         &expected_error);
+      std::string actual_error;
+      grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
+      EXPECT_EQ(expected_error, actual_error);
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());
@@ -536,7 +523,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
 
   grpc_error_handle expected_error_;
   std::string expected_;
-  absl::optional<bool> expect_delay_;
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
@@ -812,8 +798,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
@@ -905,8 +890,7 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsFailure) {
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -1166,8 +1150,7 @@ TEST_F(CredentialsTest, TestStsCredsTokenFileNotFound) {
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAVAILABLE.
-      absl::InternalError(
+      GRPC_ERROR_CREATE(
           "Failed to load file: /some/completely/random/path due to "
           "error(fdopen): No such file or directory"),
       {});
@@ -1238,9 +1221,8 @@ TEST_F(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAVAILABLE.
-      absl::InternalError("Failed to load file: invalid_path due to "
-                          "error(fdopen): No such file or directory"),
+      GRPC_ERROR_CREATE("Failed to load file: invalid_path due to "
+                        "error(fdopen): No such file or directory"),
       {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
@@ -1274,8 +1256,7 @@ TEST_F(CredentialsTest, TestStsCredsHttpFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      GRPC_ERROR_CREATE("error parsing oauth2 token"), {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -1472,7 +1453,7 @@ TEST_F(CredentialsTest, TestJwtCredsSigningFailure) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("Could not generate JWT."), {});
+      GRPC_ERROR_CREATE("Could not generate JWT."), {});
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
@@ -1931,8 +1912,7 @@ TEST_F(CredentialsTest, TestMetadataPluginFailure) {
   grpc_metadata_credentials_plugin plugin;
   ExecCtx exec_ctx;
   auto md_state = RequestMetadataState::NewInstance(
-      // TODO(roth): Is this the right status to use here?
-      absl::UnavailableError(
+      GRPC_ERROR_CREATE(
           absl::StrCat("Getting metadata from plugin failed with error: ",
                        plugin_error_details)),
       {});
@@ -2389,315 +2369,6 @@ int aws_external_account_creds_httpcli_post_success(
   return 1;
 }
 
-class TokenFetcherCredentialsTest : public ::testing::Test {
- protected:
-  class TestTokenFetcherCredentials final : public TokenFetcherCredentials {
-   public:
-    explicit TestTokenFetcherCredentials(
-        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-            event_engine = nullptr)
-        : TokenFetcherCredentials(std::move(event_engine),
-                                  /*test_only_use_backoff_jitter=*/false) {}
-
-    ~TestTokenFetcherCredentials() override { CHECK_EQ(queue_.size(), 0); }
-
-    void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
-      MutexLock lock(&mu_);
-      queue_.push_front(std::move(result));
-    }
-
-    size_t num_fetches() const { return num_fetches_; }
-
-   private:
-    class TestFetchRequest final : public FetchRequest {
-     public:
-      TestFetchRequest(
-          grpc_event_engine::experimental::EventEngine& event_engine,
-          absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)>
-              on_done,
-          absl::StatusOr<RefCountedPtr<Token>> result) {
-        event_engine.Run([on_done = std::move(on_done),
-                          result = std::move(result)]() mutable {
-          ApplicationCallbackExecCtx application_exec_ctx;
-          ExecCtx exec_ctx;
-          std::exchange(on_done, nullptr)(std::move(result));
-        });
-      }
-
-      void Orphan() override { Unref(); }
-    };
-
-    OrphanablePtr<FetchRequest> FetchToken(
-        Timestamp deadline,
-        absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
-        override {
-      absl::StatusOr<RefCountedPtr<Token>> result;
-      {
-        MutexLock lock(&mu_);
-        CHECK(!queue_.empty());
-        result = std::move(queue_.back());
-        queue_.pop_back();
-      }
-      num_fetches_.fetch_add(1);
-      return MakeOrphanable<TestFetchRequest>(
-          event_engine(), std::move(on_done), std::move(result));
-    }
-
-    std::string debug_string() override {
-      return "TestTokenFetcherCredentials";
-    }
-
-    UniqueTypeName type() const override {
-      static UniqueTypeName::Factory kFactory("TestTokenFetcherCredentials");
-      return kFactory.Create();
-    }
-
-    Mutex mu_;
-    std::deque<absl::StatusOr<RefCountedPtr<Token>>> queue_
-        ABSL_GUARDED_BY(&mu_);
-
-    std::atomic<size_t> num_fetches_{0};
-  };
-
-  void SetUp() override {
-    grpc_timer_manager_set_start_threaded(false);
-    grpc_init();
-  }
-
-  void TearDown() override {
-    event_engine_->FuzzingDone();
-    event_engine_->TickUntilIdle();
-    event_engine_->UnsetGlobalHooks();
-    creds_.reset();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
-    grpc_shutdown_blocking();
-  }
-
-  static RefCountedPtr<TokenFetcherCredentials::Token> MakeToken(
-      absl::string_view token, Timestamp expiration = Timestamp::InfFuture()) {
-    return MakeRefCounted<TokenFetcherCredentials::Token>(
-        Slice::FromCopiedString(token), expiration);
-  }
-
-  std::shared_ptr<FuzzingEventEngine> event_engine_ =
-      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
-                                           fuzzing_event_engine::Actions());
-  RefCountedPtr<TestTokenFetcherCredentials> creds_ =
-      MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
-};
-
-TEST_F(TokenFetcherCredentialsTest, Basic) {
-  const auto kExpirationTime = Timestamp::Now() + Duration::Hours(1);
-  ExecCtx exec_ctx;
-  creds_->AddResult(MakeToken("foo", kExpirationTime));
-  // First request will trigger a fetch.
-  auto state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Second request while fetch is still outstanding will be delayed but
-  // will not trigger a new fetch.
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Now tick to finish the fetch.
-  event_engine_->TickUntilIdle();
-  // Next request will be served from cache with no delay.
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Advance time to expiration minus expiration adjustment and prefetch time.
-  exec_ctx.TestOnlySetNow(kExpirationTime - Duration::Seconds(90));
-  // No new fetch yet.
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Next request will trigger a new fetch but will still use the
-  // cached token.
-  creds_->AddResult(MakeToken("bar"));
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 2);
-  event_engine_->TickUntilIdle();
-  // Next request will use the new data.
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: bar", /*expect_delay=*/false);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 2);
-}
-
-TEST_F(TokenFetcherCredentialsTest, Expires30SecondsEarly) {
-  const auto kExpirationTime = Timestamp::Now() + Duration::Hours(1);
-  ExecCtx exec_ctx;
-  creds_->AddResult(MakeToken("foo", kExpirationTime));
-  // First request will trigger a fetch.
-  auto state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  event_engine_->TickUntilIdle();
-  // Advance time to expiration minus 30 seconds.
-  exec_ctx.TestOnlySetNow(kExpirationTime - Duration::Seconds(30));
-  // No new fetch yet.
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Next request will trigger a new fetch and will delay the call until
-  // the fetch completes.
-  creds_->AddResult(MakeToken("bar"));
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: bar", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 2);
-  event_engine_->TickUntilIdle();
-}
-
-TEST_F(TokenFetcherCredentialsTest, FetchFails) {
-  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
-  event_engine_->SetRunAfterDurationCallback(
-      [&](FuzzingEventEngine::Duration duration) {
-        run_after_duration = duration;
-      });
-  ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
-  // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                                 /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration.has_value()) event_engine_->Tick();
-  // Make sure backoff was set for the right period.
-  // This is 1 second (initial backoff) minus 1ms for the tick needed above.
-  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
-  run_after_duration.reset();
-  // Start a new call now, which will be queued and then eventually
-  // resumed when the next fetch happens.
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  // Tick until the next fetch starts.
-  creds_->AddResult(MakeToken("foo"));
-  event_engine_->TickUntilIdle();
-  EXPECT_EQ(creds_->num_fetches(), 2);
-  // A call started now should use the new cached data.
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 2);
-}
-
-TEST_F(TokenFetcherCredentialsTest, Backoff) {
-  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
-  event_engine_->SetRunAfterDurationCallback(
-      [&](FuzzingEventEngine::Duration duration) {
-        run_after_duration = duration;
-      });
-  ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
-  // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                                 /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration.has_value()) event_engine_->Tick();
-  // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
-  run_after_duration.reset();
-  // Start a new call now, which will be queued and then eventually
-  // resumed when the next fetch happens.
-  state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                            /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  // Tick until the next fetch fails and the backoff timer starts again.
-  creds_->AddResult(kExpectedError);
-  while (!run_after_duration.has_value()) event_engine_->Tick();
-  EXPECT_EQ(creds_->num_fetches(), 2);
-  // The backoff time should be longer now.  We account for jitter here.
-  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(1600))
-      << "actual: " << run_after_duration->count();
-  run_after_duration.reset();
-  // Start another new call to trigger another new fetch once the
-  // backoff expires.
-  state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                            /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  // Tick until the next fetch starts.
-  creds_->AddResult(kExpectedError);
-  while (!run_after_duration.has_value()) event_engine_->Tick();
-  EXPECT_EQ(creds_->num_fetches(), 3);
-  // Check backoff time again.
-  EXPECT_EQ(run_after_duration, std::chrono::milliseconds(2560))
-      << "actual: " << run_after_duration->count();
-}
-
-TEST_F(TokenFetcherCredentialsTest, FetchNotStartedAfterBackoffWithoutRpc) {
-  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
-  event_engine_->SetRunAfterDurationCallback(
-      [&](FuzzingEventEngine::Duration duration) {
-        run_after_duration = duration;
-      });
-  ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
-  // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                                 /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration.has_value()) event_engine_->Tick();
-  // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
-  run_after_duration.reset();
-  // Tick until the backoff expires.  No new fetch should be started.
-  event_engine_->TickUntilIdle();
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  // Now start a new request, which will trigger a new fetch.
-  creds_->AddResult(MakeToken("foo"));
-  state = RequestMetadataState::NewInstance(
-      absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 2);
-}
-
-TEST_F(TokenFetcherCredentialsTest, ShutdownWhileBackoffTimerPending) {
-  const absl::Status kExpectedError = absl::UnavailableError("bummer, dude");
-  absl::optional<FuzzingEventEngine::Duration> run_after_duration;
-  event_engine_->SetRunAfterDurationCallback(
-      [&](FuzzingEventEngine::Duration duration) {
-        run_after_duration = duration;
-      });
-  ExecCtx exec_ctx;
-  creds_->AddResult(kExpectedError);
-  // First request will trigger a fetch, which will fail.
-  auto state = RequestMetadataState::NewInstance(kExpectedError, "",
-                                                 /*expect_delay=*/true);
-  state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  EXPECT_EQ(creds_->num_fetches(), 1);
-  while (!run_after_duration.has_value()) event_engine_->Tick();
-  // Make sure backoff was set for the right period.
-  EXPECT_EQ(run_after_duration, std::chrono::seconds(1));
-  run_after_duration.reset();
-  // Do nothing else.  Make sure the creds shut down correctly.
-}
-
 // The subclass of ExternalAccountCredentials for testing.
 // ExternalAccountCredentials is an abstract class so we can't directly test
 // against it.
@@ -2812,6 +2483,8 @@ TEST_F(CredentialsTest,
                       "sa-impersonation/true config-lifetime/true",
                       grpc_version_string()));
 }
+
+using grpc_event_engine::experimental::FuzzingEventEngine;
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
@@ -3066,8 +2739,7 @@ TEST_F(ExternalAccountCredentialsTest, FailureInvalidTokenUrl) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: Invalid token url: "
       "invalid_token_url. Error: INVALID_ARGUMENT: Could not parse "
       "'scheme' from uri 'invalid_token_url'. Scheme not found.");
@@ -3105,8 +2777,7 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: Invalid service account impersonation url: "
       "invalid_service_account_impersonation_url. Error: INVALID_ARGUMENT: "
       "Could not parse 'scheme' from uri "
@@ -3146,8 +2817,7 @@ TEST_F(ExternalAccountCredentialsTest,
       httpcli_get_should_not_be_called,
       external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token,
       httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: Missing or invalid access_token in "
       "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599, "
       "\"token_type\":\"Bearer\"}.");
@@ -3435,8 +3105,7 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAVAILABLE.
-  grpc_error_handle expected_error = absl::InternalError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: Failed to load file: "
       "non_exisiting_file due to error(fdopen): No such file or directory");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -3486,8 +3155,7 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: The content of the file is not a "
       "valid json object.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -4153,8 +3821,7 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_TRUE(creds.ok()) << creds.status();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: Creating aws request signer failed.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -4195,8 +3862,7 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_TRUE(creds.ok()) << creds.status();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE(
       "error fetching oauth2 token: "
       "Missing role name when retrieving signing keys.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -4486,190 +4152,6 @@ TEST_F(CredentialsTest, TestXdsCredentialsCompareFailure) {
   grpc_channel_credentials_release(fake_creds);
   grpc_channel_credentials_release(xds_creds_1);
   grpc_channel_credentials_release(xds_creds_2);
-}
-
-class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
- protected:
-  void SetUp() override {
-    g_http_status = 200;
-    g_audience = "";
-    g_token = nullptr;
-    g_on_http_request_error = nullptr;
-    HttpRequest::SetOverride(HttpGetOverride, httpcli_post_should_not_be_called,
-                             httpcli_put_should_not_be_called);
-  }
-
-  void TearDown() override {
-    HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  }
-
-  static void ValidateHttpRequest(const grpc_http_request* request,
-                                  const URI& uri) {
-    EXPECT_EQ(uri.authority(), "metadata.google.internal.");
-    EXPECT_EQ(uri.path(),
-              "/computeMetadata/v1/instance/service-accounts/default/identity");
-    EXPECT_THAT(
-        uri.query_parameter_map(),
-        ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
-    ASSERT_EQ(request->hdr_count, 1);
-    EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
-    EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
-  }
-
-  static int HttpGetOverride(const grpc_http_request* request, const URI& uri,
-                             Timestamp /*deadline*/, grpc_closure* on_done,
-                             grpc_http_response* response) {
-    // Validate request.
-    ValidateHttpRequest(request, uri);
-    // Generate response.
-    *response = http_response(g_http_status, g_token == nullptr ? "" : g_token);
-    ExecCtx::Run(DEBUG_LOCATION, on_done,
-                 g_on_http_request_error == nullptr ? absl::OkStatus()
-                                                    : *g_on_http_request_error);
-    return 1;
-  }
-
-  // Constructs a synthetic JWT token that's just valid enough for the
-  // call creds to extract the expiration date.
-  static std::string MakeToken(Timestamp expiration) {
-    gpr_timespec ts = expiration.as_timespec(GPR_CLOCK_REALTIME);
-    std::string json = absl::StrCat("{\"exp\":", ts.tv_sec, "}");
-    return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
-  }
-
-  static int g_http_status;
-  static absl::string_view g_audience;
-  static const char* g_token;
-  static absl::Status* g_on_http_request_error;
-};
-
-int GcpServiceAccountIdentityCredentialsTest::g_http_status;
-absl::string_view GcpServiceAccountIdentityCredentialsTest::g_audience;
-const char* GcpServiceAccountIdentityCredentialsTest::g_token;
-absl::Status* GcpServiceAccountIdentityCredentialsTest::g_on_http_request_error;
-
-TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
-  g_audience = "CV-6";
-  auto token = MakeToken(Timestamp::Now() + Duration::Hours(1));
-  g_token = token.c_str();
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), g_token);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-// HTTP status 429 is mapped to UNAVAILABLE as per
-// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
-TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
-  g_audience = "CV-5_Midway";
-  g_http_status = 429;
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnavailableError("JWT fetch failed with status 429"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-// HTTP status 400 is mapped to INTERNAL as per
-// https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md,
-// so it should be rewritten as UNAUTHENTICATED.
-TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus400) {
-  g_audience = "CV-8_SantaCruzIslands";
-  g_http_status = 400;
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("JWT fetch failed with status 400"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpIOError) {
-  g_audience = "CV-2_CoralSea";
-  absl::Status status = absl::InternalError("uh oh");
-  g_on_http_request_error = &status;
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnavailableError("INTERNAL:uh oh"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenHasWrongNumberOfDots) {
-  g_audience = "CV-7_Guadalcanal";
-  std::string bad_token = "foo.bar";
-  g_token = bad_token.c_str();
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("error parsing JWT token"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotBase64) {
-  g_audience = "CVE-56_Makin";
-  std::string bad_token = "foo.&.bar";
-  g_token = bad_token.c_str();
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("error parsing JWT token"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotJson) {
-  g_audience = "CVE-73_Samar";
-  std::string bad_token =
-      absl::StrCat("foo.", absl::WebSafeBase64Escape("xxx"), ".bar");
-  g_token = bad_token.c_str();
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("error parsing JWT token"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-}
-
-TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
-  g_audience = "CVL-23_Leyte";
-  std::string bad_token = absl::StrCat(
-      "foo.", absl::WebSafeBase64Escape("{\"exp\":\"foo\"}"), ".bar");
-  g_token = bad_token.c_str();
-  ExecCtx exec_ctx;
-  auto creds =
-      MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("error parsing JWT token"), "");
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
 }
 
 }  // namespace
