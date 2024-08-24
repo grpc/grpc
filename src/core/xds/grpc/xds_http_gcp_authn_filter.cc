@@ -100,6 +100,8 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     errors->AddError("could not parse GCP auth filter config");
     return absl::nullopt;
   }
+// FIXME: this is being added to the method config, not the top-level
+// service config
   return FilterConfig{ConfigProtoName(),
                       Json::FromObject(ValidateFilterConfig(
                           instance_name, context, gcp_auth, errors))};
@@ -134,7 +136,8 @@ XdsHttpGcpAuthnFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   CHECK_EQ(filter_config_override, nullptr);
-  return ServiceConfigJsonEntry{"gcp_auth", JsonDump(hcm_filter_config.config)};
+  return ServiceConfigJsonEntry{"gcp_authentication",
+                                JsonDump(hcm_filter_config.config)};
 }
 
 }  // namespace grpc_core

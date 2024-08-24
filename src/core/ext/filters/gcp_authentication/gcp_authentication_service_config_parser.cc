@@ -48,7 +48,7 @@ const JsonLoaderInterface* GcpAuthenticationParsedConfig::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<GcpAuthenticationParsedConfig>()
-          .OptionalField("configs",
+          .OptionalField("gcp_authentication",
                          &GcpAuthenticationParsedConfig::configs_)
           .Finish();
   return loader;
