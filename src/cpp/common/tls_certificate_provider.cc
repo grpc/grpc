@@ -51,7 +51,7 @@ FileWatcherCertificateProvider::Create(
     const std::string& private_key_path,
     const std::string& identity_certificate_path,
     const std::string& root_cert_path, unsigned int refresh_interval_sec) {
-  auto provider = ::grpc_core::FileWatcherCertificateProvider::Create(
+  auto provider = grpc_core::FileWatcherCertificateProvider::Create(
       private_key_path, identity_certificate_path, root_cert_path,
       refresh_interval_sec);
   if (!provider.ok()) {

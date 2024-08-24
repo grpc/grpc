@@ -49,7 +49,7 @@ namespace {
 
 absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
   absl::StatusOr<std::vector<X509*>> parsed_roots =
-      grpc_core::ParsePemCertificateChain(root_certificates);
+      ParsePemCertificateChain(root_certificates);
   if (!parsed_roots.ok()) {
     return parsed_roots.status();
   }
@@ -63,7 +63,7 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
                                     absl::string_view private_key) {
   // Check that the cert chain consists of valid PEM blocks.
   absl::StatusOr<std::vector<X509*>> parsed_certs =
-      grpc_core::ParsePemCertificateChain(cert_chain);
+      ParsePemCertificateChain(cert_chain);
   if (!parsed_certs.ok()) {
     return parsed_certs.status();
   }
@@ -72,7 +72,7 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   }
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
-      grpc_core::ParsePemPrivateKey(private_key);
+      ParsePemPrivateKey(private_key);
   if (!parsed_private_key.ok()) {
     return parsed_private_key.status();
   }
