@@ -12,29 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Mapping, NoReturn, Optional, Sequence
-
 import grpc
-from grpc._typing import MetadataType
-from grpc_testing import Time
 from grpc_testing import _common
-from grpc_testing._server import _rpc
 
 
 class ServicerContext(grpc.ServicerContext):
-    _rpc: _rpc.Rpc
-    _time: Time
-    _deadline: float
-
-    def __init__(self, rpc: _rpc.Rpc, time: Time, deadline: float):
+    def __init__(self, rpc, time, deadline):
         self._rpc = rpc
         self._time = time
         self._deadline = deadline
 
-    def is_active(self) -> bool:
+    def is_active(self):
         return self._rpc.is_active()
 
-    def time_remaining(self) -> Optional[float]:
+    def time_remaining(self):
         if self._rpc.is_active():
             if self._deadline is None:
                 return None
@@ -43,33 +34,31 @@ class ServicerContext(grpc.ServicerContext):
         else:
             return 0.0
 
-    def cancel(self) -> None:
+    def cancel(self):
         self._rpc.application_cancel()
 
-    def add_callback(self, callback: Callable[[], Any]) -> bool:
+    def add_callback(self, callback):
         return self._rpc.add_callback(callback)
 
-    def invocation_metadata(self) -> Optional[MetadataType]:
+    def invocation_metadata(self):
         return self._rpc.invocation_metadata()
 
-    def peer(self) -> str:
+    def peer(self):
         raise NotImplementedError()
 
-    def peer_identities(self) -> Optional[Sequence[bytes]]:
+    def peer_identities(self):
         raise NotImplementedError()
 
-    def peer_identity_key(self) -> Optional[str]:
+    def peer_identity_key(self):
         raise NotImplementedError()
 
-    def auth_context(self) -> Mapping[str, Sequence[bytes]]:
+    def auth_context(self):
         raise NotImplementedError()
 
-    def set_compression(self) -> None:
+    def set_compression(self):
         raise NotImplementedError()
 
-    def send_initial_metadata(
-        self, initial_metadata: Optional[MetadataType]
-    ) -> None:
+    def send_initial_metadata(self, initial_metadata):
         initial_metadata_sent = self._rpc.send_initial_metadata(
             _common.fuss_with_metadata(initial_metadata)
         )
@@ -78,26 +67,24 @@ class ServicerContext(grpc.ServicerContext):
                 "ServicerContext.send_initial_metadata called too late!"
             )
 
-    def disable_next_message_compression(self) -> None:
+    def disable_next_message_compression(self):
         raise NotImplementedError()
 
-    def set_trailing_metadata(
-        self, trailing_metadata: Optional[MetadataType]
-    ) -> None:
+    def set_trailing_metadata(self, trailing_metadata):
         self._rpc.set_trailing_metadata(
             _common.fuss_with_metadata(trailing_metadata)
         )
 
-    def abort(self, code: grpc.StatusCode, details: str) -> NoReturn:
+    def abort(self, code, details):
         with self._rpc._condition:
             self._rpc._abort(code, details)
         raise Exception()
 
-    def abort_with_status(self, status: grpc.Status) -> NoReturn:
+    def abort_with_status(self, status):
         raise NotImplementedError()
 
-    def set_code(self, code: grpc.StatusCode) -> None:
+    def set_code(self, code):
         self._rpc.set_code(code)
 
-    def set_details(self, details: str) -> None:
+    def set_details(self, details):
         self._rpc.set_details(details)

@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Mapping
-
-from google.protobuf import descriptor  # pytype: disable=pyi-error
-from grpc_testing import Server
-from grpc_testing import Time
-from grpc_testing._server import _server  # pytype: disable=pyi-error
+from grpc_testing._server import _server
 
 
-def server_from_dictionary(
-    descriptors_to_servicers: Mapping[descriptor.ServiceDescriptor, Any],
-    time: Time,
-) -> Server:
+def server_from_dictionary(descriptors_to_servicers, time):
     return _server.server_from_descriptor_to_servicers(
         descriptors_to_servicers, time
     )

@@ -12,16 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Optional, Tuple
-
-from google.protobuf import descriptor  # pytype: disable=pyi-error
-import grpc
-from grpc._typing import DeserializingFunction
-from grpc._typing import MetadataType
-from grpc._typing import SerializingFunction
 import grpc_testing
 from grpc_testing._channel import _channel_rpc
-from grpc_testing._channel import _channel_state
 from grpc_testing._channel import _multi_callable
 
 
@@ -29,62 +21,56 @@ from grpc_testing._channel import _multi_callable
 # test infrastructure.
 # pylint: disable=unused-argument
 class TestingChannel(grpc_testing.Channel):
-    _time: float
-    _state: _channel_state.State
-
-    def __init__(self, time: float, state: _channel_state.State):
+    def __init__(self, time, state):
         self._time = time
         self._state = state
 
-    def subscribe(
-        self,
-        callback: Callable[[grpc.ChannelConnectivity], None],
-        try_to_connect: bool = False,
-    ) -> None:
+    def subscribe(self, callback, try_to_connect=False):
         raise NotImplementedError()
 
-    def unsubscribe(
-        self, callback: Callable[[grpc.ChannelConnectivity], None]
-    ) -> None:
+    def unsubscribe(self, callback):
         raise NotImplementedError()
+
+    def _get_registered_call_handle(self, method: str) -> int:
+        pass
 
     def unary_unary(
         self,
-        method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
         _registered_method=False,
-    ) -> grpc.UnaryUnaryMultiCallable:
+    ):
         return _multi_callable.UnaryUnary(method, self._state)
 
     def unary_stream(
         self,
-        method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
         _registered_method=False,
-    ) -> grpc.UnaryStreamMultiCallable:
+    ):
         return _multi_callable.UnaryStream(method, self._state)
 
     def stream_unary(
         self,
-        method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
         _registered_method=False,
-    ) -> grpc.StreamUnaryMultiCallable:
+    ):
         return _multi_callable.StreamUnary(method, self._state)
 
     def stream_stream(
         self,
-        method: str,
-        request_serializer: Optional[SerializingFunction] = None,
-        response_deserializer: Optional[DeserializingFunction] = None,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
         _registered_method=False,
-    ) -> grpc.StreamStreamMultiCallable:
+    ):
         return _multi_callable.StreamStream(method, self._state)
 
-    def _close(self) -> None:
+    def _close(self):
         # TODO(https://github.com/grpc/grpc/issues/12531): Decide what
         # action to take here, if any?
         pass
@@ -96,27 +82,19 @@ class TestingChannel(grpc_testing.Channel):
         self._close()
         return False
 
-    def close(self) -> None:
+    def close(self):
         self._close()
 
-    def take_unary_unary(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], Any, grpc_testing.UnaryUnaryChannelRpc]:
+    def take_unary_unary(self, method_descriptor):
         return _channel_rpc.unary_unary(self._state, method_descriptor)
 
-    def take_unary_stream(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], Any, grpc_testing.UnaryStreamChannelRpc]:
+    def take_unary_stream(self, method_descriptor):
         return _channel_rpc.unary_stream(self._state, method_descriptor)
 
-    def take_stream_unary(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], grpc_testing.StreamUnaryChannelRpc]:
+    def take_stream_unary(self, method_descriptor):
         return _channel_rpc.stream_unary(self._state, method_descriptor)
 
-    def take_stream_stream(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], grpc_testing.StreamStreamChannelRpc]:
+    def take_stream_stream(self, method_descriptor):
         return _channel_rpc.stream_stream(self._state, method_descriptor)
 
 

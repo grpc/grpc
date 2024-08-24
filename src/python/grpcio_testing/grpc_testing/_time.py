@@ -14,12 +14,9 @@
 """Test times."""
 
 import collections
-from collections.abc import Iterable
 import logging
 import threading
 import time as _time
-import types
-from typing import Any, Callable, Optional, Sequence
 
 import grpc
 import grpc_testing
@@ -28,7 +25,7 @@ logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
-def _call(behaviors: Iterable[Callable[[], Any]]):
+def _call(behaviors):
     for behavior in behaviors:
         try:
             behavior()
@@ -36,7 +33,7 @@ def _call(behaviors: Iterable[Callable[[], Any]]):
             _LOGGER.exception('Exception calling behavior "%r"!', behavior)
 
 
-def _call_in_thread(behaviors: Sequence[Optional[Callable[[], Any]]]) -> None:
+def _call_in_thread(behaviors):
     calling = threading.Thread(target=_call, args=(behaviors,))
     calling.start()
     # NOTE(nathaniel): Because this function is called from "strict" Time
@@ -63,7 +60,7 @@ class _Delta(
     pass
 
 
-def _process(state: _State, now: float) -> _Delta:
+def _process(state, now):
     mature_behaviors = []
     earliest_mature_time = None
     while state.times_to_behaviors:
@@ -86,18 +83,13 @@ def _process(state: _State, now: float) -> _Delta:
 
 
 class _Future(grpc.Future):
-    _state: _State
-    _behavior: Callable[[], Any]
-    _time: float
-    _cancelled: bool
-
-    def __init__(self, state: _State, behavior: Callable[[], Any], time: float):
+    def __init__(self, state, behavior, time):
         self._state = state
         self._behavior = behavior
         self._time = time
         self._cancelled = False
 
-    def cancel(self) -> bool:
+    def cancel(self):
         with self._state.condition:
             if self._cancelled:
                 return True
@@ -115,42 +107,36 @@ class _Future(grpc.Future):
                     self._cancelled = True
                     return True
 
-    def cancelled(self) -> bool:
+    def cancelled(self):
         with self._state.condition:
             return self._cancelled
 
-    def running(self) -> bool:
+    def running(self):
         raise NotImplementedError()
 
-    def done(self) -> bool:
+    def done(self):
         raise NotImplementedError()
 
-    def result(self, timeout: Optional[float] = None) -> Any:
+    def result(self, timeout=None):
         raise NotImplementedError()
 
-    def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
+    def exception(self, timeout=None):
         raise NotImplementedError()
 
-    def traceback(
-        self, timeout: Optional[float] = None
-    ) -> Optional[types.TracebackType]:
+    def traceback(self, timeout=None):
         raise NotImplementedError()
 
-    def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
+    def add_done_callback(self, fn):
         raise NotImplementedError()
 
 
 class StrictRealTime(grpc_testing.Time):
-    _state: _State
-    _active: bool
-    _caling: Optional[float]
-
     def __init__(self):
         self._state = _State()
         self._active = False
         self._calling = None
 
-    def _activity(self) -> None:
+    def _activity(self):
         while True:
             with self._state.condition:
                 while True:
@@ -169,7 +155,7 @@ class StrictRealTime(grpc_testing.Time):
                         self._state.condition.wait(timeout=timeout)
             _call(delta.mature_behaviors)
 
-    def _ensure_called_through(self, time: float) -> None:
+    def _ensure_called_through(self, time):
         with self._state.condition:
             while (
                 self._state.times_to_behaviors
@@ -177,7 +163,7 @@ class StrictRealTime(grpc_testing.Time):
             ) or (self._calling is not None and self._calling < time):
                 self._state.condition.wait()
 
-    def _call_at(self, behavior: Callable[[], Any], time: float) -> _Future:
+    def _call_at(self, behavior, time):
         with self._state.condition:
             self._state.times_to_behaviors[time].append(behavior)
             if self._active:
@@ -188,38 +174,35 @@ class StrictRealTime(grpc_testing.Time):
                 self._active = True
             return _Future(self._state, behavior, time)
 
-    def time(self) -> float:
+    def time(self):
         return _time.time()
 
-    def call_in(self, behavior: Callable[[], Any], delay: float) -> _Future:
+    def call_in(self, behavior, delay):
         return self._call_at(behavior, _time.time() + delay)
 
-    def call_at(self, behavior: Callable[[], Any], time: float) -> _Future:
+    def call_at(self, behavior, time):
         return self._call_at(behavior, time)
 
-    def sleep_for(self, duration: float) -> None:
+    def sleep_for(self, duration):
         time = _time.time() + duration
         _time.sleep(duration)
         self._ensure_called_through(time)
 
-    def sleep_until(self, time: float) -> None:
+    def sleep_until(self, time):
         _time.sleep(max(0, time - _time.time()))
         self._ensure_called_through(time)
 
 
 class StrictFakeTime(grpc_testing.Time):
-    _state: _State
-    _time: float
-
-    def __init__(self, time: float):
+    def __init__(self, time):
         self._state = _State()
         self._time = time
 
-    def time(self) -> float:
+    def time(self):
         return self._time
 
-    def call_in(self, behavior: Callable[[], Any], delay: float) -> _Future:
-        if delay <= 0.0:
+    def call_in(self, behavior, delay):
+        if delay <= 0:
             _call_in_thread((behavior,))
         else:
             with self._state.condition:
@@ -227,7 +210,7 @@ class StrictFakeTime(grpc_testing.Time):
                 self._state.times_to_behaviors[time].append(behavior)
         return _Future(self._state, behavior, time)
 
-    def call_at(self, behavior: Callable[[], Any], time: float) -> _Future:
+    def call_at(self, behavior, time):
         with self._state.condition:
             if time <= self._time:
                 _call_in_thread((behavior,))
@@ -235,14 +218,14 @@ class StrictFakeTime(grpc_testing.Time):
                 self._state.times_to_behaviors[time].append(behavior)
         return _Future(self._state, behavior, time)
 
-    def sleep_for(self, duration: float) -> None:
-        if 0.0 < duration:
+    def sleep_for(self, duration):
+        if 0 < duration:
             with self._state.condition:
                 self._time += duration
                 delta = _process(self._state, self._time)
                 _call_in_thread(delta.mature_behaviors)
 
-    def sleep_until(self, time: float) -> None:
+    def sleep_until(self, time):
         with self._state.condition:
             if self._time < time:
                 self._time = time

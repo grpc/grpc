@@ -15,17 +15,9 @@
 
 import abc
 import collections
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
-
-from google.protobuf import descriptor  # pytype: disable=pyi-error
-import grpc
-from grpc._typing import MetadataType
-from grpc._typing import TuplifiedMetadataType
 
 
-def _fuss(
-    tuplified_metadata: Union[TuplifiedMetadataType, Tuple]
-) -> MetadataType:
+def _fuss(tuplified_metadata):
     return tuplified_metadata + (
         (
             "grpc.metadata_added_by_runtime",
@@ -37,16 +29,14 @@ def _fuss(
 FUSSED_EMPTY_METADATA = _fuss(())
 
 
-def fuss_with_metadata(metadata: Optional[MetadataType]) -> MetadataType:
+def fuss_with_metadata(metadata):
     if metadata is None:
         return FUSSED_EMPTY_METADATA
     else:
         return _fuss(tuple(metadata))
 
 
-def rpc_names(
-    service_descriptors: descriptor.ServiceDescriptor,
-) -> Mapping[str, descriptor.ServiceDescriptor]:
+def rpc_names(service_descriptors):
     rpc_names_to_descriptors = {}
     for service_descriptor in service_descriptors:
         for method_descriptor in service_descriptor.methods_by_name.values():
@@ -73,39 +63,39 @@ class ChannelRpcRead(
 
 class ChannelRpcHandler(abc.ABC):
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]:
+    def initial_metadata(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_request(self, request: Any) -> bool:
+    def add_request(self, request):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def close_requests(self) -> None:
+    def close_requests(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_response(self) -> ChannelRpcRead:
+    def take_response(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self, code: grpc.StatusCode, details: str) -> bool:
+    def cancel(self, code, details):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def termination(self) -> Tuple[MetadataType, grpc.StatusCode, str]:
+    def termination(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def is_active(self) -> bool:
+    def is_active(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def time_remaining(self) -> float:
+    def time_remaining(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_callback(self, callback: Callable) -> None:
+    def add_callback(self, callback):
         raise NotImplementedError()
 
 
@@ -113,12 +103,12 @@ class ChannelHandler(abc.ABC):
     @abc.abstractmethod
     def invoke_rpc(
         self,
-        method_full_rpc_name: str,
-        invocation_metadata: MetadataType,
-        requests: List,
-        requests_closed: bool,
-        timeout: Optional[float],
-    ) -> ChannelRpcHandler:
+        method_full_rpc_name,
+        invocation_metadata,
+        requests,
+        requests_closed,
+        timeout,
+    ):
         raise NotImplementedError()
 
 
@@ -141,28 +131,23 @@ TERMINATED = ServerRpcRead(None, False, True)
 
 class ServerRpcHandler(abc.ABC):
     @abc.abstractmethod
-    def send_initial_metadata(self, initial_metadata: MetadataType) -> None:
+    def send_initial_metadata(self, initial_metadata):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_request(self) -> ServerRpcRead:
+    def take_request(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_response(self, response: Any) -> None:
+    def add_response(self, response):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_termination(
-        self,
-        trailing_metadata: Optional[MetadataType],
-        code: grpc.StatusCode,
-        details: str,
-    ) -> None:
+    def send_termination(self, trailing_metadata, code, details):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_termination_callback(self, callback: Callable[[], None]) -> bool:
+    def add_termination_callback(self, callback):
         raise NotImplementedError()
 
 

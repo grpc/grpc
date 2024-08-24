@@ -14,11 +14,9 @@
 """Objects for use in testing gRPC Python-using application code."""
 
 import abc
-from typing import Any, Callable, Iterator, Mapping, Optional, Tuple
 
-from google.protobuf import descriptor  # pytype: disable=pyi-error
+from google.protobuf import descriptor
 import grpc
-from grpc._typing import MetadataType
 
 
 class UnaryUnaryChannelRpc(abc.ABC):
@@ -28,9 +26,7 @@ class UnaryUnaryChannelRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def send_initial_metadata(
-        self, initial_metadata: Optional[MetadataType]
-    ) -> None:
+    def send_initial_metadata(self, initial_metadata):
         """Sends the RPC's initial metadata to the system under test.
 
         Args:
@@ -40,18 +36,12 @@ class UnaryUnaryChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self) -> bool:
+    def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def terminate(
-        self,
-        response: Any,
-        trailing_metadata: MetadataType,
-        code: grpc.StatusCode,
-        details: str,
-    ) -> None:
+    def terminate(self, response, trailing_metadata, code, details):
         """Terminates the RPC.
 
         Args:
@@ -70,9 +60,7 @@ class UnaryStreamChannelRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def send_initial_metadata(
-        self, initial_metadata: Optional[MetadataType]
-    ) -> None:
+    def send_initial_metadata(self, initial_metadata):
         """Sends the RPC's initial metadata to the system under test.
 
         Args:
@@ -82,7 +70,7 @@ class UnaryStreamChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_response(self, response: Any) -> None:
+    def send_response(self, response):
         """Sends a response to the system under test.
 
         Args:
@@ -91,17 +79,12 @@ class UnaryStreamChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self) -> bool:
+    def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def terminate(
-        self,
-        trailing_metadata: MetadataType,
-        code: grpc.StatusCode,
-        details: str,
-    ) -> None:
+    def terminate(self, trailing_metadata, code, details):
         """Terminates the RPC.
 
         Args:
@@ -119,9 +102,7 @@ class StreamUnaryChannelRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def send_initial_metadata(
-        self, initial_metadata: Optional[MetadataType]
-    ) -> None:
+    def send_initial_metadata(self, initial_metadata):
         """Sends the RPC's initial metadata to the system under test.
 
         Args:
@@ -131,7 +112,7 @@ class StreamUnaryChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_request(self) -> Any:
+    def take_request(self):
         """Draws one of the requests added to the RPC by the system under test.
 
         This method blocks until the system under test has added to the RPC
@@ -146,23 +127,17 @@ class StreamUnaryChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def requests_closed(self) -> bool:
+    def requests_closed(self):
         """Blocks until the system under test has closed the request stream."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self) -> bool:
+    def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def terminate(
-        self,
-        response: Any,
-        trailing_metadata: MetadataType,
-        code: grpc.StatusCode,
-        details: str,
-    ) -> None:
+    def terminate(self, response, trailing_metadata, code, details):
         """Terminates the RPC.
 
         Args:
@@ -181,9 +156,7 @@ class StreamStreamChannelRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def send_initial_metadata(
-        self, initial_metadata: Optional[MetadataType]
-    ) -> None:
+    def send_initial_metadata(self, initial_metadata):
         """Sends the RPC's initial metadata to the system under test.
 
         Args:
@@ -193,7 +166,7 @@ class StreamStreamChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_request(self) -> Any:
+    def take_request(self):
         """Draws one of the requests added to the RPC by the system under test.
 
         This method blocks until the system under test has added to the RPC
@@ -208,7 +181,7 @@ class StreamStreamChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_response(self, response: Any) -> None:
+    def send_response(self, response):
         """Sends a response to the system under test.
 
         Args:
@@ -217,22 +190,17 @@ class StreamStreamChannelRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def requests_closed(self) -> bool:
+    def requests_closed(self):
         """Blocks until the system under test has closed the request stream."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self) -> bool:
+    def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def terminate(
-        self,
-        trailing_metadata: MetadataType,
-        code: grpc.StatusCode,
-        details: str,
-    ):
+    def terminate(self, trailing_metadata, code, details):
         """Terminates the RPC.
 
         Args:
@@ -247,9 +215,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
     """A grpc.Channel double with which to test a system that invokes RPCs."""
 
     @abc.abstractmethod
-    def take_unary_unary(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], Any, UnaryUnaryChannelRpc]:
+    def take_unary_unary(self, method_descriptor):
         """Draws an RPC currently being made by the system under test.
 
         If the given descriptor does not identify any RPC currently being made
@@ -268,9 +234,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_unary_stream(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], Any, UnaryStreamChannelRpc]:
+    def take_unary_stream(self, method_descriptor):
         """Draws an RPC currently being made by the system under test.
 
         If the given descriptor does not identify any RPC currently being made
@@ -289,9 +253,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_stream_unary(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], StreamUnaryChannelRpc]:
+    def take_stream_unary(self, method_descriptor):
         """Draws an RPC currently being made by the system under test.
 
         If the given descriptor does not identify any RPC currently being made
@@ -310,9 +272,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_stream_stream(
-        self, method_descriptor: descriptor.MethodDescriptor
-    ) -> Tuple[Optional[MetadataType], StreamStreamChannelRpc]:
+    def take_stream_stream(self, method_descriptor):
         """Draws an RPC currently being made by the system under test.
 
         If the given descriptor does not identify any RPC currently being made
@@ -338,7 +298,7 @@ class UnaryUnaryServerRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]:
+    def initial_metadata(self):
         """Accesses the initial metadata emitted by the system under test.
 
         This method blocks until the system under test has added initial
@@ -352,19 +312,17 @@ class UnaryUnaryServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self) -> bool:
+    def cancel(self):
         """Cancels the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def termination(
-        self,
-    ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, str]:
+    def termination(self):
         """Blocks until the system under test has terminated the RPC.
 
         Returns:
-          A (response, trailing_metadata, code, details) tuple with the RPC's
-            response, trailing metadata, StatusCode, and details.
+          A (response, trailing_metadata, code, details) sequence with the RPC's
+            response, trailing metadata, code, and details.
         """
         raise NotImplementedError()
 
@@ -376,7 +334,7 @@ class UnaryStreamServerRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]:
+    def initial_metadata(self):
         """Accesses the initial metadata emitted by the system under test.
 
         This method blocks until the system under test has added initial
@@ -390,7 +348,7 @@ class UnaryStreamServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_response(self) -> Any:
+    def take_response(self):
         """Draws one of the responses added to the RPC by the system under test.
 
         Successive calls to this method return responses in the same order in
@@ -402,19 +360,17 @@ class UnaryStreamServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self) -> bool:
+    def cancel(self):
         """Cancels the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def termination(
-        self,
-    ) -> Tuple[Optional[MetadataType], grpc.StatusCode, Optional[str]]:
+    def termination(self):
         """Blocks until the system under test has terminated the RPC.
 
         Returns:
-          A (trailing_metadata, code, details) tuple with the RPC's trailing
-            metadata, StatusCode, and details.
+          A (trailing_metadata, code, details) sequence with the RPC's trailing
+            metadata, code, and details.
         """
         raise NotImplementedError()
 
@@ -426,7 +382,7 @@ class StreamUnaryServerRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]:
+    def initial_metadata(self):
         """Accesses the initial metadata emitted by the system under test.
 
         This method blocks until the system under test has added initial
@@ -440,7 +396,7 @@ class StreamUnaryServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_request(self, request: Any) -> None:
+    def send_request(self, request):
         """Sends a request to the system under test.
 
         Args:
@@ -450,24 +406,22 @@ class StreamUnaryServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def requests_closed(self) -> bool:
+    def requests_closed(self):
         """Indicates the end of the RPC's request stream."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self) -> bool:
+    def cancel(self):
         """Cancels the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def termination(
-        self,
-    ) -> Tuple[Any, Optional[MetadataType], grpc.StatusCode, str]:
+    def termination(self):
         """Blocks until the system under test has terminated the RPC.
 
         Returns:
-          A (response, trailing_metadata, code, details) tuple with the RPC's
-            response, trailing metadata, StatusCode, and details.
+          A (response, trailing_metadata, code, details) sequence with the RPC's
+            response, trailing metadata, code, and details.
         """
         raise NotImplementedError()
 
@@ -479,7 +433,7 @@ class StreamStreamServerRpc(abc.ABC):
     """
 
     @abc.abstractmethod
-    def initial_metadata(self) -> Optional[MetadataType]:
+    def initial_metadata(self):
         """Accesses the initial metadata emitted by the system under test.
 
         This method blocks until the system under test has added initial
@@ -493,7 +447,7 @@ class StreamStreamServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_request(self, request: Any) -> None:
+    def send_request(self, request):
         """Sends a request to the system under test.
 
         Args:
@@ -503,12 +457,12 @@ class StreamStreamServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def requests_closed(self) -> bool:
+    def requests_closed(self):
         """Indicates the end of the RPC's request stream."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_response(self) -> Any:
+    def take_response(self):
         """Draws one of the responses added to the RPC by the system under test.
 
         Successive calls to this method return responses in the same order in
@@ -520,19 +474,17 @@ class StreamStreamServerRpc(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self) -> bool:
+    def cancel(self):
         """Cancels the RPC."""
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def termination(
-        self,
-    ) -> Tuple[Optional[MetadataType], grpc.StatusCode, str]:
+    def termination(self):
         """Blocks until the system under test has terminated the RPC.
 
         Returns:
-          A (trailing_metadata, code, details) tuple with the RPC's trailing
-            metadata, StatusCode, and details.
+          A (trailing_metadata, code, details) sequence with the RPC's trailing
+            metadata, code, and details.
         """
         raise NotImplementedError()
 
@@ -542,12 +494,8 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def invoke_unary_unary(
-        self,
-        method_descriptor: descriptor.MethodDescriptor,
-        invocation_metadata: Optional[MetadataType],
-        request: Any,
-        timeout: Optional[float],
-    ) -> UnaryUnaryServerRpc:
+        self, method_descriptor, invocation_metadata, request, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -565,12 +513,8 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def invoke_unary_stream(
-        self,
-        method_descriptor: descriptor.MethodDescriptor,
-        invocation_metadata: Optional[MetadataType],
-        request: Any,
-        timeout: Optional[float],
-    ) -> UnaryStreamServerRpc:
+        self, method_descriptor, invocation_metadata, request, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -588,11 +532,8 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def invoke_stream_unary(
-        self,
-        method_descriptor: descriptor.MethodDescriptor,
-        invocation_metadata: Optional[MetadataType],
-        timeout: Optional[float],
-    ) -> StreamUnaryServerRpc:
+        self, method_descriptor, invocation_metadata, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -609,11 +550,8 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def invoke_stream_stream(
-        self,
-        method_descriptor: descriptor.MethodDescriptor,
-        invocation_metadata: Optional[MetadataType],
-        timeout: Optional[float],
-    ) -> StreamStreamServerRpc:
+        self, method_descriptor, invocation_metadata, timeout
+    ):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -639,7 +577,7 @@ class Time(abc.ABC):
     """
 
     @abc.abstractmethod
-    def time(self) -> float:
+    def time(self):
         """Accesses the current test time.
 
         Returns:
@@ -648,9 +586,7 @@ class Time(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def call_in(
-        self, behavior: Callable[[], Any], delay: Optional[float]
-    ) -> grpc.Future:
+    def call_in(self, behavior, delay):
         """Adds a behavior to be called after some time.
 
         Args:
@@ -664,9 +600,7 @@ class Time(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def call_at(
-        self, behavior: Callable[[], Any], time: Optional[float]
-    ) -> grpc.Future:
+    def call_at(self, behavior, time):
         """Adds a behavior to be called at a specific time.
 
         Args:
@@ -680,7 +614,7 @@ class Time(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def sleep_for(self, duration: float) -> None:
+    def sleep_for(self, duration):
         """Blocks for some length of test time.
 
         Args:
@@ -689,7 +623,7 @@ class Time(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def sleep_until(self, time: float) -> None:
+    def sleep_until(self, time):
         """Blocks until some test time.
 
         Args:
@@ -698,7 +632,7 @@ class Time(abc.ABC):
         raise NotImplementedError()
 
 
-def strict_real_time() -> Time:
+def strict_real_time():
     """Creates a Time backed by the Python interpreter's time.
 
     The returned instance will be "strict" with respect to callbacks
@@ -714,7 +648,7 @@ def strict_real_time() -> Time:
     return _time.StrictRealTime()
 
 
-def strict_fake_time(now: float) -> Time:
+def strict_fake_time(now):
     """Creates a Time that can be manipulated by test code.
 
     The returned instance maintains an internal representation of time
@@ -734,9 +668,7 @@ def strict_fake_time(now: float) -> Time:
     return _time.StrictFakeTime(now)
 
 
-def channel(
-    service_descriptors: Iterator[descriptor.ServiceDescriptor], time: float
-) -> Channel:
+def channel(service_descriptors, time):
     """Creates a Channel for use in tests of a gRPC Python-using system.
 
     Args:
@@ -748,15 +680,12 @@ def channel(
     Returns:
       A Channel for use in tests.
     """
-    from grpc_testing import _channel  # pytype: disable=pyi-error
+    from grpc_testing import _channel
 
     return _channel.testing_channel(service_descriptors, time)
 
 
-def server_from_dictionary(
-    descriptors_to_servicers: Mapping[descriptor.ServiceDescriptor, Any],
-    time: Time,
-) -> Server:
+def server_from_dictionary(descriptors_to_servicers, time):
     """Creates a Server for use in tests of a gRPC Python-using system.
 
     Args:
@@ -769,6 +698,6 @@ def server_from_dictionary(
     Returns:
       A Server for use in tests.
     """
-    from grpc_testing import _server  # pytype: disable=pyi-error
+    from grpc_testing import _server
 
     return _server.server_from_dictionary(descriptors_to_servicers, time)
