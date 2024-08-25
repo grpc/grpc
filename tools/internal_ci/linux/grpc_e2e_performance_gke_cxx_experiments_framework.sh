@@ -57,7 +57,7 @@ BIGQUERY_TABLE_8CORE=e2e_benchmark_cxx_experiments.results_8core
 BIGQUERY_TABLE_32CORE=e2e_benchmark_cxx_experiments.results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/cxx_experiment/${LOAD_TEST_PREFIX}"
+PREBUILT_IMAGE_PREFIX="us-docker.pkg.dev/grpc-testing/e2etest-prebuilt"
 UNIQUE_IDENTIFIER="cxx-experiment-$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.
