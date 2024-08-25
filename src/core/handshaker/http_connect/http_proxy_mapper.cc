@@ -126,39 +126,59 @@ absl::optional<std::string> GetHttpProxyServer(
   // an empty value means "don't use proxy"
   if (uri_str->empty()) return absl::nullopt;
   uri = URI::Parse(*uri_str);
-  if (!uri.ok() || uri->authority().empty()) {
-    LOG(ERROR) << "cannot parse value of 'http_proxy' env var. Error: "
-               << uri.status();
+  if (!uri.ok()) {
+    LOG(ERROR) << "cannot parse value of 'http_proxy' env var. " << *uri_str
+               << " Error: " << uri.status();
     return absl::nullopt;
   }
-  if (uri->scheme() != "http") {
-    LOG(ERROR) << "'" << uri->scheme() << "' scheme not supported in proxy URI";
-    return absl::nullopt;
+  if (uri->scheme() == "http") {
+    if (uri->authority().empty()) {
+      LOG(ERROR) << "authority for http:// proxy uri must be non-empty."
+                 << *uri_str;
+      return absl::nullopt;
+    }
+    // Split on '@' to separate user credentials from host
+    char** authority_strs = nullptr;
+    size_t authority_nstrs;
+    gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
+                     &authority_nstrs);
+    CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
+    absl::optional<std::string> proxy_name;
+    if (authority_nstrs == 1) {
+      // User cred not present in authority
+      proxy_name = authority_strs[0];
+    } else if (authority_nstrs == 2) {
+      // User cred found
+      *user_cred = authority_strs[0];
+      proxy_name = authority_strs[1];
+      VLOG(2) << "userinfo found in proxy URI";
+    } else {
+      // Bad authority
+      proxy_name = absl::nullopt;
+    }
+    for (size_t i = 0; i < authority_nstrs; i++) {
+      gpr_free(authority_strs[i]);
+    }
+    gpr_free(authority_strs);
+    return proxy_name;
+  } else if (uri->scheme() == "http+unix") {
+    if (uri->authority().empty()) {
+      // for http+unix:///path/to/socket
+      return absl::StrCat("unix:", uri->path());
+    }
+    // for http+unix://%2Fpath%2Fto%2Fsocket
+    return absl::StrCat("unix:", uri->authority());
+  } else if (uri->scheme() == "http+unix-abstract") {
+    if (uri->authority().empty()) {
+      // for http+unix-abstract:///path/to/socket
+      return absl::StrCat("unix-abstract:", uri->path());
+    }
+    // for http+unix-abstract://%2Fpath%2Fto%2Fsocket
+    return absl::StrCat("unix-abstract:", uri->authority());
   }
-  // Split on '@' to separate user credentials from host
-  char** authority_strs = nullptr;
-  size_t authority_nstrs;
-  gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
-                   &authority_nstrs);
-  CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
-  absl::optional<std::string> proxy_name;
-  if (authority_nstrs == 1) {
-    // User cred not present in authority
-    proxy_name = authority_strs[0];
-  } else if (authority_nstrs == 2) {
-    // User cred found
-    *user_cred = authority_strs[0];
-    proxy_name = authority_strs[1];
-    VLOG(2) << "userinfo found in proxy URI";
-  } else {
-    // Bad authority
-    proxy_name = absl::nullopt;
-  }
-  for (size_t i = 0; i < authority_nstrs; i++) {
-    gpr_free(authority_strs[i]);
-  }
-  gpr_free(authority_strs);
-  return proxy_name;
+
+  LOG(ERROR) << "'" << uri->scheme() << "' scheme not supported in proxy URI";
+  return absl::nullopt;
 }
 
 // Adds the default port if target does not contain a port.

@@ -299,8 +299,11 @@ class NoRetryFixture : public InsecureFixture {
 
 class HttpProxyFilter : public CoreTestFixture {
  public:
-  explicit HttpProxyFilter(const ChannelArgs& client_args)
-      : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get())) {}
+  explicit HttpProxyFilter(const ChannelArgs& client_args,
+                           grpc_local_connect_type connect_type,
+                           const std::string& socket_path)
+      : proxy_(grpc_end2end_http_proxy_create(client_args.ToC().get(),
+                                              connect_type, socket_path)) {}
   ~HttpProxyFilter() override { grpc_end2end_http_proxy_destroy(proxy_); }
 
  private:
@@ -327,11 +330,13 @@ class HttpProxyFilter : public CoreTestFixture {
     std::string proxy_uri;
     if (!proxy_auth_str.has_value()) {
       proxy_uri = absl::StrFormat(
-          "http://%s", grpc_end2end_http_proxy_get_proxy_name(proxy_));
+          "%s://%s", grpc_end2end_http_proxy_get_protocol(proxy_),
+          grpc_end2end_http_proxy_get_proxy_name(proxy_));
     } else {
-      proxy_uri =
-          absl::StrFormat("http://%s@%s", proxy_auth_str->c_str(),
-                          grpc_end2end_http_proxy_get_proxy_name(proxy_));
+      proxy_uri = absl::StrFormat(
+          "%s://%s@%s", grpc_end2end_http_proxy_get_protocol(proxy_),
+          proxy_auth_str->c_str(),
+          grpc_end2end_http_proxy_get_proxy_name(proxy_));
     }
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     auto* client = grpc_channel_create(
@@ -736,8 +741,45 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                 FEATURE_MASK_DO_NOT_FUZZ,
             nullptr,
             [](const ChannelArgs& client_args, const ChannelArgs&) {
-              return std::make_unique<HttpProxyFilter>(client_args);
+              return std::make_unique<HttpProxyFilter>(client_args, LOCAL_TCP,
+                  /*socket_path=*/"");
             }},
+#ifdef GRPC_HAVE_UNIX_SOCKET
+        CoreTestConfiguration{
+            "Chttp2HttpUnixProxy",
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
+            nullptr,
+            [](const ChannelArgs& client_args, const ChannelArgs&) {
+              gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+              return std::make_unique<HttpProxyFilter>(
+                  client_args, UDS,
+                  /*socket_path=*/
+                  absl::StrFormat("%s"
+                                  "grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
+                                  ".%" PRId64 ".%" PRId64,
+                                  temp_dir, getpid(), now.tv_sec, now.tv_nsec,
+                                  unique.fetch_add(1, std::memory_order_relaxed),
+                                  Rand()));
+            }},
+        CoreTestConfiguration{
+            "Chttp2HttpUnixAbstractProxy",
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_DO_NOT_FUZZ,
+            nullptr,
+            [](const ChannelArgs& client_args, const ChannelArgs&) {
+              gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+              // \0 for unix-abstract socket.
+              return std::make_unique<HttpProxyFilter>(
+                  client_args, UDS,
+                  /*socket_path=*/
+                  absl::StrFormat("%cgrpc_fullstack_test.%d.%" PRId64 ".%" PRId32
+                                  ".%" PRId64 ".%" PRId64,
+                                  '\0', getpid(), now.tv_sec, now.tv_nsec,
+                                  unique.fetch_add(1, std::memory_order_relaxed),
+                                  Rand()));
+            }},
+#endif
         CoreTestConfiguration{
             "Chttp2SslProxy",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_SECURE |
