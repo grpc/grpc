@@ -183,7 +183,7 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
 struct grpc_call_credentials
-    : public grpc_core::RefCounted<grpc_call_credentials> {
+    : public grpc_core::DualRefCounted<grpc_call_credentials> {
  public:
   // TODO(roth): Consider whether security connector actually needs to
   // be part of this interface.  Currently, it is here only for the

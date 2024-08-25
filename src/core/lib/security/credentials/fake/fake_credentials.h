@@ -99,6 +99,8 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
         key_(grpc_core::Slice::FromCopiedString(md_key)),
         value_(grpc_core::Slice::FromCopiedString(md_value)) {}
 
+  void Orphaned() override {}
+
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;

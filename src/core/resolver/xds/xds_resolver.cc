@@ -139,8 +139,7 @@ class XdsResolver final : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(
-        RefCountedPtr<const XdsDependencyManager::XdsConfig> config) override {
+    void OnUpdate(RefCountedPtr<const XdsConfig> config) override {
       resolver_->OnUpdate(std::move(config));
     }
 
@@ -363,7 +362,7 @@ class XdsResolver final : public Resolver {
     return it->second->Ref();
   }
 
-  void OnUpdate(RefCountedPtr<const XdsDependencyManager::XdsConfig> config);
+  void OnUpdate(RefCountedPtr<const XdsConfig> config);
   void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist(std::string context);
 
@@ -382,7 +381,7 @@ class XdsResolver final : public Resolver {
   const uint64_t channel_id_;
 
   OrphanablePtr<XdsDependencyManager> dependency_mgr_;
-  RefCountedPtr<const XdsDependencyManager::XdsConfig> current_config_;
+  RefCountedPtr<const XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
 
@@ -976,8 +975,7 @@ void XdsResolver::ShutdownLocked() {
   }
 }
 
-void XdsResolver::OnUpdate(
-    RefCountedPtr<const XdsDependencyManager::XdsConfig> config) {
+void XdsResolver::OnUpdate(RefCountedPtr<const XdsConfig> config) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[xds_resolver " << this << "] received updated xDS config";
   if (xds_client_ == nullptr) return;

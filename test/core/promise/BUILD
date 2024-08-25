@@ -540,6 +540,7 @@ grpc_proto_fuzzer(
         "//src/core:poll",
         "//src/core:race",
         "//src/core:seq",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

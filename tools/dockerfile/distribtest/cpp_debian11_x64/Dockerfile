@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:10
+FROM debian:11
 
-RUN apt-get update && apt-get install -y php php-dev php-pear wget zlib1g-dev
+# gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config && apt-get clean
 
-RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
-  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
+# C++ distribtests are setup in a way that requires git
+RUN apt-get update && apt-get install -y git && apt-get clean
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
+
+
+CMD ["bash"]
