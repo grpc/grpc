@@ -48,8 +48,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void discard_write(grpc_slice /*slice*/) {}
-
 namespace grpc_core {
 namespace testing {
 
