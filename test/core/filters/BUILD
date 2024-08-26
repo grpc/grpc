@@ -136,10 +136,8 @@ grpc_cc_test(
         "filter_test",
         "//:grpc",
         "//:grpc_security_base",
-        "//:promise",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
-        "//src/core:useful",
     ],
 )
 

@@ -48,16 +48,21 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
     ClientMetadata& /*md*/, GcpAuthenticationFilter* filter) {
   // Get the cluster name chosen for this RPC.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
-  CHECK_NE(service_config_call_data, nullptr);
   auto cluster_attribute =
       service_config_call_data->GetCallAttribute<XdsClusterAttribute>();
-  CHECK_NE(cluster_attribute, nullptr);
+  if (cluster_attribute == nullptr) {
+    return absl::OkStatus();  // Should never happen, but be defensive.
+  }
   absl::string_view cluster_name = cluster_attribute->cluster();
   // Look up the CDS resource for the cluster.
   auto it = filter->xds_config_->clusters.find(cluster_name);
-  CHECK(it != filter->xds_config_->clusters.end());
-  if (!it->second.ok()) return absl::OkStatus();  // Will fail later.
-  CHECK(it->second->cluster != nullptr);
+  if (it == filter->xds_config_->clusters.end()) {
+    return absl::OkStatus();  // Can't happen, but be defensive.
+  }
+  if (!it->second.ok()) return absl::OkStatus();
+  if (it->second->cluster == nullptr) {
+    return absl::OkStatus();  // Can't happen, but be defensive.
+  }
   auto& metadata_map = it->second->cluster->metadata;
   const XdsMetadataValue* metadata_value =
       metadata_map.Find(filter->filter_config_->filter_instance_name);
@@ -71,7 +76,6 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   // Get the call creds instance.
   auto creds = filter->GetCallCredentials(
       DownCast<const XdsGcpAuthnAudienceMetadataValue*>(metadata_value)->url());
-  CHECK(creds != nullptr);
   // Add the call creds instance to the call.
   auto* arena = GetContext<Arena>();
   auto* security_ctx = DownCast<grpc_client_security_context*>(

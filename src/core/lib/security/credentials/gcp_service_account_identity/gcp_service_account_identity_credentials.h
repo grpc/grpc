@@ -66,7 +66,9 @@ class GcpServiceAccountIdentityCallCredentials
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override;
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
   absl::string_view audience() const { return audience_; }
 

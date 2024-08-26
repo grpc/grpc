@@ -14,7 +14,7 @@
 
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
 
-#include <string>
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -23,26 +23,16 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
-#include "src/core/util/useful.h"
 #include "src/core/resolver/xds/xds_config.h"
 #include "test/core/filters/filter_test.h"
 
@@ -63,28 +53,45 @@ class GcpAuthenticationFilterTest : public FilterTest<GcpAuthenticationFilter> {
 
   static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::string_view cluster, absl::string_view filter_instance_name,
-      std::unique_ptr<XdsStructMetadataValue> audience_metadata) {
-    auto cluster_resource = std::make_shared<XdsClusterResource>();
-    if (audience_metadata != nullptr) {
-      cluster_resource->metadata.Insert(filter_instance_name,
-                                        std::move(audience_metadata));
-    }
+      std::unique_ptr<XdsMetadataValue> audience_metadata) {
     auto xds_config = MakeRefCounted<XdsConfig>();
-    xds_config->clusters[cluster].emplace(
-        std::move(cluster_resource), nullptr, "");
+    if (!cluster.empty()) {
+      auto cluster_resource = std::make_shared<XdsClusterResource>();
+      if (audience_metadata != nullptr) {
+        cluster_resource->metadata.Insert(filter_instance_name,
+                                          std::move(audience_metadata));
+      }
+      xds_config->clusters[cluster].emplace(
+          std::move(cluster_resource), nullptr, "");
+    }
+    return xds_config;
+  }
+
+  static RefCountedPtr<const XdsConfig> MakeXdsConfigWithCluster(
+      absl::string_view cluster,
+      absl::StatusOr<XdsConfig::ClusterConfig> cluster_config) {
+    auto xds_config = MakeRefCounted<XdsConfig>();
+    xds_config->clusters[cluster] = std::move(cluster_config);
     return xds_config;
   }
 
   ChannelArgs MakeChannelArgs(
       absl::string_view service_config_json, absl::string_view cluster,
       absl::string_view filter_instance_name,
-      std::unique_ptr<XdsStructMetadataValue> audience_metadata) {
+      std::unique_ptr<XdsMetadataValue> audience_metadata) {
     auto service_config = MakeServiceConfig(service_config_json);
     auto xds_config = MakeXdsConfig(cluster, filter_instance_name,
                                     std::move(audience_metadata));
     return ChannelArgs()
                .SetObject(std::move(service_config))
                .SetObject(std::move(xds_config));
+  }
+
+  static RefCountedPtr<grpc_call_credentials> GetCallCreds(const Call& call) {
+    auto* security_ctx = DownCast<grpc_client_security_context*>(
+        call.arena()->GetContext<SecurityContext>());
+    if (security_ctx == nullptr) return nullptr;
+    return security_ctx->creds;
   }
 };
 
@@ -146,6 +153,107 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
                 "gcp_auth: xds config not found in channel args"));
 }
 
+TEST_F(GcpAuthenticationFilterTest, NoOpIfNoXdsClusterAttribute) {
+  constexpr absl::string_view kClusterName = "foo";
+  constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
+  constexpr absl::string_view kServiceConfigJson =
+      "{\n"
+      "  \"gcp_authentication\": [\n"
+      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
+      "  ]\n"
+      "}";
+  auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
+                                      kFilterInstanceName, nullptr);
+  Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  EXPECT_EVENT(Started(&call, ::testing::_));
+  call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
+  EXPECT_EVENT(Finished(
+      &call, HasMetadataResult(absl::OkStatus())));
+  Step();
+  // Call creds were not set.
+  EXPECT_EQ(GetCallCreds(call), nullptr);
+}
+
+TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotPresentInXdsConfig) {
+  constexpr absl::string_view kClusterName = "foo";
+  constexpr absl::string_view kServiceConfigJson =
+      "{\n"
+      "  \"gcp_authentication\": [\n"
+      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
+      "  ]\n"
+      "}";
+  auto channel_args = MakeChannelArgs(kServiceConfigJson, /*cluster=*/"",
+                                      /*filter_instance_name=*/"", nullptr);
+  Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  XdsClusterAttribute xds_cluster_attribute(kClusterName);
+  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  EXPECT_EVENT(Started(&call, ::testing::_));
+  call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
+  EXPECT_EVENT(Finished(
+      &call, HasMetadataResult(absl::OkStatus())));
+  Step();
+  // Call creds were not set.
+  EXPECT_EQ(GetCallCreds(call), nullptr);
+}
+
+TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotOkayInXdsConfig) {
+  constexpr absl::string_view kClusterName = "foo";
+  constexpr absl::string_view kServiceConfigJson =
+      "{\n"
+      "  \"gcp_authentication\": [\n"
+      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
+      "  ]\n"
+      "}";
+  auto channel_args =
+      ChannelArgs()
+          .SetObject(MakeServiceConfig(kServiceConfigJson))
+          .SetObject(MakeXdsConfigWithCluster(
+              kClusterName, absl::UnavailableError("nope")));
+  Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  XdsClusterAttribute xds_cluster_attribute(kClusterName);
+  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  EXPECT_EVENT(Started(&call, ::testing::_));
+  call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
+  EXPECT_EVENT(Finished(
+      &call, HasMetadataResult(absl::OkStatus())));
+  Step();
+  // Call creds were not set.
+  EXPECT_EQ(GetCallCreds(call), nullptr);
+}
+
+TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterResourceMissingInXdsConfig) {
+  constexpr absl::string_view kClusterName = "foo";
+  constexpr absl::string_view kServiceConfigJson =
+      "{\n"
+      "  \"gcp_authentication\": [\n"
+      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
+      "  ]\n"
+      "}";
+  auto channel_args =
+      ChannelArgs()
+          .SetObject(MakeServiceConfig(kServiceConfigJson))
+          .SetObject(MakeXdsConfigWithCluster(
+              kClusterName, XdsConfig::ClusterConfig(nullptr, nullptr, "")));
+  Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  XdsClusterAttribute xds_cluster_attribute(kClusterName);
+  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  EXPECT_EVENT(Started(&call, ::testing::_));
+  call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
+  EXPECT_EVENT(Finished(
+      &call, HasMetadataResult(absl::OkStatus())));
+  Step();
+  // Call creds were not set.
+  EXPECT_EQ(GetCallCreds(call), nullptr);
+}
+
 TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
@@ -157,33 +265,80 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
       "}";
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
-// FIXME: not working
   Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  XdsClusterAttribute xds_cluster_attribute(kClusterName);
+  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
   EXPECT_EVENT(Finished(
       &call, HasMetadataResult(absl::OkStatus())));
   Step();
+  // Call creds were not set.
+  EXPECT_EQ(GetCallCreds(call), nullptr);
 }
 
-#if 0
-TEST_F(GcpAuthenticationFilterTest, CallCredsFails) {
-  Call call(MakeChannelWithCallCredsResult(
-      absl::UnauthenticatedError("access denied")));
-  call.Start(call.NewClientMetadata({{":authority", target()}}));
+TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
+  constexpr absl::string_view kClusterName = "foo";
+  constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
+  constexpr absl::string_view kServiceConfigJson =
+      "{\n"
+      "  \"gcp_authentication\": [\n"
+      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
+      "  ]\n"
+      "}";
+  auto channel_args = MakeChannelArgs(
+      kServiceConfigJson, kClusterName, kFilterInstanceName,
+      std::make_unique<XdsStructMetadataValue>(Json()));
+  Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  XdsClusterAttribute xds_cluster_attribute(kClusterName);
+  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  call.Start(call.NewClientMetadata());
   EXPECT_EVENT(Finished(
-      &call, HasMetadataResult(absl::UnauthenticatedError("access denied"))));
+      &call,
+      HasMetadataResult(absl::UnavailableError(
+          absl::StrCat("audience metadata in wrong format for cluster ",
+                       kClusterName)))));
   Step();
+  // Call creds were not set.
+  EXPECT_EQ(GetCallCreds(call), nullptr);
 }
 
-TEST_F(GcpAuthenticationFilterTest, RewritesInvalidStatusFromCallCreds) {
-  Call call(MakeChannelWithCallCredsResult(absl::AbortedError("nope")));
-  call.Start(call.NewClientMetadata({{":authority", target()}}));
-  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::InternalError(
-                                   "Illegal status code from call credentials; "
-                                   "original status: ABORTED: nope"))));
+TEST_F(GcpAuthenticationFilterTest, SetsCallCredsIfClusterHasAudience) {
+  constexpr absl::string_view kClusterName = "foo";
+  constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
+  constexpr absl::string_view kServiceConfigJson =
+      "{\n"
+      "  \"gcp_authentication\": [\n"
+      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
+      "  ]\n"
+      "}";
+  constexpr absl::string_view kAudience = "bar";
+  auto channel_args = MakeChannelArgs(
+      kServiceConfigJson, kClusterName, kFilterInstanceName,
+      std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
+  Call call(MakeChannel(std::move(channel_args)).value());
+  ServiceConfigCallData service_config_call_data(call.arena());
+  XdsClusterAttribute xds_cluster_attribute(kClusterName);
+  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  EXPECT_EVENT(Started(&call, ::testing::_));
+  call.Start(call.NewClientMetadata());
+  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
+  EXPECT_EVENT(Finished(
+      &call, HasMetadataResult(absl::OkStatus())));
   Step();
+  // Call creds were set with the right audience.
+  auto call_creds = GetCallCreds(call);
+  ASSERT_NE(call_creds, nullptr);
+  EXPECT_EQ(call_creds->type(),
+            GcpServiceAccountIdentityCallCredentials::Type());
+  EXPECT_EQ(
+      call_creds->debug_string(),
+      absl::StrCat("GcpServiceAccountIdentityCallCredentials(", kAudience,
+                   ")"));
 }
-#endif
 
 }  // namespace
 }  // namespace grpc_core
