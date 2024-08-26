@@ -28,8 +28,8 @@
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/util/upb_utils.h"
 #include "src/core/util/string.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
@@ -47,30 +47,27 @@ bool XdsGcpAuthFilterEnabled() {
 namespace {
 
 std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
-    const XdsResourceType::DecodeContext& context,
-    XdsExtension extension, ValidationErrors* errors) {
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) {
   absl::string_view* serialized_proto =
       absl::get_if<absl::string_view>(&extension.value);
   if (serialized_proto == nullptr) {
     errors->AddError("could not parse audience metadata");
     return nullptr;
   }
-  auto* proto =
-      envoy_extensions_filters_http_gcp_authn_v3_Audience_parse(
-          serialized_proto->data(), serialized_proto->size(),
-          context.arena);
+  auto* proto = envoy_extensions_filters_http_gcp_authn_v3_Audience_parse(
+      serialized_proto->data(), serialized_proto->size(), context.arena);
   if (proto == nullptr) {
     errors->AddError("could not parse audience metadata");
     return nullptr;
   }
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_extensions_filters_http_gcp_authn_v3_Audience_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_TextEncode(reinterpret_cast<const upb_Message*>(proto),
-                   msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(proto), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     VLOG(2) << "[xds_client " << context.client
             << "] cluster metadata Audience: " << buf;
   }

@@ -2460,8 +2460,11 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
   };
 
   void SetUp() override {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
+    creds_ = MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
   }
 
   void TearDown() override {
@@ -2480,11 +2483,8 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
         Slice::FromCopiedString(token), expiration);
   }
 
-  std::shared_ptr<FuzzingEventEngine> event_engine_ =
-      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
-                                           fuzzing_event_engine::Actions());
-  RefCountedPtr<TestTokenFetcherCredentials> creds_ =
-      MakeRefCounted<TestTokenFetcherCredentials>(event_engine_);
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
+  RefCountedPtr<TestTokenFetcherCredentials> creds_;
 };
 
 TEST_F(TokenFetcherCredentialsTest, Basic) {
@@ -4491,6 +4491,7 @@ TEST_F(CredentialsTest, TestXdsCredentialsCompareFailure) {
 class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    grpc_init();
     g_http_status = 200;
     g_audience = "";
     g_token = nullptr;
@@ -4501,6 +4502,7 @@ class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
 
   void TearDown() override {
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+    grpc_shutdown_blocking();
   }
 
   static void ValidateHttpRequest(const grpc_http_request* request,
