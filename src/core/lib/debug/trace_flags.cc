@@ -114,6 +114,7 @@ TraceFlag subchannel_pool_trace(false, "subchannel_pool");
 TraceFlag tcp_trace(false, "tcp");
 TraceFlag timer_trace(false, "timer");
 TraceFlag timer_check_trace(false, "timer_check");
+TraceFlag token_fetcher_credentials_trace(false, "token_fetcher_credentials");
 TraceFlag tsi_trace(false, "tsi");
 TraceFlag weighted_round_robin_lb_trace(false, "weighted_round_robin_lb");
 TraceFlag weighted_target_lb_trace(false, "weighted_target_lb");
@@ -206,6 +207,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"tcp", &tcp_trace},
           {"timer", &timer_trace},
           {"timer_check", &timer_check_trace},
+          {"token_fetcher_credentials", &token_fetcher_credentials_trace},
           {"tsi", &tsi_trace},
           {"weighted_round_robin_lb", &weighted_round_robin_lb_trace},
           {"weighted_target_lb", &weighted_target_lb_trace},
