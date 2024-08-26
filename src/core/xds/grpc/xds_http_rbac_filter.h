@@ -49,9 +49,11 @@ class XdsHttpRbacFilter final : public XdsHttpFilterImpl {
   void AddFilter(InterceptionChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const override;
+  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+      const FilterConfig& hcm_filter_config) const override;
   bool IsSupportedOnClients() const override { return false; }
   bool IsSupportedOnServers() const override { return true; }
 };

@@ -232,7 +232,7 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpFaultFilter::GenerateServiceConfig(
+XdsHttpFaultFilter::GenerateMethodConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   Json policy_json = filter_config_override != nullptr
@@ -240,6 +240,12 @@ XdsHttpFaultFilter::GenerateServiceConfig(
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
   return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpFaultFilter::GenerateServiceConfig(
+    const FilterConfig& hcm_filter_config) const {
+  return ServiceConfigJsonEntry{"", ""};
 }
 
 }  // namespace grpc_core

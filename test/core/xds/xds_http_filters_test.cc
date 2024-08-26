@@ -302,26 +302,35 @@ TEST_F(XdsFaultInjectionFilterTest, ModifyChannelArgs) {
   EXPECT_EQ(*value, 1);
 }
 
-TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfigTopLevelConfig) {
+TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
   XdsHttpFilterImpl::FilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateServiceConfig(config, nullptr);
+  auto service_config = filter_->GenerateMethodConfig(config, nullptr);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
   EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
 }
 
-TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfigOverrideConfig) {
+TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
   XdsHttpFilterImpl::FilterConfig top_config;
   top_config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   XdsHttpFilterImpl::FilterConfig override_config;
   override_config.config =
       Json::FromObject({{"baz", Json::FromString("quux")}});
   auto service_config =
-      filter_->GenerateServiceConfig(top_config, &override_config);
+      filter_->GenerateMethodConfig(top_config, &override_config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
   EXPECT_EQ(service_config->element, "{\"baz\":\"quux\"}");
+}
+
+TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfig) {
+  XdsHttpFilterImpl::FilterConfig config;
+  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  auto service_config = filter_->GenerateServiceConfig(config);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_EQ(service_config->service_config_field_name, "");
+  EXPECT_EQ(service_config->element, "");
 }
 
 // For the fault injection filter, GenerateFilterConfig() and
@@ -594,15 +603,24 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparseable) {
       << status;
 }
 
-TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
+TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
   XdsHttpFilterImpl::FilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
-  auto config = filter_->GenerateServiceConfig(hcm_config, nullptr);
+  auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "rbacPolicy");
   EXPECT_EQ(config->element,
             JsonDump(Json::FromObject({{"name", Json::FromString("foo")}})));
+}
+
+TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
+  XdsHttpFilterImpl::FilterConfig config;
+  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  auto service_config = filter_->GenerateServiceConfig(config);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_EQ(service_config->service_config_field_name, "");
+  EXPECT_EQ(service_config->element, "");
 }
 
 // For the RBAC filter, the override config is a superset of the
@@ -1150,29 +1168,38 @@ TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
   EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
-TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigNoOverride) {
+TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigNoOverride) {
   XdsHttpFilterImpl::FilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
-  auto config = filter_->GenerateServiceConfig(hcm_config, nullptr);
+  auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
   EXPECT_EQ(config->element,
             JsonDump(Json::FromObject({{"name", Json::FromString("foo")}})));
 }
 
-TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigWithOverride) {
+TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigWithOverride) {
   XdsHttpFilterImpl::FilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
   XdsHttpFilterImpl::FilterConfig override_config = {
       filter_->OverrideConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("bar")}})};
-  auto config = filter_->GenerateServiceConfig(hcm_config, &override_config);
+  auto config = filter_->GenerateMethodConfig(hcm_config, &override_config);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
   EXPECT_EQ(config->element,
             JsonDump(Json::FromObject({{"name", Json::FromString("bar")}})));
+}
+
+TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfig) {
+  XdsHttpFilterImpl::FilterConfig config;
+  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  auto service_config = filter_->GenerateServiceConfig(config);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_EQ(service_config->service_config_field_name, "");
+  EXPECT_EQ(service_config->element, "");
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigTypedStruct) {
@@ -1622,6 +1649,24 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
       "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
       "error:GCP auth filter does not support config override]")
       << status;
+}
+
+TEST_F(XdsGcpAuthnFilterTest, GenerateMethodConfig) {
+  XdsHttpFilterImpl::FilterConfig config;
+  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  auto service_config = filter_->GenerateMethodConfig(config, nullptr);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_EQ(service_config->service_config_field_name, "");
+  EXPECT_EQ(service_config->element, "");
+}
+
+TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
+  XdsHttpFilterImpl::FilterConfig config;
+  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  auto service_config = filter_->GenerateServiceConfig(config);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+  EXPECT_EQ(service_config->service_config_field_name, "gcp_authentication");
+  EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
 }
 
 }  // namespace

@@ -54,9 +54,14 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
       ValidationErrors* errors) const override;
   void AddFilter(InterceptionChainBuilder& /*builder*/) const override {}
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
+    // This will never be called, since channel_filter() returns null.
+    return absl::UnimplementedError("router filter should never be called");
+  }
+  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+      const FilterConfig& /*hcm_filter_config*/) const override {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
