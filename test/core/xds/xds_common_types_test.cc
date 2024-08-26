@@ -74,7 +74,7 @@ class XdsCommonTypesTest : public ::testing::Test {
       : xds_client_(MakeXdsClient()),
         decode_context_{xds_client_.get(),
                         *xds_client_->bootstrap().servers().front(),
-                        &xds_common_types_test_trace, upb_def_pool_.ptr(),
+                        &xds_unittest_trace, upb_def_pool_.ptr(),
                         upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {

@@ -55,9 +55,8 @@ class XdsMetadataTest : public ::testing::Test {
       : xds_client_(MakeXdsClient()),
         decode_context_{xds_client_.get(),
                         *xds_client_->bootstrap().servers().front(),
-                        // FIXME: why does each test need its own tracer?
-                        &xds_cluster_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+                        &xds_unittest_trace, upb_def_pool_.ptr(),
+                        upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     auto bootstrap = GrpcXdsBootstrap::Create(
