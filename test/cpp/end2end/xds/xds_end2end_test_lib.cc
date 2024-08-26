@@ -353,6 +353,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (echo_host_from_authority_header) {
     request->mutable_param()->set_echo_host_from_authority_header(true);
   }
+  if (echo_metadata_initially) {
+    request->mutable_param()->set_echo_metadata_initially(true);
+  }
 }
 
 //
