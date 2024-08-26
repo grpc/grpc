@@ -38,8 +38,6 @@
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
-#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
-#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -51,7 +49,6 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
