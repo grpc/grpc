@@ -1818,6 +1818,8 @@ let package = Package(
         "src/core/resolver/resolver_registry.h",
         "src/core/resolver/server_address.h",
         "src/core/resolver/sockaddr/sockaddr_resolver.cc",
+        "src/core/resolver/xds/xds_config.cc",
+        "src/core/resolver/xds/xds_config.h",
         "src/core/resolver/xds/xds_dependency_manager.cc",
         "src/core/resolver/xds/xds_dependency_manager.h",
         "src/core/resolver/xds/xds_resolver.cc",

@@ -1161,6 +1161,7 @@ libs:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/resolver/xds/xds_config.h
   - src/core/resolver/xds/xds_dependency_manager.h
   - src/core/resolver/xds/xds_resolver_attributes.h
   - src/core/server/server.h
@@ -1987,6 +1988,7 @@ libs:
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/resolver/xds/xds_config.cc
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
   - src/core/server/server.cc
@@ -2129,6 +2131,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/log:initialize
   - grpc
 - name: grpc_test_util_unsecure
   build: private
@@ -2157,6 +2160,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/log:initialize
   - grpc_unsecure
 - name: grpc_unsecure
   build: all

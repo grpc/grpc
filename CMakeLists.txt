@@ -2573,6 +2573,7 @@ add_library(grpc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/resolver/xds/xds_config.cc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
   src/core/server/server.cc
@@ -2883,6 +2884,7 @@ target_link_libraries(grpc_test_util
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::log_initialize
   grpc
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2948,6 +2950,7 @@ target_link_libraries(grpc_test_util_unsecure
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::log_initialize
   grpc_unsecure
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)

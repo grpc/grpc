@@ -62,7 +62,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/json/json.h"
@@ -78,8 +78,6 @@
 namespace grpc_core {
 
 namespace {
-
-using XdsConfig = XdsDependencyManager::XdsConfig;
 
 //
 // global circuit breaker atomic map
