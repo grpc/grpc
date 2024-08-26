@@ -19,8 +19,8 @@ cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# This is to ensure we can push and pull images from gcr.io. We do not
-# necessarily need it to run load tests, but will need it when we employ
+# This is to ensure we can push and pull images from Artifact Registry. We do
+# not necessarily need it to run load tests, but will need it when we employ
 # pre-built images in the optimization.
 gcloud auth configure-docker
 
@@ -38,7 +38,7 @@ fi
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.psm_experimental_results_8core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
+PREBUILT_IMAGE_PREFIX="us-docker.pkg.dev/grpc-testing/e2etest-prebuilt"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.

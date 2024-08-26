@@ -331,13 +331,11 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     case GRPC_DTS_FH_8:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
-      if (GRPC_TRACE_FLAG_ENABLED(http)) {
-        LOG(INFO) << "INCOMING[" << t << "]: "
-                  << FrameTypeString(t->incoming_frame_type,
-                                     t->incoming_frame_flags)
-                  << " len:" << t->incoming_frame_size
-                  << absl::StrFormat(" id:0x%08x", t->incoming_stream_id);
-      }
+      GRPC_TRACE_LOG(http, INFO)
+          << "INCOMING[" << t << "]: "
+          << FrameTypeString(t->incoming_frame_type, t->incoming_frame_flags)
+          << " len:" << t->incoming_frame_size
+          << absl::StrFormat(" id:0x%08x", t->incoming_stream_id);
       t->deframe_state = GRPC_DTS_FRAME;
       err = init_frame_parser(t, requests_started);
       if (!err.ok()) {
@@ -453,10 +451,9 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
     default:
-      if (GRPC_TRACE_FLAG_ENABLED(http)) {
-        LOG(ERROR) << "Unknown frame type "
-                   << absl::StrFormat("%02x", t->incoming_frame_type);
-      }
+      GRPC_TRACE_LOG(http, ERROR)
+          << "Unknown frame type "
+          << absl::StrFormat("%02x", t->incoming_frame_type);
       return init_non_header_skip_frame_parser(t);
   }
 }
@@ -790,10 +787,8 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_stream* s = t->incoming_stream =
         grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
     if (s == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(http)) {
-        LOG(ERROR) << "Stream " << t->incoming_stream_id
-                   << " not found, ignoring WINDOW_UPDATE";
-      }
+      GRPC_TRACE_LOG(http, ERROR) << "Stream " << t->incoming_stream_id
+                                  << " not found, ignoring WINDOW_UPDATE";
       return init_non_header_skip_frame_parser(t);
     }
     s->call_tracer_wrapper.RecordIncomingBytes({9, 0, 0});
@@ -888,10 +883,8 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   if (GPR_LIKELY(err.ok())) {
     return err;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(http)) {
-    LOG(ERROR) << "INCOMING[" << t << ";" << s << "]: Parse failed with "
-               << err;
-  }
+  GRPC_TRACE_LOG(http, ERROR)
+      << "INCOMING[" << t << ";" << s << "]: Parse failed with " << err;
   if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);

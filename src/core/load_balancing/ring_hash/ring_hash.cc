@@ -570,15 +570,13 @@ absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
 void RingHash::RingHashEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << ring_hash_.get()
-              << "] connectivity changed for endpoint " << this << " ("
-              << ring_hash_->endpoints_[index_].ToString()
-              << ", child_policy=" << child_policy_.get()
-              << "): prev_state=" << ConnectivityStateName(connectivity_state_)
-              << " new_state=" << ConnectivityStateName(new_state) << " ("
-              << status << ")";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO)
+      << "[RH " << ring_hash_.get() << "] connectivity changed for endpoint "
+      << this << " (" << ring_hash_->endpoints_[index_].ToString()
+      << ", child_policy=" << child_policy_.get()
+      << "): prev_state=" << ConnectivityStateName(connectivity_state_)
+      << " new_state=" << ConnectivityStateName(new_state) << " (" << status
+      << ")";
   if (child_policy_ == nullptr) return;  // Already orphaned.
   // Update state.
   const bool entered_transient_failure =
@@ -756,15 +754,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] setting connectivity state to "
-              << ConnectivityStateName(state) << " (num_idle=" << num_idle
-              << ", num_connecting=" << num_connecting
-              << ", num_ready=" << num_ready
-              << ", num_transient_failure=" << num_transient_failure
-              << ", size=" << endpoints_.size()
-              << ") -- start_connection_attempt=" << start_connection_attempt;
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO)
+      << "[RH " << this << "] setting connectivity state to "
+      << ConnectivityStateName(state) << " (num_idle=" << num_idle
+      << ", num_connecting=" << num_connecting << ", num_ready=" << num_ready
+      << ", num_transient_failure=" << num_transient_failure
+      << ", size=" << endpoints_.size()
+      << ") -- start_connection_attempt=" << start_connection_attempt;
   // In TRANSIENT_FAILURE, report the last reported failure.
   // Otherwise, report OK.
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -833,13 +829,12 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-        LOG(INFO) << "[RH " << this
-                  << "] triggering internal connection attempt for endpoint "
-                  << it->second.get() << " ("
-                  << endpoints_[first_idle_index].ToString() << ") (index "
-                  << first_idle_index << " of " << endpoints_.size() << ")";
-      }
+      GRPC_TRACE_LOG(ring_hash_lb, INFO)
+          << "[RH " << this
+          << "] triggering internal connection attempt for endpoint "
+          << it->second.get() << " (" << endpoints_[first_idle_index].ToString()
+          << ") (index " << first_idle_index << " of " << endpoints_.size()
+          << ")";
       it->second->RequestConnectionLocked();
     }
   }

@@ -22,7 +22,6 @@
 #include "absl/log/check.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_COMPILE_WITH_CRONET

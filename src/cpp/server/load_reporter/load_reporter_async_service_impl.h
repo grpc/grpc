@@ -29,7 +29,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/grpcpp.h>

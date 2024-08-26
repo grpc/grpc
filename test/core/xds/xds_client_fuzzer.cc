@@ -336,7 +336,7 @@ class Fuzzer {
 
 bool squelch = true;
 
-DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Message& message) {
+DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Msg& message) {
   grpc_init();
   grpc_core::Fuzzer fuzzer(message.bootstrap());
   for (int i = 0; i < message.actions_size(); i++) {

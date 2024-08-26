@@ -26,7 +26,6 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"

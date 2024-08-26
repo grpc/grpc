@@ -447,28 +447,24 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
     weight = qps / (utilization + penalty);
   }
   if (weight == 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
-                << ": qps=" << qps << ", eps=" << eps
-                << ", utilization=" << utilization
-                << ": error_util_penalty=" << error_utilization_penalty
-                << ", weight=" << weight << " (not updating)";
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+        << ": qps=" << qps << ", eps=" << eps << ", utilization=" << utilization
+        << ": error_util_penalty=" << error_utilization_penalty
+        << ", weight=" << weight << " (not updating)";
     return;
   }
   Timestamp now = Timestamp::Now();
   // Grab the lock and update the data.
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
-              << ": qps=" << qps << ", eps=" << eps
-              << ", utilization=" << utilization
-              << " error_util_penalty=" << error_utilization_penalty
-              << " : setting weight=" << weight << " weight_=" << weight_
-              << " now=" << now.ToString()
-              << " last_update_time_=" << last_update_time_.ToString()
-              << " non_empty_since_=" << non_empty_since_.ToString();
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+      << ": qps=" << qps << ", eps=" << eps << ", utilization=" << utilization
+      << " error_util_penalty=" << error_utilization_penalty
+      << " : setting weight=" << weight << " weight_=" << weight_
+      << " now=" << now.ToString()
+      << " last_update_time_=" << last_update_time_.ToString()
+      << " non_empty_since_=" << non_empty_since_.ToString();
   if (non_empty_since_ == Timestamp::InfFuture()) non_empty_since_ = now;
   weight_ = weight;
   last_update_time_ = now;
@@ -478,16 +474,14 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
     Timestamp now, Duration weight_expiration_period, Duration blackout_period,
     uint64_t* num_not_yet_usable, uint64_t* num_stale) {
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
-              << ": getting weight: now=" << now.ToString()
-              << " weight_expiration_period="
-              << weight_expiration_period.ToString()
-              << " blackout_period=" << blackout_period.ToString()
-              << " last_update_time_=" << last_update_time_.ToString()
-              << " non_empty_since_=" << non_empty_since_.ToString()
-              << " weight_=" << weight_;
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+      << ": getting weight: now=" << now.ToString()
+      << " weight_expiration_period=" << weight_expiration_period.ToString()
+      << " blackout_period=" << blackout_period.ToString()
+      << " last_update_time_=" << last_update_time_.ToString()
+      << " non_empty_since_=" << non_empty_since_.ToString()
+      << " weight_=" << weight_;
   // If the most recent update was longer ago than the expiration
   // period, reset non_empty_since_ so that we apply the blackout period
   // again if we start getting data again in the future, and return 0.
@@ -865,16 +859,13 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* wrr_endpoint_list = endpoint_list<WrrEndpointList>();
   auto* wrr = policy<WeightedRoundRobin>();
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr << "] connectivity changed for child " << this
-              << ", endpoint_list " << wrr_endpoint_list << " (index "
-              << Index() << " of " << wrr_endpoint_list->size()
-              << "): prev_state="
-              << (old_state.has_value() ? ConnectivityStateName(*old_state)
-                                        : "N/A")
-              << " new_state=" << ConnectivityStateName(new_state) << " ("
-              << status << ")";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr << "] connectivity changed for child " << this
+      << ", endpoint_list " << wrr_endpoint_list << " (index " << Index()
+      << " of " << wrr_endpoint_list->size() << "): prev_state="
+      << (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A")
+      << " new_state=" << ConnectivityStateName(new_state) << " (" << status
+      << ")";
   if (new_state == GRPC_CHANNEL_IDLE) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] child " << this

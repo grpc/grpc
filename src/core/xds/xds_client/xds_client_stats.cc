@@ -100,26 +100,21 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
       cluster_name_(cluster_name),
       eds_service_name_(eds_service_name),
       name_(std::move(name)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client_.get()
-              << "] created locality stats " << this << " for {" << lrs_server_
-              << ", " << cluster_name_ << ", " << eds_service_name_ << ", "
-              << (name_ == nullptr ? "<none>"
-                                   : name_->human_readable_string().c_str())
-              << "}";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client_.get() << "] created locality stats "
+      << this << " for {" << lrs_server_ << ", " << cluster_name_ << ", "
+      << eds_service_name_ << ", "
+      << (name_ == nullptr ? "<none>" : name_->human_readable_string().c_str())
+      << "}";
 }
 
 XdsClusterLocalityStats::~XdsClusterLocalityStats() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    LOG(INFO) << "[xds_client " << xds_client_.get()
-              << "] destroying locality stats " << this << " for {"
-              << lrs_server_ << ", " << cluster_name_ << ", "
-              << eds_service_name_ << ", "
-              << (name_ == nullptr ? "<none>"
-                                   : name_->human_readable_string().c_str())
-              << "}";
-  }
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[xds_client " << xds_client_.get() << "] destroying locality stats "
+      << this << " for {" << lrs_server_ << ", " << cluster_name_ << ", "
+      << eds_service_name_ << ", "
+      << (name_ == nullptr ? "<none>" : name_->human_readable_string().c_str())
+      << "}";
   xds_client_->RemoveClusterLocalityStats(lrs_server_, cluster_name_,
                                           eds_service_name_, name_, this);
   xds_client_.reset(DEBUG_LOCATION, "LocalityStats");

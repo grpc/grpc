@@ -30,9 +30,9 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
@@ -49,6 +49,8 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/http_client/parser.h"
@@ -58,18 +60,22 @@
 
 // override functions return 1 if they handled the request, 0 otherwise
 typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
-                                         const char* host, const char* path,
+                                         const grpc_core::URI& uri,
                                          grpc_core::Timestamp deadline,
                                          grpc_closure* on_complete,
                                          grpc_http_response* response);
-typedef int (*grpc_httpcli_post_override)(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body_bytes, size_t body_size, grpc_core::Timestamp deadline,
-    grpc_closure* on_complete, grpc_http_response* response);
-typedef int (*grpc_httpcli_put_override)(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body_bytes, size_t body_size, grpc_core::Timestamp deadline,
-    grpc_closure* on_complete, grpc_http_response* response);
+typedef int (*grpc_httpcli_post_override)(const grpc_http_request* request,
+                                          const grpc_core::URI& uri,
+                                          absl::string_view body,
+                                          grpc_core::Timestamp deadline,
+                                          grpc_closure* on_complete,
+                                          grpc_http_response* response);
+typedef int (*grpc_httpcli_put_override)(const grpc_http_request* request,
+                                         const grpc_core::URI& uri,
+                                         absl::string_view body,
+                                         grpc_core::Timestamp deadline,
+                                         grpc_closure* on_complete,
+                                         grpc_http_response* response);
 
 namespace grpc_core {
 
@@ -222,16 +228,13 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
 
-  void DoHandshake(
-      const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr)
+  void DoHandshake(const grpc_resolved_address* addr)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
-      absl::StatusOr<std::vector<
-          grpc_event_engine::experimental::EventEngine::ResolvedAddress>>
-          addresses_or);
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
   const URI uri_;
   const grpc_slice request_text_;
@@ -252,17 +255,16 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
-  std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
-      addresses_ ABSL_GUARDED_BY(mu_);
+  std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
   int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
-  absl::StatusOr<std::unique_ptr<
-      grpc_event_engine::experimental::EventEngine::DNSResolver>>
-      resolver_;
+  std::shared_ptr<DNSResolver> resolver_;
+  absl::optional<DNSResolver::TaskHandle> dns_request_handle_
+      ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };
 
 }  // namespace grpc_core

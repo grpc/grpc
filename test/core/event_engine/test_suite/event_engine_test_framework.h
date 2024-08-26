@@ -23,7 +23,6 @@
 #include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 extern absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
