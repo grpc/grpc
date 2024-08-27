@@ -64,7 +64,7 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["test_main.cc"],
     external_deps = ["absl/random"],
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//visibility:private"],
     deps = [
         "yodel_test",
         "//:grpc_trace",
