@@ -29,6 +29,7 @@
 #include "src/proto/grpc/testing/xds/v3/gcp_authn.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -50,17 +51,19 @@ class XdsGcpAuthnEnd2endTest : public XdsEnd2endTest {
     g_audience = "";
     g_token = nullptr;
     grpc_core::HttpRequest::SetOverride(HttpGetOverride, nullptr, nullptr);
+    InitClient(MakeBootstrapBuilder(), /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"", /*args=*/nullptr,
+               CreateTlsChannelCredentials());
   }
 
   void TearDown() override {
+    XdsEnd2endTest::TearDown();
     grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   }
 
   static void ValidateHttpRequest(const grpc_http_request* request,
                                   const grpc_core::URI& uri) {
-    EXPECT_EQ(uri.authority(), "metadata.google.internal.");
-    EXPECT_EQ(uri.path(),
-              "/computeMetadata/v1/instance/service-accounts/default/identity");
     EXPECT_THAT(
         uri.query_parameter_map(),
         ::testing::ElementsAre(::testing::Pair("audience", g_audience)));
@@ -74,6 +77,12 @@ class XdsGcpAuthnEnd2endTest : public XdsEnd2endTest {
                              grpc_core::Timestamp /*deadline*/,
                              grpc_closure* on_done,
                              grpc_http_response* response) {
+    // Intercept only requests for GCP service account identity tokens.
+    if (uri.authority() != "metadata.google.internal." ||
+        uri.path() !=
+        "/computeMetadata/v1/instance/service-accounts/default/identity") {
+      return 0;
+    }
     // Validate request.
     ValidateHttpRequest(request, uri);
     // Generate response.
@@ -126,12 +135,15 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsGcpAuthnEnd2endTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   // Construct auth token.
   g_audience = kAudience;
   std::string token = MakeToken(grpc_core::Timestamp::InfFuture());
   g_token = token.c_str();
   // Set xDS resources.
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(1, /*xds_enabled=*/false,
+                         CreateTlsServerCredentials());
   SetListenerAndRouteConfiguration(
       balancer_.get(), BuildListenerWithGcpAuthnFilter(),
       default_route_config_);
@@ -146,7 +158,7 @@ TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
       << "code=" << status.error_code() << " message="
       << status.error_message();
   EXPECT_THAT(server_initial_metadata, ::testing::Contains(
-      ::testing::Pair("authorization", g_token)));
+      ::testing::Pair("authorization", absl::StrCat("Bearer ", g_token))));
 }
 
 #if 0

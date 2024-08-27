@@ -976,6 +976,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns XdsCredentials with mTLS fallback creds.
   static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials> CreateTlsChannelCredentials();
 
   // Creates various types of server credentials.
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();

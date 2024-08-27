@@ -302,6 +302,15 @@ grpc_cc_test(
     name = "xds_gcp_authn_end2end_test",
     size = "large",
     srcs = ["xds_gcp_authn_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
@@ -323,6 +332,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

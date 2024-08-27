@@ -54,6 +54,9 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
     return absl::OkStatus();  // Should never happen, but be defensive.
   }
   absl::string_view cluster_name = cluster_attribute->cluster();
+  if (!absl::ConsumePrefix(&cluster_name, "cluster:")) {
+    return absl::OkStatus();  // Cluster specifier plugin.
+  }
   // Look up the CDS resource for the cluster.
   auto it = filter->xds_config_->clusters.find(cluster_name);
   if (it == filter->xds_config_->clusters.end()) {
