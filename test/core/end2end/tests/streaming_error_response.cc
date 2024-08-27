@@ -36,10 +36,10 @@ namespace {
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
 CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponse) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage response_payload1_recv;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage response_payload1_recv;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -59,18 +59,18 @@ CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponse) {
   // Since this behavior is dependent on the transport implementation, we allow
   // any success status with this op.
   Expect(103, AnyStatus());
-  CoreEnd2endTest::IncomingMessage response_payload2_recv;
+  IncomingMessage response_payload2_recv;
   c.NewBatch(2).RecvMessage(response_payload2_recv);
   Expect(2, true);
   Step();
   EXPECT_FALSE(response_payload2_recv.is_end_of_stream());
   // Cancel the call so that the client sets up an error status.
   c.Cancel();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(104).RecvCloseOnServer(client_close);
   Expect(104, true);
   Step();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(3).RecvStatusOnClient(server_status);
   Expect(3, true);
   Step();
@@ -81,11 +81,11 @@ CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponse) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage response_payload1_recv;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage response_payload1_recv;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -107,7 +107,7 @@ CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
   Expect(103, AnyStatus());
   // Cancel the call so that the client sets up an error status.
   c.Cancel();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(104).RecvCloseOnServer(client_close);
   Expect(104, true);
   Expect(1, true);
@@ -119,10 +119,10 @@ CORE_END2END_TEST(CoreEnd2endTest, StreamingErrorResponseRequestStatusEarly) {
 CORE_END2END_TEST(
     CoreEnd2endTest,
     StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -132,7 +132,7 @@ CORE_END2END_TEST(
   Expect(101, true);
   Step();
   s.NewBatch(102).SendInitialMetadata({}).SendMessage("hello");
-  CoreEnd2endTest::IncomingMessage response_payload1_recv;
+  IncomingMessage response_payload1_recv;
   c.NewBatch(4).RecvMessage(response_payload1_recv);
   Expect(102, true);
   Expect(4, true);
@@ -146,7 +146,7 @@ CORE_END2END_TEST(
   Expect(103, AnyStatus());
   // Cancel the call so that the client sets up an error status.
   c.Cancel();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(104).RecvCloseOnServer(client_close);
   Expect(104, true);
   Expect(1, true);

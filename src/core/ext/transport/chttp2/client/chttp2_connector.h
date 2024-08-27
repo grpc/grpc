@@ -37,13 +37,11 @@ namespace grpc_core {
 
 class Chttp2Connector : public SubchannelConnector {
  public:
-  ~Chttp2Connector() override;
-
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override;
 
  private:
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
   void OnTimeout() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -63,9 +61,6 @@ class Chttp2Connector : public SubchannelConnector {
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
-  // Holds the endpoint when first created before being handed off to
-  // the handshake manager, and then again after handshake is done.
-  grpc_endpoint* endpoint_ = nullptr;
   grpc_closure on_receive_settings_;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);

@@ -320,7 +320,7 @@ class CLanguage(object):
             self._cmake_architecture_windows = (
                 "x64" if self.args.arch == "x64" else "Win32"
             )
-            # when builing with Ninja, the VS common tools need to be activated first
+            # when building with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
             # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
             self._vs_tools_architecture_windows = (
@@ -568,7 +568,13 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            return ("debian11", [])
+            # This is to address Apple clang defaults C++98.
+            cmake_args = (
+                ["-DCMAKE_CXX_STANDARD=14"]
+                if platform_string() == "mac"
+                else []
+            )
+            return ("debian11", cmake_args)
         elif compiler == "gcc8":
             return ("gcc_8", [])
         elif compiler == "gcc10.2":
@@ -879,7 +885,7 @@ class PythonLanguage(object):
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python39_config,)
+            return (python310_config,)
         elif args.compiler == "all_the_cpythons":
             return (
                 python38_config,
@@ -1777,7 +1783,7 @@ argp.add_argument(
 argp.add_argument(
     "--cmake_configure_extra_args",
     default=[],
-    nargs="+",
+    action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()

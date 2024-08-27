@@ -31,8 +31,8 @@ namespace {
 CORE_END2END_TEST(CoreDeadlineTest, NegativeDeadline) {
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(-1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata)

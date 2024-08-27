@@ -42,7 +42,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
@@ -131,10 +130,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame,
-                                 uint32_t stream_id);
+                                 absl::Status error, ClientFragmentFrame frame);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame, uint32_t stream_id);
+                            ClientFragmentFrame frame);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;

@@ -38,6 +38,7 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
@@ -122,7 +123,7 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
 }
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md = Arena::MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/test"));
   return md;
 }
@@ -141,8 +142,10 @@ class ClientTransportTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                        call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
   }
 
  private:
@@ -188,7 +191,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
+  transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 1);
@@ -232,7 +235,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
+  transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 1);
@@ -284,11 +287,9 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call1 = MakeCall(TestInitialMetadata());
-  transport->StartCall(
-      call1.handler.V2HackToStartCallWithoutACallFilterStack());
+  transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
-  transport->StartCall(
-      call2.handler.V2HackToStartCallWithoutACallFilterStack());
+  transport->StartCall(call2.handler.StartCall());
   call1.initiator.SpawnGuarded(
       "test-send-1", [initiator = call1.initiator]() mutable {
         return SendClientToServerMessages(initiator, 1);
@@ -354,11 +355,9 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call1 = MakeCall(TestInitialMetadata());
-  transport->StartCall(
-      call1.handler.V2HackToStartCallWithoutACallFilterStack());
+  transport->StartCall(call1.handler.StartCall());
   auto call2 = MakeCall(TestInitialMetadata());
-  transport->StartCall(
-      call2.handler.V2HackToStartCallWithoutACallFilterStack());
+  transport->StartCall(call2.handler.StartCall());
   call1.initiator.SpawnGuarded(
       "test-send", [initiator = call1.initiator]() mutable {
         return SendClientToServerMessages(initiator, 1);

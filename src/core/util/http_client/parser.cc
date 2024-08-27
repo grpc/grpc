@@ -25,12 +25,10 @@
 #include <algorithm>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 
 static char* buf2str(void* buffer, size_t length) {
   char* out = static_cast<char*>(gpr_malloc(length + 1));
@@ -378,10 +376,9 @@ static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
     case GRPC_HTTP_HEADERS:
     case GRPC_HTTP_TRAILERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http1_trace)) {
-          gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
-                  GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
-        }
+        GRPC_TRACE_LOG(http1, ERROR)
+            << "HTTP header max line length ("
+            << GRPC_HTTP_PARSER_MAX_HEADER_LENGTH << ") exceeded";
         return GRPC_ERROR_CREATE("HTTP header max line length exceeded");
       }
       parser->cur_line[parser->cur_line_length] = byte;

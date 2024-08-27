@@ -31,7 +31,6 @@
 #include "absl/log/check.h"
 
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/util/crash.h"
@@ -78,8 +77,8 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   } else {
     clock_gettime(clockid_for_gpr_clock[clock_type], &now);
     if (clock_type == GPR_CLOCK_MONOTONIC) {
-      // Add 5 seconds arbitrarily: avoids weird conditions in gprpp/time.cc
-      // when there's a small number of seconds returned.
+      // Add 5 seconds arbitrarily: avoids weird conditions in
+      // src/core/util/time.cc when there's a small number of seconds returned.
       now.tv_sec += 5;
     }
     return gpr_from_timespec(now, clock_type);

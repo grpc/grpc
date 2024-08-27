@@ -1,0 +1,46 @@
+# Copyright 2024 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+# TODO(xuanwn): Instead of using Bazel build, we should pip install all dependencies
+# once we have a released version of grpcio-csm-observability.
+
+py_binary(
+    name = "csm_greeter_client",
+    srcs = ["csm_greeter_client.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
+        requirement("opentelemetry-exporter-prometheus"),
+    ],
+)
+
+py_binary(
+    name = "csm_greeter_server",
+    srcs = ["csm_greeter_server.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
+        requirement("opentelemetry-exporter-prometheus"),
+    ],
+)

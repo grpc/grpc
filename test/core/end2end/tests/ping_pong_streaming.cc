@@ -30,8 +30,8 @@ void PingPongStreaming(CoreEnd2endTest& test, int num_messages) {
   auto request_slice = RandomSlice(20);
   auto response_slice = RandomSlice(15);
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_md;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_md;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .RecvInitialMetadata(server_initial_md)
@@ -39,12 +39,12 @@ void PingPongStreaming(CoreEnd2endTest& test, int num_messages) {
   auto s = test.RequestCall(100);
   test.Expect(100, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(101).SendInitialMetadata({}).RecvCloseOnServer(client_close);
   for (int i = 0; i < num_messages; i++) {
-    CoreEnd2endTest::IncomingMessage server_message;
+    IncomingMessage server_message;
     c.NewBatch(2).SendMessage(request_slice.Ref()).RecvMessage(server_message);
-    CoreEnd2endTest::IncomingMessage client_message;
+    IncomingMessage client_message;
     s.NewBatch(102).RecvMessage(client_message);
     test.Expect(102, true);
     test.Step();

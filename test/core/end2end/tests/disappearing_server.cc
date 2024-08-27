@@ -35,8 +35,8 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(30))
                .Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_md;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_md;
+  IncomingStatusOnClient server_status;
   LOG(ERROR) << "Start initial batch";
   c.NewBatch(1)
       .SendInitialMetadata({})
@@ -47,7 +47,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   test.Expect(101, true);
   test.Step();
   test.ShutdownServerAndNotify(1000);
-  CoreEnd2endTest::IncomingCloseOnServer client_closed;
+  IncomingCloseOnServer client_closed;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -71,7 +71,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   OneRequestAndShutdownServer(*this);
   InitServer(ChannelArgs());
   OneRequestAndShutdownServer(*this);

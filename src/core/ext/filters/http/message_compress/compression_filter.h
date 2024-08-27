@@ -25,6 +25,7 @@
 #include <stdint.h>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/compression_types.h>
@@ -110,6 +111,8 @@ class ClientCompressionFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "compression"; }
+
   static absl::StatusOr<std::unique_ptr<ClientCompressionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
@@ -146,6 +149,8 @@ class ServerCompressionFilter final
     : public ImplementChannelFilter<ServerCompressionFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "compression"; }
 
   static absl::StatusOr<std::unique_ptr<ServerCompressionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);

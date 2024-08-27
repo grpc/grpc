@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -241,6 +242,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//src/core:join",
         "//src/core:poll",
     ],
@@ -487,6 +489,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
@@ -537,6 +540,7 @@ grpc_proto_fuzzer(
         "//src/core:poll",
         "//src/core:race",
         "//src/core:seq",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -680,5 +684,15 @@ grpc_cc_test(
         "//src/core:seq",
         "//src/core:sleep",
         "//src/core:time",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_party",
+    srcs = ["bm_party.cc"],
+    deps = [
+        "//:grpc",
+        "//src/core:1999",
+        "//src/core:default_event_engine",
     ],
 )

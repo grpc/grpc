@@ -49,6 +49,8 @@ class ServerCallTracerFilter
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "server_call_tracer"; }
+
   static absl::StatusOr<std::unique_ptr<ServerCallTracerFilter>> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
 
@@ -90,8 +92,7 @@ const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =
     MakePromiseBasedFilter<ServerCallTracerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>(
-        "server_call_tracer");
+                           kFilterExaminesServerInitialMetadata>();
 
 absl::StatusOr<std::unique_ptr<ServerCallTracerFilter>>
 ServerCallTracerFilter::Create(const ChannelArgs& /*args*/,
@@ -102,7 +103,6 @@ ServerCallTracerFilter::Create(const ChannelArgs& /*args*/,
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
-  if (IsChaoticGoodEnabled()) return;
   builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
       GRPC_SERVER_CHANNEL);
 }

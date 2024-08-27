@@ -94,7 +94,6 @@ static void set_read_done(void* arg, grpc_error_handle /*error*/) {
 // shutdown client
 static void shutdown_client(grpc_endpoint** client_fd) {
   if (*client_fd != nullptr) {
-    grpc_endpoint_shutdown(*client_fd, GRPC_ERROR_CREATE("Forced Disconnect"));
     grpc_endpoint_destroy(*client_fd);
     grpc_core::ExecCtx::Get()->Flush();
     *client_fd = nullptr;
@@ -228,9 +227,10 @@ void grpc_run_bad_client_test(
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(server_args.ToC().get()),
-      sfd.server, false);
+      grpc_core::OrphanablePtr<grpc_endpoint>(sfd.server), false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                      nullptr);
 
   // Bind fds to pollsets
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(client_cq));

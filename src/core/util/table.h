@@ -35,20 +35,28 @@ namespace grpc_core {
 namespace table_detail {
 
 // A tuple-like type that contains manually constructed elements.
-template <typename... Ts>
+template <typename, typename... Ts>
 struct Elements;
 
 template <typename T, typename... Ts>
-struct Elements<T, Ts...> : Elements<Ts...> {
-  union U {
-    U() {}
-    ~U() {}
-    GPR_NO_UNIQUE_ADDRESS T x;
+struct Elements<absl::enable_if_t<!std::is_empty<T>::value>, T, Ts...>
+    : Elements<void, Ts...> {
+  struct alignas(T) Data {
+    unsigned char bytes[sizeof(T)];
   };
-  U u;
+  Data x;
+  Elements() {}
+  T* ptr() { return reinterpret_cast<T*>(x.bytes); }
+  const T* ptr() const { return reinterpret_cast<const T*>(x.bytes); }
+};
+template <typename T, typename... Ts>
+struct Elements<absl::enable_if_t<std::is_empty<T>::value>, T, Ts...>
+    : Elements<void, Ts...> {
+  T* ptr() { return reinterpret_cast<T*>(this); }
+  const T* ptr() const { return reinterpret_cast<const T*>(this); }
 };
 template <>
-struct Elements<> {};
+struct Elements<void> {};
 
 // Element accessor for Elements<>
 // Provides a static method f that returns a pointer to the value of element I
@@ -58,17 +66,17 @@ struct GetElem;
 
 template <typename T, typename... Ts>
 struct GetElem<0, T, Ts...> {
-  static T* f(Elements<T, Ts...>* e) { return &e->u.x; }
-  static const T* f(const Elements<T, Ts...>* e) { return &e->u.x; }
+  static T* f(Elements<void, T, Ts...>* e) { return e->ptr(); }
+  static const T* f(const Elements<void, T, Ts...>* e) { return e->ptr(); }
 };
 
 template <size_t I, typename T, typename... Ts>
 struct GetElem<I, T, Ts...> {
-  static auto f(Elements<T, Ts...>* e)
+  static auto f(Elements<void, T, Ts...>* e)
       -> decltype(GetElem<I - 1, Ts...>::f(e)) {
     return GetElem<I - 1, Ts...>::f(e);
   }
-  static auto f(const Elements<T, Ts...>* e)
+  static auto f(const Elements<void, T, Ts...>* e)
       -> decltype(GetElem<I - 1, Ts...>::f(e)) {
     return GetElem<I - 1, Ts...>::f(e);
   }
@@ -326,6 +334,15 @@ class Table {
                 absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
   }
 
+  // Iterate through each set field in the table if it exists in Vs, in the
+  // order of Vs. For each existing field, call the filter function. If the
+  // function returns true, keep the field. Otherwise, remove the field.
+  template <typename F, typename... Vs>
+  void FilterIn(F f) {
+    FilterInImpl(std::move(f),
+                 absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
+  }
+
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
 
@@ -340,7 +357,7 @@ class Table {
   // the default) -- one bit for each type in Ts.
   using PresentBits = BitSet<sizeof...(Ts)>;
   // The tuple-like backing structure for Table.
-  using Elements = table_detail::Elements<Ts...>;
+  using Elements = table_detail::Elements<void, Ts...>;
   // Extractor from Elements
   template <size_t I>
   using GetElem = table_detail::GetElem<I, Ts...>;
@@ -407,6 +424,18 @@ class Table {
     }
   }
 
+  // Call (*f)(value) if that value is in the table.
+  // If the value is present in the table and (*f)(value) returns false, remove
+  // the value from the table.
+  template <size_t I, typename F>
+  void FilterIf(F* f) {
+    if (auto* p = get<I>()) {
+      if (!(*f)(*p)) {
+        clear<I>();
+      }
+    }
+  }
+
   // For each field (element I=0, 1, ...) if that field is present, call its
   // destructor.
   template <size_t... I>
@@ -436,15 +465,22 @@ class Table {
     table_detail::do_these_things<int>({(CallIf<I>(&f), 1)...});
   }
 
+  // For each field (element I=0, 1, ...) if that field is present, call f. If
+  // f returns false, remove the field from the table.
+  template <typename F, size_t... I>
+  void FilterInImpl(F f, absl::index_sequence<I...>) {
+    table_detail::do_these_things<int>({(FilterIf<I>(&f), 1)...});
+  }
+
   template <size_t... I>
   void ClearAllImpl(absl::index_sequence<I...>) {
     table_detail::do_these_things<int>({(clear<I>(), 1)...});
   }
 
   // Bit field indicating which elements are set.
-  GPR_NO_UNIQUE_ADDRESS PresentBits present_bits_;
+  PresentBits present_bits_;
   // The memory to store the elements themselves.
-  GPR_NO_UNIQUE_ADDRESS Elements elements_;
+  Elements elements_;
 };
 
 }  // namespace grpc_core

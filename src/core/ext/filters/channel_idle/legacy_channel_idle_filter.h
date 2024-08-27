@@ -96,6 +96,8 @@ class LegacyClientIdleFilter final : public LegacyChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "client_idle"; }
+
   static absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
@@ -106,6 +108,8 @@ class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
   struct Config;
+
+  static absl::string_view TypeName() { return "max_age"; }
 
   static absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);

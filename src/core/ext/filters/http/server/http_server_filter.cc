@@ -25,12 +25,12 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -44,7 +44,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -56,7 +55,7 @@ const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>("http-server");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 void FilterOutgoingMetadata(ServerMetadata* md) {
@@ -140,10 +139,8 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-            GetContext<Activity>()->DebugTag().c_str());
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << "[http-server] Write metadata";
   FilterOutgoingMetadata(&md);
   md.Set(HttpStatusMetadata(), 200);
   md.Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);

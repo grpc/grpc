@@ -65,9 +65,10 @@ ABSL_FLAG(std::string, benchmark_names, "",
           "if --use_xds is true.");
 
 ABSL_FLAG(int, size, 1000, "Number of channels/calls");
-ABSL_FLAG(std::string, scenario_config, "insecure",
-          "Possible Values: minstack (Use minimal stack), resource_quota, "
-          "secure (Use SSL credentials on server)");
+ABSL_FLAG(
+    std::string, scenario_config, "insecure",
+    "Possible Values: minstack (Use minimal stack), resource_quota, insecure, "
+    "secure (Use SSL credentials on server), chaotic_good");
 ABSL_FLAG(bool, memory_profiling, false,
           "Run memory profiling");  // TODO (chennancy) Connect this flag
 ABSL_FLAG(bool, use_xds, false, "Use xDS");
@@ -82,6 +83,7 @@ class Subprocess {
     for (const auto& arg : args) {
       args_c.push_back(arg.c_str());
     }
+    LOG(INFO) << "START: " << absl::StrJoin(args, " ");
     process_ = gpr_subprocess_create(args_c.size(), args_c.data());
   }
 
@@ -308,7 +310,7 @@ int main(int argc, char** argv) {
       {"resource_quota", {/*client=*/{}, /*server=*/{"--secure"}}},
       {"minstack", {/*client=*/{"--minstack"}, /*server=*/{"--minstack"}}},
       {"insecure", {{}, {}}},
-  };
+      {"chaotic_good", {{"--chaotic_good"}, {"--chaotic_good"}}}};
   auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
   if (it_scenario == scenarios.end()) {
     printf("No scenario matching the name could be found\n");

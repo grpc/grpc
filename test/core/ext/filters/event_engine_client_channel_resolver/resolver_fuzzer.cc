@@ -27,7 +27,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -48,9 +47,9 @@
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace {
 
@@ -96,6 +95,9 @@ class FuzzingResolverEventEngine
     } else if (msg.has_srv_response()) {
       srv_responses_.emplace();
       for (const auto& srv_record : msg.srv_response().srv_records()) {
+        if (srv_responses_->size() == 1024) {
+          break;
+        }
         EventEngine::DNSResolver::SRVRecord final_r;
         final_r.host = srv_record.host();
         final_r.port = srv_record.port();
@@ -254,7 +256,9 @@ grpc_core::ResolverArgs ConstructResolverArgs(
 }  // namespace
 
 DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();

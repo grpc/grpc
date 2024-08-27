@@ -39,9 +39,10 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 
@@ -192,6 +193,11 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
   }
   return FilterConfig{OverrideConfigProtoName(),
                       Json::FromObject(std::move(config))};
+}
+
+void XdsHttpStatefulSessionFilter::AddFilter(
+    InterceptionChainBuilder& builder) const {
+  builder.Add<StatefulSessionFilter>();
 }
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()

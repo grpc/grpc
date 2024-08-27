@@ -120,6 +120,8 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
+        "absl/log:globals",
+        "absl/log:initialize",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -167,6 +169,7 @@ grpc_cc_library(
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
+        "absl/log:initialize",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -332,10 +335,12 @@ grpc_cc_library(
         "//:uri_parser",
         "//src/core:channel_args",
         "//src/core:delegating_helper",
+        "//src/core:down_cast",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
         "//src/core:json",
         "//src/core:json_util",
+        "//src/core:lb_metadata",
         "//src/core:lb_policy",
         "//src/core:lb_policy_factory",
         "//src/core:lb_policy_registry",
@@ -530,5 +535,17 @@ grpc_cc_library(
         "//:grpc",
         "//src/core:examine_stack",
         "//src/core:metrics",
+    ],
+)
+
+grpc_cc_library(
+    name = "passthrough_endpoint",
+    testonly = True,
+    srcs = ["passthrough_endpoint.cc"],
+    hdrs = ["passthrough_endpoint.h"],
+    external_deps = [
+    ],
+    deps = [
+        "//:grpc",
     ],
 )

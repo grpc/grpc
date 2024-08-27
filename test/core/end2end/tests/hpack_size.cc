@@ -97,8 +97,8 @@ void SimpleRequestBody(CoreEnd2endTest& test, size_t index) {
   auto method =
       absl::StrCat("/", hobbit.first, ".", hobbit.second, "/", dragon);
   auto c = test.NewClientCall(method).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({
           {"hobbit-first-name", (*hobbits)[index % hobbits->size()].first},
@@ -111,7 +111,7 @@ void SimpleRequestBody(CoreEnd2endTest& test, size_t index) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, dragon, {})

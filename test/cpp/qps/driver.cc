@@ -363,8 +363,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
-  // Log everything from the driver
-  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;
@@ -470,7 +468,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target.c_str());
     }
   }
-  if (qps_server_target_override.length() > 0) {
+  if (!qps_server_target_override.empty()) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
     CHECK_LE(num_servers, 1u);

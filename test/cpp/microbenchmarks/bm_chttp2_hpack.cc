@@ -54,6 +54,39 @@ static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   return s;
 }
 
+namespace grpc_core {
+
+class FakeCallTracer final : public CallTracerInterface {
+ public:
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override {}
+  void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {}
+  void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {}
+  void RecordSendMessage(const SliceBuffer& send_message) override {}
+  void RecordSendCompressedMessage(
+      const SliceBuffer& send_compressed_message) override {}
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* recv_initial_metadata) override {}
+  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
+  void RecordReceivedDecompressedMessage(
+      const SliceBuffer& recv_decompressed_message) override {}
+  void RecordCancel(grpc_error_handle cancel_error) override {}
+  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
+  }
+  void RecordAnnotation(absl::string_view annotation) override {}
+  void RecordAnnotation(const Annotation& annotation) override {}
+  std::string TraceId() override { return ""; }
+  std::string SpanId() override { return ""; }
+  bool IsSampled() override { return false; }
+};
+
+}  // namespace grpc_core
+
 ////////////////////////////////////////////////////////////////////////////////
 // HPACK encoder
 //
@@ -80,8 +113,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
         saved_now + grpc_core::Duration::Seconds(30));
 
   grpc_core::HPackCompressor c;
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
@@ -91,7 +123,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             true,
             false,
             size_t{1024},
-            &stats,
+            &call_tracer,
         },
         b, &outbuf);
     grpc_slice_buffer_reset_and_unref(&outbuf);
@@ -110,8 +142,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   Fixture::Prepare(&b);
 
   grpc_core::HPackCompressor c;
-  grpc_transport_one_way_stats stats;
-  stats = {};
+  grpc_core::FakeCallTracer call_tracer;
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
@@ -122,7 +153,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
             state.range(0) != 0,
             Fixture::kEnableTrueBinary,
             static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
-            &stats,
+            &call_tracer,
         },
         b, &outbuf);
     if (!logged_representative_output && state.iterations() > 3) {
@@ -383,9 +414,8 @@ class FromEncoderFixture {
     EncoderFixture::Prepare(&b);
 
     grpc_core::HPackCompressor c;
-    grpc_transport_one_way_stats stats;
+    grpc_core::FakeCallTracer call_tracer;
     std::vector<grpc_slice> out;
-    stats = {};
     bool done = false;
     int i = 0;
     while (!done) {
@@ -397,7 +427,7 @@ class FromEncoderFixture {
               false,
               EncoderFixture::kEnableTrueBinary,
               1024 * 1024,
-              &stats,
+              &call_tracer,
           },
           b, &outbuf);
       if (i == iteration) {

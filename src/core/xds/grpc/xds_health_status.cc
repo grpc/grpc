@@ -22,8 +22,6 @@
 #include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/health_check.upb.h"
 
-#include <grpc/support/port_platform.h>
-
 namespace grpc_core {
 
 absl::optional<XdsHealthStatus> XdsHealthStatus::FromUpb(uint32_t status) {

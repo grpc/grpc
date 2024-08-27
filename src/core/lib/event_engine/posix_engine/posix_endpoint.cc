@@ -39,11 +39,11 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -102,6 +102,7 @@ namespace {
 // of bytes sent.
 ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
                 int additional_flags = 0) {
+  GRPC_LATENT_SEE_INNER_SCOPE("TcpSend");
   ssize_t sent_length;
   do {
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
@@ -286,6 +287,8 @@ absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
 
 // Returns true if data available to read or error other than EAGAIN.
 bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
+  GRPC_LATENT_SEE_INNER_SCOPE("TcpDoRead");
+
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -345,7 +348,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
     if (read_bytes <= 0 && total_read_bytes >= 1) {
-      inq_ = 1;
       break;
     }
 
@@ -407,6 +409,12 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   if (inq_ == 0) {
     FinishEstimate();
+    // If this is using the epoll poller, then it is edge-triggered.
+    // Since this read did not consume the edge (i.e., did not get EAGAIN), the
+    // next read on this endpoint must assume there is something to read.
+    // Otherwise, assuming there is nothing to read and waiting for an epoll
+    // edge event could cause the next read to wait indefinitely.
+    inq_ = 1;
   }
 
   DCHECK_GT(total_read_bytes, 0u);
@@ -564,7 +572,8 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
     grpc_core::MutexLock lock(&read_mu_);
     ret = HandleReadLocked(status);
     if (ret) {
-      GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Read complete", this);
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "Endpoint[" << this << "]: Read complete";
       cb = std::move(read_cb_);
       read_cb_ = nullptr;
       incoming_buffer_ = nullptr;
@@ -582,7 +591,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Read", this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "Endpoint[" << this << "]: Read";
   CHECK(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
@@ -624,9 +634,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
       // asynchronously.
       lock.Release();
       engine_->Run([on_read = std::move(on_read), status, this]() mutable {
-        GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-            "Endpoint[%p]: Read failed immediately: %s", this,
-            status.ToString().c_str());
+        GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+            << "Endpoint[" << this << "]: Read failed immediately: " << status;
         on_read(status);
       });
       Unref();
@@ -636,8 +645,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     // callback.
     incoming_buffer_ = nullptr;
     Unref();
-    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Read succeeded immediately",
-                                     this);
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Endpoint[" << this << "]: Read succeeded immediately";
     return true;
   }
   return false;
@@ -969,15 +978,15 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         handle_->SetWritable();
       } else {
 #ifdef GRPC_LINUX_ERRQUEUE
-        GRPC_LOG_EVERY_N_SEC(
-            1, GPR_INFO,
-            "Tx0cp encountered an ENOBUFS error possibly because one or "
-            "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
-            "small for the intended user. Current system value of "
-            "RLIMIT_MEMLOCK is %" PRIu64 " and hard memlock ulimit is %" PRIu64
-            ".Consider increasing these values appropriately for the intended "
-            "user.",
-            GetRLimitMemLockMax(), GetUlimitHardMemLock());
+        LOG_EVERY_N_SEC(INFO, 1)
+            << "Tx0cp encountered an ENOBUFS error possibly because one or "
+               "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
+               "small for the intended user. Current system value of "
+               "RLIMIT_MEMLOCK is "
+            << GetRLimitMemLockMax() << " and hard memlock ulimit is "
+            << GetUlimitHardMemLock()
+            << ".Consider increasing these values appropriately for the "
+               "intended user.";
 #endif
       }
     }
@@ -1111,8 +1120,8 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
 
 void PosixEndpointImpl::HandleWrite(absl::Status status) {
   if (!status.ok()) {
-    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write failed: %s", this,
-                                     status.ToString().c_str());
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Endpoint[" << this << "]: Write failed: " << status;
     absl::AnyInvocable<void(absl::Status)> cb_ = std::move(write_cb_);
     write_cb_ = nullptr;
     if (current_zerocopy_send_ != nullptr) {
@@ -1130,8 +1139,8 @@ void PosixEndpointImpl::HandleWrite(absl::Status status) {
     DCHECK(status.ok());
     handle_->NotifyOnWrite(on_write_);
   } else {
-    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write complete: %s", this,
-                                     status.ToString().c_str());
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Endpoint[" << this << "]: Write complete: " << status;
     absl::AnyInvocable<void(absl::Status)> cb_ = std::move(write_cb_);
     write_cb_ = nullptr;
     current_zerocopy_send_ = nullptr;
@@ -1150,8 +1159,8 @@ bool PosixEndpointImpl::Write(
   DCHECK_EQ(current_zerocopy_send_, nullptr);
   DCHECK_NE(data, nullptr);
 
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write %" PRIdPTR " bytes",
-                                   this, data->Length());
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "Endpoint[" << this << "]: Write " << data->Length() << " bytes";
 
   if (data->Length() == 0) {
     TcpShutdownTracedBufferList();
@@ -1159,13 +1168,14 @@ bool PosixEndpointImpl::Write(
       status = TcpAnnotateError(absl::InternalError("EOF"));
       engine_->Run(
           [on_writable = std::move(on_writable), status, this]() mutable {
-            GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write failed: %s",
-                                             this, status.ToString().c_str());
+            GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+                << "Endpoint[" << this << "]: Write failed: " << status;
             on_writable(status);
           });
       return false;
     }
-    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write skipped", this);
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Endpoint[" << this << "]: Write skipped";
     return true;
   }
 
@@ -1197,16 +1207,16 @@ bool PosixEndpointImpl::Write(
     // asynchronously.
     engine_->Run(
         [on_writable = std::move(on_writable), status, this]() mutable {
-          GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write failed: %s",
-                                           this, status.ToString().c_str());
+          GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+              << "Endpoint[" << this << "]: Write failed: " << status;
           on_writable(status);
         });
     return false;
   }
   // Write succeeded immediately. Return true and don't run the on_writable
   // callback.
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write succeded immediately",
-                                   this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "Endpoint[" << this << "]: Write succeded immediately";
   return true;
 }
 
@@ -1295,9 +1305,9 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     }
 
     if (zerocopy_enabled) {
-      LOG(INFO) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
-                << "=" << GetRLimitMemLockMax()
-                << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
+      VLOG(2) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
+              << "=" << GetRLimitMemLockMax()
+              << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE

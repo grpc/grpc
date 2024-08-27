@@ -26,14 +26,15 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/util/orphanable.h"
+
+#define GRPC_ARG_USE_V3_STACK "grpc.internal.use_v3_stack"
 
 namespace grpc_core {
 
 class Transport;
 
 // Creates a client channel.
-absl::StatusOr<OrphanablePtr<Channel>> ChannelCreate(
+absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport);
 

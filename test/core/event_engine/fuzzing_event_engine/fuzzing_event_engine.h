@@ -17,6 +17,7 @@
 
 #include <stddef.h>
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <map>
@@ -124,6 +125,36 @@ class FuzzingEventEngine : public EventEngine {
   }
 
  private:
+  class IoToken {
+   public:
+    IoToken() : refs_(nullptr) {}
+    explicit IoToken(std::atomic<size_t>* refs) : refs_(refs) {
+      refs_->fetch_add(1, std::memory_order_relaxed);
+    }
+    ~IoToken() {
+      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
+    }
+    IoToken(const IoToken& other) : refs_(other.refs_) {
+      if (refs_ != nullptr) refs_->fetch_add(1, std::memory_order_relaxed);
+    }
+    IoToken& operator=(const IoToken& other) {
+      IoToken copy(other);
+      Swap(copy);
+      return *this;
+    }
+    IoToken(IoToken&& other) noexcept
+        : refs_(std::exchange(other.refs_, nullptr)) {}
+    IoToken& operator=(IoToken&& other) noexcept {
+      if (refs_ != nullptr) refs_->fetch_sub(1, std::memory_order_relaxed);
+      refs_ = std::exchange(other.refs_, nullptr);
+      return *this;
+    }
+    void Swap(IoToken& other) { std::swap(refs_, other.refs_); }
+
+   private:
+    std::atomic<size_t>* refs_;
+  };
+
   enum class RunType {
     kWrite,
     kRunAfter,
@@ -183,6 +214,8 @@ class FuzzingEventEngine : public EventEngine {
 
   // One read that's outstanding.
   struct PendingRead {
+    // The associated io token
+    IoToken io_token;
     // Callback to invoke when the read completes.
     absl::AnyInvocable<void(absl::Status)> on_read;
     // The buffer to read into.
@@ -243,8 +276,8 @@ class FuzzingEventEngine : public EventEngine {
     // endpoint shutdown, it's believed this is a legal implementation.
     static void ScheduleDelayedWrite(
         std::shared_ptr<EndpointMiddle> middle, int index,
-        absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+        absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+        IoToken write_token) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
     const std::shared_ptr<EndpointMiddle> middle_;
     const int index_;
   };
@@ -299,6 +332,8 @@ class FuzzingEventEngine : public EventEngine {
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
   grpc_pick_port_functions previous_pick_port_functions_;
+  std::atomic<size_t> outstanding_writes_{0};
+  std::atomic<size_t> outstanding_reads_{0};
 
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_

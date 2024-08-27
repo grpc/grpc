@@ -22,14 +22,14 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -67,10 +67,8 @@ class Latch {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T> {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%sWait %s", DebugTag().c_str(),
-                StateString().c_str());
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "Wait " << StateString();
       if (has_value_) {
         return std::move(value_);
       } else {
@@ -86,10 +84,8 @@ class Latch {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T> {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%sWaitAndCopy %s", DebugTag().c_str(),
-                StateString().c_str());
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "WaitAndCopy " << StateString();
       if (has_value_) {
         return value_;
       } else {
@@ -100,9 +96,8 @@ class Latch {
 
   // Set the value of the latch. Can only be called once.
   void Set(T value) {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     DCHECK(!has_value_);
     value_ = std::move(value);
     has_value_ = true;
@@ -163,10 +158,8 @@ class Latch<void> {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<Empty> {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
-                StateString().c_str());
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
         return Empty{};
       } else {
@@ -177,9 +170,8 @@ class Latch<void> {
 
   // Set the latch. Can only be called once.
   void Set() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     DCHECK(!is_set_);
     is_set_ = true;
     waiter_.Wake();
@@ -226,10 +218,8 @@ class ExternallyObservableLatch<void> {
   // Produce a promise to wait for this latch.
   auto Wait() {
     return [this]() -> Poll<Empty> {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
-                StateString().c_str());
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "PollWait " << StateString();
       if (IsSet()) {
         return Empty{};
       } else {
@@ -240,9 +230,8 @@ class ExternallyObservableLatch<void> {
 
   // Set the latch.
   void Set() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     is_set_.store(true, std::memory_order_relaxed);
     waiter_.Wake();
   }
@@ -250,10 +239,8 @@ class ExternallyObservableLatch<void> {
   bool IsSet() const { return is_set_.load(std::memory_order_relaxed); }
 
   void Reset() {
-    if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%sReset %s", DebugTag().c_str(),
-              StateString().c_str());
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Reset " << StateString();
     is_set_.store(false, std::memory_order_relaxed);
   }
 

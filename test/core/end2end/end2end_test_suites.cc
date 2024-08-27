@@ -43,7 +43,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
@@ -836,7 +835,16 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
             FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
-              return std::make_unique<InprocFixture>();
+              return std::make_unique<InprocFixture>(false);
+            },
+        },
+        CoreTestConfiguration{
+            "InprocWithPromises",
+            FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+                FEATURE_MASK_IS_CALL_V3,
+            nullptr,
+            [](const ChannelArgs&, const ChannelArgs&) {
+              return std::make_unique<InprocFixture>(true);
             },
         },
         CoreTestConfiguration{
@@ -986,29 +994,23 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
               return std::make_unique<InsecureFixtureWithPipeForWakeupFd>();
             }},
 #endif
+        CoreTestConfiguration {
+      "ChaoticGoodFullStack",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodFixture>();
+          }
+    }
   };
 }
 
-std::vector<CoreTestConfiguration> ChaoticGoodFixtures() {
-  return std::vector<CoreTestConfiguration>{
-      CoreTestConfiguration{"ChaoticGoodFullStack",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
-                            nullptr,
-                            [](const ChannelArgs& /*client_args*/,
-                               const ChannelArgs& /*server_args*/) {
-                              return std::make_unique<ChaoticGoodFixture>();
-                            }}};
-}
-
 std::vector<CoreTestConfiguration> AllConfigs() {
-  std::vector<CoreTestConfiguration> configs;
-  if (IsExperimentEnabledInConfiguration(kExperimentIdChaoticGood)) {
-    configs = ChaoticGoodFixtures();
-  } else {
-    configs = DefaultConfigs();
-  }
+  std::vector<CoreTestConfiguration> configs = DefaultConfigs();
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;

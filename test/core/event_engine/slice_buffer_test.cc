@@ -24,7 +24,6 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 using ::grpc_event_engine::experimental::Slice;

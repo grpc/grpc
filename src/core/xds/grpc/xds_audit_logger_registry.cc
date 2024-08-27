@@ -32,6 +32,7 @@
 #include "src/core/util/match.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 
 namespace grpc_core {
 

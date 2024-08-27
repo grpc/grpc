@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -35,7 +36,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -163,8 +163,6 @@ using NextPromiseFactory =
 // for a stream.
 typedef struct grpc_stream grpc_stream;
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount;
-
 typedef struct grpc_stream_refcount {
   grpc_core::RefCount refs;
   grpc_closure destroy;
@@ -192,10 +190,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #ifndef NDEBUG
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
-  if (grpc_trace_stream_refcount.enabled()) {
-    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " REF " << reason;
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
 #else
@@ -209,10 +206,9 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
-  if (grpc_trace_stream_refcount.enabled()) {
-    gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " UNREF " << reason;
   if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
     grpc_stream_destroy(refcount);
   }
@@ -510,6 +506,8 @@ class Transport : public InternallyRefCounted<Transport> {
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
+  using InternallyRefCounted<Transport>::InternallyRefCounted;
+
   // Though internally ref counted transports expose their "Ref" method to
   // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
   // singleton decision maker on whether the transport should be destroyed or
@@ -603,6 +601,7 @@ class FilterStackTransport : public Transport {
 
 class ClientTransport : public Transport {
  public:
+  using Transport::Transport;
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
@@ -611,6 +610,7 @@ class ClientTransport : public Transport {
 
 class ServerTransport : public Transport {
  public:
+  using Transport::Transport;
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;

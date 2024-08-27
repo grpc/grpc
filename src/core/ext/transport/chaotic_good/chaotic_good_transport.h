@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/random/random.h"
 
 #include <grpc/support/port_platform.h>
@@ -32,8 +33,6 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-
-extern grpc_core::TraceFlag grpc_chaotic_good_trace;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -54,14 +53,14 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    auto buffers = frame.Serialize(&encoder_);
-    if (grpc_chaotic_good_trace.enabled()) {
-      gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
-              ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                  .value_or("<<unknown peer address>>")
-                  .c_str(),
-              frame.ToString().c_str());
-    }
+    bool saw_encoding_errors = false;
+    auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
+    // ignore encoding errors: they will be logged separately already
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: WriteFrame to:"
+        << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+               .value_or("<<unknown peer address>>")
+        << " " << frame.ToString();
     return TryJoin<absl::StatusOr>(
         control_endpoint_.Write(std::move(buffers.control)),
         data_endpoint_.Write(std::move(buffers.data)));
@@ -76,15 +75,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
-          if (grpc_chaotic_good_trace.enabled()) {
-            gpr_log(GPR_INFO, "CHAOTIC_GOOD: ReadHeader from:%s %s",
-                    ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                        .value_or("<<unknown peer address>>")
-                        .c_str(),
-                    frame_header.ok()
-                        ? frame_header->ToString().c_str()
-                        : frame_header.status().ToString().c_str());
-          }
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: ReadHeader from:"
+              << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+                     .value_or("<<unknown peer address>>")
+              << " "
+              << (frame_header.ok() ? frame_header->ToString()
+                                    : frame_header.status().ToString());
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
           return If(
@@ -125,10 +122,9 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                                 FrameLimits limits) {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
-    if (grpc_chaotic_good_trace.enabled()) {
-      gpr_log(GPR_INFO, "CHAOTIC_GOOD: DeserializeFrame %s",
-              s.ok() ? frame.ToString().c_str() : s.ToString().c_str());
-    }
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: DeserializeFrame "
+        << (s.ok() ? frame.ToString() : s.ToString());
     return s;
   }
 

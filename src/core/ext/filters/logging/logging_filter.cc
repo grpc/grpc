@@ -46,7 +46,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
@@ -106,11 +105,9 @@ class MetadataEncoder {
     }
     uint64_t mdentry_len = key.length() + value.length();
     if (mdentry_len > log_len_) {
-      gpr_log(
-          GPR_DEBUG,
-          "Skipped metadata key because of max metadata logging bytes %" PRIu64
-          " (current) vs %" PRIu64 " (max less already accounted metadata)",
-          mdentry_len, log_len_);
+      VLOG(2) << "Skipped metadata key because of max metadata logging bytes "
+              << mdentry_len << " (current) vs " << log_len_
+              << " (max less already accounted metadata)";
       truncated_ = true;
       return;
     }
@@ -417,7 +414,7 @@ const grpc_channel_filter ClientLoggingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoggingFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("logging");
+                               kFilterExaminesOutboundMessages>();
 
 absl::StatusOr<std::unique_ptr<ServerLoggingFilter>>
 ServerLoggingFilter::Create(const ChannelArgs& /*args*/,
@@ -483,7 +480,7 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
     MakePromiseBasedFilter<ServerLoggingFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("logging");
+                               kFilterExaminesOutboundMessages>();
 
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;

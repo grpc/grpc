@@ -23,7 +23,6 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/util/time.h"
 #include "test/core/bad_client/bad_client.h"

@@ -24,7 +24,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"

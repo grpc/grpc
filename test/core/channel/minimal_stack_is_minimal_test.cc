@@ -41,7 +41,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -101,9 +100,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
 
   std::vector<std::string> parts;
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry->name;
-    if (name == nullptr) continue;
-    parts.push_back(name);
+    parts.push_back(std::string(entry->name.name()));
   }
 
   return parts;

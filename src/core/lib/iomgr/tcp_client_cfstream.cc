@@ -27,9 +27,10 @@
 #include <netinet/in.h>
 #include <string.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -44,8 +45,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
-
-extern grpc_core::TraceFlag grpc_tcp_trace;
 
 struct CFStreamConnect {
   gpr_mu mu;
@@ -79,10 +78,8 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
-            grpc_core::StatusToString(error).c_str());
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CLIENT_CONNECT :" << connect << " OnAlarm, error:"
+                          << grpc_core::StatusToString(error);
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
   connect->closure = nil;
@@ -100,10 +97,8 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
 
 static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
-            grpc_core::StatusToString(error).c_str());
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CLIENT_CONNECT :" << connect << " OnOpen, error:"
+                          << grpc_core::StatusToString(error);
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
   grpc_closure* closure = connect->closure;
@@ -174,10 +169,9 @@ static int64_t CFStreamClientConnect(
   gpr_ref_init(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
 
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
-            connect, connect->addr_name.c_str());
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CLIENT_CONNECT: " << connect << ", "
+                          << connect->addr_name
+                          << ": asynchronously connecting";
 
   CFReadStreamRef read_stream;
   CFWriteStreamRef write_stream;

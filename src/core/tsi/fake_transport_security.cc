@@ -25,7 +25,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -211,6 +210,8 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
     frame->offset += to_read_size;
     available_size -= to_read_size;
     frame->size = load32_little_endian(frame->data);
+    if (frame->size < 4) return TSI_DATA_CORRUPTED;
+    if (frame->size > 16 * 1024 * 1024) return TSI_DATA_CORRUPTED;
     tsi_fake_frame_ensure_size(frame);
   }
 
@@ -640,11 +641,9 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      gpr_log(GPR_INFO, "%s prepared %s.",
-              impl->is_client ? "Client" : "Server",
-              tsi_fake_handshake_message_to_string(impl->next_message_to_send));
-    }
+    GRPC_TRACE_LOG(tsi, INFO)
+        << (impl->is_client ? "Client" : "Server") << " prepared "
+        << tsi_fake_handshake_message_to_string(impl->next_message_to_send);
     impl->next_message_to_send = next_message_to_send;
   }
   result =
@@ -653,9 +652,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     // We're done.
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      LOG(INFO) << "Server is done.";
-    }
+    GRPC_TRACE_LOG(tsi, INFO) << "Server is done.";
     impl->result = TSI_OK;
   } else {
     impl->needs_incoming_message = 1;
@@ -690,21 +687,20 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
     return result;
   }
   if (received_msg != expected_msg) {
-    gpr_log(GPR_ERROR, "Invalid received message (%s instead of %s)",
-            tsi_fake_handshake_message_to_string(received_msg),
-            tsi_fake_handshake_message_to_string(expected_msg));
+    LOG(ERROR) << "Invalid received message ("
+               << tsi_fake_handshake_message_to_string(received_msg)
+               << " instead of "
+               << tsi_fake_handshake_message_to_string(expected_msg) << ")";
   }
-  if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-    LOG(INFO) << (impl->is_client ? "Client" : "Server") << " received "
-              << tsi_fake_handshake_message_to_string(received_msg);
-  }
+  GRPC_TRACE_LOG(tsi, INFO)
+      << (impl->is_client ? "Client" : "Server") << " received "
+      << tsi_fake_handshake_message_to_string(received_msg);
   tsi_fake_frame_reset(&impl->incoming_frame, 0 /* needs_draining */);
   impl->needs_incoming_message = 0;
   if (impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     // We're done.
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      LOG(INFO) << (impl->is_client ? "Client" : "Server") << " is done.";
-    }
+    GRPC_TRACE_LOG(tsi, INFO)
+        << (impl->is_client ? "Client" : "Server") << " is done.";
     impl->result = TSI_OK;
   }
   return TSI_OK;

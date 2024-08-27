@@ -20,10 +20,7 @@
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-
-grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
 
 namespace grpc_core {
 

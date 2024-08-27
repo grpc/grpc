@@ -18,24 +18,17 @@
 
 #include "gtest/gtest.h"
 
-template <typename T>
-std::string Stringify(const T& t) {
-  std::ostringstream oss;
-  oss << t;
-  return oss.str();
-}
-
 int add(int a, int b) { return a + b; }
 
 TEST(DumpArgsTest, Basic) {
   int a = 1;
   int b = 2;
   int c = 3;
-  EXPECT_EQ("a = 1, b = 2, c = 3", Stringify(GRPC_DUMP_ARGS(a, b, c)));
+  EXPECT_EQ("a = 1, b = 2, c = 3", absl::StrCat(GRPC_DUMP_ARGS(a, b, c)));
 }
 
 TEST(DumpArgsTest, FunctionCall) {
-  EXPECT_EQ("add(1, 2) = 3", Stringify(GRPC_DUMP_ARGS(add(1, 2))));
+  EXPECT_EQ("add(1, 2) = 3", absl::StrCat(GRPC_DUMP_ARGS(add(1, 2))));
 }
 
 int main(int argc, char** argv) {

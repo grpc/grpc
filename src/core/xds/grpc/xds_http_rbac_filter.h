@@ -28,7 +28,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
@@ -44,6 +44,7 @@ class XdsHttpRbacFilter final : public XdsHttpFilterImpl {
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
+  void AddFilter(InterceptionChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(

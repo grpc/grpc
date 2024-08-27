@@ -21,14 +21,13 @@
 
 #include <type_traits>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 #include "absl/strings/cord.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -65,7 +64,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
         total_size_(total_size),
         byte_count_(0),
         have_backup_(false) {
-    CHECK(!byte_buffer->Valid());
+    ABSL_CHECK(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
     grpc_byte_buffer* bp = grpc_raw_byte_buffer_create(nullptr, 0);
     byte_buffer->set_buffer(bp);
@@ -82,7 +81,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   /// safe for the caller to write from data[0, size - 1].
   bool Next(void** data, int* size) override {
     // Protobuf should not ask for more memory than total_size_.
-    CHECK_LT(byte_count_, total_size_);
+    ABSL_CHECK_LT(byte_count_, total_size_);
     // 1. Use the remaining backup slice if we have one
     // 2. Otherwise allocate a slice, up to the remaining length needed
     //    or our maximum allocation size
@@ -107,7 +106,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
-    CHECK(GRPC_SLICE_LENGTH(slice_) <= static_cast<size_t>(INT_MAX));
+    ABSL_CHECK(GRPC_SLICE_LENGTH(slice_) <= static_cast<size_t>(INT_MAX));
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(slice_));
     // Using grpc_slice_buffer_add could modify slice_ and merge it with the
     // previous slice. Therefore, use grpc_slice_buffer_add_indexed method to
@@ -132,7 +131,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     /// 2. Split it into the needed (if any) and unneeded part
     /// 3. Add the needed part back to the slice buffer
     /// 4. Mark that we still have the remaining part (for later use/unref)
-    CHECK_LE(count, static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
+    ABSL_CHECK_LE(count, static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
     grpc_slice_buffer_pop(slice_buffer_);
     if (static_cast<size_t>(count) == GRPC_SLICE_LENGTH(slice_)) {
       backup_slice_ = slice_;

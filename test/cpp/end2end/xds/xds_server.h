@@ -27,7 +27,6 @@
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/support/status.h>
 
 #include "src/core/lib/address_utils/parse_address.h"

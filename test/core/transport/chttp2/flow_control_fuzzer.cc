@@ -32,7 +32,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_request.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"

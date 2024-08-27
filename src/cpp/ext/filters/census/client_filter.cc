@@ -44,7 +44,6 @@
 #include "opencensus/trace/status_code.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/client_context.h>
@@ -53,6 +52,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -81,8 +81,7 @@ constexpr uint32_t
 
 const grpc_channel_filter OpenCensusClientFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<OpenCensusClientFilter,
-                                      grpc_core::FilterEndpoint::kClient, 0>(
-        "opencensus_client");
+                                      grpc_core::FilterEndpoint::kClient, 0>();
 
 absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>>
 OpenCensusClientFilter::Create(const grpc_core::ChannelArgs& args,
@@ -215,23 +214,34 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
     tags.emplace_back(ClientStatusTagKey(),
                       absl::StatusCodeToString(status_code_));
+    uint64_t outgoing_bytes = 0;
+    uint64_t incoming_bytes = 0;
+    if (grpc_core::IsCallTracerInTransportEnabled()) {
+      outgoing_bytes = outgoing_bytes_.load();
+      incoming_bytes = incoming_bytes_.load();
+    } else if (transport_stream_stats != nullptr) {
+      outgoing_bytes = transport_stream_stats->outgoing.data_bytes;
+      incoming_bytes = transport_stream_stats->incoming.data_bytes;
+    }
     ::opencensus::stats::Record(
-        // TODO(yashykt): Recording zeros here when transport_stream_stats is
-        // nullptr is unfortunate and should be fixed.
-        {{RpcClientSentBytesPerRpc(),
-          static_cast<double>(transport_stream_stats != nullptr
-                                  ? transport_stream_stats->outgoing.data_bytes
-                                  : 0)},
-         {RpcClientReceivedBytesPerRpc(),
-          static_cast<double>(transport_stream_stats != nullptr
-                                  ? transport_stream_stats->incoming.data_bytes
-                                  : 0)},
+        {{RpcClientSentBytesPerRpc(), static_cast<double>(outgoing_bytes)},
+         {RpcClientReceivedBytesPerRpc(), static_cast<double>(incoming_bytes)},
          {RpcClientServerLatency(),
           ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))},
          {RpcClientRoundtripLatency(),
           absl::ToDoubleMilliseconds(absl::Now() - start_time_)}},
         tags);
   }
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(

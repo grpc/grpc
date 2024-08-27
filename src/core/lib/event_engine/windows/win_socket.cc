@@ -22,7 +22,6 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/debug_location.h"
@@ -49,7 +48,8 @@ WinSocket::WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept
 
 WinSocket::~WinSocket() {
   CHECK(is_shutdown_.load());
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p destroyed", this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WinSocket::" << this << " destroyed";
 }
 
 SOCKET WinSocket::raw_socket() { return socket_; }
@@ -57,8 +57,8 @@ SOCKET WinSocket::raw_socket() { return socket_; }
 void WinSocket::Shutdown() {
   // if already shutdown, return early. Otherwise, set the shutdown flag.
   if (is_shutdown_.exchange(true)) {
-    GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p already shutting down",
-                                     this);
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "WinSocket::" << this << " already shutting down";
     return;
   }
   // Grab the function pointer for DisconnectEx for that specific socket.
@@ -69,29 +69,38 @@ void WinSocket::Shutdown() {
   int status = WSAIoctl(socket_, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid,
                         sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
                         &ioctl_num_bytes, NULL, NULL);
-
-  if (status == 0) {
-    DisconnectEx(socket_, NULL, 0, 0);
-  } else {
+  if (status != 0) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    LOG(INFO) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
+  } else if (DisconnectEx(socket_, NULL, 0, 0) == FALSE) {
+    auto last_error = WSAGetLastError();
+    // DisconnectEx may be called when the socket is not connected. Ignore that
+    // error, and log all others.
+    if (last_error != WSAENOTCONN) {
+      char* utf8_message = gpr_format_message(last_error);
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "DisconnectEx failed: " << utf8_message;
+      gpr_free(utf8_message);
+    }
   }
   closesocket(socket_);
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WinSocket::" << this << " socket closed";
 }
 
 void WinSocket::Shutdown(const grpc_core::DebugLocation& location,
                          absl::string_view reason) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE(
-      "WinSocket::%p Shut down from %s:%d. Reason: %s", this, location.file(),
-      location.line(), reason.data());
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WinSocket::" << this << " Shut down from " << location.file() << ":"
+      << location.line() << ". Reason: " << reason.data();
   Shutdown();
 }
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   if (IsShutdown()) {
-    info.SetError(WSAESHUTDOWN);
+    info.SetResult(WSAESHUTDOWN, 0, "NotifyOnReady");
     thread_pool_->Run(closure);
     return;
   };
@@ -130,12 +139,13 @@ void WinSocket::OpState::SetReady() {
   win_socket_->thread_pool_->Run(closure);
 }
 
-void WinSocket::OpState::SetError(int wsa_error) {
-  result_ = OverlappedResult{/*wsa_error=*/wsa_error, /*bytes_transferred=*/0};
-}
-
-void WinSocket::OpState::SetResult(OverlappedResult result) {
-  result_ = result;
+void WinSocket::OpState::SetResult(int wsa_error, DWORD bytes,
+                                   absl::string_view context) {
+  bytes = wsa_error == 0 ? bytes : 0;
+  result_ = OverlappedResult{
+      /*wsa_error=*/wsa_error, /*bytes_transferred=*/bytes,
+      /*error_status=*/wsa_error == 0 ? absl::OkStatus()
+                                      : GRPC_WSA_ERROR(wsa_error, context)};
 }
 
 void WinSocket::OpState::SetErrorStatus(absl::Status error_status) {
@@ -149,25 +159,25 @@ void WinSocket::OpState::GetOverlappedResult() {
 
 void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
   if (win_socket_->IsShutdown()) {
-    result_ = OverlappedResult{/*wsa_error=*/WSA_OPERATION_ABORTED,
-                               /*bytes_transferred=*/0};
+    SetResult(WSA_OPERATION_ABORTED, 0, "GetOverlappedResult");
     return;
   }
   DWORD flags = 0;
   DWORD bytes;
   BOOL success =
       WSAGetOverlappedResult(sock, &overlapped_, &bytes, FALSE, &flags);
-  result_ = OverlappedResult{/*wsa_error=*/success ? 0 : WSAGetLastError(),
-                             /*bytes_transferred=*/bytes};
+  auto wsa_error = success ? 0 : WSAGetLastError();
+  SetResult(wsa_error, bytes, "WSAGetOverlappedResult");
 }
 
 bool WinSocket::IsShutdown() { return is_shutdown_.load(); }
 
 WinSocket::OpState* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
-  GRPC_EVENT_ENGINE_POLLER_TRACE(
-      "WinSocket::%p looking for matching OVERLAPPED::%p. "
-      "read(%p) write(%p)",
-      this, overlapped, &read_info_.overlapped_, &write_info_.overlapped_);
+  GRPC_TRACE_LOG(event_engine_poller, INFO)
+      << "WinSocket::" << this
+      << " looking for matching OVERLAPPED::" << overlapped << ". read("
+      << &read_info_.overlapped_ << ") write(" << &write_info_.overlapped_
+      << ")";
   if (overlapped == &read_info_.overlapped_) return &read_info_;
   if (overlapped == &write_info_.overlapped_) return &write_info_;
   return nullptr;

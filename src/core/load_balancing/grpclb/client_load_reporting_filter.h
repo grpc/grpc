@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 
 namespace grpc_core {
 
@@ -35,6 +36,8 @@ class ClientLoadReportingFilter final
     : public ImplementChannelFilter<ClientLoadReportingFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "client_load_reporting"; }
 
   class Call {
    public:

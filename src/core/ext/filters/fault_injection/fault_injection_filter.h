@@ -45,6 +45,8 @@ class FaultInjectionFilter
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "fault_injection_filter"; }
+
   static absl::StatusOr<std::unique_ptr<FaultInjectionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 

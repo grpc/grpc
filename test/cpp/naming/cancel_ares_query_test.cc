@@ -32,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -50,6 +49,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"
 #include "src/core/util/thd.h"
@@ -118,6 +118,10 @@ void ArgsInit(ArgsStruct* args) {
 void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
+  grpc_core::Notification notification;
+  args->lock->Run([&notification]() { notification.Notify(); }, DEBUG_LOCATION);
+  args->lock.reset();
+  notification.WaitForNotification();
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;

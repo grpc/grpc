@@ -36,8 +36,8 @@ void TestRequestResponseWithMetadataToBeFiltered(
     absl::string_view filter_md_value) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
 
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata(
           {{"key1", "val1"}, {filtered_md_key, filter_md_value}})
@@ -55,7 +55,7 @@ void TestRequestResponseWithMetadataToBeFiltered(
   test.Expect(102, true);
   test.Step();
 
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});

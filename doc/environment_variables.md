@@ -41,114 +41,31 @@ some configuration as environment variables that can be set.
   - legacy - the (deprecated) original polling engine for gRPC
 
 * GRPC_TRACE
-  A comma separated list of tracers that provide additional insight into how
-  gRPC C core is processing requests via debug logs. Available tracers include:
-  - api - traces api calls to the C core
-  - bdp_estimator - traces behavior of bdp estimation logic
-  - call_error - traces the possible errors contributing to final call status
-  - cares_resolver - traces operations of the c-ares based DNS resolver
-  - cares_address_sorting - traces operations of the c-ares based DNS
-    resolver's resolved address sorter
-  - cds_lb - traces cds LB policy
-  - channel - traces operations on the C core channel stack
-  - channel_stack - traces the set of filters in a channel stack upon
-    construction
-  - client_channel - traces client channel control plane activity, including
-    resolver and load balancing policy interaction
-  - client_channel_call - traces client channel call activity related to name
-    resolution
-  - client_channel_lb_call - traces client channel call activity related
-    to load balancing picking
-  - compression - traces compression operations
-  - connectivity_state - traces connectivity state changes to channels
-  - cronet - traces state in the cronet transport engine
-  - dns_resolver - traces state in the native DNS resolver
-  - executor - traces grpc's internal thread pool ('the executor')
-  - glb - traces the grpclb load balancer
-  - handshaker - traces handshaking state
-  - health_check_client - traces health checking client code
-  - http - traces state in the http2 transport engine
-  - http2_stream_state - traces all http2 stream state mutations.
-  - http2_ping - traces pings/ping acks/antagonist writes in http2 stack.
-  - http1 - traces HTTP/1.x operations performed by gRPC
-  - inproc - traces the in-process transport
-  - http_keepalive - traces gRPC keepalive pings
-  - flowctl - traces http2 flow control
-  - op_failure - traces error information when failure is pushed onto a
-    completion queue
-  - pick_first - traces the pick first load balancing policy
-  - plugin_credentials - traces plugin credentials
-  - pollable_refcount - traces reference counting of 'pollable' objects (only
-    in DEBUG)
-  - priority_lb - traces priority LB policy
-  - resource_quota - trace resource quota objects internals
-  - ring_hash_lb - traces the ring hash load balancing policy
-  - rls_lb - traces the RLS load balancing policy
-  - round_robin - traces the round_robin load balancing policy
-  - weighted_round_robin_lb - traces the weighted_round_robin load balancing
-    policy
-  - queue_pluck
-  - grpc_authz_api - traces gRPC authorization
-  - server_channel - lightweight trace of significant server channel events
-  - secure_endpoint - traces bytes flowing through encrypted channels
-  - subchannel - traces the connectivity state of subchannel
-  - subchannel_pool - traces subchannel pool
-  - timer - timers (alarms) in the grpc internals
-  - timer_check - more detailed trace of timer logic in grpc internals
-  - transport_security - traces metadata about secure channel establishment
-  - tcp - traces bytes in and out of a channel
-  - tsi - traces tsi transport security
-  - weighted_target_lb - traces weighted_target LB policy
-  - xds_client - traces xds client
-  - xds_cluster_manager_lb - traces cluster manager LB policy
-  - xds_cluster_impl_lb - traces cluster impl LB policy
-  - xds_resolver - traces xds resolver
+  A comma-separated list of tracer names or glob patterns that provide
+  additional insight into how gRPC C core is processing requests via debug logs.
+  Available tracers and their usage can be found in
+  [gRPC Trace Flags](trace_flags.md)
 
-  The following tracers will only run in binaries built in DEBUG mode. This is
-  accomplished by invoking `CONFIG=dbg make <target>`
-  - metadata - tracks creation and mutation of metadata
-  - combiner - traces combiner lock state
-  - call_combiner - traces call combiner state
-  - closure - tracks closure creation, scheduling, and completion
-  - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-  - pending_tags - traces still-in-progress tags on completion queues
-  - polling - traces the selected polling engine
-  - polling_api - traces the api calls to polling engine
-  - subchannel_refcount
-  - queue_refcount
-  - error_refcount
-  - stream_refcount
-  - slice_refcount
-  - workqueue_refcount
-  - fd_refcount
-  - cq_refcount
-  - auth_context_refcount
-  - security_connector_refcount
-  - resolver_refcount
-  - lb_policy_refcount
-  - chttp2_refcount
+* GRPC_VERBOSITY (DEPRECATED)
 
-  'all' can additionally be used to turn all traces on.
-  Individual traces can be disabled by prefixing them with '-'.
+<!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
+  `GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO`, `ERROR` and `NONE`.
 
-  'refcount' will turn on all of the tracers for refcount debugging.
+  We only support this flag for legacy reasons. If this environment variable is set, then gRPC will set absl MinLogValue and absl SetVLogLevel. This will alter the log settings of the entire application, not just gRPC code. For that reason, it is not recommended. Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging).
 
-  if 'list_tracers' is present, then all of the available tracers will be
-  printed when the program starts up.
+  gRPC logging verbosity - one of:
+  - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
+  - INFO - log INFO, WARNING, ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
+  - ERROR - log ERROR and FATAL messages. This is recommended for production systems.
+  - NONE - won't log any.
+  GRPC_VERBOSITY will set verbosity of absl logging. 
+  - If the external application sets some other verbosity, then whatever is set later will be honoured. 
+  - If nothing is set as GRPC_VERBOSITY, then the setting of the external application will be honoured.
+  - If nothing is set by the external application also, the default set by absl will be honoured.
+<!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
-  Example:
-  export GRPC_TRACE=all,-pending_tags
-
-* GRPC_VERBOSITY
-  Default gRPC logging verbosity - one of:
-  - DEBUG - log all gRPC messages
-  - INFO - log INFO and ERROR message
-  - ERROR - log only errors (default)
-  - NONE - won't log any
-
-* GRPC_STACKTRACE_MINLOGLEVEL
-  Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
-  NONE is a default value.
+* GRPC_STACKTRACE_MINLOGLEVEL (DEPRECATED)
+  This will not work anymore.
 
 * GRPC_TRACE_FUZZER
   if set, the fuzzers will output trace (it is usually suppressed).

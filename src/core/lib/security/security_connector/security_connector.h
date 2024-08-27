@@ -42,8 +42,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
-
 // --- URL schemes. ---
 
 #define GRPC_SSL_URL_SCHEME "https"
@@ -63,7 +61,7 @@ class grpc_security_connector
  public:
   explicit grpc_security_connector(absl::string_view url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
-            GRPC_TRACE_FLAG_ENABLED(grpc_trace_security_connector_refcount)
+            GRPC_TRACE_FLAG_ENABLED(security_connector_refcount)
                 ? "security_connector_refcount"
                 : nullptr),
         url_scheme_(url_scheme) {}

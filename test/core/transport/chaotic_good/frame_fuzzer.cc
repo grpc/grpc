@@ -55,7 +55,8 @@ FrameLimits FuzzerFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
-  auto serialized = input.Serialize(&hpack_compressor);
+  bool saw_encoding_errors = false;
+  auto serialized = input.Serialize(&hpack_compressor, saw_encoding_errors);
   CHECK(serialized.control.Length() >=
         24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
@@ -67,7 +68,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
     }
     Crash("Failed to parse header");
   }
-  CHECK(header->type == expected_frame_type);
+  CHECK_EQ(header->type, expected_frame_type);
   T output;
   HPackParser hpack_parser;
   DeterministicBitGen bitgen;
@@ -75,7 +76,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
                                   absl::BitGenRef(bitgen), GetContext<Arena>(),
                                   std::move(serialized), FuzzerFrameLimits());
   CHECK_OK(deser);
-  CHECK(output == input);
+  if (!saw_encoding_errors) CHECK_EQ(input, output);
 }
 
 template <typename T>

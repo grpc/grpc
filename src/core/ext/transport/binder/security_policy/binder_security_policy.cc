@@ -24,8 +24,7 @@
 #include <unistd.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 #include "src/core/util/crash.h"
@@ -91,11 +90,11 @@ bool SameSignatureSecurityPolicy::IsAuthorized(int uid) {
   JNIEnv* env = GetEnv(jvm_);
   bool result = grpc_binder::IsSignatureMatch(env, context_, getuid(), uid);
   if (result) {
-    gpr_log(GPR_INFO, "uid %d and uid %d passed SameSignature check", getuid(),
-            uid);
+    LOG(INFO) << "uid " << getuid() << " and uid " << uid
+              << " passed SameSignature check";
   } else {
-    gpr_log(GPR_ERROR, "uid %d and uid %d failed SameSignature check", getuid(),
-            uid);
+    LOG(ERROR) << "uid " << getuid() << " and uid " << uid
+               << " failed SameSignature check";
   }
   return result;
 }

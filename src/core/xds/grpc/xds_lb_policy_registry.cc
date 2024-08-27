@@ -40,6 +40,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 
 namespace grpc_core {
 
@@ -81,11 +82,9 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
     }
     Json::Object config;
     // enable_oob_load_report
-    auto* enable_oob_load_report =
-        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_enable_oob_load_report(
-            resource);
-    if (enable_oob_load_report != nullptr &&
-        google_protobuf_BoolValue_value(enable_oob_load_report)) {
+    if (ParseBoolValue(
+            envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_enable_oob_load_report(
+                resource))) {
       config["enableOobLoadReport"] = Json::FromBool(true);
     }
     // oob_reporting_period

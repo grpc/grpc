@@ -132,7 +132,7 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    LOG(INFO) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
+    VLOG(2) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
   }
   // Calling closesocket triggers invocation of any pending I/O operations with
@@ -216,7 +216,7 @@ static void probe_ipv6_once(void) {
   SOCKET s = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (s == INVALID_SOCKET) {
-    LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
+    VLOG(2) << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
@@ -225,7 +225,7 @@ static void probe_ipv6_once(void) {
     if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      LOG(INFO) << "Disabling AF_INET6 sockets because ::1 is not available.";
+      VLOG(2) << "Disabling AF_INET6 sockets because ::1 is not available.";
     }
     closesocket(s);
   }

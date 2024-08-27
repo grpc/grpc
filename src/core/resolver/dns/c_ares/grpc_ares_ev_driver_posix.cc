@@ -39,8 +39,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"

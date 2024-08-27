@@ -23,7 +23,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 namespace grpc_core {

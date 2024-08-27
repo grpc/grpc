@@ -23,7 +23,6 @@
 #include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/transport_security_interface.h"

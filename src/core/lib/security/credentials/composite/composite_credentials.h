@@ -102,6 +102,8 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
       grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
   ~grpc_composite_call_credentials() override = default;
 
+  void Orphaned() override { inner_.clear(); }
+
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;

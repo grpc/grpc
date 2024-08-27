@@ -27,8 +27,6 @@
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -78,7 +76,9 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
   grpc_call_stack* call_stack = CALL_TO_CALL_STACK(this);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
-  GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
+  GRPC_TRACE_LOG(channel, INFO)
+      << "OP[" << top_elem->filter->name << ":" << top_elem
+      << "]: " << grpc_transport_stream_op_batch_string(batch, false);
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
 }
 

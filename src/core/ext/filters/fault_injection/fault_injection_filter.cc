@@ -27,6 +27,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -36,7 +37,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -53,7 +53,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 const NoInterceptor FaultInjectionFilter::Call::OnServerInitialMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnClientToServerMessage;
@@ -151,10 +150,9 @@ FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
 ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, FaultInjectionFilter* filter) {
   auto decision = filter->MakeInjectionDecision(md);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-    gpr_log(GPR_INFO, "chand=%p: Fault injection triggered %s", this,
-            decision.ToString().c_str());
-  }
+  GRPC_TRACE_LOG(fault_injection_filter, INFO)
+      << "chand=" << this << ": Fault injection triggered "
+      << decision.ToString();
   auto delay = decision.DelayUntil();
   return TrySeq(Sleep(delay), [decision = std::move(decision)]() {
     return decision.MaybeAbort();
@@ -271,8 +269,7 @@ std::string FaultInjectionFilter::InjectionDecision::ToString() const {
 }
 
 const grpc_channel_filter FaultInjectionFilter::kFilter =
-    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>(
-        "fault_injection_filter");
+    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>();
 
 void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
   FaultInjectionServiceConfigParser::Register(builder);

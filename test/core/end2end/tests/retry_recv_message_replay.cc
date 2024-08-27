@@ -37,6 +37,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
+#include "src/core/util/unique_type_name.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -108,8 +109,6 @@ class FailFirstSendOpFilter {
 
 grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -120,7 +119,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstSendOpFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailFirstSendOpFilter"),
 };
 
 // Tests the fix for a bug found in real-world code where recv_message

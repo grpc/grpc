@@ -43,6 +43,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/orphanable/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 // This test won't work except with posix sockets enabled
@@ -121,11 +122,13 @@ static void client_setup_transport(grpc_core::Transport* transport) {
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Transport* transport;
-  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
-                                           g_ctx.ep->client, true);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::ChannelArgs(),
+      grpc_core::OrphanablePtr<grpc_endpoint>(g_ctx.ep->client), true);
   client_setup_transport(transport);
   CHECK(g_ctx.client);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                      nullptr);
 }
 
 static void init_server() {
@@ -135,10 +138,12 @@ static void init_server() {
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
-  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
-                                           g_ctx.ep->server, false);
+  transport = grpc_create_chttp2_transport(
+      grpc_core::ChannelArgs(),
+      grpc_core::OrphanablePtr<grpc_endpoint>(g_ctx.ep->server), false);
   server_setup_transport(transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                      nullptr);
 }
 
 static void test_init() {

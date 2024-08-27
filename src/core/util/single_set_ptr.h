@@ -22,8 +22,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
-
 namespace grpc_core {
 
 template <class T, class Deleter = std::default_delete<T>>
@@ -64,17 +62,19 @@ class SingleSetPtr {
   void Reset() { Delete(p_.exchange(nullptr, std::memory_order_acq_rel)); }
 
   bool is_set() const {
-    T* p = p_.load(std::memory_order_acquire);
+    T* p = Get();
     return p != nullptr;
   }
 
+  T* Get() const { return p_.load(std::memory_order_acquire); }
+
   T* operator->() const {
-    T* p = p_.load(std::memory_order_acquire);
+    T* p = Get();
     DCHECK_NE(p, nullptr);
     return p;
   }
 
-  T& operator*() const { return *operator->(); }
+  T& operator*() const { return *Get(); }
 
  private:
   static void Delete(T* p) {

@@ -3,7 +3,7 @@
 ## Build Instruction
 
 1. Install Android SDK and NDK. Only NDK version >= 25 is supported. We tested against SDK Platform `33` and NDK `26.2.11394342`.
-2. Make sure Bazel is at least `7.0`. Use `export OVERRIDE_BAZEL_VERSION=7.1.0` to selected a supported version listed in `bazel/supported_versions.txt` if necessary.
+2. Make sure Bazel is at least `7.0`. Use `export OVERRIDE_BAZEL_VERSION=7.3.1` to selected a supported version listed in `bazel/supported_versions.txt` if necessary.
 3. Point environment variables to install locations of SDK and NDK
     ```
     export ANDROID_HOME=$HOME/android-sdk
@@ -13,7 +13,7 @@
     ```
     bazel build \
       --extra_toolchains=@androidndk//:all \
-      --android_platforms=//:android_x86_64,//:android_armv7,//:android_arm64 \
+      --android_platforms=//bazel/platforms/android:x86_64,//bazel/platforms/android:armeabi-v7a,//bazel/platforms/android:arm64-v8a \
       --copt=-Wno-unknown-warning-option \
       //examples/android/binder/java/io/grpc/binder/cpp/exampleserver:app \
       //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app

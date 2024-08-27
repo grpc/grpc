@@ -80,8 +80,6 @@ namespace experimental {
 class PassiveListenerImpl;
 }  // namespace experimental
 
-extern TraceFlag grpc_server_channel_trace;
-
 class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
                public CppImplOf<Server, grpc_server> {
@@ -243,7 +241,7 @@ class Server : public ServerInterface,
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
-                       OrphanablePtr<Channel> channel, size_t cq_idx,
+                       RefCountedPtr<Channel> channel, size_t cq_idx,
                        Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
@@ -254,7 +252,6 @@ class Server : public ServerInterface,
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
-    void InitCall(RefCountedPtr<CallSpineInterface> call);
 
    private:
     class ConnectivityWatcher;
@@ -267,7 +264,7 @@ class Server : public ServerInterface,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    OrphanablePtr<Channel> channel_;
+    RefCountedPtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;

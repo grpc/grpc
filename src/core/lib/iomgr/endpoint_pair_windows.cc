@@ -66,13 +66,13 @@ static void create_sockets(SOCKET sv[2]) {
   closesocket(lst_sock);
   grpc_error_handle error = grpc_tcp_prepare_socket(cli_sock);
   if (!error.ok()) {
-    LOG(INFO) << "Prepare cli_sock failed with error: "
-              << grpc_core::StatusToString(error);
+    VLOG(2) << "Prepare cli_sock failed with error: "
+            << grpc_core::StatusToString(error);
   }
   error = grpc_tcp_prepare_socket(svr_sock);
   if (!error.ok()) {
-    LOG(INFO) << "Prepare svr_sock failed with error: "
-              << grpc_core::StatusToString(error);
+    VLOG(2) << "Prepare svr_sock failed with error: "
+            << grpc_core::StatusToString(error);
   }
 
   sv[1] = cli_sock;

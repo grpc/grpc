@@ -34,6 +34,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -41,7 +42,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/fork.h"
@@ -51,6 +51,10 @@
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
+void grpc_resolver_dns_ares_reset_dns_resolver(void);
+
+extern absl::Status AresInit();
+extern void AresShutdown();
 
 #define MAX_PLUGINS 128
 
@@ -109,11 +113,21 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    grpc_resolver_dns_ares_init();
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      auto status = AresInit();
+      if (!status.ok()) {
+        VLOG(2) << "AresInit failed: " << status.message();
+      } else {
+        // TODO(yijiem): remove this once we remove the iomgr dns system.
+        grpc_resolver_dns_ares_reset_dns_resolver();
+      }
+    } else {
+      grpc_resolver_dns_ares_init();
+    }
     grpc_iomgr_start();
   }
 
-  GRPC_API_TRACE("grpc_init(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_init(void)";
 }
 
 void grpc_shutdown_internal_locked(void)
@@ -122,7 +136,11 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    grpc_resolver_dns_ares_shutdown();
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      AresShutdown();
+    } else {
+      grpc_resolver_dns_ares_shutdown();
+    }
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;
@@ -130,7 +148,7 @@ void grpc_shutdown_internal_locked(void)
 }
 
 void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
-  GRPC_API_TRACE("grpc_shutdown_from_cleanup_thread", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_from_cleanup_thread";
   grpc_core::MutexLock lock(g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
@@ -142,7 +160,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
 }
 
 void grpc_shutdown(void) {
-  GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown(void)";
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
@@ -175,7 +193,7 @@ void grpc_shutdown(void) {
 }
 
 void grpc_shutdown_blocking(void) {
-  GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_blocking(void)";
   grpc_core::MutexLock lock(g_init_mu);
   if (--g_initializations == 0) {
     g_shutting_down = true;

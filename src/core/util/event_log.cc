@@ -23,8 +23,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/log.h>
-
 namespace grpc_core {
 
 std::atomic<EventLog*> EventLog::g_instance_{nullptr};

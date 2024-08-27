@@ -24,7 +24,6 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -54,6 +53,10 @@ class ServerConfigSelectorFilter final
   explicit ServerConfigSelectorFilter(
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider);
+
+  static absl::string_view TypeName() {
+    return "server_config_selector_filter";
+  }
 
   ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
   ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
@@ -164,7 +167,7 @@ const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 }  // namespace
 
 const grpc_channel_filter kServerConfigSelectorFilter =
-    MakePromiseBasedFilter<ServerConfigSelectorFilter, FilterEndpoint::kServer>(
-        "server_config_selector_filter");
+    MakePromiseBasedFilter<ServerConfigSelectorFilter,
+                           FilterEndpoint::kServer>();
 
 }  // namespace grpc_core

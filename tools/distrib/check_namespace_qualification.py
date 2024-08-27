@@ -76,6 +76,7 @@ IGNORED_FILES = [
     # multi-line #define statements are not handled
     "src/core/lib/profiling/timers.h",
     "src/core/util/crash.h",
+    "src/core/util/unique_type_name.h",
     # The grpc_core::Server redundant namespace qualification is required for
     # older gcc versions.
     "src/core/ext/transport/chttp2/server/chttp2_server.h",

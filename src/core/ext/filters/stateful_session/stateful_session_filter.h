@@ -74,6 +74,8 @@ class StatefulSessionFilter
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "stateful_session_filter"; }
+
   static absl::StatusOr<std::unique_ptr<StatefulSessionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 

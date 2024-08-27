@@ -1,4 +1,5 @@
 # a set of tests that are run in parallel for sanity tests
+- script: tools/run_tests/sanity/banned_functions.py
 - script: tools/run_tests/sanity/check_absl_mutex.sh
 - script: tools/run_tests/sanity/check_bad_dependencies.sh
 - script: tools/run_tests/sanity/check_bazel_workspace.py
@@ -29,6 +30,8 @@
 - script: tools/distrib/check_pytype.sh
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
 - script: tools/distrib/clang_format_code.sh
+  cpu_cost: 1000
+- script: tools/codegen/core/gen_trace_flags_ci.sh
   cpu_cost: 1000
 - script: tools/distrib/gen_experiments_and_format.sh --check
   cpu_cost: 1000

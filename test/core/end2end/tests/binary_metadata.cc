@@ -48,9 +48,9 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   auto status_string = RandomBinarySlice(256);
 
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_md;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_md;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({
           {"key1-bin", key1_payload.as_string_view()},
@@ -64,7 +64,7 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102)
       .SendInitialMetadata({
           {"key3-bin", key3_payload.as_string_view()},
@@ -73,7 +73,7 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
       .RecvMessage(client_message);
   test.Expect(102, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage(response_payload.Ref())

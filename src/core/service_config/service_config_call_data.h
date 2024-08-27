@@ -28,6 +28,7 @@
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/chunked_vector.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 
@@ -85,7 +86,7 @@ class ServiceConfigCallData {
 
   template <typename A>
   A* GetCallAttribute() const {
-    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+    return DownCast<A*>(GetCallAttribute(A::TypeName()));
   }
 
   CallAttributeInterface* GetCallAttribute(UniqueTypeName type) const {

@@ -26,18 +26,14 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/util/alloc.h"
 
 using grpc_event_engine::experimental::EventEngine;
-
-grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 
 static int register_get_name_fn = []() {
   grpc_core::NameFromChannelFilter = [](const grpc_channel_filter* filter) {
@@ -121,11 +117,10 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
-  if (grpc_trace_channel_stack.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     LOG(INFO) << "CHANNEL_STACK: init " << name;
     for (size_t i = 0; i < filter_count; i++) {
-      gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s%s", filters[i]->name,
-              filters[i]->make_call_promise ? " [promise-capable]" : "");
+      LOG(INFO) << "CHANNEL_STACK:   filter " << filters[i]->name;
     }
   }
 
@@ -266,7 +261,9 @@ void grpc_call_stack_destroy(grpc_call_stack* stack,
 void grpc_call_next_op(grpc_call_element* elem,
                        grpc_transport_stream_op_batch* op) {
   grpc_call_element* next_elem = elem + 1;
-  GRPC_CALL_LOG_OP(GPR_INFO, next_elem, op);
+  GRPC_TRACE_LOG(channel, INFO)
+      << "OP[" << elem->filter->name << ":" << elem
+      << "]: " << grpc_transport_stream_op_batch_string(op, false);
   next_elem->filter->start_transport_stream_op_batch(next_elem, op);
 }
 
@@ -296,39 +293,3 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
 
 void grpc_channel_stack_no_post_init(grpc_channel_stack*,
                                      grpc_channel_element*) {}
-
-namespace {
-
-grpc_core::NextPromiseFactory ClientNext(grpc_channel_element* elem) {
-  return [elem](grpc_core::CallArgs args) {
-    return elem->filter->make_call_promise(elem, std::move(args),
-                                           ClientNext(elem + 1));
-  };
-}
-
-}  // namespace
-
-grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-grpc_channel_stack::MakeClientCallPromise(grpc_core::CallArgs call_args) {
-  return ClientNext(grpc_channel_stack_element(this, 0))(std::move(call_args));
-}
-
-void grpc_channel_stack::InitClientCallSpine(
-    grpc_core::CallSpineInterface* call) {
-  for (size_t i = 0; i < count; i++) {
-    auto* elem = grpc_channel_stack_element(this, i);
-    if (elem->filter->init_call == nullptr) {
-      grpc_core::Crash(
-          absl::StrCat("Filter '", elem->filter->name,
-                       "' does not support the call-v3 interface"));
-    }
-    elem->filter->init_call(elem, call);
-  }
-}
-
-void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
-                      grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* op) {
-  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
-          grpc_transport_stream_op_batch_string(op, false).c_str());
-}

@@ -23,12 +23,12 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -55,9 +55,6 @@ namespace internal {
 
 namespace {
 
-grpc_core::TraceFlag grpc_environment_autodetect_trace(
-    false, "environment_autodetect");
-
 // This is not a definite method to get the namespace name for GKE, but it is
 // the best we have.
 std::string GetNamespaceName() {
@@ -66,10 +63,9 @@ std::string GetNamespaceName() {
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
-      gpr_log(GPR_DEBUG, "Reading file %s failed: %s", filename,
-              grpc_core::StatusToString(namespace_name.status()).c_str());
-    }
+    GRPC_TRACE_VLOG(environment_autodetect, 2)
+        << "Reading file " << filename
+        << " failed: " << grpc_core::StatusToString(namespace_name.status());
     // Fallback on an environment variable
     return grpc_core::GetEnv("NAMESPACE_NAME").value_or("");
   }
@@ -251,15 +247,12 @@ class EnvironmentAutoDetectHelper
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, absl::StatusOr<std::string> result) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_environment_autodetect_trace)) {
-              gpr_log(
-                  GPR_INFO,
-                  "Environment AutoDetect: Attribute: \"%s\" Result: \"%s\"",
-                  attribute.c_str(),
-                  result.ok()
-                      ? result.value().c_str()
-                      : grpc_core::StatusToString(result.status()).c_str());
-            }
+            GRPC_TRACE_LOG(environment_autodetect, INFO)
+                << "Environment AutoDetect: Attribute: \"" << attribute
+                << "\" Result: \""
+                << (result.ok() ? result.value()
+                                : grpc_core::StatusToString(result.status()))
+                << "\"";
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
@@ -272,22 +265,18 @@ class EnvironmentAutoDetectHelper
                 // If fetching from the MetadataServer failed and we were
                 // assuming a GCE environment, fallback to "global".
                 else if (assuming_gce_) {
-                  if (GRPC_TRACE_FLAG_ENABLED(
-                          grpc_environment_autodetect_trace)) {
-                    gpr_log(GPR_INFO,
-                            "Environment Autodetect: Falling back to global "
-                            "resource type");
-                  }
+                  GRPC_TRACE_LOG(environment_autodetect, INFO)
+                      << "Environment Autodetect: Falling back to "
+                      << "global resource type";
                   assuming_gce_ = false;
                   resource_.resource_type = "global";
                 }
                 attributes_to_fetch_.erase(it);
               } else {
                 // This should not happen
-                gpr_log(GPR_ERROR,
-                        "An unexpected attribute was seen from the "
-                        "MetadataServer: %s",
-                        attribute.c_str());
+                LOG(ERROR) << "An unexpected attribute was seen from the "
+                              "MetadataServer: "
+                           << attribute;
               }
               if (attributes_to_fetch_.empty()) {
                 resource = std::move(resource_);

@@ -27,7 +27,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -322,6 +321,8 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
   PosixSocketWrapper sock;
   EventEngine::ResolvedAddress mapped_target_addr;
 };
+
+bool SetSocketDualStack(int fd);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

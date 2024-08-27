@@ -33,13 +33,11 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/debug_location.h"
 #include "src/core/util/fork.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 
@@ -109,17 +107,23 @@ class Combiner;
 ///               since that implies a core re-entry outside of application
 ///               callbacks.
 ///
-class GRPC_DLL ExecCtx {
+class GRPC_DLL ExecCtx : public latent_see::ParentScope {
  public:
   /// Default Constructor
 
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+  ExecCtx()
+      : latent_see::ParentScope(GRPC_LATENT_SEE_METADATA("ExecCtx")),
+        flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
     Fork::IncExecCtxCount();
     Set(this);
   }
 
   /// Parameterised Constructor
-  explicit ExecCtx(uintptr_t fl) : flags_(fl) {
+  explicit ExecCtx(uintptr_t fl)
+      : ExecCtx(fl, GRPC_LATENT_SEE_METADATA("ExecCtx")) {}
+
+  explicit ExecCtx(uintptr_t fl, latent_see::Metadata* latent_see_metadata)
+      : latent_see::ParentScope(latent_see_metadata), flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::IncExecCtxCount();
     }

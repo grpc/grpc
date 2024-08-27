@@ -46,16 +46,16 @@ namespace grpc_core {
 
 class LegacyChannel final : public Channel {
  public:
-  static absl::StatusOr<OrphanablePtr<Channel>> Create(
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type);
 
   // Do not instantiate directly -- use Create() instead.
-  LegacyChannel(bool is_client, bool is_promising, std::string target,
+  LegacyChannel(bool is_client, std::string target,
                 const ChannelArgs& channel_args,
                 RefCountedPtr<grpc_channel_stack> channel_stack);
 
-  void Orphan() override;
+  void Orphaned() override;
 
   bool IsLame() const override;
 
@@ -64,6 +64,10 @@ class LegacyChannel final : public Channel {
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         absl::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
+
+  void StartCall(UnstartedCallHandler) override {
+    Crash("StartCall() not supported on LegacyChannel");
+  }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel_stack_->EventEngine();
@@ -90,7 +94,6 @@ class LegacyChannel final : public Channel {
   void Ping(grpc_completion_queue* cq, void* tag) override;
 
   bool is_client() const override { return is_client_; }
-  bool is_promising() const override { return is_promising_; }
   grpc_channel_stack* channel_stack() const override {
     return channel_stack_.get();
   }
@@ -103,7 +106,6 @@ class LegacyChannel final : public Channel {
   ClientChannelFilter* GetClientChannelFilter() const;
 
   const bool is_client_;
-  const bool is_promising_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
 };
 

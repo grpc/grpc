@@ -47,12 +47,11 @@ class WinSocket {
     // the WinSocket's ThreadPool. Otherwise, a "pending iocp" flag will
     // be set.
     void SetReady();
-    // Set WSA error results for a completed op.
-    void SetError(int wsa_error);
-    // Set an OverlappedResult. Useful when WSARecv returns immediately.
-    void SetResult(OverlappedResult result);
+    // Set WSA result for a completed op.
+    // If the error is non-zero, bytes will be overridden to 0.
+    void SetResult(int wsa_error, DWORD bytes, absl::string_view context);
     // Set error results for a completed op.
-    // This is a manual override, meant to override any WSA status code.
+    // This is a manual override, meant to ignore any WSA status code.
     void SetErrorStatus(absl::Status error_status);
     // Retrieve the results of an overlapped operation (via Winsock API) and
     // store them locally.

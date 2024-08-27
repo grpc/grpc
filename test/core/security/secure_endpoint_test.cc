@@ -82,11 +82,6 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
-  grpc_endpoint_shutdown(m->wrapped_ep, why);
-}
-
 static void me_destroy(grpc_endpoint* ep) {
   intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
   grpc_endpoint_destroy(m->wrapped_ep);
@@ -111,7 +106,6 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_add_to_pollset,
                                             me_add_to_pollset_set,
                                             me_delete_from_pollset_set,
-                                            me_shutdown,
                                             me_destroy,
                                             me_get_peer,
                                             me_get_local_address,
@@ -167,9 +161,11 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   }
 
   if (leftover_nslices == 0) {
-    f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
-                                              fake_read_zero_copy_protector,
-                                              tcp.client, nullptr, &args, 0);
+    f.client_ep = grpc_secure_endpoint_create(
+                      fake_read_protector, fake_read_zero_copy_protector,
+                      grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
+                      nullptr, &args, 0)
+                      .release();
   } else {
     unsigned i;
     tsi_result result;
@@ -212,15 +208,19 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         reinterpret_cast<const char*>(encrypted_buffer),
         total_buffer_size - buffer_size);
     f.client_ep = grpc_secure_endpoint_create(
-        fake_read_protector, fake_read_zero_copy_protector, tcp.client,
-        &encrypted_leftover, &args, 1);
+                      fake_read_protector, fake_read_zero_copy_protector,
+                      grpc_core::OrphanablePtr<grpc_endpoint>(tcp.client),
+                      &encrypted_leftover, &args, 1)
+                      .release();
     grpc_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
 
-  f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
-                                            fake_write_zero_copy_protector,
-                                            tcp.server, nullptr, &args, 0);
+  f.server_ep = grpc_secure_endpoint_create(
+                    fake_write_protector, fake_write_zero_copy_protector,
+                    grpc_core::OrphanablePtr<grpc_endpoint>(tcp.server),
+                    nullptr, &args, 0)
+                    .release();
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   return f;
@@ -294,8 +294,6 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   ASSERT_EQ(incoming.count, 1);
   ASSERT_TRUE(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_shutdown(f.server_ep, GRPC_ERROR_CREATE("test_leftover end"));
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);
 

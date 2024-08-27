@@ -103,8 +103,6 @@ class InjectStatusFilter {
 
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -115,7 +113,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "InjectStatusFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("InjectStatusFilter"),
 };
 
 // Tests that we honor the error passed to recv_trailing_metadata_ready

@@ -32,7 +32,6 @@
 #include "xds/service/orca/v3/orca.upb.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/rpc_method.h>

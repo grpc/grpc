@@ -35,9 +35,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/util/backoff.h"
@@ -174,8 +174,8 @@ thread_local WorkQueue* g_local_queue = nullptr;
 WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
     : pool_{std::make_shared<WorkStealingThreadPoolImpl>(reserve_threads)} {
   if (g_log_verbose_failures) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "%s", "WorkStealingThreadPool verbose failures are enabled");
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "WorkStealingThreadPool verbose failures are enabled";
   }
   pool_->Start();
 }
@@ -266,7 +266,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
-  LOG(INFO) << "WorkStealingThreadPoolImpl::Quiesce";
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
@@ -318,7 +317,8 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
-  LOG(INFO) << "WorkStealingThreadPoolImpl::PrepareFork";
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "WorkStealingThreadPoolImpl::PrepareFork";
   SetForking(true);
   work_signal_.SignalAll();
   auto threads_were_shut_down = living_thread_count_.BlockUntilThreadCount(
@@ -413,9 +413,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::~Lifeguard() {
   lifeguard_should_shut_down_->Notify();
   while (lifeguard_running_.load(std::memory_order_relaxed)) {
-    GRPC_LOG_EVERY_N_SEC_DELAYED(kBlockingQuiesceLogRateSeconds, GPR_DEBUG,
-                                 "%s",
-                                 "Waiting for lifeguard thread to shut down");
+    GRPC_LOG_EVERY_N_SEC_DELAYED_DEBUG(
+        kBlockingQuiesceLogRateSeconds, "%s",
+        "Waiting for lifeguard thread to shut down");
     lifeguard_is_shut_down_->WaitForNotification();
   }
   // Do an additional wait in case this method races with LifeguardMain's
@@ -456,10 +456,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // TODO(hork): new threads may spawn when there is no work in the global
   // queue, nor any work to steal. Add more sophisticated logic about when to
   // start a thread.
-  GRPC_EVENT_ENGINE_TRACE(
-      "Starting new ThreadPool thread due to backlog (total threads: %" PRIuPTR
-      ")",
-      living_thread_count + 1);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "Starting new ThreadPool thread due to backlog (total threads: "
+      << living_thread_count + 1;
   pool_->StartThread();
   // Tell the lifeguard to monitor the pool more closely.
   backoff_.Reset();

@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
@@ -34,7 +35,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -58,8 +58,6 @@
 #include "src/core/util/time.h"
 
 namespace grpc_core {
-
-TraceFlag grpc_orca_client_trace(false, "orca_client");
 
 //
 // OrcaProducer::ConnectivityWatcher
@@ -149,7 +147,7 @@ class OrcaProducer::OrcaStreamEventHandler final
     if (status == GRPC_STATUS_UNIMPLEMENTED) {
       static const char kErrorMessage[] =
           "Orca stream returned UNIMPLEMENTED; disabling";
-      gpr_log(GPR_ERROR, kErrorMessage);
+      LOG(ERROR) << kErrorMessage;
       auto* channelz_node = producer_->subchannel_->channelz_node();
       if (channelz_node != nullptr) {
         channelz_node->AddTraceEvent(
@@ -271,15 +269,13 @@ void OrcaProducer::MaybeStartStreamLocked() {
       connected_subchannel_, subchannel_->pollset_set(),
       std::make_unique<OrcaStreamEventHandler>(
           WeakRefAsSubclass<OrcaProducer>(), report_interval_),
-      GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace) ? "OrcaClient" : nullptr);
+      GRPC_TRACE_FLAG_ENABLED(orca_client) ? "OrcaClient" : nullptr);
 }
 
 void OrcaProducer::NotifyWatchers(
     const BackendMetricData& backend_metric_data) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace)) {
-    gpr_log(GPR_INFO, "OrcaProducer %p: reporting backend metrics to watchers",
-            this);
-  }
+  GRPC_TRACE_LOG(orca_client, INFO)
+      << "OrcaProducer " << this << ": reporting backend metrics to watchers";
   MutexLock lock(&mu_);
   for (OrcaWatcher* watcher : watchers_) {
     watcher->watcher()->OnBackendMetricReport(backend_metric_data);

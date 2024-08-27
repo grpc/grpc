@@ -28,7 +28,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
@@ -57,6 +56,8 @@ class ServiceConfigChannelArgFilter final
     : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "service_config_channel_arg"; }
 
   static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
@@ -119,8 +120,7 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
 
 const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
     MakePromiseBasedFilter<ServiceConfigChannelArgFilter,
-                           FilterEndpoint::kClient>(
-        "service_config_channel_arg");
+                           FilterEndpoint::kClient>();
 
 }  // namespace
 

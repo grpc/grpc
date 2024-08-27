@@ -102,17 +102,17 @@ class Epoll1Poller : public PosixEventPoller {
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {
-    int epfd;
+    int epfd = -1;
 
     // The epoll_events after the last call to epoll_wait()
-    struct epoll_event events[MAX_EPOLL_EVENTS];
+    struct epoll_event events[MAX_EPOLL_EVENTS]{};
 
     // The number of epoll_events after the last call to epoll_wait()
-    int num_events;
+    int num_events = 0;
 
     // Index of the first event in epoll_events that has to be processed. This
     // field is only valid if num_events > 0
-    int cursor;
+    int cursor = 0;
   };
 #else
   struct EpollSet {};

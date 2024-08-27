@@ -15,9 +15,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\client_channel\\client_channel_filter.cc " +
     "src\\core\\client_channel\\client_channel_plugin.cc " +
     "src\\core\\client_channel\\client_channel_service_config.cc " +
-    "src\\core\\client_channel\\config_selector.cc " +
+    "src\\core\\client_channel\\direct_channel.cc " +
     "src\\core\\client_channel\\dynamic_filters.cc " +
     "src\\core\\client_channel\\global_subchannel_pool.cc " +
+    "src\\core\\client_channel\\lb_metadata.cc " +
     "src\\core\\client_channel\\load_balanced_call_destination.cc " +
     "src\\core\\client_channel\\local_subchannel_pool.cc " +
     "src\\core\\client_channel\\retry_filter.cc " +
@@ -64,9 +65,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\hpack_parser_table.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\http2_settings.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\http_trace.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\huffsyms.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\max_concurrent_streams_policy.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\parsing.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\ping_abuse_policy.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\ping_callbacks.cc " +
@@ -75,7 +74,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\transport\\chttp2\\transport\\varint.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\write_size_policy.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\writing.cc " +
-    "src\\core\\ext\\transport\\inproc\\inproc_plugin.cc " +
     "src\\core\\ext\\transport\\inproc\\inproc_transport.cc " +
     "src\\core\\ext\\transport\\inproc\\legacy_inproc_transport.cc " +
     "src\\core\\ext\\upb-gen\\envoy\\admin\\v3\\certs.upb_minitable.c " +
@@ -411,7 +409,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\channel\\channel_stack.cc " +
     "src\\core\\lib\\channel\\channel_stack_builder.cc " +
     "src\\core\\lib\\channel\\channel_stack_builder_impl.cc " +
-    "src\\core\\lib\\channel\\channel_stack_trace.cc " +
     "src\\core\\lib\\channel\\connected_channel.cc " +
     "src\\core\\lib\\channel\\promise_based_filter.cc " +
     "src\\core\\lib\\channel\\status_util.cc " +
@@ -423,6 +420,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\config\\core_configuration.cc " +
     "src\\core\\lib\\config\\load_config.cc " +
     "src\\core\\lib\\debug\\trace.cc " +
+    "src\\core\\lib\\debug\\trace_flags.cc " +
     "src\\core\\lib\\event_engine\\ares_resolver.cc " +
     "src\\core\\lib\\event_engine\\cf_engine\\cf_engine.cc " +
     "src\\core\\lib\\event_engine\\cf_engine\\cfstream_endpoint.cc " +
@@ -461,7 +459,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\thread_pool\\work_stealing_thread_pool.cc " +
     "src\\core\\lib\\event_engine\\thready_event_engine\\thready_event_engine.cc " +
     "src\\core\\lib\\event_engine\\time_util.cc " +
-    "src\\core\\lib\\event_engine\\trace.cc " +
     "src\\core\\lib\\event_engine\\utils.cc " +
     "src\\core\\lib\\event_engine\\windows\\grpc_polled_fd_windows.cc " +
     "src\\core\\lib\\event_engine\\windows\\iocp.cc " +
@@ -489,7 +486,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\ev_epoll1_linux.cc " +
     "src\\core\\lib\\iomgr\\ev_poll_posix.cc " +
     "src\\core\\lib\\iomgr\\ev_posix.cc " +
-    "src\\core\\lib\\iomgr\\ev_windows.cc " +
     "src\\core\\lib\\iomgr\\event_engine_shims\\closure.cc " +
     "src\\core\\lib\\iomgr\\event_engine_shims\\endpoint.cc " +
     "src\\core\\lib\\iomgr\\event_engine_shims\\tcp_client.cc " +
@@ -548,7 +544,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\promise\\activity.cc " +
     "src\\core\\lib\\promise\\party.cc " +
     "src\\core\\lib\\promise\\sleep.cc " +
-    "src\\core\\lib\\promise\\trace.cc " +
     "src\\core\\lib\\resource_quota\\api.cc " +
     "src\\core\\lib\\resource_quota\\arena.cc " +
     "src\\core\\lib\\resource_quota\\connection_quota.cc " +
@@ -556,7 +551,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\resource_quota\\periodic_update.cc " +
     "src\\core\\lib\\resource_quota\\resource_quota.cc " +
     "src\\core\\lib\\resource_quota\\thread_quota.cc " +
-    "src\\core\\lib\\resource_quota\\trace.cc " +
     "src\\core\\lib\\security\\authorization\\audit_logging.cc " +
     "src\\core\\lib\\security\\authorization\\authorization_policy_provider_vtable.cc " +
     "src\\core\\lib\\security\\authorization\\evaluate_args.cc " +
@@ -604,6 +598,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\credentials\\tls\\grpc_tls_crl_provider.cc " +
     "src\\core\\lib\\security\\credentials\\tls\\tls_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\tls\\tls_utils.cc " +
+    "src\\core\\lib\\security\\credentials\\token_fetcher\\token_fetcher_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\xds\\xds_credentials.cc " +
     "src\\core\\lib\\security\\security_connector\\alts\\alts_security_connector.cc " +
     "src\\core\\lib\\security\\security_connector\\fake\\fake_security_connector.cc " +
@@ -622,35 +617,36 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\slice\\percent_encoding.cc " +
     "src\\core\\lib\\slice\\slice.cc " +
     "src\\core\\lib\\slice\\slice_buffer.cc " +
-    "src\\core\\lib\\slice\\slice_refcount.cc " +
     "src\\core\\lib\\slice\\slice_string_helpers.cc " +
-    "src\\core\\lib\\surface\\api_trace.cc " +
     "src\\core\\lib\\surface\\byte_buffer.cc " +
     "src\\core\\lib\\surface\\byte_buffer_reader.cc " +
     "src\\core\\lib\\surface\\call.cc " +
     "src\\core\\lib\\surface\\call_details.cc " +
     "src\\core\\lib\\surface\\call_log_batch.cc " +
+    "src\\core\\lib\\surface\\call_utils.cc " +
     "src\\core\\lib\\surface\\channel.cc " +
     "src\\core\\lib\\surface\\channel_create.cc " +
     "src\\core\\lib\\surface\\channel_init.cc " +
     "src\\core\\lib\\surface\\channel_stack_type.cc " +
+    "src\\core\\lib\\surface\\client_call.cc " +
     "src\\core\\lib\\surface\\completion_queue.cc " +
     "src\\core\\lib\\surface\\completion_queue_factory.cc " +
     "src\\core\\lib\\surface\\event_string.cc " +
+    "src\\core\\lib\\surface\\filter_stack_call.cc " +
     "src\\core\\lib\\surface\\init.cc " +
     "src\\core\\lib\\surface\\init_internally.cc " +
     "src\\core\\lib\\surface\\lame_client.cc " +
     "src\\core\\lib\\surface\\legacy_channel.cc " +
     "src\\core\\lib\\surface\\metadata_array.cc " +
+    "src\\core\\lib\\surface\\server_call.cc " +
     "src\\core\\lib\\surface\\validate_metadata.cc " +
     "src\\core\\lib\\surface\\version.cc " +
-    "src\\core\\lib\\surface\\wait_for_cq_end_op.cc " +
-    "src\\core\\lib\\transport\\batch_builder.cc " +
     "src\\core\\lib\\transport\\bdp_estimator.cc " +
     "src\\core\\lib\\transport\\call_arena_allocator.cc " +
     "src\\core\\lib\\transport\\call_filters.cc " +
     "src\\core\\lib\\transport\\call_final_info.cc " +
     "src\\core\\lib\\transport\\call_spine.cc " +
+    "src\\core\\lib\\transport\\call_state.cc " +
     "src\\core\\lib\\transport\\connectivity_state.cc " +
     "src\\core\\lib\\transport\\error_utils.cc " +
     "src\\core\\lib\\transport\\interception_chain.cc " +
@@ -710,9 +706,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\resolver\\resolver.cc " +
     "src\\core\\resolver\\resolver_registry.cc " +
     "src\\core\\resolver\\sockaddr\\sockaddr_resolver.cc " +
+    "src\\core\\resolver\\xds\\xds_config.cc " +
     "src\\core\\resolver\\xds\\xds_dependency_manager.cc " +
     "src\\core\\resolver\\xds\\xds_resolver.cc " +
-    "src\\core\\resolver\\xds\\xds_resolver_trace.cc " +
     "src\\core\\server\\server.cc " +
     "src\\core\\server\\server_call_tracer_filter.cc " +
     "src\\core\\server\\server_config_selector_filter.cc " +
@@ -768,6 +764,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\util\\gethostname_fallback.cc " +
     "src\\core\\util\\gethostname_host_name_max.cc " +
     "src\\core\\util\\gethostname_sysconf.cc " +
+    "src\\core\\util\\glob.cc " +
     "src\\core\\util\\gpr_time.cc " +
     "src\\core\\util\\grpc_if_nametoindex_posix.cc " +
     "src\\core\\util\\grpc_if_nametoindex_unsupported.cc " +
@@ -781,6 +778,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\util\\json\\json_reader.cc " +
     "src\\core\\util\\json\\json_util.cc " +
     "src\\core\\util\\json\\json_writer.cc " +
+    "src\\core\\util\\latent_see.cc " +
     "src\\core\\util\\linux\\cpu.cc " +
     "src\\core\\util\\linux\\env.cc " +
     "src\\core\\util\\linux\\log.cc " +
@@ -834,18 +832,24 @@ if (PHP_GRPC != "no") {
     "src\\core\\xds\\grpc\\xds_certificate_provider.cc " +
     "src\\core\\xds\\grpc\\xds_client_grpc.cc " +
     "src\\core\\xds\\grpc\\xds_cluster.cc " +
+    "src\\core\\xds\\grpc\\xds_cluster_parser.cc " +
     "src\\core\\xds\\grpc\\xds_cluster_specifier_plugin.cc " +
     "src\\core\\xds\\grpc\\xds_common_types.cc " +
+    "src\\core\\xds\\grpc\\xds_common_types_parser.cc " +
     "src\\core\\xds\\grpc\\xds_endpoint.cc " +
+    "src\\core\\xds\\grpc\\xds_endpoint_parser.cc " +
     "src\\core\\xds\\grpc\\xds_health_status.cc " +
     "src\\core\\xds\\grpc\\xds_http_fault_filter.cc " +
-    "src\\core\\xds\\grpc\\xds_http_filters.cc " +
+    "src\\core\\xds\\grpc\\xds_http_filter_registry.cc " +
     "src\\core\\xds\\grpc\\xds_http_rbac_filter.cc " +
     "src\\core\\xds\\grpc\\xds_http_stateful_session_filter.cc " +
     "src\\core\\xds\\grpc\\xds_lb_policy_registry.cc " +
     "src\\core\\xds\\grpc\\xds_listener.cc " +
+    "src\\core\\xds\\grpc\\xds_listener_parser.cc " +
     "src\\core\\xds\\grpc\\xds_route_config.cc " +
+    "src\\core\\xds\\grpc\\xds_route_config_parser.cc " +
     "src\\core\\xds\\grpc\\xds_routing.cc " +
+    "src\\core\\xds\\grpc\\xds_server_grpc.cc " +
     "src\\core\\xds\\grpc\\xds_transport_grpc.cc " +
     "src\\core\\xds\\xds_client\\xds_api.cc " +
     "src\\core\\xds\\xds_client\\xds_bootstrap.cc " +
@@ -1310,6 +1314,7 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\message\\array.c " +
     "third_party\\upb\\upb\\message\\compat.c " +
     "third_party\\upb\\upb\\message\\copy.c " +
+    "third_party\\upb\\upb\\message\\internal\\compare_unknown.c " +
     "third_party\\upb\\upb\\message\\internal\\extension.c " +
     "third_party\\upb\\upb\\message\\internal\\message.c " +
     "third_party\\upb\\upb\\message\\map.c " +
@@ -1686,6 +1691,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\plugin");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\tls");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\token_fetcher");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\alts");

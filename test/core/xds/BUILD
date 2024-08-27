@@ -36,6 +36,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_server_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
     ],
@@ -224,6 +225,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -272,6 +274,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -309,6 +312,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_health_status",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:http_protocol_options_proto",
@@ -317,6 +321,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -332,6 +337,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_health_status",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",

@@ -18,7 +18,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
@@ -32,7 +31,7 @@
 namespace grpc_core {
 
 void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
-#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
+#if GRPC_IOS_EVENT_ENGINE_CLIENT
   VLOG(2) << "Using EventEngine dns resolver";
   builder->resolver_registry()->RegisterResolverFactory(
       std::make_unique<EventEngineClientChannelDNSResolverFactory>());

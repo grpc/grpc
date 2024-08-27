@@ -55,9 +55,9 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
@@ -70,7 +70,7 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   Step();
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})
@@ -83,7 +83,7 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   Step();
   EXPECT_NE(s2.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close2;
+  IncomingCloseOnServer client_close2;
   s2.NewBatch(202)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})

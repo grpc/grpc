@@ -35,6 +35,9 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag_msg_init = {
   &envoy_type_tracing_v3_CustomTag_submsgs[0],
   &envoy_type_tracing_v3_CustomTag__fields[0],
   UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.tracing.v3.CustomTag",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -55,6 +58,9 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Literal_msg_init = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Literal__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.tracing.v3.CustomTag.Literal",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -70,6 +76,9 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Environment_msg_init = 
   NULL,
   &envoy_type_tracing_v3_CustomTag_Environment__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.tracing.v3.CustomTag.Environment",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -87,6 +96,9 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Header_msg_init = {
   NULL,
   &envoy_type_tracing_v3_CustomTag_Header__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.tracing.v3.CustomTag.Header",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -110,6 +122,9 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Metadata_msg_init = {
   &envoy_type_tracing_v3_CustomTag_Metadata_submsgs[0],
   &envoy_type_tracing_v3_CustomTag_Metadata__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.tracing.v3.CustomTag.Metadata",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

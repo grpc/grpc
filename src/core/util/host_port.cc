@@ -26,8 +26,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
-
 namespace grpc_core {
 
 std::string JoinHostPort(absl::string_view host, int port) {

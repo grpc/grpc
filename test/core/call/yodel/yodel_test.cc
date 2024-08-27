@@ -22,8 +22,12 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/build.h"
 
 namespace grpc_core {
+
+bool g_yodel_fuzzing;
 
 namespace yodel_detail {
 
@@ -126,8 +130,12 @@ class YodelTest::WatchDog {
  private:
   YodelTest* const test_;
   grpc_event_engine::experimental::EventEngine::TaskHandle const timer_{
-      test_->state_->event_engine->RunAfter(Duration::Minutes(5),
-                                            [this]() { test_->Timeout(); })};
+      // For fuzzing, we'll wait for a year since the fuzzing EE allows delays
+      // capped to one year for each RunAfter() call. This will prevent
+      // pre-mature timeouts of some legitimate fuzzed inputs.
+      test_->state_->event_engine->RunAfter(
+          g_yodel_fuzzing ? Duration::Hours(24 * 365) : Duration::Minutes(5),
+          [this]() { test_->Timeout(); })};
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -144,12 +152,13 @@ void YodelTest::RunTest() {
   state_->event_engine =
       std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
           []() {
-            grpc_timer_manager_set_threading(false);
+            grpc_timer_manager_set_start_threaded(false);
             grpc_event_engine::experimental::FuzzingEventEngine::Options
                 options;
             return options;
           }(),
           actions_);
+  grpc_init();
   state_->call_arena_allocator = MakeRefCounted<CallArenaAllocator>(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "test-allocator"),
@@ -168,6 +177,14 @@ void YodelTest::RunTest() {
   Shutdown();
   state_->event_engine->TickUntilIdle();
   state_->event_engine->UnsetGlobalHooks();
+  grpc_event_engine::experimental::WaitForSingleOwner(
+      std::move(state_->event_engine));
+  grpc_shutdown_blocking();
+  if (!grpc_wait_until_shutdown(10)) {
+    LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
+  }
+  state_.reset();
+  AsanAssertNoLeaks();
 }
 
 void YodelTest::TickUntilTrue(absl::FunctionRef<bool()> poll) {

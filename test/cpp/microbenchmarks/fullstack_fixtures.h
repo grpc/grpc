@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -77,7 +76,7 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const std::string& address) {
     ServerBuilder b;
-    if (address.length() > 0) {
+    if (!address.empty()) {
       b.AddListeningPort(address, InsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -86,7 +85,7 @@ class FullstackFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (address.length() > 0) {
+    if (!address.empty()) {
       channel_ = grpc::CreateCustomChannel(address,
                                            InsecureChannelCredentials(), args);
     } else {
@@ -95,6 +94,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
+    channel_.reset();
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
@@ -180,7 +180,9 @@ class EndpointPairFixture : public BaseFixture {
           grpc_core::Server::FromC(server_->c_server());
       grpc_core::ChannelArgs server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+          server_args,
+          grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
+          /*is_client=*/false);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
@@ -189,7 +191,7 @@ class EndpointPairFixture : public BaseFixture {
                                                     server_transport_, nullptr,
                                                     server_args, nullptr)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
-                                          nullptr);
+                                          nullptr, nullptr);
     }
 
     // create channel
@@ -206,8 +208,9 @@ class EndpointPairFixture : public BaseFixture {
                      .channel_args_preconditioning()
                      .PreconditionChannelArgs(&tmp_args);
       }
-      client_transport_ =
-          grpc_create_chttp2_transport(c_args, endpoints.client, true);
+      client_transport_ = grpc_create_chttp2_transport(
+          c_args, grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.client),
+          /*is_client=*/true);
       CHECK(client_transport_);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,
@@ -215,7 +218,7 @@ class EndpointPairFixture : public BaseFixture {
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
-                                          nullptr);
+                                          nullptr, nullptr);
 
       channel_ = grpc::CreateChannelInternal(
           "", channel,

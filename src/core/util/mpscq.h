@@ -25,8 +25,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/util/sync.h"
 
 namespace grpc_core {

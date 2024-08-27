@@ -504,6 +504,20 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "glob_test",
+    srcs = ["glob_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_fuzzer(
     name = "uri_fuzzer_test",
     srcs = ["uri_fuzzer_test.cc"],
@@ -622,23 +636,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "log_test",
-    srcs = ["log_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "spinlock_test",
     srcs = ["spinlock_test.cc"],
     external_deps = ["gtest"],
@@ -691,6 +688,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "unique_ptr_with_bitset_test",
+    srcs = ["unique_ptr_with_bitset_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:unique_ptr_with_bitset",
+    ],
+)
+
+grpc_cc_test(
     name = "useful_test",
     srcs = ["useful_test.cc"],
     external_deps = ["gtest"],
@@ -700,6 +710,19 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_test(
+    name = "ring_buffer_test",
+    srcs = ["ring_buffer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:ring_buffer",
     ],
 )
 

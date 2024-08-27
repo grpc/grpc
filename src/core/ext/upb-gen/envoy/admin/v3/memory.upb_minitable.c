@@ -27,6 +27,9 @@ const upb_MiniTable envoy__admin__v3__Memory_msg_init = {
   NULL,
   &envoy_admin_v3_Memory__fields[0],
   56, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.Memory",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},

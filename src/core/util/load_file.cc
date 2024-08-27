@@ -26,7 +26,6 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 namespace grpc_core {
 

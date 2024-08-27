@@ -48,8 +48,6 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
-extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
-
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -58,6 +56,8 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,
                                    grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
+
+  void Orphaned() override {}
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,

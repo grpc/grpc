@@ -256,7 +256,7 @@ class TestMultipleServiceImpl : public RpcService {
       }
     }
     if (request->has_param() &&
-        (request->param().expected_client_identity().length() > 0 ||
+        (!request->param().expected_client_identity().empty() ||
          request->param().check_auth_context())) {
       internal::CheckServerAuthContext(
           context, request->param().expected_transport_security_type(),

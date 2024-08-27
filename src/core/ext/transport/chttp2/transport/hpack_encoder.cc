@@ -22,16 +22,15 @@
 #include <cstdint>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/trace.h"
@@ -88,7 +87,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
   if (options.is_end_of_stream) {
     flags |= GRPC_CHTTP2_DATA_FLAG_END_STREAM;
   }
-  options.stats->header_bytes += raw.Length();
+  options.call_tracer->RecordOutgoingBytes({0, 0, raw.Length()});
   while (frame_type == GRPC_CHTTP2_FRAME_HEADER || raw.Length() > 0) {
     // per the HTTP/2 spec:
     //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
@@ -102,7 +101,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     }
     FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
-    options.stats->framing_bytes += kHeadersFrameHeaderSize;
+    options.call_tracer->RecordOutgoingBytes({kHeadersFrameHeaderSize, 0, 0});
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;
@@ -118,10 +117,8 @@ void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
 void HPackCompressor::SetMaxTableSize(uint32_t max_table_size) {
   if (table_.SetMaxSize(std::min(max_usable_size_, max_table_size))) {
     advertise_table_size_change_ = true;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      gpr_log(GPR_INFO, "set max table size from encoder to %d",
-              max_table_size);
-    }
+    GRPC_TRACE_LOG(http, INFO)
+        << "set max table size from encoder to " << max_table_size;
   }
 }
 
@@ -378,7 +375,8 @@ void Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::EncodeWith(
       encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      Crash("invalid http scheme encoding");
+      LOG(ERROR) << "Not encoding bad http scheme";
+      encoder->NoteEncodingError();
       break;
   }
 }
@@ -435,7 +433,8 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
           Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      Crash("invalid http method encoding");
+      LOG(ERROR) << "Not encoding bad http method";
+      encoder->NoteEncodingError();
       break;
   }
 }

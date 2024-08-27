@@ -25,7 +25,6 @@
 #include "absl/log/check.h"
 
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 // Number of mutexes to allocate for events, to avoid lock contention.

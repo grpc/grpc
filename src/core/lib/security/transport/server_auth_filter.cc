@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -32,7 +33,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -53,7 +53,6 @@
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
@@ -63,8 +62,7 @@
 namespace grpc_core {
 
 const grpc_channel_filter ServerAuthFilter::kFilter =
-    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>(
-        "server-auth");
+    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
@@ -133,13 +131,10 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_ERROR,
-            "%s[server-auth]: Delegate to application: filter=%p this=%p "
-            "auth_ctx=%p",
-            GetContext<Activity>()->DebugTag().c_str(), filter, this,
-            filter->auth_context_.get());
-  }
+  GRPC_TRACE_LOG(call, ERROR)
+      << GetContext<Activity>()->DebugTag()
+      << "[server-auth]: Delegate to application: filter=" << filter
+      << " this=" << this << " auth_ctx=" << filter->auth_context_.get();
   filter->server_credentials_->auth_metadata_processor().process(
       filter->server_credentials_->auth_metadata_processor().state,
       filter->auth_context_.get(), state_->md.metadata, state_->md.count,
@@ -164,9 +159,8 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
 
   // TODO(ZhenLian): Implement support for response_md.
   if (response_md != nullptr && num_response_md > 0) {
-    gpr_log(GPR_ERROR,
-            "response_md in auth metadata processing not supported for now. "
-            "Ignoring...");
+    LOG(ERROR) << "response_md in auth metadata processing not supported for "
+                  "now. Ignoring...";
   }
 
   if (status == GRPC_STATUS_OK) {

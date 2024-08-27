@@ -22,8 +22,6 @@
 
 #ifdef GRPC_WINDOWS_SOCKETUTILS
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/util/crash.h"

@@ -23,9 +23,9 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/util/no_destruct.h"
@@ -61,9 +61,8 @@ GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
     if (process_epoch_seconds > 1) {
       break;
     }
-    gpr_log(GPR_INFO,
-            "gpr_now(GPR_CLOCK_MONOTONIC) returns a very small number: "
-            "sleeping for 100ms");
+    LOG(INFO) << "gpr_now(GPR_CLOCK_MONOTONIC) returns a very small number: "
+                 "sleeping for 100ms";
     gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
 

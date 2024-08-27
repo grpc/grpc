@@ -38,11 +38,10 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/create_auth_context.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -248,7 +247,7 @@ class ClientContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
-    CHECK(initial_metadata_received_);
+    ABSL_CHECK(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
 

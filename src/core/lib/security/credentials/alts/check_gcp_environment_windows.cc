@@ -26,7 +26,6 @@
 #include <windows.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"

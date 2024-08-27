@@ -36,8 +36,8 @@ namespace {
 bool SimpleRequestBody(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata(
           {}, GRPC_INITIAL_METADATA_WAIT_FOR_READY |
@@ -67,7 +67,7 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_TRUE(saw_request_at_server);
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -90,7 +90,9 @@ CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
           .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
                Duration::Seconds(1).millis())
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, Duration::Seconds(1).millis())
-          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, Duration::Seconds(5).millis())
+          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
+               g_is_fuzzing_core_e2e_tests ? Duration::Minutes(5).millis()
+                                           : Duration::Seconds(5).millis())
           // Avoid transparent retries for this test.
           .Set(GRPC_ARG_ENABLE_RETRIES, false));
   InitServer(

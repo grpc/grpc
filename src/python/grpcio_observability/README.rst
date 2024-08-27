@@ -19,7 +19,7 @@ time the data is collected and the time it becomes available through Python expo
 
 Supported Python Versions
 -------------------------
-Python >= 3.7
+Python >= 3.8
 
 Installation
 ------------
@@ -63,7 +63,7 @@ gRPC Python Observability Depends on the following packages:
 ::
 
   grpcio
-  opentelemetry-api==1.21.0
+  opentelemetry-api
 
 
 Usage

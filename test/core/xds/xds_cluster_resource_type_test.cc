@@ -45,6 +45,7 @@
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -64,6 +65,7 @@
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
@@ -77,9 +79,6 @@ using xds::type::v3::TypedStruct;
 namespace grpc_core {
 namespace testing {
 namespace {
-
-TraceFlag xds_cluster_resource_type_test_trace(
-    true, "xds_cluster_resource_type_test");
 
 class XdsClusterTest : public ::testing::Test {
  protected:
@@ -934,12 +933,40 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.common_tls_context.certificate_validation_context
-                .ca_certificate_provider_instance.instance_name,
-            "provider1");
-  EXPECT_EQ(resource.common_tls_context.certificate_validation_context
-                .ca_certificate_provider_instance.certificate_name,
-            "cert_name");
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &resource.common_tls_context.certificate_validation_context.ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
+}
+
+TEST_F(TlsConfigTest, SystemRootCerts) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  auto* common_tls_context = upstream_tls_context.mutable_common_tls_context();
+  auto* validation_context = common_tls_context->mutable_validation_context();
+  validation_context->mutable_system_root_certs();
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_TRUE(absl::holds_alternative<
+              CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
+      resource.common_tls_context.certificate_validation_context.ca_certs));
 }
 
 // This is just one example of where CommonTlsContext::Parse() will
@@ -1080,7 +1107,7 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
             "field:transport_socket.typed_config.value["
             "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]"
             ".common_tls_context "
-            "error:no CA certificate provider instance configured]")
+            "error:no CA certs configured]")
       << decode_result.resource.status();
 }
 
@@ -1616,79 +1643,24 @@ TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
   EXPECT_EQ(resource.override_host_statuses.ToString(), "{}");
 }
 
-using TelemetryLabelTest = XdsClusterTest;
+using MetadataTest = XdsClusterTest;
 
-TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
+MATCHER_P(JsonEq, json_str, "") {
+  std::string actual = JsonDump(arg);
+  bool ok = ::testing::ExplainMatchResult(json_str, actual, result_listener);
+  if (!ok) *result_listener << "Actual: " << actual;
+  return ok;
+}
+
+TEST_F(MetadataTest, MetadataSet) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
-  auto& label_map =
-      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
-  *label_map["service_name"].mutable_string_value() = "abc";
-  *label_map["service_namespace"].mutable_string_value() = "xyz";
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.service_telemetry_label.as_string_view(), "abc");
-  EXPECT_EQ(resource.namespace_telemetry_label.as_string_view(), "xyz");
-}
-
-TEST_F(TelemetryLabelTest, MissingMetadataField) {
-  Cluster cluster;
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-}
-
-TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
-  Cluster cluster;
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
-  auto& label_map = *filter_map["some_key"].mutable_fields();
-  *label_map["some_value"].mutable_string_value() = "abc";
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-}
-
-TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {
-  Cluster cluster;
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
-  auto& label_map =
-      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  auto& label_map = *filter_map["filter_key"].mutable_fields();
+  *label_map["string_value"].mutable_string_value() = "abc";
   label_map["bool_value"].set_bool_value(true);
   label_map["number_value"].set_number_value(3.14);
-  *label_map["string_value"].mutable_string_value() = "abc";
-  *label_map["service_name"].mutable_string_value() = "service";
   label_map["null_value"].set_null_value(::google::protobuf::NULL_VALUE);
   auto& list_value_values =
       *label_map["list_value"].mutable_list_value()->mutable_values();
@@ -1705,9 +1677,31 @@ TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(), "service");
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
+  EXPECT_THAT(resource.metadata,
+              ::testing::ElementsAre(::testing::Pair(
+                  "filter_key", JsonEq("{"
+                                       "\"bool_value\":true,"
+                                       "\"list_value\":[\"efg\",3.14],"
+                                       "\"null_value\":null,"
+                                       "\"number_value\":3.14,"
+                                       "\"string_value\":\"abc\","
+                                       "\"struct_value\":{\"bool_value\":false}"
+                                       "}"))));
+}
+
+TEST_F(MetadataTest, MetadataUnset) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(resource.metadata, ::testing::ElementsAre());
 }
 
 }  // namespace

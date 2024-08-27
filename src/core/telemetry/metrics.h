@@ -25,7 +25,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
 
@@ -211,6 +210,8 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  FindInstrumentByName(absl::string_view name);
 
  private:
   friend class GlobalInstrumentsRegistryTestPeer;
@@ -289,6 +290,14 @@ class StatsPlugin {
   // configure the ServerCallTracer in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
+  // Gets a scope config for the client channel specified by \a scope. Note that
+  // the stats plugin should have been enabled for the channel.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& scope) const = 0;
+  // Gets a scope config for the server specified by \a args. Note that the
+  // stats plugin should have been enabled for the server.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& args) const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
@@ -330,7 +339,7 @@ class StatsPlugin {
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
   // Returns true if instrument \a handle is enabled.
   virtual bool IsInstrumentEnabled(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) = 0;
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const = 0;
 
   // Gets a ClientCallTracer associated with this stats plugin which can be used
   // in a call.
@@ -429,7 +438,7 @@ class GlobalStatsPluginRegistry {
     // Returns true if any of the stats plugins in the group have enabled \a
     // handle.
     bool IsInstrumentEnabled(
-        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const {
       for (auto& state : plugins_state_) {
         if (state.plugin->IsInstrumentEnabled(handle)) {
           return true;
@@ -451,14 +460,7 @@ class GlobalStatsPluginRegistry {
     template <typename... Args>
     GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
     RegisterCallback(absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
-                     Duration min_interval, Args... args) {
-      AssertIsCallbackGaugeHandle(args...);
-      return std::make_unique<RegisteredMetricCallback>(
-          *this, std::move(callback),
-          std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{
-              args...},
-          min_interval);
-    }
+                     Duration min_interval, Args... args);
 
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
@@ -546,6 +548,18 @@ class RegisteredMetricCallback {
   std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics_;
   Duration min_interval_;
 };
+
+template <typename... Args>
+inline std::unique_ptr<RegisteredMetricCallback>
+GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    Duration min_interval, Args... args) {
+  AssertIsCallbackGaugeHandle(args...);
+  return std::make_unique<RegisteredMetricCallback>(
+      *this, std::move(callback),
+      std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},
+      min_interval);
+}
 
 }  // namespace grpc_core
 

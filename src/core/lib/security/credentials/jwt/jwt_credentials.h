@@ -51,6 +51,8 @@ class grpc_service_account_jwt_access_credentials
                                               gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
+  void Orphaned() override {}
+
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
