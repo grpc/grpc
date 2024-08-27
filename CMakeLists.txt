@@ -1848,6 +1848,7 @@ endif()
 
 
 add_library(grpc
+  src/core/call/call_spine.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -2505,7 +2506,6 @@ add_library(grpc
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -2953,6 +2953,7 @@ endif()
 endif()
 
 add_library(grpc_unsecure
+  src/core/call/call_spine.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -3269,7 +3270,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -5253,6 +5253,7 @@ endif()
 
 
 add_library(grpc_authorization_provider
+  src/core/call/call_spine.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -5487,7 +5488,6 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -8985,6 +8985,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_utils_test
+  src/core/call/call_spine.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
@@ -9191,7 +9192,6 @@ add_executable(call_utils_test
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/call_state.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc

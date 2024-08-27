@@ -6,6 +6,7 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "src\\core\\call\\call_spine.cc " +
     "src\\core\\channelz\\channel_trace.cc " +
     "src\\core\\channelz\\channelz.cc " +
     "src\\core\\channelz\\channelz_registry.cc " +
@@ -682,7 +683,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\transport\\call_arena_allocator.cc " +
     "src\\core\\lib\\transport\\call_filters.cc " +
     "src\\core\\lib\\transport\\call_final_info.cc " +
-    "src\\core\\lib\\transport\\call_spine.cc " +
     "src\\core\\lib\\transport\\call_state.cc " +
     "src\\core\\lib\\transport\\connectivity_state.cc " +
     "src\\core\\lib\\transport\\error_utils.cc " +
@@ -1386,6 +1386,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\call");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\channelz");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\client_channel");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");

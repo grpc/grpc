@@ -15,6 +15,7 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'src/core/call/call_spine.cc',
     'src/core/channelz/channel_trace.cc',
     'src/core/channelz/channelz.cc',
     'src/core/channelz/channelz_registry.cc',
@@ -691,7 +692,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/transport/call_arena_allocator.cc',
     'src/core/lib/transport/call_filters.cc',
     'src/core/lib/transport/call_final_info.cc',
-    'src/core/lib/transport/call_spine.cc',
     'src/core/lib/transport/call_state.cc',
     'src/core/lib/transport/connectivity_state.cc',
     'src/core/lib/transport/error_utils.cc',

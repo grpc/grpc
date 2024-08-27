@@ -1091,6 +1091,8 @@ include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
+src/core/call/call_spine.cc \
+src/core/call/call_spine.h \
 src/core/channelz/channel_trace.cc \
 src/core/channelz/channel_trace.h \
 src/core/channelz/channelz.cc \
@@ -2698,8 +2700,6 @@ src/core/lib/transport/call_filters.cc \
 src/core/lib/transport/call_filters.h \
 src/core/lib/transport/call_final_info.cc \
 src/core/lib/transport/call_final_info.h \
-src/core/lib/transport/call_spine.cc \
-src/core/lib/transport/call_spine.h \
 src/core/lib/transport/call_state.cc \
 src/core/lib/transport/call_state.h \
 src/core/lib/transport/connectivity_state.cc \
