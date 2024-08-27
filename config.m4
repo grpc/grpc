@@ -613,9 +613,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/matchers/matchers.cc \
-    src/core/lib/promise/activity.cc \
-    src/core/lib/promise/party.cc \
-    src/core/lib/promise/sleep.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/connection_quota.cc \
@@ -848,6 +845,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/posix/sync.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
+    src/core/util/promise/activity.cc \
+    src/core/util/promise/party.cc \
+    src/core/util/promise/sleep.cc \
     src/core/util/string.cc \
     src/core/util/sync.cc \
     src/core/util/sync_abseil.cc \
@@ -1540,7 +1540,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine_shims)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
@@ -1614,6 +1613,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/linux)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/msys)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/posix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)

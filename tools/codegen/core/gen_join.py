@@ -150,7 +150,7 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
-with open("src/core/lib/promise/detail/join_state.h", "w") as f:
+with open("src/core/util/promise/detail/join_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 10):
