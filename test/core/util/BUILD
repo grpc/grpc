@@ -418,6 +418,7 @@ grpc_cc_test(
     srcs = ["unique_type_name_test.cc"],
     external_deps = [
         "gtest",
+        "absl/container:flat_hash_map",
         "absl/strings:str_format",
     ],
     language = "c++",

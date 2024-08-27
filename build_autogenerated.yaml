@@ -20539,6 +20539,7 @@ targets:
   - test/core/util/unique_type_name_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/log:check
   - absl/numeric:bits
   - absl/strings:str_format
