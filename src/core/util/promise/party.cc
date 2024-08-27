@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/party.h"
+#include "src/core/util/promise/party.h"
 
 #include <atomic>
 #include <cstdint>
@@ -27,8 +27,8 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/promise/activity.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep

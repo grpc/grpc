@@ -54,8 +54,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
@@ -63,6 +61,8 @@
 #include "src/core/tsi/local_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/promise.h"
 
 #define GRPC_UDS_URI_PATTERN "unix:"
 #define GRPC_ABSTRACT_UDS_URI_PATTERN "unix-abstract:"

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
-#define GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_OBSERVABLE_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_OBSERVABLE_H
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -179,4 +179,4 @@ class Observable {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_OBSERVABLE_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_OBSERVABLE_H

@@ -67,11 +67,11 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/promise/arena_promise.h"
 #include "src/core/util/time_precise.h"
 
 struct grpc_channel_element_args {

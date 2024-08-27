@@ -38,8 +38,8 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/promise/seq.h"
 
 namespace grpc_core {
 namespace promise_filter_detail {

@@ -33,9 +33,9 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/arena_promise.h"
 
 #define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 

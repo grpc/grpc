@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/sleep.h"
+#include "src/core/util/promise/sleep.h"
 
 #include <utility>
 
@@ -22,9 +22,9 @@
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 

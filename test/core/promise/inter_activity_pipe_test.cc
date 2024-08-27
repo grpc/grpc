@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/inter_activity_pipe.h"
+#include "src/core/util/promise/inter_activity_pipe.h"
 
 #include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/seq.h"
+#include "src/core/util/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 namespace grpc_core {

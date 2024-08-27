@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
-#define GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_TRY_JOIN_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_TRY_JOIN_H
 
 #include <tuple>
 #include <variant>
@@ -25,10 +25,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/detail/join_state.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/promise/detail/join_state.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/status_flag.h"
 
 namespace grpc_core {
 
@@ -146,4 +146,4 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TryJoin(F promise) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_TRY_JOIN_H

@@ -23,7 +23,7 @@
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/context.h"
+#include "src/core/util/promise/context.h"
 
 typedef enum grpc_pollset_tag {
   GRPC_POLLS_NONE,

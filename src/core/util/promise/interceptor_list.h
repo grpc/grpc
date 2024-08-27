@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
-#define GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_INTERCEPTOR_LIST_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_INTERCEPTOR_LIST_H
 
 #include <stddef.h>
 
@@ -32,10 +32,10 @@
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -323,4 +323,4 @@ class InterceptorList {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_INTERCEPTOR_LIST_H

@@ -31,10 +31,10 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/arena_promise.h"
 
 namespace grpc_core {
 

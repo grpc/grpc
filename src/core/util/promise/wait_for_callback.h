@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_WAIT_FOR_CALLBACK_H
-#define GRPC_SRC_CORE_LIB_PROMISE_WAIT_FOR_CALLBACK_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_WAIT_FOR_CALLBACK_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_WAIT_FOR_CALLBACK_H
 
 #include <memory>
 #include <utility>
@@ -23,8 +23,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -66,4 +66,4 @@ class WaitForCallback {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_WAIT_FOR_CALLBACK_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_WAIT_FOR_CALLBACK_H

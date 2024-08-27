@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
-#define GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_PIPE_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_PIPE_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -32,14 +32,14 @@
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/interceptor_list.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/if.h"
+#include "src/core/util/promise/interceptor_list.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/seq.h"
 
 namespace grpc_core {
 
@@ -734,4 +734,4 @@ struct Pipe {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_PIPE_H

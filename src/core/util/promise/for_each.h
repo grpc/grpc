@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
-#define GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_FOR_EACH_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_FOR_EACH_H
 
 #include <stdint.h>
 
@@ -29,11 +29,11 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/detail/status.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/status_flag.h"
 
 namespace grpc_core {
 
@@ -239,4 +239,4 @@ ForEach(Reader reader, Action action, DebugLocation whence = {}) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_FOR_EACH_H

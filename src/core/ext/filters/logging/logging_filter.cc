@@ -55,11 +55,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/cancel_callback.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -69,6 +64,11 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/cancel_callback.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/pipe.h"
 
 namespace grpc_core {
 

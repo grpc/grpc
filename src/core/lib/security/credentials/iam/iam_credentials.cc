@@ -32,8 +32,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/promise/promise.h"
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_google_iam_credentials::GetRequestMetadata(

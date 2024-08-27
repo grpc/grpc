@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_H
-#define GRPC_SRC_CORE_LIB_PROMISE_MAP_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_MAP_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_MAP_H
 
 #include <stddef.h>
 
@@ -22,8 +22,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/detail/promise_like.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -107,4 +107,4 @@ struct JustElem {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_MAP_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_MAP_H

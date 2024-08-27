@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
-#define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_ACTIVITY_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_ACTIVITY_H
 
 #include <stdint.h>
 
@@ -37,11 +37,11 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/detail/status.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -683,4 +683,4 @@ inline void IntraActivityWaiter::Wake() {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_ACTIVITY_H

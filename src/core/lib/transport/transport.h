@@ -48,10 +48,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_destination.h"
@@ -62,6 +58,10 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/latch.h"
+#include "src/core/util/promise/pipe.h"
 
 // Minimum and maximum protocol accepted versions.
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2

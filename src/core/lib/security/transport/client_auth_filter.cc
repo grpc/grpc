@@ -40,11 +40,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -52,6 +47,11 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/promise.h"
+#include "src/core/util/promise/seq.h"
+#include "src/core/util/promise/try_seq.h"
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 

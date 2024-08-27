@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/activity.h"
+#include "src/core/util/promise/activity.h"
 
 #include <stdlib.h>
 
@@ -23,11 +23,11 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/wait_set.h"
+#include "src/core/util/promise/join.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/promise.h"
+#include "src/core/util/promise/seq.h"
+#include "src/core/util/promise/wait_set.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::_;

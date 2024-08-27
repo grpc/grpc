@@ -41,17 +41,17 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/promise/all_ok.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/promise/all_ok.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/status_flag.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 

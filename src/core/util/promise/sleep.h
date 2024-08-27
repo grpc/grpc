@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_SLEEP_H
-#define GRPC_SRC_CORE_LIB_PROMISE_SLEEP_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_SLEEP_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_SLEEP_H
 
 #include <atomic>
 #include <utility>
@@ -24,8 +24,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -75,4 +75,4 @@ class Sleep final {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_SLEEP_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_SLEEP_H

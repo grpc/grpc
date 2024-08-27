@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H
-#define GRPC_SRC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_CANCEL_CALLBACK_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_CANCEL_CALLBACK_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/detail/promise_like.h"
 
 namespace grpc_core {
 
@@ -100,4 +100,4 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancelFactory(MainFn main_fn,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_CANCEL_CALLBACK_H

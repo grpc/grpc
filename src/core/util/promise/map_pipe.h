@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
-#define GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_MAP_PIPE_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_MAP_PIPE_H
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/for_each.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/for_each.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/pipe.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 
@@ -94,4 +94,4 @@ class PipeMapper {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_MAP_PIPE_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_MAP_PIPE_H

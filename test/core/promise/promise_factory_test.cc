@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/util/promise/detail/promise_factory.h"
 
 #include "absl/functional/bind_front.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 namespace promise_detail {

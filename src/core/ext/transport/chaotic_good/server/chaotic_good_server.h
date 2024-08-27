@@ -39,13 +39,13 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/inter_activity_latch.h"
 
 namespace grpc_core {
 namespace chaotic_good {

@@ -89,7 +89,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -109,6 +108,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/promise/poll.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 

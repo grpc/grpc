@@ -40,15 +40,15 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/latch.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/pipe.h"
+#include "src/core/util/promise/race.h"
 
 namespace grpc_core {
 

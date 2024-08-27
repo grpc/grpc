@@ -22,9 +22,9 @@
 #include <grpc/grpc.h>
 
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/promise/promise.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
 

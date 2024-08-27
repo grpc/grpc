@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/activity.h"
+#include "src/core/util/promise/activity.h"
 
 #include <stddef.h>
 

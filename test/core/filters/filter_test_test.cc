@@ -27,15 +27,15 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/pipe.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/seq.h"
 
 using ::testing::_;
 

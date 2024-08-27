@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_SWITCH_H
-#define GRPC_SRC_CORE_LIB_PROMISE_SWITCH_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_SWITCH_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_SWITCH_H
 
 #include <memory>
 #include <utility>
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/if.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/if.h"
 
 namespace grpc_core {
 
@@ -69,4 +69,4 @@ auto Switch(D discriminator, promise_detail::Case<D, F> c, Others... others) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_SWITCH_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_SWITCH_H

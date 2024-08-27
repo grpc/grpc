@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
-#define GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_ARENA_PROMISE_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_ARENA_PROMISE_H
 
 #include <stdlib.h>
 
@@ -27,9 +27,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -232,4 +232,4 @@ class ArenaPromise {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_ARENA_PROMISE_H

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
-#define GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_INTER_ACTIVITY_PIPE_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_INTER_ACTIVITY_PIPE_H
 
 #include <stdint.h>
 
@@ -28,8 +28,8 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 
@@ -180,4 +180,4 @@ class InterActivityPipe {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_INTER_ACTIVITY_PIPE_H

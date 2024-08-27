@@ -15,7 +15,7 @@
 #ifndef GRPC_TEST_CORE_PROMISE_TEST_CONTEXT_H
 #define GRPC_TEST_CORE_PROMISE_TEST_CONTEXT_H
 
-#include "src/core/lib/promise/context.h"
+#include "src/core/util/promise/context.h"
 
 namespace grpc_core {
 

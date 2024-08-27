@@ -29,12 +29,12 @@
 #include <grpc/event_engine/port.h>  // IWYU pragma: keep
 #include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/join.h"
+#include "src/core/util/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::AtMost;

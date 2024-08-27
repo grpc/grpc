@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
-#define GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_TRY_SEQ_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_TRY_SEQ_H
 
 #include <stdlib.h>
 
@@ -27,12 +27,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/detail/seq_state.h"
-#include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/promise/detail/basic_seq.h"
+#include "src/core/util/promise/detail/promise_like.h"
+#include "src/core/util/promise/detail/seq_state.h"
+#include "src/core/util/promise/detail/status.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/status_flag.h"
 
 namespace grpc_core {
 
@@ -364,4 +364,4 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_TRY_SEQ_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_TRY_SEQ_H

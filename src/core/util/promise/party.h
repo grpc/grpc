@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
-#define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_PARTY_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_PARTY_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -37,11 +37,11 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/detail/promise_factory.h"
+#include "src/core/util/promise/poll.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -447,4 +447,4 @@ auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_PARTY_H

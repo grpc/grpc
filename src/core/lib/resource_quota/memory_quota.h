@@ -43,9 +43,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

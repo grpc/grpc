@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
-#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
+#ifndef GRPC_SRC_CORE_UTIL_PROMISE_DETAIL_PROMISE_LIKE_H
+#define GRPC_SRC_CORE_UTIL_PROMISE_DETAIL_PROMISE_LIKE_H
 
 #include <utility>
 
@@ -22,7 +22,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/poll.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
 // Often when we're writing code that uses promises, we end up wanting to also
@@ -105,4 +105,4 @@ class PromiseLike<F, absl::enable_if_t<!std::is_void<
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
+#endif  // GRPC_SRC_CORE_UTIL_PROMISE_DETAIL_PROMISE_LIKE_H

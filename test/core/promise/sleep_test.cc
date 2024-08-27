@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/sleep.h"
+#include "src/core/util/promise/sleep.h"
 
 #include <chrono>
 #include <cstddef>
@@ -31,9 +31,9 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
-#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/util/promise/race.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 

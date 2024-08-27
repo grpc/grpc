@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/wait_for_callback.h"
+#include "src/core/util/promise/wait_for_callback.h"
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/promise/map.h"
+#include "src/core/util/promise/map.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 namespace grpc_core {

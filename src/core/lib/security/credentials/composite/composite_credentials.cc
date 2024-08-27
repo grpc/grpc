@@ -30,8 +30,8 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/promise/try_seq.h"
 
 //
 // grpc_composite_channel_credentials
