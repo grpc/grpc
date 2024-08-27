@@ -238,7 +238,10 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/call/call_spine.cc',
+    ss.source_files = 'src/core/call/call_destination.h',
+                      'src/core/call/call_filters.cc',
+                      'src/core/call/call_filters.h',
+                      'src/core/call/call_spine.cc',
                       'src/core/call/call_spine.h',
                       'src/core/channelz/channel_trace.cc',
                       'src/core/channelz/channel_trace.h',
@@ -1804,9 +1807,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/call_arena_allocator.cc',
                       'src/core/lib/transport/call_arena_allocator.h',
-                      'src/core/lib/transport/call_destination.h',
-                      'src/core/lib/transport/call_filters.cc',
-                      'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.cc',
                       'src/core/lib/transport/call_final_info.h',
                       'src/core/lib/transport/call_state.cc',
@@ -2376,7 +2376,9 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.c',
                       'third_party/zlib/zutil.h'
-    ss.private_header_files = 'src/core/call/call_spine.h',
+    ss.private_header_files = 'src/core/call/call_destination.h',
+                              'src/core/call/call_filters.h',
+                              'src/core/call/call_spine.h',
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
@@ -3267,8 +3269,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/call_arena_allocator.h',
-                              'src/core/lib/transport/call_destination.h',
-                              'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/call_state.h',
                               'src/core/lib/transport/connectivity_state.h',

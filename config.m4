@@ -41,6 +41,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
+    src/core/call/call_filters.cc \
     src/core/call/call_spine.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
@@ -716,7 +717,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_arena_allocator.cc \
-    src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \

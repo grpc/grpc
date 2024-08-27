@@ -271,7 +271,9 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/call/call_spine.h',
+    ss.source_files = 'src/core/call/call_destination.h',
+                      'src/core/call/call_filters.h',
+                      'src/core/call/call_spine.h',
                       'src/core/channelz/channel_trace.h',
                       'src/core/channelz/channelz.h',
                       'src/core/channelz/channelz_registry.h',
@@ -1200,8 +1202,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/call_arena_allocator.h',
-                      'src/core/lib/transport/call_destination.h',
-                      'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.h',
                       'src/core/lib/transport/call_state.h',
                       'src/core/lib/transport/connectivity_state.h',
@@ -1576,7 +1576,9 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.h'
 
-    ss.private_header_files = 'src/core/call/call_spine.h',
+    ss.private_header_files = 'src/core/call/call_destination.h',
+                              'src/core/call/call_filters.h',
+                              'src/core/call/call_spine.h',
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
@@ -2487,8 +2489,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/call_arena_allocator.h',
-                              'src/core/lib/transport/call_destination.h',
-                              'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/call_state.h',
                               'src/core/lib/transport/connectivity_state.h',
