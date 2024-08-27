@@ -85,7 +85,7 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
       arena->GetContext<SecurityContext>());
   if (security_ctx == nullptr) {
     security_ctx = arena->New<grpc_client_security_context>(std::move(creds));
-    arena->SetContext<grpc_core::SecurityContext>(security_ctx);
+    arena->SetContext<SecurityContext>(security_ctx);
   } else {
     security_ctx->creds = std::move(creds);
   }
