@@ -21,7 +21,7 @@ import %workspace%/tools/remote_build/include/rbe_base_config.bazelrc
 build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
 # Very large value to avoid problems like https://github.com/grpc/grpc/issues/20777
-build --remote_timeout=7200
+build --remote_timeout=10800
 
 # In the remote execution environment, each test gets its own docker containers
 # and port server won't be available.
