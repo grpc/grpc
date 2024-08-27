@@ -76,6 +76,7 @@ grpc_cc_test(
     name = "call_filters_test",
     srcs = ["call_filters_test.cc"],
     external_deps = [
+        "absl/strings",
         "gtest",
     ],
     language = "C++",
