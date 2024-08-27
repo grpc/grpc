@@ -48,6 +48,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/call/call_spine.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
@@ -82,7 +83,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/client_call.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/child_policy_handler.h"

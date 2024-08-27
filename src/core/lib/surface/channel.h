@@ -31,6 +31,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/call/call_destination.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
@@ -44,7 +45,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // Forward declaration to avoid dependency loop.
