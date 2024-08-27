@@ -62,7 +62,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -93,10 +92,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
-#include "src/core/util/manual_constructor.h"
-#include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
-#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
 

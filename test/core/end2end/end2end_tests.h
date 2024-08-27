@@ -56,6 +56,7 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/time.h"
+#include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"

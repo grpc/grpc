@@ -36,6 +36,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/time.h"
