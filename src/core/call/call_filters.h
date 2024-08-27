@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
+#ifndef GRPC_SRC_CORE_CALL_CALL_FILTERS_H
+#define GRPC_SRC_CORE_CALL_CALL_FILTERS_H
 
 #include <cstdint>
 #include <limits>
@@ -1529,4 +1529,4 @@ class CallFilters {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
+#endif  // GRPC_SRC_CORE_CALL_CALL_FILTERS_H
