@@ -852,19 +852,26 @@ static void cq_end_op_for_callback(
     cq_finish_shutdown_callback(cq);
   }
 
+  auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
+  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
+    // Run the callback on EventEngine threads.
+    cqd->event_engine->Run(
+        [engine = cqd->event_engine, functor, ok = error.ok()]() {
+          grpc_core::ExecCtx exec_ctx;
+          (*functor->functor_run)(functor, ok);
+        });
+    return;
+  }
   // If possible, schedule the callback onto an existing thread-local
   // ApplicationCallbackExecCtx, which is a work queue. This is possible for:
   // 1. The callback is internally-generated and there is an ACEC available
   // 2. The callback is marked inlineable and there is an ACEC available
   // 3. We are already running in a background poller thread (which always has
   //    an ACEC available at the base of the stack).
-  auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
-  if ((internal || functor->inlineable) ||
+  if (((internal || functor->inlineable) &&
+       grpc_core::ApplicationCallbackExecCtx::Available()) ||
       grpc_iomgr_is_any_background_poller_thread()) {
-    cqd->event_engine->Run([functor, ok = error.ok()]() {
-      grpc_core::ExecCtx exec_ctx;
-      (*functor->functor_run)(functor, ok);
-    });
+    grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, (error.ok()));
     return;
   }
 
@@ -1341,6 +1348,14 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   CHECK(cqd->shutdown_called);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
+
+  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
+    cqd->event_engine->Run([engine = cqd->event_engine, callback]() {
+      grpc_core::ExecCtx exec_ctx;
+      callback->functor_run(callback, /*true=*/1);
+    });
+    return;
+  }
   if (grpc_iomgr_is_any_background_poller_thread()) {
     grpc_core::ApplicationCallbackExecCtx::Enqueue(callback, true);
     return;

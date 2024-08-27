@@ -61,6 +61,7 @@ namespace grpc_core {
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
+inline bool IsEventEngineApplicationCallbacksEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
@@ -88,6 +89,7 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
+inline bool IsEventEngineApplicationCallbacksEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -118,6 +120,7 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
+inline bool IsEventEngineApplicationCallbacksEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
@@ -148,6 +151,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientPrivacy,
+  kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineListener,
@@ -178,6 +182,10 @@ inline bool IsCanaryClientPrivacyEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
   return IsExperimentEnabled<kExperimentIdClientPrivacy>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
+inline bool IsEventEngineApplicationCallbacksEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineApplicationCallbacks>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
