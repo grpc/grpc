@@ -45,8 +45,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/context.h"
@@ -60,6 +58,8 @@
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 

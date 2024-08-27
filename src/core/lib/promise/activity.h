@@ -38,10 +38,10 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
-#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 

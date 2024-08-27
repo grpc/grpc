@@ -36,8 +36,8 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/util/per_cpu.h"
-#include "src/core/util/sync.h"
 #include "src/core/util/ring_buffer.h"
+#include "src/core/util/sync.h"
 
 #define TAGGED_POINTER_SIZE_BITS 48
 

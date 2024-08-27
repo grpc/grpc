@@ -49,9 +49,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/match.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -63,6 +60,9 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 

@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_UTIL_DEBUG_LOCATION_H
 #define GRPC_SRC_CORE_UTIL_DEBUG_LOCATION_H
 
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/port_platform.h>
 
 #include <utility>
+
+#include "absl/strings/str_cat.h"
 
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_FILE)
