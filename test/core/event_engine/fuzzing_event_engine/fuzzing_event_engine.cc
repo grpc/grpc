@@ -34,6 +34,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
