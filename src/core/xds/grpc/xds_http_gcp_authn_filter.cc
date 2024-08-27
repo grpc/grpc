@@ -43,8 +43,7 @@ absl::string_view XdsHttpGcpAuthnFilter::ConfigProtoName() const {
   return "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig";
 }
 
-absl::string_view XdsHttpGcpAuthnFilter::OverrideConfigProtoName()
-    const {
+absl::string_view XdsHttpGcpAuthnFilter::OverrideConfigProtoName() const {
   return "";
 }
 
@@ -61,16 +60,17 @@ Json::Object ValidateFilterConfig(
     const envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig*
         gcp_auth,
     ValidationErrors* errors) {
-  Json::Object config =
-      {{"filter_instance_name", Json::FromString(std::string(instance_name))}};
+  Json::Object config = {
+      {"filter_instance_name", Json::FromString(std::string(instance_name))}};
   const auto* cache_config =
       envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_cache_config(
           gcp_auth);
   if (cache_config == nullptr) return config;
-  uint64_t cache_size = ParseUInt64Value(
-      envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_cache_size(
-          cache_config))
-      .value_or(10);
+  uint64_t cache_size =
+      ParseUInt64Value(
+          envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_cache_size(
+              cache_config))
+          .value_or(10);
   if (cache_size == 0 || cache_size >= INT64_MAX) {
     ValidationErrors::ScopedField field(errors, ".cache_config.cache_size");
     errors->AddError("must be in the range (0, INT64_MAX)");
@@ -114,13 +114,11 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
   return absl::nullopt;
 }
 
-void XdsHttpGcpAuthnFilter::AddFilter(
-    InterceptionChainBuilder& builder) const {
+void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
   builder.Add<GcpAuthenticationFilter>();
 }
 
-const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter()
-    const {
+const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
   return &GcpAuthenticationFilter::kFilter;
 }
 

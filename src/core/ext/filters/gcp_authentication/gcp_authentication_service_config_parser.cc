@@ -26,8 +26,8 @@
 
 namespace grpc_core {
 
-const JsonLoaderInterface*
-GcpAuthenticationParsedConfig::Config::JsonLoader(const JsonArgs&) {
+const JsonLoaderInterface* GcpAuthenticationParsedConfig::Config::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<Config>()
           .Field("filter_instance_name", &Config::filter_instance_name)
@@ -59,7 +59,7 @@ GcpAuthenticationServiceConfigParser::ParseGlobalParams(
     const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
   // Only parse config if the following channel arg is enabled.
   if (!args.GetBool(GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG)
-          .value_or(false)) {
+           .value_or(false)) {
     return nullptr;
   }
   // Parse config from json.

@@ -120,8 +120,8 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
     return absl::InvalidArgumentError(
         "gcp_auth: xds config not found in channel args");
   }
-  return std::make_unique<GcpAuthenticationFilter>(
-      filter_config, std::move(xds_config));
+  return std::make_unique<GcpAuthenticationFilter>(filter_config,
+                                                   std::move(xds_config));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
@@ -134,12 +134,9 @@ GcpAuthenticationFilter::GcpAuthenticationFilter(
 RefCountedPtr<grpc_call_credentials>
 GcpAuthenticationFilter::GetCallCredentials(const std::string& audience) {
   MutexLock lock(&mu_);
-  return cache_.GetOrInsert(
-      audience,
-      [](const std::string& audience) {
-        return MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(
-            audience);
-      });
+  return cache_.GetOrInsert(audience, [](const std::string& audience) {
+    return MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(audience);
+  });
 }
 
 void GcpAuthenticationFilterRegister(CoreConfiguration::Builder* builder) {

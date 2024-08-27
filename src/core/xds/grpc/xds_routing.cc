@@ -221,10 +221,9 @@ GeneratePerHTTPFilterConfigs(
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
     const ChannelArgs& args,
-    absl::FunctionRef<
-        absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>(
-            const XdsHttpFilterImpl&,
-            const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+    absl::FunctionRef<absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>(
+        const XdsHttpFilterImpl&,
+        const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
         generate_service_config) {
   XdsRouting::GeneratePerHttpFilterConfigsResult result;
   result.args = args;
@@ -278,7 +277,7 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
                                      cluster_weight);
         // Generate service config for filter.
         return filter_impl.GenerateMethodConfig(http_filter.config,
-                                               config_override);
+                                                config_override);
       });
 }
 

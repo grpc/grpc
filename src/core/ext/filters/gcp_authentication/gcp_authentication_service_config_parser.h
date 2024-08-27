@@ -40,8 +40,7 @@
 
 namespace grpc_core {
 
-class GcpAuthenticationParsedConfig
-    : public ServiceConfigParser::ParsedConfig {
+class GcpAuthenticationParsedConfig : public ServiceConfigParser::ParsedConfig {
  public:
   struct Config {
     std::string filter_instance_name;

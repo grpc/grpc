@@ -80,7 +80,7 @@ class XdsGcpAuthnEnd2endTest : public XdsEnd2endTest {
     // Intercept only requests for GCP service account identity tokens.
     if (uri.authority() != "metadata.google.internal." ||
         uri.path() !=
-        "/computeMetadata/v1/instance/service-accounts/default/identity") {
+            "/computeMetadata/v1/instance/service-accounts/default/identity") {
       return 0;
     }
     // Validate request.
@@ -144,9 +144,9 @@ TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
   // Set xDS resources.
   CreateAndStartBackends(1, /*xds_enabled=*/false,
                          CreateTlsServerCredentials());
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithGcpAuthnFilter(),
-      default_route_config_);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithGcpAuthnFilter(),
+                                   default_route_config_);
   balancer_->ads_service()->SetCdsResource(BuildClusterWithAudience(kAudience));
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -154,11 +154,11 @@ TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
                           /*response=*/nullptr, &server_initial_metadata);
-  EXPECT_TRUE(status.ok())
-      << "code=" << status.error_code() << " message="
-      << status.error_message();
-  EXPECT_THAT(server_initial_metadata, ::testing::Contains(
-      ::testing::Pair("authorization", absl::StrCat("Bearer ", g_token))));
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_THAT(server_initial_metadata,
+              ::testing::Contains(::testing::Pair(
+                  "authorization", absl::StrCat("Bearer ", g_token))));
 }
 
 TEST_P(XdsGcpAuthnEnd2endTest, NoOpWhenClusterHasNoAudience) {
@@ -167,18 +167,17 @@ TEST_P(XdsGcpAuthnEnd2endTest, NoOpWhenClusterHasNoAudience) {
   // Set xDS resources.
   CreateAndStartBackends(1, /*xds_enabled=*/false,
                          CreateTlsServerCredentials());
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithGcpAuthnFilter(),
-      default_route_config_);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithGcpAuthnFilter(),
+                                   default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check that it does not have an auth token.
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
                           /*response=*/nullptr, &server_initial_metadata);
-  EXPECT_TRUE(status.ok())
-      << "code=" << status.error_code() << " message="
-      << status.error_message();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
   EXPECT_THAT(
       server_initial_metadata,
       ::testing::Not(::testing::Contains(::testing::Key("authorization"))));
@@ -202,9 +201,8 @@ TEST_P(XdsGcpAuthnEnd2endTest, FilterIgnoredWhenEnvVarNotSet) {
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
                           /*response=*/nullptr, &server_initial_metadata);
-  EXPECT_TRUE(status.ok())
-      << "code=" << status.error_code() << " message="
-      << status.error_message();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
   EXPECT_THAT(
       server_initial_metadata,
       ::testing::Not(::testing::Contains(::testing::Key("authorization"))));

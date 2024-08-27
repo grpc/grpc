@@ -1523,8 +1523,8 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigEmpty) {
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
   EXPECT_EQ(config->config,
-            Json::FromObject({{"filter_instance_name",
-                               Json::FromString("enterprise")}}))
+            Json::FromObject(
+                {{"filter_instance_name", Json::FromString("enterprise")}}))
       << JsonDump(config->config);
 }
 
@@ -1538,10 +1538,10 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeDefault) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json::FromObject({{"filter_instance_name",
-                               Json::FromString("yorktown")},
-                              {"cache_size", Json::FromNumber(10)}}))
+  EXPECT_EQ(
+      config->config,
+      Json::FromObject({{"filter_instance_name", Json::FromString("yorktown")},
+                        {"cache_size", Json::FromNumber(10)}}))
       << JsonDump(config->config);
 }
 
@@ -1555,10 +1555,10 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSize) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json::FromObject({{"filter_instance_name",
-                               Json::FromString("hornet")},
-                              {"cache_size", Json::FromNumber(6)}}))
+  EXPECT_EQ(
+      config->config,
+      Json::FromObject({{"filter_instance_name", Json::FromString("hornet")},
+                        {"cache_size", Json::FromNumber(6)}}))
       << JsonDump(config->config);
 }
 
@@ -1571,13 +1571,12 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value["
-      "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
-      ".cache_config.cache_size "
-      "error:must be in the range (0, INT64_MAX)]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
+            ".cache_config.cache_size "
+            "error:must be in the range (0, INT64_MAX)]")
       << status;
 }
 
@@ -1590,13 +1589,12 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeTooBig) {
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value["
-      "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
-      ".cache_config.cache_size "
-      "error:must be in the range (0, INT64_MAX)]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig]"
+            ".cache_config.cache_size "
+            "error:must be in the range (0, INT64_MAX)]")
       << status;
 }
 
@@ -1608,12 +1606,11 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigTypedStruct) {
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value["
-      "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
-      "error:could not parse GCP auth filter config]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
+            "error:could not parse GCP auth filter config]")
       << status;
 }
 
@@ -1626,12 +1623,11 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigUnparseable) {
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value["
-      "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
-      "error:could not parse GCP auth filter config]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
+            "error:could not parse GCP auth filter config]")
       << status;
 }
 
@@ -1642,12 +1638,11 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      "errors validating filter config: ["
-      "field:http_filter.value["
-      "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
-      "error:GCP auth filter does not support config override]")
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
+            "error:GCP auth filter does not support config override]")
       << status;
 }
 
