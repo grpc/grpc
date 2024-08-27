@@ -107,7 +107,7 @@ TEST_F(GcpAuthenticationFilterTest, CreateSucceeds) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
   auto filter = GcpAuthenticationFilter::Create(
-      std::move(channel_args), ChannelFilter::Args(/*instance_id=*/0));
+      channel_args, ChannelFilter::Args(/*instance_id=*/0));
   EXPECT_TRUE(filter.ok()) << filter.status();
 }
 
@@ -117,7 +117,7 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsWithoutServiceConfig) {
   auto channel_args = ChannelArgs().SetObject(
       MakeXdsConfig(kClusterName, kFilterInstanceName, nullptr));
   auto filter = GcpAuthenticationFilter::Create(
-      std::move(channel_args), ChannelFilter::Args(/*instance_id=*/0));
+      channel_args, ChannelFilter::Args(/*instance_id=*/0));
   EXPECT_EQ(filter.status(),
             absl::InvalidArgumentError(
                 "gcp_auth: no service config in channel args"));
@@ -131,7 +131,7 @@ TEST_F(GcpAuthenticationFilterTest,
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
   auto filter = GcpAuthenticationFilter::Create(
-      std::move(channel_args), ChannelFilter::Args(/*instance_id=*/0));
+      channel_args, ChannelFilter::Args(/*instance_id=*/0));
   EXPECT_EQ(filter.status(),
             absl::InvalidArgumentError(
                 "gcp_auth: filter instance ID not found in filter config"));
@@ -147,7 +147,7 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
   auto channel_args =
       ChannelArgs().SetObject(MakeServiceConfig(kServiceConfigJson));
   auto filter = GcpAuthenticationFilter::Create(
-      std::move(channel_args), ChannelFilter::Args(/*instance_id=*/0));
+      channel_args, ChannelFilter::Args(/*instance_id=*/0));
   EXPECT_EQ(filter.status(),
             absl::InvalidArgumentError(
                 "gcp_auth: xds config not found in channel args"));
@@ -164,7 +164,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfNoXdsClusterAttribute) {
       "}";
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
@@ -188,7 +188,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterAttributeHasWrongPrefix) {
   auto channel_args = MakeChannelArgs(
       kServiceConfigJson, kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(kClusterName);
   service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
@@ -211,7 +211,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotPresentInXdsConfig) {
       "}";
   auto channel_args = MakeChannelArgs(kServiceConfigJson, /*cluster=*/"",
                                       /*filter_instance_name=*/"", nullptr);
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(
       absl::StrCat("cluster:", kClusterName));
@@ -237,7 +237,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotOkayInXdsConfig) {
                           .SetObject(MakeServiceConfig(kServiceConfigJson))
                           .SetObject(MakeXdsConfigWithCluster(
                               kClusterName, absl::UnavailableError("nope")));
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(
       absl::StrCat("cluster:", kClusterName));
@@ -264,7 +264,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterResourceMissingInXdsConfig) {
           .SetObject(MakeServiceConfig(kServiceConfigJson))
           .SetObject(MakeXdsConfigWithCluster(
               kClusterName, XdsConfig::ClusterConfig(nullptr, nullptr, "")));
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(
       absl::StrCat("cluster:", kClusterName));
@@ -289,7 +289,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
       "}";
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(
       absl::StrCat("cluster:", kClusterName));
@@ -315,7 +315,7 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
   auto channel_args =
       MakeChannelArgs(kServiceConfigJson, kClusterName, kFilterInstanceName,
                       std::make_unique<XdsStructMetadataValue>(Json()));
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(
       absl::StrCat("cluster:", kClusterName));
@@ -343,7 +343,7 @@ TEST_F(GcpAuthenticationFilterTest, SetsCallCredsIfClusterHasAudience) {
   auto channel_args = MakeChannelArgs(
       kServiceConfigJson, kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
-  Call call(MakeChannel(std::move(channel_args)).value());
+  Call call(MakeChannel(channel_args).value());
   ServiceConfigCallData service_config_call_data(call.arena());
   XdsClusterAttribute xds_cluster_attribute(
       absl::StrCat("cluster:", kClusterName));
