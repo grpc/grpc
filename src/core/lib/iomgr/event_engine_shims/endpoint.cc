@@ -173,10 +173,9 @@ class EventEngineEndpointWrapper {
   void FinishPendingWrite(absl::Status status) {
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(INFO) << "TCP: " << this << " WRITE (peer=" << PeerAddress()
-                << ") error=" << status;
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "TCP: " << this << " WRITE (peer=" << PeerAddress()
+        << ") error=" << status;
     grpc_closure* cb = pending_write_cb_;
     pending_write_cb_ = nullptr;
     if (grpc_core::ExecCtx::Get() == nullptr) {

@@ -22,7 +22,6 @@
 #include <grpc/credentials.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"

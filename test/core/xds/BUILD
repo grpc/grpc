@@ -231,6 +231,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_metadata_test",
+    srcs = ["xds_metadata_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:base_proto",
+        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_http_filters_test",
     srcs = ["xds_http_filters_test.cc"],
     external_deps = [
@@ -315,6 +333,7 @@ grpc_cc_test(
         "//src/core:xds_health_status",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
         "//src/proto/grpc/testing/xds/v3:http_protocol_options_proto",
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",

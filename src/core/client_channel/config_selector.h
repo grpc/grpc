@@ -29,7 +29,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"

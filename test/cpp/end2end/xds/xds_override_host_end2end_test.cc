@@ -703,8 +703,6 @@ TEST_P(OverrideHostTest, TTLSetsMaxAge) {
 }
 
 TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   // Create 3 backends, but leave backend 0 unstarted.
   CreateBackends(3);
   StartBackend(1);

@@ -83,10 +83,6 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
 }
 
 void gpr_log_verbosity_init(void) {
-// This is enabled in Github only.
-// This ifndef is converted to ifdef internally by copybara.
-// Internally grpc verbosity is managed using absl settings.
-// So internally we avoid setting it like this.
 #ifndef GRPC_VERBOSITY_MACRO
   // SetMinLogLevel sets the value for the entire binary, not just gRPC.
   // This setting will change things for other libraries/code that is unrelated
@@ -118,11 +114,4 @@ void gpr_log_verbosity_init(void) {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
-}
-
-void gpr_set_log_function([[maybe_unused]] gpr_log_func deprecated_setting) {
-  LOG(ERROR)
-      << "This function is deprecated. This function will be deleted in the "
-         "next gRPC release. You may create a new absl LogSink with similar "
-         "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
 }

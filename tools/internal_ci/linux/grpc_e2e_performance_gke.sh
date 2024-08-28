@@ -34,16 +34,6 @@ GRPC_NODE_GITREF=master
 TEST_INFRA_REPO=grpc/test-infra
 TEST_INFRA_GITREF=master
 
-# This is to ensure we can push and pull images from gcr.io. We do not
-# necessarily need it to run load tests, but will need it when we employ
-# pre-built images in the optimization.
-gcloud auth configure-docker
-
-# Connect to benchmarks-prod2 cluster.
-gcloud config set project grpc-testing
-gcloud container clusters get-credentials benchmarks-prod2 \
-  --zone us-central1-b --project grpc-testing
-
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
@@ -59,7 +49,7 @@ else
 fi
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
+PREBUILT_IMAGE_PREFIX="us-docker.pkg.dev/grpc-testing/e2etest-prebuilt"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.
@@ -82,6 +72,16 @@ WORKER_POOL_8CORE=workers-c2-8core-ci
 WORKER_POOL_32CORE=workers-c2-30core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
+
+# This is to ensure we can push and pull images from Artifact Registry. We do
+# not necessarily need it to run load tests, but will need it when we employ
+# pre-built images in the optimization.
+gcloud auth configure-docker "${PREBUILT_IMAGE_PREFIX%%/*}"
+
+# Connect to benchmarks-prod2 cluster.
+gcloud config set project grpc-testing
+gcloud container clusters get-credentials benchmarks-prod2 \
+  --zone us-central1-b --project grpc-testing
 
 # Clone test-infra repository and build all tools.
 mkdir ../test-infra

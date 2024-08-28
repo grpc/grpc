@@ -17,7 +17,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -51,23 +50,24 @@ class CallSpine final : public Party {
         std::move(client_initial_metadata), std::move(arena)));
   }
 
-  ~CallSpine() override {}
+  ~CallSpine() override { CallOnDone(true); }
 
   CallFilters& call_filters() { return call_filters_; }
 
   // Add a callback to be called when server trailing metadata is received.
-  void OnDone(absl::AnyInvocable<void()> fn) {
+  void OnDone(absl::AnyInvocable<void(bool)> fn) {
     if (on_done_ == nullptr) {
       on_done_ = std::move(fn);
       return;
     }
-    on_done_ = [first = std::move(fn), next = std::move(on_done_)]() mutable {
-      first();
-      next();
+    on_done_ = [first = std::move(fn),
+                next = std::move(on_done_)](bool cancelled) mutable {
+      first(cancelled);
+      next(cancelled);
     };
   }
-  void CallOnDone() {
-    if (on_done_ != nullptr) std::exchange(on_done_, nullptr)();
+  void CallOnDone(bool cancelled) {
+    if (on_done_ != nullptr) std::exchange(on_done_, nullptr)(cancelled);
   }
 
   auto PullServerInitialMetadata() {
@@ -75,7 +75,12 @@ class CallSpine final : public Party {
   }
 
   auto PullServerTrailingMetadata() {
-    return call_filters().PullServerTrailingMetadata();
+    return Map(
+        call_filters().PullServerTrailingMetadata(),
+        [this](ServerMetadataHandle result) {
+          CallOnDone(result->get(GrpcCallWasCancelled()).value_or(false));
+          return result;
+        });
   }
 
   auto PushClientToServerMessage(MessageHandle message) {
@@ -190,7 +195,7 @@ class CallSpine final : public Party {
 
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
-  absl::AnyInvocable<void()> on_done_{nullptr};
+  absl::AnyInvocable<void(bool)> on_done_{nullptr};
 };
 
 class CallInitiator {
@@ -227,7 +232,9 @@ class CallInitiator {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  void OnDone(absl::AnyInvocable<void(bool)> fn) {
+    spine_->OnDone(std::move(fn));
+  }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
@@ -274,7 +281,9 @@ class CallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  void OnDone(absl::AnyInvocable<void(bool)> fn) {
+    spine_->OnDone(std::move(fn));
+  }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
@@ -327,7 +336,9 @@ class UnstartedCallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+  void OnDone(absl::AnyInvocable<void(bool)> fn) {
+    spine_->OnDone(std::move(fn));
+  }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {

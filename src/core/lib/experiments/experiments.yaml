@@ -40,13 +40,6 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: call_status_override_on_cancellation
-  description:
-    Avoid overriding call status of successfully finished calls if it races with
-    cancellation.
-  expiry: 2024/08/01
-  owner: vigneshbabu@google.com
-  test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
   expiry: 2024/09/30
@@ -55,14 +48,14 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -82,13 +75,13 @@
   uses_polling: true
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2024/10/01
+  expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: max_pings_wo_data_throttle
@@ -110,17 +103,9 @@
   expiry: 2024/09/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
-- name: peer_state_based_framing
-  description:
-    If set, the max sizes of frames sent to lower layers is controlled based
-    on the peer's memory pressure which is reflected in its max http2 frame
-    size.
-  expiry: 2024/08/01
-  owner: vigneshbabu@google.com
-  test_tags: ["flow_control_test"]
 - name: pick_first_new
   description: New pick_first impl with memory reduction.
-  expiry: 2024/07/30
+  expiry: 2024/10/30
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: promise_based_inproc_transport
@@ -130,21 +115,15 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
-- name: rstpit
-  description:
-    On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
-  expiry: 2024/08/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -154,22 +133,22 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2024/08/01
+  expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/09/01
+  expiry: 2024/09/09
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: work_serializer_clears_time_cache

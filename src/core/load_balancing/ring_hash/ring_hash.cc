@@ -570,15 +570,13 @@ absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
 void RingHash::RingHashEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << ring_hash_.get()
-              << "] connectivity changed for endpoint " << this << " ("
-              << ring_hash_->endpoints_[index_].ToString()
-              << ", child_policy=" << child_policy_.get()
-              << "): prev_state=" << ConnectivityStateName(connectivity_state_)
-              << " new_state=" << ConnectivityStateName(new_state) << " ("
-              << status << ")";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO)
+      << "[RH " << ring_hash_.get() << "] connectivity changed for endpoint "
+      << this << " (" << ring_hash_->endpoints_[index_].ToString()
+      << ", child_policy=" << child_policy_.get()
+      << "): prev_state=" << ConnectivityStateName(connectivity_state_)
+      << " new_state=" << ConnectivityStateName(new_state) << " (" << status
+      << ")";
   if (child_policy_ == nullptr) return;  // Already orphaned.
   // Update state.
   const bool entered_transient_failure =
@@ -597,21 +595,16 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
 //
 
 RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] Created";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] Created";
 }
 
 RingHash::~RingHash() {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] Destroying Ring Hash policy";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO)
+      << "[RH " << this << "] Destroying Ring Hash policy";
 }
 
 void RingHash::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] Shutting down";
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] Shutting down";
   shutdown_ = true;
   endpoint_map_.clear();
 }
@@ -625,9 +618,7 @@ void RingHash::ResetBackoffLocked() {
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-      LOG(INFO) << "[RH " << this << "] received update";
-    }
+    GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
     // De-dup endpoints, taking weight into account.
     endpoints_.clear();
     std::map<EndpointAddressSet, size_t> endpoint_indices;
@@ -641,11 +632,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
             prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-        if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-          LOG(INFO) << "[RH " << this << "] merging duplicate endpoint for "
-                    << key.ToString() << ", combined weight "
-                    << weight_arg + prev_weight_arg;
-        }
+        GRPC_TRACE_LOG(ring_hash_lb, INFO)
+            << "[RH " << this << "] merging duplicate endpoint for "
+            << key.ToString() << ", combined weight "
+            << weight_arg + prev_weight_arg;
         prev_endpoint = EndpointAddresses(
             prev_endpoint.addresses(),
             prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
@@ -655,10 +645,9 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       }
     });
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-      LOG(INFO) << "[RH " << this << "] received update with addresses error: "
-                << args.addresses.status();
-    }
+    GRPC_TRACE_LOG(ring_hash_lb, INFO)
+        << "[RH " << this << "] received update with addresses error: "
+        << args.addresses.status();
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (!endpoints_.empty()) return args.addresses.status();
@@ -765,15 +754,13 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << this << "] setting connectivity state to "
-              << ConnectivityStateName(state) << " (num_idle=" << num_idle
-              << ", num_connecting=" << num_connecting
-              << ", num_ready=" << num_ready
-              << ", num_transient_failure=" << num_transient_failure
-              << ", size=" << endpoints_.size()
-              << ") -- start_connection_attempt=" << start_connection_attempt;
-  }
+  GRPC_TRACE_LOG(ring_hash_lb, INFO)
+      << "[RH " << this << "] setting connectivity state to "
+      << ConnectivityStateName(state) << " (num_idle=" << num_idle
+      << ", num_connecting=" << num_connecting << ", num_ready=" << num_ready
+      << ", num_transient_failure=" << num_transient_failure
+      << ", size=" << endpoints_.size()
+      << ") -- start_connection_attempt=" << start_connection_attempt;
   // In TRANSIENT_FAILURE, report the last reported failure.
   // Otherwise, report OK.
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -842,13 +829,12 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-        LOG(INFO) << "[RH " << this
-                  << "] triggering internal connection attempt for endpoint "
-                  << it->second.get() << " ("
-                  << endpoints_[first_idle_index].ToString() << ") (index "
-                  << first_idle_index << " of " << endpoints_.size() << ")";
-      }
+      GRPC_TRACE_LOG(ring_hash_lb, INFO)
+          << "[RH " << this
+          << "] triggering internal connection attempt for endpoint "
+          << it->second.get() << " (" << endpoints_[first_idle_index].ToString()
+          << ") (index " << first_idle_index << " of " << endpoints_.size()
+          << ")";
       it->second->RequestConnectionLocked();
     }
   }

@@ -49,7 +49,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
@@ -205,24 +204,21 @@ static bool update_list(grpc_chttp2_transport* t, int64_t send_bytes,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
-    VLOG(2) << t->peer_string.as_string_view() << ":" << t << " stream "
-            << s->id << " moved to stalled list by " << staller
-            << ". This is FULLY expected to happen in a healthy program that "
-               "is not seeing flow control stalls. However, if you know that "
-               "there are unwanted stalls, here is some helpful data: "
-               "[fc:pending="
-            << s->flow_controlled_buffer.length
-            << ":flowed=" << s->flow_controlled_bytes_flowed
-            << ":peer_initwin=" << t->settings.acked().initial_window_size()
-            << ":t_win=" << t->flow_control.remote_window() << ":s_win="
-            << static_cast<uint32_t>(
-                   std::max(int64_t{0},
-                            s->flow_control.remote_window_delta() +
-                                static_cast<int64_t>(
-                                    t->settings.peer().initial_window_size())))
-            << ":s_delta=" << s->flow_control.remote_window_delta() << "]";
-  }
+  GRPC_TRACE_VLOG(flowctl, 2)
+      << t->peer_string.as_string_view() << ":" << t << " stream " << s->id
+      << " moved to stalled list by " << staller
+      << ". This is FULLY expected to happen in a healthy program that is not "
+         "seeing flow control stalls. However, if you know that there are "
+         "unwanted stalls, here is some helpful data: [fc:pending="
+      << s->flow_controlled_buffer.length
+      << ":flowed=" << s->flow_controlled_bytes_flowed
+      << ":peer_initwin=" << t->settings.acked().initial_window_size()
+      << ":t_win=" << t->flow_control.remote_window() << ":s_win="
+      << static_cast<uint32_t>(std::max(
+             int64_t{0}, s->flow_control.remote_window_delta() +
+                             static_cast<int64_t>(
+                                 t->settings.peer().initial_window_size())))
+      << ":s_delta=" << s->flow_control.remote_window_delta() << "]";
 }
 
 namespace {
@@ -260,8 +256,6 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    t_->settings.mutable_local().SetMaxConcurrentStreams(
-        t_->max_concurrent_streams_policy.AdvertiseValue());
     auto update = t_->settings.MaybeSendUpdate();
     if (update.has_value()) {
       grpc_core::Http2Frame frame(std::move(*update));
@@ -280,7 +274,6 @@ class WriteContext {
             });
       }
       t_->flow_control.FlushedSettings();
-      t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }

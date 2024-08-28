@@ -438,11 +438,6 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         )
         return capsule
 
-    def delete_client_call_tracer(
-        self, client_call_tracer: ClientCallTracerCapsule
-    ) -> None:
-        _cyobservability.delete_client_call_tracer(client_call_tracer)
-
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:

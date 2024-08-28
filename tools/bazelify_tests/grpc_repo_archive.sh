@@ -50,7 +50,7 @@ then
   exit 1
 fi
 
-GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS=$(grep ^STABLE_GRPC_UNCOMMITED_PATCH_CHECKSUM bazel-out/stable-status.txt | cut -d' ' -f2)
+GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS=$(grep ^STABLE_GRPC_UNCOMMITTED_PATCH_CHECKSUM bazel-out/stable-status.txt | cut -d' ' -f2)
 GRPC_GIT_WORKSPACE_DIRTY_FROM_STABLE_STATUS=$(grep ^STABLE_GRPC_GIT_WORKSPACE_DIRTY bazel-out/stable-status.txt | cut -d' ' -f2)
 
 pushd ${ORIGINAL_BAZEL_WORKSPACE_ROOT} >/dev/null
@@ -65,11 +65,11 @@ fi
 mkdir -p ${ARCHIVES_DIR}/grpc
 git archive --format="${ARCHIVE_FORMAT}" HEAD >"${ARCHIVES_DIR}/grpc/$(git rev-parse HEAD).${ARCHIVE_FORMAT}"
 
-if [ "${GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS}" != "" ]
+if [ "${GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS}" != "" ]
 then
-  git diff HEAD >"${ARCHIVES_DIR}/grpc/grpc_uncommited_${GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS}.patch"
+  git diff HEAD >"${ARCHIVES_DIR}/grpc/grpc_uncommited_${GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS}.patch"
   # check that the actual checksum of the patch file is what we expect it to be
-  echo "${GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS} ${ARCHIVES_DIR}/grpc/grpc_uncommited_${GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS}.patch" | sha256sum --quiet --check
+  echo "${GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS} ${ARCHIVES_DIR}/grpc/grpc_uncommited_${GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS}.patch" | sha256sum --quiet --check
 fi
 
 # produce archive for each submodule 
@@ -82,10 +82,10 @@ mkdir grpc
 tar -xopf "${ARCHIVES_DIR}/grpc/${GRPC_GIT_COMMIT_FROM_STABLE_STATUS}.${ARCHIVE_FORMAT}" -C grpc
 
 # apply the patch
-if [ "${GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS}" != "" ]
+if [ "${GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS}" != "" ]
 then
   pushd grpc >/dev/null
-  patch --quiet -p1 <"${ARCHIVES_DIR}/grpc/grpc_uncommited_${GRPC_UNCOMMITED_PATCH_CHECKSUM_FROM_STABLE_STATUS}.patch"
+  patch --quiet -p1 <"${ARCHIVES_DIR}/grpc/grpc_uncommited_${GRPC_UNCOMMITTED_PATCH_CHECKSUM_FROM_STABLE_STATUS}.patch"
   popd >/dev/null
 fi
 

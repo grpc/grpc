@@ -20,7 +20,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {

@@ -190,10 +190,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #ifndef NDEBUG
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    VLOG(2) << refcount->object_type << " " << refcount << ":"
-            << refcount->destroy.cb_arg << " REF " << reason;
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " REF " << reason;
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
 #else
@@ -207,10 +206,9 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    VLOG(2) << refcount->object_type << " " << refcount << ":"
-            << refcount->destroy.cb_arg << " UNREF " << reason;
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " UNREF " << reason;
   if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
     grpc_stream_destroy(refcount);
   }
