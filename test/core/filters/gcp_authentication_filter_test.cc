@@ -215,8 +215,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotPresentInXdsConfig) {
   Call call(MakeChannel(channel_args).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
-  std::string cluster_name_with_prefix =
-      absl::StrCat("cluster:", kClusterName);
+  std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
@@ -243,8 +242,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotOkayInXdsConfig) {
   Call call(MakeChannel(channel_args).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
-  std::string cluster_name_with_prefix =
-      absl::StrCat("cluster:", kClusterName);
+  std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
@@ -272,8 +270,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterResourceMissingInXdsConfig) {
   Call call(MakeChannel(channel_args).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
-  std::string cluster_name_with_prefix =
-      absl::StrCat("cluster:", kClusterName);
+  std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
@@ -299,8 +296,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
   Call call(MakeChannel(channel_args).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
-  std::string cluster_name_with_prefix =
-      absl::StrCat("cluster:", kClusterName);
+  std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
@@ -327,8 +323,7 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
   Call call(MakeChannel(channel_args).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
-  std::string cluster_name_with_prefix =
-      absl::StrCat("cluster:", kClusterName);
+  std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   call.Start(call.NewClientMetadata());
@@ -357,8 +352,7 @@ TEST_F(GcpAuthenticationFilterTest, SetsCallCredsIfClusterHasAudience) {
   Call call(MakeChannel(channel_args).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
-  std::string cluster_name_with_prefix =
-      absl::StrCat("cluster:", kClusterName);
+  std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
