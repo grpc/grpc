@@ -47,16 +47,16 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/cancel_callback.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/cancel_callback.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/seq.h"
+#include "src/core/util/promise/status_flag.h"
 
 namespace grpc_core {
 

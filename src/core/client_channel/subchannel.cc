@@ -59,8 +59,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/cancel_callback.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -72,6 +70,8 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/promise/cancel_callback.h"
+#include "src/core/util/promise/seq.h"
 #include "src/core/util/useful.h"
 
 // Backoff parameters.

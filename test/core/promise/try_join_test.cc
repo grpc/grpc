@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/try_join.h"
+#include "src/core/util/promise/try_join.h"
 
 #include <functional>
 #include <memory>

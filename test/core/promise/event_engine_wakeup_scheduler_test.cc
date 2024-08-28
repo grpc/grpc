@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/util/promise/event_engine_wakeup_scheduler.h"
 
 #include <stdlib.h>
 
@@ -25,8 +25,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 

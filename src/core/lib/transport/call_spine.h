@@ -20,19 +20,19 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/prioritized_race.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/promise/detail/status.h"
+#include "src/core/util/promise/if.h"
+#include "src/core/util/promise/latch.h"
+#include "src/core/util/promise/party.h"
+#include "src/core/util/promise/pipe.h"
+#include "src/core/util/promise/prioritized_race.h"
+#include "src/core/util/promise/promise.h"
+#include "src/core/util/promise/status_flag.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 

@@ -36,9 +36,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/promise/context.h"
 
 namespace grpc_core {
 

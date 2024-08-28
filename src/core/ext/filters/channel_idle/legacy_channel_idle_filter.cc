@@ -44,16 +44,16 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/sleep.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/util/promise/loop.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/promise.h"
+#include "src/core/util/promise/sleep.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 

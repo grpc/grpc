@@ -35,10 +35,10 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/promise/arena_promise.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

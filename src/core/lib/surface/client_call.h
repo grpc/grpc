@@ -46,11 +46,11 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
-#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/promise/status_flag.h"
 
 namespace grpc_core {
 

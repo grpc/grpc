@@ -30,8 +30,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -39,6 +37,8 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/promise.h"
 #include "src/core/util/useful.h"
 #include "test/core/filters/filter_test.h"
 

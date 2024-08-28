@@ -28,11 +28,11 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_join.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/promise/if.h"
+#include "src/core/util/promise/promise.h"
+#include "src/core/util/promise/try_join.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 namespace chaotic_good {

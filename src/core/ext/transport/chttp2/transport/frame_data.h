@@ -30,10 +30,10 @@
 
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/promise/poll.h"
 
 // start processing a new data frame
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,

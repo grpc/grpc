@@ -19,9 +19,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_final_info.h"
+#include "src/core/util/promise/context.h"
 
 namespace grpc_core {
 

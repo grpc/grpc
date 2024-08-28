@@ -22,8 +22,8 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/promise/loop.h"
 
 namespace grpc_core {
 

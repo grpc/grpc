@@ -33,10 +33,10 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/arena_promise.h"
 
 namespace grpc_core {
 

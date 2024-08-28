@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/map.h"
+#include "src/core/util/promise/map.h"
 
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/promise.h"
+#include "src/core/util/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {

@@ -40,17 +40,17 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/latch.h"
+#include "src/core/util/promise/pipe.h"
+#include "src/core/util/promise/prioritized_race.h"
 
 namespace grpc_core {
 

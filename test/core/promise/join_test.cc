@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/join.h"
+#include "src/core/util/promise/join.h"
 
 #include <memory>
 #include <tuple>
@@ -20,7 +20,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/poll.h"
+#include "src/core/util/promise/poll.h"
 #include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {

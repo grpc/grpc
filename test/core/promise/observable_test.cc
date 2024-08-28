@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/observable.h"
+#include "src/core/util/promise/observable.h"
 
 #include <cstdint>
 #include <limits>
@@ -26,8 +26,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/map.h"
+#include "src/core/util/promise/loop.h"
+#include "src/core/util/promise/map.h"
 #include "test/core/promise/poll_matcher.h"
 
 using testing::Mock;

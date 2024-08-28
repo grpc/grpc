@@ -21,9 +21,9 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/poll.h"
+#include "src/core/util/promise/status_flag.h"
 
 namespace grpc_core {
 

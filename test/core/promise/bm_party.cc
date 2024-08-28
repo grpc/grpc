@@ -17,8 +17,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/promise/party.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/promise/party.h"
 
 namespace grpc_core {
 namespace {

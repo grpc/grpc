@@ -34,11 +34,11 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/promise/arena_promise.h"
+#include "src/core/util/promise/promise.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using ::testing::AnyOf;

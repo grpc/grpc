@@ -40,13 +40,13 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/cancel_callback.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/cancel_callback.h"
+#include "src/core/util/promise/if.h"
+#include "src/core/util/promise/map.h"
+#include "src/core/util/promise/poll.h"
 
 namespace grpc_core {
 

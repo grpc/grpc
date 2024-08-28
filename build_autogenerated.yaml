@@ -979,36 +979,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/matchers/matchers.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/all_ok.h
-  - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/party.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/prioritized_race.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/sleep.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -1222,6 +1192,36 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/all_ok.h
+  - src/core/util/promise/arena_promise.h
+  - src/core/util/promise/cancel_callback.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/for_each.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/latch.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/observable.h
+  - src/core/util/promise/party.h
+  - src/core/util/promise/pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/prioritized_race.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/sleep.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_join.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/unique_ptr_with_bitset.h
@@ -1822,9 +1822,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/matchers/matchers.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
-  - src/core/lib/promise/sleep.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -2043,6 +2040,9 @@ libs:
   - src/core/util/json/json_util.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
+  - src/core/util/promise/party.cc
+  - src/core/util/promise/sleep.cc
   - src/core/xds/grpc/certificate_provider_store.cc
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   - src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -2543,36 +2543,6 @@ libs:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/all_ok.h
-  - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/party.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/prioritized_race.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/sleep.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -2719,6 +2689,36 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/all_ok.h
+  - src/core/util/promise/arena_promise.h
+  - src/core/util/promise/cancel_callback.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/for_each.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/latch.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/observable.h
+  - src/core/util/promise/party.h
+  - src/core/util/promise/pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/prioritized_race.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/sleep.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_join.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - src/core/util/unique_ptr_with_bitset.h
@@ -2972,9 +2972,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
-  - src/core/lib/promise/sleep.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -3118,6 +3115,9 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
+  - src/core/util/promise/party.cc
+  - src/core/util/promise/sleep.cc
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
@@ -4640,33 +4640,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/matchers/matchers.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/all_ok.h
-  - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/prioritized_race.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -4774,6 +4747,33 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/all_ok.h
+  - src/core/util/promise/arena_promise.h
+  - src/core/util/promise/cancel_callback.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/for_each.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/latch.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/party.h
+  - src/core/util/promise/pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/prioritized_race.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
@@ -4945,8 +4945,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/matchers/matchers.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -5043,6 +5041,8 @@ libs:
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
+  - src/core/util/promise/party.cc
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
@@ -5234,21 +5234,21 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/join.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/wait_set.h
   - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -5257,8 +5257,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/activity_test.cc
   deps:
   - gtest
@@ -5392,13 +5392,13 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/glob.h
-  - src/core/lib/promise/all_ok.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/status_flag.h
+  - src/core/util/promise/all_ok.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/status_flag.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -5829,14 +5829,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -6056,14 +6056,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -6340,14 +6340,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -6435,24 +6435,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -6481,6 +6463,24 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/latch.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
@@ -6507,7 +6507,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -6530,6 +6529,7 @@ targets:
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/transport/call_filters_test.cc
   deps:
   - gtest
@@ -6570,14 +6570,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -6660,15 +6660,15 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/status_flag.h
   - src/core/lib/transport/call_state.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/status_flag.h
   - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
@@ -6677,9 +6677,9 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/transport/call_state.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/transport/call_state_test.cc
   deps:
   - gtest
@@ -6906,33 +6906,6 @@ targets:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/all_ok.h
-  - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/prioritized_race.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -7014,6 +6987,33 @@ targets:
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/all_ok.h
+  - src/core/util/promise/arena_promise.h
+  - src/core/util/promise/cancel_callback.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/for_each.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/latch.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/party.h
+  - src/core/util/promise/pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/prioritized_race.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
@@ -7180,8 +7180,6 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -7252,6 +7250,8 @@ targets:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
+  - src/core/util/promise/party.cc
   - test/core/call/call_utils_test.cc
   deps:
   - gtest
@@ -7285,14 +7285,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -7349,14 +7349,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -7413,14 +7413,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -7477,14 +7477,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -7558,14 +7558,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -7642,20 +7642,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/cancel_callback.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -7668,6 +7654,20 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/cancel_callback.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
@@ -7689,7 +7689,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -7700,6 +7699,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/cancel_callback_test.cc
   deps:
   - gtest
@@ -7726,14 +7726,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -7790,14 +7790,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8439,19 +8439,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -8464,6 +8451,19 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
@@ -8485,7 +8485,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -8496,6 +8495,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - gtest
@@ -8755,14 +8755,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -8930,14 +8930,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9093,14 +9093,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9166,7 +9166,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/down_cast.h
-  - src/core/lib/promise/context.h
+  - src/core/util/promise/context.h
   src:
   - test/core/promise/context_test.cc
   deps:
@@ -9263,14 +9263,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9364,14 +9364,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9516,14 +9516,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -9917,7 +9917,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
   src:
   - test/core/promise/event_engine_wakeup_scheduler_test.cc
   deps:
@@ -10001,19 +10001,19 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/poll.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/poll.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
@@ -10035,11 +10035,11 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - gtest
@@ -10289,14 +10289,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -10353,14 +10353,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -10435,14 +10435,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -10539,19 +10539,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
@@ -10566,6 +10553,19 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
@@ -10590,7 +10590,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
@@ -10602,6 +10601,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - gtest
@@ -10649,28 +10649,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -10683,6 +10661,28 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/for_each.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/join.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -10705,7 +10705,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -10716,6 +10715,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/for_each_test.cc
   deps:
   - gtest
@@ -10949,14 +10949,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -11145,14 +11145,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -11705,14 +11705,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -11900,14 +11900,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -11988,14 +11988,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -12132,10 +12132,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/poll.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/poll.h
   src:
   - test/core/promise/if_test.cc
   deps:
@@ -12232,9 +12232,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/wait_set.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/wait_set.h
   src:
   - test/core/promise/inter_activity_latch_test.cc
   deps:
@@ -12257,17 +12257,17 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -12276,8 +12276,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
@@ -12333,20 +12333,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -12359,6 +12345,20 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_context.h
@@ -12381,7 +12381,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -12392,6 +12391,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/interceptor_list_test.cc
   deps:
   - gtest
@@ -12468,14 +12468,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -12561,11 +12561,11 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/glob.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/join.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -12674,14 +12674,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -12750,14 +12750,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -12818,20 +12818,20 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/join.h
+  - src/core/util/promise/latch.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -12840,8 +12840,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/latch_test.cc
   deps:
   - gtest
@@ -12961,13 +12961,13 @@ targets:
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/glob.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/seq.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/seq.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -13013,28 +13013,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/map_pipe.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -13047,6 +13025,28 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/util/promise/for_each.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/interceptor_list.h
+  - src/core/util/promise/join.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/map_pipe.h
+  - src/core/util/promise/pipe.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
+  - src/core/util/promise/seq.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_seq.h
   - src/core/util/ring_buffer.h
   - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -13069,7 +13069,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -13080,6 +13079,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/map_pipe_test.cc
   deps:
   - gtest
@@ -13147,14 +13147,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13211,14 +13211,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13275,14 +13275,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13339,14 +13339,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13580,16 +13580,16 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/wait_set.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/wait_set.h
   - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
@@ -13598,8 +13598,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
@@ -13638,14 +13638,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13714,14 +13714,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13778,14 +13778,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -13894,16 +13894,16 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/poll.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/loop.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/observable.h
+  - src/core/util/promise/poll.h
   - src/core/util/ring_buffer.h
   - test/core/promise/poll_matcher.h
   src:
@@ -13912,8 +13912,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/observable_test.cc
   deps:
   - gtest
@@ -14142,8 +14142,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/wait_set.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/wait_set.h
   src:
   - test/core/promise/party_test.cc
   deps:
@@ -14163,14 +14163,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -14401,14 +14401,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -14495,14 +14495,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -14551,7 +14551,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
+  - src/core/util/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - test/core/promise/pipe_test.cc
@@ -14564,7 +14564,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/poll.h
+  - src/core/util/promise/poll.h
   src:
   - test/core/promise/poll_test.cc
   deps:
@@ -14738,8 +14738,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/prioritized_race.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/prioritized_race.h
   src:
   - test/core/promise/prioritized_race_test.cc
   deps:
@@ -14751,8 +14751,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/join.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/transport/promise_endpoint.cc
@@ -14765,9 +14765,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/poll.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/poll.h
   src:
   - test/core/promise/promise_factory_test.cc
   deps:
@@ -14781,10 +14781,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/promise.h
   - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/map_test.cc
@@ -14810,21 +14810,21 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/promise_mutex.h
-  - src/core/lib/promise/seq.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/join.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/promise.h
+  - src/core/util/promise/promise_mutex.h
+  - src/core/util/promise/seq.h
   - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -14833,8 +14833,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
@@ -14849,9 +14849,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/promise.h
   src:
   - test/core/promise/promise_test.cc
   deps:
@@ -14926,14 +14926,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15070,8 +15070,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/race.h
   src:
   - test/core/promise/race_test.cc
   deps:
@@ -15184,14 +15184,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15262,14 +15262,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15326,14 +15326,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15538,14 +15538,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15613,14 +15613,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15677,14 +15677,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15741,14 +15741,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15805,14 +15805,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15869,14 +15869,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15933,14 +15933,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -15997,14 +15997,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16061,14 +16061,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16125,14 +16125,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16189,14 +16189,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16253,14 +16253,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16317,14 +16317,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16381,14 +16381,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16445,14 +16445,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16509,14 +16509,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16573,14 +16573,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16637,14 +16637,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16701,14 +16701,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16765,14 +16765,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16829,14 +16829,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16893,14 +16893,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -16957,14 +16957,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17021,14 +17021,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17096,14 +17096,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17160,14 +17160,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17224,14 +17224,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17288,14 +17288,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17363,14 +17363,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17427,14 +17427,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17491,14 +17491,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17555,14 +17555,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17619,14 +17619,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17683,14 +17683,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17747,14 +17747,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -17975,12 +17975,12 @@ targets:
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/glob.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/seq.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/seq.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -18194,14 +18194,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -18344,14 +18344,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -18474,14 +18474,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -18538,14 +18538,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -18617,14 +18617,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -18681,14 +18681,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -18759,14 +18759,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -19066,8 +19066,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/status_flag.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/status_flag.h
   src:
   - test/core/promise/status_flag_test.cc
   deps:
@@ -19120,14 +19120,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -19260,11 +19260,11 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/switch.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/if.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/switch.h
   src:
   - test/core/promise/switch_test.cc
   deps:
@@ -19485,14 +19485,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -19759,13 +19759,13 @@ targets:
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -19848,14 +19848,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - src/cpp/ext/chaotic_good.h
   src:
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
@@ -20044,14 +20044,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -20273,14 +20273,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -20464,13 +20464,13 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/glob.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_join.h
+  - src/core/util/promise/detail/join_state.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_join.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -20504,14 +20504,14 @@ targets:
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/glob.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
+  - src/core/util/promise/detail/basic_seq.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/seq_state.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/status_flag.h
+  - src/core/util/promise/try_seq.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -20639,15 +20639,15 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/wait_for_callback.h
   - src/core/util/latent_see.h
+  - src/core/util/promise/activity.h
+  - src/core/util/promise/context.h
+  - src/core/util/promise/detail/promise_factory.h
+  - src/core/util/promise/detail/promise_like.h
+  - src/core/util/promise/detail/status.h
+  - src/core/util/promise/map.h
+  - src/core/util/promise/poll.h
+  - src/core/util/promise/wait_for_callback.h
   - src/core/util/ring_buffer.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -20656,8 +20656,8 @@ targets:
   - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/per_cpu.cc
-  - src/core/lib/promise/activity.cc
   - src/core/util/latent_see.cc
+  - src/core/util/promise/activity.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
@@ -21017,14 +21017,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
@@ -21081,14 +21081,14 @@ targets:
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/promise/event_engine_wakeup_scheduler.h
+  - src/core/util/promise/inter_activity_latch.h
+  - src/core/util/promise/inter_activity_pipe.h
+  - src/core/util/promise/mpsc.h
+  - src/core/util/promise/switch.h
+  - src/core/util/promise/wait_for_callback.h
+  - src/core/util/promise/wait_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h

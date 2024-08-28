@@ -49,9 +49,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/all_ok.h"
-#include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -59,6 +56,9 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/promise/all_ok.h"
+#include "src/core/util/promise/status_flag.h"
+#include "src/core/util/promise/try_seq.h"
 
 namespace grpc_core {
 

@@ -37,12 +37,12 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/promise/context.h"
+#include "src/core/util/promise/map.h"
 
 namespace grpc_core {
 

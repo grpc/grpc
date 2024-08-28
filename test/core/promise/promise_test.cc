@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/promise.h"
+#include "src/core/util/promise/promise.h"
 
 #include <memory>
 #include <utility>

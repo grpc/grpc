@@ -2407,9 +2407,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/matchers/matchers.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/promise/sleep.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -2628,6 +2625,9 @@ add_library(grpc
   src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
+  src/core/util/promise/sleep.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3208,9 +3208,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/promise/sleep.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -3354,6 +3351,9 @@ add_library(grpc_unsecure
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
+  src/core/util/promise/sleep.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -5428,8 +5428,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/matchers/matchers.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -5526,6 +5524,8 @@ add_library(grpc_authorization_provider
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -6087,8 +6087,8 @@ add_executable(activity_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8663,7 +8663,6 @@ add_executable(call_filters_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -8686,6 +8685,7 @@ add_executable(call_filters_test
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/transport/call_filters_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8901,9 +8901,9 @@ add_executable(call_state_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/transport/call_state.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/transport/call_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9155,8 +9155,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -9227,6 +9225,8 @@ add_executable(call_utils_test
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
+  src/core/util/promise/party.cc
   test/core/call/call_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9663,7 +9663,6 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -9674,6 +9673,7 @@ add_executable(cancel_callback_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/cancel_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10763,7 +10763,6 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -10774,6 +10773,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/gprpp/chunked_vector_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14066,11 +14066,11 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14860,7 +14860,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -14872,6 +14871,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/transport/chttp2/flow_control_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14939,7 +14939,6 @@ add_executable(for_each_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -14950,6 +14949,7 @@ add_executable(for_each_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/for_each_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18371,8 +18371,8 @@ add_executable(inter_activity_pipe_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18478,7 +18478,6 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -18489,6 +18488,7 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/interceptor_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19255,8 +19255,8 @@ add_executable(latch_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19681,7 +19681,6 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -19692,6 +19691,7 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/map_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20610,8 +20610,8 @@ add_executable(mpsc_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21113,8 +21113,8 @@ add_executable(observable_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22990,8 +22990,8 @@ add_executable(promise_mutex_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32838,8 +32838,8 @@ add_executable(wait_for_callback_test
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/promise/activity.cc
   src/core/util/latent_see.cc
+  src/core/util/promise/activity.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)

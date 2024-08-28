@@ -1,0 +1,50 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+DerivePointerAlignment: false
+PointerAlignment: Left
+IncludeBlocks: Regroup
+IncludeCategories:
+  # ruby.h is even more first if it's included
+  - Regex: '^<ruby/ruby.h>'
+    Priority: -200
+  # Some platforms (namely msys) need wchar to be included BEFORE
+  # anything else, especially strsafe.h.
+  - Regex: '^<wchar.h>'
+    Priority: 5
+  # use priority 100+ for grpc headers so they sort last
+  # 'system' headers - include things that have " in the names to make them
+  # stand out and get fixed
+  - Regex: '^(<|")grpc'
+    Priority: 100
+  # similary using include/ to get system headers should stand out and get
+  # fixed
+  - Regex: '^"include/'
+    Priority: 100
+  # source headers go last
+  - Regex: '^"(src|test)/'
+    Priority: 101
+  # not-grpc headers follow
+  # first, non system headers that are included like <> - these are all
+  # local carveouts, and get sorted below c++ but before non grpc "" files
+  - Regex: '^<(openssl/|uv\.h|ares\.h|address_sorting/|gmock/|gtest/|zlib|zconf|benchmark/|google/)'
+    Priority: 30
+  # first C system headers - they have a . in the filename
+  - Regex: '^<.*\.'
+    Priority: 10
+  # then C++ system headers - no ., the only thing that will match now
+  - Regex: '^<'
+    Priority: 20
+  # finally other "" includes go between system headers and our headers
+  - Regex: '^"'
+    Priority: 40
+---
+Language: ObjC
+BasedOnStyle: Google
+ColumnLimit: 100
+ObjCBlockIndentWidth: 2
+---
+Language: Proto
+BasedOnStyle: Google
+ColumnLimit: 100
+...

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/mpsc.h"
+#include "src/core/util/promise/mpsc.h"
 
 #include <memory>
 #include <string>
@@ -23,8 +23,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/util/promise/activity.h"
+#include "src/core/util/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"
 
 using testing::Mock;

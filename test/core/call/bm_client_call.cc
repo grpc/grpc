@@ -18,13 +18,13 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/promise/all_ok.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/client_call.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/util/promise/all_ok.h"
+#include "src/core/util/promise/map.h"
 
 namespace grpc_core {
 namespace {
