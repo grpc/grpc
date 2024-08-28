@@ -22,6 +22,7 @@
 #include <type_traits>
 
 #include "absl/log/check.h"
+#include "absl/strings/str_cat.h"  // IWYU pragma: keep
 
 #include <grpc/support/port_platform.h>
 

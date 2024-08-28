@@ -7974,6 +7974,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
     ],
     deps = [
         "call_final_info",
