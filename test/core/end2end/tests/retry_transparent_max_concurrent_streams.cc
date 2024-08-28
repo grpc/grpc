@@ -40,14 +40,10 @@ namespace {
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
 CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
-  // The minimum time between subsequent connection attempts helps with cases
-  // where the connection handshake does not realize that the socket is not
-  // working in time. (b/333896115)
   const auto server_args =
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
-          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false)
-          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000);
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
   InitServer(server_args);
   InitClient(ChannelArgs());
   auto c =
