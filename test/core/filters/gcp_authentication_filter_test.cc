@@ -249,7 +249,7 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotOkayInXdsConfig) {
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   call.Start(call.NewClientMetadata());
   EXPECT_EVENT(Finished(
-      &call, HasMetadataResult(absl::UnauthenticatedError(absl::StrCat(
+      &call, HasMetadataResult(absl::UnavailableError(absl::StrCat(
                  "GCP authentication filter: CDS resource unavailable for ",
                  kClusterName)))));
   Step();

@@ -75,7 +75,7 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
     // because once that happens, a new instance of this filter will be
     // swapped in for subsequent calls, but *this* call is already tied
     // to this filter instance, which will never see the update.
-    return absl::UnauthenticatedError(
+    return absl::UnavailableError(
         absl::StrCat("GCP authentication filter: CDS resource unavailable for ",
                      cluster_name));
   }
