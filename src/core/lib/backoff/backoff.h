@@ -21,8 +21,6 @@
 
 #include "absl/random/random.h"
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
@@ -36,11 +34,11 @@ class BackOff {
   /// Initialize backoff machinery - does not need to be destroyed
   explicit BackOff(const Options& options);
 
-  /// Returns the time at which the next attempt should start.
-  Timestamp NextAttemptTime();
+  /// Returns the delay before the next attempt should start.
+  Duration NextAttemptDelay();
 
-  /// Reset the backoff, so the next value returned by NextAttemptTime()
-  /// will be the time of the second attempt (rather than the Nth).
+  /// Reset the backoff, so the next value returned by NextAttemptDelay()
+  /// will be the delay for the second attempt (rather than the Nth).
   void Reset();
 
   class Options {
