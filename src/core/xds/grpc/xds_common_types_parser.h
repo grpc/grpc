@@ -40,6 +40,18 @@ inline bool ParseBoolValue(const google_protobuf_BoolValue* bool_value_proto,
   return google_protobuf_BoolValue_value(bool_value_proto);
 }
 
+inline absl::optional<uint64_t> ParseUInt64Value(
+    const google_protobuf_UInt64Value* proto) {
+  if (proto == nullptr) return absl::nullopt;
+  return google_protobuf_UInt64Value_value(proto);
+}
+
+inline absl::optional<uint32_t> ParseUInt32Value(
+    const google_protobuf_UInt32Value* proto) {
+  if (proto == nullptr) return absl::nullopt;
+  return google_protobuf_UInt32Value_value(proto);
+}
+
 CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*

@@ -173,23 +173,21 @@ class RingHashLbPolicyConfigFactory final
       ValidationErrors::ScopedField field(errors, ".hash_function");
       errors->AddError("unsupported value (must be XX_HASH)");
     }
-    uint64_t max_ring_size = 8388608;
-    const auto* uint64_value =
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
-            resource);
-    if (uint64_value != nullptr) {
-      max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
-      if (max_ring_size == 0 || max_ring_size > 8388608) {
-        ValidationErrors::ScopedField field(errors, ".maximum_ring_size");
-        errors->AddError("value must be in the range [1, 8388608]");
-      }
+    uint64_t max_ring_size =
+        ParseUInt64Value(
+            envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
+                resource))
+            .value_or(8388608);
+    if (max_ring_size == 0 || max_ring_size > 8388608) {
+      ValidationErrors::ScopedField field(errors, ".maximum_ring_size");
+      errors->AddError("value must be in the range [1, 8388608]");
     }
-    uint64_t min_ring_size = 1024;
-    uint64_value =
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
-            resource);
-    if (uint64_value != nullptr) {
-      min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+    uint64_t min_ring_size =
+        ParseUInt64Value(
+            envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
+                resource))
+            .value_or(1024);
+    {
       ValidationErrors::ScopedField field(errors, ".minimum_ring_size");
       if (min_ring_size == 0 || min_ring_size > 8388608) {
         errors->AddError("value must be in the range [1, 8388608]");

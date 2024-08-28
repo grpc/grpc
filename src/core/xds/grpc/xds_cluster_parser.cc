@@ -58,6 +58,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_metadata_parser.h"
 
 namespace grpc_core {
 
@@ -300,22 +301,22 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
     uint64_t max_ring_size = 8388608;
     if (ring_hash_config != nullptr) {
       ValidationErrors::ScopedField field(errors, ".ring_hash_lb_config");
-      const google_protobuf_UInt64Value* uint64_value =
+      auto value = ParseUInt64Value(
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-              ring_hash_config);
-      if (uint64_value != nullptr) {
+              ring_hash_config));
+      if (value.has_value()) {
         ValidationErrors::ScopedField field(errors, ".maximum_ring_size");
-        max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        max_ring_size = *value;
         if (max_ring_size > 8388608 || max_ring_size == 0) {
           errors->AddError("must be in the range of 1 to 8388608");
         }
       }
-      uint64_value =
+      value = ParseUInt64Value(
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-              ring_hash_config);
-      if (uint64_value != nullptr) {
+              ring_hash_config));
+      if (value.has_value()) {
         ValidationErrors::ScopedField field(errors, ".minimum_ring_size");
-        min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        min_ring_size = *value;
         if (min_ring_size > 8388608 || min_ring_size == 0) {
           errors->AddError("must be in the range of 1 to 8388608");
         }
@@ -478,13 +479,10 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       const auto* threshold = thresholds[i];
       if (envoy_config_cluster_v3_CircuitBreakers_Thresholds_priority(
               threshold) == envoy_config_core_v3_DEFAULT) {
-        const google_protobuf_UInt32Value* max_requests =
+        auto value = ParseUInt32Value(
             envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
-                threshold);
-        if (max_requests != nullptr) {
-          cds_update->max_concurrent_requests =
-              google_protobuf_UInt32Value_value(max_requests);
-        }
+                threshold));
+        if (value.has_value()) cds_update->max_concurrent_requests = *value;
         break;
       }
     }
@@ -515,91 +513,80 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       outlier_detection_update.max_ejection_time =
           ParseDuration(duration, &errors);
     }
-    const google_protobuf_UInt32Value* max_ejection_percent =
+    auto max_ejection_percent = ParseUInt32Value(
         envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
-            outlier_detection);
-    if (max_ejection_percent != nullptr) {
-      outlier_detection_update.max_ejection_percent =
-          google_protobuf_UInt32Value_value(max_ejection_percent);
+            outlier_detection));
+    if (max_ejection_percent.has_value()) {
+      outlier_detection_update.max_ejection_percent = *max_ejection_percent;
       if (outlier_detection_update.max_ejection_percent > 100) {
         ValidationErrors::ScopedField field(&errors, ".max_ejection_percent");
         errors.AddError("value must be <= 100");
       }
     }
-    const google_protobuf_UInt32Value* enforcing_success_rate =
+    auto enforcement_percentage = ParseUInt32Value(
         envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
-            outlier_detection);
-    if (enforcing_success_rate != nullptr) {
-      uint32_t enforcement_percentage =
-          google_protobuf_UInt32Value_value(enforcing_success_rate);
-      if (enforcement_percentage > 100) {
+            outlier_detection));
+    if (enforcement_percentage.has_value()) {
+      if (*enforcement_percentage > 100) {
         ValidationErrors::ScopedField field(&errors, ".enforcing_success_rate");
         errors.AddError("value must be <= 100");
       }
-      if (enforcement_percentage != 0) {
+      if (*enforcement_percentage != 0) {
         OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
-        success_rate_ejection.enforcement_percentage = enforcement_percentage;
-        const google_protobuf_UInt32Value* minimum_hosts =
+        success_rate_ejection.enforcement_percentage = *enforcement_percentage;
+        auto minimum_hosts = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_success_rate_minimum_hosts(
-                outlier_detection);
-        if (minimum_hosts != nullptr) {
-          success_rate_ejection.minimum_hosts =
-              google_protobuf_UInt32Value_value(minimum_hosts);
+                outlier_detection));
+        if (minimum_hosts.has_value()) {
+          success_rate_ejection.minimum_hosts = *minimum_hosts;
         }
-        const google_protobuf_UInt32Value* request_volume =
+        auto request_volume = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_success_rate_request_volume(
-                outlier_detection);
-        if (request_volume != nullptr) {
-          success_rate_ejection.request_volume =
-              google_protobuf_UInt32Value_value(request_volume);
+                outlier_detection));
+        if (request_volume.has_value()) {
+          success_rate_ejection.request_volume = *request_volume;
         }
-        const google_protobuf_UInt32Value* stdev_factor =
+        auto stdev_factor = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_success_rate_stdev_factor(
-                outlier_detection);
-        if (stdev_factor != nullptr) {
-          success_rate_ejection.stdev_factor =
-              google_protobuf_UInt32Value_value(stdev_factor);
+                outlier_detection));
+        if (stdev_factor.has_value()) {
+          success_rate_ejection.stdev_factor = *stdev_factor;
         }
         outlier_detection_update.success_rate_ejection = success_rate_ejection;
       }
     }
-    const google_protobuf_UInt32Value* enforcing_failure_percentage =
+    enforcement_percentage = ParseUInt32Value(
         envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage(
-            outlier_detection);
-    if (enforcing_failure_percentage != nullptr) {
-      uint32_t enforcement_percentage =
-          google_protobuf_UInt32Value_value(enforcing_failure_percentage);
-      if (enforcement_percentage > 100) {
+            outlier_detection));
+    if (enforcement_percentage.has_value()) {
+      if (*enforcement_percentage > 100) {
         ValidationErrors::ScopedField field(&errors,
                                             ".enforcing_failure_percentage");
         errors.AddError("value must be <= 100");
       }
-      if (enforcement_percentage != 0) {
+      if (*enforcement_percentage != 0) {
         OutlierDetectionConfig::FailurePercentageEjection
             failure_percentage_ejection;
         failure_percentage_ejection.enforcement_percentage =
-            enforcement_percentage;
-        const google_protobuf_UInt32Value* minimum_hosts =
+            *enforcement_percentage;
+        auto minimum_hosts = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(
-                outlier_detection);
-        if (minimum_hosts != nullptr) {
-          failure_percentage_ejection.minimum_hosts =
-              google_protobuf_UInt32Value_value(minimum_hosts);
+                outlier_detection));
+        if (minimum_hosts.has_value()) {
+          failure_percentage_ejection.minimum_hosts = *minimum_hosts;
         }
-        const google_protobuf_UInt32Value* request_volume =
+        auto request_volume = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(
-                outlier_detection);
-        if (request_volume != nullptr) {
-          failure_percentage_ejection.request_volume =
-              google_protobuf_UInt32Value_value(request_volume);
+                outlier_detection));
+        if (request_volume.has_value()) {
+          failure_percentage_ejection.request_volume = *request_volume;
         }
-        const google_protobuf_UInt32Value* threshold =
+        auto threshold = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_failure_percentage_threshold(
-                outlier_detection);
-        if (threshold != nullptr) {
-          failure_percentage_ejection.threshold =
-              google_protobuf_UInt32Value_value(threshold);
-          if (enforcement_percentage > 100) {
+                outlier_detection));
+        if (threshold.has_value()) {
+          failure_percentage_ejection.threshold = *threshold;
+          if (*enforcement_percentage > 100) {
             ValidationErrors::ScopedField field(
                 &errors, ".failure_percentage_threshold");
             errors.AddError("value must be <= 100");
@@ -642,50 +629,10 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
   // Parse metadata.
-  const envoy_config_core_v3_Metadata* metadata =
-      envoy_config_cluster_v3_Cluster_metadata(cluster);
-  if (metadata != nullptr) {
-    // First, try typed_filter_metadata.
-    size_t iter = kUpb_Map_Begin;
-    const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry* typed_entry;
-    while (
-        (typed_entry = envoy_config_core_v3_Metadata_typed_filter_metadata_next(
-             metadata, &iter)) != nullptr) {
-      absl::string_view key = UpbStringToAbsl(
-          envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_key(
-              typed_entry));
-      ValidationErrors::ScopedField field(
-          &errors, absl::StrCat(".metadata.typed_filter_metadata[", key, "]"));
-      auto extension = ExtractXdsExtension(
-          context,
-          envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_value(
-              typed_entry),
-          &errors);
-      if (!extension.has_value()) continue;
-      // TODO(roth): If we ever need to support another type here, refactor
-      // this into a separate registry.
-      if (extension->type == "extensions.filters.http.gcp_authn.v3.Audience") {
-        // TODO(roth): In a subsequent PR, add parsing here.
-      }
-    }
-    // Then, try filter_metadata.
-    iter = kUpb_Map_Begin;
-    const envoy_config_core_v3_Metadata_FilterMetadataEntry* entry;
-    while ((entry = envoy_config_core_v3_Metadata_filter_metadata_next(
-                metadata, &iter)) != nullptr) {
-      absl::string_view key = UpbStringToAbsl(
-          envoy_config_core_v3_Metadata_FilterMetadataEntry_key(entry));
-      auto json = ParseProtobufStructToJson(
-          context,
-          envoy_config_core_v3_Metadata_FilterMetadataEntry_value(entry));
-      if (!json.ok()) {
-        ValidationErrors::ScopedField field(
-            &errors, absl::StrCat(".metadata.filter_metadata[", key, "]"));
-        errors.AddError(json.status().message());
-      } else if (!cds_update->metadata.contains(key)) {
-        cds_update->metadata[key] = std::move(*json);
-      }
-    }
+  {
+    ValidationErrors::ScopedField field(&errors, ".metadata");
+    cds_update->metadata = ParseXdsMetadataMap(
+        context, envoy_config_cluster_v3_Cluster_metadata(cluster), &errors);
   }
   // Return result.
   if (!errors.ok()) {
