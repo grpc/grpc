@@ -43,7 +43,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/orphanable/orphanable.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 // This test won't work except with posix sockets enabled
