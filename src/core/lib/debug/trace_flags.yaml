@@ -336,35 +336,19 @@ xds_cluster_impl_lb:
 xds_cluster_manager_lb:
   default: false
   description: XDS Cluster manager LB policy.
-xds_cluster_resource_type_test:
-  default: true
-  description: XDS Cluster resource type.
-  internal: true
-xds_common_types_test:
-  default: true
-  description: XDS Common types.
-  internal: true
-xds_endpoint_resource_type_test:
-  default: true
-  description: XDS Endpoint resource type.
-  internal: true
-xds_listener_resource_type_test:
-  default: true
-  description: XDS Listener resource type.
-  internal: true
 xds_override_host_lb:
   default: false
   description: XDS Override host LB.
 xds_resolver:
   default: false
   description: XDS Resolver.
-xds_route_config_resource_type_test:
-  default: true
-  description: XDS Route config resource type.
-  internal: true
 xds_server_config_fetcher:
   default: false
   description: XDS Server config fetcher.
+xds_unittest:
+  default: true
+  description: xDS unit tests.
+  internal: true
 xds_wrr_locality_lb:
   default: false
   description: XDS WRR locality LB policy.

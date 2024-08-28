@@ -729,14 +729,11 @@ grpc_cc_library(
         "//src/core:lib/gprpp/windows/stat.cc",
         "//src/core:lib/gprpp/windows/thd.cc",
         "//src/core:util/alloc.cc",
-        "//src/core:util/android/log.cc",
         "//src/core:util/iphone/cpu.cc",
         "//src/core:util/linux/cpu.cc",
-        "//src/core:util/linux/log.cc",
         "//src/core:util/log.cc",
         "//src/core:util/msys/tmpfile.cc",
         "//src/core:util/posix/cpu.cc",
-        "//src/core:util/posix/log.cc",
         "//src/core:util/posix/string.cc",
         "//src/core:util/posix/sync.cc",
         "//src/core:util/posix/time.cc",
@@ -747,7 +744,6 @@ grpc_cc_library(
         "//src/core:util/time.cc",
         "//src/core:util/time_precise.cc",
         "//src/core:util/windows/cpu.cc",
-        "//src/core:util/windows/log.cc",
         "//src/core:util/windows/string.cc",
         "//src/core:util/windows/string_util.cc",
         "//src/core:util/windows/sync.cc",
@@ -5016,6 +5012,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_fault_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_gcp_authn_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_gcp_authn_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
 )
 
 grpc_upb_proto_library(
