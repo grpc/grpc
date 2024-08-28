@@ -102,7 +102,7 @@ def cc_grpc_library(
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
-            plugin = Label("//src/compiler:grpc_cpp_plugin"),
+            plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
             **kwargs
@@ -114,6 +114,6 @@ def cc_grpc_library(
             hdrs = [":" + codegen_grpc_target],
             deps = deps +
                    extra_deps +
-                   [Label("//:grpc++_codegen_proto")],
+                   ["@com_github_grpc_grpc//:grpc++_codegen_proto"],
             **kwargs
         )
