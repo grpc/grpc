@@ -35,7 +35,7 @@ template <typename Key, typename Value>
 class LruCache {
  public:
   explicit LruCache(size_t max_size) : max_size_(max_size) {
-    CHECK_GT(max_size, 0);
+    CHECK_GT(max_size, 0UL);
   }
 
   // Returns the value for key, or nullopt if not present.
