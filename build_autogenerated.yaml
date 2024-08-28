@@ -20558,13 +20558,13 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: uri_parser_test
+- name: uri_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
-  - test/core/util/uri_parser_test.cc
+  - test/core/util/uri_test.cc
   deps:
   - gtest
   - grpc_test_util_unsecure

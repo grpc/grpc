@@ -533,13 +533,13 @@ grpc_fuzzer(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
 grpc_cc_test(
-    name = "uri_parser_test",
-    srcs = ["uri_parser_test.cc"],
+    name = "uri_test",
+    srcs = ["uri_test.cc"],
     external_deps = [
         "absl/status",
         "gtest",
@@ -547,7 +547,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:event_engine_base_hdrs",
-        "//:uri_parser",
+        "//:uri",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )

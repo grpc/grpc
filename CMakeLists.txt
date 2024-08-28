@@ -1530,7 +1530,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx unique_ptr_with_bitset_test)
   add_dependencies(buildtests_cxx unique_type_name_test)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
-  add_dependencies(buildtests_cxx uri_parser_test)
+  add_dependencies(buildtests_cxx uri_test)
   add_dependencies(buildtests_cxx useful_test)
   add_dependencies(buildtests_cxx uuid_v4_test)
   add_dependencies(buildtests_cxx validation_errors_test)
@@ -32622,20 +32622,20 @@ target_link_libraries(unknown_frame_bad_client_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(uri_parser_test
-  test/core/util/uri_parser_test.cc
+add_executable(uri_test
+  test/core/util/uri_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(uri_parser_test
+    target_compile_definitions(uri_test
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
-target_compile_features(uri_parser_test PUBLIC cxx_std_14)
-target_include_directories(uri_parser_test
+target_compile_features(uri_test PUBLIC cxx_std_14)
+target_include_directories(uri_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -32654,7 +32654,7 @@ target_include_directories(uri_parser_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(uri_parser_test
+target_link_libraries(uri_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util_unsecure

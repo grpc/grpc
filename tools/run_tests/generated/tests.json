@@ -11506,7 +11506,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "uri_parser_test",
+    "name": "uri_test",
     "platforms": [
       "linux",
       "mac",

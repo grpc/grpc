@@ -1387,7 +1387,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:parse_address",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -2707,7 +2707,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:parse_address",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -3719,7 +3719,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:parse_address",
         "//:sockaddr_utils",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -3913,7 +3913,7 @@ grpc_cc_library(
         "//:parse_address",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4099,7 +4099,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:tsi_base",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4202,7 +4202,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4396,7 +4396,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4451,7 +4451,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4508,7 +4508,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -5751,7 +5751,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:tsi_ssl_credentials",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
         "//:xds_client",
     ],
@@ -5837,7 +5837,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
-        "//:uri_parser",
+        "//:uri",
         "//:xds_client",
     ],
 )
@@ -6745,7 +6745,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:parse_address",
         "//:promise",
-        "//:uri_parser",
+        "//:uri",
     ],
     alwayslink = 1,
 )
@@ -6821,7 +6821,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
     ],
 )
@@ -6894,7 +6894,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -6957,7 +6957,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -6982,7 +6982,7 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:orphanable",
         "//:parse_address",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7009,7 +7009,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_resolver",
         "//:orphanable",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7144,7 +7144,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
         "//:xds_client",
     ],
@@ -7181,7 +7181,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
         "//:xds_client",
     ],
@@ -7504,7 +7504,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7669,7 +7669,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7735,7 +7735,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
