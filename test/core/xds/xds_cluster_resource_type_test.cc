@@ -58,6 +58,7 @@
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/gcp_authn.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_protocol_options.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
@@ -70,6 +71,7 @@
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using envoy::extensions::filters::http::gcp_authn::v3::Audience;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
 using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
@@ -84,10 +86,9 @@ class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        &xds_cluster_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{
+            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
@@ -1652,23 +1653,13 @@ MATCHER_P(JsonEq, json_str, "") {
   return ok;
 }
 
-TEST_F(MetadataTest, MetadataSet) {
+TEST_F(MetadataTest, UntypedMetadata) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
   auto& label_map = *filter_map["filter_key"].mutable_fields();
   *label_map["string_value"].mutable_string_value() = "abc";
-  label_map["bool_value"].set_bool_value(true);
-  label_map["number_value"].set_number_value(3.14);
-  label_map["null_value"].set_null_value(::google::protobuf::NULL_VALUE);
-  auto& list_value_values =
-      *label_map["list_value"].mutable_list_value()->mutable_values();
-  *list_value_values.Add()->mutable_string_value() = "efg";
-  list_value_values.Add()->set_number_value(3.14);
-  auto& struct_value_fields =
-      *label_map["struct_value"].mutable_struct_value()->mutable_fields();
-  struct_value_fields["bool_value"].set_bool_value(false);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
@@ -1677,31 +1668,41 @@ TEST_F(MetadataTest, MetadataSet) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.metadata,
-              ::testing::ElementsAre(::testing::Pair(
-                  "filter_key", JsonEq("{"
-                                       "\"bool_value\":true,"
-                                       "\"list_value\":[\"efg\",3.14],"
-                                       "\"null_value\":null,"
-                                       "\"number_value\":3.14,"
-                                       "\"string_value\":\"abc\","
-                                       "\"struct_value\":{\"bool_value\":false}"
-                                       "}"))));
+  ASSERT_EQ(resource.metadata.size(), 1);
+  auto* entry = resource.metadata.Find("filter_key");
+  ASSERT_NE(entry, nullptr);
+  ASSERT_EQ(entry->type(), XdsStructMetadataValue::Type());
+  EXPECT_THAT(DownCast<const XdsStructMetadataValue*>(entry)->json(),
+              JsonEq("{\"string_value\":\"abc\"}"));
 }
 
-TEST_F(MetadataTest, MetadataUnset) {
+// Test just one possible error from metadata validation, to make sure
+// they're being passed through.  A complete set of tests for metadata
+// validation is in xds_metadata_test.cc.
+TEST_F(MetadataTest, MetadataUnparseable) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  auto& entry = filter_map["filter_key"];
+  entry.PackFrom(Audience());
+  entry.set_value(std::string("\0", 1));
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
       resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.metadata, ::testing::ElementsAre());
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:metadata.typed_filter_metadata[filter_key].value["
+            "envoy.extensions.filters.http.gcp_authn.v3.Audience] "
+            "error:could not parse audience metadata]")
+      << decode_result.resource.status();
 }
 
 }  // namespace

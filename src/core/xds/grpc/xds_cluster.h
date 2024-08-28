@@ -28,6 +28,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
@@ -87,7 +88,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  absl::flat_hash_map<std::string, Json> metadata;
+  XdsMetadataMap metadata;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
