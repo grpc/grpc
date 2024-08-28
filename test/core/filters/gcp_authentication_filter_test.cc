@@ -165,7 +165,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfNoXdsClusterAttribute) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
+  call.arena()->New<ServiceConfigCallData>(call.arena());
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
@@ -189,9 +189,10 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterAttributeHasWrongPrefix) {
       kServiceConfigJson, kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
   XdsClusterAttribute xds_cluster_attribute(kClusterName);
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
@@ -212,10 +213,12 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotPresentInXdsConfig) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, /*cluster=*/"",
                                       /*filter_instance_name=*/"", nullptr);
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
-  XdsClusterAttribute xds_cluster_attribute(
-      absl::StrCat("cluster:", kClusterName));
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
+  std::string cluster_name_with_prefix =
+      absl::StrCat("cluster:", kClusterName);
+  XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
@@ -238,10 +241,12 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotOkayInXdsConfig) {
                           .SetObject(MakeXdsConfigWithCluster(
                               kClusterName, absl::UnavailableError("nope")));
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
-  XdsClusterAttribute xds_cluster_attribute(
-      absl::StrCat("cluster:", kClusterName));
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
+  std::string cluster_name_with_prefix =
+      absl::StrCat("cluster:", kClusterName);
+  XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
@@ -265,10 +270,12 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterResourceMissingInXdsConfig) {
           .SetObject(MakeXdsConfigWithCluster(
               kClusterName, XdsConfig::ClusterConfig(nullptr, nullptr, "")));
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
-  XdsClusterAttribute xds_cluster_attribute(
-      absl::StrCat("cluster:", kClusterName));
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
+  std::string cluster_name_with_prefix =
+      absl::StrCat("cluster:", kClusterName);
+  XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
@@ -290,10 +297,12 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
-  XdsClusterAttribute xds_cluster_attribute(
-      absl::StrCat("cluster:", kClusterName));
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
+  std::string cluster_name_with_prefix =
+      absl::StrCat("cluster:", kClusterName);
+  XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
@@ -316,10 +325,12 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
       MakeChannelArgs(kServiceConfigJson, kClusterName, kFilterInstanceName,
                       std::make_unique<XdsStructMetadataValue>(Json()));
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
-  XdsClusterAttribute xds_cluster_attribute(
-      absl::StrCat("cluster:", kClusterName));
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
+  std::string cluster_name_with_prefix =
+      absl::StrCat("cluster:", kClusterName);
+  XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   call.Start(call.NewClientMetadata());
   EXPECT_EVENT(Finished(
       &call,
@@ -344,10 +355,12 @@ TEST_F(GcpAuthenticationFilterTest, SetsCallCredsIfClusterHasAudience) {
       kServiceConfigJson, kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
   Call call(MakeChannel(channel_args).value());
-  ServiceConfigCallData service_config_call_data(call.arena());
-  XdsClusterAttribute xds_cluster_attribute(
-      absl::StrCat("cluster:", kClusterName));
-  service_config_call_data.SetCallAttribute(&xds_cluster_attribute);
+  auto* service_config_call_data =
+      call.arena()->New<ServiceConfigCallData>(call.arena());
+  std::string cluster_name_with_prefix =
+      absl::StrCat("cluster:", kClusterName);
+  XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
+  service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
