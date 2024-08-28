@@ -56,7 +56,6 @@ namespace {
 
 Json::Object ValidateFilterConfig(
     absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig*
         gcp_auth,
     ValidationErrors* errors) {
@@ -100,9 +99,8 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     errors->AddError("could not parse GCP auth filter config");
     return absl::nullopt;
   }
-  return FilterConfig{ConfigProtoName(),
-                      Json::FromObject(ValidateFilterConfig(
-                          instance_name, context, gcp_auth, errors))};
+  return FilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
+                                             instance_name, gcp_auth, errors))};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
