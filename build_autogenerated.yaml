@@ -19651,6 +19651,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
@@ -19665,6 +19666,7 @@ targets:
   - test/core/test_util/tracer_util.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/security/credentials_test.cc

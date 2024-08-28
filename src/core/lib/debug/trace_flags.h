@@ -112,6 +112,7 @@ extern TraceFlag subchannel_pool_trace;
 extern TraceFlag tcp_trace;
 extern TraceFlag timer_trace;
 extern TraceFlag timer_check_trace;
+extern TraceFlag token_fetcher_credentials_trace;
 extern TraceFlag tsi_trace;
 extern TraceFlag weighted_round_robin_lb_trace;
 extern TraceFlag weighted_target_lb_trace;
