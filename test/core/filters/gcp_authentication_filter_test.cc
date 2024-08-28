@@ -153,7 +153,7 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
                 "gcp_auth: xds config not found in channel args"));
 }
 
-TEST_F(GcpAuthenticationFilterTest, NoOpIfNoXdsClusterAttribute) {
+TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
   constexpr absl::string_view kServiceConfigJson =
@@ -166,10 +166,11 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfNoXdsClusterAttribute) {
                                       kFilterInstanceName, nullptr);
   Call call(MakeChannel(channel_args).value());
   call.arena()->New<ServiceConfigCallData>(call.arena());
-  EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
-  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
-  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::OkStatus())));
+  EXPECT_EVENT(Finished(
+      &call,
+      HasMetadataResult(absl::InternalError(
+          "GCP authentication filter: call has no xDS cluster attribute"))));
   Step();
   // Call creds were not set.
   EXPECT_EQ(GetCallCreds(call), nullptr);
@@ -202,7 +203,7 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterAttributeHasWrongPrefix) {
   EXPECT_EQ(GetCallCreds(call), nullptr);
 }
 
-TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotPresentInXdsConfig) {
+TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotPresentInXdsConfig) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kServiceConfigJson =
       "{\n"
@@ -218,16 +219,17 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotPresentInXdsConfig) {
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
-  EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
-  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
-  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::OkStatus())));
+  EXPECT_EVENT(
+      Finished(&call, HasMetadataResult(absl::InternalError(absl::StrCat(
+                          "GCP authentication filter: xDS cluster ",
+                          kClusterName, " not found in XdsConfig")))));
   Step();
   // Call creds were not set.
   EXPECT_EQ(GetCallCreds(call), nullptr);
 }
 
-TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotOkayInXdsConfig) {
+TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotOkayInXdsConfig) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kServiceConfigJson =
       "{\n"
@@ -245,16 +247,18 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterNotOkayInXdsConfig) {
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
-  EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
-  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
-  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::OkStatus())));
+  EXPECT_EVENT(Finished(
+      &call, HasMetadataResult(absl::UnauthenticatedError(absl::StrCat(
+                 "GCP authentication filter: CDS resource unavailable for ",
+                 kClusterName)))));
   Step();
   // Call creds were not set.
   EXPECT_EQ(GetCallCreds(call), nullptr);
 }
 
-TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterResourceMissingInXdsConfig) {
+TEST_F(GcpAuthenticationFilterTest,
+       FailsCallIfClusterResourceMissingInXdsConfig) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kServiceConfigJson =
       "{\n"
@@ -273,10 +277,12 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterResourceMissingInXdsConfig) {
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
   XdsClusterAttribute xds_cluster_attribute(cluster_name_with_prefix);
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
-  EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
-  call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));
-  EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::OkStatus())));
+  EXPECT_EVENT(Finished(
+      &call,
+      HasMetadataResult(absl::InternalError(absl::StrCat(
+          "GCP authentication filter: CDS resource not present for cluster ",
+          kClusterName)))));
   Step();
   // Call creds were not set.
   EXPECT_EQ(GetCallCreds(call), nullptr);
@@ -328,9 +334,10 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
   service_config_call_data->SetCallAttribute(&xds_cluster_attribute);
   call.Start(call.NewClientMetadata());
   EXPECT_EVENT(Finished(
-      &call,
-      HasMetadataResult(absl::UnavailableError(absl::StrCat(
-          "audience metadata in wrong format for cluster ", kClusterName)))));
+      &call, HasMetadataResult(absl::UnavailableError(absl::StrCat(
+                 "GCP authentication filter: audience metadata in wrong format "
+                 "for cluster ",
+                 kClusterName)))));
   Step();
   // Call creds were not set.
   EXPECT_EQ(GetCallCreds(call), nullptr);

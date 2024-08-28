@@ -51,7 +51,9 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   auto cluster_attribute =
       service_config_call_data->GetCallAttribute<XdsClusterAttribute>();
   if (cluster_attribute == nullptr) {
-    return absl::OkStatus();  // Should never happen, but be defensive.
+    // Can't happen, but be defensive.
+    return absl::InternalError(
+        "GCP authentication filter: call has no xDS cluster attribute");
   }
   absl::string_view cluster_name = cluster_attribute->cluster();
   if (!absl::ConsumePrefix(&cluster_name, "cluster:")) {
@@ -60,11 +62,28 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   // Look up the CDS resource for the cluster.
   auto it = filter->xds_config_->clusters.find(cluster_name);
   if (it == filter->xds_config_->clusters.end()) {
-    return absl::OkStatus();  // Can't happen, but be defensive.
+    // Can't happen, but be defensive.
+    return absl::InternalError(
+        absl::StrCat("GCP authentication filter: xDS cluster ", cluster_name,
+                     " not found in XdsConfig"));
   }
-  if (!it->second.ok()) return absl::OkStatus();
+  if (!it->second.ok()) {
+    // Cluster resource had an error, so fail the call.
+    // Note: For wait_for_ready calls, this does the wrong thing by
+    // failing the call instead of queuing it, but there's no easy
+    // way to queue the call here until we get a valid CDS resource,
+    // because once that happens, a new instance of this filter will be
+    // swapped in for subsequent calls, but *this* call is already tied
+    // to this filter instance, which will never see the update.
+    return absl::UnauthenticatedError(
+        absl::StrCat("GCP authentication filter: CDS resource unavailable for ",
+                     cluster_name));
+  }
   if (it->second->cluster == nullptr) {
-    return absl::OkStatus();  // Can't happen, but be defensive.
+    // Can't happen, but be defensive.
+    return absl::InternalError(absl::StrCat(
+        "GCP authentication filter: CDS resource not present for cluster ",
+        cluster_name));
   }
   auto& metadata_map = it->second->cluster->metadata;
   const XdsMetadataValue* metadata_value =
@@ -74,7 +93,9 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   // If the entry is present but the wrong type, fail the RPC.
   if (metadata_value->type() != XdsGcpAuthnAudienceMetadataValue::Type()) {
     return absl::UnavailableError(absl::StrCat(
-        "audience metadata in wrong format for cluster ", cluster_name));
+        "GCP authentication filter: audience metadata in wrong format for "
+        "cluster ",
+        cluster_name));
   }
   // Get the call creds instance.
   auto creds = filter->GetCallCredentials(
