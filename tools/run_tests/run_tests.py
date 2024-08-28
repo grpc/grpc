@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import collections
@@ -38,7 +36,6 @@ import time
 import traceback
 import uuid
 
-import six
 from six.moves import urllib
 
 import python_utils.jobset as jobset
@@ -1043,7 +1040,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly.keys():
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,

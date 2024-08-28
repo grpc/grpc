@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run performance tests locally or remotely."""
 
-from __future__ import print_function
-
 import argparse
 import collections
 import itertools
@@ -25,8 +23,6 @@ import re
 import shlex
 import sys
 import time
-
-import six
 
 import performance.scenario_config as scenario_config
 import python_utils.jobset as jobset
@@ -692,7 +688,7 @@ def main():
     languages = set(
         scenario_config.LANGUAGES[l]
         for l in itertools.chain.from_iterable(
-            six.iterkeys(scenario_config.LANGUAGES) if x == "all" else [x]
+            scenario_config.LANGUAGES.keys() if x == "all" else [x]
             for x in args.language
         )
     )
@@ -782,8 +778,8 @@ def main():
                 total_scenario_failures += scenario_failures
                 merged_resultset = dict(
                     itertools.chain(
-                        six.iteritems(merged_resultset),
-                        six.iteritems(resultset),
+                        merged_resultset.items(),
+                        resultset.items(),
                     )
                 )
             finally:
