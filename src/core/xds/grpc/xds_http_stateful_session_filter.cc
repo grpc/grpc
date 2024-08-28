@@ -224,7 +224,7 @@ XdsHttpStatefulSessionFilter::GenerateMethodConfig(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
+    const FilterConfig& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 

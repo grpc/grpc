@@ -592,7 +592,7 @@ XdsHttpRbacFilter::GenerateMethodConfig(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
+    const FilterConfig& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 

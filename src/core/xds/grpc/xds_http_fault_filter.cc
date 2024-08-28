@@ -244,7 +244,7 @@ XdsHttpFaultFilter::GenerateMethodConfig(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
+    const FilterConfig& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
