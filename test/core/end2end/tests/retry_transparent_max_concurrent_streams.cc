@@ -116,7 +116,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   Expect(201, true);
   // Give enough time for the handshake to timeout, and a new handshake to start
   // if needed. (b/333896115)
-  // TODO(hork): Remove the extra duration on fixing b/362326480.
+  // TODO(yashykt): Remove the extra duration on fixing b/362326480.
   Step(Duration::Seconds(30));
   EXPECT_EQ(s2.method(), "/service/method");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
