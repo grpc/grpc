@@ -1,21 +1,53 @@
+version: 2
 mergeable:
-  pull_requests:
-    label:
-      and:
-        - must_exclude:
-            regex: '^disposition/DO NOT MERGE'
-            message: 'Pull request marked not mergeable'
-        - must_exclude:
-            regex: '^disposition/Needs Internal Changes'
-            message: 'Pull request must be cherrypicked. Remove this label when ready to merge.'
-        - or:
-          - and:
-            - must_include:
-                regex: '^release notes: yes'
-                message: 'Please add the label (release notes: yes)'
-            - must_include:
-                regex: '^lang\/'
-                message: 'Please add a language label (lang/...)'
+  - name: 'DO NOT MERGE'
+    when: pull_request.*
+    validate:
+      - do: label
+        must_exclude:
+          regex: '^disposition/DO NOT MERGE$'
+          message: 'Pull request marked not mergeable'
+    # Is this still needed?
+  - name: 'Needs Internal Change'
+    when: pull_request.*
+    validate:
+      - do: label
+        must_exclude:
+          regex: '^disposition/Needs Internal Changes$'
+          message: 'Pull request must be cherrypicked. Remove this label when ready to merge.'
+  - name: 'Release Notes'
+    when: pull_request.*
+    validate:
+      - do: label
+        or:
           - must_include:
-              regex: '^release notes: no'
+              regex: '^release notes: no$'
               message: 'Please add the label (release notes: no)'
+          - and:
+              - must_include:
+                  regex: '^release notes: yes$'
+                  message: 'Please add the label (release notes: yes)'
+              - must_include:
+                  regex: '^lang\/'
+                  message: 'Please add a language label (lang/...)'
+  - name: 'Export PRs must be approved'
+    when: pull_request.*
+    validate:
+      - do: or
+        validate:
+          - do: label
+            must_exclude:
+              regex: "^exported$"
+              message: "This is not an exported PR"
+          - do: and
+            validate:
+              - do: label
+                must_include:
+                  regex: "^exported$"
+                  message: "This is an exported PR"
+              - do: approvals
+                min:
+                  count: 1
+                  message: "Exported PRs must be reviewed on Github."
+                limit:
+                  teams: ['org/grpc']
