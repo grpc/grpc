@@ -48,7 +48,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "grpc_absl_log(": RUBY_PHP_ALLOW_LIST,
     "grpc_absl_log_int(": RUBY_PHP_ALLOW_LIST,
     "grpc_absl_log_str(": RUBY_PHP_ALLOW_LIST,
-
     # These have been deprecated.
     # Most of these have been deleted.
     # Putting this check here just to prevent people from
