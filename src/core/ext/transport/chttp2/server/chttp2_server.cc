@@ -940,7 +940,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> resolved_or;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
   absl::string_view parsed_addr_unprefixed{parsed_addr};
