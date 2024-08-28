@@ -24,18 +24,17 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/port_platform.h>
-
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
 // A factory for creating new XdsTransport instances.
-class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
+class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
  public:
   // Represents a transport for xDS communication (e.g., a gRPC channel).
-  class XdsTransport : public InternallyRefCounted<XdsTransport> {
+  class XdsTransport : public DualRefCounted<XdsTransport> {
    public:
     // Represents a bidi streaming RPC call.
     class StreamingCall : public InternallyRefCounted<StreamingCall> {
@@ -78,7 +77,7 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
   // a connectivity failure on the transport.
   // *status will be set if there is an error creating the channel,
   // although the returned channel must still accept calls (which may fail).
-  virtual OrphanablePtr<XdsTransport> Create(
+  virtual RefCountedPtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
       std::function<void(absl::Status)> on_connectivity_failure,
       absl::Status* status) = 0;

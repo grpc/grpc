@@ -47,7 +47,7 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   explicit GrpcXdsTransportFactory(const ChannelArgs& args);
   ~GrpcXdsTransportFactory() override;
 
-  void Orphan() override { Unref(); }
+  void Orphaned() override {}
 
   OrphanablePtr<XdsTransport> Create(
       const XdsBootstrap::XdsServer& server,
@@ -66,12 +66,12 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
  public:
   class GrpcStreamingCall;
 
-  GrpcXdsTransport(GrpcXdsTransportFactory* factory,
+  GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    const XdsBootstrap::XdsServer& server,
                    std::function<void(absl::Status)> on_connectivity_failure,
                    absl::Status* status);
 
-  void Orphan() override;
+  void Orphaned() override;
 
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
@@ -82,7 +82,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
  private:
   class StateWatcher;
 
-  GrpcXdsTransportFactory* factory_;  // Not owned.
+  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   RefCountedPtr<Channel> channel_;
   StateWatcher* watcher_;
 };
@@ -90,7 +90,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
     : public XdsTransportFactory::XdsTransport::StreamingCall {
  public:
-  GrpcStreamingCall(RefCountedPtr<GrpcXdsTransportFactory> factory,
+  GrpcStreamingCall(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                     Channel* channel, const char* method,
                     std::unique_ptr<StreamingCall::EventHandler> event_handler);
   ~GrpcStreamingCall() override;
@@ -107,7 +107,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
 
-  RefCountedPtr<GrpcXdsTransportFactory> factory_;
+  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
 
   std::unique_ptr<StreamingCall::EventHandler> event_handler_;
 

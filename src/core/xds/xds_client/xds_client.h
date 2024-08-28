@@ -85,7 +85,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   XdsClient(
       std::unique_ptr<XdsBootstrap> bootstrap,
-      OrphanablePtr<XdsTransportFactory> transport_factory,
+      RefCountedPtr<XdsTransportFactory> transport_factory,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       std::unique_ptr<XdsMetricsReporter> metrics_reporter,
       std::string user_agent_name, std::string user_agent_version,
@@ -262,7 +262,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
-    OrphanablePtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
 
     bool shutting_down_ = false;
 
@@ -349,7 +349,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   bool HasUncachedResources(const AuthorityState& authority_state);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
-  OrphanablePtr<XdsTransportFactory> transport_factory_;
+  RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
   XdsApi api_;

@@ -68,7 +68,7 @@ namespace grpc_core {
 //
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
-    RefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
+    WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
@@ -264,10 +264,11 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 }  // namespace
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
-    GrpcXdsTransportFactory* factory, const XdsBootstrap::XdsServer& server,
+    WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
+    const XdsBootstrap::XdsServer& server,
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status)
-    : factory_(factory) {
+    : factory_(std::move(factory)) {
   channel_ = CreateXdsChannel(factory->args_,
                               static_cast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
@@ -281,18 +282,19 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   }
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
+void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
   if (!channel_->IsLame()) {
     channel_->RemoveConnectivityWatcher(watcher_);
   }
   // Do an async hop before unreffing.  This avoids a deadlock upon
   // shutdown in the case where the xDS channel is itself an xDS channel
   // (e.g., when using one control plane to find another control plane).
-  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this]() {
-    ApplicationCallbackExecCtx application_exec_ctx;
-    ExecCtx exec_ctx;
-    Unref();
-  });
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+      [self = WeakRefAsSubclass<GrpcXdsTransport>()]() mutable {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
+        self.release();
+      });
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
@@ -300,8 +302,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
   return MakeOrphanable<GrpcStreamingCall>(
-      factory_->RefAsSubclass<GrpcXdsTransportFactory>(DEBUG_LOCATION,
-                                                       "StreamingCall"),
+      factory_.Ref(DEBUG_LOCATION, "StreamingCall"),
       channel_.get(), method, std::move(event_handler));
 }
 
@@ -336,13 +337,14 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
   ShutdownInternally();
 }
 
-OrphanablePtr<XdsTransportFactory::XdsTransport>
+RefCountedPtr<XdsTransportFactory::XdsTransport>
 GrpcXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status) {
-  return MakeOrphanable<GrpcXdsTransport>(
-      this, server, std::move(on_connectivity_failure), status);
+  return MakeRefCounted<GrpcXdsTransport>(
+      WeakRefAsSubclass<GrpcXdsTransportFactory>, server,
+      std::move(on_connectivity_failure), status);
 }
 
 }  // namespace grpc_core
