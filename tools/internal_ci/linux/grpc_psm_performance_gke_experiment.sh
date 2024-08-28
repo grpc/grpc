@@ -19,16 +19,6 @@ cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# This is to ensure we can push and pull images from Artifact Registry. We do
-# not necessarily need it to run load tests, but will need it when we employ
-# pre-built images in the optimization.
-gcloud auth configure-docker
-
-# Connect to benchmarks-prod2 cluster.
-gcloud config set project grpc-testing
-gcloud container clusters get-credentials psm-benchmarks-performance \
-  --zone us-central1-b --project grpc-testing
-
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
@@ -55,6 +45,16 @@ DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
+
+# This is to ensure we can push and pull images from Artifact Registry. We do
+# not necessarily need it to run load tests, but will need it when we employ
+# pre-built images in the optimization.
+gcloud auth configure-docker "${PREBUILT_IMAGE_PREFIX%%/*}"
+
+# Connect to benchmarks-prod2 cluster.
+gcloud config set project grpc-testing
+gcloud container clusters get-credentials psm-benchmarks-performance \
+  --zone us-central1-b --project grpc-testing
 
 # Clone test-infra repository and build all tools.
 pushd ..
