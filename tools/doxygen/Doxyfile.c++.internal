@@ -1481,6 +1481,9 @@ src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitabl
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h \
+src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.h \
@@ -1908,6 +1911,8 @@ src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.
 src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
@@ -2915,7 +2920,6 @@ src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
 src/core/util/alloc.cc \
 src/core/util/alloc.h \
-src/core/util/android/log.cc \
 src/core/util/atm.cc \
 src/core/util/gcp_metadata_query.cc \
 src/core/util/gcp_metadata_query.h \
@@ -2942,11 +2946,9 @@ src/core/util/json/json_writer.h \
 src/core/util/latent_see.cc \
 src/core/util/latent_see.h \
 src/core/util/linux/cpu.cc \
-src/core/util/linux/log.cc \
 src/core/util/log.cc \
 src/core/util/msys/tmpfile.cc \
 src/core/util/posix/cpu.cc \
-src/core/util/posix/log.cc \
 src/core/util/posix/string.cc \
 src/core/util/posix/sync.cc \
 src/core/util/posix/time.cc \
@@ -2965,7 +2967,6 @@ src/core/util/unique_ptr_with_bitset.h \
 src/core/util/upb_utils.h \
 src/core/util/useful.h \
 src/core/util/windows/cpu.cc \
-src/core/util/windows/log.cc \
 src/core/util/windows/string.cc \
 src/core/util/windows/string_util.cc \
 src/core/util/windows/sync.cc \
@@ -3015,6 +3016,10 @@ src/core/xds/grpc/xds_listener.cc \
 src/core/xds/grpc/xds_listener.h \
 src/core/xds/grpc/xds_listener_parser.cc \
 src/core/xds/grpc/xds_listener_parser.h \
+src/core/xds/grpc/xds_metadata.cc \
+src/core/xds/grpc/xds_metadata.h \
+src/core/xds/grpc/xds_metadata_parser.cc \
+src/core/xds/grpc/xds_metadata_parser.h \
 src/core/xds/grpc/xds_route_config.cc \
 src/core/xds/grpc/xds_route_config.h \
 src/core/xds/grpc/xds_route_config_parser.cc \

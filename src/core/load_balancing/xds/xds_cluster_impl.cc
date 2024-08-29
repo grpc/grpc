@@ -646,17 +646,21 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config state, now that we're done comparing old and new fields.
   config_ = std::move(new_config);
   cluster_resource_ = new_cluster_config.cluster;
-  auto it2 =
-      cluster_resource_->metadata.find("com.google.csm.telemetry_labels");
-  if (it2 != cluster_resource_->metadata.end()) {
-    auto& json_object = it2->second.object();
-    auto it3 = json_object.find("service_name");
-    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
-      service_telemetry_label_ = RefCountedStringValue(it3->second.string());
+  const XdsMetadataValue* metadata_value =
+      cluster_resource_->metadata.Find("com.google.csm.telemetry_labels");
+  if (metadata_value != nullptr &&
+      metadata_value->type() == XdsStructMetadataValue::Type()) {
+    const Json::Object& json_object =
+        DownCast<const XdsStructMetadataValue*>(metadata_value)
+            ->json()
+            .object();
+    auto it = json_object.find("service_name");
+    if (it != json_object.end() && it->second.type() == Json::Type::kString) {
+      service_telemetry_label_ = RefCountedStringValue(it->second.string());
     }
-    it3 = json_object.find("service_namespace");
-    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
-      namespace_telemetry_label_ = RefCountedStringValue(it3->second.string());
+    it = json_object.find("service_namespace");
+    if (it != json_object.end() && it->second.type() == Json::Type::kString) {
+      namespace_telemetry_label_ = RefCountedStringValue(it->second.string());
     }
   }
   drop_config_ = endpoint_config->endpoints != nullptr

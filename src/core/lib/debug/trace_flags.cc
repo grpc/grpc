@@ -122,18 +122,10 @@ TraceFlag xds_client_trace(false, "xds_client");
 TraceFlag xds_client_refcount_trace(false, "xds_client_refcount");
 TraceFlag xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 TraceFlag xds_cluster_manager_lb_trace(false, "xds_cluster_manager_lb");
-TraceFlag xds_cluster_resource_type_test_trace(
-    true, "xds_cluster_resource_type_test");
-TraceFlag xds_common_types_test_trace(true, "xds_common_types_test");
-TraceFlag xds_endpoint_resource_type_test_trace(
-    true, "xds_endpoint_resource_type_test");
-TraceFlag xds_listener_resource_type_test_trace(
-    true, "xds_listener_resource_type_test");
 TraceFlag xds_override_host_lb_trace(false, "xds_override_host_lb");
 TraceFlag xds_resolver_trace(false, "xds_resolver");
-TraceFlag xds_route_config_resource_type_test_trace(
-    true, "xds_route_config_resource_type_test");
 TraceFlag xds_server_config_fetcher_trace(false, "xds_server_config_fetcher");
+TraceFlag xds_unittest_trace(true, "xds_unittest");
 TraceFlag xds_wrr_locality_lb_trace(false, "xds_wrr_locality_lb");
 
 const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
@@ -215,18 +207,10 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"xds_client_refcount", &xds_client_refcount_trace},
           {"xds_cluster_impl_lb", &xds_cluster_impl_lb_trace},
           {"xds_cluster_manager_lb", &xds_cluster_manager_lb_trace},
-          {"xds_cluster_resource_type_test",
-           &xds_cluster_resource_type_test_trace},
-          {"xds_common_types_test", &xds_common_types_test_trace},
-          {"xds_endpoint_resource_type_test",
-           &xds_endpoint_resource_type_test_trace},
-          {"xds_listener_resource_type_test",
-           &xds_listener_resource_type_test_trace},
           {"xds_override_host_lb", &xds_override_host_lb_trace},
           {"xds_resolver", &xds_resolver_trace},
-          {"xds_route_config_resource_type_test",
-           &xds_route_config_resource_type_test_trace},
           {"xds_server_config_fetcher", &xds_server_config_fetcher_trace},
+          {"xds_unittest", &xds_unittest_trace},
           {"xds_wrr_locality_lb", &xds_wrr_locality_lb_trace},
 #ifndef NDEBUG
           {"auth_context_refcount", &auth_context_refcount_trace},
