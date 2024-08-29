@@ -5248,6 +5248,9 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
+    # TODO(roth): Remove this unnecessary dependency once
+    # yaqs/eng/q/6510477728410501120 is resolved.
+    deps = ["//:grpc_public_hdrs"],
 )
 
 grpc_cc_library(
