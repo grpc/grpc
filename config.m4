@@ -789,7 +789,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/util/alloc.cc \
-    src/core/util/android/log.cc \
     src/core/util/atm.cc \
     src/core/util/backoff.cc \
     src/core/util/crash.cc \
@@ -818,7 +817,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
     src/core/util/linux/env.cc \
-    src/core/util/linux/log.cc \
     src/core/util/load_file.cc \
     src/core/util/log.cc \
     src/core/util/matchers.cc \
@@ -828,7 +826,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/posix/cpu.cc \
     src/core/util/posix/directory_reader.cc \
     src/core/util/posix/env.cc \
-    src/core/util/posix/log.cc \
     src/core/util/posix/stat.cc \
     src/core/util/posix/string.cc \
     src/core/util/posix/sync.cc \
@@ -853,7 +850,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/windows/cpu.cc \
     src/core/util/windows/directory_reader.cc \
     src/core/util/windows/env.cc \
-    src/core/util/windows/log.cc \
     src/core/util/windows/stat.cc \
     src/core/util/windows/string.cc \
     src/core/util/windows/string_util.cc \
@@ -1606,7 +1602,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/android)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/http_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/iphone)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/json)

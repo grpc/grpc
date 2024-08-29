@@ -1414,7 +1414,6 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/util/alloc.cc \
-    src/core/util/android/log.cc \
     src/core/util/atm.cc \
     src/core/util/backoff.cc \
     src/core/util/crash.cc \
@@ -1443,7 +1442,6 @@ LIBGRPC_SRC = \
     src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
     src/core/util/linux/env.cc \
-    src/core/util/linux/log.cc \
     src/core/util/load_file.cc \
     src/core/util/log.cc \
     src/core/util/matchers.cc \
@@ -1453,7 +1451,6 @@ LIBGRPC_SRC = \
     src/core/util/posix/cpu.cc \
     src/core/util/posix/directory_reader.cc \
     src/core/util/posix/env.cc \
-    src/core/util/posix/log.cc \
     src/core/util/posix/stat.cc \
     src/core/util/posix/string.cc \
     src/core/util/posix/sync.cc \
@@ -1478,7 +1475,6 @@ LIBGRPC_SRC = \
     src/core/util/windows/cpu.cc \
     src/core/util/windows/directory_reader.cc \
     src/core/util/windows/env.cc \
-    src/core/util/windows/log.cc \
     src/core/util/windows/stat.cc \
     src/core/util/windows/string.cc \
     src/core/util/windows/string_util.cc \

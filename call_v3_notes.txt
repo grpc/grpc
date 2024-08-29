@@ -1,0 +1,117 @@
+1. CallFactory: client channel
+  - construct call stack for client channel based on resolver result
+2. CallDestination: retry or no-retry
+
+3. CallFactory: load-balanced call
+  - construct call stack for subchannel
+4. CallDestination: client transport
+
+------------------------------------------------------------------------------
+
+Approach A:
+
+class L2Filter {
+ public:
+  explicit L2Filter(CallFactory* next);
+  void StartCall(CallHandler handler);
+};
+
+class CallDestinationBuilder {
+ public:
+  void AddFilter(L1Filter* filter);
+  void AddFilter(L2Filter* filter);
+  CallDestination* Build();
+};
+
+For (1):
+- on resolver result, use CallDestinationBuilder to build new CallDestination
+- for each call, use CallDestination to deal with the call handler
+
+For (3):
+- upon subchannel connection, use CallDestinationBuilder to build new
+  CallDestination
+- for each call, use CallDestination to deal with the call handler
+
+PROBLEM: How do we set the destination to use differently in these two cases?
+
+------------------------------------------------------------------------------
+
+Approach B:
+
+class CallStackBuilder {
+ public:
+  void AddFilter(L1Filter* filter);
+  void AddFilter(L2Filter* filter);
+  CallDestination* Build(CallDestination destination);
+};
+
+This works but gets a little weird around request aggregation:
+- need to implement retry as both L2 filter and CallDestination
+- need to set CallDestination differently depending on whether request
+  aggregation is being used (will be either retry or aggregation)
+
+------------------------------------------------------------------------------
+
+Approach C:
+
+Same API as A, but requires final filter in the stack to be L2, and
+returns a CallDestination that wraps that filter.
+
+This would mean either (a) transport is a filter or (b) need a
+connected_channel filter to bridge between filter stack and transport.
+
+
+
+======
+DECISION:
+
+- remove CallFactory
+- everything is a CallDestination (maybe rename)
+- retries and request aggregation are both L2 filters
+  - retry always creates a new initiator/handler pair for each attempt
+    (this works regardless of whether next destination is aggregation or
+    a LoadBalancedCall)
+  - no-retry is a no-op!  just pass the handler to the next destination,
+    which may be either aggregation or LoadBalancedCall
+  - aggregation creates a new initiator/handler pair for each combined
+    attempt, or if not aggregating, simply passes the handler down to
+    the next destination
+- LoadBalancedCall is a CallDestination:
+  - takes in the handler from the parent call
+  - drains client initial metadata from the handler
+  - creates a new initiator/handler pair
+  - does LB pick
+  - pushes client initial metadata into initiator
+  - constructs call stack for chosen subchannel
+  - pushes call handler into that stack
+
+class CallStackBuilder {
+ public:
+  void AddFilter(L1Filter* filter);
+  void AddFilter(L2Filter* filter);
+  // Returns top-level destination, which delegates through the L2 filters
+  // Pass in destination for LB call in client channel
+  // Pass in client transport in connected subchannel
+  CallDestination Build(CallDestination end_destination);
+};
+
+-------------------------------------------------------------------------------
+
+2024-02-26 discussion with ctiller:
+
+- have a new UnstartedCallHandler class (representing a CallHandler that
+  has not yet been pulled from) with 2 methods:
+  - get the client initial metadata that was pushed into the call initiator
+  - set the stack (constructed externally from both registered filters
+    and dynamic input), and get back a CallHandler that can then be
+    pulled from
+- CallDestination will now take UnstartedCallHandler.  impls can check
+  client initial metadata and decide to do one of two things:
+  - no-op: just forward the UnstartedCallHandler to the next CallDestination
+  - hijack: set the stack, take ownership of call handler, create new
+    initiator/unstarted-handler pair, and pass the new
+    UnstartedCallHandler down to the next CallDestination
+- retry filter will always create a new initiator/handler pair
+- call aggregation can dynamically decide
+- LoadBalancedCall will always take ownership of the UnstartedCallHandler
+- client transport will always take ownership of the UnstartedCallHandler

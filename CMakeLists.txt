@@ -1687,7 +1687,6 @@ add_library(gpr
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
   src/core/util/alloc.cc
-  src/core/util/android/log.cc
   src/core/util/atm.cc
   src/core/util/crash.cc
   src/core/util/examine_stack.cc
@@ -1697,13 +1696,11 @@ add_library(gpr
   src/core/util/iphone/cpu.cc
   src/core/util/linux/cpu.cc
   src/core/util/linux/env.cc
-  src/core/util/linux/log.cc
   src/core/util/log.cc
   src/core/util/mpscq.cc
   src/core/util/msys/tmpfile.cc
   src/core/util/posix/cpu.cc
   src/core/util/posix/env.cc
-  src/core/util/posix/log.cc
   src/core/util/posix/stat.cc
   src/core/util/posix/string.cc
   src/core/util/posix/sync.cc
@@ -1719,7 +1716,6 @@ add_library(gpr
   src/core/util/time_util.cc
   src/core/util/windows/cpu.cc
   src/core/util/windows/env.cc
-  src/core/util/windows/log.cc
   src/core/util/windows/stat.cc
   src/core/util/windows/string.cc
   src/core/util/windows/string_util.cc
