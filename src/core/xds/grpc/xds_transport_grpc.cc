@@ -265,7 +265,7 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
     const XdsBootstrap::XdsServer& server, absl::Status* status)
-    : factory_(std::move(factory)) {
+    : factory_(std::move(factory)), key_(server.Key()) {
   channel_ = CreateXdsChannel(factory_->args_,
                               static_cast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
@@ -275,6 +275,13 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
+  {
+    MutexLock lock(&factory_->mu_);
+    auto it = factory_->transports_.find(key_);
+    if (it != factory_->transports_.end() && it->second == this) {
+      factory_->transports_.erase(it);
+    }
+  }
   // Do an async hop before unreffing.  This avoids a deadlock upon
   // shutdown in the case where the xDS channel is itself an xDS channel
   // (e.g., when using one control plane to find another control plane).
@@ -356,8 +363,19 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 RefCountedPtr<XdsTransportFactory::XdsTransport>
 GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
                                       absl::Status* status) {
-  return MakeRefCounted<GrpcXdsTransport>(
-      WeakRefAsSubclass<GrpcXdsTransportFactory>(), server, status);
+  std::string key = server.Key();
+  RefCountedPtr<GrpcXdsTransport> transport;
+  MutexLock lock(&mu_);
+  auto it = transports_.find(key);
+  if (it != transports_.end()) {
+    transport = it->second->RefIfNonZero().TakeAsSubclass<GrpcXdsTransport>();
+  }
+  if (transport == nullptr) {
+    transport = MakeRefCounted<GrpcXdsTransport>(
+        WeakRefAsSubclass<GrpcXdsTransportFactory>(), server, status);
+    transports_.emplace(std::move(key), transport.get());
+  }
+  return transport;
 }
 
 }  // namespace grpc_core

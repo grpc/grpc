@@ -59,6 +59,10 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
  private:
   ChannelArgs args_;
   grpc_pollset_set* interested_parties_;
+
+  Mutex mu_;
+  absl::flat_hash_map<std::string /*XdsServer key*/, GrpcXdsTransport*>
+      transports_ ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport final
@@ -87,6 +91,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class StateWatcher;
 
   WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
+  std::string key_;
   RefCountedPtr<Channel> channel_;
 
   Mutex mu_;
