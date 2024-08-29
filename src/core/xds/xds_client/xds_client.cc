@@ -445,6 +445,25 @@ class XdsClient::XdsChannel::LrsCall final
 };
 
 //
+// XdsClient::XdsChannel::ConnectivityFailureWatcher
+//
+
+class XdsClient::XdsChannel::ConnectivityFailureWatcher
+    : public XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher {
+ public:
+  explicit ConnectivityFailureWatcher(
+      WeakRefCountedPtr<XdsChannel> xds_channel)
+      : xds_channel_(std::move(xds_channel)) {}
+
+  void OnConnectivityFailure(absl::Status status) override {
+    xds_channel_->OnConnectivityFailure(std::move(status));
+  }
+
+ private:
+  WeakRefCountedPtr<XdsChannel> xds_channel_;
+};
+
+//
 // XdsClient::XdsChannel
 //
 
@@ -459,15 +478,15 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
       << "[xds_client " << xds_client_.get() << "] creating channel " << this
       << " for server " << server.server_uri();
   absl::Status status;
-  transport_ = xds_client_->transport_factory_->Create(
-      server,
-      [self = WeakRef(DEBUG_LOCATION, "OnConnectivityFailure")](
-          absl::Status status) {
-        self->OnConnectivityFailure(std::move(status));
-      },
-      &status);
+  transport_ = xds_client_->transport_factory_->GetTransport(server, &status);
   CHECK(transport_ != nullptr);
-  if (!status.ok()) SetChannelStatusLocked(std::move(status));
+  if (!status.ok()) {
+    SetChannelStatusLocked(std::move(status));
+  } else {
+    failure_watcher_ = MakeRefCounted<ConnectivityFailureWatcher>(
+        WeakRef(DEBUG_LOCATION, "OnConnectivityFailure"));
+    transport_->StartConnectivityFailureWatch(failure_watcher_);
+  }
 }
 
 XdsClient::XdsChannel::~XdsChannel() {
@@ -486,6 +505,9 @@ void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
       << "[xds_client " << xds_client() << "] orphaning xds channel " << this
       << " for server " << server_.server_uri();
   shutting_down_ = true;
+  if (failure_watcher_ != nullptr) {
+    transport_->StopConnectivityFailureWatch(failure_watcher_);
+  }
   transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
   // prevent subsequent subscription from trying to use this XdsChannel as
@@ -1520,7 +1542,7 @@ constexpr absl::string_view XdsClient::kOldStyleAuthority;
 
 XdsClient::XdsClient(
     std::unique_ptr<XdsBootstrap> bootstrap,
-    OrphanablePtr<XdsTransportFactory> transport_factory,
+    RefCountedPtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
     std::unique_ptr<XdsMetricsReporter> metrics_reporter,
     std::string user_agent_name, std::string user_agent_version,

@@ -229,25 +229,24 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  explicit StateWatcher(
-      std::function<void(absl::Status)> on_connectivity_failure)
-      : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
+  explicit StateWatcher(RefCountedPtr<ConnectivityFailureWatcher> watcher)
+      : watcher_(std::move(watcher)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(absl::Status(
+      watcher_->OnConnectivityFailure(absl::Status(
           status.code(),
           absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
     }
   }
 
-  std::function<void(absl::Status)> on_connectivity_failure_;
+  RefCountedPtr<ConnectivityFailureWatcher> watcher_;
 };
 
 //
-// GrpcXdsClient::GrpcXdsTransport
+// GrpcXdsTransportFactory::GrpcXdsTransport
 //
 
 namespace {
@@ -265,27 +264,17 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-    const XdsBootstrap::XdsServer& server,
-    std::function<void(absl::Status)> on_connectivity_failure,
-    absl::Status* status)
+    const XdsBootstrap::XdsServer& server, absl::Status* status)
     : factory_(std::move(factory)) {
-  channel_ = CreateXdsChannel(factory->args_,
+  channel_ = CreateXdsChannel(factory_->args_,
                               static_cast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
-  } else {
-    watcher_ = new StateWatcher(std::move(on_connectivity_failure));
-    channel_->AddConnectivityWatcher(
-        GRPC_CHANNEL_IDLE,
-        OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
   }
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
-  if (!channel_->IsLame()) {
-    channel_->RemoveConnectivityWatcher(watcher_);
-  }
   // Do an async hop before unreffing.  This avoids a deadlock upon
   // shutdown in the case where the xDS channel is itself an xDS channel
   // (e.g., when using one control plane to find another control plane).
@@ -297,12 +286,39 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
       });
 }
 
+void GrpcXdsTransportFactory::GrpcXdsTransport::StartConnectivityFailureWatch(
+    RefCountedPtr<ConnectivityFailureWatcher> watcher) {
+  if (channel_->IsLame()) return;
+  auto* state_watcher = new StateWatcher(watcher);
+  {
+    MutexLock lock(&mu_);
+    watchers_.emplace(watcher, state_watcher);
+  }
+  channel_->AddConnectivityWatcher(
+      GRPC_CHANNEL_IDLE,
+      OrphanablePtr<AsyncConnectivityStateWatcherInterface>(state_watcher));
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
+    const RefCountedPtr<ConnectivityFailureWatcher>& watcher) {
+  if (channel_->IsLame()) return;
+  StateWatcher* state_watcher = nullptr;
+  {
+    MutexLock lock(&mu_);
+    auto it = watchers_.find(watcher);
+    if (it == watchers_.end()) return;
+    state_watcher = it->second;
+    watchers_.erase(it);
+  }
+  channel_->RemoveConnectivityWatcher(state_watcher);
+}
+
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
   return MakeOrphanable<GrpcStreamingCall>(
-      factory_.Ref(DEBUG_LOCATION, "StreamingCall"),
+      factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"),
       channel_.get(), method, std::move(event_handler));
 }
 
@@ -338,13 +354,10 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 }
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-GrpcXdsTransportFactory::Create(
-    const XdsBootstrap::XdsServer& server,
-    std::function<void(absl::Status)> on_connectivity_failure,
-    absl::Status* status) {
+GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
+                                      absl::Status* status) {
   return MakeRefCounted<GrpcXdsTransport>(
-      WeakRefAsSubclass<GrpcXdsTransportFactory>, server,
-      std::move(on_connectivity_failure), status);
+      WeakRefAsSubclass<GrpcXdsTransportFactory>(), server, status);
 }
 
 }  // namespace grpc_core

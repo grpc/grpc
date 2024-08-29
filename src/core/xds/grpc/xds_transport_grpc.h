@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 
 #include <grpc/grpc.h>
@@ -31,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -49,10 +51,8 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
 
   void Orphaned() override {}
 
-  OrphanablePtr<XdsTransport> Create(
-      const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
-      absl::Status* status) override;
+  RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServer& server, absl::Status* status) override;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -68,10 +68,14 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    const XdsBootstrap::XdsServer& server,
-                   std::function<void(absl::Status)> on_connectivity_failure,
                    absl::Status* status);
 
   void Orphaned() override;
+
+  void StartConnectivityFailureWatch(
+      RefCountedPtr<ConnectivityFailureWatcher> watcher) override;
+  void StopConnectivityFailureWatch(
+      const RefCountedPtr<ConnectivityFailureWatcher>& watcher) override;
 
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
@@ -84,7 +88,11 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
   RefCountedPtr<Channel> channel_;
-  StateWatcher* watcher_;
+
+  Mutex mu_;
+  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
+                      StateWatcher*> watchers_
+      ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final

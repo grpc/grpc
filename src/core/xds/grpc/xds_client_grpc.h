@@ -63,7 +63,7 @@ class GrpcXdsClient final : public XdsClient {
   GrpcXdsClient(absl::string_view key,
                 std::unique_ptr<GrpcXdsBootstrap> bootstrap,
                 const ChannelArgs& args,
-                OrphanablePtr<XdsTransportFactory> transport_factory);
+                RefCountedPtr<XdsTransportFactory> transport_factory);
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {

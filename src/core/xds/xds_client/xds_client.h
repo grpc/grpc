@@ -242,6 +242,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
+    class ConnectivityFailureWatcher;
+
     // Attempts to find a suitable Xds fallback server. Returns true if
     // a connection to a suitable server had been established.
     bool MaybeFallbackLocked(const std::string& authority,
@@ -263,6 +265,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher>
+        failure_watcher_;
 
     bool shutting_down_ = false;
 

@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_H
 
-#include <functional>
 #include <memory>
 #include <string>
 
@@ -62,6 +61,22 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       virtual void StartRecvMessage() = 0;
     };
 
+    // A watcher for connectivity failures.
+    class ConnectivityFailureWatcher
+        : public RefCounted<ConnectivityFailureWatcher> {
+     public:
+      // Will be invoked whenever there is a connectivity failure on the
+      // transport.
+      virtual void OnConnectivityFailure(absl::Status status) = 0;
+    };
+
+    // Starts a connectivity failure watcher on the transport.
+    virtual void StartConnectivityFailureWatch(
+        RefCountedPtr<ConnectivityFailureWatcher> watcher) = 0;
+    // Stops a connectivity failure watcher on the transport.
+    virtual void StopConnectivityFailureWatch(
+        const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
+
     // Create a streaming call on this transport for the specified method.
     // Events on the stream will be reported to event_handler.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
@@ -72,15 +87,14 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     virtual void ResetBackoff() = 0;
   };
 
-  // Creates a new transport for the specified server.
-  // The on_connectivity_failure callback will be invoked whenever there is
-  // a connectivity failure on the transport.
+  // Returns a transport for the specified server.  If there is already
+  // a transport for the server, returns a new ref to that transport;
+  // otherwise, creates a new transport.
+  //
   // *status will be set if there is an error creating the channel,
   // although the returned channel must still accept calls (which may fail).
-  virtual RefCountedPtr<XdsTransport> Create(
-      const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
-      absl::Status* status) = 0;
+  virtual RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServer& server, absl::Status* status) = 0;
 };
 
 }  // namespace grpc_core

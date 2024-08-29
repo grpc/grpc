@@ -242,7 +242,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     auto channel_args = ChannelArgs::FromC(xds_channel_args);
     return MakeRefCounted<GrpcXdsClient>(
         key, std::move(*bootstrap), channel_args,
-        MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
+        MakeRefCounted<GrpcXdsTransportFactory>(channel_args));
   }
   // Otherwise, use the global instance.
   MutexLock lock(g_mu);
@@ -265,7 +265,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
       key, std::move(*bootstrap), channel_args,
-      MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
+      MakeRefCounted<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
                                    << "] Created xDS client for key " << key;
@@ -291,7 +291,7 @@ GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
 GrpcXdsClient::GrpcXdsClient(
     absl::string_view key, std::unique_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
-    OrphanablePtr<XdsTransportFactory> transport_factory)
+    RefCountedPtr<XdsTransportFactory> transport_factory)
     : XdsClient(
           std::move(bootstrap), std::move(transport_factory),
           grpc_event_engine::experimental::GetDefaultEventEngine(),
