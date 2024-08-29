@@ -1672,13 +1672,8 @@ argp.add_argument(
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
-<<<<<<< HEAD
         "clang7",
-        "clang17",
-=======
-        "clang6",
         "clang18",
->>>>>>> upstream/master
         # TODO: Automatically populate from supported version
         "python3.7",
         "python3.8",
