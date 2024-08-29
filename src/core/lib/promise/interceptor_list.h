@@ -217,15 +217,13 @@ class InterceptorList {
   // Append a new map to the end of the chain.
   template <typename Fn>
   void AppendMap(Fn fn, DebugLocation from) {
-    Append(MakeMapToAdd(
-        std::move(fn), [] {}, from));
+    Append(MakeMapToAdd(std::move(fn), [] {}, from));
   }
 
   // Prepend a new map to the beginning of the chain.
   template <typename Fn>
   void PrependMap(Fn fn, DebugLocation from) {
-    Prepend(MakeMapToAdd(
-        std::move(fn), [] {}, from));
+    Prepend(MakeMapToAdd(std::move(fn), [] {}, from));
   }
 
   // Append a new map to the end of the chain, with a cleanup function to be

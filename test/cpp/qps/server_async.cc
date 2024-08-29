@@ -238,7 +238,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     ServerRpcContext() {}
     void lock() { mu_.lock(); }
     void unlock() { mu_.unlock(); }
-    virtual ~ServerRpcContext(){};
+    virtual ~ServerRpcContext() {};
     virtual bool RunNextState(bool) = 0;  // next state, return false if done
     virtual void Reset() = 0;             // start this back at a clean state
    private:

@@ -156,7 +156,7 @@ class Log {
   static std::atomic<uintptr_t> free_bins_;
   absl::AnyInvocable<void(absl::string_view)> stats_flusher_ = nullptr;
   struct Fragment {
-    Fragment() : active(&primary){};
+    Fragment() : active(&primary) {};
     Mutex mu;
     RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu>* active
         ABSL_GUARDED_BY(mu);

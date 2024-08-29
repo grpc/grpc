@@ -83,7 +83,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
       explicit HandshakingState(RefCountedPtr<ActiveConnection> connection);
-      ~HandshakingState() override{};
+      ~HandshakingState() override {};
       void Start(std::unique_ptr<
                  grpc_event_engine::experimental::EventEngine::Endpoint>
                      endpoint);

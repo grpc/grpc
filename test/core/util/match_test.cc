@@ -54,8 +54,7 @@ TEST(MatchTest, TestVoidReturn) {
 
 TEST(MatchTest, TestMutable) {
   absl::variant<int, double> v = 1.9;
-  MatchMutable(
-      &v, [](int*) { abort(); }, [](double* x) { *x = 0.0; });
+  MatchMutable(&v, [](int*) { abort(); }, [](double* x) { *x = 0.0; });
   EXPECT_EQ(v, (absl::variant<int, double>(0.0)));
 }
 

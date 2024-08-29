@@ -112,8 +112,7 @@ int main(int argc, char** argv) {
   gpr_mu_lock(&params.mu);
   while (
       params.queuing != THREADS &&
-      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
-    ;
+      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)));
   gpr_mu_unlock(&params.mu);
 
   // Wait for the mutexes to be released. This indicates that the threads have
@@ -133,8 +132,7 @@ int main(int argc, char** argv) {
   gpr_mu_lock(&params.mu);
   while (
       params.complete != THREADS &&
-      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
-    ;
+      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)));
   gpr_mu_unlock(&params.mu);
 
   for (auto& t : threads) t.Join();
