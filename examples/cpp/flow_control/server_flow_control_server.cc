@@ -30,9 +30,9 @@
 #include <grpcpp/support/status.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/hellostreamingworld.grpc.pb.h"
+#include "examples/protos/helloworld.grpc.pb.h"
 #else
-#include "hellostreamingworld.grpc.pb.h"
+#include "helloworld.grpc.pb.h"
 #endif
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
@@ -53,7 +53,7 @@ namespace {
  * previous one is done.
  */
 class HelloReactor final
-    : public grpc::ServerWriteReactor<hellostreamingworld::HelloReply> {
+    : public grpc::ServerWriteReactor<helloworld::HelloReply> {
  public:
   HelloReactor(size_t message_size, size_t to_send)
       : messages_to_send_(to_send) {
@@ -88,21 +88,20 @@ class HelloReactor final
   void OnDone() override { delete this; }
 
  private:
-  hellostreamingworld::HelloReply res_;
+  helloworld::HelloReply res_;
   size_t messages_to_send_;
   absl::optional<absl::Time> write_start_time_;
   absl::Mutex mu_;
 };
 
-class GreeterService final
-    : public hellostreamingworld::MultiGreeter::CallbackService {
+class GreeterService final : public helloworld::Greeter::CallbackService {
  public:
   GreeterService(size_t message_size, size_t to_send)
       : message_size_(message_size), to_send_(to_send) {}
 
-  grpc::ServerWriteReactor<hellostreamingworld::HelloReply>* sayHello(
+  grpc::ServerWriteReactor<helloworld::HelloReply>* SayHelloStreamReply(
       grpc::CallbackServerContext* /*context*/,
-      const hellostreamingworld::HelloRequest* request) override {
+      const helloworld::HelloRequest* request) override {
     return new HelloReactor(message_size_, to_send_);
   }
 

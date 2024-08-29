@@ -21,7 +21,7 @@ cc_binary(
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
-        "//examples/protos:hellostreamingworld",
+        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
     ],
@@ -34,7 +34,7 @@ cc_binary(
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
-        "//examples/protos:hellostreamingworld",
+        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
     ],

@@ -27,9 +27,9 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/hellostreamingworld.grpc.pb.h"
+#include "examples/protos/helloworld.grpc.pb.h"
 #else
-#include "hellostreamingworld.grpc.pb.h"
+#include "helloworld.grpc.pb.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
@@ -39,8 +39,7 @@ ABSL_FLAG(bool, bdp_probe, false,
 
 namespace {
 
-class Reader final
-    : public grpc::ClientReadReactor<hellostreamingworld::HelloReply> {
+class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
  public:
   void Start() {
     StartRead(&res_);
@@ -74,7 +73,7 @@ class Reader final
  private:
   absl::Mutex mu_;
   absl::optional<grpc::Status> result_;
-  hellostreamingworld::HelloReply res_;
+  helloworld::HelloReply res_;
 };
 
 }  // namespace
@@ -91,12 +90,12 @@ int main(int argc, char* argv[]) {
   auto channel = grpc::CreateCustomChannel(absl::GetFlag(FLAGS_target),
                                            grpc::InsecureChannelCredentials(),
                                            channel_arguments);
-  auto greeter = hellostreamingworld::MultiGreeter::NewStub(channel);
+  auto greeter = helloworld::Greeter::NewStub(channel);
   grpc::ClientContext ctx;
-  hellostreamingworld::HelloRequest req;
+  helloworld::HelloRequest req;
   req.set_name("World");
   Reader reader;
-  greeter->async()->sayHello(&ctx, &req, &reader);
+  greeter->async()->SayHelloStreamReply(&ctx, &req, &reader);
   reader.Start();
   auto status = reader.WaitForDone();
   if (status.ok()) {
