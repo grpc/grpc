@@ -146,6 +146,14 @@ def _update_visibility(visibility):
             final_visibility.append(rule)
     return [x for x in final_visibility]
 
+def _include_prefix():
+    include_prefix = ""
+    subdir_path = native.package_name().removeprefix("third_party/grpc/")
+    if subdir_path != native.package_name():
+        for _ in subdir_path.split("/"):
+            include_prefix += "../"
+    return include_prefix
+
 def grpc_cc_library(
         name,
         srcs = [],
@@ -193,6 +201,7 @@ def grpc_cc_library(
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
+    include_prefix = _include_prefix()
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -217,9 +226,9 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
-            "include",
-            "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
-            "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.
+            include_prefix + "include",
+            include_prefix + "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
+            include_prefix + "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
