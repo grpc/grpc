@@ -71,8 +71,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class GrpcStreamingCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-                   const XdsBootstrap::XdsServer& server,
-                   absl::Status* status);
+                   const XdsBootstrap::XdsServer& server, absl::Status* status);
 
   void Orphaned() override;
 
@@ -95,9 +94,8 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   RefCountedPtr<Channel> channel_;
 
   Mutex mu_;
-  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>,
-                      StateWatcher*> watchers_
-      ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>, StateWatcher*>
+      watchers_ ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final

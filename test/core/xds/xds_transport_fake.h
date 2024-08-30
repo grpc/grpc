@@ -235,8 +235,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   // Returns an existing transport or creates a new one.
   RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServer& server,
-      absl::Status* /*status*/) override;
+      const XdsBootstrap::XdsServer& server, absl::Status* /*status*/) override;
 
   // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(
@@ -246,8 +245,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   Mutex mu_;
-  std::map<std::string /*XdsServer key*/, FakeXdsTransport*>
-      transport_map_ ABSL_GUARDED_BY(&mu_);
+  std::map<std::string /*XdsServer key*/, FakeXdsTransport*> transport_map_
+      ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
   bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;
   std::function<void()> too_many_pending_reads_callback_;

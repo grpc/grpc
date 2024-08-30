@@ -451,8 +451,7 @@ class XdsClient::XdsChannel::LrsCall final
 class XdsClient::XdsChannel::ConnectivityFailureWatcher
     : public XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher {
  public:
-  explicit ConnectivityFailureWatcher(
-      WeakRefCountedPtr<XdsChannel> xds_channel)
+  explicit ConnectivityFailureWatcher(WeakRefCountedPtr<XdsChannel> xds_channel)
       : xds_channel_(std::move(xds_channel)) {}
 
   void OnConnectivityFailure(absl::Status status) override {
