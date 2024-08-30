@@ -148,7 +148,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       XdsClusterLocalityStats* cluster_locality_stats);
 
   // Resets connection backoff state.
-  void ResetBackoff();
+  virtual void ResetBackoff();
 
   grpc_event_engine::experimental::EventEngine* engine() {
     return engine_.get();

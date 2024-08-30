@@ -74,6 +74,8 @@ class GrpcXdsClient final : public XdsClient {
     return QsortCompare(a, b);
   }
 
+  void ResetBackoff() override;
+
   grpc_pollset_set* interested_parties() const;
 
   CertificateProviderStore& certificate_provider_store() const {
@@ -82,7 +84,7 @@ class GrpcXdsClient final : public XdsClient {
 
   absl::string_view key() const { return key_; }
 
-  RefCountedPtr<LrsClient> lrs_client() const { return lrs_client_; }
+  LrsClient& lrs_client() { return *lrs_client_; }
 
   // Builds ClientStatusResponse containing all resources from all XdsClients
   static grpc_slice DumpAllClientConfigs();

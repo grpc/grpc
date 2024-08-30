@@ -338,6 +338,11 @@ void GrpcXdsClient::Orphaned() {
   }
 }
 
+void GrpcXdsClient::ResetBackoff() {
+  XdsClient::ResetBackoff();
+  lrs_client_->ResetBackoff();
+}
+
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
   return reinterpret_cast<GrpcXdsTransportFactory*>(transport_factory())
       ->interested_parties();
