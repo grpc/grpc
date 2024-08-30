@@ -222,9 +222,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
             return static_cast<LrsClient::ClusterLocalityStats*>(nullptr);
           },
           [](const RefCountedPtr<LrsClient::ClusterLocalityStats>&
-                 locality_stats) {
-            return locality_stats.get();
-          });
+                 locality_stats) { return locality_stats.get(); });
     }
 
     const grpc_event_engine::experimental::Slice& hostname() const {

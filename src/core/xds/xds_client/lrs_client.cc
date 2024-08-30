@@ -99,7 +99,8 @@ LrsClient::ClusterDropStats::~ClusterDropStats() {
   lrs_client_.reset(DEBUG_LOCATION, "ClusterDropStats");
 }
 
-LrsClient::ClusterDropStats::Snapshot LrsClient::ClusterDropStats::GetSnapshotAndReset() {
+LrsClient::ClusterDropStats::Snapshot
+LrsClient::ClusterDropStats::GetSnapshotAndReset() {
   Snapshot snapshot;
   snapshot.uncategorized_drops = GetAndResetCounter(&uncategorized_drops_);
   MutexLock lock(&mu_);
@@ -556,8 +557,7 @@ void LrsClient::LrsChannel::LrsCall::Orphan() {
 
 void LrsClient::LrsChannel::LrsCall::MaybeScheduleNextReportLocked() {
   // If there are no more registered stats to report, cancel the call.
-  auto it = lrs_client()->load_report_map_.find(
-      lrs_channel()->server_.Key());
+  auto it = lrs_client()->load_report_map_.find(lrs_channel()->server_.Key());
   if (it == lrs_client()->load_report_map_.end() ||
       it->second.load_report_map.empty()) {
     it->second.lrs_channel->StopLrsCallLocked();
@@ -592,9 +592,8 @@ bool LrsClient::LoadReportCountersAreZero(
 
 void LrsClient::LrsChannel::LrsCall::SendReportLocked() {
   // Construct snapshot from all reported stats.
-  ClusterLoadReportMap snapshot =
-      lrs_client()->BuildLoadReportSnapshotLocked(
-          lrs_channel()->server_, send_all_clusters_, cluster_names_);
+  ClusterLoadReportMap snapshot = lrs_client()->BuildLoadReportSnapshotLocked(
+      lrs_channel()->server_, send_all_clusters_, cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -715,8 +714,8 @@ bool LrsClient::LrsChannel::LrsCall::IsCurrentCallOnChannel() const {
 //
 
 LrsClient::LrsClient(
-    std::shared_ptr<XdsBootstrap> bootstrap,
-    std::string user_agent_name, std::string user_agent_version,
+    std::shared_ptr<XdsBootstrap> bootstrap, std::string user_agent_name,
+    std::string user_agent_version,
     RefCountedPtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
     : DualRefCounted<LrsClient>(
@@ -774,9 +773,8 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     // absl::string_views stored in the ClusterDropStats object point
     // to the strings in the load_report_map_ keys, so that
     // they have the same lifetime.
-    auto server_it = load_report_map_
-                         .emplace(lrs_server.Key(), LoadReportServer())
-                         .first;
+    auto server_it =
+        load_report_map_.emplace(lrs_server.Key(), LoadReportServer()).first;
     if (server_it->second.lrs_channel == nullptr) {
       server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
           lrs_server, "load report map (drop stats)");
@@ -824,10 +822,11 @@ void LrsClient::RemoveClusterDropStats(
   }
 }
 
-RefCountedPtr<LrsClient::ClusterLocalityStats> LrsClient::AddClusterLocalityStats(
-    const XdsBootstrap::XdsServer& lrs_server, absl::string_view cluster_name,
-    absl::string_view eds_service_name,
-    RefCountedPtr<XdsLocalityName> locality) {
+RefCountedPtr<LrsClient::ClusterLocalityStats>
+LrsClient::AddClusterLocalityStats(const XdsBootstrap::XdsServer& lrs_server,
+                                   absl::string_view cluster_name,
+                                   absl::string_view eds_service_name,
+                                   RefCountedPtr<XdsLocalityName> locality) {
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
@@ -837,9 +836,8 @@ RefCountedPtr<LrsClient::ClusterLocalityStats> LrsClient::AddClusterLocalityStat
     // absl::string_views stored in the ClusterLocalityStats object point
     // to the strings in the load_report_map_ keys, so that
     // they have the same lifetime.
-    auto server_it = load_report_map_
-                         .emplace(lrs_server.Key(), LoadReportServer())
-                         .first;
+    auto server_it =
+        load_report_map_.emplace(lrs_server.Key(), LoadReportServer()).first;
     if (server_it->second.lrs_channel == nullptr) {
       server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
           lrs_server, "load report map (locality stats)");
@@ -1168,9 +1166,9 @@ void MaybeLogLrsResponse(
 }  // namespace
 
 absl::Status LrsClient::ParseLrsResponse(absl::string_view encoded_response,
-                                      bool* send_all_clusters,
-                                      std::set<std::string>* cluster_names,
-                                      Duration* load_reporting_interval) {
+                                         bool* send_all_clusters,
+                                         std::set<std::string>* cluster_names,
+                                         Duration* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =
