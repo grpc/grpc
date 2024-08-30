@@ -184,6 +184,11 @@ class XdsApi final {
   const std::string user_agent_version_;
 };
 
+void PopulateXdsNode(const XdsBootstrap::Node* node,
+                     absl::string_view user_agent_name,
+                     absl::string_view user_agent_version,
+                     envoy_config_core_v3_Node* node_msg, upb_Arena* arena);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_API_H

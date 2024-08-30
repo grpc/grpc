@@ -84,7 +84,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   XdsClient(
-      std::unique_ptr<XdsBootstrap> bootstrap,
+      std::shared_ptr<XdsBootstrap> bootstrap,
       RefCountedPtr<XdsTransportFactory> transport_factory,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       std::unique_ptr<XdsMetricsReporter> metrics_reporter,
@@ -352,7 +352,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   bool HasUncachedResources(const AuthorityState& authority_state);
 
-  std::unique_ptr<XdsBootstrap> bootstrap_;
+  std::shared_ptr<XdsBootstrap> bootstrap_;
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;

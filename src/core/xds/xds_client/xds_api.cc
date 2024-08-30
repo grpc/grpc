@@ -154,42 +154,50 @@ std::string SerializeDiscoveryRequest(
 
 void XdsApi::PopulateNode(envoy_config_core_v3_Node* node_msg,
                           upb_Arena* arena) {
-  if (node_ != nullptr) {
-    if (!node_->id().empty()) {
+  PopulateXdsNode(node_, user_agent_name_, user_agent_version_, node_msg,
+                  arena);
+}
+
+void PopulateXdsNode(const XdsBootstrap::Node* node,
+                     absl::string_view user_agent_name,
+                     absl::string_view user_agent_version,
+                     envoy_config_core_v3_Node* node_msg, upb_Arena* arena) {
+  if (node != nullptr) {
+    if (!node->id().empty()) {
       envoy_config_core_v3_Node_set_id(node_msg,
-                                       StdStringToUpbString(node_->id()));
+                                       StdStringToUpbString(node->id()));
     }
-    if (!node_->cluster().empty()) {
+    if (!node->cluster().empty()) {
       envoy_config_core_v3_Node_set_cluster(
-          node_msg, StdStringToUpbString(node_->cluster()));
+          node_msg, StdStringToUpbString(node->cluster()));
     }
-    if (!node_->metadata().empty()) {
+    if (!node->metadata().empty()) {
       google_protobuf_Struct* metadata =
           envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
-      PopulateMetadata(metadata, node_->metadata(), arena);
+      PopulateMetadata(metadata, node->metadata(), arena);
     }
-    if (!node_->locality_region().empty() || !node_->locality_zone().empty() ||
-        !node_->locality_sub_zone().empty()) {
+    if (!node->locality_region().empty() || !node->locality_zone().empty() ||
+        !node->locality_sub_zone().empty()) {
       envoy_config_core_v3_Locality* locality =
           envoy_config_core_v3_Node_mutable_locality(node_msg, arena);
-      if (!node_->locality_region().empty()) {
+      if (!node->locality_region().empty()) {
         envoy_config_core_v3_Locality_set_region(
-            locality, StdStringToUpbString(node_->locality_region()));
+            locality, StdStringToUpbString(node->locality_region()));
       }
-      if (!node_->locality_zone().empty()) {
+      if (!node->locality_zone().empty()) {
         envoy_config_core_v3_Locality_set_zone(
-            locality, StdStringToUpbString(node_->locality_zone()));
+            locality, StdStringToUpbString(node->locality_zone()));
       }
-      if (!node_->locality_sub_zone().empty()) {
+      if (!node->locality_sub_zone().empty()) {
         envoy_config_core_v3_Locality_set_sub_zone(
-            locality, StdStringToUpbString(node_->locality_sub_zone()));
+            locality, StdStringToUpbString(node->locality_sub_zone()));
       }
     }
   }
   envoy_config_core_v3_Node_set_user_agent_name(
-      node_msg, StdStringToUpbString(user_agent_name_));
+      node_msg, StdStringToUpbString(user_agent_name));
   envoy_config_core_v3_Node_set_user_agent_version(
-      node_msg, StdStringToUpbString(user_agent_version_));
+      node_msg, StdStringToUpbString(user_agent_version));
   envoy_config_core_v3_Node_add_client_features(
       node_msg,
       upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),

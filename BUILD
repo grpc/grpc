@@ -4394,12 +4394,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_client",
     srcs = [
+        "//src/core:xds/xds_client/lrs_client.cc",
         "//src/core:xds/xds_client/xds_api.cc",
         "//src/core:xds/xds_client/xds_bootstrap.cc",
         "//src/core:xds/xds_client/xds_client.cc",
         "//src/core:xds/xds_client/xds_client_stats.cc",
     ],
     hdrs = [
+        "//src/core:xds/xds_client/lrs_client.h",
         "//src/core:xds/xds_client/xds_api.h",
         "//src/core:xds/xds_client/xds_bootstrap.h",
         "//src/core:xds/xds_client/xds_channel_args.h",

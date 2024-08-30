@@ -34,6 +34,7 @@
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 
@@ -61,7 +62,7 @@ class GrpcXdsClient final : public XdsClient {
   // that also use certificate_provider_store(), but we should consider
   // alternatives for that case as well.
   GrpcXdsClient(absl::string_view key,
-                std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+                std::shared_ptr<GrpcXdsBootstrap> bootstrap,
                 const ChannelArgs& args,
                 RefCountedPtr<XdsTransportFactory> transport_factory);
 
@@ -81,6 +82,8 @@ class GrpcXdsClient final : public XdsClient {
 
   absl::string_view key() const { return key_; }
 
+  RefCountedPtr<LrsClient> lrs_client() const { return lrs_client_; }
+
   // Builds ClientStatusResponse containing all resources from all XdsClients
   static grpc_slice DumpAllClientConfigs();
 
@@ -94,6 +97,7 @@ class GrpcXdsClient final : public XdsClient {
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
   std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
+  RefCountedPtr<LrsClient> lrs_client_;
 };
 
 namespace internal {

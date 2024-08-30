@@ -1540,7 +1540,7 @@ bool XdsClient::XdsChannel::LrsCall::IsCurrentCallOnChannel() const {
 constexpr absl::string_view XdsClient::kOldStyleAuthority;
 
 XdsClient::XdsClient(
-    std::unique_ptr<XdsBootstrap> bootstrap,
+    std::shared_ptr<XdsBootstrap> bootstrap,
     RefCountedPtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
     std::unique_ptr<XdsMetricsReporter> metrics_reporter,

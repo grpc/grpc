@@ -286,21 +286,28 @@ GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
   return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 
+std::string UserAgentName() {
+  return absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
+                      GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING);
+}
+
+std::string UserAgentVersion() {
+  return absl::StrCat("C-core ", grpc_version_string(),
+                      GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                      GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING);
+}
+
 }  // namespace
 
 GrpcXdsClient::GrpcXdsClient(
-    absl::string_view key, std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+    absl::string_view key, std::shared_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
     RefCountedPtr<XdsTransportFactory> transport_factory)
     : XdsClient(
-          std::move(bootstrap), std::move(transport_factory),
+          bootstrap, transport_factory,
           grpc_event_engine::experimental::GetDefaultEventEngine(),
-          std::make_unique<MetricsReporter>(*this),
-          absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
-                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING),
-          absl::StrCat("C-core ", grpc_version_string(),
-                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING),
+          std::make_unique<MetricsReporter>(*this), UserAgentName(),
+          UserAgentVersion(),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
@@ -314,11 +321,16 @@ GrpcXdsClient::GrpcXdsClient(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },
-          Duration::Seconds(5), kMetricConnected, kMetricResources)) {}
+          Duration::Seconds(5), kMetricConnected, kMetricResources)),
+      lrs_client_(MakeRefCounted<LrsClient>(
+          std::move(bootstrap), UserAgentName(), UserAgentVersion(),
+          std::move(transport_factory),
+          grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
   XdsClient::Orphaned();
+  lrs_client_.reset();
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
