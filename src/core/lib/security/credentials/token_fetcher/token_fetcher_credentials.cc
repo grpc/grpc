@@ -60,15 +60,13 @@ void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
 TokenFetcherCredentials::FetchState::BackoffTimer::BackoffTimer(
     RefCountedPtr<FetchState> fetch_state)
     : fetch_state_(std::move(fetch_state)) {
-  const Timestamp next_attempt_time = fetch_state_->backoff_.NextAttemptTime();
-  const Duration duration = next_attempt_time - Timestamp::Now();
+  const Duration delay = fetch_state_->backoff_.NextAttemptDelay();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
       << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
       << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
-      << ": starting backoff timer for " << next_attempt_time << " ("
-      << duration << " from now)";
+      << ": starting backoff timer for " << delay;
   timer_handle_ = fetch_state_->creds_->event_engine().RunAfter(
-      duration, [self = Ref()]() mutable {
+      delay, [self = Ref()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnTimer();

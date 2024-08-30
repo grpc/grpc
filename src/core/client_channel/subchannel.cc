@@ -764,8 +764,9 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
-  next_attempt_time_ = backoff_.NextAttemptTime();
+  const Timestamp now = Timestamp::Now();
+  const Timestamp min_deadline = now + min_connect_timeout_;
+  next_attempt_time_ = now + backoff_.NextAttemptDelay();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
   // Start connection attempt.
