@@ -36,7 +36,8 @@
 #endif
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
-ABSL_FLAG(size_t, message_size, 3 * 1024 * 1024, "Size of the messages to send");
+ABSL_FLAG(size_t, message_size, 3 * 1024 * 1024,
+          "Size of the messages to send");
 ABSL_FLAG(uint32_t, to_send, 10,
           "Messages to send in response to a single request");
 
