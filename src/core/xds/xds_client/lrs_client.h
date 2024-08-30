@@ -245,7 +245,6 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
     void ResetBackoff();
 
-// FIXME: maybe call this automatically from ctor?
     void MaybeStartLrsCall();
 
     absl::string_view server_uri() const { return server_.server_uri(); }

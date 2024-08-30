@@ -74,6 +74,9 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 // An xds call wrapper that can restart a call upon failure. Holds a ref to
 // the xds channel. The template parameter is the kind of wrapped xds call.
+// TODO(roth): This is basically the same code as in LrsClient, and
+// probably very similar to many other places in the codebase.
+// Consider refactoring this into a common utility library somehow.
 template <typename T>
 class XdsClient::XdsChannel::RetryableCall final
     : public InternallyRefCounted<RetryableCall<T>> {

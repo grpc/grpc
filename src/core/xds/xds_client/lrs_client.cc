@@ -199,7 +199,9 @@ void LrsClient::ClusterLocalityStats::AddCallFinished(
 
 // A call wrapper that can restart a call upon failure.
 // The template parameter is the kind of wrapped call.
-// FIXME: move this to its own file, so it can be shared with XdsClient?
+// TODO(roth): This is basically the same code as in XdsClient, and
+// probably very similar to many other places in the codebase.
+// Consider refactoring this into a common utility library somehow.
 template <typename T>
 class LrsClient::LrsChannel::RetryableCall final
     : public InternallyRefCounted<RetryableCall<T>> {
@@ -350,7 +352,8 @@ LrsClient::LrsChannel::LrsChannel(WeakRefCountedPtr<LrsClient> lrs_client,
   transport_ = lrs_client_->transport_factory_->GetTransport(server, &status);
   CHECK(transport_ != nullptr);
   if (!status.ok()) {
-    // FIXME: maybe just log?  need to make sure to try again later
+    LOG(ERROR) << "Error creating LRS channel to " << server.server_uri()
+               << ": " << status;
   }
 }
 
