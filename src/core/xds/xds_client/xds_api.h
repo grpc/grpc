@@ -44,10 +44,8 @@ namespace grpc_core {
 
 class XdsClient;
 
-// TODO(roth): When we have time, split this into multiple pieces:
-// - ADS request/response handling
-// - LRS request/response handling
-// - CSDS response generation
+// TODO(roth): When we have time, remove this class and move its
+// functionality directly inside of XdsClient.
 class XdsApi final {
  public:
   // Interface defined by caller and passed to ParseAdsResponse().
