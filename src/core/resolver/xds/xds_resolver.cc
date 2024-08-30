@@ -510,7 +510,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   // Handle xDS HTTP filters.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
       resolver->current_config_->listener->listener);
-  auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+  auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
       hcm.http_filters, *resolver->current_config_->virtual_host, route,
@@ -1041,18 +1041,27 @@ XdsResolver::CreateServiceConfig() {
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_cluster_manager_experimental\":{\n"
-      "      \"children\":{\n");
-  config_parts.push_back(absl::StrJoin(clusters, ",\n"));
-  config_parts.push_back(
-      "    }\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  std::string json = absl::StrJoin(config_parts, "");
-  return ServiceConfigImpl::Create(args_, json.c_str());
+      absl::StrCat("  \"loadBalancingConfig\":[\n"
+                   "    { \"xds_cluster_manager_experimental\":{\n"
+                   "      \"children\":{\n",
+                   absl::StrJoin(clusters, ",\n"),
+                   "    }\n"
+                   "    } }\n"
+                   "  ]"));
+  auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+      current_config_->listener->listener);
+  auto filter_configs =
+      XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
+          static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+              .http_filter_registry(),
+          hcm.http_filters, args_);
+  if (!filter_configs.ok()) return filter_configs.status();
+  for (const auto& p : filter_configs->per_filter_configs) {
+    config_parts.emplace_back(absl::StrCat(
+        "  \"", p.first, "\": [\n", absl::StrJoin(p.second, ",\n"), "\n  ]"));
+  }
+  std::string json = absl::StrCat("{", absl::StrJoin(config_parts, ",\n"), "}");
+  return ServiceConfigImpl::Create(filter_configs->args, json.c_str());
 }
 
 void XdsResolver::GenerateResult() {
