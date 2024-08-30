@@ -81,17 +81,6 @@ class XdsApi final {
                                               absl::string_view message) = 0;
   };
 
-  struct ClusterLoadReport {
-    XdsClusterDropStats::Snapshot dropped_requests;
-    std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
-             XdsLocalityName::Less>
-        locality_stats;
-    Duration load_report_interval;
-  };
-  using ClusterLoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      ClusterLoadReport>;
-
   // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
     // Resource status from the view of a xDS client, which tells the
@@ -159,19 +148,6 @@ class XdsApi final {
   // Otherwise, all events are reported to the parser.
   absl::Status ParseAdsResponse(absl::string_view encoded_response,
                                 AdsResponseParserInterface* parser);
-
-  // Creates an initial LRS request.
-  std::string CreateLrsInitialRequest();
-
-  // Creates an LRS request sending a client-side load report.
-  std::string CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
-
-  // Parses the LRS response and populates send_all_clusters,
-  // cluster_names, and load_reporting_interval.
-  absl::Status ParseLrsResponse(absl::string_view encoded_response,
-                                bool* send_all_clusters,
-                                std::set<std::string>* cluster_names,
-                                Duration* load_reporting_interval);
 
   void PopulateNode(envoy_config_core_v3_Node* node_msg, upb_Arena* arena);
 

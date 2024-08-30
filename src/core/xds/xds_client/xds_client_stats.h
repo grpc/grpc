@@ -1,3 +1,6 @@
+// FIXME: rename to xds_locality.h
+
+
 //
 //
 // Copyright 2018 gRPC authors.
@@ -19,33 +22,21 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
 
-#include <atomic>
-#include <cstdint>
-#include <map>
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/useful.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
-// Forward declaration to avoid circular dependency.
-class XdsClient;
-
-// Locality name.
+// An xDS locality name.
 class XdsLocalityName final : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
@@ -108,149 +99,6 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
   std::string zone_;
   std::string sub_zone_;
   RefCountedStringValue human_readable_string_;
-};
-
-// Drop stats for an xds cluster.
-class XdsClusterDropStats final : public RefCounted<XdsClusterDropStats> {
- public:
-  // The total number of requests dropped for any reason is the sum of
-  // uncategorized_drops, and dropped_requests map.
-  using CategorizedDropsMap = std::map<std::string /* category */, uint64_t>;
-  struct Snapshot {
-    uint64_t uncategorized_drops = 0;
-    // The number of requests dropped for the specific drop categories
-    // outlined in the drop_overloads field in the EDS response.
-    CategorizedDropsMap categorized_drops;
-
-    Snapshot& operator+=(const Snapshot& other) {
-      uncategorized_drops += other.uncategorized_drops;
-      for (const auto& p : other.categorized_drops) {
-        categorized_drops[p.first] += p.second;
-      }
-      return *this;
-    }
-
-    bool IsZero() const {
-      if (uncategorized_drops != 0) return false;
-      for (const auto& p : categorized_drops) {
-        if (p.second != 0) return false;
-      }
-      return true;
-    }
-  };
-
-  XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                      absl::string_view lrs_server,
-                      absl::string_view cluster_name,
-                      absl::string_view eds_service_name);
-  ~XdsClusterDropStats() override;
-
-  // Returns a snapshot of this instance and resets all the counters.
-  Snapshot GetSnapshotAndReset();
-
-  void AddUncategorizedDrops();
-  void AddCallDropped(const std::string& category);
-
- private:
-  RefCountedPtr<XdsClient> xds_client_;
-  absl::string_view lrs_server_;
-  absl::string_view cluster_name_;
-  absl::string_view eds_service_name_;
-  std::atomic<uint64_t> uncategorized_drops_{0};
-  // Protects categorized_drops_. A mutex is necessary because the length of
-  // dropped_requests can be accessed by both the picker (from data plane
-  // mutex) and the load reporting thread (from the control plane combiner).
-  Mutex mu_;
-  CategorizedDropsMap categorized_drops_ ABSL_GUARDED_BY(mu_);
-};
-
-// Locality stats for an xds cluster.
-class XdsClusterLocalityStats final
-    : public RefCounted<XdsClusterLocalityStats> {
- public:
-  struct BackendMetric {
-    uint64_t num_requests_finished_with_metric = 0;
-    double total_metric_value = 0;
-
-    BackendMetric& operator+=(const BackendMetric& other) {
-      num_requests_finished_with_metric +=
-          other.num_requests_finished_with_metric;
-      total_metric_value += other.total_metric_value;
-      return *this;
-    }
-
-    bool IsZero() const {
-      return num_requests_finished_with_metric == 0 && total_metric_value == 0;
-    }
-  };
-
-  struct Snapshot {
-    uint64_t total_successful_requests = 0;
-    uint64_t total_requests_in_progress = 0;
-    uint64_t total_error_requests = 0;
-    uint64_t total_issued_requests = 0;
-    std::map<std::string, BackendMetric> backend_metrics;
-
-    Snapshot& operator+=(const Snapshot& other) {
-      total_successful_requests += other.total_successful_requests;
-      total_requests_in_progress += other.total_requests_in_progress;
-      total_error_requests += other.total_error_requests;
-      total_issued_requests += other.total_issued_requests;
-      for (const auto& p : other.backend_metrics) {
-        backend_metrics[p.first] += p.second;
-      }
-      return *this;
-    }
-
-    bool IsZero() const {
-      if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
-          total_error_requests != 0 || total_issued_requests != 0) {
-        return false;
-      }
-      for (const auto& p : backend_metrics) {
-        if (!p.second.IsZero()) return false;
-      }
-      return true;
-    }
-  };
-
-  XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
-                          absl::string_view lrs_server,
-                          absl::string_view cluster_name,
-                          absl::string_view eds_service_name,
-                          RefCountedPtr<XdsLocalityName> name);
-  ~XdsClusterLocalityStats() override;
-
-  // Returns a snapshot of this instance and resets all the counters.
-  Snapshot GetSnapshotAndReset();
-
-  void AddCallStarted();
-  void AddCallFinished(const std::map<absl::string_view, double>* named_metrics,
-                       bool fail = false);
-
-  XdsLocalityName* locality_name() const { return name_.get(); }
-
- private:
-  struct Stats {
-    std::atomic<uint64_t> total_successful_requests{0};
-    std::atomic<uint64_t> total_requests_in_progress{0};
-    std::atomic<uint64_t> total_error_requests{0};
-    std::atomic<uint64_t> total_issued_requests{0};
-
-    // Protects backend_metrics. A mutex is necessary because the length of
-    // backend_metrics_ can be accessed by both the callback intercepting the
-    // call's recv_trailing_metadata and the load reporting thread.
-    Mutex backend_metrics_mu;
-    std::map<std::string, BackendMetric> backend_metrics
-        ABSL_GUARDED_BY(backend_metrics_mu);
-  };
-
-  RefCountedPtr<XdsClient> xds_client_;
-  absl::string_view lrs_server_;
-  absl::string_view cluster_name_;
-  absl::string_view eds_service_name_;
-  RefCountedPtr<XdsLocalityName> name_;
-  PerCpu<Stats> stats_{PerCpuOptions().SetMaxShards(32).SetCpusPerShard(4)};
 };
 
 }  // namespace grpc_core

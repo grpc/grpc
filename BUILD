@@ -4398,7 +4398,6 @@ grpc_cc_library(
         "//src/core:xds/xds_client/xds_api.cc",
         "//src/core:xds/xds_client/xds_bootstrap.cc",
         "//src/core:xds/xds_client/xds_client.cc",
-        "//src/core:xds/xds_client/xds_client_stats.cc",
     ],
     hdrs = [
         "//src/core:xds/xds_client/lrs_client.h",
@@ -4465,6 +4464,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
+        "//src/core:ref_counted_string",
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
