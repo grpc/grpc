@@ -80,7 +80,8 @@ using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : server_(server),
+    : ListenerInterface(server),
+      server_(server),
       args_(args),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
@@ -147,10 +148,11 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : listener_(std::move(listener)) {
+    : listener_(std::move(listener)) {  // FIXME
   arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
       listener_->event_engine_.get());
-  handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
+  handshaking_state_ = MakeRefCounted<HandshakingState>(
+      RefAsSubclass<ChaoticGoodServerListener::ActiveConnection>());
   handshaking_state_->Start(std::move(endpoint));
 }
 
@@ -194,13 +196,14 @@ void ChaoticGoodServerListener::ActiveConnection::Done(
   }
   // Can easily be holding various locks here: bounce through EE to ensure no
   // deadlocks.
-  listener_->event_engine_->Run([self = Ref()]() {
-    ExecCtx exec_ctx;
-    OrphanablePtr<ActiveConnection> con;
-    MutexLock lock(&self->listener_->mu_);
-    auto v = self->listener_->connection_list_.extract(self.get());
-    if (!v.empty()) con = std::move(v.value());
-  });
+  listener_->event_engine_->Run(
+      [self = RefAsSubclass<ChaoticGoodServerListener::ActiveConnection>()]() {
+        ExecCtx exec_ctx;
+        OrphanablePtr<ActiveConnection> con;
+        MutexLock lock(&self->listener_->mu_);
+        auto v = self->listener_->connection_list_.extract(self.get());
+        if (!v.empty()) con = std::move(v.value());
+      });
 }
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
@@ -450,7 +453,7 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
              .value_or(kConnectionDeadline);
 }
 
-void ChaoticGoodServerListener::Orphan() {
+void ChaoticGoodServerListener::OrphanImpl() {
   GRPC_TRACE_LOG(chaotic_good, INFO) << "ChaoticGoodServerListener::Orphan()";
   {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;

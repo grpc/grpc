@@ -139,19 +139,11 @@ class BinderServerListener : public Server::ListenerInterface {
       Server* server, std::string addr, BinderTxReceiverFactory factory,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy)
-      : server_(server),
+      : ListenerInterface(server),
+        server_(server),
         addr_(std::move(addr)),
         factory_(std::move(factory)),
         security_policy_(security_policy) {}
-
-  void Start(Server* /*server*/,
-             const std::vector<grpc_pollset*>* /*pollsets*/) override {
-    tx_receiver_ = factory_(
-        [this](transaction_code_t code, grpc_binder::ReadableParcel* parcel,
-               int uid) { return OnSetupTransport(code, parcel, uid); });
-    endpoint_binder_ = tx_receiver_->GetRawBinder();
-    grpc_add_endpoint_binder(addr_, endpoint_binder_);
-  }
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
@@ -160,8 +152,6 @@ class BinderServerListener : public Server::ListenerInterface {
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override {
     on_destroy_done_ = on_destroy_done;
   }
-
-  void Orphan() override { Unref(); }
 
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
@@ -173,6 +163,16 @@ class BinderServerListener : public Server::ListenerInterface {
   }
 
  private:
+  void StartListeningImpl() override {
+    tx_receiver_ = factory_(
+        [this](transaction_code_t code, grpc_binder::ReadableParcel* parcel,
+               int uid) { return OnSetupTransport(code, parcel, uid); });
+    endpoint_binder_ = tx_receiver_->GetRawBinder();
+    grpc_add_endpoint_binder(addr_, endpoint_binder_);
+  }
+
+  void OrphanImpl() override { Unref(); }
+
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
     ExecCtx exec_ctx;

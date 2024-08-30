@@ -48,6 +48,7 @@
 
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -69,6 +70,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -85,6 +87,8 @@
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
+
+using grpc_event_engine::experimental::EventEngine;
 
 //
 // Server::RequestMatcherInterface
@@ -943,11 +947,227 @@ void Server::Start() {
     }
   }
   for (auto& listener : listeners_) {
-    listener.listener->Start(this, &pollsets_);
+    listener.listener->Start();
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
   starting_cv_.Signal();
+}
+
+//
+// Server::ListenerInterface::ConfigFetcherWatcher
+//
+
+void Server::ListenerInterface::ConfigFetcherWatcher::UpdateConnectionManager(
+    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+        connection_manager) {
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager_to_destroy;
+  class GracefulShutdownExistingConnections {
+   public:
+    ~GracefulShutdownExistingConnections() {
+      // Send GOAWAYs on the transports so that they get disconnected when
+      // existing RPCs finish, and so that no new RPC is started on them.
+      for (auto& connection : connections_) {
+        connection->SendGoAway();
+      }
+    }
+
+    void set_connections(
+        absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+            connections) {
+      CHECK(connections_.empty());
+      connections_ = std::move(connections);
+    }
+
+   private:
+    absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+        connections_;
+  } connections_to_shutdown;
+  {
+    MutexLock lock(&listener_->mu_);
+    connection_manager_to_destroy = listener_->connection_manager_;
+    listener_->connection_manager_ = std::move(connection_manager);
+    connections_to_shutdown.set_connections(std::move(listener_->connections_));
+    if (listener_->server_->ShutdownCalled()) {
+      return;
+    }
+    listener_->is_serving_ = true;
+    if (listener_->started_) return;
+    listener_->started_ = true;
+  }
+  listener_->StartListeningImpl();
+}
+
+void Server::ListenerInterface::ConfigFetcherWatcher::StopServing() {
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&listener_->mu_);
+    listener_->is_serving_ = false;
+    connections = std::move(listener_->connections_);
+  }
+  // Send GOAWAYs on the transports so that they disconnect when existing
+  // RPCs finish.
+  for (auto& connection : connections) {
+    connection->SendGoAway();
+  }
+}
+
+//
+// Server::ListenerInterface::LogicalConnection::ConfigFetcherWatcher
+//
+
+void Server::ListenerInterface::LogicalConnection::SendGoAway() {
+  {
+    if (!SendGoAwayImpl()) {
+      return;
+    }
+    MutexLock lock(&mu_);
+    if (drain_grace_timer_handle_cancelled_) {
+      return;
+    }
+    CHECK(drain_grace_timer_handle_ == EventEngine::TaskHandle::kInvalid);
+    drain_grace_timer_handle_ = event_engine_->RunAfter(
+        std::max(Duration::Zero(),
+                 listener_->server_->channel_args()
+                     .GetDurationFromIntMillis(
+                         GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                     .value_or(Duration::Minutes(10))),
+        [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          // If the drain_grace_timer_ was not cancelled, disconnect
+          // immediately.
+          bool disconnect_immediately = false;
+          {
+            MutexLock lock(&self->mu_);
+            self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
+            if (!self->drain_grace_timer_handle_cancelled_) {
+              disconnect_immediately = true;
+            }
+          }
+          if (disconnect_immediately) {
+            self->DisconnectImmediatelyImpl();
+          }
+          self.reset(DEBUG_LOCATION, "drain_grace_timer");
+        });
+  }
+}
+
+void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {
+  MutexLock lock(&mu_);
+  drain_grace_timer_handle_cancelled_ = true;
+  if (drain_grace_timer_handle_ != EventEngine::TaskHandle::kInvalid) {
+    event_engine_->Cancel(drain_grace_timer_handle_);
+    drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
+  }
+}
+
+void Server::ListenerInterface::AddLogicalConnection(
+    absl::AnyInvocable<OrphanablePtr<ListenerInterface::LogicalConnection>(
+        const ChannelArgs& args)>
+        connection_creator,
+    const ChannelArgs& args, grpc_endpoint* endpoint) {
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager;
+  {
+    MutexLock lock(&mu_);
+    if (!is_serving_) {
+      // Not serving
+      return;
+    }
+    connection_manager = connection_manager_;
+  }
+  ChannelArgs new_args = args;
+  if (server_->config_fetcher() != nullptr) {
+    if (connection_manager == nullptr) {
+      // Connection manager not available
+      return;
+    }
+    absl::StatusOr<ChannelArgs> args_result =
+        connection_manager->UpdateChannelArgsForConnection(new_args, endpoint);
+    if (!args_result.ok()) {
+      return;
+    }
+    auto* server_credentials =
+        (*args_result).GetObject<grpc_server_credentials>();
+    if (server_credentials == nullptr) {
+      // Could not find server credentials
+      return;
+    }
+    auto security_connector =
+        server_credentials->create_security_connector(*args_result);
+    if (security_connector == nullptr) {
+      // Unable to create secure server with credentials
+      return;
+    }
+    new_args = (*args_result).SetObject(security_connector);
+  }
+  auto connection = connection_creator(new_args);
+  if (connection == nullptr) {
+    return;
+  }
+  MutexLock lock(&mu_);
+  if (!is_serving_ && connection_manager == connection_manager_) {
+    // Not serving
+    return;
+  }
+  connections_.emplace(std::move(connection));
+}
+
+void Server::ListenerInterface::RemoveLogicalConnection(
+    LogicalConnection* connection) {
+  OrphanablePtr<LogicalConnection> connection_to_remove;
+  {
+    // Remove the connection if it wasn't already removed.
+    MutexLock lock(&mu_);
+    auto connection_handle = connections_.extract(connection);
+    if (!connection_handle.empty()) {
+      connection_to_remove = std::move(connection_handle.value());
+    }
+  }
+  connection->CancelDrainGraceTimer();
+}
+
+//
+// Server::ListenerInterface
+//
+
+void Server::ListenerInterface::Start() {
+  if (server_->config_fetcher() != nullptr) {
+    auto watcher =
+        std::make_unique<ListenerInterface::ConfigFetcherWatcher>(Ref());
+    config_fetcher_watcher_ = watcher.get();
+    server_->config_fetcher()->StartWatch(
+        grpc_sockaddr_to_string(&resolved_address_, false).value(),
+        std::move(watcher));
+  } else {
+    {
+      MutexLock lock(&mu_);
+      started_ = true;
+      is_serving_ = true;
+    }
+    StartListeningImpl();
+  }
+}
+
+void Server::ListenerInterface::Orphan() {
+  // Cancel the watch before shutting down so as to avoid holding a ref to the
+  // listener in the watcher.
+  if (config_fetcher_watcher_ != nullptr) {
+    CHECK_NE(server_->config_fetcher(), nullptr);
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+  }
+  absl::flat_hash_set<OrphanablePtr<LogicalConnection>> connections;
+  {
+    MutexLock lock(&mu_);
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(connections_);
+    is_serving_ = false;
+  }
+  // OrphanImpl will unref the listener and hence should be done last.
+  OrphanImpl();
 }
 
 grpc_error_handle Server::SetupTransport(
@@ -1852,9 +2072,8 @@ grpc_call_error grpc_server_request_call(
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_request_call("
-      << "server=" << server << ", call=" << call << ", details=" << details
-      << ", initial_metadata=" << request_metadata
+      << "grpc_server_request_call(" << "server=" << server << ", call=" << call
+      << ", details=" << details << ", initial_metadata=" << request_metadata
       << ", cq_bound_to_call=" << cq_bound_to_call
       << ", cq_for_notification=" << cq_for_notification << ", tag=" << tag;
   return grpc_core::Server::FromC(server)->RequestCall(
@@ -1873,10 +2092,9 @@ grpc_call_error grpc_server_request_registered_call(
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_request_registered_call("
-      << "server=" << server << ", registered_method=" << registered_method
-      << ", call=" << call << ", deadline=" << deadline
-      << ", request_metadata=" << request_metadata
+      << "grpc_server_request_registered_call(" << "server=" << server
+      << ", registered_method=" << registered_method << ", call=" << call
+      << ", deadline=" << deadline << ", request_metadata=" << request_metadata
       << ", optional_payload=" << optional_payload
       << ", cq_bound_to_call=" << cq_bound_to_call
       << ", cq_for_notification=" << cq_for_notification << ", tag=" << tag_new
