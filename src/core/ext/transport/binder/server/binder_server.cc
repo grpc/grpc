@@ -163,7 +163,7 @@ class BinderServerListener : public Server::ListenerInterface {
   }
 
  private:
-  void StartListeningImpl() override {
+  void StartImpl() override {
     tx_receiver_ = factory_(
         [this](transaction_code_t code, grpc_binder::ReadableParcel* parcel,
                int uid) { return OnSetupTransport(code, parcel, uid); });

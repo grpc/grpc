@@ -263,7 +263,7 @@ class Server : public ServerInterface,
     }
 
    private:
-    virtual void StartListeningImpl() = 0;
+    virtual void StartImpl() = 0;
     virtual void OrphanImpl() = 0;
 
     Server* const server_;

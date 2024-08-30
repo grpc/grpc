@@ -216,7 +216,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   // Should only be called once so as to start the TCP server. This should only
   // be called by the config fetcher.
-  void StartListeningImpl() override;
+  void StartImpl() override;
 
   static void OnAccept(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
@@ -635,7 +635,7 @@ Chttp2ServerListener::~Chttp2ServerListener() {
   }
 }
 
-void Chttp2ServerListener::StartListeningImpl() {
+void Chttp2ServerListener::StartImpl() {
   bool should_add_port = false;
   {
     MutexLock lock(&mu_);

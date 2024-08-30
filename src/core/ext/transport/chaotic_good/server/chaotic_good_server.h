@@ -127,7 +127,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     int32_t data_alignment_;
   };
 
-  void StartListeningImpl() override { StartListening().IgnoreError(); };
+  void StartImpl() override { StartListening().IgnoreError(); };
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
