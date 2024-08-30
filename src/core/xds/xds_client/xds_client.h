@@ -44,7 +44,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"

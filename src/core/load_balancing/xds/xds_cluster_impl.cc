@@ -73,7 +73,7 @@
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 
 namespace grpc_core {
 

@@ -50,7 +50,7 @@
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 
 namespace grpc_core {
 

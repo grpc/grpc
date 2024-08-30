@@ -1,6 +1,3 @@
-// FIXME: rename to xds_locality.h
-
-
 //
 //
 // Copyright 2018 gRPC authors.
@@ -19,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
-#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
+#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_LOCALITY_H
+#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_LOCALITY_H
 
 #include <string>
 #include <utility>
@@ -103,4 +100,4 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
+#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_LOCALITY_H

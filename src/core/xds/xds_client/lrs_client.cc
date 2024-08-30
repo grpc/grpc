@@ -49,7 +49,7 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6
