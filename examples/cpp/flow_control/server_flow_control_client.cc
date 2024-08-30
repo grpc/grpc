@@ -33,7 +33,7 @@
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
-ABSL_FLAG(size_t, quota, 16,
+ABSL_FLAG(size_t, quota, 20,
           "Resource quota (in megabytes) that defines how much memory gRPC has available for buffers");
 
 namespace {
