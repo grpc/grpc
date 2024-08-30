@@ -81,7 +81,6 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
     : ListenerInterface(server),
-      server_(server),
       args_(args),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
@@ -310,7 +309,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             if (self->connection_->listener_->shutdown_) {
               return absl::UnavailableError("Server shutdown");
             }
-            return self->connection_->listener_->server_->SetupTransport(
+            return self->connection_->listener_->server()->SetupTransport(
                 new ChaoticGoodServerTransport(
                     self->connection_->args(),
                     std::move(self->connection_->endpoint_), std::move(ret),

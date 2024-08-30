@@ -140,7 +140,6 @@ class BinderServerListener : public Server::ListenerInterface {
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy)
       : ListenerInterface(server),
-        server_(server),
         addr_(std::move(addr)),
         factory_(std::move(factory)),
         security_policy_(security_policy) {}
@@ -215,12 +214,11 @@ class BinderServerListener : public Server::ListenerInterface {
     Transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
     CHECK(server_transport);
-    grpc_error_handle error = server_->SetupTransport(
-        server_transport, nullptr, server_->channel_args(), nullptr);
+    grpc_error_handle error = server()->SetupTransport(
+        server_transport, nullptr, server()->channel_args(), nullptr);
     return grpc_error_to_absl_status(error);
   }
 
-  Server* server_;
   grpc_closure* on_destroy_done_ = nullptr;
   std::string addr_;
   BinderTxReceiverFactory factory_;
