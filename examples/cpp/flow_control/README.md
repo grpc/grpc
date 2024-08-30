@@ -22,8 +22,8 @@ A client implementation in [server_flow_control_client.cc](server_flow_control_c
 will delay for 1s before starting a next read to simulate client that does not
 have resources for handling the replies.
 
+# Related information
 
-# Related documents
 Also see [gRPC Flow Control Users Guide][user guide]
 
  [user guide]: https://grpc.io/docs/guides/flow-control

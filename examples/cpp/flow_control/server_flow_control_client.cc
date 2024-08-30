@@ -33,9 +33,8 @@
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
-ABSL_FLAG(bool, bdp_probe, false,
-          "Setting to true will enable gRPC to increase buffer sizes and allow "
-          "for more in-flight bytes");
+ABSL_FLAG(size_t, quota, 16,
+          "Resource quota (in megabytes) that defines how much memory gRPC has available for buffers");
 
 namespace {
 
@@ -81,12 +80,9 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
   grpc::ChannelArguments channel_arguments;
-  // Bandwidth Delay Product (BDP) is the bandwidth of a network connection
-  // times its round-trip latency. This effectively tells us how many bytes can
-  // be “on the wire” at a given moment, if full utilization is achieved.
-  // This probe makes gRPC adjust the buffer size when there's too much traffic.
-  channel_arguments.SetInt("grpc.http2.bdp_probe",
-                           absl::GetFlag(FLAGS_bdp_probe));
+  grpc::ResourceQuota quota;
+  quota.Resize(absl::GetFlag(FLAGS_quota) * 1024 * 1024);
+  channel_arguments.SetResourceQuota(quota);
   auto channel = grpc::CreateCustomChannel(absl::GetFlag(FLAGS_target),
                                            grpc::InsecureChannelCredentials(),
                                            channel_arguments);
