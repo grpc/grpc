@@ -1071,21 +1071,17 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   }
 
   void SendRpc(
-      std::function<std::shared_ptr<grpc::Channel>()> channel_creator,
-      std::vector<std::string> expected_server_identity,
-      std::vector<std::string> expected_client_identity,
+      absl::FunctionRef<std::shared_ptr<grpc::Channel>()> channel_creator,
+      const std::vector<std::string>& expected_server_identity,
+      const std::vector<std::string>& expected_client_identity,
       bool test_expects_failure = false,
       absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
     LOG(INFO) << "Sending RPC";
-    int num_tries = 0;
-    constexpr int kRetryCount = 100;
-    auto overall_deadline = absl::Now() + absl::Seconds(5);
-    for (; num_tries < kRetryCount || absl::Now() < overall_deadline;
-         num_tries++) {
+    auto overall_deadline = absl::Now() + absl::Seconds(20);
+    while (absl::Now() < overall_deadline) {
       auto channel = channel_creator();
       auto stub = grpc::testing::EchoTestService::NewStub(channel);
       ClientContext context;
-      context.set_wait_for_ready(true);
       context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
       EchoRequest request;
       // TODO(yashykt): Skipping the cancelled check on the server since the
@@ -1142,7 +1138,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       }
       break;
     }
-    EXPECT_LT(num_tries, kRetryCount);
+    EXPECT_THAT(absl::Now(), ::testing::Lt(overall_deadline));
   }
 
   std::string root_cert_;
