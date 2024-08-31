@@ -44,6 +44,7 @@ ABSL_FLAG(std::string, db_path, "route_guide_db.json", "Path to db file");
 namespace routeguide {
 
 std::string GetDbFileContent(int argc, char** argv) {
+  // Command-line flags should be parsed at startup
   absl::ParseCommandLine(argc, argv);
   std::string db_path = absl::GetFlag(FLAGS_db_path);
   std::ifstream db_file(db_path);
