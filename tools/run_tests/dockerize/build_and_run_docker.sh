@@ -19,6 +19,7 @@
 # shellcheck disable=SC2103
 
 set -ex
+
 cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
 cd -
@@ -203,7 +204,7 @@ docker run \
   "${DOCKER_IMAGE_NAME}" \
   "${DOCKER_CMD_AND_ARGS[@]}" || DOCKER_EXIT_CODE=$?
 
-echo "Copy reports stored by the container (if any)"
+# Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
   mkdir -p "${GRPC_TEST_REPORT_BASE_DIR}"
@@ -212,7 +213,7 @@ else
   cp -r "${TEMP_REPORT_DIR}"/* "${git_root}" || true
 fi
 
-echo "Copy contents of OUTPUT_DIR back under the git repo root"
+# Copy contents of OUTPUT_DIR back under the git repo root
 if [ "${OUTPUT_DIR}" != "" ]
 then
   cp -r "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
