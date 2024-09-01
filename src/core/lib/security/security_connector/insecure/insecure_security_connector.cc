@@ -23,7 +23,6 @@
 #include "absl/log/check.h"
 
 #include <grpc/grpc_security_constants.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/handshaker/security/security_handshaker.h"

@@ -111,8 +111,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.find("testkey") == 0 &&
-                pair.second.find("testvalue") == 0;
+        found = pair.first.starts_with("testkey") &&
+                pair.second.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);

@@ -18,7 +18,6 @@
 #include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS

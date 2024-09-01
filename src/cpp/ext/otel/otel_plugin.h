@@ -223,6 +223,7 @@ class OpenTelemetryPluginImpl
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
+  ~OpenTelemetryPluginImpl() override;
 
  private:
   class ClientCallTracer;

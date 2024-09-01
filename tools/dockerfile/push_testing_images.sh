@@ -37,7 +37,7 @@ cd -
 # $ gcloud auth login
 
 # Various check that the environment is setup correctly.
-# The enviroment checks are skipped when running as a sanity check on CI.
+# The environment checks are skipped when running as a sanity check on CI.
 if [ "${CHECK_MODE}" == "" ]
 then
   # Check that docker is installed and sudoless docker works.
@@ -178,7 +178,7 @@ do
   then
     echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
     echo "=========="
-    # Buliding a docker image with two tags;
+    # Building a docker image with two tags;
     # - one for image identification based on Dockerfile hash
     # - one to exclude it from the GCP Vulnerability Scanner
     docker build \

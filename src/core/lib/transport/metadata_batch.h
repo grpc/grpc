@@ -36,7 +36,6 @@
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/compression/compression_internal.h"
@@ -1052,6 +1051,26 @@ struct LogWrapper {
   }
 };
 
+// Callable for the table FilterIn -- for each value, call the
+// appropriate filter method to determine of the value should be kept or
+// removed.
+template <typename Filterer>
+struct FilterWrapper {
+  Filterer filter_fn;
+
+  template <typename Which,
+            absl::enable_if_t<IsEncodableTrait<Which>::value, bool> = true>
+  bool operator()(const Value<Which>& /*which*/) {
+    return filter_fn(Which());
+  }
+
+  template <typename Which,
+            absl::enable_if_t<!IsEncodableTrait<Which>::value, bool> = true>
+  bool operator()(const Value<Which>& /*which*/) {
+    return true;
+  }
+};
+
 // Encoder to compute TransportSize
 class TransportSizeEncoder {
  public:
@@ -1093,6 +1112,16 @@ class UnknownMap {
 
   BackingType::const_iterator begin() const { return unknown_.cbegin(); }
   BackingType::const_iterator end() const { return unknown_.cend(); }
+
+  template <typename Filterer>
+  void Filter(Filterer* filter_fn) {
+    unknown_.erase(
+        std::remove_if(unknown_.begin(), unknown_.end(),
+                       [&](auto& pair) {
+                         return !(*filter_fn)(pair.first.as_string_view());
+                       }),
+        unknown_.end());
+  }
 
   bool empty() const { return unknown_.empty(); }
   size_t size() const { return unknown_.size(); }
@@ -1312,6 +1341,17 @@ class MetadataMap {
     for (const auto& unk : unknown_) {
       log_fn(unk.first.as_string_view(), unk.second.as_string_view());
     }
+  }
+
+  // Filter the metadata map.
+  // Iterates over all encodable and unknown headers and calls the filter_fn
+  // for each of them. If the function returns true, the header is kept.
+  template <typename Filterer>
+  void Filter(Filterer filter_fn) {
+    table_.template FilterIn<metadata_detail::FilterWrapper<Filterer>,
+                             Value<Traits>...>(
+        metadata_detail::FilterWrapper<Filterer>{filter_fn});
+    unknown_.Filter<Filterer>(&filter_fn);
   }
 
   std::string DebugString() const {

@@ -613,6 +613,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
+    bool echo_metadata_initially = false;
 
     RpcOptions() {}
 
@@ -686,6 +687,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     RpcOptions& set_echo_host_from_authority_header(bool value) {
       echo_host_from_authority_header = value;
+      return *this;
+    }
+
+    RpcOptions& set_echo_metadata_initially(bool value) {
+      echo_metadata_initially = value;
       return *this;
     }
 
@@ -970,6 +976,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns XdsCredentials with mTLS fallback creds.
   static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials> CreateTlsChannelCredentials();
 
   // Creates various types of server credentials.
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();

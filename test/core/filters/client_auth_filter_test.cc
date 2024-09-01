@@ -58,6 +58,8 @@ class ClientAuthFilterTest : public FilterTest<ClientAuthFilter> {
         : grpc_call_credentials(GRPC_SECURITY_NONE),
           status_(std::move(status)) {}
 
+    void Orphaned() override {}
+
     UniqueTypeName type() const override {
       static UniqueTypeName::Factory kFactory("FailCallCreds");
       return kFactory.Create();

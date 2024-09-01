@@ -77,7 +77,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -464,10 +464,9 @@ XdsOverrideHostLb::Picker::Picker(
     : policy_(std::move(xds_override_host_lb)),
       picker_(std::move(picker)),
       override_host_health_status_set_(override_host_health_status_set) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << policy_.get()
-              << "] constructed new picker " << this;
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << policy_.get()
+      << "] constructed new picker " << this;
 }
 
 absl::optional<LoadBalancingPolicy::PickResult>
@@ -487,18 +486,15 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       if (it == policy_->subchannel_map_.end()) continue;
       if (!override_host_health_status_set_.Contains(
               it->second->eds_health_status())) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "Subchannel " << address
-                    << " health status is not overridden ("
-                    << it->second->eds_health_status().ToString() << ")";
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "Subchannel " << address << " health status is not overridden ("
+            << it->second->eds_health_status().ToString() << ")";
         continue;
       }
       auto subchannel = it->second->GetSubchannelRef();
       if (subchannel == nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "No subchannel for " << address;
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "No subchannel for " << address;
         if (address_with_no_subchannel.empty()) {
           address_with_no_subchannel = it->first;
         }
@@ -508,9 +504,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
       if (connectivity_state == GRPC_CHANNEL_READY) {
         // Found a READY subchannel.  Pass back the actual address list
         // and return the subchannel.
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "Picker override found READY subchannel " << address;
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "Picker override found READY subchannel " << address;
         it->second->set_last_used_time();
         override_host_attr->set_actual_address_list(it->second->address_list());
         return PickResult::Complete(subchannel->wrapped_subchannel());
@@ -524,9 +519,8 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // No READY subchannel found.  If we found an IDLE subchannel, trigger
   // a connection attempt and queue the pick until that attempt completes.
   if (idle_subchannel != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "Picker override found IDLE subchannel";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "Picker override found IDLE subchannel";
     // Deletes itself after the connection is requested.
     new SubchannelConnectionRequester(std::move(idle_subchannel));
     return PickResult::Queue();
@@ -534,18 +528,16 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
   // queue the pick and wait for the connection attempt to complete.
   if (found_connecting) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "Picker override found CONNECTING subchannel";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "Picker override found CONNECTING subchannel";
     return PickResult::Queue();
   }
   // No READY, IDLE, or CONNECTING subchannels found.  If we found an
   // entry that has no subchannel, then queue the pick and trigger
   // creation of a subchannel for that entry.
   if (!address_with_no_subchannel.empty()) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "Picker override found entry with no subchannel";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "Picker override found entry with no subchannel";
     if (!IsWorkSerializerDispatchEnabled()) {
       new SubchannelCreationRequester(policy_, address_with_no_subchannel);
     } else {
@@ -605,10 +597,9 @@ XdsOverrideHostLb::IdleTimer::IdleTimer(RefCountedPtr<XdsOverrideHostLb> policy,
   // Min time between timer runs is 5s so that we don't kill ourselves
   // with lock contention and CPU usage due to sweeps over the map.
   duration = std::max(duration, Duration::Seconds(5));
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << policy_.get() << "] idle timer "
-              << this << ": subchannel cleanup pass will run in " << duration;
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << policy_.get() << "] idle timer " << this
+      << ": subchannel cleanup pass will run in " << duration;
   timer_handle_ = policy_->channel_control_helper()->GetEventEngine()->RunAfter(
       duration, [self = RefAsSubclass<IdleTimer>()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
@@ -622,10 +613,9 @@ XdsOverrideHostLb::IdleTimer::IdleTimer(RefCountedPtr<XdsOverrideHostLb> policy,
 
 void XdsOverrideHostLb::IdleTimer::Orphan() {
   if (timer_handle_.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb " << policy_.get() << "] idle timer "
-                << this << ": cancelling";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb " << policy_.get() << "] idle timer " << this
+        << ": cancelling";
     policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
     timer_handle_.reset();
   }
@@ -635,10 +625,9 @@ void XdsOverrideHostLb::IdleTimer::Orphan() {
 void XdsOverrideHostLb::IdleTimer::OnTimerLocked() {
   if (timer_handle_.has_value()) {
     timer_handle_.reset();
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb " << policy_.get() << "] idle timer "
-                << this << ": timer fired";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb " << policy_.get() << "] idle timer " << this
+        << ": timer fired";
     policy_->CleanupSubchannels();
   }
 }
@@ -649,22 +638,19 @@ void XdsOverrideHostLb::IdleTimer::OnTimerLocked() {
 
 XdsOverrideHostLb::XdsOverrideHostLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this << "] created";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] created";
 }
 
 XdsOverrideHostLb::~XdsOverrideHostLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] destroying xds_override_host LB policy";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this
+      << "] destroying xds_override_host LB policy";
 }
 
 void XdsOverrideHostLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
 }
@@ -695,10 +681,9 @@ void XdsOverrideHostLb::ResetState() {
 }
 
 void XdsOverrideHostLb::ReportTransientFailure(absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] reporting TRANSIENT_FAILURE: " << status;
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this
+      << "] reporting TRANSIENT_FAILURE: " << status;
   ResetState();
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
@@ -732,11 +717,9 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
       if (status.status() != XdsHealthStatus::kDraining) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                    << endpoint.ToString()
-                    << ": not draining, passing to child";
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "[xds_override_host_lb " << this << "] endpoint "
+            << endpoint.ToString() << ": not draining, passing to child";
         callback(endpoint);
       }
     });
@@ -747,17 +730,15 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
 };
 
 absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] Received update";
   // Grab new LB policy config.
   if (args.config == nullptr) {
     return absl::InvalidArgumentError("Missing policy config");
   }
   auto new_config = args.config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   // Get xDS config.
-  auto new_xds_config =
-      args.args.GetObjectRef<XdsDependencyManager::XdsConfig>();
+  auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
   if (new_xds_config == nullptr) {
     // Should never happen.
     absl::Status status = absl::InternalError(
@@ -777,23 +758,19 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   args_ = std::move(args.args);
   override_host_status_set_ = it->second->cluster->override_host_statuses;
   connection_idle_timeout_ = it->second->cluster->connection_idle_timeout;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] override host status set: "
-              << override_host_status_set_.ToString()
-              << " connection idle timeout: "
-              << connection_idle_timeout_.ToString();
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this
+      << "] override host status set: " << override_host_status_set_.ToString()
+      << " connection idle timeout: " << connection_idle_timeout_.ToString();
   // Update address map and wrap endpoint iterator for child policy.
   if (args.addresses.ok()) {
     UpdateAddressMap(**args.addresses);
     args.addresses =
         std::make_shared<ChildEndpointIterator>(std::move(*args.addresses));
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb " << this
-                << "] address error: " << args.addresses.status();
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb " << this
+        << "] address error: " << args.addresses.status();
   }
   // Create child policy if needed.
   if (child_policy_ == nullptr) {
@@ -805,10 +782,9 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = new_config->child_config();
   update_args.args = args_;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] Updating child policy handler " << child_policy_.get();
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] Updating child policy handler "
+      << child_policy_.get();
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -816,12 +792,11 @@ void XdsOverrideHostLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
     auto xds_override_host_picker = MakeRefCounted<Picker>(
         RefAsSubclass<XdsOverrideHostLb>(), picker_, override_host_status_set_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb " << this
-                << "] updating connectivity: state="
-                << ConnectivityStateName(state_) << " status=(" << status_
-                << ") picker=" << xds_override_host_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb " << this
+        << "] updating connectivity: state=" << ConnectivityStateName(state_)
+        << " status=(" << status_
+        << ") picker=" << xds_override_host_picker.get();
     channel_control_helper()->UpdateState(state_, status_,
                                           std::move(xds_override_host_picker));
   }
@@ -837,10 +812,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &xds_override_host_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] Created new child policy handler " << lb_policy.get();
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this
+      << "] Created new child policy handler " << lb_policy.get();
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // this policy, which in turn is tied to the application's call.
@@ -864,12 +838,11 @@ void XdsOverrideHostLb::UpdateAddressMap(
     // Skip draining hosts if not in the override status set.
     if (status.status() == XdsHealthStatus::kDraining &&
         !override_host_status_set_.Contains(status)) {
-      if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-        LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                  << endpoint.ToString()
-                  << ": draining but not in override_host_status set -- "
-                     "ignoring";
-      }
+      GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+          << "[xds_override_host_lb " << this << "] endpoint "
+          << endpoint.ToString()
+          << ": draining but not in override_host_status set -- "
+             "ignoring";
       return;
     }
     std::vector<std::string> addresses;
@@ -877,10 +850,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
     for (const auto& address : endpoint.addresses()) {
       auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
       if (!key.ok()) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "[xds_override_host_lb " << this
-                    << "] no key for endpoint address; not adding to map";
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "[xds_override_host_lb " << this
+            << "] no key for endpoint address; not adding to map";
       } else {
         addresses.push_back(*std::move(key));
       }
@@ -907,10 +879,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
     MutexLock lock(&mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
       if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "[xds_override_host_lb " << this << "] removing map key "
-                    << it->first;
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "[xds_override_host_lb " << this << "] removing map key "
+            << it->first;
         it->second->UnsetSubchannel(&subchannel_refs_to_drop);
         it = subchannel_map_.erase(it);
       } else {
@@ -922,20 +893,17 @@ void XdsOverrideHostLb::UpdateAddressMap(
       auto& address_info = p.second;
       auto it = subchannel_map_.find(address);
       if (it == subchannel_map_.end()) {
-        if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-          LOG(INFO) << "[xds_override_host_lb " << this << "] adding map key "
-                    << address;
-        }
+        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+            << "[xds_override_host_lb " << this << "] adding map key "
+            << address;
         it = subchannel_map_.emplace(address, MakeRefCounted<SubchannelEntry>())
                  .first;
       }
-      if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-        LOG(INFO) << "[xds_override_host_lb " << this << "] map key " << address
-                  << ": setting "
-                  << "eds_health_status="
-                  << address_info.eds_health_status.ToString()
-                  << " address_list=" << address_info.address_list.c_str();
-      }
+      GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+          << "[xds_override_host_lb " << this << "] map key " << address
+          << ": setting "
+          << "eds_health_status=" << address_info.eds_health_status.ToString()
+          << " address_list=" << address_info.address_list.c_str();
       it->second->set_eds_health_status(address_info.eds_health_status);
       it->second->set_address_list(std::move(address_info.address_list));
       // Check the entry's last_used_time to determine the next time at
@@ -973,10 +941,9 @@ XdsOverrideHostLb::AdoptSubchannel(
 }
 
 void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << this
-              << "] creating owned subchannel for " << address;
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << this << "] creating owned subchannel for "
+      << address;
   auto addr = StringToSockaddr(address);
   CHECK(addr.ok());
   // Note: We don't currently have any cases where per_address_args need to
@@ -1016,10 +983,9 @@ void XdsOverrideHostLb::CleanupSubchannels() {
       if (p.second->last_used_time() <= idle_threshold) {
         auto subchannel = p.second->TakeOwnedSubchannel();
         if (subchannel != nullptr) {
-          if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-            LOG(INFO) << "[xds_override_host_lb " << this
-                      << "] dropping subchannel for " << p.first;
-          }
+          GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+              << "[xds_override_host_lb " << this
+              << "] dropping subchannel for " << p.first;
           subchannel_refs_to_drop.push_back(std::move(subchannel));
         }
       } else {
@@ -1093,10 +1059,9 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    LOG(INFO) << "[xds_override_host_lb " << policy_.get()
-              << "] subchannel wrapper " << this << " orphaned";
-  }
+  GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+      << "[xds_override_host_lb " << policy_.get() << "] subchannel wrapper "
+      << this << " orphaned";
   if (!IsWorkSerializerDispatchEnabled()) {
     wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
     if (subchannel_entry_ != nullptr) {
@@ -1206,20 +1171,19 @@ void XdsOverrideHostLb::SubchannelEntry::OnSubchannelWrapperOrphan(
   auto* subchannel = GetSubchannel();
   if (subchannel != wrapper) return;
   if (last_used_time_ < (Timestamp::Now() - connection_idle_timeout)) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb] removing unowned subchannel wrapper "
-                << subchannel;
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb] removing unowned subchannel "
+           "wrapper "
+        << subchannel;
     subchannel_ = nullptr;
   } else {
     // The subchannel is being released by the child policy, but it
     // is still within its idle timeout, so we make a new copy of
     // the wrapper with the same underlying subchannel, and we hold
     // our own ref to it.
-    if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-      LOG(INFO) << "[xds_override_host_lb] subchannel wrapper " << subchannel
-                << ": cloning to gain ownership";
-    }
+    GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+        << "[xds_override_host_lb] subchannel wrapper " << subchannel
+        << ": cloning to gain ownership";
     subchannel_ = wrapper->Clone();
   }
 }

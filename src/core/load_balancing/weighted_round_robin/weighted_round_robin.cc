@@ -447,28 +447,24 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
     weight = qps / (utilization + penalty);
   }
   if (weight == 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
-                << ": qps=" << qps << ", eps=" << eps
-                << ", utilization=" << utilization
-                << ": error_util_penalty=" << error_utilization_penalty
-                << ", weight=" << weight << " (not updating)";
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+        << ": qps=" << qps << ", eps=" << eps << ", utilization=" << utilization
+        << ": error_util_penalty=" << error_utilization_penalty
+        << ", weight=" << weight << " (not updating)";
     return;
   }
   Timestamp now = Timestamp::Now();
   // Grab the lock and update the data.
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
-              << ": qps=" << qps << ", eps=" << eps
-              << ", utilization=" << utilization
-              << " error_util_penalty=" << error_utilization_penalty
-              << " : setting weight=" << weight << " weight_=" << weight_
-              << " now=" << now.ToString()
-              << " last_update_time_=" << last_update_time_.ToString()
-              << " non_empty_since_=" << non_empty_since_.ToString();
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+      << ": qps=" << qps << ", eps=" << eps << ", utilization=" << utilization
+      << " error_util_penalty=" << error_utilization_penalty
+      << " : setting weight=" << weight << " weight_=" << weight_
+      << " now=" << now.ToString()
+      << " last_update_time_=" << last_update_time_.ToString()
+      << " non_empty_since_=" << non_empty_since_.ToString();
   if (non_empty_since_ == Timestamp::InfFuture()) non_empty_since_ = now;
   weight_ = weight;
   last_update_time_ = now;
@@ -478,16 +474,14 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
     Timestamp now, Duration weight_expiration_period, Duration blackout_period,
     uint64_t* num_not_yet_usable, uint64_t* num_stale) {
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
-              << ": getting weight: now=" << now.ToString()
-              << " weight_expiration_period="
-              << weight_expiration_period.ToString()
-              << " blackout_period=" << blackout_period.ToString()
-              << " last_update_time_=" << last_update_time_.ToString()
-              << " non_empty_since_=" << non_empty_since_.ToString()
-              << " weight_=" << weight_;
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+      << ": getting weight: now=" << now.ToString()
+      << " weight_expiration_period=" << weight_expiration_period.ToString()
+      << " blackout_period=" << blackout_period.ToString()
+      << " last_update_time_=" << last_update_time_.ToString()
+      << " non_empty_since_=" << non_empty_since_.ToString()
+      << " weight_=" << weight_;
   // If the most recent update was longer ago than the expiration
   // period, reset non_empty_since_ so that we apply the blackout period
   // again if we start getting data again in the future, and return 0.
@@ -555,27 +549,25 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
   }
   global_stats().IncrementWrrSubchannelListSize(endpoint_list->size());
   global_stats().IncrementWrrSubchannelReadySize(endpoints_.size());
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] created picker from endpoint_list=" << endpoint_list
-              << " with " << endpoints_.size() << " subchannels";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this
+      << "] created picker from endpoint_list=" << endpoint_list << " with "
+      << endpoints_.size() << " subchannels";
+  // Note: BuildSchedulerAndStartTimerLocked() passes out pointers to `this`,
+  // so we need to ensure that we really hold timer_mu_.
+  MutexLock lock(&timer_mu_);
   BuildSchedulerAndStartTimerLocked();
 }
 
 WeightedRoundRobin::Picker::~Picker() {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] destroying picker";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this << "] destroying picker";
 }
 
 void WeightedRoundRobin::Picker::Orphaned() {
   MutexLock lock(&timer_mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] cancelling timer";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this << "] cancelling timer";
   wrr_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
   timer_handle_.reset();
   wrr_.reset();
@@ -585,11 +577,9 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   size_t index = PickIndex();
   CHECK(index < endpoints_.size());
   auto& endpoint_info = endpoints_[index];
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] returning index " << index
-              << ", picker=" << endpoint_info.picker.get();
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this << "] returning index "
+      << index << ", picker=" << endpoint_info.picker.get();
   auto result = endpoint_info.picker->Pick(args);
   // Collect per-call utilization data if needed.
   if (!config_->enable_oob_load_report()) {
@@ -641,25 +631,22 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   stats_plugins.AddCounter(kMetricEndpointWeightStale, num_stale,
                            {wrr_->channel_control_helper()->GetTarget()},
                            {wrr_->locality_name_});
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] new weights: " << absl::StrJoin(weights, " ");
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this
+      << "] new weights: " << absl::StrJoin(weights, " ");
   auto scheduler_or = StaticStrideScheduler::Make(
       weights, [this]() { return wrr_->scheduler_state_.fetch_add(1); });
   std::shared_ptr<StaticStrideScheduler> scheduler;
   if (scheduler_or.has_value()) {
     scheduler =
         std::make_shared<StaticStrideScheduler>(std::move(*scheduler_or));
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-                << "] new scheduler: " << scheduler.get();
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr_.get() << " picker " << this
+        << "] new scheduler: " << scheduler.get();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-                << "] no scheduler, falling back to RR";
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr_.get() << " picker " << this
+        << "] no scheduler, falling back to RR";
     stats_plugins.AddCounter(kMetricRrFallback, 1,
                              {wrr_->channel_control_helper()->GetTarget()},
                              {wrr_->locality_name_});
@@ -669,11 +656,14 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     scheduler_ = std::move(scheduler);
   }
   // Start timer.
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << " picker " << this
-              << "] scheduling timer for "
-              << config_->weight_update_period().ToString();
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr_.get() << " picker " << this
+      << "] scheduling timer for "
+      << config_->weight_update_period().ToString();
+  // It's insufficient to hold the implicit constructor lock here, a real lock
+  // over timer_mu_ is needed: we update timer_handle_ after the timer is
+  // scheduled, but it may run on another thread before that occurs, causing a
+  // race.
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
       config_->weight_update_period(),
       [self = WeakRefAsSubclass<Picker>(),
@@ -683,10 +673,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         {
           MutexLock lock(&self->timer_mu_);
           if (self->timer_handle_.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-              LOG(INFO) << "[WRR " << self->wrr_.get() << " picker "
-                        << self.get() << "] timer fired";
-            }
+            GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+                << "[WRR " << self->wrr_.get() << " picker " << self.get()
+                << "] timer fired";
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
@@ -708,24 +697,21 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
       locality_name_(channel_args()
                          .GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD)
                          .value_or("")) {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << this << "] Created -- locality_name=\""
-              << std::string(locality_name_) << "\"";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << this << "] Created -- locality_name=\""
+      << std::string(locality_name_) << "\"";
 }
 
 WeightedRoundRobin::~WeightedRoundRobin() {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << this << "] Destroying Round Robin policy";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << this << "] Destroying Round Robin policy";
   CHECK(endpoint_list_ == nullptr);
   CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void WeightedRoundRobin::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << this << "] Shutting down";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << this << "] Shutting down";
   shutdown_ = true;
   endpoint_list_.reset();
   latest_pending_endpoint_list_.reset();
@@ -743,9 +729,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   config_ = args.config.TakeAsSubclass<WeightedRoundRobinConfig>();
   std::shared_ptr<EndpointAddressesIterator> addresses;
   if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << this << "] received update";
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << this << "] received update";
     // Weed out duplicate endpoints.  Also sort the endpoints so that if
     // the set of endpoints doesn't change, their indexes in the endpoint
     // list don't change, since this avoids unnecessary churn in the
@@ -771,10 +756,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
         std::make_shared<EndpointAddressesListIterator>(EndpointAddressesList(
             ordered_addresses.begin(), ordered_addresses.end()));
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << this << "] received update with address error: "
-                << args.addresses.status().ToString();
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << this << "] received update with address error: "
+        << args.addresses.status().ToString();
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (endpoint_list_ != nullptr) return args.addresses.status();
@@ -875,21 +859,17 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* wrr_endpoint_list = endpoint_list<WrrEndpointList>();
   auto* wrr = policy<WeightedRoundRobin>();
-  if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr << "] connectivity changed for child " << this
-              << ", endpoint_list " << wrr_endpoint_list << " (index "
-              << Index() << " of " << wrr_endpoint_list->size()
-              << "): prev_state="
-              << (old_state.has_value() ? ConnectivityStateName(*old_state)
-                                        : "N/A")
-              << " new_state=" << ConnectivityStateName(new_state) << " ("
-              << status << ")";
-  }
+  GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+      << "[WRR " << wrr << "] connectivity changed for child " << this
+      << ", endpoint_list " << wrr_endpoint_list << " (index " << Index()
+      << " of " << wrr_endpoint_list->size() << "): prev_state="
+      << (old_state.has_value() ? ConnectivityStateName(*old_state) : "N/A")
+      << " new_state=" << ConnectivityStateName(new_state) << " (" << status
+      << ")";
   if (new_state == GRPC_CHANNEL_IDLE) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr << "] child " << this
-                << " reported IDLE; requesting connection";
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr << "] child " << this
+        << " reported IDLE; requesting connection";
     ExitIdleLocked();
   } else if (new_state == GRPC_CHANNEL_READY) {
     // If we transition back to READY state, restart the blackout period.
@@ -983,27 +963,22 @@ void WeightedRoundRobin::WrrEndpointList::
   // 2) ANY child is CONNECTING => policy is CONNECTING.
   // 3) ALL children are TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
   if (num_ready_ > 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr << "] reporting READY with endpoint list "
-                << this;
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr << "] reporting READY with endpoint list " << this;
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
         MakeRefCounted<Picker>(wrr->RefAsSubclass<WeightedRoundRobin>(), this));
   } else if (num_connecting_ > 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr
-                << "] reporting CONNECTING with endpoint list " << this;
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr << "] reporting CONNECTING with endpoint list "
+        << this;
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         MakeRefCounted<QueuePicker>(nullptr));
   } else if (num_transient_failure_ == size()) {
-    if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr
-                << "] reporting TRANSIENT_FAILURE with endpoint list " << this
-                << ": " << status_for_tf;
-    }
+    GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
+        << "[WRR " << wrr << "] reporting TRANSIENT_FAILURE with endpoint list "
+        << this << ": " << status_for_tf;
     if (!status_for_tf.ok()) {
       last_failure_ = absl::UnavailableError(
           absl::StrCat("connections to all backends failing; last error: ",

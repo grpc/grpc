@@ -39,13 +39,6 @@
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
-#define GRPC_CARES_TRACE_LOG(format, ...)                                      \
-  do {                                                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {                             \
-      VLOG(2) << "(c-ares resolver) " << absl::StrFormat(format, __VA_ARGS__); \
-    }                                                                          \
-  } while (0)
-
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
 struct grpc_ares_request {

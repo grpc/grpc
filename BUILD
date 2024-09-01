@@ -227,11 +227,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gladiator"  # @unused
+g_stands_for = "gesundheit"  # @unused
 
-core_version = "42.0.0"  # @unused
+core_version = "43.0.0"  # @unused
 
-version = "1.66.0-dev"  # @unused
+version = "1.67.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -729,14 +729,11 @@ grpc_cc_library(
         "//src/core:lib/gprpp/windows/stat.cc",
         "//src/core:lib/gprpp/windows/thd.cc",
         "//src/core:util/alloc.cc",
-        "//src/core:util/android/log.cc",
         "//src/core:util/iphone/cpu.cc",
         "//src/core:util/linux/cpu.cc",
-        "//src/core:util/linux/log.cc",
         "//src/core:util/log.cc",
         "//src/core:util/msys/tmpfile.cc",
         "//src/core:util/posix/cpu.cc",
-        "//src/core:util/posix/log.cc",
         "//src/core:util/posix/string.cc",
         "//src/core:util/posix/sync.cc",
         "//src/core:util/posix/time.cc",
@@ -747,7 +744,6 @@ grpc_cc_library(
         "//src/core:util/time.cc",
         "//src/core:util/time_precise.cc",
         "//src/core:util/windows/cpu.cc",
-        "//src/core:util/windows/log.cc",
         "//src/core:util/windows/string.cc",
         "//src/core:util/windows/string_util.cc",
         "//src/core:util/windows/sync.cc",
@@ -907,6 +903,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:grpc++_public_hdrs"],
     deps = [
+        "global_callback_hook",
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
     ],
@@ -951,6 +948,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
+        "global_callback_hook",
         "grpc++_base",
         "//src/core:gpr_atm",
         "//src/core:slice",
@@ -1260,6 +1258,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "generic_stub_internal",
+        "global_callback_hook",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
@@ -2455,6 +2454,7 @@ grpc_cc_library(
         "config",
         "exec_ctx",
         "generic_stub_internal",
+        "global_callback_hook",
         "gpr",
         "grpc",
         "grpc++_codegen_proto",
@@ -2544,6 +2544,7 @@ grpc_cc_library(
         "config",
         "exec_ctx",
         "generic_stub_internal",
+        "global_callback_hook",
         "gpr",
         "grpc_base",
         "grpc_core_credentials_header",
@@ -2644,6 +2645,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/reflection/v1:reflection_proto",
@@ -3279,6 +3281,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_spinlock",
+        "//src/core:latent_see",
         "//src/core:time",
         "//src/core:useful",
     ],
@@ -4034,6 +4037,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "tsi_base",
+        "//src/core:dump_args",
         "//src/core:slice",
         "//src/core:useful",
     ],
@@ -4568,11 +4572,13 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_trace",
         "hpack_parse_result",
+        "stats",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",
         "//src/core:slice",
+        "//src/core:unique_ptr_with_bitset",
     ],
 )
 
@@ -4828,7 +4834,6 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:match",
-        "//src/core:max_concurrent_streams_policy",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
@@ -4908,6 +4913,22 @@ grpc_cc_library(
         "//src/core:strerror",
         "//src/core:tchar",
     ],
+)
+
+grpc_cc_library(
+    name = "global_callback_hook",
+    srcs = [
+        "src/cpp/client/global_callback_hook.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/support/global_callback_hook.h",
+    ],
+    external_deps = [
+        "absl/base:no_destructor",
+        "absl/log:check",
+        "absl/functional:function_ref",
+    ],
+    language = "c++",
 )
 
 # TODO(yashykt): Remove the UPB definitions from here once they are no longer needed
@@ -4991,6 +5012,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_fault_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_gcp_authn_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_gcp_authn_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
 )
 
 grpc_upb_proto_library(

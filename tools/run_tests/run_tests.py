@@ -320,7 +320,7 @@ class CLanguage(object):
             self._cmake_architecture_windows = (
                 "x64" if self.args.arch == "x64" else "Win32"
             )
-            # when builing with Ninja, the VS common tools need to be activated first
+            # when building with Ninja, the VS common tools need to be activated first
             self._activate_vs_tools_windows = activate_vs_tools
             # "x64_x86" means create 32bit binaries, but use 64bit toolkit to secure more memory for the build
             self._vs_tools_architecture_windows = (
@@ -606,8 +606,8 @@ class CLanguage(object):
             return ("alpine", [])
         elif compiler == "clang6":
             return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang17":
-            return ("clang_17", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang18":
+            return ("clang_18", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -885,7 +885,7 @@ class PythonLanguage(object):
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python39_config,)
+            return (python310_config,)
         elif args.compiler == "all_the_cpythons":
             return (
                 python38_config,
@@ -1673,7 +1673,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang17",
+        "clang18",
         # TODO: Automatically populate from supported version
         "python3.7",
         "python3.8",

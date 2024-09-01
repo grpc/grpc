@@ -30,7 +30,6 @@
 #include "absl/log/absl_check.h"
 #include "absl/synchronization/mutex.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

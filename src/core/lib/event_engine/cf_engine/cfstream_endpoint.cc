@@ -331,8 +331,21 @@ void CFStreamEndpointImpl::DoWrite(
   size_t total_written_size = 0;
   for (size_t i = 0; i < data->Count(); i++) {
     auto slice = data->RefSlice(i);
-    size_t written_size =
+    if (slice.size() == 0) {
+      continue;
+    }
+
+    CFIndex written_size =
         CFWriteStreamWrite(cf_write_stream_, slice.begin(), slice.size());
+
+    if (written_size < 0) {
+      auto status = CFErrorToStatus(CFWriteStreamCopyError(cf_write_stream_));
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "CFStream write error: " << status
+          << ", written_size: " << written_size;
+      on_writable(status);
+      return;
+    }
 
     total_written_size += written_size;
     if (written_size < slice.size()) {
