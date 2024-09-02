@@ -67,4 +67,4 @@ pushd src/python/grpcio_tests;
   python3 setup.py test_py3_only
 popd;
 
-# chmod -R 755 src/
+chmod -R 755 src/
