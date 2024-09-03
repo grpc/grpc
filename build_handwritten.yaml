@@ -16,6 +16,13 @@ settings:
   csharp_major_version: 2
   g_stands_for: gesundheit
   protobuf_version: 3.27.2
+  supported_python_versions:
+  - '3.8'
+  - '3.9'
+  - '3.10'
+  - '3.11'
+  - '3.12'
+  - '3.13'
   version: 1.67.0-dev
 configs:
   asan:

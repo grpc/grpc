@@ -91,23 +91,23 @@ import grpc_core_dependencies
 
 import commands
 import grpc_version
+import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
+
+supported_python_versions = python_version.SUPPORTED_PYTHON_VERSIONS
+min_python_version = python_version.MIN_PYTHON_VERSION
 
 LICENSE = "Apache License 2.0"
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: Apache Software License",
-]
+    "Programming Language :: Python :: 3"
+    ] + \
+    [f"Programming Language :: Python :: {x}" for x in supported_python_versions] + \
+    ["License :: OSI Approved :: Apache Software License"]
 
 
 def _env_bool_value(env_name, default):
@@ -596,7 +596,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=">=3.8",
+    python_requires=f">={min_python_version}",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

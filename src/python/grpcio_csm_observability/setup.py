@@ -23,6 +23,7 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 import grpc_version
+import python_version
 
 CLASSIFIERS = [
     "Development Status :: 4 - Beta",
@@ -42,6 +43,8 @@ INSTALL_REQUIRES = (
     "protobuf>=5.26.1,<6.0dev",
 )
 
+min_python_version = python_version.MIN_PYTHON_VERSION
+
 setuptools.setup(
     name="grpcio-csm-observability",
     version=grpc_version.VERSION,
@@ -58,6 +61,6 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
+    python_requires=f">={min_python_version}",
     install_requires=INSTALL_REQUIRES,
 )

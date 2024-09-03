@@ -26,6 +26,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our local modules.
 import grpc_version
+import python_version
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
@@ -44,6 +45,8 @@ INSTALL_REQUIRES = (
 )
 SETUP_REQUIRES = INSTALL_REQUIRES
 
+min_python_version = python_version.MIN_PYTHON_VERSION
+
 setuptools.setup(
     name="grpcio-admin",
     version=grpc_version.VERSION,
@@ -56,7 +59,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
+    python_requires=f">={min_python_version}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
 )

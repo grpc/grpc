@@ -36,6 +36,7 @@ import _parallel_compile_patch
 import observability_lib_deps
 
 import grpc_version
+import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
@@ -270,6 +271,8 @@ def extension_modules():
 
 PACKAGES = setuptools.find_packages(PYTHON_STEM)
 
+min_python_version = python_version.MIN_PYTHON_VERSION
+
 setuptools.setup(
     name="grpcio-observability",
     version=grpc_version.VERSION,
@@ -287,7 +290,7 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=list(PACKAGES),
-    python_requires=">=3.8",
+    python_requires=f">={min_python_version}",
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
         "setuptools>=59.6.0",

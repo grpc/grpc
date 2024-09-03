@@ -26,6 +26,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our local modules.
 import grpc_version
+import python_version
 
 
 class _NoOpCommand(setuptools.Command):
@@ -43,18 +44,16 @@ class _NoOpCommand(setuptools.Command):
     def run(self):
         pass
 
+supported_python_versions = python_version.SUPPORTED_PYTHON_VERSIONS
+min_python_version = python_version.MIN_PYTHON_VERSION
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: Apache Software License",
-]
+    "Programming Language :: Python :: 3"
+    ] + \
+    [f"Programming Language :: Python :: {x}" for x in supported_python_versions] + \
+    ["License :: OSI Approved :: Apache Software License"]
 
 PACKAGE_DIRECTORIES = {
     "": ".",
@@ -97,7 +96,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
+    python_requires=f">={min_python_version}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,
