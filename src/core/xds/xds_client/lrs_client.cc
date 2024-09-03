@@ -339,21 +339,22 @@ class LrsClient::LrsChannel::LrsCall final
 // LrsClient::LrsChannel
 //
 
-LrsClient::LrsChannel::LrsChannel(WeakRefCountedPtr<LrsClient> lrs_client,
-                                  const XdsBootstrap::XdsServer& server)
+LrsClient::LrsChannel::LrsChannel(
+    WeakRefCountedPtr<LrsClient> lrs_client,
+    std::shared_ptr<const XdsBootstrap::XdsServer> server)
     : DualRefCounted<LrsChannel>(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                                      ? "LrsChannel"
                                      : nullptr),
       lrs_client_(std::move(lrs_client)),
-      server_(server) {
+      server_(std::move(server)) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client_.get() << "] creating channel " << this
-      << " for server " << server.server_uri();
+      << " for server " << server_->server_uri();
   absl::Status status;
-  transport_ = lrs_client_->transport_factory_->GetTransport(server, &status);
+  transport_ = lrs_client_->transport_factory_->GetTransport(*server_, &status);
   CHECK(transport_ != nullptr);
   if (!status.ok()) {
-    LOG(ERROR) << "Error creating LRS channel to " << server.server_uri()
+    LOG(ERROR) << "Error creating LRS channel to " << server_->server_uri()
                << ": " << status;
   }
 }
@@ -361,7 +362,7 @@ LrsClient::LrsChannel::LrsChannel(WeakRefCountedPtr<LrsClient> lrs_client,
 LrsClient::LrsChannel::~LrsChannel() {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] destroying lrs channel " << this
-      << " for server " << server_.server_uri();
+      << " for server " << server_->server_uri();
   lrs_client_.reset(DEBUG_LOCATION, "LrsChannel");
 }
 
@@ -372,12 +373,12 @@ LrsClient::LrsChannel::~LrsChannel() {
 void LrsClient::LrsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] orphaning lrs channel " << this
-      << " for server " << server_.server_uri();
+      << " for server " << server_->server_uri();
   transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
   // prevent subsequent subscription from trying to use this LrsChannel as
   // it is shutting down.
-  lrs_client_->lrs_channel_map_.erase(server_.Key());
+  lrs_client_->lrs_channel_map_.erase(server_->Key());
   lrs_call_.reset();
 }
 
@@ -390,7 +391,7 @@ void LrsClient::LrsChannel::MaybeStartLrsCall() {
 }
 
 void LrsClient::LrsChannel::StopLrsCallLocked() {
-  lrs_client_->load_report_map_.erase(server_.Key());
+  lrs_client_->load_report_map_.erase(server_->Key());
   lrs_call_.reset();
 }
 
@@ -439,7 +440,7 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartNewCallLocked() {
   CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_channel()->lrs_client() << "] lrs server "
-      << lrs_channel()->server_.server_uri()
+      << lrs_channel()->server_->server_uri()
       << ": start new call from retryable call " << this;
   call_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
@@ -451,7 +452,7 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   const Duration delay = backoff_.NextAttemptDelay();
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_channel()->lrs_client() << "] lrs server "
-      << lrs_channel()->server_.server_uri()
+      << lrs_channel()->server_->server_uri()
       << ": call attempt failed; retry timer will fire in " << delay.millis()
       << "ms.";
   timer_handle_ = lrs_channel()->lrs_client()->engine()->RunAfter(
@@ -471,7 +472,7 @@ void LrsClient::LrsChannel::RetryableCall<T>::OnRetryTimer() {
     if (shutting_down_) return;
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[lrs_client " << lrs_channel()->lrs_client() << "] lrs server "
-        << lrs_channel()->server_.server_uri()
+        << lrs_channel()->server_->server_uri()
         << ": retry timer fired (retryable call: " << this << ")";
     StartNewCallLocked();
   }
@@ -492,7 +493,7 @@ void LrsClient::LrsChannel::LrsCall::Timer::Orphan() {
 void LrsClient::LrsChannel::LrsCall::Timer::ScheduleNextReportLocked() {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] lrs server "
-      << lrs_call_->lrs_channel()->server_.server_uri()
+      << lrs_call_->lrs_channel()->server_->server_uri()
       << ": scheduling next load report in "
       << lrs_call_->load_reporting_interval_;
   timer_handle_ = lrs_client()->engine()->RunAfter(
@@ -534,7 +535,7 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] lrs server "
-      << lrs_channel()->server_.server_uri()
+      << lrs_channel()->server_->server_uri()
       << ": starting LRS call (lrs_call=" << this
       << ", streaming_call=" << streaming_call_.get() << ")";
   // Send the initial request.
@@ -555,7 +556,7 @@ void LrsClient::LrsChannel::LrsCall::Orphan() {
 
 void LrsClient::LrsChannel::LrsCall::MaybeScheduleNextReportLocked() {
   // If there are no more registered stats to report, cancel the call.
-  auto it = lrs_client()->load_report_map_.find(lrs_channel()->server_.Key());
+  auto it = lrs_client()->load_report_map_.find(lrs_channel()->server_->Key());
   if (it == lrs_client()->load_report_map_.end() ||
       it->second.load_report_map.empty()) {
     it->second.lrs_channel->StopLrsCallLocked();
@@ -591,7 +592,7 @@ bool LrsClient::LoadReportCountersAreZero(
 void LrsClient::LrsChannel::LrsCall::SendReportLocked() {
   // Construct snapshot from all reported stats.
   ClusterLoadReportMap snapshot = lrs_client()->BuildLoadReportSnapshotLocked(
-      lrs_channel()->server_, send_all_clusters_, cluster_names_);
+      *lrs_channel()->server_, send_all_clusters_, cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -633,14 +634,14 @@ void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
       &new_load_reporting_interval);
   if (!status.ok()) {
     LOG(ERROR) << "[lrs_client " << lrs_client() << "] lrs server "
-               << lrs_channel()->server_.server_uri()
+               << lrs_channel()->server_->server_uri()
                << ": LRS response parsing failed: " << status;
     return;
   }
   seen_response_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
     LOG(INFO) << "[lrs_client " << lrs_client() << "] lrs server "
-              << lrs_channel()->server_.server_uri()
+              << lrs_channel()->server_->server_uri()
               << ": LRS response received, " << new_cluster_names.size()
               << " cluster names, send_all_clusters=" << send_all_clusters
               << ", load_report_interval="
@@ -657,7 +658,7 @@ void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
         Duration::Milliseconds(GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[lrs_client " << lrs_client() << "] lrs server "
-        << lrs_channel()->server_.server_uri()
+        << lrs_channel()->server_->server_uri()
         << ": increased load_report_interval to minimum value "
         << GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS << "ms";
   }
@@ -667,7 +668,7 @@ void LrsClient::LrsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
       load_reporting_interval_ == new_load_reporting_interval) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[lrs_client " << lrs_client() << "] lrs server "
-        << lrs_channel()->server_.server_uri()
+        << lrs_channel()->server_->server_uri()
         << ": incoming LRS response identical to current, ignoring.";
     return;
   }
@@ -689,7 +690,7 @@ void LrsClient::LrsChannel::LrsCall::OnStatusReceived(absl::Status status) {
   MutexLock lock(&lrs_client()->mu_);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] lrs server "
-      << lrs_channel()->server_.server_uri()
+      << lrs_channel()->server_->server_uri()
       << ": LRS call status received (lrs_channel=" << lrs_channel()
       << ", lrs_call=" << this << ", streaming_call=" << streaming_call_.get()
       << "): " << status;
@@ -746,22 +747,22 @@ void LrsClient::Orphaned() {
 }
 
 RefCountedPtr<LrsClient::LrsChannel> LrsClient::GetOrCreateLrsChannelLocked(
-    const XdsBootstrap::XdsServer& server, const char* reason) {
-  std::string key = server.Key();
+    std::shared_ptr<const XdsBootstrap::XdsServer> server, const char* reason) {
+  std::string key = server->Key();
   auto it = lrs_channel_map_.find(key);
   if (it != lrs_channel_map_.end()) {
     return it->second->Ref(DEBUG_LOCATION, reason);
   }
   // Channel not found, so create a new one.
-  auto lrs_channel =
-      MakeRefCounted<LrsChannel>(WeakRef(DEBUG_LOCATION, "LrsChannel"), server);
+  auto lrs_channel = MakeRefCounted<LrsChannel>(
+      WeakRef(DEBUG_LOCATION, "LrsChannel"), std::move(server));
   lrs_channel_map_[std::move(key)] = lrs_channel.get();
   return lrs_channel;
 }
 
 RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
-    const XdsBootstrap::XdsServer& lrs_server, absl::string_view cluster_name,
-    absl::string_view eds_service_name) {
+    std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+    absl::string_view cluster_name, absl::string_view eds_service_name) {
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterDropStats> cluster_drop_stats;
@@ -772,7 +773,7 @@ RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
     // to the strings in the load_report_map_ keys, so that
     // they have the same lifetime.
     auto server_it =
-        load_report_map_.emplace(lrs_server.Key(), LoadReportServer()).first;
+        load_report_map_.emplace(lrs_server->Key(), LoadReportServer()).first;
     if (server_it->second.lrs_channel == nullptr) {
       server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
           lrs_server, "load report map (drop stats)");
@@ -821,10 +822,10 @@ void LrsClient::RemoveClusterDropStats(
 }
 
 RefCountedPtr<LrsClient::ClusterLocalityStats>
-LrsClient::AddClusterLocalityStats(const XdsBootstrap::XdsServer& lrs_server,
-                                   absl::string_view cluster_name,
-                                   absl::string_view eds_service_name,
-                                   RefCountedPtr<XdsLocalityName> locality) {
+LrsClient::AddClusterLocalityStats(
+    std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+    absl::string_view cluster_name, absl::string_view eds_service_name,
+    RefCountedPtr<XdsLocalityName> locality) {
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<ClusterLocalityStats> cluster_locality_stats;
@@ -835,10 +836,10 @@ LrsClient::AddClusterLocalityStats(const XdsBootstrap::XdsServer& lrs_server,
     // to the strings in the load_report_map_ keys, so that
     // they have the same lifetime.
     auto server_it =
-        load_report_map_.emplace(lrs_server.Key(), LoadReportServer()).first;
+        load_report_map_.emplace(lrs_server->Key(), LoadReportServer()).first;
     if (server_it->second.lrs_channel == nullptr) {
       server_it->second.lrs_channel = GetOrCreateLrsChannelLocked(
-          lrs_server, "load report map (locality stats)");
+          std::move(lrs_server), "load report map (locality stats)");
     }
     auto load_report_it = server_it->second.load_report_map
                               .emplace(std::move(key), LoadReportState())

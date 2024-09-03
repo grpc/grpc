@@ -618,14 +618,15 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Note: We need a drop stats object whenever load reporting is enabled,
   // even if we have no EDS drop config, because we also use it when
   // reporting circuit breaker drops.
-  if (!new_cluster_config.cluster->lrs_load_reporting_server.has_value()) {
+  if (new_cluster_config.cluster->lrs_load_reporting_server == nullptr) {
     drop_stats_.reset();
   } else if (cluster_resource_ == nullptr ||
              old_eds_service_name != new_eds_service_name ||
-             cluster_resource_->lrs_load_reporting_server !=
-                 new_cluster_config.cluster->lrs_load_reporting_server) {
+             !LrsServersEqual(
+                 cluster_resource_->lrs_load_reporting_server,
+                 new_cluster_config.cluster->lrs_load_reporting_server)) {
     drop_stats_ = xds_client_->lrs_client().AddClusterDropStats(
-        *new_cluster_config.cluster->lrs_load_reporting_server,
+        new_cluster_config.cluster->lrs_load_reporting_server,
         new_config->cluster_name(), new_eds_service_name);
     if (drop_stats_ == nullptr) {
       LOG(ERROR)
@@ -820,10 +821,10 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   // will be used by the picker.
   auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
   RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats;
-  if (parent()->cluster_resource_->lrs_load_reporting_server.has_value()) {
+  if (parent()->cluster_resource_->lrs_load_reporting_server != nullptr) {
     locality_stats =
         parent()->xds_client_->lrs_client().AddClusterLocalityStats(
-            parent()->cluster_resource_->lrs_load_reporting_server.value(),
+            parent()->cluster_resource_->lrs_load_reporting_server,
             parent()->config_->cluster_name(),
             GetEdsResourceName(*parent()->cluster_resource_), locality_name);
     if (locality_stats == nullptr) {

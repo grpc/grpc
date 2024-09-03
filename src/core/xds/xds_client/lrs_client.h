@@ -206,14 +206,14 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<ClusterDropStats> AddClusterDropStats(
-      const XdsBootstrap::XdsServer& lrs_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name);
+      std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+      absl::string_view cluster_name, absl::string_view eds_service_name);
 
   // Adds and removes locality stats for cluster_name and eds_service_name
   // for the specified locality.
   RefCountedPtr<ClusterLocalityStats> AddClusterLocalityStats(
-      const XdsBootstrap::XdsServer& lrs_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
+      std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+      absl::string_view cluster_name, absl::string_view eds_service_name,
       RefCountedPtr<XdsLocalityName> locality);
 
   // Resets connection backoff state.
@@ -238,7 +238,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     class LrsCall;
 
     LrsChannel(WeakRefCountedPtr<LrsClient> lrs_client,
-               const XdsBootstrap::XdsServer& server);
+               std::shared_ptr<const XdsBootstrap::XdsServer> server);
     ~LrsChannel() override;
 
     LrsClient* lrs_client() const { return lrs_client_.get(); }
@@ -247,7 +247,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
     void MaybeStartLrsCall();
 
-    absl::string_view server_uri() const { return server_.server_uri(); }
+    absl::string_view server_uri() const { return server_->server_uri(); }
 
    private:
     void Orphaned() override;
@@ -257,7 +257,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     // The owning LrsClient.
     WeakRefCountedPtr<LrsClient> lrs_client_;
 
-    const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
+    std::shared_ptr<const XdsBootstrap::XdsServer> server_;
 
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
 
@@ -307,7 +307,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<LrsChannel> GetOrCreateLrsChannelLocked(
-      const XdsBootstrap::XdsServer& server, const char* reason)
+      std::shared_ptr<const XdsBootstrap::XdsServer> server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static bool LoadReportCountersAreZero(const ClusterLoadReportMap& snapshot);
