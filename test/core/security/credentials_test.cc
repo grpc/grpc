@@ -2381,7 +2381,7 @@ int aws_external_account_creds_httpcli_post_success(
     grpc_http_response* response) {
   if (uri.path() == "/token") {
     validate_aws_external_account_creds_token_exchange_request(request, uri,
-                                                              body);
+                                                               body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }

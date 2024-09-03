@@ -571,36 +571,36 @@ void TestUnparsableHostPort(
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsOnlyBracket) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, "[");
+                         &dns_resolver_signal_, "[");
 }
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsMissingRightBracket) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, "[::1");
+                         &dns_resolver_signal_, "[::1");
 }
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsBadPort) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, "[::1]bad");
+                         &dns_resolver_signal_, "[::1]bad");
 }
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsBadIPv6) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, "[1.2.3.4]");
+                         &dns_resolver_signal_, "[1.2.3.4]");
 }
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsBadLocalhost) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, "[localhost]");
+                         &dns_resolver_signal_, "[localhost]");
 }
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsBadLocalhostWithPort) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, "[localhost]:1");
+                         &dns_resolver_signal_, "[localhost]:1");
 }
 
 TEST_F(EventEngineDNSTest, UnparsableHostPortsEmptyHostname) {
   TestUnparsableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
-                          &dns_resolver_signal_, ":443");
+                         &dns_resolver_signal_, ":443");
 }
 // END

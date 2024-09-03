@@ -326,9 +326,9 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
       3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
-  // 1 backend experienced failure, but since the enforcement percentage is 0, no
-  // backend will be ejected.
-  // Both backends are still getting the RPCs intended for them.
+  // 1 backend experienced failure, but since the enforcement percentage is 0,
+  // no backend will be ejected. Both backends are still getting the RPCs
+  // intended for them.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
@@ -738,9 +738,9 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
       3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
-  // 1 backend experienced failure, but since the enforcement percentage is 0, no
-  // backend will be ejected.
-  // Both backends are still getting the RPCs intended for them.
+  // 1 backend experienced failure, but since the enforcement percentage is 0,
+  // no backend will be ejected. Both backends are still getting the RPCs
+  // intended for them.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
