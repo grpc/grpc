@@ -415,6 +415,7 @@ void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   shutting_down_ = true;
   if (failure_watcher_ != nullptr) {
     transport_->StopConnectivityFailureWatch(failure_watcher_);
+    failure_watcher_.reset();
   }
   transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
