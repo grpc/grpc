@@ -18,8 +18,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,9 +34,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -47,17 +42,6 @@
 #include "src/core/util/string.h"
 
 namespace grpc_core {
-
-namespace {
-bool IsFallbackExperimentEnabled() {
-  auto fallback_enabled = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK");
-  bool enabled = false;
-  return gpr_parse_bool_value(fallback_enabled.value_or("0").c_str(),
-                              &enabled) &&
-         enabled;
-}
-
-}  // namespace
 
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
@@ -104,16 +88,6 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
           .OptionalField("xds_servers", &GrpcAuthority::servers_)
           .Finish();
   return loader;
-}
-
-void GrpcXdsBootstrap::GrpcAuthority::JsonPostLoad(
-    const Json& /*json*/, const JsonArgs& /*args*/,
-    ValidationErrors* /*errors*/) {
-  if (!IsFallbackExperimentEnabled()) {
-    if (servers_.size() > 1) {
-      servers_.resize(1);
-    }
-  }
 }
 
 //
@@ -188,11 +162,6 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
         errors->AddError(
             absl::StrCat("field must begin with \"", expected_prefix, "\""));
       }
-    }
-  }
-  if (!IsFallbackExperimentEnabled()) {
-    if (servers_.size() > 1) {
-      servers_.resize(1);
     }
   }
 }

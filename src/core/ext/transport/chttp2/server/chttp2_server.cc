@@ -207,7 +207,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     ActiveConnection(grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
                      EventEngine* event_engine, const ChannelArgs& args,
                      MemoryOwner memory_owner);
-    ~ActiveConnection() override;
 
     void Orphan() override;
 
@@ -392,6 +391,10 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
     grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
   }
   grpc_pollset_set_destroy(interested_parties_);
+  if (connection_->listener_ != nullptr &&
+      connection_->listener_->tcp_server_ != nullptr) {
+    grpc_tcp_server_unref(connection_->listener_->tcp_server_);
+  }
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
@@ -563,12 +566,6 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
       event_engine_(event_engine) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
-}
-
-Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
-  if (listener_ != nullptr && listener_->tcp_server_ != nullptr) {
-    grpc_tcp_server_unref(listener_->tcp_server_);
-  }
 }
 
 void Chttp2ServerListener::ActiveConnection::Orphan() {
@@ -871,7 +868,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       // Orphaned, so as to avoid heap-use-after-free issues where `Ref()` is
       // invoked when the listener is already shutdown. Note that the listener
       // holds a ref to the tcp_server but this ref is given away when the
-      // listener is orphaned (shutdown).
+      // listener is orphaned (shutdown). A connection needs the tcp_server to
+      // outlast the handshake since the acceptor needs it.
       if (self->tcp_server_ != nullptr) {
         grpc_tcp_server_ref(self->tcp_server_);
       }
