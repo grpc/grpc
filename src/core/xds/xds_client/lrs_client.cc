@@ -448,16 +448,14 @@ void LrsClient::LrsChannel::RetryableCall<T>::StartNewCallLocked() {
 template <typename T>
 void LrsClient::LrsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
-  const Timestamp next_attempt_time = backoff_.NextAttemptTime();
-  const Duration timeout =
-      std::max(next_attempt_time - Timestamp::Now(), Duration::Zero());
+  const Duration delay = backoff_.NextAttemptDelay();
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_channel()->lrs_client() << "] lrs server "
       << lrs_channel()->server_.server_uri()
-      << ": call attempt failed; retry timer will fire in " << timeout.millis()
+      << ": call attempt failed; retry timer will fire in " << delay.millis()
       << "ms.";
   timer_handle_ = lrs_channel()->lrs_client()->engine()->RunAfter(
-      timeout,
+      delay,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
