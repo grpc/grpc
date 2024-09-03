@@ -982,11 +982,11 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   // Check how long it took.
   const grpc_core::Duration waited = grpc_core::Timestamp::Now() - t0;
   VLOG(2) << "Waited " << waited.millis() << " milliseconds";
-  // We should have waited at least kInitialBackOffMs. We substract one to
-  // account for test and precision accuracy drift.
+  // We should have waited at least kInitialBackOffMs, plus or minus
+  // jitter.  We give a little more leeway on the high end to account
+  // for things taking a little longer than expected in other threads.
   EXPECT_GE(waited.millis(),
-            (kInitialBackOffMs * grpc_test_slowdown_factor()) - 1);
-  // But not much more.
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 0.8);
   EXPECT_LE(waited.millis(),
             (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.3);
 }

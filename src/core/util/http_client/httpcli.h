@@ -165,7 +165,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
               grpc_http_response* response, Timestamp deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
               grpc_polling_entity* pollent, const char* name,
-              absl::optional<std::function<void()>> test_only_generate_response,
+              absl::optional<std::function<bool()>> test_only_generate_response,
               RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   ~HttpRequest() override;
@@ -250,7 +250,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   ResourceQuotaRefPtr resource_quota_;
   grpc_polling_entity* pollent_;
   grpc_pollset_set* pollset_set_;
-  const absl::optional<std::function<void()>> test_only_generate_response_;
+  const absl::optional<std::function<bool()>> test_only_generate_response_;
   Mutex mu_;
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
