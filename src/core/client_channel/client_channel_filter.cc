@@ -1319,6 +1319,10 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
     service_config = std::move(*result.service_config);
     config_selector = result.args.GetObjectRef<ConfigSelector>();
   }
+  // Remove the config selector from channel args so that we're not holding
+  // unnecessary refs that cause it to be destroyed somewhere other than in the
+  // WorkSerializer.
+  result.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
   // Note: The only case in which service_config is null here is if the resolver
   // returned a service config error and we don't have a previous service
   // config to fall back to.
@@ -1349,6 +1353,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
           << "chand=" << this << ": service config not changed";
     }
     // Create or update LB policy, as needed.
+    ChannelArgs new_args = result.args;
     resolver_result_status = CreateOrUpdateLbPolicyLocked(
         std::move(lb_policy_config),
         parsed_service_config->health_check_service_name(), std::move(result));
@@ -1357,7 +1362,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
       // This needs to happen after the LB policy has been updated, since
       // the ConfigSelector may need the LB policy to know about new
       // destinations before it can send RPCs to those destinations.
-      UpdateServiceConfigInDataPlaneLocked();
+      UpdateServiceConfigInDataPlaneLocked(new_args);
       // TODO(ncteisen): might be worth somehow including a snippet of the
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back("Service config changed");
@@ -1413,10 +1418,7 @@ absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
   }
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
-  // Remove the config selector from channel args so that we're not holding
-  // unnecessary refs that cause it to be destroyed somewhere other than in the
-  // WorkSerializer.
-  update_args.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
+  update_args.args = std::move(result.args);
   // Add health check service name to channel args.
   if (health_check_service_name.has_value()) {
     update_args.args = update_args.args.Set(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME,
@@ -1480,7 +1482,8 @@ void ClientChannelFilter::UpdateServiceConfigInControlPlaneLocked(
       << saved_config_selector_.get();
 }
 
-void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
+void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
+    const ChannelArgs& args) {
   // Grab ref to service config.
   RefCountedPtr<ServiceConfig> service_config = saved_service_config_;
   // Grab ref to config selector.  Use default if resolver didn't supply one.
@@ -1492,8 +1495,7 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
-  ChannelArgs new_args =
-      channel_args_.SetObject(this).SetObject(service_config);
+  ChannelArgs new_args = args.SetObject(this).SetObject(service_config);
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);

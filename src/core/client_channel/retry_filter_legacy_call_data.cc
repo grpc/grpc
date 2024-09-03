@@ -1890,7 +1890,7 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
     next_attempt_timeout = *server_pushback;
     retry_backoff_.Reset();
   } else {
-    next_attempt_timeout = retry_backoff_.NextAttemptTime() - Timestamp::Now();
+    next_attempt_timeout = retry_backoff_.NextAttemptDelay();
   }
   GRPC_TRACE_LOG(retry, INFO)
       << "chand=" << chand_ << " calld=" << this << ": retrying failed call in "

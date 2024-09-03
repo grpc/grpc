@@ -56,7 +56,7 @@ class FilterTestBase::Call::Impl
       : call_(call), channel_(std::move(channel)) {}
   ~Impl();
 
-  Arena* arena() { return arena_.get(); }
+  Arena* arena() const { return arena_.get(); }
   const std::shared_ptr<Channel::Impl>& channel() const { return channel_; }
   CallFinalization* call_finalization() { return &call_finalization_; }
 
@@ -336,7 +336,7 @@ FilterTestBase::Call::Call(const Channel& channel)
 
 FilterTestBase::Call::~Call() { ScopedContext x(std::move(impl_)); }
 
-Arena* FilterTestBase::Call::arena() { return impl_->arena(); }
+Arena* FilterTestBase::Call::arena() const { return impl_->arena(); }
 
 ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>

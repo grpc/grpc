@@ -526,7 +526,7 @@ class RlsLb final : public LoadBalancingPolicy {
      private:
       class BackoffTimer final : public InternallyRefCounted<BackoffTimer> {
        public:
-        BackoffTimer(RefCountedPtr<Entry> entry, Timestamp backoff_time);
+        BackoffTimer(RefCountedPtr<Entry> entry, Duration delay);
 
         // Note: We are forced to disable lock analysis here because
         // Orphan() is called by OrphanablePtr<>, which cannot have lock
@@ -1138,12 +1138,11 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
 //
 
 RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
-                                                Timestamp backoff_time)
+                                                Duration delay)
     : entry_(std::move(entry)) {
   backoff_timer_task_handle_ =
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
-          backoff_time - Timestamp::Now(),
-          [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
+          delay, [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
@@ -1311,11 +1310,12 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
     } else {
       backoff_state_ = MakeCacheEntryBackoff();
     }
-    backoff_time_ = backoff_state_->NextAttemptTime();
-    Timestamp now = Timestamp::Now();
-    backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
+    const Duration delay = backoff_state_->NextAttemptDelay();
+    const Timestamp now = Timestamp::Now();
+    backoff_time_ = now + delay;
+    backoff_expiration_time_ = now + delay * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
-        Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
+        Ref(DEBUG_LOCATION, "BackoffTimer"), delay);
     lb_policy_->UpdatePickerAsync();
     return {};
   }

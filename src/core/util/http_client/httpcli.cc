@@ -70,14 +70,14 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
     grpc_polling_entity* pollent, const grpc_http_request* request,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
-  absl::optional<std::function<void()>> test_only_generate_response;
+  absl::optional<std::function<bool()>> test_only_generate_response;
   if (g_get_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
       // Note that capturing request here assumes it will remain alive
       // until after Start is called. This avoids making a copy as this
       // code path is only used for test mocks.
-      g_get_override(request, uri, deadline, on_done, response);
+      return g_get_override(request, uri, deadline, on_done, response);
     };
   }
   std::string name =
@@ -95,13 +95,13 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
     grpc_polling_entity* pollent, const grpc_http_request* request,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
-  absl::optional<std::function<void()>> test_only_generate_response;
+  absl::optional<std::function<bool()>> test_only_generate_response;
   if (g_post_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
-      g_post_override(request, uri,
-                      absl::string_view(request->body, request->body_length),
-                      deadline, on_done, response);
+      return g_post_override(
+          request, uri, absl::string_view(request->body, request->body_length),
+          deadline, on_done, response);
     };
   }
   std::string name =
@@ -119,13 +119,13 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
     grpc_polling_entity* pollent, const grpc_http_request* request,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
-  absl::optional<std::function<void()>> test_only_generate_response;
+  absl::optional<std::function<bool()>> test_only_generate_response;
   if (g_put_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
-      g_put_override(request, uri,
-                     absl::string_view(request->body, request->body_length),
-                     deadline, on_done, response);
+      return g_put_override(
+          request, uri, absl::string_view(request->body, request->body_length),
+          deadline, on_done, response);
     };
   }
   std::string name =
@@ -155,7 +155,7 @@ HttpRequest::HttpRequest(
     URI uri, const grpc_slice& request_text, grpc_http_response* response,
     Timestamp deadline, const grpc_channel_args* channel_args,
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
-    absl::optional<std::function<void()>> test_only_generate_response,
+    absl::optional<std::function<bool()>> test_only_generate_response,
     RefCountedPtr<grpc_channel_credentials> channel_creds)
     : uri_(std::move(uri)),
       request_text_(request_text),
@@ -202,8 +202,7 @@ HttpRequest::~HttpRequest() {
 void HttpRequest::Start() {
   MutexLock lock(&mu_);
   if (test_only_generate_response_.has_value()) {
-    test_only_generate_response_.value()();
-    return;
+    if (test_only_generate_response_.value()()) return;
   }
   Ref().release();  // ref held by pending DNS resolution
   dns_request_handle_ = resolver_->LookupHostname(

@@ -1176,7 +1176,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
-      auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
           http_filter_registry, http_filters, vhost, route, nullptr,
           ChannelArgs());
       if (!result.ok()) return result.status();

@@ -44,7 +44,10 @@ typedef enum gpr_log_severity {
 /**
  * EXPERIMENTAL. API stability not guaranteed.
  * Should only be used from gRPC PHP and RUBY.
- * Equivalent to ABSL_LOG(severity) << message_str;
+ * This will be removed once Ruby and PHP can start using C++ APIs.
+ * We would replace this with calls to absl LOG functions.
+ * grpc_absl_log is equivalent to
+ * ABSL_LOG(severity) << message_str;
  * **/
 GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
                           const char* message_str);
@@ -52,7 +55,10 @@ GPRAPI void grpc_absl_log(const char* file, int line, gpr_log_severity severity,
 /**
  * EXPERIMENTAL. API stability not guaranteed.
  * Should only be used from gRPC PHP and RUBY.
- * Equivalent to ABSL_LOG(severity) << message_str << num;
+ * This will be removed once Ruby and PHP can start using C++ APIs.
+ * We would replace this with calls to absl LOG functions.
+ * grpc_absl_log_int is equivalent to
+ * ABSL_LOG(severity) << message_str << num;
  * **/
 GPRAPI void grpc_absl_log_int(const char* file, int line,
                               gpr_log_severity severity,
@@ -61,7 +67,10 @@ GPRAPI void grpc_absl_log_int(const char* file, int line,
 /**
  * EXPERIMENTAL. API stability not guaranteed.
  * Should only be used from gRPC PHP and RUBY.
- * Equivalent to ABSL_LOG(severity) << message_str1 << message_str2;
+ * This will be removed once Ruby and PHP can start using C++ APIs.
+ * We would replace this with calls to absl LOG functions.
+ * grpc_absl_log_str is equivalent to
+ * ABSL_LOG(severity) << message_str1 << message_str2;
  * **/
 GPRAPI void grpc_absl_log_str(const char* file, int line,
                               gpr_log_severity severity,

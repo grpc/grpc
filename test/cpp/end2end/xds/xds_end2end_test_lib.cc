@@ -353,6 +353,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (echo_host_from_authority_header) {
     request->mutable_param()->set_echo_host_from_authority_header(true);
   }
+  if (echo_metadata_initially) {
+    request->mutable_param()->set_echo_metadata_initially(true);
+  }
 }
 
 //
@@ -847,6 +850,11 @@ XdsEnd2endTest::MakeIdentityKeyCertPairForTlsCreds() {
 
 std::shared_ptr<ChannelCredentials>
 XdsEnd2endTest::CreateXdsChannelCredentials() {
+  return XdsCredentials(CreateTlsChannelCredentials());
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateTlsChannelCredentials() {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       grpc_core::testing::GetFileContents(kCaCertPath),
       MakeIdentityKeyCertPairForTlsCreds());
@@ -859,8 +867,7 @@ XdsEnd2endTest::CreateXdsChannelCredentials() {
   options.set_certificate_verifier(std::move(verifier));
   options.set_verify_server_certs(true);
   options.set_check_call_host(false);
-  auto tls_creds = grpc::experimental::TlsCredentials(options);
-  return XdsCredentials(tls_creds);
+  return grpc::experimental::TlsCredentials(options);
 }
 
 std::shared_ptr<ServerCredentials>

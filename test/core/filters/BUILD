@@ -120,6 +120,27 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "gcp_authentication_filter_test",
+    srcs = ["gcp_authentication_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "filter_test",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+    ],
+)
+
 grpc_cc_benchmark(
     name = "bm_http_client_filter",
     srcs = ["bm_http_client_filter.cc"],
