@@ -206,13 +206,13 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<ClusterDropStats> AddClusterDropStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& lrs_server, absl::string_view cluster_name,
       absl::string_view eds_service_name);
 
   // Adds and removes locality stats for cluster_name and eds_service_name
   // for the specified locality.
   RefCountedPtr<ClusterLocalityStats> AddClusterLocalityStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& lrs_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       RefCountedPtr<XdsLocalityName> locality);
 
@@ -303,7 +303,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
   void Orphaned() override;
 
   ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
+      const XdsBootstrap::XdsServer& lrs_server, bool send_all_clusters,
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<LrsChannel> GetOrCreateLrsChannelLocked(
@@ -312,13 +312,13 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
   static bool LoadReportCountersAreZero(const ClusterLoadReportMap& snapshot);
 
-  void RemoveClusterDropStats(absl::string_view xds_server,
+  void RemoveClusterDropStats(absl::string_view lrs_server,
                               absl::string_view cluster_name,
                               absl::string_view eds_service_name,
                               ClusterDropStats* cluster_drop_stats);
 
   void RemoveClusterLocalityStats(
-      absl::string_view xds_server, absl::string_view cluster_name,
+      absl::string_view lrs_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       const RefCountedPtr<XdsLocalityName>& locality,
       ClusterLocalityStats* cluster_locality_stats);
