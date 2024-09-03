@@ -49,10 +49,10 @@ using grpc::Status;
 
 namespace {
 
-/**
- * Will write the replies as fast as it can, starting a new write as soon as
- * previous one is done.
- */
+//
+// Will write the replies as fast as it can, starting a new write as soon as
+// previous one is done.
+//
 class HelloReactor final
     : public grpc::ServerWriteReactor<helloworld::HelloReply> {
  public:
@@ -124,7 +124,6 @@ int main(int argc, char* argv[]) {
   ServerBuilder builder;
   builder.RegisterService(&service);
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  // builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
   server->Wait();
