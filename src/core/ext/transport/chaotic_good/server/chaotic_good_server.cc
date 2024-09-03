@@ -147,7 +147,7 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : listener_(std::move(listener)) {  // FIXME
+    : listener_(std::move(listener)) {
   arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
       listener_->event_engine_.get());
   handshaking_state_ = MakeRefCounted<HandshakingState>(
