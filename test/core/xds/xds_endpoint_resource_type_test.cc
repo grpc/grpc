@@ -69,10 +69,9 @@ class XdsEndpointTest : public ::testing::Test {
  protected:
   XdsEndpointTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        &xds_endpoint_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{
+            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;

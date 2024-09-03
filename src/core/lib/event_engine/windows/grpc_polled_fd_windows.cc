@@ -82,7 +82,7 @@ grpc_slice FlattenIovec(const struct iovec* iov, int iov_count) {
 // instantiated at the top of the virtual socket function callstack.
 class WSAErrorContext {
  public:
-  explicit WSAErrorContext(){};
+  explicit WSAErrorContext() {};
 
   ~WSAErrorContext() {
     if (error_ != 0) {

@@ -59,6 +59,10 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: event_engine_application_callbacks
+  description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
+  expiry: 2024/10/31
+  owner: hork@google.com
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2024/10/01

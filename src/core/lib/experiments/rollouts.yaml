@@ -53,6 +53,8 @@
     windows: broken
 - name: client_privacy
   default: false
+- name: event_engine_application_callbacks
+  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all

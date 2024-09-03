@@ -165,6 +165,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
@@ -453,6 +457,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.h" role="src" />
@@ -880,6 +887,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c" role="src" />
@@ -1549,6 +1558,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/url_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/credentials_generic.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/google_default/google_default_credentials.h" role="src" />
@@ -1892,7 +1903,6 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/alloc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/android/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/atm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/gcp_metadata_query.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/gcp_metadata_query.h" role="src" />
@@ -1919,11 +1929,10 @@
     <file baseinstalldir="/" name="src/core/util/latent_see.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/latent_see.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/linux/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/lru_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/msys/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/posix/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
@@ -1942,7 +1951,6 @@
     <file baseinstalldir="/" name="src/core/util/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/windows/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/string_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/sync.cc" role="src" />
@@ -1981,6 +1989,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_gcp_authn_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_gcp_authn_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_stateful_session_filter.cc" role="src" />
@@ -1991,6 +2001,10 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_metadata_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config_parser.cc" role="src" />

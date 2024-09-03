@@ -715,16 +715,14 @@ void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
 template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
-  const Timestamp next_attempt_time = backoff_.NextAttemptTime();
-  const Duration timeout =
-      std::max(next_attempt_time - Timestamp::Now(), Duration::Zero());
+  const Duration delay = backoff_.NextAttemptDelay();
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_channel()->xds_client() << "] xds server "
       << xds_channel()->server_.server_uri()
-      << ": call attempt failed; retry timer will fire in " << timeout.millis()
+      << ": call attempt failed; retry timer will fire in " << delay.millis()
       << "ms.";
   timer_handle_ = xds_channel()->xds_client()->engine()->RunAfter(
-      timeout,
+      delay,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;

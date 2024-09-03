@@ -81,10 +81,9 @@ class XdsRouteConfigTest : public ::testing::Test {
  protected:
   explicit XdsRouteConfigTest(bool trusted_xds_server = false)
       : xds_client_(MakeXdsClient(trusted_xds_server)),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        &xds_route_config_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{
+            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(bool trusted_xds_server) {
     auto bootstrap = GrpcXdsBootstrap::Create(

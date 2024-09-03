@@ -30,6 +30,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_event_engine_application_callbacks =
+    "Run application callbacks in EventEngine threads, instead of on the "
+    "thread-local ApplicationCallbackExecCtx";
+const char* const additional_constraints_event_engine_application_callbacks =
+    "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -101,6 +106,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"event_engine_application_callbacks",
+     description_event_engine_application_callbacks,
+     additional_constraints_event_engine_application_callbacks, nullptr, 0,
+     true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -158,6 +167,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_event_engine_application_callbacks =
+    "Run application callbacks in EventEngine threads, instead of on the "
+    "thread-local ApplicationCallbackExecCtx";
+const char* const additional_constraints_event_engine_application_callbacks =
+    "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -229,6 +243,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"event_engine_application_callbacks",
+     description_event_engine_application_callbacks,
+     additional_constraints_event_engine_application_callbacks, nullptr, 0,
+     true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -286,6 +304,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_event_engine_application_callbacks =
+    "Run application callbacks in EventEngine threads, instead of on the "
+    "thread-local ApplicationCallbackExecCtx";
+const char* const additional_constraints_event_engine_application_callbacks =
+    "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -357,6 +380,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"event_engine_application_callbacks",
+     description_event_engine_application_callbacks,
+     additional_constraints_event_engine_application_callbacks, nullptr, 0,
+     true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
