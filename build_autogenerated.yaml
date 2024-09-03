@@ -21269,8 +21269,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/scoped_env_var.h
+  headers: []
   src:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
