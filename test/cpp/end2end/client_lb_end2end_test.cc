@@ -979,9 +979,8 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   const grpc_core::Duration waited =
       grpc_core::Timestamp::Now() - first_attempt_time;
   // The channel will transition to TRANSIENT_FAILURE.
-  EXPECT_TRUE(WaitForChannelState(
-      channel.get(),
-      [&](grpc_connectivity_state state) {
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
         EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_IDLE,
                                             GRPC_CHANNEL_CONNECTING));
