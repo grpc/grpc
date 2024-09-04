@@ -31,7 +31,7 @@ import jobset
 _PORT_SERVER_PORT = 32766
 
 
-def start_port_server(verbose = False):
+def start_port_server(verbose=False):
     # check if a compatible port server is running
     # if incompatible (version mismatch) ==> start a new one
     # if not running ==> start a new one
