@@ -212,13 +212,12 @@ class GRPC_DLL ExecCtx : public latent_see::ParentScope {
   void SetNowIomgrShutdown() {
     // We get to do a test only set now on this path just because iomgr
     // is getting removed and no point adding more interfaces for it.
-    if (time_cache_.has_value()) {
-      time_cache_->TestOnlySetNow(Timestamp::InfFuture());
-    }
+    TestOnlySetNow(Timestamp::InfFuture());
   }
 
   void TestOnlySetNow(Timestamp now) {
-    if (time_cache_.has_value()) time_cache_->TestOnlySetNow(now);
+    if (!time_cache_.has_value()) time_cache_.emplace();
+    time_cache_->TestOnlySetNow(Timestamp::InfFuture());
   }
 
   /// Gets pointer to current exec_ctx.
