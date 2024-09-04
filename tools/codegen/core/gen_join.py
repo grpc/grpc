@@ -46,13 +46,10 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept : ready(other.ready) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
 % for i in range(0,n):
-    if (ready.is_set(${i})) {
-      Construct(&result${i}, std::move(other.result${i}));
-    } else {
-      Construct(&promise${i}, std::move(other.promise${i}));
-    }
+    Construct(&promise${i}, std::move(other.promise${i}));
 % endfor
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
@@ -82,7 +79,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2) << "join[" << this << "]: joint ${i+1}/${n} already ready";
     }
 % endfor

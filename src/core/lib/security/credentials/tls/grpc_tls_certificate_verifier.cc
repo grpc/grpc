@@ -25,7 +25,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -33,7 +32,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
 
@@ -234,8 +232,8 @@ grpc_tls_certificate_verifier_host_name_create() {
 
 void grpc_tls_certificate_verifier_release(
     grpc_tls_certificate_verifier* verifier) {
-  GRPC_API_TRACE("grpc_tls_certificate_verifier_release(verifier=%p)", 1,
-                 (verifier));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_tls_certificate_verifier_release(verifier=" << verifier << ")";
   grpc_core::ExecCtx exec_ctx;
   if (verifier != nullptr) verifier->Unref();
 }

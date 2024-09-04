@@ -22,7 +22,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/security/server_credentials.h>
 
 namespace grpc {

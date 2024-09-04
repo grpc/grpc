@@ -220,6 +220,8 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
   return (*g_test_experiments)[experiment_id];
 }
 
+#define GRPC_EXPERIMENT_LOG VLOG(2)
+
 void PrintExperimentsList() {
   std::map<std::string, std::string> experiment_status;
   std::set<std::string> defaulted_on_experiments;
@@ -254,20 +256,20 @@ void PrintExperimentsList() {
   }
   if (experiment_status.empty()) {
     if (!defaulted_on_experiments.empty()) {
-      LOG(INFO) << "gRPC experiments enabled: "
-                << absl::StrJoin(defaulted_on_experiments, ", ");
+      GRPC_EXPERIMENT_LOG << "gRPC experiments enabled: "
+                          << absl::StrJoin(defaulted_on_experiments, ", ");
     }
   } else {
     if (defaulted_on_experiments.empty()) {
-      LOG(INFO) << "gRPC experiments: "
-                << absl::StrJoin(experiment_status, ", ",
-                                 absl::PairFormatter(":"));
+      GRPC_EXPERIMENT_LOG << "gRPC experiments: "
+                          << absl::StrJoin(experiment_status, ", ",
+                                           absl::PairFormatter(":"));
     } else {
-      LOG(INFO) << "gRPC experiments: "
-                << absl::StrJoin(experiment_status, ", ",
-                                 absl::PairFormatter(":"))
-                << "; default-enabled: "
-                << absl::StrJoin(defaulted_on_experiments, ", ");
+      GRPC_EXPERIMENT_LOG << "gRPC experiments: "
+                          << absl::StrJoin(experiment_status, ", ",
+                                           absl::PairFormatter(":"))
+                          << "; default-enabled: "
+                          << absl::StrJoin(defaulted_on_experiments, ", ");
     }
   }
 }

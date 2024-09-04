@@ -35,7 +35,6 @@
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/percent_encoding.h"
@@ -342,7 +341,7 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
                          PercentEncodingType::Compatible);
   char* message_percent = reinterpret_cast<char*>(
       upb_Arena_Malloc(arena, message_percent_slice.length()));
-  if (message_percent_slice.length() > 0) {
+  if (!message_percent_slice.empty()) {
     memcpy(message_percent, message_percent_slice.data(),
            message_percent_slice.length());
   }

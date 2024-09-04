@@ -34,7 +34,6 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"

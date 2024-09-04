@@ -61,7 +61,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -319,9 +318,8 @@ void ChaoticGoodConnector::OnHandshakeDone(
         },
         EventEngineWakeupScheduler(event_engine_),
         [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
-          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-            LOG(INFO) << "ChaoticGoodConnector::OnHandshakeDone: " << status;
-          }
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "ChaoticGoodConnector::OnHandshakeDone: " << status;
           if (status.ok()) {
             MutexLock lock(&self->mu_);
             self->result_->transport = new ChaoticGoodClientTransport(
@@ -373,8 +371,9 @@ class ChaoticGoodChannelFactory final : public ClientChannelFactory {
 grpc_channel* grpc_chaotic_good_channel_create(const char* target,
                                                const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_chaotic_good_channel_create(target=%s,  args=%p)", 2,
-                 (target, (void*)args));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_chaotic_good_channel_create(target=" << target
+      << ",  args=" << (void*)args << ")";
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   // Create channel.

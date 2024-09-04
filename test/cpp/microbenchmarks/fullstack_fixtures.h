@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -77,7 +76,7 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const std::string& address) {
     ServerBuilder b;
-    if (address.length() > 0) {
+    if (!address.empty()) {
       b.AddListeningPort(address, InsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -86,7 +85,7 @@ class FullstackFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (address.length() > 0) {
+    if (!address.empty()) {
       channel_ = grpc::CreateCustomChannel(address,
                                            InsecureChannelCredentials(), args);
     } else {

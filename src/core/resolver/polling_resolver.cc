@@ -104,10 +104,10 @@ void PollingResolver::ShutdownLocked() {
   request_.reset();
 }
 
-void PollingResolver::ScheduleNextResolutionTimer(const Duration& timeout) {
+void PollingResolver::ScheduleNextResolutionTimer(Duration delay) {
   next_resolution_timer_handle_ =
       channel_args_.GetObject<EventEngine>()->RunAfter(
-          timeout, [self = RefAsSubclass<PollingResolver>()]() mutable {
+          delay, [self = RefAsSubclass<PollingResolver>()]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
@@ -198,22 +198,13 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     }
   } else {
     // Set up for retry.
-    // InvalidateNow to avoid getting stuck re-initializing this timer
-    // in a loop while draining the currently-held WorkSerializer.
-    // Also see https://github.com/grpc/grpc/issues/26079.
-    ExecCtx::Get()->InvalidateNow();
-    const Timestamp next_try = backoff_.NextAttemptTime();
-    const Duration timeout = next_try - Timestamp::Now();
+    const Duration delay = backoff_.NextAttemptDelay();
     CHECK(!next_resolution_timer_handle_.has_value());
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-      if (timeout > Duration::Zero()) {
-        LOG(INFO) << "[polling resolver " << this << "] retrying in "
-                  << timeout.millis() << " ms";
-      } else {
-        LOG(INFO) << "[polling resolver " << this << "] retrying immediately";
-      }
+      LOG(INFO) << "[polling resolver " << this << "] retrying in "
+                << delay.millis() << " ms";
     }
-    ScheduleNextResolutionTimer(timeout);
+    ScheduleNextResolutionTimer(delay);
     // Reset result_status_state_.  Note that even if re-resolution was
     // requested while the result-health callback was pending, we can
     // ignore it here, because we are in backoff to re-resolve anyway.

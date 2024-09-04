@@ -25,7 +25,6 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -154,7 +153,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   CHECK_NE(arena, nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooledForOverwrite<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),

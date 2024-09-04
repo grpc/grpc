@@ -24,7 +24,6 @@
 
 #include "absl/log/absl_check.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/string_ref.h>

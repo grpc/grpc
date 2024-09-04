@@ -30,19 +30,20 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/util/useful.h"
 
 // -- Common. --
 
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
-  GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
 
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
-  GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
@@ -95,18 +96,19 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 }
 
 void grpc_server_credentials_release(grpc_server_credentials* creds) {
-  GRPC_API_TRACE("grpc_server_credentials_release(creds=%p)", 1, (creds));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_credentials_release(creds=" << creds << ")";
   grpc_core::ExecCtx exec_ctx;
   if (creds) creds->Unref();
 }
 
 void grpc_server_credentials::set_auth_metadata_processor(
     const grpc_auth_metadata_processor& processor) {
-  GRPC_API_TRACE(
-      "grpc_server_credentials_set_auth_metadata_processor("
-      "creds=%p, "
-      "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
-      3, (this, (void*)(intptr_t)processor.process, processor.state));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_credentials_set_auth_metadata_processor(creds=" << this
+      << ", processor=grpc_auth_metadata_processor { process: "
+      << (void*)(intptr_t)processor.process << ", state: " << processor.state
+      << " })";
   DestroyProcessor();
   processor_ = processor;
 }

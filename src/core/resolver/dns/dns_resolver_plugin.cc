@@ -18,7 +18,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"

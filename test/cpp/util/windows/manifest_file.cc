@@ -29,8 +29,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {

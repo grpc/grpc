@@ -361,8 +361,8 @@ def _create_portability_test_jobs(
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
-        "clang6",
-        "clang17",
+        "clang7",
+        "clang18",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -530,16 +530,6 @@ if __name__ == "__main__":
         type=int,
         help="Maximum amount of time to run tests for"
         + "(other tests will be skipped)",
-    )
-    argp.add_argument(
-        "--internal_ci",
-        default=False,
-        action="store_const",
-        const=True,
-        help=(
-            "(Deprecated, has no effect) Put reports into subdirectories to"
-            " improve presentation of results by Kokoro."
-        ),
     )
     argp.add_argument(
         "--bq_result_table",

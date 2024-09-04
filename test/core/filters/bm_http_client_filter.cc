@@ -34,17 +34,17 @@ class HttpClientFilterTraits {
   ChannelArgs MakeChannelArgs() { return ChannelArgs().SetObject(&transport_); }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    return Arena::MakePooled<ClientMetadata>();
+    return Arena::MakePooledForOverwrite<ClientMetadata>();
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
   MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    auto md = Arena::MakePooled<ServerMetadata>();
+    auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
     md->Set(HttpStatusMetadata(), 200);
     return md;
   }

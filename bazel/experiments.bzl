@@ -17,10 +17,10 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
-    "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
+    "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
@@ -28,10 +28,8 @@ EXPERIMENT_ENABLES = {
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
-    "peer_state_based_framing": "peer_state_based_framing",
     "pick_first_new": "pick_first_new",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
-    "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
@@ -59,8 +57,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -107,8 +103,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -135,6 +129,10 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_client",
+                "work_serializer_dispatch",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -145,14 +143,18 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lb_unit_test": [
+                "work_serializer_dispatch",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "work_serializer_dispatch",
             ],
         },
         "on": {
@@ -161,10 +163,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_listener",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -174,14 +172,12 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
-                "work_serializer_dispatch",
             ],
         },
     },

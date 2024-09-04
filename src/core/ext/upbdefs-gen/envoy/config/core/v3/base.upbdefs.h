@@ -78,6 +78,21 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RuntimeFeatureFlag_getmsgd
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RuntimeFeatureFlag");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_KeyValue_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.KeyValue");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_KeyValueAppend_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.KeyValueAppend");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_KeyValueMutation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.KeyValueMutation");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_QueryParameter_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.QueryParameter");
@@ -111,6 +126,16 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_DataSource_getmsgdef(upb_D
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RetryPolicy_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RetryPolicy");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RetryPolicy_RetryPriority_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RetryPolicy.RetryPriority");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RetryPolicy_RetryHostPredicate_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RetryPolicy.RetryHostPredicate");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RemoteDataSource_getmsgdef(upb_DefPool *s) {

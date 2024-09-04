@@ -20,23 +20,20 @@
 
 #include <algorithm>
 
-#include <grpc/support/port_platform.h>
-
 namespace grpc_core {
 
 BackOff::BackOff(const Options& options) : options_(options) { Reset(); }
 
-Timestamp BackOff::NextAttemptTime() {
+Duration BackOff::NextAttemptDelay() {
   if (initial_) {
     initial_ = false;
-    return current_backoff_ + Timestamp::Now();
+  } else {
+    current_backoff_ = std::min(current_backoff_ * options_.multiplier(),
+                                options_.max_backoff());
   }
-  current_backoff_ = std::min(current_backoff_ * options_.multiplier(),
-                              options_.max_backoff());
-  const Duration jitter = Duration::FromSecondsAsDouble(
-      absl::Uniform(rand_gen_, -options_.jitter() * current_backoff_.seconds(),
-                    options_.jitter() * current_backoff_.seconds()));
-  return Timestamp::Now() + current_backoff_ + jitter;
+  const double jitter =
+      absl::Uniform(rand_gen_, 1 - options_.jitter(), 1 + options_.jitter());
+  return current_backoff_ * jitter;
 }
 
 void BackOff::Reset() {

@@ -27,7 +27,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -164,7 +163,7 @@ class PosixSocketWrapper {
  public:
   explicit PosixSocketWrapper(int fd) : fd_(fd) { CHECK_GT(fd_, 0); }
 
-  PosixSocketWrapper() : fd_(-1){};
+  PosixSocketWrapper() : fd_(-1) {};
 
   ~PosixSocketWrapper() = default;
 

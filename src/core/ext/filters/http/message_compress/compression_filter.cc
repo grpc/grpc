@@ -32,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -104,19 +103,17 @@ ChannelCompression::ChannelCompression(const ChannelArgs& args)
                                          &name)) {
       name = "<unknown>";
     }
-    gpr_log(GPR_ERROR,
-            "default compression algorithm %s not enabled: switching to none",
-            name);
+    LOG(ERROR) << "default compression algorithm " << name
+               << " not enabled: switching to none";
     default_compression_algorithm_ = GRPC_COMPRESS_NONE;
   }
 }
 
 MessageHandle ChannelCompression::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm) const {
-  if (GRPC_TRACE_FLAG_ENABLED(compression)) {
-    gpr_log(GPR_INFO, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
-            message->payload()->Length(), algorithm, message->flags());
-  }
+  GRPC_TRACE_LOG(compression, INFO)
+      << "CompressMessage: len=" << message->payload()->Length()
+      << " alg=" << algorithm << " flags=" << message->flags();
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordSendMessage(*message->payload());
@@ -144,10 +141,10 @@ MessageHandle ChannelCompression::CompressMessage(
       const float savings_ratio = 1.0f - static_cast<float>(after_size) /
                                              static_cast<float>(before_size);
       CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
-      gpr_log(GPR_INFO,
-              "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
-              " bytes (%.2f%% savings)",
-              algo_name, before_size, after_size, 100 * savings_ratio);
+      LOG(INFO) << absl::StrFormat(
+          "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
+          " bytes (%.2f%% savings)",
+          algo_name, before_size, after_size, 100 * savings_ratio);
     }
     tmp.Swap(payload);
     flags |= GRPC_WRITE_INTERNAL_COMPRESS;
@@ -158,10 +155,9 @@ MessageHandle ChannelCompression::CompressMessage(
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       const char* algo_name;
       CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
-      gpr_log(GPR_INFO,
-              "Algorithm '%s' enabled but decided not to compress. Input size: "
-              "%" PRIuPTR,
-              algo_name, payload->Length());
+      LOG(INFO) << "Algorithm '" << algo_name
+                << "' enabled but decided not to compress. Input size: "
+                << payload->Length();
     }
   }
   return message;
@@ -169,11 +165,10 @@ MessageHandle ChannelCompression::CompressMessage(
 
 absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     bool is_client, MessageHandle message, DecompressArgs args) const {
-  if (GRPC_TRACE_FLAG_ENABLED(compression)) {
-    gpr_log(GPR_INFO, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
-            message->payload()->Length(),
-            args.max_recv_message_length.value_or(-1), args.algorithm);
-  }
+  GRPC_TRACE_LOG(compression, INFO)
+      << "DecompressMessage: len=" << message->payload()->Length()
+      << " max=" << args.max_recv_message_length.value_or(-1)
+      << " alg=" << args.algorithm;
   auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordReceivedMessage(*message->payload());

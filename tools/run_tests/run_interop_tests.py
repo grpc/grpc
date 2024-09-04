@@ -1425,16 +1425,6 @@ argp.add_argument(
     help="Skip auth tests requiring access to compute engine credentials.",
 )
 argp.add_argument(
-    "--internal_ci",
-    default=False,
-    action="store_const",
-    const=True,
-    help=(
-        "(Deprecated, has no effect) Put reports into subdirectories to improve"
-        " presentation of results by Internal CI."
-    ),
-)
-argp.add_argument(
     "--bq_result_table",
     default="",
     type=str,

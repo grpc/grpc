@@ -34,7 +34,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
@@ -253,8 +252,8 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
 
 namespace {
 
-RefCountedPtr<Channel> CreateXdsChannel(
-    const ChannelArgs& args, const GrpcXdsBootstrap::GrpcXdsServer& server) {
+RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
+                                        const GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
@@ -269,9 +268,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status)
     : factory_(factory) {
-  channel_ = CreateXdsChannel(
-      factory->args_,
-      static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
+  channel_ = CreateXdsChannel(factory->args_,
+                              static_cast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");

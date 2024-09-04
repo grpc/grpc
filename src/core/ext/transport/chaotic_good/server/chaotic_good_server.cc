@@ -300,12 +300,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           },
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
-            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-              LOG(INFO) << self->connection_.get()
-                        << " Data endpoint setup done: shutdown="
-                        << (self->connection_->listener_->shutdown_ ? "true"
-                                                                    : "false");
-            }
+            GRPC_TRACE_LOG(chaotic_good, INFO)
+                << self->connection_.get()
+                << " Data endpoint setup done: shutdown="
+                << (self->connection_->listener_->shutdown_ ? "true" : "false");
             if (self->connection_->listener_->shutdown_) {
               return absl::UnavailableError("Server shutdown");
             }
@@ -458,6 +456,7 @@ void ChaoticGoodServerListener::Orphan() {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
     MutexLock lock(&mu_);
     connection_list = std::move(connection_list_);
+    connection_list_.clear();
     shutdown_ = true;
   }
   ee_listener_.reset();
@@ -488,7 +487,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
         grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr);
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
-    LOG(INFO) << "BIND: " << addr_str;
+    GRPC_TRACE_LOG(chaotic_good, INFO) << "BIND: " << addr_str;
     auto bind_result = listener->Bind(ee_addr);
     if (!bind_result.ok()) {
       error_list.push_back(
@@ -510,7 +509,8 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   } else if (!error_list.empty()) {
     LOG(INFO) << "Failed to bind some addresses for " << addr;
     for (const auto& error : error_list) {
-      LOG(INFO) << "  " << error.first << ": " << error.second;
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "Binding Failed: " << error.first << ": " << error.second;
     }
   }
   return port_num;

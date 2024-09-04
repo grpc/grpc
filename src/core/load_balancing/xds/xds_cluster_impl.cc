@@ -35,7 +35,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -63,7 +62,8 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -78,8 +78,6 @@
 namespace grpc_core {
 
 namespace {
-
-using XdsConfig = XdsDependencyManager::XdsConfig;
 
 //
 // global circuit breaker atomic map
@@ -201,9 +199,11 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        LocalityData locality_data)
+        LocalityData locality_data, absl::string_view hostname)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
-          locality_data_(std::move(locality_data)) {}
+          locality_data_(std::move(locality_data)),
+          hostname_(grpc_event_engine::experimental::Slice::FromCopiedString(
+              hostname)) {}
 
     RefCountedStringValue locality() const {
       return Match(
@@ -225,8 +225,13 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           });
     }
 
+    const grpc_event_engine::experimental::Slice& hostname() const {
+      return hostname_;
+    }
+
    private:
     LocalityData locality_data_;
+    grpc_event_engine::experimental::Slice hostname_;
   };
 
   // A picker that wraps the picker from the child to perform drops.
@@ -285,6 +290,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
   // Current config from the resolver.
   RefCountedPtr<XdsClusterImplLbConfig> config_;
   std::shared_ptr<const XdsClusterResource> cluster_resource_;
+  RefCountedStringValue service_telemetry_label_;
+  RefCountedStringValue namespace_telemetry_label_;
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 
   // Current concurrent number of requests.
@@ -389,17 +396,15 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
-      service_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label),
+      service_telemetry_label_(xds_cluster_impl_lb->service_telemetry_label_),
       namespace_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
+          xds_cluster_impl_lb->namespace_telemetry_label_),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << xds_cluster_impl_lb
-              << "] constructed new picker " << this;
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << xds_cluster_impl_lb
+      << "] constructed new picker " << this;
 }
 
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
@@ -454,6 +459,20 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
     }
+    // Handle authority rewriting if needed.
+    if (!subchannel_wrapper->hostname().empty()) {
+      auto* route_state_attribute =
+          call_state->GetCallAttribute<XdsRouteStateAttribute>();
+      if (route_state_attribute != nullptr) {
+        auto* route_action =
+            absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+                &route_state_attribute->route().action);
+        if (route_action != nullptr && route_action->auto_host_rewrite) {
+          complete_pick->authority_override =
+              subchannel_wrapper->hostname().Ref();
+        }
+      }
+    }
     // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     // Inject subchannel call tracker to record call completion.
@@ -478,23 +497,20 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
 XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<GrpcXdsClient> xds_client,
                                    Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] created -- using xds client " << xds_client_.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] created -- using xds client "
+      << xds_client_.get();
 }
 
 XdsClusterImplLb::~XdsClusterImplLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] destroying xds_cluster_impl LB policy";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this
+      << "] destroying xds_cluster_impl LB policy";
 }
 
 void XdsClusterImplLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
   xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
@@ -515,10 +531,9 @@ void XdsClusterImplLb::ResetState() {
 }
 
 void XdsClusterImplLb::ReportTransientFailure(absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] reporting TRANSIENT_FAILURE: " << status;
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this
+      << "] reporting TRANSIENT_FAILURE: " << status;
   ResetState();
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, status,
@@ -542,9 +557,8 @@ std::string GetEdsResourceName(const XdsClusterResource& cluster_resource) {
 }
 
 absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] Received update";
   // Grab new LB policy config.
   auto new_config = args.config.TakeAsSubclass<XdsClusterImplLbConfig>();
   // Cluster name should never change, because the cds policy will assign a
@@ -632,6 +646,23 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config state, now that we're done comparing old and new fields.
   config_ = std::move(new_config);
   cluster_resource_ = new_cluster_config.cluster;
+  const XdsMetadataValue* metadata_value =
+      cluster_resource_->metadata.Find("com.google.csm.telemetry_labels");
+  if (metadata_value != nullptr &&
+      metadata_value->type() == XdsStructMetadataValue::Type()) {
+    const Json::Object& json_object =
+        DownCast<const XdsStructMetadataValue*>(metadata_value)
+            ->json()
+            .object();
+    auto it = json_object.find("service_name");
+    if (it != json_object.end() && it->second.type() == Json::Type::kString) {
+      service_telemetry_label_ = RefCountedStringValue(it->second.string());
+    }
+    it = json_object.find("service_namespace");
+    if (it != json_object.end() && it->second.type() == Json::Type::kString) {
+      namespace_telemetry_label_ = RefCountedStringValue(it->second.string());
+    }
+  }
   drop_config_ = endpoint_config->endpoints != nullptr
                      ? endpoint_config->endpoints->drop_config
                      : nullptr;
@@ -652,23 +683,35 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
     return nullptr;
   }
   // Configure root cert.
-  absl::string_view root_provider_instance_name =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.instance_name;
-  absl::string_view root_cert_name =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certificate_provider_instance.certificate_name;
+  absl::string_view root_cert_name;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
-  if (!root_provider_instance_name.empty()) {
-    root_cert_provider =
-        xds_client_->certificate_provider_store()
-            .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (root_cert_provider == nullptr) {
-      return absl::InternalError(
-          absl::StrCat("Certificate provider instance name: \"",
-                       root_provider_instance_name, "\" not recognized."));
-    }
-  }
+  bool use_system_root_certs = false;
+  absl::Status status = Match(
+      cluster_resource.common_tls_context.certificate_validation_context
+          .ca_certs,
+      [](const absl::monostate&) {
+        // No root cert configured.
+        return absl::OkStatus();
+      },
+      [&](const CommonTlsContext::CertificateProviderPluginInstance&
+              cert_provider) {
+        root_cert_name = cert_provider.certificate_name;
+        root_cert_provider =
+            xds_client_->certificate_provider_store()
+                .CreateOrGetCertificateProvider(cert_provider.instance_name);
+        if (root_cert_provider == nullptr) {
+          return absl::InternalError(
+              absl::StrCat("Certificate provider instance name: \"",
+                           cert_provider.instance_name, "\" not recognized."));
+        }
+        return absl::OkStatus();
+      },
+      [&](const CommonTlsContext::CertificateValidationContext::
+              SystemRootCerts&) {
+        use_system_root_certs = true;
+        return absl::OkStatus();
+      });
+  if (!status.ok()) return status;
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
       cluster_resource.common_tls_context.tls_certificate_provider_instance
@@ -693,8 +736,8 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
           .match_subject_alt_names;
   // Create xds cert provider.
   return MakeRefCounted<XdsCertificateProvider>(
-      root_cert_provider, root_cert_name, identity_cert_provider,
-      identity_cert_name, san_matchers);
+      std::move(root_cert_provider), root_cert_name, use_system_root_certs,
+      std::move(identity_cert_provider), identity_cert_name, san_matchers);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -702,11 +745,10 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-      LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity (drop all): state=READY picker="
-                << drop_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+        << "[xds_cluster_impl_lb " << this
+        << "] updating connectivity (drop all): state=READY picker="
+        << drop_picker.get();
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
                                           std::move(drop_picker));
     return;
@@ -714,12 +756,10 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-      LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity: state="
-                << ConnectivityStateName(state_) << " status=(" << status_
-                << ") picker=" << drop_picker.get();
-    }
+    GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+        << "[xds_cluster_impl_lb " << this
+        << "] updating connectivity: state=" << ConnectivityStateName(state_)
+        << " status=(" << status_ << ") picker=" << drop_picker.get();
     channel_control_helper()->UpdateState(state_, status_,
                                           std::move(drop_picker));
   }
@@ -735,10 +775,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &xds_cluster_impl_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] Created new child policy handler " << lb_policy.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this
+      << "] Created new child policy handler " << lb_policy.get();
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // this policy, which in turn is tied to the application's call.
@@ -762,10 +801,9 @@ absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
   update_args.args =
       args.Set(GRPC_ARG_XDS_CLUSTER_NAME, config_->cluster_name());
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << this
-              << "] Updating child policy handler " << child_policy_.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << this << "] Updating child policy handler "
+      << child_policy_.get();
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -808,19 +846,19 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
-      std::move(locality_data));
+      std::move(locality_data),
+      per_address_args.GetString(GRPC_ARG_ADDRESS_NAME).value_or(""));
 }
 
 void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (parent()->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
-    LOG(INFO) << "[xds_cluster_impl_lb " << parent()
-              << "] child connectivity state update: state="
-              << ConnectivityStateName(state) << " (" << status
-              << ") picker=" << picker.get();
-  }
+  GRPC_TRACE_LOG(xds_cluster_impl_lb, INFO)
+      << "[xds_cluster_impl_lb " << parent()
+      << "] child connectivity state update: state="
+      << ConnectivityStateName(state) << " (" << status
+      << ") picker=" << picker.get();
   // Save the state and picker.
   parent()->state_ = state;
   parent()->status_ = status;

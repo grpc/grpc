@@ -102,6 +102,7 @@ namespace {
 // of bytes sent.
 ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
                 int additional_flags = 0) {
+  GRPC_LATENT_SEE_INNER_SCOPE("TcpSend");
   ssize_t sent_length;
   do {
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
@@ -286,6 +287,8 @@ absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
 
 // Returns true if data available to read or error other than EAGAIN.
 bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
+  GRPC_LATENT_SEE_INNER_SCOPE("TcpDoRead");
+
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -345,7 +348,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
     if (read_bytes <= 0 && total_read_bytes >= 1) {
-      inq_ = 1;
       break;
     }
 
@@ -407,6 +409,12 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   if (inq_ == 0) {
     FinishEstimate();
+    // If this is using the epoll poller, then it is edge-triggered.
+    // Since this read did not consume the edge (i.e., did not get EAGAIN), the
+    // next read on this endpoint must assume there is something to read.
+    // Otherwise, assuming there is nothing to read and waiting for an epoll
+    // edge event could cause the next read to wait indefinitely.
+    inq_ = 1;
   }
 
   DCHECK_GT(total_read_bytes, 0u);
@@ -970,15 +978,15 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         handle_->SetWritable();
       } else {
 #ifdef GRPC_LINUX_ERRQUEUE
-        GRPC_LOG_EVERY_N_SEC(
-            1, GPR_INFO,
-            "Tx0cp encountered an ENOBUFS error possibly because one or "
-            "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
-            "small for the intended user. Current system value of "
-            "RLIMIT_MEMLOCK is %" PRIu64 " and hard memlock ulimit is %" PRIu64
-            ".Consider increasing these values appropriately for the intended "
-            "user.",
-            GetRLimitMemLockMax(), GetUlimitHardMemLock());
+        LOG_EVERY_N_SEC(INFO, 1)
+            << "Tx0cp encountered an ENOBUFS error possibly because one or "
+               "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
+               "small for the intended user. Current system value of "
+               "RLIMIT_MEMLOCK is "
+            << GetRLimitMemLockMax() << " and hard memlock ulimit is "
+            << GetUlimitHardMemLock()
+            << ".Consider increasing these values appropriately for the "
+               "intended user.";
 #endif
       }
     }
@@ -1297,9 +1305,9 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     }
 
     if (zerocopy_enabled) {
-      LOG(INFO) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
-                << "=" << GetRLimitMemLockMax()
-                << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
+      VLOG(2) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
+              << "=" << GetRLimitMemLockMax()
+              << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE

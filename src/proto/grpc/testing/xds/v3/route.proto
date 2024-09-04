@@ -356,6 +356,30 @@ message RouteAction {
 
   // Specifies the maximum stream duration for this route.
   MaxStreamDuration max_stream_duration = 36;
+
+  oneof host_rewrite_specifier {
+    // Indicates that during forwarding, the host header will be swapped with
+    // the hostname of the upstream host chosen by the cluster manager. This
+    // option is applicable only when the destination cluster for a route is of
+    // type ``strict_dns`` or ``logical_dns``,
+    // or when :ref:`hostname <envoy_v3_api_field_config.endpoint.v3.Endpoint.hostname>`
+    // field is not empty. Setting this to true with other cluster types
+    // has no effect. Using this option will append the
+    // :ref:`config_http_conn_man_headers_x-forwarded-host` header if
+    // :ref:`append_x_forwarded_host <envoy_v3_api_field_config.route.v3.RouteAction.append_x_forwarded_host>`
+    // is set.
+    google.protobuf.BoolValue auto_host_rewrite = 7;
+  }
+
+  // If set, then a host rewrite action (one of
+  // :ref:`host_rewrite_literal <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_literal>`,
+  // :ref:`auto_host_rewrite <envoy_v3_api_field_config.route.v3.RouteAction.auto_host_rewrite>`,
+  // :ref:`host_rewrite_header <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_header>`, or
+  // :ref:`host_rewrite_path_regex <envoy_v3_api_field_config.route.v3.RouteAction.host_rewrite_path_regex>`)
+  // causes the original value of the host header, if any, to be appended to the
+  // :ref:`config_http_conn_man_headers_x-forwarded-host` HTTP header if it is different to the last value appended.
+  // This can be disabled by setting the runtime guard ``envoy_reloadable_features_append_xfh_idempotent`` to false.
+  bool append_x_forwarded_host = 38;
 }
 
 // .. attention::

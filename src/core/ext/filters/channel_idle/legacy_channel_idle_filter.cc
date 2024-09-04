@@ -29,7 +29,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -70,13 +69,6 @@ const auto kDefaultMaxConnectionIdle = Duration::Infinity();
 const auto kMaxConnectionAgeJitter = 0.1;
 
 }  // namespace
-
-#define GRPC_IDLE_FILTER_LOG(format, ...)                               \
-  do {                                                                  \
-    if (GRPC_TRACE_FLAG_ENABLED(client_idle_filter)) {                  \
-      gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
-    }                                                                   \
-  } while (0)
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
@@ -259,7 +251,8 @@ void LegacyChannelIdleFilter::DecreaseCallCount() {
 }
 
 void LegacyChannelIdleFilter::StartIdleTimer() {
-  GRPC_IDLE_FILTER_LOG("timer has started");
+  GRPC_TRACE_LOG(client_idle_filter, INFO)
+      << "(client idle filter) timer has started";
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
   auto channel_stack = channel_stack_->Ref();

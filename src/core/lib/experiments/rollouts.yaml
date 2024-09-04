@@ -40,7 +40,7 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: call_status_override_on_cancellation
+- name: call_tracer_in_transport
   default: true
 - name: call_v3
   default: false
@@ -53,6 +53,8 @@
     windows: broken
 - name: client_privacy
   default: false
+- name: event_engine_application_callbacks
+  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all
@@ -77,8 +79,6 @@
   default: false
 - name: monitoring_experiment
   default: true
-- name: peer_state_based_framing
-  default: false
 - name: pending_queue_cap
   default: true
 - name: pick_first_new
@@ -108,6 +108,6 @@
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken
-    posix: true
+    posix: false
     # TODO(ysseung): Test flakes not fully resolved.
     windows: broken

@@ -247,7 +247,7 @@ class ClientChannelFilter final {
       RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void UpdateServiceConfigInDataPlaneLocked()
+  void UpdateServiceConfigInDataPlaneLocked(const ChannelArgs& args)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);

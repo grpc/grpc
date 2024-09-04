@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+extern const upb_MiniTable envoy__config__trace__v3__DatadogRemoteConfig_msg_init;
 extern const upb_MiniTable envoy__config__trace__v3__DatadogConfig_msg_init;
 
 extern const upb_MiniTableFile envoy_config_trace_v3_datadog_proto_upb_file_layout;

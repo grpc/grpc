@@ -15,24 +15,45 @@
 #include "src/core/util/latent_see.h"
 
 #ifdef GRPC_ENABLE_LATENT_SEE
+#include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ring_buffer.h"
 
 namespace grpc_core {
 namespace latent_see {
 
-thread_local std::vector<Log::Event> Log::thread_events_;
 thread_local uint64_t Log::thread_id_ = Log::Get().next_thread_id_.fetch_add(1);
+thread_local Bin* Log::bin_ = nullptr;
+thread_local void* Log::bin_owner_ = nullptr;
 std::atomic<uint64_t> Flow::next_flow_id_{1};
+std::atomic<uintptr_t> Log::free_bins_{0};
 
 std::string Log::GenerateJson() {
   std::vector<RecordedEvent> events;
+  RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu>* other;
   for (auto& fragment : fragments_) {
-    MutexLock lock(&fragment.mu);
-    events.insert(events.end(), fragment.events.begin(), fragment.events.end());
+    {
+      MutexLock lock(&fragment.mu);
+      other = fragment.active;
+      if (fragment.active == &fragment.primary) {
+        fragment.active = &fragment.secondary;
+      } else {
+        fragment.active = &fragment.primary;
+      }
+    }
+    for (auto it = other->begin(); it != other->end(); ++it) {
+      events.push_back(*it);
+    }
+    other->Clear();
   }
   absl::optional<std::chrono::steady_clock::time_point> start_time;
   for (auto& event : events) {
@@ -91,9 +112,8 @@ std::string Log::GenerateJson() {
   return json;
 }
 
-void Log::FlushThreadLog() {
-  auto& thread_events = thread_events_;
-  if (thread_events.empty()) return;
+void Log::FlushBin(Bin* bin) {
+  if (bin->events.empty()) return;
   auto& log = Get();
   const auto batch_id =
       log.next_batch_id_.fetch_add(1, std::memory_order_relaxed);
@@ -101,11 +121,11 @@ void Log::FlushThreadLog() {
   const auto thread_id = thread_id_;
   {
     MutexLock lock(&fragment.mu);
-    for (auto event : thread_events) {
-      fragment.events.push_back(RecordedEvent{thread_id, batch_id, event});
+    for (auto event : bin->events) {
+      fragment.active->Append(RecordedEvent{thread_id, batch_id, event});
     }
   }
-  thread_events.clear();
+  bin->events.clear();
 }
 
 }  // namespace latent_see

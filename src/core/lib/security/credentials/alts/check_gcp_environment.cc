@@ -25,7 +25,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 const size_t kBiosDataBufferSize = 256;
@@ -58,7 +57,7 @@ namespace internal {
 char* read_bios_file(const char* bios_file) {
   FILE* fp = fopen(bios_file, "r");
   if (!fp) {
-    LOG(INFO) << "BIOS data file does not exist or cannot be opened.";
+    VLOG(2) << "BIOS data file does not exist or cannot be opened.";
     return nullptr;
   }
   char buf[kBiosDataBufferSize + 1];

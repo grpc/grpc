@@ -57,7 +57,8 @@ class ClientChannelTest : public YodelTest {
   ClientChannel& channel() { return *channel_; }
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kTestPath));
     return client_initial_metadata;

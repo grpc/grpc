@@ -35,9 +35,13 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
+#include "src/core/xds/grpc/xds_endpoint_parser.h"
 #include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_listener_parser.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -332,7 +336,7 @@ class Fuzzer {
 
 bool squelch = true;
 
-DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Message& message) {
+DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Msg& message) {
   grpc_init();
   grpc_core::Fuzzer fuzzer(message.bootstrap());
   for (int i = 0; i < message.actions_size(); i++) {

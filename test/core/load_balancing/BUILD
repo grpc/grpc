@@ -158,6 +158,7 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_xds_override_host",
+        "//src/core:xds_health_status",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -263,5 +264,19 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_picker",
+    srcs = ["bm_picker.cc"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "//:config",
+        "//:grpc",
+        "//src/core:lb_policy",
+        "//test/core/test_util:build",
     ],
 )

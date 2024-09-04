@@ -84,7 +84,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -208,7 +207,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     ActiveConnection(grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
                      EventEngine* event_engine, const ChannelArgs& args,
                      MemoryOwner memory_owner);
-    ~ActiveConnection() override;
 
     void Orphan() override;
 
@@ -393,6 +391,10 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
     grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
   }
   grpc_pollset_set_destroy(interested_parties_);
+  if (connection_->listener_ != nullptr &&
+      connection_->listener_->tcp_server_ != nullptr) {
+    grpc_tcp_server_unref(connection_->listener_->tcp_server_);
+  }
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
@@ -566,12 +568,6 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
                     grpc_schedule_on_exec_ctx);
 }
 
-Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
-  if (listener_ != nullptr && listener_->tcp_server_ != nullptr) {
-    grpc_tcp_server_unref(listener_->tcp_server_);
-  }
-}
-
 void Chttp2ServerListener::ActiveConnection::Orphan() {
   OrphanablePtr<HandshakingState> handshaking_state;
   {
@@ -617,9 +613,6 @@ void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener,
     OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args) {
   listener_ = std::move(listener);
-  if (listener_->tcp_server_ != nullptr) {
-    grpc_tcp_server_ref(listener_->tcp_server_);
-  }
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   {
     MutexLock lock(&mu_);
@@ -870,16 +863,21 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     // connection manager has changed.
     if (!self->shutdown_ && self->is_serving_ &&
         connection_manager == self->connection_manager_) {
-      // This ref needs to be taken in the critical region after having made
-      // sure that the listener has not been Orphaned, so as to avoid
-      // heap-use-after-free issues where `Ref()` is invoked when the ref of
-      // tcp_server_ has already reached 0. (Ref() implementation of
-      // Chttp2ServerListener is grpc_tcp_server_ref().)
+      // The ref for both the listener and tcp_server need to be taken in the
+      // critical region after having made sure that the listener has not been
+      // Orphaned, so as to avoid heap-use-after-free issues where `Ref()` is
+      // invoked when the listener is already shutdown. Note that the listener
+      // holds a ref to the tcp_server but this ref is given away when the
+      // listener is orphaned (shutdown). A connection needs the tcp_server to
+      // outlast the handshake since the acceptor needs it.
+      if (self->tcp_server_ != nullptr) {
+        grpc_tcp_server_ref(self->tcp_server_);
+      }
       listener_ref = self->RefAsSubclass<Chttp2ServerListener>();
       self->connections_.emplace(connection.get(), std::move(connection));
     }
   }
-  if (connection == nullptr) {
+  if (connection == nullptr && listener_ref != nullptr) {
     connection_ref->Start(std::move(listener_ref), std::move(endpoint), args);
   }
 }
@@ -1078,8 +1076,8 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
   int port_num = 0;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   grpc_core::ChannelArgs args = core_server->channel_args();
-  GRPC_API_TRACE("grpc_server_add_http2_port(server=%p, addr=%s, creds=%p)", 3,
-                 (server, addr, creds));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_server_add_http2_port(server=" << server
+                            << ", addr=" << addr << ", creds=" << creds << ")";
   // Create security context.
   if (creds == nullptr) {
     err = GRPC_ERROR_CREATE(
@@ -1174,8 +1172,9 @@ absl::Status grpc_server_add_passive_listener(
     std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
         passive_listener) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_server_add_passive_listener(server=%p, credentials=%p)",
-                 2, (server, credentials));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_server_add_passive_listener(server=" << server
+      << ", credentials=" << credentials << ")";
   // Create security context.
   if (credentials == nullptr) {
     return absl::UnavailableError(

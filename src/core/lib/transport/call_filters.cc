@@ -15,6 +15,7 @@
 #include "src/core/lib/transport/call_filters.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -187,24 +188,20 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (push_server_trailing_metadata_ == nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-    gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
-            "Cancelling due to failed pipe operation: %s",
-            DebugString().c_str());
-  }
+  GRPC_TRACE_VLOG(promise_primitives, 2)
+          .AtLocation(but_where.file(), but_where.line())
+      << "Cancelling due to failed pipe operation: " << DebugString();
   auto status =
-      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
+      ServerMetadataFromStatus(GRPC_STATUS_CANCELLED, "Failed pipe operation");
   status->Set(GrpcCallWasCancelled(), true);
   PushServerTrailingMetadata(std::move(status));
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
-            GetContext<Activity>()->DebugTag().c_str(), this,
-            md->DebugString().c_str(), DebugString().c_str());
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << " PushServerTrailingMetadata["
+      << this << "]: " << md->DebugString() << " into " << DebugString();
   CHECK(md != nullptr);
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {

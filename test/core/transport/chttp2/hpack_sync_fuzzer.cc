@@ -27,8 +27,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -84,6 +82,10 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
           // Not an interesting case to fuzz
           continue;
         }
+        if (msg.check_ab_preservation() &&
+            header.literal_inc_idx().key() == "a") {
+          continue;
+        }
         if (absl::EndsWith(header.literal_inc_idx().value(), "-bin")) {
           std::ignore = encoder.EmitLitHdrWithBinaryStringKeyIncIdx(
               Slice::FromCopiedString(header.literal_inc_idx().key()),
@@ -95,6 +97,10 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
         }
         break;
       case hpack_sync_fuzzer::Header::kLiteralNotIdx:
+        if (msg.check_ab_preservation() &&
+            header.literal_not_idx().key() == "a") {
+          continue;
+        }
         if (absl::EndsWith(header.literal_not_idx().value(), "-bin")) {
           encoder.EmitLitHdrWithBinaryStringKeyNotIdx(
               Slice::FromCopiedString(header.literal_not_idx().key()),
@@ -112,6 +118,10 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
             Slice::FromCopiedString(header.literal_not_idx_from_idx().value()));
         break;
     }
+  }
+  if (msg.check_ab_preservation()) {
+    std::ignore = encoder.EmitLitHdrWithNonBinaryStringKeyIncIdx(
+        Slice::FromCopiedString("a"), Slice::FromCopiedString("b"));
   }
 
   // STAGE 2: Decode the buffer (encode_output) into a list of headers
@@ -132,6 +142,21 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
       // If we get a connection error (i.e. not a stream error), stop parsing,
       // return.
       if (!IsStreamError(err)) return;
+    }
+  }
+
+  if (seen_errors.empty() && msg.check_ab_preservation()) {
+    std::string backing;
+    auto a_value = read_metadata.GetStringValue("a", &backing);
+    if (!a_value.has_value()) {
+      fprintf(stderr, "Expected 'a' header to be present: %s\n",
+              read_metadata.DebugString().c_str());
+      abort();
+    }
+    if (a_value != "b") {
+      fprintf(stderr, "Expected 'a' header to be 'b', got '%s'\n",
+              std::string(*a_value).c_str());
+      abort();
     }
   }
 
@@ -162,6 +187,41 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
           absl::BytesToHexString(encode_output[i].as_string_view()).c_str());
     }
     abort();
+  }
+
+  if (msg.check_ab_preservation()) {
+    SliceBuffer encode_output_2;
+    hpack_encoder_detail::Encoder encoder_2(
+        &compressor, msg.use_true_binary_metadata(), encode_output_2);
+    encoder_2.EmitIndexed(62);
+    CHECK_EQ(encode_output_2.Count(), 1);
+    grpc_metadata_batch read_metadata_2;
+    parser.BeginFrame(
+        &read_metadata_2, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
+        HPackParser::Priority::None,
+        HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false});
+    auto err = parser.Parse(encode_output_2.c_slice_at(0), true,
+                            absl::BitGenRef(proto_bit_src),
+                            /*call_tracer=*/nullptr);
+    if (!err.ok()) {
+      fprintf(stderr, "Error parsing preservation encoded data: %s\n",
+              err.ToString().c_str());
+      abort();
+    }
+    std::string backing;
+    auto a_value = read_metadata_2.GetStringValue("a", &backing);
+    if (!a_value.has_value()) {
+      fprintf(stderr,
+              "Expected 'a' header to be present: %s\nfirst metadata: %s\n",
+              read_metadata_2.DebugString().c_str(),
+              read_metadata.DebugString().c_str());
+      abort();
+    }
+    if (a_value != "b") {
+      fprintf(stderr, "Expected 'a' header to be 'b', got '%s'\n",
+              std::string(*a_value).c_str());
+      abort();
+    }
   }
 }
 

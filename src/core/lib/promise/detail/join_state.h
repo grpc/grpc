@@ -65,18 +65,10 @@ struct JoinState<Traits, P0, P1> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -111,7 +103,7 @@ struct JoinState<Traits, P0, P1> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/2 already ready";
     }
@@ -133,7 +125,7 @@ struct JoinState<Traits, P0, P1> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/2 already ready";
     }
@@ -180,23 +172,11 @@ struct JoinState<Traits, P0, P1, P2> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -236,7 +216,7 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/3 already ready";
     }
@@ -258,7 +238,7 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/3 already ready";
     }
@@ -280,7 +260,7 @@ struct JoinState<Traits, P0, P1, P2> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/3 already ready";
     }
@@ -337,28 +317,12 @@ struct JoinState<Traits, P0, P1, P2, P3> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -403,7 +367,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/4 already ready";
     }
@@ -425,7 +389,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/4 already ready";
     }
@@ -447,7 +411,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/4 already ready";
     }
@@ -469,7 +433,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 4/4 already ready";
     }
@@ -535,33 +499,13 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -611,7 +555,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/5 already ready";
     }
@@ -633,7 +577,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/5 already ready";
     }
@@ -655,7 +599,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/5 already ready";
     }
@@ -677,7 +621,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 4/5 already ready";
     }
@@ -699,7 +643,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 5/5 already ready";
     }
@@ -774,38 +718,14 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -860,7 +780,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/6 already ready";
     }
@@ -882,7 +802,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/6 already ready";
     }
@@ -904,7 +824,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/6 already ready";
     }
@@ -926,7 +846,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 4/6 already ready";
     }
@@ -948,7 +868,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 5/6 already ready";
     }
@@ -970,7 +890,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 6/6 already ready";
     }
@@ -1054,43 +974,15 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
-    if (ready.is_set(6)) {
-      Construct(&result6, std::move(other.result6));
-    } else {
-      Construct(&promise6, std::move(other.promise6));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
+    Construct(&promise6, std::move(other.promise6));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -1150,7 +1042,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/7 already ready";
     }
@@ -1172,7 +1064,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/7 already ready";
     }
@@ -1194,7 +1086,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/7 already ready";
     }
@@ -1216,7 +1108,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 4/7 already ready";
     }
@@ -1238,7 +1130,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 5/7 already ready";
     }
@@ -1260,7 +1152,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 6/7 already ready";
     }
@@ -1282,7 +1174,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 7/7 already ready";
     }
@@ -1375,48 +1267,16 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
-    if (ready.is_set(6)) {
-      Construct(&result6, std::move(other.result6));
-    } else {
-      Construct(&promise6, std::move(other.promise6));
-    }
-    if (ready.is_set(7)) {
-      Construct(&result7, std::move(other.result7));
-    } else {
-      Construct(&promise7, std::move(other.promise7));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
+    Construct(&promise6, std::move(other.promise6));
+    Construct(&promise7, std::move(other.promise7));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -1481,7 +1341,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/8 already ready";
     }
@@ -1503,7 +1363,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/8 already ready";
     }
@@ -1525,7 +1385,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/8 already ready";
     }
@@ -1547,7 +1407,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 4/8 already ready";
     }
@@ -1569,7 +1429,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 5/8 already ready";
     }
@@ -1591,7 +1451,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 6/8 already ready";
     }
@@ -1613,7 +1473,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 7/8 already ready";
     }
@@ -1635,7 +1495,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 8/8 already ready";
     }
@@ -1736,53 +1596,17 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept
-      : ready(other.ready) {
-    if (ready.is_set(0)) {
-      Construct(&result0, std::move(other.result0));
-    } else {
-      Construct(&promise0, std::move(other.promise0));
-    }
-    if (ready.is_set(1)) {
-      Construct(&result1, std::move(other.result1));
-    } else {
-      Construct(&promise1, std::move(other.promise1));
-    }
-    if (ready.is_set(2)) {
-      Construct(&result2, std::move(other.result2));
-    } else {
-      Construct(&promise2, std::move(other.promise2));
-    }
-    if (ready.is_set(3)) {
-      Construct(&result3, std::move(other.result3));
-    } else {
-      Construct(&promise3, std::move(other.promise3));
-    }
-    if (ready.is_set(4)) {
-      Construct(&result4, std::move(other.result4));
-    } else {
-      Construct(&promise4, std::move(other.promise4));
-    }
-    if (ready.is_set(5)) {
-      Construct(&result5, std::move(other.result5));
-    } else {
-      Construct(&promise5, std::move(other.promise5));
-    }
-    if (ready.is_set(6)) {
-      Construct(&result6, std::move(other.result6));
-    } else {
-      Construct(&promise6, std::move(other.promise6));
-    }
-    if (ready.is_set(7)) {
-      Construct(&result7, std::move(other.result7));
-    } else {
-      Construct(&promise7, std::move(other.promise7));
-    }
-    if (ready.is_set(8)) {
-      Construct(&result8, std::move(other.result8));
-    } else {
-      Construct(&promise8, std::move(other.promise8));
-    }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
+    DCHECK(other.ready.none());
+    Construct(&promise0, std::move(other.promise0));
+    Construct(&promise1, std::move(other.promise1));
+    Construct(&promise2, std::move(other.promise2));
+    Construct(&promise3, std::move(other.promise3));
+    Construct(&promise4, std::move(other.promise4));
+    Construct(&promise5, std::move(other.promise5));
+    Construct(&promise6, std::move(other.promise6));
+    Construct(&promise7, std::move(other.promise7));
+    Construct(&promise8, std::move(other.promise8));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
     if (ready.is_set(0)) {
@@ -1853,7 +1677,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 1/9 already ready";
     }
@@ -1875,7 +1699,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 2/9 already ready";
     }
@@ -1897,7 +1721,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 3/9 already ready";
     }
@@ -1919,7 +1743,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 4/9 already ready";
     }
@@ -1941,7 +1765,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 5/9 already ready";
     }
@@ -1963,7 +1787,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 6/9 already ready";
     }
@@ -1985,7 +1809,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 7/9 already ready";
     }
@@ -2007,7 +1831,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 8/9 already ready";
     }
@@ -2029,7 +1853,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2)
           << "join[" << this << "]: joint 9/9 already ready";
     }
