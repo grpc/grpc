@@ -204,24 +204,21 @@ static bool update_list(grpc_chttp2_transport* t, int64_t send_bytes,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
-    VLOG(2) << t->peer_string.as_string_view() << ":" << t << " stream "
-            << s->id << " moved to stalled list by " << staller
-            << ". This is FULLY expected to happen in a healthy program that "
-               "is not seeing flow control stalls. However, if you know that "
-               "there are unwanted stalls, here is some helpful data: "
-               "[fc:pending="
-            << s->flow_controlled_buffer.length
-            << ":flowed=" << s->flow_controlled_bytes_flowed
-            << ":peer_initwin=" << t->settings.acked().initial_window_size()
-            << ":t_win=" << t->flow_control.remote_window() << ":s_win="
-            << static_cast<uint32_t>(
-                   std::max(int64_t{0},
-                            s->flow_control.remote_window_delta() +
-                                static_cast<int64_t>(
-                                    t->settings.peer().initial_window_size())))
-            << ":s_delta=" << s->flow_control.remote_window_delta() << "]";
-  }
+  GRPC_TRACE_VLOG(flowctl, 2)
+      << t->peer_string.as_string_view() << ":" << t << " stream " << s->id
+      << " moved to stalled list by " << staller
+      << ". This is FULLY expected to happen in a healthy program that is not "
+         "seeing flow control stalls. However, if you know that there are "
+         "unwanted stalls, here is some helpful data: [fc:pending="
+      << s->flow_controlled_buffer.length
+      << ":flowed=" << s->flow_controlled_bytes_flowed
+      << ":peer_initwin=" << t->settings.acked().initial_window_size()
+      << ":t_win=" << t->flow_control.remote_window() << ":s_win="
+      << static_cast<uint32_t>(std::max(
+             int64_t{0}, s->flow_control.remote_window_delta() +
+                             static_cast<int64_t>(
+                                 t->settings.peer().initial_window_size())))
+      << ":s_delta=" << s->flow_control.remote_window_delta() << "]";
 }
 
 namespace {

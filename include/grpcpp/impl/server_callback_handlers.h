@@ -22,7 +22,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/message_allocator.h>

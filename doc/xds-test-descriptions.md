@@ -640,17 +640,17 @@ There are four sub-tests:
 1. `app_timeout_exceeded`
    1. Test client configured to send UnaryCall RPCs with a 1s application
       timeout, and metadata of `rpc-behavior: sleep-2`.
-   1. Test driver asserts client recieves ~100% status `DEADLINE_EXCEEDED`.
+   1. Test driver asserts client receives ~100% status `DEADLINE_EXCEEDED`.
 1. `timeout_not_exceeded`
    1. Test client configured to send UnaryCall RPCs with the default
       application timeout (20 seconds), and no metadata.
-   1. Test driver asserts client recieves ~100% status `OK`.
+   1. Test driver asserts client receives ~100% status `OK`.
 1. `timeout_exceeded` (executed with the below test case)
 1. `timeout_different_route`
    1. Test client configured to send UnaryCall RPCs and EmptyCall RPCs with
       the default application timeout (20 seconds), and metadata of
       `rpc-behavior: sleep-4`.
-   1. Test driver asserts client recieves ~100% status `OK` for EmptyCall
+   1. Test driver asserts client receives ~100% status `OK` for EmptyCall
       and ~100% status `DEADLINE_EXCEEDED` for UnaryCall.
 
 ### api_listener

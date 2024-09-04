@@ -14,12 +14,13 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  FROM alpine:3.15
+  FROM alpine:3.17
 
   # Install Git and basic packages.
   RUN apk update && apk add \
     autoconf \
     automake \
+    bash ${'\\'}
     bzip2 \
     build-base \
     cmake \
@@ -39,8 +40,6 @@
     zip
 
   <%include file="../../git_avoid_dubious_ownership_error.include"/>
-
-  RUN ln -s /usr/bin/python3 /usr/bin/python
 
   # Install Python packages from PyPI
   RUN python3 -m pip install --upgrade pip==19.3.1

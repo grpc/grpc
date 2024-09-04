@@ -88,9 +88,9 @@ class XdsRouting final {
     ChannelArgs args;
   };
 
-  // Generates a map of per_filter_configs. \a args is consumed.
+  // Generates per-HTTP filter configs for a method config.
   static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
-  GeneratePerHTTPFilterConfigs(
+  GeneratePerHTTPFilterConfigsForMethodConfig(
       const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
@@ -98,6 +98,14 @@ class XdsRouting final {
       const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
+      const ChannelArgs& args);
+
+  // Generates per-HTTP filter configs for the top-level service config.
+  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
+  GeneratePerHTTPFilterConfigsForServiceConfig(
+      const XdsHttpFilterRegistry& http_filter_registry,
+      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+          http_filters,
       const ChannelArgs& args);
 };
 

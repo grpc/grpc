@@ -21,7 +21,6 @@
 
 #include "absl/log/absl_check.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>

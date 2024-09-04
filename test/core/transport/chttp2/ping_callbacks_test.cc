@@ -118,9 +118,7 @@ TEST(PingCallbacksTest, PingRoundtrips) {
   // request
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -198,9 +196,7 @@ TEST(PingCallbacksTest, DuplicatePingIdFlagsError) {
   EXPECT_FALSE(acked);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -240,9 +236,7 @@ TEST(PingCallbacksTest, OnPingAckCanPiggybackInflightPings) {
   EXPECT_FALSE(acked_second);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -281,9 +275,7 @@ TEST(PingCallbacksTest, PingAckRoundtrips) {
   EXPECT_FALSE(acked);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -321,9 +313,7 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
   EXPECT_FALSE(acked2);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id1 = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -348,9 +338,7 @@ TEST(PingCallbacksTest, MultiPingRoundtrips) {
   EXPECT_FALSE(acked2);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 789};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 789}; });
   auto id2 = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -402,9 +390,7 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
   EXPECT_FALSE(acked2);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id1 = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -429,9 +415,7 @@ TEST(PingCallbacksTest, MultiPingRoundtripsWithOutOfOrderAcks) {
   EXPECT_FALSE(acked2);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 789};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 789}; });
   auto id2 = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -492,9 +476,7 @@ TEST(PingCallbacksTest, CoalescedPingsRoundtrip) {
   EXPECT_FALSE(acked2);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -537,9 +519,7 @@ TEST(PingCallbacksTest, CancelAllCancelsCallbacks) {
   // Can still send a ping, no callback should be invoked
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });
@@ -574,9 +554,7 @@ TEST(PingCallbacksTest, CancelAllCancelsInflightPings) {
   EXPECT_FALSE(acked);
   EXPECT_CALL(event_engine, RunAfter(EventEngine::Duration(Duration::Hours(24)),
                                      Matcher<absl::AnyInvocable<void()>>(_)))
-      .WillOnce([]() {
-        return EventEngine::TaskHandle{123, 456};
-      });
+      .WillOnce([]() { return EventEngine::TaskHandle{123, 456}; });
   auto id = callbacks.StartPing(bitgen);
   callbacks.OnPingTimeout(Duration::Hours(24), &event_engine,
                           [] { Crash("should not reach here"); });

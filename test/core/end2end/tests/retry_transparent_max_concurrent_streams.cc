@@ -110,7 +110,10 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server should get the second call.
   auto s2 = RequestCall(201);
   Expect(201, true);
-  Step();
+  // Give enough time for the handshake to timeout, and a new handshake to start
+  // if needed. (b/333896115)
+  // TODO(yashykt): Remove the extra duration on fixing b/362326480.
+  Step(Duration::Seconds(30));
   EXPECT_EQ(s2.method(), "/service/method");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.

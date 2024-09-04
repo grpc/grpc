@@ -128,9 +128,8 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
 auto ChaoticGoodServerTransport::SendFragment(
     ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
-  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-    LOG(INFO) << "CHAOTIC_GOOD: SendFragment: frame=" << frame.ToString();
-  }
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: SendFragment: frame=" << frame.ToString();
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
   return Map(outgoing_frames.Send(std::move(frame)),
@@ -204,10 +203,9 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
       Map(SendCallInitialMetadataAndBody(stream_id, outgoing_frames,
                                          call_initiator),
           [stream_id](absl::Status main_body_result) {
-            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-              VLOG(2) << "CHAOTIC_GOOD: CallOutboundLoop: stream_id="
-                      << stream_id << " main_body_result=" << main_body_result;
-            }
+            GRPC_TRACE_VLOG(chaotic_good, 2)
+                << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
+                << " main_body_result=" << main_body_result;
             return Empty{};
           }),
       call_initiator.PullServerTrailingMetadata(),

@@ -69,10 +69,9 @@ class XdsEndpointTest : public ::testing::Test {
  protected:
   XdsEndpointTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        &xds_endpoint_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{
+            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
@@ -487,8 +486,6 @@ TEST_F(XdsEndpointTest, MissingAddress) {
 }
 
 TEST_F(XdsEndpointTest, MultipleAddressesPerEndpoint) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -543,8 +540,6 @@ TEST_F(XdsEndpointTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesMissingAddress) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -575,8 +570,6 @@ TEST_F(XdsEndpointTest, AdditionalAddressesMissingAddress) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesMissingSocketAddress) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -608,8 +601,6 @@ TEST_F(XdsEndpointTest, AdditionalAddressesMissingSocketAddress) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesInvalidPort) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -645,8 +636,6 @@ TEST_F(XdsEndpointTest, AdditionalAddressesInvalidPort) {
 }
 
 TEST_F(XdsEndpointTest, AdditionalAddressesInvalidAddress) {
-  testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
@@ -681,7 +670,9 @@ TEST_F(XdsEndpointTest, AdditionalAddressesInvalidAddress) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenNotEnabled) {
+TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenDisabled) {
+  testing::ScopedEnvVar env("GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS",
+                            "false");
   ClusterLoadAssignment cla;
   cla.set_cluster_name("foo");
   auto* locality = cla.add_endpoints();
