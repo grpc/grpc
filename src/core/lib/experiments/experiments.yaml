@@ -145,6 +145,11 @@
   expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
+- name: time_caching_in_party
+  description: Disable time caching in exec_ctx, and enable it only in a single party execution.
+  owner: ctiller@google.com
+  expiry: 2024/12/12
+  test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
   expiry: 2024/12/01
