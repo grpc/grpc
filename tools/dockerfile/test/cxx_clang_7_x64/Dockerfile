@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:6
+FROM silkeh/clang:7-buster
 
 RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
 #=================
@@ -56,10 +56,10 @@ RUN python3 -m pip install twisted
 RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 #=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
-
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+# Install cmake using the install script.
+RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
+    && sh cmake-linux.sh -- --skip-license --prefix=/usr \
+    && rm cmake-linux.sh
 
 #=================
 # Install ccache

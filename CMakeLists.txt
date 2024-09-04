@@ -416,18 +416,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNL
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
-    5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
-    googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
+    0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
+    googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
-    5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
-    googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
+    https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
+    0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
+    googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
   )
 endif()
 # Setup external proto library at third_party/opencensus-proto/src with 2 download URLs

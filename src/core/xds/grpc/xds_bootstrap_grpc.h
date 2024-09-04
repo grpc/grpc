@@ -19,7 +19,6 @@
 
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -29,9 +28,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -93,8 +90,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
 
    private:
     std::vector<GrpcXdsServer> servers_;
