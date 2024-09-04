@@ -173,10 +173,11 @@ Pod::Spec.new do |s|
     # /src/boringssl/boringssl_prefix_symbols.h. Here we decode the content and inject the header to
     # the correct location in BoringSSL.
     case "$(uname)" in
-      Darwin) opts="" ;;
-           *) opts="--ignore-garbage" ;;
+      Darwin) opts=""; BASE64_BIN=/usr/bin/base64 ;;
+      *) opts="--ignore-garbage"; BASE64_BIN=base64 ;;
     esac
-    base64 --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
+
+    "$BASE64_BIN" --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
       H4sICAAAAAAC/2JvcmluZ3NzbF9wcmVmaXhfc3ltYm9scy5oALS9XXPbuJaofT+/wnXm5kzVrpnY6WRn
       v3eKrXQ0cWxvSenpzA2LkiCLOxSpEJRj968/AEmJ+FgL5FrwW7VrpmPpeRYFgPgiCPzXf108ikJUaS02
       F6uX8z+SVVllxaOUeXKoxDZ7TnYi3YjqP+XuoiwuPjafLha3F+tyv8/q/+/i8v36w+btZnWZbq/ebNfr
@@ -696,7 +697,7 @@ Pod::Spec.new do |s|
     EOF
 
     # PrivacyInfo.xcprivacy is not part of BoringSSL repo, inject it during pod installation
-    base64 --decode $opts <<EOF | gunzip > src/PrivacyInfo.xcprivacy
+    "$BASE64_BIN" --decode $opts <<EOF | gunzip > src/PrivacyInfo.xcprivacy
       H4sICAAAAAAC/1ByaXZhY3lJbmZvLnhjcHJpdmFjeQCFUU1PwjAYPo9fUXtnr7uoMWMEN0iWEFykHDw2
       3Ss2dGvTNuD+vUWdk4hya54+n3nT6VujyB6tk7qd0CS+pgRboWvZbid0wxbjOzrNRulV8Ziz52pOjJLO
       k2rzsCxzQscAM2MUAhSsINWyXDMSPADmK0roq/fmHuBwOMT8yIqFbo5EB5XVBq3vlsFsHARx7WsaYj7d
