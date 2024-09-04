@@ -229,6 +229,7 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     : reserve_threads_(reserve_threads), queue_(this) {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
+  LOG(INFO) << "Starting thread pool " << getpid();
   for (size_t i = 0; i < reserve_threads_; i++) {
     StartThread();
   }
@@ -238,7 +239,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
-  CHECK(!IsQuiesced());
+  CHECK(!IsQuiesced()) << " pid: " << getpid();
   if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
@@ -282,6 +283,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   }
   CHECK(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
+  LOG(INFO) << "Thread pool running " << getpid();
   grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_.reset();
 }

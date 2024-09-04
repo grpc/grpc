@@ -52,10 +52,10 @@ namespace experimental {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
-  GrpcPolledFdPosix(ares_socket_t as, EventHandle* handle)
+  GrpcPolledFdPosix(ares_socket_t as, EventHandleRef handle)
       : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))),
         as_(as),
-        handle_(handle) {}
+        handle_(std::move(handle)) {}
 
   ~GrpcPolledFdPosix() override {
     // c-ares library will close the fd. This fd may be picked up immediately by
@@ -95,7 +95,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
  private:
   const std::string name_;
   const ares_socket_t as_;
-  EventHandle* handle_;
+  EventHandleRef handle_;
 };
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {

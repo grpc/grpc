@@ -18,6 +18,8 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
+#include <unistd.h>
+
 #include <memory>
 #include <utility>
 
@@ -144,6 +146,7 @@ void TimerManager::RestartPostFork() {
       << "TimerManager::" << this << " restarting after shutdown";
   shutdown_ = false;
   main_loop_exit_signal_.emplace();
+  LOG(INFO) << "Starting timer manager " << getpid();
   thread_pool_->Run([this]() { MainLoop(); });
 }
 

@@ -15,11 +15,9 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_FORKABLE_H
 
 #include <memory>
-#include <vector>
+#include <set>
 
 #include <grpc/support/port_platform.h>
-
-#include "src/core/lib/debug/trace.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -29,6 +27,10 @@ namespace experimental {
 class Forkable {
  public:
   virtual ~Forkable() = default;
+  // Pre-fork is executed in the order of decreased return value. Post fork is
+  // executed in the order of increased value.
+  // Pollers return 1. Thread pool is 1000. Timer manager is 10000.
+  virtual int fork_priority() const = 0;
   virtual void PrepareFork() = 0;
   virtual void PostforkParent() = 0;
   virtual void PostforkChild() = 0;
@@ -58,9 +60,13 @@ class ObjectGroupForkHandler {
   void PostforkChild();
 
  private:
+  struct CompareForkablesByPriority {
+    bool operator()(const std::weak_ptr<Forkable>& f1,
+                    const std::weak_ptr<Forkable>& f2) const;
+  };
   GRPC_UNUSED bool registered_ = false;
   bool is_forking_ = false;
-  std::vector<std::weak_ptr<Forkable> > forkables_;
+  std::set<std::weak_ptr<Forkable>, CompareForkablesByPriority> forkables_;
 };
 
 }  // namespace experimental
