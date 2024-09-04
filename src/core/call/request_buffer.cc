@@ -87,6 +87,17 @@ void RequestBuffer::SwitchToStreaming(Reader* winner) {
   ReleasableMutexLock lock(&mu_);
   CHECK_EQ(winner_, nullptr);
   winner_ = winner;
+  if (auto* buffering = absl::get_if<Buffering>(&state_)) {
+    if (buffering->initial_metadata != nullptr &&
+        winner->message_index_ == buffering->messages.size()) {
+      state_.emplace<Streaming>();
+    }
+  } else if (auto* buffered = absl::get_if<Buffered>(&state_)) {
+    CHECK_NE(buffered->initial_metadata.get(), nullptr);
+    if (winner->message_index_ == buffered->messages.size()) {
+      state_.emplace<Streaming>().end_of_stream = true;
+    }
+  }
   auto wakeup = pull_waiters_.TakeWakeupSet();
   lock.Release();
   wakeup.Wakeup();

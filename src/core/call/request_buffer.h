@@ -17,7 +17,6 @@
 
 #include <utility>
 
-#include "src/core/lib/promise/wait_set.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -43,6 +42,8 @@ class RequestBuffer {
     absl::Status TakeError() { return std::move(error_); }
 
    private:
+    friend class RequestBuffer;
+
     Poll<ValueOrFailure<ClientMetadataHandle>> PollPullClientInitialMetadata();
     Poll<ValueOrFailure<absl::optional<MessageHandle>>> PollPullMessage();
 
@@ -63,6 +64,7 @@ class RequestBuffer {
     RequestBuffer* const buffer_;
     size_t message_index_ = 0;
     absl::Status error_;
+    Waker pull_waker_;
   };
 
   StatusFlag PushClientInitialMetadata(ClientMetadataHandle md);
@@ -102,18 +104,24 @@ class RequestBuffer {
   using State = absl::variant<Buffering, Buffered, Streaming, Cancelled>;
 
   Poll<ValueOrFailure<size_t>> PollPushMessage(MessageHandle& message);
-  Pending PendingPull() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return pull_waiters_.AddPending(Activity::current()->MakeOwningWaker());
+  Pending PendingPull(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    reader->pull_waker_ = Activity::current()->MakeOwningWaker();
+    return Pending{};
   }
   Pending PendingPush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     push_waker_ = Activity::current()->MakeOwningWaker();
-    return Pending();
+    return Pending{};
   }
+
+  void WakeupAsyncAllPullers() { WakeupAsyncAllPullersExcept(nullptr); }
+  void WakeupAsyncAllPullersExcept(Reader* reader);
 
   Mutex mu_;
   Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
   State state_ ABSL_GUARDED_BY(mu_){Buffering{}};
-  WaitSet pull_waiters_ ABSL_GUARDED_BY(mu_);
+  // TODO(ctiller): change this to an intrusively linked list to avoid
+  // allocations.
+  absl::flat_hash_set<Reader*> readers_ ABSL_GUARDED_BY(mu_);
   Waker push_waker_ ABSL_GUARDED_BY(mu_);
 };
 
