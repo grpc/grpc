@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -265,7 +266,13 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
     const XdsBootstrap::XdsServer& server, absl::Status* status)
-    : factory_(std::move(factory)), key_(server.Key()) {
+    : XdsTransport(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
+                       ? "GrpcXdsTransport"
+                       : nullptr),
+      factory_(std::move(factory)),
+      key_(server.Key()) {
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[GrpcXdsTransport " << this << "] created";
   channel_ = CreateXdsChannel(factory_->args_,
                               static_cast<const GrpcXdsServer&>(server));
   CHECK(channel_ != nullptr);
@@ -274,7 +281,14 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   }
 }
 
+GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[GrpcXdsTransport " << this << "] destroying";
+}
+
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[GrpcXdsTransport " << this << "] orphaned";
   {
     MutexLock lock(&factory_->mu_);
     auto it = factory_->transports_.find(key_);
@@ -289,7 +303,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
       [self = WeakRefAsSubclass<GrpcXdsTransport>()]() mutable {
         ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
-        self.release();
+        self.reset();
       });
 }
 

@@ -72,6 +72,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    const XdsBootstrap::XdsServer& server, absl::Status* status);
+  ~GrpcXdsTransport() override;
 
   void Orphaned() override;
 

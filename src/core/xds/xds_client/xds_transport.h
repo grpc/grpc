@@ -70,6 +70,9 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
       virtual void OnConnectivityFailure(absl::Status status) = 0;
     };
 
+    explicit XdsTransport(const char* trace = nullptr)
+        : DualRefCounted(trace) {}
+
     // Starts a connectivity failure watcher on the transport.
     virtual void StartConnectivityFailureWatch(
         RefCountedPtr<ConnectivityFailureWatcher> watcher) = 0;
