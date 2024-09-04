@@ -270,9 +270,11 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
   absl::optional<ScopedTimeCache> time_cache;
+#if !TARGET_OS_IPHONE
   if (IsTimeCachingInPartyEnabled()) {
     time_cache.emplace();
   }
+#endif
   for (;;) {
     uint64_t keep_allocated_mask = kAllocatedMask;
     // For each wakeup bit...
