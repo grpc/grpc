@@ -853,7 +853,10 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
-        "//src/core:grpc_resolver_binder",
+        # TODO(b/365123034): The gRPC Binder transport is unmaintained, and users of it have refused to maintain it.
+        # gRPC Binder tests have been failing for months.
+        # Per go/thirdparty/maintenance#abandoning, it is our responsibility to delete this code.
+        # "//src/core:grpc_resolver_binder",
         "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "//src/core:grpc_resolver_dns_native",
@@ -941,6 +944,10 @@ grpc_cc_library(
         {
             "grpc_no_binder": [],
             "//conditions:default": [
+                # TODO(b/365123034): The gRPC Binder transport is unmaintained, and users of it have refused to maintain it.
+                # gRPC Binder tests have been failing for months.
+                # Per go/thirdparty/maintenance#abandoning, it is our responsibility to delete this code.
+                # If this change breaks you, you will need to find a suitable owner to maintain this code.
                 "grpc++_binder",
             ],
         },
@@ -1146,6 +1153,11 @@ grpc_cc_library(
         "include/grpcpp/security/binder_credentials.h",
     ],
     tags = ["nofixdeps"],
+    # TODO(b/365123034): The gRPC Binder transport is unmaintained, and users of it have refused to maintain it.
+    # gRPC Binder tests have been failing for months.
+    # Per go/thirdparty/maintenance#abandoning, it is our responsibility to delete this code.
+    # If this change breaks you, you will need to find a suitable owner to maintain this code.
+    visibility = ["//visibility:private"],
     deps = [
         "channel",
         "channel_create",
