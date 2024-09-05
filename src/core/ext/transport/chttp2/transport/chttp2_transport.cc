@@ -2958,20 +2958,16 @@ void grpc_chttp2_config_default_keepalive_args_server(
   g_default_server_keepalive_time =
       std::max(grpc_core::Duration::Milliseconds(1),
                channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
-                   .value_or(is_client ? g_default_client_keepalive_time
-                                       : g_default_server_keepalive_time));
+                   .value_or(g_default_server_keepalive_time));
 
   g_default_server_keepalive_timeout = std::max(
       grpc_core::Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
-          .value_or(is_client ? g_default_client_keepalive_timeout
-                              : g_default_server_keepalive_timeout));
+          .value_or(g_default_server_keepalive_timeout));
 
   g_default_server_keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-          .value_or(is_client
-                        ? g_default_client_keepalive_permit_without_calls
-                        : g_default_server_keepalive_permit_without_calls);
+          .value_or(g_default_server_keepalive_permit_without_calls);
 
   grpc_core::Chttp2PingAbusePolicy::SetDefaults(channel_args);
   grpc_core::Chttp2PingRatePolicy::SetDefaults(channel_args);
