@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
