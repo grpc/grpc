@@ -38,6 +38,7 @@
 #include <grpc/impl/connectivity_state.h>
 
 #include "src/core/channelz/channelz.h"
+#include "src/core/client_channel/blackboard.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
@@ -315,6 +316,8 @@ class ClientChannelFilter final {
   RefCountedPtr<ServiceConfig> saved_service_config_
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
+      ABSL_GUARDED_BY(*work_serializer_);
+  RefCountedPtr<const Blackboard> blackboard_
       ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(*work_serializer_);

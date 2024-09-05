@@ -1495,7 +1495,12 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
     config_selector =
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
-  ChannelArgs new_args = args.SetObject(this).SetObject(service_config);
+  // Modify channel args.
+  auto new_blackboard = MakeRefCounted<Blackboard>();
+  config_selector->PopulateBlackboard(blackboard_.get(), new_blackboard.get());
+  blackboard_ = std::move(new_blackboard);
+  ChannelArgs new_args =
+      args.SetObject(this).SetObject(service_config).SetObject(blackboard_);
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);

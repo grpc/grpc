@@ -30,6 +30,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/client_channel/blackboard.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -61,6 +62,11 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     if (cs1->name() != cs2->name()) return false;
     return cs1->Equals(cs2);
   }
+
+  // Populates new_blackboard with data to be used in filters.
+  // May reuse entries from old_blackboard if non-null.
+  virtual void PopulateBlackboard(const Blackboard* /*old_blackboard*/,
+                                  Blackboard* /*new_blackboard*/) {}
 
   // The channel will call this when the resolver returns a new ConfigSelector
   // to determine what set of dynamic filters will be configured.

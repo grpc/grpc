@@ -3775,6 +3775,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_spine",
