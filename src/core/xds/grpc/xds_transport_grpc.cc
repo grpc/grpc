@@ -34,7 +34,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"

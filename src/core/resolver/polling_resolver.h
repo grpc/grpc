@@ -77,7 +77,7 @@ class PollingResolver : public Resolver {
   void OnRequestCompleteLocked(Result result);
   void GetResultStatus(absl::Status status);
 
-  void ScheduleNextResolutionTimer(const Duration& timeout);
+  void ScheduleNextResolutionTimer(Duration delay);
   void OnNextResolutionLocked();
   void MaybeCancelNextResolutionTimer();
 

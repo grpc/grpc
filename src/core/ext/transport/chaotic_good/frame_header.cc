@@ -19,7 +19,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {

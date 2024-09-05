@@ -586,11 +586,9 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     std::shared_ptr<const XdsListenerResource> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
-    LOG(INFO) << "[ListenerWatcher " << this
-              << "] Received LDS update from xds client " << xds_client_.get()
-              << ": " << listener->ToString();
-  }
+  GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+      << "[ListenerWatcher " << this << "] Received LDS update from xds client "
+      << xds_client_.get() << ": " << listener->ToString();
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&listener->listener);
   if (tcp_listener == nullptr) {
@@ -1178,7 +1176,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
-      auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
           http_filter_registry, http_filters, vhost, route, nullptr,
           ChannelArgs());
       if (!result.ok()) return result.status();

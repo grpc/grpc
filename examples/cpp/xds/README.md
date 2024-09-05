@@ -10,7 +10,7 @@ The client takes two command-line arguments -
 
 The server takes three command-line arguments -
 * port - Port on which the Hello World service is run. Defaults to 50051.
-* mantenance_port - If secure mode is used (see below), the [Admin](https://github.com/grpc/proposal/blob/master/A38-admin-interface-api.md) service is exposed on this port. If secure mode is not used, `maintenance_port` is unused, and the Admin service is just exposed on `port`. Defaults to 50052.
+* maintenance_port - If secure mode is used (see below), the [Admin](https://github.com/grpc/proposal/blob/master/A38-admin-interface-api.md) service is exposed on this port. If secure mode is not used, `maintenance_port` is unused, and the Admin service is just exposed on `port`. Defaults to 50052.
 * secure - Bool value, defaults to true. When this is set, [XdsServerCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureServerCredentials`. If unset, `InsecureServerCredentials` will be used.
 
 ## Running the example

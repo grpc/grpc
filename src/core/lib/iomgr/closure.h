@@ -292,18 +292,15 @@ class Closure {
       return;
     }
 #ifndef NDEBUG
-    if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-      VLOG(2) << "running closure " << closure << ": created ["
-              << closure->file_created << ":" << closure->line_created
-              << "]: run [" << location.file() << ":" << location.line() << "]";
-    }
+    GRPC_TRACE_VLOG(closure, 2)
+        << "running closure " << closure << ": created ["
+        << closure->file_created << ":" << closure->line_created << "]: run ["
+        << location.file() << ":" << location.line() << "]";
     CHECK_NE(closure->cb, nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    if (GRPC_TRACE_FLAG_ENABLED(closure)) {
-      VLOG(2) << "closure " << closure << " finished";
-    }
+    GRPC_TRACE_VLOG(closure, 2) << "closure " << closure << " finished";
 #endif
   }
 };

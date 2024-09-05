@@ -27,7 +27,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"

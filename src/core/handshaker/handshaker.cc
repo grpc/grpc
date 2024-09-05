@@ -81,11 +81,10 @@ HandshakeManager::HandshakeManager()
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO) << "handshake_manager " << this << ": adding handshaker "
-              << std::string(handshaker->name()) << " [" << handshaker.get()
-              << "] at index " << handshakers_.size();
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": adding handshaker "
+      << std::string(handshaker->name()) << " [" << handshaker.get()
+      << "] at index " << handshakers_.size();
   handshakers_.push_back(std::move(handshaker));
 }
 
@@ -153,11 +152,10 @@ void HandshakeManager::Shutdown(absl::Status error) {
 }
 
 void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO) << "handshake_manager " << this << ": error=" << error
-              << " shutdown=" << is_shutdown_ << " index=" << index_
-              << ", args=" << HandshakerArgsString(&args_);
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": error=" << error
+      << " shutdown=" << is_shutdown_ << " index=" << index_
+      << ", args=" << HandshakerArgsString(&args_);
   CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
@@ -168,12 +166,10 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       error = GRPC_ERROR_CREATE("handshaker shutdown");
       args_.endpoint.reset();
     }
-    if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-      LOG(INFO) << "handshake_manager " << this
-                << ": handshaking complete -- scheduling "
-                   "on_handshake_done with error="
-                << error;
-    }
+    GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
+                                     << ": handshaking complete -- scheduling "
+                                        "on_handshake_done with error="
+                                     << error;
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     args_.event_engine->Cancel(deadline_timer_handle_);
@@ -192,11 +188,10 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   }
   // Call the next handshaker.
   auto handshaker = handshakers_[index_];
-  if (GRPC_TRACE_FLAG_ENABLED(handshaker)) {
-    LOG(INFO) << "handshake_manager " << this << ": calling handshaker "
-              << handshaker->name() << " [" << handshaker.get() << "] at index "
-              << index_;
-  }
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "handshake_manager " << this << ": calling handshaker "
+      << handshaker->name() << " [" << handshaker.get() << "] at index "
+      << index_;
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
     MutexLock lock(&self->mu_);

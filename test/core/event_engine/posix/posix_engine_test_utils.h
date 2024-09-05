@@ -30,7 +30,7 @@ class TestScheduler : public Scheduler {
  public:
   explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
       : engine_(engine) {}
-  TestScheduler() : engine_(nullptr){};
+  TestScheduler() : engine_(nullptr) {};
   void ChangeCurrentEventEngine(
       grpc_event_engine::experimental::EventEngine* engine) {
     engine_ = engine;

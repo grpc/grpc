@@ -268,8 +268,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         absl::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(context, std::move(*extension),
-                                              errors);
+            filter_impl->GenerateFilterConfig(name, context,
+                                              std::move(*extension), errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -478,11 +478,11 @@ absl::optional<XdsListenerResource::FilterChainMap::CidrRange> CidrRangeParse(
   }
   cidr_range.address = *address;
   cidr_range.prefix_len = 0;
-  auto* prefix_len_proto =
-      envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto);
-  if (prefix_len_proto != nullptr) {
+  auto value = ParseUInt32Value(
+      envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto));
+  if (value.has_value()) {
     cidr_range.prefix_len = std::min(
-        google_protobuf_UInt32Value_value(prefix_len_proto),
+        *value,
         (reinterpret_cast<const grpc_sockaddr*>(cidr_range.address.addr))
                     ->sa_family == GRPC_AF_INET
             ? uint32_t{32}
@@ -499,12 +499,11 @@ absl::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
   FilterChain::FilterChainMatch filter_chain_match;
   const size_t original_error_size = errors->size();
   // destination_port
-  auto* destination_port =
+  auto destination_port = ParseUInt32Value(
       envoy_config_listener_v3_FilterChainMatch_destination_port(
-          filter_chain_match_proto);
-  if (destination_port != nullptr) {
-    filter_chain_match.destination_port =
-        google_protobuf_UInt32Value_value(destination_port);
+          filter_chain_match_proto));
+  if (destination_port.has_value()) {
+    filter_chain_match.destination_port = *destination_port;
   }
   // prefix_ranges
   size_t size = 0;

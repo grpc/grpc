@@ -40,7 +40,6 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 

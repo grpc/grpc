@@ -105,6 +105,7 @@ class ConnectorFuzzer {
           engine_->RunAfterExactly(
               Duration::Milliseconds(when_ms),
               [this, new_size = action.resize_resource_quota()]() {
+                ExecCtx exec_ctx;
                 resource_quota_->memory_quota()->SetSize(new_size);
               });
           when_ms += 1;

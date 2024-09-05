@@ -372,10 +372,8 @@ CommonTlsContext CommonTlsContextParse(
 }
 
 //
-// ExtractXdsExtension
+// ParseProtobufStructToJson()
 //
-
-namespace {
 
 absl::StatusOr<Json> ParseProtobufStructToJson(
     const XdsResourceType::DecodeContext& context,
@@ -405,7 +403,9 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
   return std::move(*json);
 }
 
-}  // namespace
+//
+// ExtractXdsExtension()
+//
 
 absl::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,

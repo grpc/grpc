@@ -118,17 +118,13 @@ void TimerManager::Shutdown() {
   {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) return;
-    if (GRPC_TRACE_FLAG_ENABLED(timer)) {
-      VLOG(2) << "TimerManager::" << this << " shutting down";
-    }
+    GRPC_TRACE_VLOG(timer, 2) << "TimerManager::" << this << " shutting down";
     shutdown_ = true;
     // Wait on the main loop to exit.
     cv_wait_.Signal();
   }
   main_loop_exit_signal_->WaitForNotification();
-  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
-    VLOG(2) << "TimerManager::" << this << " shutdown complete";
-  }
+  GRPC_TRACE_VLOG(timer, 2) << "TimerManager::" << this << " shutdown complete";
 }
 
 TimerManager::~TimerManager() { Shutdown(); }
@@ -144,9 +140,8 @@ void TimerManager::Kick() {
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
   CHECK(GPR_LIKELY(shutdown_));
-  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
-    VLOG(2) << "TimerManager::" << this << " restarting after shutdown";
-  }
+  GRPC_TRACE_VLOG(timer, 2)
+      << "TimerManager::" << this << " restarting after shutdown";
   shutdown_ = false;
   main_loop_exit_signal_.emplace();
   thread_pool_->Run([this]() { MainLoop(); });

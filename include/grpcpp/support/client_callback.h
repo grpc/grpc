@@ -26,7 +26,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/sync.h>

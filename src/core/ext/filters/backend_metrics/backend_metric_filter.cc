@@ -128,9 +128,8 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-      LOG(INFO) << "[" << this << "] No BackendMetricProvider.";
-    }
+    GRPC_TRACE_LOG(backend_metric_filter, INFO)
+        << "[" << this << "] No BackendMetricProvider.";
     return;
   }
   absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
@@ -140,8 +139,9 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
         << "] Backend metrics serialized. size: " << serialized->size();
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
-  } else if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-    LOG(INFO) << "[" << this << "] No backend metrics.";
+  } else {
+    GRPC_TRACE_LOG(backend_metric_filter, INFO)
+        << "[" << this << "] No backend metrics.";
   }
 }
 
