@@ -50,11 +50,12 @@ class ForkableTest : public testing::Test {};
 
 #ifdef GPR_POSIX_SUBPROCESS
 TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
-  class SomeForkable : public Forkable {
+  class SomeForkable final : public Forkable {
    public:
     void PrepareFork() override { prepare_called_ = true; }
     void PostforkParent() override { parent_called_ = true; }
     void PostforkChild() override { child_called_ = true; }
+    int fork_priority() const override { return 1000; }
 
     void CheckParent() {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
@@ -123,11 +124,12 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
   GTEST_SKIP() << "Unnecessary test, this platform supports pthreads.";
 #endif
 
-  class SomeForkable : public Forkable {
+  class SomeForkable final : public Forkable {
    public:
     void PrepareFork() override { prepare_called_ = true; }
     void PostforkParent() override { parent_called_ = true; }
     void PostforkChild() override { child_called_ = true; }
+    int fork_priority() const override { return 1000; }
 
     void AssertStates(bool prepare, bool parent, bool child) {
       EXPECT_EQ(prepare_called_, prepare);
