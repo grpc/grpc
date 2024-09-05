@@ -48,7 +48,8 @@ const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_local_connector_secure =
-    "Local Security Connector uses TSI_PRIVACY_AND_INTEGRITY only for UDS.";
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
@@ -190,7 +191,8 @@ const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_local_connector_secure =
-    "Local Security Connector uses TSI_PRIVACY_AND_INTEGRITY only for UDS.";
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
@@ -332,7 +334,8 @@ const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_local_connector_secure =
-    "Local Security Connector uses TSI_PRIVACY_AND_INTEGRITY only for UDS.";
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
@@ -407,7 +410,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
     {"monitoring_experiment", description_monitoring_experiment,

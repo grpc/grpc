@@ -4098,9 +4098,9 @@ grpc_cc_library(
         "//:promise",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
-        "//src/core:experiments",
         "//:tsi_base",
         "//:uri_parser",
+        "//src/core:experiments",
     ],
 )
 
