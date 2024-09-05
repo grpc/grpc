@@ -217,7 +217,7 @@ class GRPC_DLL ExecCtx : public latent_see::ParentScope {
 
   void TestOnlySetNow(Timestamp now) {
     if (!time_cache_.has_value()) time_cache_.emplace();
-    time_cache_->TestOnlySetNow(Timestamp::InfFuture());
+    time_cache_->TestOnlySetNow(now);
   }
 
   /// Gets pointer to current exec_ctx.
