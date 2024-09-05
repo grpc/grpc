@@ -2924,17 +2924,6 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                             is_client);
 }
 
-void grpc_chttp2_config_default_keepalive_args(
-    const grpc_core::ChannelArgs& channel_args, const bool is_client) {
-  if (is_client) {
-    grpc_chttp2_config_default_keepalive_args_client(channel_args);
-  } else {
-    grpc_chttp2_config_default_keepalive_args_server(channel_args);
-  }
-  grpc_core::Chttp2PingAbusePolicy::SetDefaults(channel_args);
-  grpc_core::Chttp2PingRatePolicy::SetDefaults(channel_args);
-}
-
 static void grpc_chttp2_config_default_keepalive_args_client(
     const grpc_core::ChannelArgs& channel_args) {
   g_default_client_keepalive_time =
@@ -2963,6 +2952,17 @@ static void grpc_chttp2_config_default_keepalive_args_server(
   g_default_server_keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(g_default_server_keepalive_permit_without_calls);
+}
+
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& channel_args, const bool is_client) {
+  if (is_client) {
+    grpc_chttp2_config_default_keepalive_args_client(channel_args);
+  } else {
+    grpc_chttp2_config_default_keepalive_args_server(channel_args);
+  }
+  grpc_core::Chttp2PingAbusePolicy::SetDefaults(channel_args);
+  grpc_core::Chttp2PingRatePolicy::SetDefaults(channel_args);
 }
 
 static void init_keepalive_ping(
