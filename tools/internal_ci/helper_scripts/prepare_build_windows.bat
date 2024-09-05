@@ -94,6 +94,9 @@ If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
 @rem Needed for uploading test results to bigquery
 python -m pip install google-api-python-client oauth2client six==1.16.0 || goto :error
 
+@rem Testing the protobuf version
+python -m pip install protobuf==4.25.4 || goto :error
+
 git submodule update --init || goto :error
 
 echo "!TIME!: prepare_build_windows.bat exiting with success"
