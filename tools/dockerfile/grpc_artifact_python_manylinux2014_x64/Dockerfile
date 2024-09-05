@@ -22,7 +22,7 @@ ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
 # TODO(jtattermusch): revisit which of the deps are really required
 RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
 
-###################################
+#===================================
 # Install Python build requirements
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade 'cython<3.0.0rc1'
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade 'cython<3.0.0rc1'
@@ -31,9 +31,10 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython<3.0.0rc1'
 RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython<3.0.0rc1'
 RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython<3.0.0rc1'
 RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython<3.0.0rc1'
 
 #=================
-# Install ccache
+# Install ccache (use slighly older release of ccache that works older compilers and cmake)
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
@@ -45,6 +46,7 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
+
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global protocol.file.allow always
