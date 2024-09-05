@@ -604,8 +604,8 @@ class CLanguage(object):
             )
         elif compiler == "gcc_musl":
             return ("alpine", [])
-        elif compiler == "clang6":
-            return ("clang_6", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang7":
+            return ("clang_7", self._clang_cmake_configure_extra_args())
         elif compiler == "clang18":
             return ("clang_18", self._clang_cmake_configure_extra_args())
         else:
@@ -1164,15 +1164,16 @@ class ObjCLanguage(object):
 
         # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
         # How does one add the cfstream dependency in bazel?
-        out.append(
-            self.config.job_spec(
-                ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
-                timeout_seconds=60 * 60,
-                shortname="ios-test-cfstream-tests",
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-            )
-        )
+        # Disabled due to flakiness and being replaced with event engine
+        # out.append(
+        #     self.config.job_spec(
+        #         ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
+        #         timeout_seconds=60 * 60,
+        #         shortname="ios-test-cfstream-tests",
+        #         cpu_cost=1e6,
+        #         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        #     )
+        # )
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1672,7 +1673,7 @@ argp.add_argument(
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
-        "clang6",
+        "clang7",
         "clang18",
         # TODO: Automatically populate from supported version
         "python3.7",

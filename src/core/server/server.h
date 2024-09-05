@@ -163,7 +163,7 @@ class Server : public ServerInterface,
       void StopServing() override;
 
      private:
-      RefCountedPtr<ListenerInterface> listener_;
+      const RefCountedPtr<ListenerInterface> listener_;
     };
 
     // State for a connection that is being managed by this listener.
@@ -209,7 +209,7 @@ class Server : public ServerInterface,
       virtual bool SendGoAwayImpl() = 0;
       virtual void DisconnectImmediatelyImpl() = 0;
 
-      RefCountedPtr<ListenerInterface> listener_;
+      const RefCountedPtr<ListenerInterface> listener_;
       grpc_event_engine::experimental::EventEngine* const event_engine_;
       mutable Mutex mu_;
       grpc_event_engine::experimental::EventEngine::TaskHandle

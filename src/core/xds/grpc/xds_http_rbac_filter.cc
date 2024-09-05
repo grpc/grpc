@@ -515,6 +515,7 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -536,6 +537,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -578,7 +580,7 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpRbacFilter::GenerateServiceConfig(
+XdsHttpRbacFilter::GenerateMethodConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   const Json& policy_json = filter_config_override != nullptr
@@ -586,6 +588,12 @@ XdsHttpRbacFilter::GenerateServiceConfig(
                                 : hcm_filter_config.config;
   // The policy JSON may be empty and that's allowed.
   return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpRbacFilter::GenerateServiceConfig(
+    const FilterConfig& /*hcm_filter_config*/) const {
+  return ServiceConfigJsonEntry{"", ""};
 }
 
 }  // namespace grpc_core

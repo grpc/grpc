@@ -181,7 +181,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     ActiveConnection(RefCountedPtr<Chttp2ServerListener> listener,
                      grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
                      const ChannelArgs& args, MemoryOwner memory_owner);
-    ~ActiveConnection() override;
     void Start(OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
 
     void Orphan() override;
@@ -279,6 +278,10 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
     grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
   }
   grpc_pollset_set_destroy(interested_parties_);
+  if (connection_->listener() != nullptr &&
+      connection_->listener_as_subclass()->tcp_server_ != nullptr) {
+    grpc_tcp_server_unref(connection_->listener_as_subclass()->tcp_server_);
+  }
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
@@ -449,13 +452,6 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
           accepting_pollset, std::move(acceptor), args)) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
-}
-
-Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
-  if (listener_as_subclass() != nullptr &&
-      listener_as_subclass()->tcp_server_ != nullptr) {
-    grpc_tcp_server_unref(listener_as_subclass()->tcp_server_);
-  }
 }
 
 void Chttp2ServerListener::ActiveConnection::Orphan() {
@@ -697,7 +693,9 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
           // not been Orphaned, so as to avoid heap-use-after-free issues where
           // `Ref()` is invoked when the listener is already shutdown. Note that
           // the listener holds a ref to the tcp_server but this ref is given
-          // away when the listener is orphaned (shutdown).
+          // away when the listener is orphaned (shutdown). A connection needs
+          // the tcp_server to outlast the handshake since the acceptor needs
+          // it.
           MutexLock lock(&self->mu_);
           if (self->shutdown_) {
             return nullptr;
