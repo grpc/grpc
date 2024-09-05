@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -49,10 +50,6 @@ class GcpAuthenticationFilter
   static absl::StatusOr<std::unique_ptr<GcpAuthenticationFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  GcpAuthenticationFilter(
-      const GcpAuthenticationParsedConfig::Config* filter_config,
-      RefCountedPtr<const XdsConfig> xds_config);
-
   class Call {
    public:
     absl::Status OnClientInitialMetadata(ClientMetadata& /*md*/,
@@ -66,15 +63,30 @@ class GcpAuthenticationFilter
   };
 
  private:
-  RefCountedPtr<grpc_call_credentials> GetCallCredentials(
-      const std::string& audience);
+  class CallCredentialsCache : public Blackboard::Entry {
+   public:
+    explicit CallCredentialsCache(size_t max_size) : cache_(max_size) {}
+
+    static UniqueTypeName Type();
+
+    void SetMaxSize(size_t max_size);
+
+    RefCountedPtr<grpc_call_credentials> Get(const std::string& audience);
+
+   private:
+    Mutex mu_;
+    LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
+        cache_ ABSL_GUARDED_BY(&mu_);
+  };
+
+  GcpAuthenticationFilter(
+      const GcpAuthenticationParsedConfig::Config* filter_config,
+      RefCountedPtr<const XdsConfig> xds_config,
+      RefCountedPtr<CallCredentialsCache> cache);
 
   const GcpAuthenticationParsedConfig::Config* filter_config_;
   const RefCountedPtr<const XdsConfig> xds_config_;
-
-  Mutex mu_;
-  LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
-      cache_ ABSL_GUARDED_BY(&mu_);
+  const RefCountedPtr<CallCredentialsCache> cache_;
 };
 
 }  // namespace grpc_core

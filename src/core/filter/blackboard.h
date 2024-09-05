@@ -40,33 +40,27 @@ namespace grpc_core {
 class Blackboard : public RefCounted<Blackboard> {
  public:
   // All entries must derive from this type.
-  class Entry : public RefCounted<Entry> {
-   public:
-    // The unique type of the entry.
-    virtual UniqueTypeName type() const = 0;
-  };
+  // They must also have a static method with the following signature:
+  //  static UniqueTypeName Type();
+  class Entry : public RefCounted<Entry> {};
 
   // Returns an entry for a particular type and name, or null if not present.
-  RefCountedPtr<Entry> Get(UniqueTypeName type, const std::string& key) const;
-
   template <typename T>
-  RefCountedPtr<T> Get(const std::string& key) {
+  RefCountedPtr<T> Get(const std::string& key) const {
     return Get(T::Type(), key).template TakeAsSubclass<T>();
   }
 
   // Sets an entry for a particular type and name.
+  template <typename T>
+  void Set(const std::string& key, RefCountedPtr<T> entry) {
+    Set(T::Type(), key, std::move(entry));
+  }
+
+ private:
+  RefCountedPtr<Entry> Get(UniqueTypeName type, const std::string& key) const;
   void Set(UniqueTypeName type, const std::string& key,
            RefCountedPtr<Entry> entry);
 
-  static absl::string_view ChannelArgName() {
-    return GRPC_ARG_NO_SUBCHANNEL_PREFIX "internal.blackboard";
-  }
-  static int ChannelArgsCompare(const Blackboard* a, const Blackboard* b) {
-    return QsortCompare(a, b);
-  }
-  static constexpr bool ChannelArgUseConstPtr() { return true; }
-
- private:
   absl::flat_hash_map<std::pair<UniqueTypeName, std::string>,
                       RefCountedPtr<Entry>>
       map_;

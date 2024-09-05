@@ -37,6 +37,10 @@
 
 namespace grpc_core {
 
+//
+// GcpAuthenticationFilter::Call
+//
+
 const NoInterceptor GcpAuthenticationFilter::Call::OnClientToServerMessage;
 const NoInterceptor GcpAuthenticationFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor GcpAuthenticationFilter::Call::OnServerInitialMetadata;
@@ -98,7 +102,7 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
         cluster_name));
   }
   // Get the call creds instance.
-  auto creds = filter->GetCallCredentials(
+  auto creds = filter->cache_->Get(
       DownCast<const XdsGcpAuthnAudienceMetadataValue*>(metadata_value)->url());
   // Add the call creds instance to the call.
   auto* arena = GetContext<Arena>();
@@ -113,6 +117,34 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
   return absl::OkStatus();
 }
 
+//
+// GcpAuthenticationFilter::CallCredentialsCache
+//
+
+UniqueTypeName GcpAuthenticationFilter::CallCredentialsCache::Type() {
+  static UniqueTypeName::Factory factory("gcp_auth_call_creds_cache");
+  return factory.Create();
+}
+
+void GcpAuthenticationFilter::CallCredentialsCache::SetMaxSize(
+    size_t max_size) {
+  MutexLock lock(&mu_);
+  cache_.SetMaxSize(max_size);
+}
+
+RefCountedPtr<grpc_call_credentials>
+GcpAuthenticationFilter::CallCredentialsCache::Get(
+    const std::string& audience) {
+  MutexLock lock(&mu_);
+  return cache_.GetOrInsert(audience, [](const std::string& audience) {
+    return MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(audience);
+  });
+}
+
+//
+// GcpAuthenticationFilter
+//
+
 const grpc_channel_filter GcpAuthenticationFilter::kFilter =
     MakePromiseBasedFilter<GcpAuthenticationFilter, FilterEndpoint::kClient,
                            0>();
@@ -120,6 +152,7 @@ const grpc_channel_filter GcpAuthenticationFilter::kFilter =
 absl::StatusOr<std::unique_ptr<GcpAuthenticationFilter>>
 GcpAuthenticationFilter::Create(const ChannelArgs& args,
                                 ChannelFilter::Args filter_args) {
+  // Get filter config.
   auto* service_config = args.GetObject<ServiceConfig>();
   if (service_config == nullptr) {
     return absl::InvalidArgumentError(
@@ -136,29 +169,39 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
     return absl::InvalidArgumentError(
         "gcp_auth: filter instance ID not found in filter config");
   }
+  // Get XdsConfig so that we can look up CDS resources.
   auto xds_config = args.GetObjectRef<XdsConfig>();
   if (xds_config == nullptr) {
     return absl::InvalidArgumentError(
         "gcp_auth: xds config not found in channel args");
   }
-  return std::make_unique<GcpAuthenticationFilter>(filter_config,
-                                                   std::move(xds_config));
+  // Get existing cache or create new one.
+  RefCountedPtr<CallCredentialsCache> cache;
+  if (filter_args.old_blackboard() != nullptr) {
+    cache = filter_args.old_blackboard()->Get<CallCredentialsCache>(
+        filter_config->filter_instance_name);
+    cache->SetMaxSize(filter_config->cache_size);
+  }
+  if (cache == nullptr) {
+    cache = MakeRefCounted<CallCredentialsCache>(filter_config->cache_size);
+  }
+  if (filter_args.new_blackboard() != nullptr) {
+    filter_args.new_blackboard()->Set(filter_config->filter_instance_name,
+                                      cache);
+  }
+  // Instantiate filter.
+  return std::unique_ptr<GcpAuthenticationFilter>(
+      new GcpAuthenticationFilter(filter_config, std::move(xds_config),
+                                  std::move(cache)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
     const GcpAuthenticationParsedConfig::Config* filter_config,
-    RefCountedPtr<const XdsConfig> xds_config)
+    RefCountedPtr<const XdsConfig> xds_config,
+    RefCountedPtr<CallCredentialsCache> cache)
     : filter_config_(filter_config),
       xds_config_(std::move(xds_config)),
-      cache_(filter_config->cache_size) {}
-
-RefCountedPtr<grpc_call_credentials>
-GcpAuthenticationFilter::GetCallCredentials(const std::string& audience) {
-  MutexLock lock(&mu_);
-  return cache_.GetOrInsert(audience, [](const std::string& audience) {
-    return MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(audience);
-  });
-}
+      cache_(std::move(cache)) {}
 
 void GcpAuthenticationFilterRegister(CoreConfiguration::Builder* builder) {
   GcpAuthenticationServiceConfigParser::Register(builder);

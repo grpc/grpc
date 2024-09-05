@@ -5036,6 +5036,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "context",

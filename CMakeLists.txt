@@ -2244,6 +2244,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
+  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -3050,6 +3051,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc

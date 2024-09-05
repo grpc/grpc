@@ -122,7 +122,7 @@ class ChannelFilter {
     }
 
     const Blackboard* old_blackboard() const { return old_blackboard_; }
-    const Blackboard* new_blackboard() const { return new_blackboard_; }
+    Blackboard* new_blackboard() const { return new_blackboard_; }
 
    private:
     friend class ChannelFilter;
