@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_BLACKBOARD_H
-#define GRPC_SRC_CORE_CLIENT_CHANNEL_BLACKBOARD_H
+#ifndef GRPC_SRC_CORE_FILTER_BLACKBOARD_H
+#define GRPC_SRC_CORE_FILTER_BLACKBOARD_H
 
 #include <string>
 #include <utility>
@@ -74,4 +74,4 @@ class Blackboard : public RefCounted<Blackboard> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_BLACKBOARD_H
+#endif  // GRPC_SRC_CORE_FILTER_BLACKBOARD_H

@@ -3295,10 +3295,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "blackboard",
     srcs = [
-        "client_channel/blackboard.cc",
+        "filter/blackboard.cc",
     ],
     hdrs = [
-        "client_channel/blackboard.h",
+        "filter/blackboard.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -3376,7 +3376,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
-        "blackboard",
         "channel_args",
         "channel_fwd",
         "client_channel_internal_header",

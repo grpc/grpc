@@ -25,6 +25,8 @@
 
 namespace grpc_core {
 
+class Blackboard;
+
 // Build a channel stack.
 // Allows interested parties to add filters to the stack, and to query an
 // in-progress build.
@@ -34,13 +36,24 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
  public:
   using ChannelStackBuilder::ChannelStackBuilder;
 
+  void SetBlackboards(const Blackboard* old_blackboard,
+                      Blackboard* new_blackboard) {
+    old_blackboard_ = old_blackboard;
+    new_blackboard_ = new_blackboard;
+  }
+
   // Build the channel stack.
   // After success, *result holds the new channel stack,
   // prefix_bytes are allocated before the channel stack,
   // initial_refs, destroy, destroy_arg are as per grpc_channel_stack_init
   // On failure, *result is nullptr.
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() override;
+
+ private:
+  const Blackboard* old_blackboard_ = nullptr;
+  Blackboard* new_blackboard_ = nullptr;
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H

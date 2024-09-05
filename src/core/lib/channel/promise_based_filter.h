@@ -81,15 +81,23 @@ class ChannelFilter {
    public:
     Args() : Args(nullptr, nullptr) {}
     Args(grpc_channel_stack* channel_stack,
-         grpc_channel_element* channel_element)
-        : impl_(ChannelStackBased{channel_stack, channel_element}) {}
+         grpc_channel_element* channel_element,
+         const Blackboard* old_blackboard = nullptr,
+         Blackboard* new_blackboard = nullptr)
+        : impl_(ChannelStackBased{channel_stack, channel_element}),
+          old_blackboard_(old_blackboard),
+          new_blackboard_(new_blackboard) {}
     // While we're moving to call-v3 we need to have access to
     // grpc_channel_stack & friends here. That means that we can't rely on this
     // type signature from interception_chain.h, which means that we need a way
     // of constructing this object without naming it ===> implicit construction.
     // TODO(ctiller): remove this once we're fully on call-v3
     // NOLINTNEXTLINE(google-explicit-constructor)
-    Args(size_t instance_id) : impl_(V3Based{instance_id}) {}
+    Args(size_t instance_id, const Blackboard* old_blackboard = nullptr,
+         Blackboard* new_blackboard = nullptr)
+        : impl_(V3Based{instance_id}),
+          old_blackboard_(old_blackboard),
+          new_blackboard_(new_blackboard) {}
 
     ABSL_DEPRECATED("Direct access to channel stack is deprecated")
     grpc_channel_stack* channel_stack() const {
@@ -113,6 +121,9 @@ class ChannelFilter {
           [](const V3Based& v3) { return v3.instance_id; });
     }
 
+    const Blackboard* old_blackboard() const { return old_blackboard_; }
+    const Blackboard* new_blackboard() const { return new_blackboard_; }
+
    private:
     friend class ChannelFilter;
 
@@ -127,6 +138,9 @@ class ChannelFilter {
 
     using Impl = absl::variant<ChannelStackBased, V3Based>;
     Impl impl_;
+
+    const Blackboard* old_blackboard_ = nullptr;
+    Blackboard* new_blackboard_ = nullptr;
   };
 
   // Perform post-initialization step (if any).
@@ -1620,8 +1634,10 @@ struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
     CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(args->channel_args,
-                            ChannelFilter::Args(args->channel_stack, elem));
+    auto status = F::Create(
+        args->channel_args,
+        ChannelFilter::Args(args->channel_stack, elem, args->old_blackboard,
+                            args->new_blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

@@ -1496,11 +1496,7 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
   // Modify channel args.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
-  config_selector->PopulateBlackboard(blackboard_.get(), new_blackboard.get());
-  blackboard_ = std::move(new_blackboard);
-  ChannelArgs new_args =
-      args.SetObject(this).SetObject(service_config).SetObject(blackboard_);
+  ChannelArgs new_args = args.SetObject(this).SetObject(service_config);
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
@@ -1512,9 +1508,11 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
-  RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args, std::move(filters));
+  auto new_blackboard = MakeRefCounted<Blackboard>();
+  RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
+      new_args, std::move(filters), blackboard_.get(), new_blackboard.get());
   CHECK(dynamic_filters != nullptr);
+  blackboard_ = std::move(new_blackboard);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until

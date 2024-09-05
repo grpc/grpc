@@ -23,11 +23,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/client_channel/blackboard.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
