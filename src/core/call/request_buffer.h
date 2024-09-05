@@ -27,7 +27,11 @@ class RequestBuffer {
  public:
   class Reader {
    public:
-    explicit Reader(RequestBuffer* buffer) : buffer_(buffer) {}
+    explicit Reader(RequestBuffer* buffer) ABSL_LOCKS_EXCLUDED(buffer->mu_)
+        : buffer_(buffer) {
+      buffer->AddReader(this);
+    }
+    ~Reader() ABSL_LOCKS_EXCLUDED(buffer_->mu_) { buffer_->RemoveReader(this); }
 
     Reader(const Reader&) = delete;
     Reader& operator=(const Reader&) = delete;
@@ -113,8 +117,19 @@ class RequestBuffer {
     return Pending{};
   }
 
-  void WakeupAsyncAllPullers() { WakeupAsyncAllPullersExcept(nullptr); }
-  void WakeupAsyncAllPullersExcept(Reader* reader);
+  void WakeupAsyncAllPullers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    WakeupAsyncAllPullersExcept(nullptr);
+  }
+  void WakeupAsyncAllPullersExcept(Reader* except_reader)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  void AddReader(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    readers_.insert(reader);
+  }
+
+  void RemoveReader(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    readers_.erase(reader);
+  }
 
   Mutex mu_;
   Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
