@@ -65,6 +65,6 @@ pid = fork do
   dump("/proc/#{Process.pid}/status")
   STDERR.puts "==== sanity check child process DONE ===="
 end
-child_pid, status = Process.wait2(pid)
+_, status = Process.wait2(pid)
 fail "sanity check require grpc in child process FAILED exit code #{status.exitstatus}" unless status.success?
 STDERR.puts "==== sanity check require grpc in child process SUCCESS ====="
