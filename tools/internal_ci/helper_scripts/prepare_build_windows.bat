@@ -98,7 +98,7 @@ python -m pip install google-api-python-client oauth2client six==1.16.0 || goto 
 python -m pip install protobuf==4.24.4 || goto :error
 
 @rem Checking pip installed versions
-python freeze || goto :error
+python -m pip freeze || goto :error
 
 git submodule update --init || goto :error
 
