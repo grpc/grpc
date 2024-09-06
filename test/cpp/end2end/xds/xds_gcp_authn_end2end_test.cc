@@ -222,16 +222,17 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
   RouteConfiguration route_config = default_route_config_;
   *route_config.mutable_virtual_hosts(0)->add_routes() =
       route_config.virtual_hosts(0).routes(0);
-  auto* header_matcher =
-      route_config.mutable_virtual_hosts(0)->mutable_routes(0)->mutable_match()
-          ->add_headers();
+  auto* header_matcher = route_config.mutable_virtual_hosts(0)
+                             ->mutable_routes(0)
+                             ->mutable_match()
+                             ->add_headers();
   header_matcher->set_name("foo");
   header_matcher->set_present_match(true);
-  route_config.mutable_virtual_hosts(0)->mutable_routes(0)
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
       ->mutable_non_forwarding_action();
-  SetListenerAndRouteConfiguration(balancer_.get(),
-                                   BuildListenerWithGcpAuthnFilter(),
-                                   route_config);
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithGcpAuthnFilter(), route_config);
   // Send RPCs with the header "foo" and wait for them to start failing.
   // When they do, we know that the client has seen the update.
   SendRpcsUntil(
@@ -243,8 +244,7 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
                   result.status.error_message());
         return false;
       },
-      /*timeout_ms=*/15000,
-      RpcOptions().set_metadata({{"foo", "bar"}}));
+      /*timeout_ms=*/15000, RpcOptions().set_metadata({{"foo", "bar"}}));
   // Now send an RPC without the header, which will go through the new
   // instance of the GCP auth filter.
   CheckRpcSendOk(DEBUG_LOCATION);

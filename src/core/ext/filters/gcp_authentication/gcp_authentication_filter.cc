@@ -190,9 +190,8 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
                                       cache);
   }
   // Instantiate filter.
-  return std::unique_ptr<GcpAuthenticationFilter>(
-      new GcpAuthenticationFilter(filter_config, std::move(xds_config),
-                                  std::move(cache)));
+  return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
+      filter_config, std::move(xds_config), std::move(cache)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(

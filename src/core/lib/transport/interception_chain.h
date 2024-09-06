@@ -185,9 +185,8 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
   Add() {
-    AddInterceptor(T::Create(args_,
-                             {FilterInstanceId(FilterTypeId<T>()),
-                              old_blackboard_, new_blackboard_}));
+    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                     old_blackboard_, new_blackboard_}));
     return *this;
   };
 

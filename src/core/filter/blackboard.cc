@@ -18,8 +18,8 @@
 
 namespace grpc_core {
 
-RefCountedPtr<Blackboard::Entry> Blackboard::Get(
-    UniqueTypeName type, const std::string& key) const {
+RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
+                                                 const std::string& key) const {
   auto it = map_.find(std::make_pair(type, key));
   if (it == map_.end()) return nullptr;
   return it->second;

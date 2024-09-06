@@ -116,8 +116,7 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
-    grpc_channel_stack* stack,
-    const grpc_core::Blackboard* old_blackboard,
+    grpc_channel_stack* stack, const grpc_core::Blackboard* old_blackboard,
     grpc_core::Blackboard* new_blackboard) {
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     LOG(INFO) << "CHANNEL_STACK: init " << name;
