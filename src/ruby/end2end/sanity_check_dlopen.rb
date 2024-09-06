@@ -40,5 +40,5 @@ pid = fork do
   STDERR.puts "==== sanity check child process DONE ===="
 end
 Process.wait pid
-raise "==== sanity check require grpc in child process FAILED exit code #{$CHILD_STATUS.exitstatus} =====" unless $CHILD_STATUS.success?
+raise "==== sanity check require grpc in child process FAILED exit code #{$CHILD_STATUS} =====" unless $CHILD_STATUS.to_i.zero?
 STDERR.puts "==== sanity check require grpc in child process SUCCESS ====="
