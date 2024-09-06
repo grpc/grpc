@@ -16,9 +16,28 @@
 
 # Some tests are flaking by failing to dlopen grpc. Perform a sanity check.
 pid = fork do
+  STDERR.puts "==== sanity check child process BEGIN ===="
+  def dump(file_path)
+    STDERR.puts "==== dump file: #{file_path} BEGIN ===="
+    begin
+      File.open(file_path, 'r') do |file|
+      file.each_line do |line|
+        puts line
+      end
+    end
+    rescue => e
+      STDERR.puts "Error reading file: #{file_path} error: |#{e}|"
+    end
+    STDERR.puts "==== dump file: #{file_path} DONE ===="
+  end
+  dump("/proc/#{Process.pid}/limits")
+  dump("/proc/#{Process.pid}/status")
   STDERR.puts "==== sanity check require grpc in child process BEGIN ====="
   require 'grpc'
   STDERR.puts "==== sanity check require grpc in child process DONE ====="
+  dump("/proc/#{Process.pid}/limits")
+  dump("/proc/#{Process.pid}/status")
+  STDERR.puts "==== sanity check child process DONE ===="
 end
 Process.wait pid
 if $?.success?
