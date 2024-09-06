@@ -17,8 +17,11 @@
 # Some tests are flaking by failing to dlopen grpc. Perform some sanity checks.
 this_dir = File.expand_path(File.dirname(__FILE__))
 grpc_bin_dir = File.join(File.join(File.dirname(this_dir), 'lib'), 'grpc')
-grpc_c_so_path = File.join(grpc_bin_dir, 'grpc_c.so')
-grpc_c_sha256_path = File.join(grpc_bin_dir, 'grpc_c_sha256')
+grpc_c_so_path = if RUBY_PLATFORM =~ /darwin/
+                   File.join(grpc_bin_dir, 'grpc_c.bundle')
+                 else
+                   File.join(grpc_bin_dir, 'grpc_c.so')
+                 end
 
 require 'digest'
 
