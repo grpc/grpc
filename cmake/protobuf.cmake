@@ -69,7 +69,7 @@ elseif(gRPC_PROTOBUF_PROVIDER STREQUAL "package")
       set(_gRPC_PROTOBUF_PROTOC_LIBRARIES ${PROTOBUF_PROTOC_LIBRARIES})
     endif()
     # Well-known proto files are expected to be in the Protobuf include directory.
-    get_target_property(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR _gRPC_PROTOBUF_LIBRARIES INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR ${_gRPC_PROTOBUF_LIBRARIES} INTERFACE_INCLUDE_DIRECTORIES)
     if(TARGET protobuf::protoc)
       set(_gRPC_PROTOBUF_PROTOC protobuf::protoc)
       if(CMAKE_CROSSCOMPILING)
