@@ -21,113 +21,117 @@ grpc_package(
     visibility = "tests",
 )
 
-grpc_cc_library(
-    name = "mock_objects",
-    testonly = 1,
-    srcs = ["mock_objects.cc"],
-    hdrs = ["mock_objects.h"],
-    external_deps = [
-        "absl/memory",
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:grpc++_binder",
-    ],
-)
+################################################################################
+# TODO(b/365123034): These will likely be deleted unless a new owner steps forward.
+################################################################################
 
-grpc_cc_test(
-    name = "wire_writer_test",
-    srcs = ["wire_writer_test.cc"],
-    external_deps = [
-        "absl/memory",
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":mock_objects",
-        "//:grpc++_binder",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_cc_library(
+#     name = "mock_objects",
+#     testonly = 1,
+#     srcs = ["mock_objects.cc"],
+#     hdrs = ["mock_objects.h"],
+#     external_deps = [
+#         "absl/memory",
+#         "gtest",
+#     ],
+#     language = "C++",
+#     deps = [
+#         "//:grpc++_binder",
+#     ],
+# )
 
-grpc_cc_test(
-    name = "wire_reader_test",
-    srcs = ["wire_reader_test.cc"],
-    external_deps = [
-        "absl/memory",
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":mock_objects",
-        "//:grpc++_binder",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_cc_test(
+#     name = "wire_writer_test",
+#     srcs = ["wire_writer_test.cc"],
+#     external_deps = [
+#         "absl/memory",
+#         "gtest",
+#     ],
+#     language = "C++",
+#     tags = ["no_test_ios"],
+#     uses_event_engine = False,
+#     uses_polling = False,
+#     deps = [
+#         ":mock_objects",
+#         "//:grpc++_binder",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
 
-grpc_cc_test(
-    name = "transport_stream_receiver_test",
-    srcs = ["transport_stream_receiver_test.cc"],
-    external_deps = [
-        "absl/memory",
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc++_binder",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_cc_test(
+#     name = "wire_reader_test",
+#     srcs = ["wire_reader_test.cc"],
+#     external_deps = [
+#         "absl/memory",
+#         "gtest",
+#     ],
+#     language = "C++",
+#     tags = ["no_test_ios"],
+#     uses_event_engine = False,
+#     uses_polling = False,
+#     deps = [
+#         ":mock_objects",
+#         "//:grpc++_binder",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
 
-grpc_cc_test(
-    name = "binder_transport_test",
-    srcs = ["binder_transport_test.cc"],
-    external_deps = [
-        "absl/memory",
-        "absl/strings",
-        "gtest",
-    ],
-    language = "C++",
-    tags = [
-        # To avoid `symbolizer buffer too small` warning of UBSAN
-        "noubsan",
-        "no_test_ios",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":mock_objects",
-        "//:grpc",
-        "//:grpc++_binder",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_cc_test(
+#     name = "transport_stream_receiver_test",
+#     srcs = ["transport_stream_receiver_test.cc"],
+#     external_deps = [
+#         "absl/memory",
+#         "gtest",
+#     ],
+#     language = "C++",
+#     tags = ["no_test_ios"],
+#     uses_event_engine = False,
+#     uses_polling = False,
+#     deps = [
+#         "//:grpc++_binder",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
 
-grpc_cc_test(
-    name = "endpoint_binder_pool_test",
-    srcs = ["endpoint_binder_pool_test.cc"],
-    external_deps = [
-        "absl/memory",
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        ":mock_objects",
-        "//:grpc",
-        "//:grpc++_binder",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_cc_test(
+#     name = "binder_transport_test",
+#     srcs = ["binder_transport_test.cc"],
+#     external_deps = [
+#         "absl/memory",
+#         "absl/strings",
+#         "gtest",
+#     ],
+#     language = "C++",
+#     tags = [
+#         # To avoid `symbolizer buffer too small` warning of UBSAN
+#         "noubsan",
+#         "no_test_ios",
+#     ],
+#     uses_event_engine = False,
+#     uses_polling = False,
+#     deps = [
+#         ":mock_objects",
+#         "//:grpc",
+#         "//:grpc++_binder",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
+
+# grpc_cc_test(
+#     name = "endpoint_binder_pool_test",
+#     srcs = ["endpoint_binder_pool_test.cc"],
+#     external_deps = [
+#         "absl/memory",
+#         "gtest",
+#     ],
+#     language = "C++",
+#     tags = ["no_test_ios"],
+#     uses_event_engine = False,
+#     uses_polling = False,
+#     deps = [
+#         ":mock_objects",
+#         "//:grpc",
+#         "//:grpc++_binder",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )

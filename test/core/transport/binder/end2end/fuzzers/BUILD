@@ -24,78 +24,82 @@ grpc_package(
 
 licenses(["notice"])
 
-# Protobuf messages for generating inputs. We manually define proto
-# library rule here so the same proto file can be shared between multiple
-# grpc_proto_fuzzer targets
-grpc_proto_library(
-    name = "binder_transport_fuzzer_proto",
-    srcs = ["binder_transport_fuzzer.proto"],
-)
+################################################################################
+# TODO(b/365123034): These will likely be deleted unless a new owner steps forward.
+################################################################################
 
-grpc_cc_library(
-    name = "fuzzer_utils",
-    srcs = ["fuzzer_utils.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
-    language = "c++",
-    public_hdrs = ["fuzzer_utils.h"],
-    deps = [
-        "binder_transport_fuzzer_proto",
-        "//:gpr",
-        "//:grpc++",
-        "//:grpc++_base",
-        "//:grpc_base",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# # Protobuf messages for generating inputs. We manually define proto
+# # library rule here so the same proto file can be shared between multiple
+# # grpc_proto_fuzzer targets
+# grpc_proto_library(
+#     name = "binder_transport_fuzzer_proto",
+#     srcs = ["binder_transport_fuzzer.proto"],
+# )
 
-grpc_proto_fuzzer(
-    name = "binder_transport_client_fuzzer",
-    srcs = [
-        "client_fuzzer.cc",
-    ],
-    corpus = "binder_transport_client_fuzzer_corpus",
-    external_deps = ["absl/log:check"],
-    owner = "binder",
-    proto = "client.proto",
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    deps = [
-        "binder_transport_fuzzer_proto",
-        ":fuzzer_utils",
-        "//:gpr",
-        "//:grpc++",
-        "//:grpc++_base",
-        "//:grpc_base",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_cc_library(
+#     name = "fuzzer_utils",
+#     srcs = ["fuzzer_utils.cc"],
+#     external_deps = [
+#         "absl/log:check",
+#         "absl/log:log",
+#     ],
+#     language = "c++",
+#     public_hdrs = ["fuzzer_utils.h"],
+#     deps = [
+#         "binder_transport_fuzzer_proto",
+#         "//:gpr",
+#         "//:grpc++",
+#         "//:grpc++_base",
+#         "//:grpc_base",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
 
-grpc_proto_fuzzer(
-    name = "binder_transport_server_fuzzer",
-    srcs = [
-        "server_fuzzer.cc",
-    ],
-    corpus = "binder_transport_server_fuzzer_corpus",
-    external_deps = ["absl/log:check"],
-    owner = "binder",
-    proto = "server.proto",
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    deps = [
-        "binder_transport_fuzzer_proto",
-        ":fuzzer_utils",
-        "//:gpr",
-        "//:grpc++",
-        "//:grpc++_base",
-        "//:grpc_base",
-        "//src/core:slice",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+# grpc_proto_fuzzer(
+#     name = "binder_transport_client_fuzzer",
+#     srcs = [
+#         "client_fuzzer.cc",
+#     ],
+#     corpus = "binder_transport_client_fuzzer_corpus",
+#     external_deps = ["absl/log:check"],
+#     owner = "binder",
+#     proto = "client.proto",
+#     tags = [
+#         "no_mac",
+#         "no_windows",
+#     ],
+#     deps = [
+#         "binder_transport_fuzzer_proto",
+#         ":fuzzer_utils",
+#         "//:gpr",
+#         "//:grpc++",
+#         "//:grpc++_base",
+#         "//:grpc_base",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
+
+# grpc_proto_fuzzer(
+#     name = "binder_transport_server_fuzzer",
+#     srcs = [
+#         "server_fuzzer.cc",
+#     ],
+#     corpus = "binder_transport_server_fuzzer_corpus",
+#     external_deps = ["absl/log:check"],
+#     owner = "binder",
+#     proto = "server.proto",
+#     tags = [
+#         "no_mac",
+#         "no_windows",
+#     ],
+#     deps = [
+#         "binder_transport_fuzzer_proto",
+#         ":fuzzer_utils",
+#         "//:gpr",
+#         "//:grpc++",
+#         "//:grpc++_base",
+#         "//:grpc_base",
+#         "//src/core:slice",
+#         "//test/core/test_util:grpc_test_util",
+#     ],
+# )
