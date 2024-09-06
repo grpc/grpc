@@ -28,6 +28,17 @@ expected_sha256 = File.read(grpc_c_sha256_path).chomp
 raise "detected corruption in #{grpc_c_so_path}: sha256: |#{actual_sha256}| != expected sha256: |#{expected_sha256}|" if actual_sha256 != expected_sha256
 STDERR.puts "verified sha256 of #{grpc_c_so_path}"
 
+def try_command(command)
+  STDERR.puts "==== run |#{command}| BEGIN ===="
+  output = `#{command} || true`
+  STDERR.puts output
+  STDERR.puts "==== run |#{command}| DONE ===="
+end
+
+try_command('vm_stat')
+try_command('free')
+try_command('ulimit -v')
+
 # sanity check that we can load grpc in a child process, log things like available
 # memory on the off chance we might be low.
 pid = fork do
@@ -54,6 +65,6 @@ pid = fork do
   dump("/proc/#{Process.pid}/status")
   STDERR.puts "==== sanity check child process DONE ===="
 end
-Process.wait pid
-raise "==== sanity check require grpc in child process FAILED exit code #{$CHILD_STATUS} =====" unless $CHILD_STATUS.to_i.zero?
+child_pid, status = Process.wait2(pid)
+fail "sanity check require grpc in child process FAILED exit code #{status.exitstatus}" unless status.success?
 STDERR.puts "==== sanity check require grpc in child process SUCCESS ====="
