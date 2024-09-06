@@ -926,6 +926,7 @@ class RubyLanguage(object):
         # This crashes have been unreproducible outside of CI. Also see
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
+        #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
@@ -938,7 +939,6 @@ class RubyLanguage(object):
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
-            "src/ruby/end2end/load_grpc_with_gc_stress_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
             "src/ruby/end2end/graceful_sig_handling_test.rb",
