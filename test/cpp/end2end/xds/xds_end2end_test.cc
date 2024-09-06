@@ -833,12 +833,16 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
 TEST_P(XdsEnabledServerTest, Basic) {
   DoSetUp();
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
   DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
   // TODO(roth): There may be multiple entries in the resource state response
