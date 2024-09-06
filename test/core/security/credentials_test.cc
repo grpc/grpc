@@ -2523,8 +2523,8 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   // cached token.
   creds_->AddResult(MakeToken("bar"));
   LOG(INFO) << "Fourth request";
-  state =
-      RequestMetadataState::NewInstance(absl::OkStatus(), "authorization: foo");
+  state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   EXPECT_EQ(creds_->num_fetches(), 2);
