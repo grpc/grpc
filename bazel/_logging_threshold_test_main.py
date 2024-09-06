@@ -20,6 +20,8 @@ import tempfile
 
 _OK_TEST_REGEX = r"^-+.*Ran ([\d]+) tests* in ([\d.]+)s.*OK(?: \(skipped=(\d+)\))?\n$"
 
+# Tests with known exception logs.
+# TODO(sourabhsinghs): Investigate and enable _rpc_part_1_test and _rpc_part_2_test tests.
 _SKIP_TESTS = [
     "_rpc_part_1_test",
     "_server_shutdown_test",
@@ -43,6 +45,7 @@ if __name__ == "__main__":
     target_module = sys.argv[2]
 
     if target_module in _SKIP_TESTS:
+        print(f"Skipping {target_module}")
         sys.exit(0)
 
     command = [
