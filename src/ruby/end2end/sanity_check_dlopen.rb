@@ -14,7 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Some tests are flaking by failing to dlopen grpc. Perform a sanity check.
+# Some tests are flaking by failing to dlopen grpc. Perform some sanity checks.
+this_dir = File.expand_path(File.dirname(__FILE__))
+grpc_bin_dir = File.join(File.join(File.dirname(this_dir), 'lib'), 'grpc')
+grpc_c_so_path = File.join(grpc_bin_dir, 'grpc_c.so')
+grpc_c_sha256_path = File.join(grpc_bin_dir, 'grpc_c_sha256')
+
+require 'digest'
+
+# first try to detect corruption b/t the build and now
+actual_sha256 = Digest::SHA256.file(grpc_c_so_path).hexdigest
+expected_sha256 = File.read(grpc_c_sha256_path).chomp
+raise "detected corruption in #{grpc_c_so_path}: sha256: |#{actual_sha256}| != expected sha256: |#{expected_sha256}|" if actual_sha256 != expected_sha256
+STDERR.puts "verified sha256 of #{grpc_c_so_path}"
+
+# sanity check that we can load grpc in a child process, log things like available
+# memory on the off chance we might be low.
 pid = fork do
   STDERR.puts "==== sanity check child process BEGIN ===="
   def dump(file_path)
