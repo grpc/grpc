@@ -19,14 +19,14 @@ pid = fork do
   STDERR.puts "==== sanity check child process BEGIN ===="
   def dump(file_path)
     STDERR.puts "==== dump file: #{file_path} BEGIN ===="
-    begin
+    if File.exist?(file_path)
       File.open(file_path, 'r') do |file|
-      file.each_line do |line|
-        puts line
+        file.each_line do |line|
+          puts line
+        end
       end
-    end
-    rescue => e
-      STDERR.puts "Error reading file: #{file_path} error: |#{e}|"
+    else
+      STDERR.puts "file: #{file_path} does not exist"
     end
     STDERR.puts "==== dump file: #{file_path} DONE ===="
   end
@@ -40,8 +40,5 @@ pid = fork do
   STDERR.puts "==== sanity check child process DONE ===="
 end
 Process.wait pid
-if $?.success?
-  STDERR.puts "==== sanity check require grpc in child process SUCCESS ====="
-else
-  raise "==== sanity check require grpc in child process FAILED exit code #{$?.exitstatus} ====="
-end
+raise "==== sanity check require grpc in child process FAILED exit code #{$CHILD_STATUS.exitstatus} =====" unless $CHILD_STATUS.success?
+STDERR.puts "==== sanity check require grpc in child process SUCCESS ====="
