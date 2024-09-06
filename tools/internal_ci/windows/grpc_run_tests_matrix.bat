@@ -45,6 +45,9 @@ call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
 @rem   run_tests.py to fail to spawn test subprocesses.
 python3 tools/run_tests/start_port_server.py || exit /b 1
 
+@rem Checking pip installed versions
+python3 -m pip freeze || goto :error
+
 python3 tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
 set RUNTESTS_EXITCODE=%errorlevel%
 

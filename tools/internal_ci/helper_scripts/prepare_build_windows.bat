@@ -97,9 +97,6 @@ python -m pip install google-api-python-client oauth2client six==1.16.0 || goto 
 @rem Testing the protobuf version
 python -m pip install protobuf==4.24.4 || goto :error
 
-@rem Checking pip installed versions
-python -m pip freeze || goto :error
-
 git submodule update --init || goto :error
 
 echo "!TIME!: prepare_build_windows.bat exiting with success"
