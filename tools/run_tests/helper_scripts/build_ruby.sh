@@ -36,6 +36,18 @@ if [ "$SYSTEM" == "Darwin" ]; then
 fi
 bundle exec rake compile
 
+# Log stuff and save a hash of the binary verify later at test runtime, in order
+# to detect corruption.
+if [ "$SYSTEM" == "Darwin" ]; then
+  ls -l src/ruby/lib/grpc/grpc_c.bundle
+  file src/ruby/lib/grpc/grpc_c.bundle
+  shasum -a 256 src/ruby/lib/grpc/grpc_c.bundle | awk '{print $1}' > src/ruby/lib/grpc/grpc_c_sha256
+else
+  ls -l src/ruby/lib/grpc/grpc_c.so
+  file src/ruby/lib/grpc/grpc_c.so
+  sha256sum src/ruby/lib/grpc/grpc_c.so | awk '{print $1}' > src/ruby/lib/grpc/grpc_c_sha256
+fi
+
 # build grpc_ruby_plugin
 mkdir -p cmake/build
 pushd cmake/build
