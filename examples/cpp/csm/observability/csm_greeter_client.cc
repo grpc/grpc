@@ -36,6 +36,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/string_ref.h>
 
+ABSL_FLAG(bool, secure, true, "Secure mode");
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
 ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9464",
           "Prometheus exporter endpoint");
@@ -73,7 +74,7 @@ int main(int argc, char** argv) {
   }
 
   // Continuously send RPCs every second.
-  RunClient(absl::GetFlag(FLAGS_target));
+  RunClient(absl::GetFlag(FLAGS_secure), absl::GetFlag(FLAGS_target));
 
   return 0;
 }
