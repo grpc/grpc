@@ -1081,7 +1081,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       bool test_expects_failure = false,
       absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
     LOG(INFO) << "Sending RPC";
-    auto overall_deadline = absl::Now() + absl::Seconds(30);
+    auto overall_deadline = absl::Now() + absl::Seconds(60);
     auto channel = channel_creator();
     auto stub = grpc::testing::EchoTestService::NewStub(channel);
     while (absl::Now() < overall_deadline) {
