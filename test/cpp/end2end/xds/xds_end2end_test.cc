@@ -1222,7 +1222,6 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin2", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
-
           server_authenticated_identity_2_, client_authenticated_identity_);
 }
 
