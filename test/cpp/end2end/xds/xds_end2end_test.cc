@@ -1076,7 +1076,6 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
 
   void SendRpc(
       absl::FunctionRef<std::shared_ptr<grpc::Channel>()> channel_creator,
-      const RpcOptions& rpc_options,
       const std::vector<std::string>& expected_server_identity,
       const std::vector<std::string>& expected_client_identity,
       bool test_expects_failure = false,
@@ -1178,8 +1177,7 @@ TEST_P(XdsServerSecurityTest,
   backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
-          RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
-          {});
+          server_authenticated_identity_, {});
 }
 
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {

@@ -73,13 +73,13 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
 }
 
 void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(std::string uri,
+    WaitOnServingStatusChange(const std::string& uri,
                               grpc::StatusCode expected_status) {
   grpc_core::MutexLock lock(&mu_);
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
-    cond_.Wait(&mu_);
+    ASSERT_FALSE(cond_.WaitWithTimeout(&mu_, absl::Seconds(60)));
   }
 }
 
