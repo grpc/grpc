@@ -2031,8 +2031,6 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
 }
