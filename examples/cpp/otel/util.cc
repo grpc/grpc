@@ -164,7 +164,7 @@ void RunServer(uint16_t port) {
   server->Wait();
 }
 
-void RunClient(const std::string& target_str) {
+void RunClient(const bool& secure, const std::string& target_str) {
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
@@ -172,7 +172,10 @@ void RunClient(const std::string& target_str) {
   // Continuously send RPCs every second.
   while (true) {
     GreeterClient greeter(grpc::CreateCustomChannel(
-        target_str, grpc::InsecureChannelCredentials(), args));
+        target_str, 
+        secure? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
+          : grpc::InsecureChannelCredentials(),
+        args));
     std::string user("world");
     std::string reply = greeter.SayHello(user);
     std::cout << "Greeter received: " << reply << std::endl;
