@@ -74,12 +74,14 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
 
 void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
     WaitOnServingStatusChange(const std::string& uri,
-                              grpc::StatusCode expected_status) {
+                              grpc::StatusCode expected_status,
+                              absl::Duration timeout) {
   grpc_core::MutexLock lock(&mu_);
+  absl::Time deadline = absl::Now() + timeout * grpc_test_slowdown_factor();
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
-    ASSERT_FALSE(cond_.WaitWithTimeout(&mu_, absl::Seconds(60)));
+    ASSERT_FALSE(cond_.WaitWithDeadline(&mu_, deadline));
   }
 }
 

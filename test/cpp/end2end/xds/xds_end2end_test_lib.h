@@ -217,8 +217,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      void WaitOnServingStatusChange(const std::string& uri,
-                                     grpc::StatusCode expected_status);
+      void WaitOnServingStatusChange(
+          const std::string& uri, grpc::StatusCode expected_status,
+          absl::Duration timeout = absl::Seconds(10));
 
      private:
       grpc_core::Mutex mu_;
