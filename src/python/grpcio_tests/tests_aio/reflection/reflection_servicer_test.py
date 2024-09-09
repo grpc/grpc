@@ -28,6 +28,13 @@ from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 from src.proto.grpc.testing.proto2 import empty2_pb2
 from tests_aio.unit._test_base import AioTestBase
 
+from google import protobuf
+print(dir(protobuf))
+print(protobuf.__version__)
+print(protobuf.__file__)
+print(protobuf.__path__)
+print(protobuf.__dict__)
+
 _EMPTY_PROTO_FILE_NAME = "src/proto/grpc/testing/empty.proto"
 _EMPTY_PROTO_SYMBOL_NAME = "grpc.testing.Empty"
 _SERVICE_NAMES = (
