@@ -15,11 +15,11 @@ On the server-side, a very simple logging interceptor is added that simply logs 
 To run the server -
 
 ```
-$ tools/bazel run examples/cpp/interceptors:server
+$ tools/bazel run examples/cpp/interceptors:keyvaluestore_server
 ```
 
 To run the client (on a different terminal) -
 
 ```
-$ tools/bazel run examples/cpp/interceptors:client
+$ tools/bazel run examples/cpp/interceptors:keyvaluestore_client
 ```
