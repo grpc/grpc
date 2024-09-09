@@ -1075,23 +1075,20 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   }
 
   void SendRpc(
-      std::function<std::shared_ptr<grpc::Channel>()> channel_creator,
-      std::vector<std::string> expected_server_identity,
-      std::vector<std::string> expected_client_identity,
+      absl::FunctionRef<std::shared_ptr<grpc::Channel>()> channel_creator,
+      const std::vector<std::string>& expected_server_identity,
+      const std::vector<std::string>& expected_client_identity,
       bool test_expects_failure = false,
       absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
     LOG(INFO) << "Sending RPC";
-    int num_tries = 0;
-    constexpr int kRetryCount = 100;
-    auto overall_deadline = absl::Now() + absl::Seconds(5);
-    for (; num_tries < kRetryCount || absl::Now() < overall_deadline;
-         num_tries++) {
-      auto channel = channel_creator();
-      auto stub = grpc::testing::EchoTestService::NewStub(channel);
+    auto overall_deadline = absl::Now() + absl::Seconds(30);
+    auto channel = channel_creator();
+    auto stub = grpc::testing::EchoTestService::NewStub(channel);
+    while (absl::Now() < overall_deadline) {
       ClientContext context;
+      EchoRequest request;
       context.set_wait_for_ready(true);
       context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-      EchoRequest request;
       // TODO(yashykt): Skipping the cancelled check on the server since the
       // server's graceful shutdown isn't as per spec and the check isn't
       // necessary for what we want to test here anyway.
@@ -1146,7 +1143,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       }
       break;
     }
-    EXPECT_LT(num_tries, kRetryCount);
+    EXPECT_THAT(absl::Now(), ::testing::Lt(overall_deadline));
   }
 
   std::string root_cert_;
@@ -1177,6 +1174,8 @@ TEST_P(XdsServerSecurityTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -1192,6 +1191,8 @@ TEST_P(XdsServerSecurityTest, TestMtls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
 }
@@ -1201,6 +1202,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
   g_fake2_cert_data_map->Set({{"", {bad_root_cert_, bad_identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin2", "", "fake_plugin1", "", true);
@@ -1213,10 +1216,13 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
   g_fake2_cert_data_map->Set({{"", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin2", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
+
           server_authenticated_identity_2_, client_authenticated_identity_);
 }
 
@@ -1226,6 +1232,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
                               {"", {bad_root_cert_, bad_identity_pair_}}});
   SetLdsUpdate("fake_plugin2", "", "fake_plugin2", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
           true /* test_expects_failure */);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
@@ -1241,6 +1249,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
                               {"bad", {bad_root_cert_, bad_identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "bad", "fake_plugin1", "", true);
@@ -1253,6 +1263,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
                               {"good", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "good", true);
@@ -1265,6 +1277,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
                               {"good", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "good", "fake_plugin1", "good", true);
@@ -1276,6 +1290,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
 }
@@ -1284,6 +1300,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringAndNotProvidingClientCerts) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -1292,6 +1310,8 @@ TEST_P(XdsServerSecurityTest, TestTls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -1301,6 +1321,8 @@ TEST_P(XdsServerSecurityTest, TestTlsWithIdentityPluginUpdate) {
   g_fake2_cert_data_map->Set({{"", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("", "", "fake_plugin2", "", false);
@@ -1313,6 +1335,8 @@ TEST_P(XdsServerSecurityTest, TestTlsWithIdentityCertificateNameUpdate) {
                               {"good", {root_cert_, identity_pair_2_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("", "", "fake_plugin1", "good", false);
@@ -1324,6 +1348,8 @@ TEST_P(XdsServerSecurityTest, TestFallback) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -1331,6 +1357,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
   SetLdsUpdate("", "", "fake_plugin1", "", false);
@@ -1342,6 +1370,8 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
@@ -1353,6 +1383,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("", "", "", "", false);
@@ -1363,6 +1395,8 @@ TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
@@ -1373,6 +1407,8 @@ TEST_P(XdsServerSecurityTest, TestTlsToFallback) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("", "", "", "", false);
@@ -1383,6 +1419,8 @@ TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   SetLdsUpdate("", "", "", "", false);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
@@ -1613,6 +1651,8 @@ class XdsServerFilterChainMatchTest : public XdsServerSecurityTest {
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -1630,6 +1670,8 @@ TEST_P(XdsServerFilterChainMatchTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -1647,6 +1689,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -1664,6 +1708,8 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -1682,6 +1728,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -1700,6 +1748,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -1725,6 +1775,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // A successful RPC proves that filter chains that mention "raw_buffer" as
   // the transport protocol are chosen as the best match in the round.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -1779,6 +1831,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -1813,6 +1867,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -1873,6 +1929,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -1905,6 +1963,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK);
   // A successful RPC proves that the filter chain with matching source port
   // was chosen.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
