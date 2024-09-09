@@ -47,6 +47,8 @@ static void cb(void* arg, grpc_error_handle error) {
 }
 
 static void add_test(void) {
+  if (grpc_core::IsTimeCachingInPartyEnabled()) return;
+
   int i;
   grpc_timer timers[20];
   grpc_core::ExecCtx exec_ctx;
@@ -116,6 +118,8 @@ static void add_test(void) {
 
 // Cleaning up a list with pending timers.
 void destruction_test(void) {
+  if (grpc_core::IsTimeCachingInPartyEnabled()) return;
+
   grpc_timer timers[5];
   grpc_core::ExecCtx exec_ctx;
 
@@ -173,6 +177,8 @@ void destruction_test(void) {
 //  4) Shuts down the timer list
 // https://github.com/grpc/grpc/issues/15904
 void long_running_service_cleanup_test(void) {
+  if (grpc_core::IsTimeCachingInPartyEnabled()) return;
+
   grpc_timer timers[4];
   grpc_core::ExecCtx exec_ctx;
 

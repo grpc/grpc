@@ -1244,7 +1244,10 @@ TEST_P(XdsMetricsTest, MetricValues) {
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION);
+  // Use wait_for_ready and increase timeout, in case the client takes a
+  // little while to get connected.
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_wait_for_ready(true).set_timeout_ms(15000));
   stats_plugin_->TriggerCallbacks();
   // Check client metrics.
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(

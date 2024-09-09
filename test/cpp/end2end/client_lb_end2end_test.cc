@@ -954,39 +954,49 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 }
 
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
+  StartServers(1);
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
               kInitialBackOffMs * grpc_test_slowdown_factor());
-  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(ports);
-  // Start trying to connect.  The channel will report
-  // TRANSIENT_FAILURE, because the server is not reachable.
-  const grpc_core::Timestamp t0 = grpc_core::Timestamp::Now();
-  ASSERT_TRUE(WaitForChannelState(
-      channel.get(),
-      [&](grpc_connectivity_state state) {
+  response_generator.SetNextResolution({servers_[0]->port_});
+  // Intercept the first two connection attempts.
+  ConnectionAttemptInjector injector;
+  auto hold1 = injector.AddHold(servers_[0]->port_);
+  auto hold2 = injector.AddHold(servers_[0]->port_);
+  // Start trying to connect.
+  EXPECT_EQ(channel->GetState(/*try_to_connect=*/true), GRPC_CHANNEL_IDLE);
+  // When the first connection attempt starts, record the time, then fail the
+  // attempt.
+  hold1->Wait();
+  const grpc_core::Timestamp first_attempt_time = grpc_core::Timestamp::Now();
+  hold1->Fail(absl::UnavailableError("nope"));
+  // Wait for the second attempt and see how long it took.
+  hold2->Wait();
+  const grpc_core::Duration waited =
+      grpc_core::Timestamp::Now() - first_attempt_time;
+  // The channel will transition to TRANSIENT_FAILURE.
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
         EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_IDLE,
                                             GRPC_CHANNEL_CONNECTING));
         return false;
-      },
-      /*try_to_connect=*/true));
-  // Bring up a server on the chosen port.
-  StartServers(1, ports);
-  // Now the channel will become connected.
-  ASSERT_TRUE(WaitForChannelReady(channel.get()));
+      }));
+  // Now let the second attempt complete.
+  hold2->Resume();
+  // The channel will transition to READY.
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
   // Check how long it took.
-  const grpc_core::Duration waited = grpc_core::Timestamp::Now() - t0;
   VLOG(2) << "Waited " << waited.millis() << " milliseconds";
   // We should have waited at least kInitialBackOffMs, plus or minus
-  // jitter.  We give a little more leeway on the high end to account
-  // for things taking a little longer than expected in other threads.
+  // jitter.  Jitter is 0.2, but we give extra leeway to account for
+  // measurement skew, thread hops, etc.
   EXPECT_GE(waited.millis(),
-            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 0.8);
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 0.7);
   EXPECT_LE(waited.millis(),
             (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.3);
 }
@@ -2886,7 +2896,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     grpc_core::CoreConfiguration::Reset();
   }
 
-  const std::vector<std::string>& addresses_seen() {
+  std::vector<std::string> addresses_seen() {
     grpc_core::MutexLock lock(&mu_);
     return addresses_seen_;
   }

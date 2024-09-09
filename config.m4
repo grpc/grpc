@@ -1160,6 +1160,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
+    third_party/boringssl-with-bazel/src/crypto/mldsa/mldsa.c \
+    third_party/boringssl-with-bazel/src/crypto/mlkem/mlkem.cc \
     third_party/boringssl-with-bazel/src/crypto/obj/obj.c \
     third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.c \
     third_party/boringssl-with-bazel/src/crypto/pem/pem_all.c \
@@ -1180,12 +1182,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.c \
     third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/fork_detect.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/urandom.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
     third_party/boringssl-with-bazel/src/crypto/refcount.c \
@@ -1674,6 +1678,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/keccak)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/kyber)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/lhash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/mldsa)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/mlkem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/obj)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/pkcs7)
