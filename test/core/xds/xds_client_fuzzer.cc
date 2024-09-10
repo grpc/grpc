@@ -292,8 +292,7 @@ class Fuzzer {
     if (xds_server == nullptr) return nullptr;
     const char* method = StreamIdMethod(stream_id);
     if (method == nullptr) return nullptr;
-    return transport_factory_->WaitForStream(*xds_server, method,
-                                             absl::ZeroDuration());
+    return transport_factory_->WaitForStream(*xds_server, method);
   }
 
   static std::string StreamIdString(
@@ -309,7 +308,7 @@ class Fuzzer {
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
     LOG(INFO) << "    stream=" << stream.get();
-    auto message = stream->WaitForMessageFromClient(absl::ZeroDuration());
+    auto message = stream->WaitForMessageFromClient();
     if (message.has_value()) {
       LOG(INFO) << "    completing send_message";
       stream->CompleteSendMessageFromClient(ok);
