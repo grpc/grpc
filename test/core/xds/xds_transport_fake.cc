@@ -93,16 +93,17 @@ bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
 absl::optional<std::string>
 FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient(
     absl::Duration timeout) {
-  MutexLock lock(&mu_);
-  while (from_client_messages_.empty()) {
-    if (cv_client_msg_.WaitWithTimeout(&mu_,
-                                       timeout * grpc_test_slowdown_factor())) {
-      return absl::nullopt;
+  while (true) {
+    event_engine_->Tick();
+    MutexLock lock(&mu_);
+    if (from_client_messages_.empty()) {
+      if (event_engine_->IsIdle()) return absl::nullopt;
+      continue;
     }
+    std::string payload = std::move(from_client_messages_.front());
+    from_client_messages_.pop_front();
+    return payload;
   }
-  std::string payload = from_client_messages_.front();
-  from_client_messages_.pop_front();
-  return payload;
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::
@@ -183,6 +184,16 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
   event_handler->OnStatusReceived(std::move(status));
 }
 
+bool FakeXdsTransportFactory::FakeStreamingCall::WaitForReadsStarted(
+    size_t expected, absl::Duration timeout) {
+  while (true) {
+    event_engine_->Tick();
+    MutexLock lock(&mu_);
+    if (reads_started_ == expected) return true;
+    if (event_engine_->IsIdle()) return false;
+  }
+}
+
 bool FakeXdsTransportFactory::FakeStreamingCall::IsOrphaned() {
   MutexLock lock(&mu_);
   return orphaned_;
@@ -229,15 +240,13 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(
     const char* method, absl::Duration timeout) {
-  MutexLock lock(&mu_);
-  auto it = active_calls_.find(method);
-  while (it == active_calls_.end() || it->second == nullptr) {
-    if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
-      return nullptr;
-    }
-    it = active_calls_.find(method);
+  while (true) {
+    event_engine_->Tick();
+    MutexLock lock(&mu_);
+    auto it = active_calls_.find(method);
+    if (it != active_calls_.end() && it->second != nullptr) return it->second;
+    if (event_engine_->IsIdle()) return nullptr;
   }
-  return it->second;
 }
 
 void FakeXdsTransportFactory::FakeXdsTransport::RemoveStream(
@@ -320,6 +329,8 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
   if (transport == nullptr) return nullptr;
   return transport->WaitForStream(method, timeout);
 }
+
+void FakeXdsTransportFactory::Orphaned() { event_engine_.reset(); }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {

@@ -46,7 +46,6 @@
 #include <grpc/support/json.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -59,6 +58,8 @@
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_client_test_peer.h"
@@ -73,6 +74,7 @@
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
+using grpc_event_engine::experimental::FuzzingEventEngine;
 
 namespace grpc_core {
 namespace testing {
@@ -252,6 +254,9 @@ class XdsClientTest : public ::testing::Test {
                                             all_resources_required_in_sotw>,
                         ResourceStruct>::WatcherInterface {
      public:
+      explicit Watcher(std::shared_ptr<FuzzingEventEngine> event_engine)
+          : event_engine_(std::move(event_engine)) {}
+
       ~Watcher() override {
         MutexLock lock(&mu_);
         EXPECT_THAT(queue_, ::testing::IsEmpty())
@@ -270,35 +275,42 @@ class XdsClientTest : public ::testing::Test {
                    });
       }
 
-      // Returns true if no event is received during the timeout period.
-      bool ExpectNoEvent(absl::Duration timeout) {
-        MutexLock lock(&mu_);
-        return !WaitForEventLocked(timeout);
-      }
-
       bool HasEvent() {
         MutexLock lock(&mu_);
         return !queue_.empty();
       }
 
+      // Returns true if no event is received during the timeout period.
+// FIXME: remove timeout (here and elsewhere)
+      bool ExpectNoEvent(absl::Duration timeout) {
+        event_engine_->TickUntilIdle();
+        return !HasEvent();
+      }
+
       absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
           absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
-        MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return absl::nullopt;
-        Event& event = queue_.front();
-        if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
-          EXPECT_TRUE(false)
-              << "got unexpected event "
-              << (absl::holds_alternative<absl::Status>(event)
-                      ? "error"
-                      : "does-not-exist")
-              << " at " << location.file() << ":" << location.line();
-          return absl::nullopt;
+        while (true) {
+          event_engine_->Tick();
+          MutexLock lock(&mu_);
+          if (queue_.empty()) {
+            if (event_engine_->IsIdle()) return absl::nullopt;
+            continue;
+          }
+          Event& event = queue_.front();
+          if (!absl::holds_alternative<ResourceAndReadDelayHandle>(event)) {
+            EXPECT_TRUE(false)
+                << "got unexpected event "
+                << (absl::holds_alternative<absl::Status>(event)
+                        ? "error"
+                        : "does-not-exist")
+                << " at " << location.file() << ":" << location.line();
+            return absl::nullopt;
+          }
+          auto foo = std::move(absl::get<ResourceAndReadDelayHandle>(event));
+          queue_.pop_front();
+          return foo;
         }
-        auto foo = std::move(absl::get<ResourceAndReadDelayHandle>(event));
-        queue_.pop_front();
-        return foo;
       }
 
       std::shared_ptr<const ResourceStruct> WaitForNextResource(
@@ -315,38 +327,50 @@ class XdsClientTest : public ::testing::Test {
       absl::optional<absl::Status> WaitForNextError(
           absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
-        MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return absl::nullopt;
-        Event& event = queue_.front();
-        if (!absl::holds_alternative<absl::Status>(event)) {
-          EXPECT_TRUE(false)
-              << "got unexpected event "
-              << (absl::holds_alternative<ResourceAndReadDelayHandle>(event)
-                      ? "resource"
-                      : "does-not-exist")
-              << " at " << location.file() << ":" << location.line();
-          return absl::nullopt;
+        while (true) {
+          event_engine_->Tick();
+          MutexLock lock(&mu_);
+          if (queue_.empty()) {
+            if (event_engine_->IsIdle()) return absl::nullopt;
+            continue;
+          }
+          Event& event = queue_.front();
+          if (!absl::holds_alternative<absl::Status>(event)) {
+            EXPECT_TRUE(false)
+                << "got unexpected event "
+                << (absl::holds_alternative<ResourceAndReadDelayHandle>(event)
+                        ? "resource"
+                        : "does-not-exist")
+                << " at " << location.file() << ":" << location.line();
+            return absl::nullopt;
+          }
+          absl::Status error = std::move(absl::get<absl::Status>(event));
+          queue_.pop_front();
+          return std::move(error);
         }
-        absl::Status error = std::move(absl::get<absl::Status>(event));
-        queue_.pop_front();
-        return std::move(error);
       }
 
       bool WaitForDoesNotExist(absl::Duration timeout,
                                SourceLocation location = SourceLocation()) {
-        MutexLock lock(&mu_);
-        if (!WaitForEventLocked(timeout)) return false;
-        Event& event = queue_.front();
-        if (!absl::holds_alternative<DoesNotExist>(event)) {
-          EXPECT_TRUE(false)
-              << "got unexpected event "
-              << (absl::holds_alternative<absl::Status>(event) ? "error"
-                                                               : "resource")
-              << " at " << location.file() << ":" << location.line();
-          return false;
+        while (true) {
+          event_engine_->Tick();
+          MutexLock lock(&mu_);
+          if (queue_.empty()) {
+            if (event_engine_->IsIdle()) return false;
+            continue;
+          }
+          Event& event = queue_.front();
+          if (!absl::holds_alternative<DoesNotExist>(event)) {
+            EXPECT_TRUE(false)
+                << "got unexpected event "
+                << (absl::holds_alternative<absl::Status>(event) ? "error"
+                                                                 : "resource")
+                << " at " << location.file() << ":" << location.line();
+            return false;
+          }
+          queue_.pop_front();
+          return true;
         }
-        queue_.pop_front();
-        return true;
       }
 
      private:
@@ -381,20 +405,10 @@ class XdsClientTest : public ::testing::Test {
         cv_.Signal();
       }
 
-      // Returns true if an event was received, or false if the timeout
-      // expires before any event is received.
-      bool WaitForEventLocked(absl::Duration timeout)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
-        while (queue_.empty()) {
-          if (cv_.WaitWithTimeout(&mu_,
-                                  timeout * grpc_test_slowdown_factor())) {
-            return false;
-          }
-        }
-        return true;
-      }
+      std::shared_ptr<FuzzingEventEngine> event_engine_;
 
       Mutex mu_;
+// FIXME: remove, here and elsewhere
       CondVar cv_;
       std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
     };
@@ -626,6 +640,9 @@ class XdsClientTest : public ::testing::Test {
         uint64_t>;
     using ServerFailureMap = std::map<std::string /*xds_server*/, uint64_t>;
 
+    explicit MetricsReporter(std::shared_ptr<FuzzingEventEngine> event_engine)
+        : event_engine_(std::move(event_engine)) {}
+
     ResourceUpdateMap resource_updates_valid() const {
       MutexLock lock(&mu_);
       return resource_updates_valid_;
@@ -645,10 +662,9 @@ class XdsClientTest : public ::testing::Test {
         ::testing::Matcher<ServerFailureMap> server_failures_matcher,
         absl::Duration timeout = absl::Seconds(3),
         SourceLocation location = SourceLocation()) {
-      const absl::Time deadline =
-          absl::Now() + (timeout * grpc_test_slowdown_factor());
-      MutexLock lock(&mu_);
       while (true) {
+        event_engine_->Tick();
+        MutexLock lock(&mu_);
         if (::testing::Matches(resource_updates_valid_matcher)(
                 resource_updates_valid_) &&
             ::testing::Matches(resource_updates_invalid_matcher)(
@@ -656,15 +672,15 @@ class XdsClientTest : public ::testing::Test {
             ::testing::Matches(server_failures_matcher)(server_failures_)) {
           return true;
         }
-        if (cond_.WaitWithDeadline(&mu_, deadline)) break;
+        if (!event_engine_->IsIdle()) continue;
+        EXPECT_THAT(resource_updates_valid_, resource_updates_valid_matcher)
+            << location.file() << ":" << location.line();
+        EXPECT_THAT(resource_updates_invalid_, resource_updates_invalid_matcher)
+            << location.file() << ":" << location.line();
+        EXPECT_THAT(server_failures_, server_failures_matcher)
+            << location.file() << ":" << location.line();
+        return false;
       }
-      EXPECT_THAT(resource_updates_valid_, resource_updates_valid_matcher)
-          << location.file() << ":" << location.line();
-      EXPECT_THAT(resource_updates_invalid_, resource_updates_invalid_matcher)
-          << location.file() << ":" << location.line();
-      EXPECT_THAT(server_failures_, server_failures_matcher)
-          << location.file() << ":" << location.line();
-      return false;
     }
 
    private:
@@ -689,6 +705,8 @@ class XdsClientTest : public ::testing::Test {
       ++server_failures_[std::string(xds_server)];
       cond_.SignalAll();
     }
+
+    std::shared_ptr<FuzzingEventEngine> event_engine_;
 
     mutable Mutex mu_;
     ResourceUpdateMap resource_updates_valid_ ABSL_GUARDED_BY(mu_);
@@ -724,18 +742,34 @@ class XdsClientTest : public ::testing::Test {
     return server_connection_map;
   }
 
+  void SetUp() override {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_init();
+  }
+
+  void TearDown() override {
+    transport_factory_.reset();
+    xds_client_.reset();
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    grpc_shutdown_blocking();
+  }
+
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
   void InitXdsClient(
       FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
       Duration resource_request_timeout = Duration::Seconds(15)) {
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
-        []() { FAIL() << "Multiple concurrent reads"; });
-    auto metrics_reporter = std::make_unique<MetricsReporter>();
+        []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
+    auto metrics_reporter = std::make_unique<MetricsReporter>(event_engine_);
     metrics_reporter_ = metrics_reporter.get();
     xds_client_ = MakeRefCounted<XdsClient>(
-        bootstrap_builder.Build(), transport_factory_,
-        grpc_event_engine::experimental::GetDefaultEventEngine(),
+        bootstrap_builder.Build(), transport_factory_, event_engine_,
         std::move(metrics_reporter), "foo agent", "foo version",
         resource_request_timeout * grpc_test_slowdown_factor());
   }
@@ -743,7 +777,7 @@ class XdsClientTest : public ::testing::Test {
   // Starts and cancels a watch for a Foo resource.
   RefCountedPtr<XdsFooResourceType::Watcher> StartFooWatch(
       absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<XdsFooResourceType::Watcher>();
+    auto watcher = MakeRefCounted<XdsFooResourceType::Watcher>(event_engine_);
     XdsFooResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
     return watcher;
   }
@@ -757,7 +791,7 @@ class XdsClientTest : public ::testing::Test {
   // Starts and cancels a watch for a Bar resource.
   RefCountedPtr<XdsBarResourceType::Watcher> StartBarWatch(
       absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<XdsBarResourceType::Watcher>();
+    auto watcher = MakeRefCounted<XdsBarResourceType::Watcher>(event_engine_);
     XdsBarResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
     return watcher;
   }
@@ -771,7 +805,8 @@ class XdsClientTest : public ::testing::Test {
   // Starts and cancels a watch for a WildcardCapable resource.
   RefCountedPtr<XdsWildcardCapableResourceType::Watcher>
   StartWildcardCapableWatch(absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<XdsWildcardCapableResourceType::Watcher>();
+    auto watcher =
+        MakeRefCounted<XdsWildcardCapableResourceType::Watcher>(event_engine_);
     XdsWildcardCapableResourceType::StartWatch(xds_client_.get(), resource_name,
                                                watcher);
     return watcher;
@@ -893,6 +928,7 @@ class XdsClientTest : public ::testing::Test {
         << location.file() << ":" << location.line();
   }
 
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<XdsClient> xds_client_;
   MetricsReporter* metrics_reporter_ = nullptr;
@@ -4185,8 +4221,5 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

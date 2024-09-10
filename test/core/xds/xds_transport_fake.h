@@ -34,13 +34,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 namespace grpc_core {
 
@@ -90,16 +90,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
 
-    bool WaitForReadsStarted(size_t expected, absl::Duration timeout) {
-      MutexLock lock(&mu_);
-      const absl::Time deadline = absl::Now() + timeout;
-      do {
-        if (reads_started_ == expected) {
-          return true;
-        }
-      } while (!cv_reads_started_.WaitWithDeadline(&mu_, deadline));
-      return false;
-    }
+    bool WaitForReadsStarted(size_t expected, absl::Duration timeout);
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -128,7 +119,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     WeakRefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+        event_engine_;
 
     Mutex mu_;
     CondVar cv_reads_started_;
@@ -144,12 +136,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   explicit FakeXdsTransportFactory(
       std::function<void()> too_many_pending_reads_callback,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine = nullptr)
-      : event_engine_(
-            event_engine != nullptr
-               ? std::move(event_engine)
-               : grpc_event_engine::experimental::GetDefaultEventEngine()),
+      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+          event_engine)
+      : event_engine_(std::move(event_engine)),
         too_many_pending_reads_callback_(
             std::move(too_many_pending_reads_callback)) {}
 
@@ -181,7 +170,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server, const char* method,
       absl::Duration timeout);
 
-  void Orphaned() override {}
+  void Orphaned() override;
 
  private:
   class FakeXdsTransport : public XdsTransport {
@@ -234,7 +223,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const XdsBootstrap::XdsServer& server_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+        event_engine_;
 
     Mutex mu_;
     CondVar cv_;
@@ -255,7 +245,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   RefCountedPtr<FakeXdsTransport> GetTransportLocked(const std::string& key)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_;
 
   Mutex mu_;
   std::map<std::string /*XdsServer key*/, FakeXdsTransport*> transport_map_
