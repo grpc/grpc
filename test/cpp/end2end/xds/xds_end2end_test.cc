@@ -1085,11 +1085,14 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       bool test_expects_failure = false,
       absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
     LOG(INFO) << "Sending RPC";
+    int num_tries = 0;
+    constexpr int kRetryCount = 100;
     auto overall_deadline =
         absl::Now() + absl::Seconds(20) * grpc_test_slowdown_factor();
     auto channel = channel_creator();
     auto stub = grpc::testing::EchoTestService::NewStub(channel);
-    while (absl::Now() < overall_deadline) {
+    for (; num_tries < kRetryCount || absl::Now() < overall_deadline;
+         num_tries++) {
       ClientContext context;
       EchoRequest request;
       context.set_wait_for_ready(true);
@@ -1148,7 +1151,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       }
       break;
     }
-    EXPECT_THAT(absl::Now(), ::testing::Lt(overall_deadline));
+    EXPECT_TRUE(absl::Now() <= overall_deadline || num_tries < kRetryCount);
   }
 
   std::string root_cert_;

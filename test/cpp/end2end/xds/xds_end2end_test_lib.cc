@@ -82,7 +82,9 @@ bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
     if (cond_.WaitWithDeadline(&mu_, deadline)) {
-      LOG(ERROR) << "\nExpected status: " << expected_status << "\nActual:"
+      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
+                    "change\nExpected status: "
+                 << expected_status << "\nActual:"
                  << (it == status_map.end()
                          ? "Entry not found in map"
                          : absl::StrCat(it->second.error_code()));
