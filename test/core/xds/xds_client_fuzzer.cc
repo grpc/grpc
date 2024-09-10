@@ -30,7 +30,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -46,15 +45,22 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
+
+using grpc_event_engine::experimental::FuzzingEventEngine;
 
 namespace grpc_core {
 
 class Fuzzer {
  public:
   explicit Fuzzer(absl::string_view bootstrap_json) {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_init();
     auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
     if (!bootstrap.ok()) {
       LOG(ERROR) << "error creating bootstrap: " << bootstrap.status();
@@ -62,13 +68,23 @@ class Fuzzer {
       return;
     }
     transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
-        []() { Crash("Multiple concurrent reads"); });
+        []() { Crash("Multiple concurrent reads"); }, event_engine_);
     transport_factory_->SetAutoCompleteMessagesFromClient(false);
     transport_factory_->SetAbortOnUndrainedMessages(false);
     xds_client_ = MakeRefCounted<XdsClient>(
-        std::move(*bootstrap), transport_factory_,
-        grpc_event_engine::experimental::GetDefaultEventEngine(),
+        std::move(*bootstrap), transport_factory_, event_engine_,
         /*metrics_reporter=*/nullptr, "foo agent", "foo version");
+  }
+
+  ~Fuzzer() {
+    transport_factory_.reset();
+    xds_client_.reset();
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    grpc_shutdown_blocking();
   }
 
   void Act(const xds_client_fuzzer::Action& action) {
@@ -320,6 +336,7 @@ class Fuzzer {
     stream->MaybeSendStatusToClient(std::move(status));
   }
 
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<XdsClient> xds_client_;
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
 
@@ -336,10 +353,8 @@ class Fuzzer {
 bool squelch = true;
 
 DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Msg& message) {
-  grpc_init();
   grpc_core::Fuzzer fuzzer(message.bootstrap());
   for (int i = 0; i < message.actions_size(); i++) {
     fuzzer.Act(message.actions(i));
   }
-  grpc_shutdown();
 }

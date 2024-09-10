@@ -192,7 +192,7 @@ grpc_proto_fuzzer(
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
     ],
     tags = ["no_windows"],
-    uses_event_engine = False,
+    uses_event_engine = True,
     uses_polling = False,
     deps = [
         ":xds_client_test_peer",
@@ -208,6 +208,8 @@ grpc_proto_fuzzer(
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
     ],
 )
 
