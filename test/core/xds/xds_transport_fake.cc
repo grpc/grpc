@@ -79,7 +79,6 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   MutexLock lock(&mu_);
   CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
-  cv_client_msg_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
     CompleteSendMessageFromClientLocked(/*ok=*/true);
   }
@@ -91,8 +90,7 @@ bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
 }
 
 absl::optional<std::string>
-FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient(
-    absl::Duration timeout) {
+FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient() {
   while (true) {
     event_engine_->Tick();
     MutexLock lock(&mu_);
@@ -132,7 +130,6 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   }
   ++reads_started_;
   ++num_pending_reads_;
-  cv_reads_started_.SignalAll();
   if (!to_client_messages_.empty()) {
     // Dispatch pending message (if there's one) on a separate thread to avoid
     // recursion
@@ -185,7 +182,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
 }
 
 bool FakeXdsTransportFactory::FakeStreamingCall::WaitForReadsStarted(
-    size_t expected, absl::Duration timeout) {
+    size_t expected) {
   while (true) {
     event_engine_->Tick();
     MutexLock lock(&mu_);
@@ -239,7 +236,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(
-    const char* method, absl::Duration timeout) {
+    const char* method) {
   while (true) {
     event_engine_->Tick();
     MutexLock lock(&mu_);
@@ -278,7 +275,6 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
-  cv_.Signal();
   return call;
 }
 
@@ -323,11 +319,10 @@ void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
 FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
-                                       const char* method,
-                                       absl::Duration timeout) {
+                                       const char* method) {
   auto transport = GetTransport(server);
   if (transport == nullptr) return nullptr;
-  return transport->WaitForStream(method, timeout);
+  return transport->WaitForStream(method);
 }
 
 void FakeXdsTransportFactory::Orphaned() { event_engine_.reset(); }

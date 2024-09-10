@@ -77,8 +77,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
-    absl::optional<std::string> WaitForMessageFromClient(
-        absl::Duration timeout);
+    absl::optional<std::string> WaitForMessageFromClient();
 
     // If FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient()
     // was called to set the value to false before the creation of the
@@ -90,7 +89,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
 
-    bool WaitForReadsStarted(size_t expected, absl::Duration timeout);
+    bool WaitForReadsStarted(size_t expected);
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -123,8 +122,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         event_engine_;
 
     Mutex mu_;
-    CondVar cv_reads_started_;
-    CondVar cv_client_msg_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
@@ -167,8 +164,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   void SetAbortOnUndrainedMessages(bool value);
 
   RefCountedPtr<FakeStreamingCall> WaitForStream(
-      const XdsBootstrap::XdsServer& server, const char* method,
-      absl::Duration timeout);
+      const XdsBootstrap::XdsServer& server, const char* method);
 
   void Orphaned() override;
 
@@ -198,8 +194,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void TriggerConnectionFailure(absl::Status status);
 
-    RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method,
-                                                   absl::Duration timeout);
+    RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method);
 
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
@@ -227,7 +222,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         event_engine_;
 
     Mutex mu_;
-    CondVar cv_;
     std::set<RefCountedPtr<ConnectivityFailureWatcher>> watchers_
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>

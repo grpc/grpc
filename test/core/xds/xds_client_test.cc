@@ -280,15 +280,14 @@ class XdsClientTest : public ::testing::Test {
         return !queue_.empty();
       }
 
-      // Returns true if no event is received during the timeout period.
-// FIXME: remove timeout (here and elsewhere)
-      bool ExpectNoEvent(absl::Duration timeout) {
+      // Returns true if no event is received after draining the fuzzing
+      // EE queue.
+      bool ExpectNoEvent() {
         event_engine_->TickUntilIdle();
         return !HasEvent();
       }
 
       absl::optional<ResourceAndReadDelayHandle> WaitForNextResourceAndHandle(
-          absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
         while (true) {
           event_engine_->Tick();
@@ -314,10 +313,8 @@ class XdsClientTest : public ::testing::Test {
       }
 
       std::shared_ptr<const ResourceStruct> WaitForNextResource(
-          absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
-        auto resource_and_handle =
-            WaitForNextResourceAndHandle(timeout, location);
+        auto resource_and_handle = WaitForNextResourceAndHandle(location);
         if (!resource_and_handle.has_value()) {
           return nullptr;
         }
@@ -325,7 +322,6 @@ class XdsClientTest : public ::testing::Test {
       }
 
       absl::optional<absl::Status> WaitForNextError(
-          absl::Duration timeout = absl::Seconds(1),
           SourceLocation location = SourceLocation()) {
         while (true) {
           event_engine_->Tick();
@@ -350,8 +346,7 @@ class XdsClientTest : public ::testing::Test {
         }
       }
 
-      bool WaitForDoesNotExist(absl::Duration timeout,
-                               SourceLocation location = SourceLocation()) {
+      bool WaitForDoesNotExist(SourceLocation location = SourceLocation()) {
         while (true) {
           event_engine_->Tick();
           MutexLock lock(&mu_);
@@ -385,7 +380,6 @@ class XdsClientTest : public ::testing::Test {
         ResourceAndReadDelayHandle event_details = {
             std::move(foo), std::move(read_delay_handle)};
         queue_.emplace_back(std::move(event_details));
-        cv_.Signal();
       }
 
       void OnError(
@@ -394,7 +388,6 @@ class XdsClientTest : public ::testing::Test {
           override {
         MutexLock lock(&mu_);
         queue_.push_back(std::move(status));
-        cv_.Signal();
       }
 
       void OnResourceDoesNotExist(
@@ -402,14 +395,11 @@ class XdsClientTest : public ::testing::Test {
           override {
         MutexLock lock(&mu_);
         queue_.push_back(DoesNotExist());
-        cv_.Signal();
       }
 
       std::shared_ptr<FuzzingEventEngine> event_engine_;
 
       Mutex mu_;
-// FIXME: remove, here and elsewhere
-      CondVar cv_;
       std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
     };
 
@@ -660,7 +650,6 @@ class XdsClientTest : public ::testing::Test {
         ::testing::Matcher<ResourceUpdateMap> resource_updates_valid_matcher,
         ::testing::Matcher<ResourceUpdateMap> resource_updates_invalid_matcher,
         ::testing::Matcher<ServerFailureMap> server_failures_matcher,
-        absl::Duration timeout = absl::Seconds(3),
         SourceLocation location = SourceLocation()) {
       while (true) {
         event_engine_->Tick();
@@ -819,17 +808,13 @@ class XdsClientTest : public ::testing::Test {
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
-      const XdsBootstrap::XdsServer& xds_server,
-      absl::Duration timeout = absl::Seconds(5)) {
+      const XdsBootstrap::XdsServer& xds_server) {
     return transport_factory_->WaitForStream(
-        xds_server, FakeXdsTransportFactory::kAdsMethod,
-        timeout * grpc_test_slowdown_factor());
+        xds_server, FakeXdsTransportFactory::kAdsMethod);
   }
 
-  RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
-      absl::Duration timeout = absl::Seconds(5)) {
-    return WaitForAdsStream(*xds_client_->bootstrap().servers().front(),
-                            timeout);
+  RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream() {
+    return WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   }
 
   void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
@@ -840,10 +825,8 @@ class XdsClientTest : public ::testing::Test {
   // Gets the latest request sent to the fake xDS server.
   absl::optional<DiscoveryRequest> WaitForRequest(
       FakeXdsTransportFactory::FakeStreamingCall* stream,
-      absl::Duration timeout = absl::Seconds(3),
       SourceLocation location = SourceLocation()) {
-    auto message =
-        stream->WaitForMessageFromClient(timeout * grpc_test_slowdown_factor());
+    auto message = stream->WaitForMessageFromClient();
     if (!message.has_value()) return absl::nullopt;
     DiscoveryRequest request;
     bool success = request.ParseFromString(*message);
@@ -2047,7 +2030,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
           .set_nonce("B")
           .Serialize());
   // Watcher should see the does-not-exist event.
-  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(1)));
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -2065,7 +2048,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartWildcardCapableWatch("wc1");
-  EXPECT_TRUE(watcher2->WaitForDoesNotExist(absl::Seconds(1)));
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist());
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
@@ -2178,7 +2161,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
           .Serialize());
   // Watcher should not see any update, since we should have ignored the
   // deletion.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -2474,7 +2457,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
       ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
   // We should not see a resource-does-not-exist event, because the
   // timer should not be running while the channel is disconnected.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Start a new watch.  This watcher should be given the same error,
   // since we have not yet recovered.
   auto watcher2 = StartFooWatch("foo1");
@@ -2553,7 +2536,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Do not send a response, but wait for the resource to be reported as
   // not existing.
-  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(5)));
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
@@ -2566,7 +2549,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // Start a new watcher for the same resource.  It should immediately
   // receive the same does-not-exist notification.
   auto watcher2 = StartFooWatch("foo1");
-  EXPECT_TRUE(watcher2->WaitForDoesNotExist(absl::Seconds(1)));
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist());
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2677,7 +2660,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Server does NOT send a response immediately.
   // Client should receive a resource does-not-exist.
-  ASSERT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(4)));
+  ASSERT_TRUE(watcher->WaitForDoesNotExist());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(), ::testing::ElementsAre(), ::testing::_));
@@ -2749,7 +2732,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   // Server does NOT send a response.
   // We should not see a resource-does-not-exist event, because the
   // timer should not be running while the channel is disconnected.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Check metric data.
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
@@ -2762,7 +2745,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   stream->CompleteSendMessageFromClient();
   // Server does NOT send a response.
   // Watcher should see a does-not-exist event.
-  EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->WaitForDoesNotExist());
   // Check metric data.
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
@@ -2951,7 +2934,7 @@ TEST_F(XdsClientTest,
                /*resource_names=*/{"foo1", "foo2"});
   stream->CompleteSendMessageFromClient();
   // Make sure the watcher for foo1 does not see a does-not-exist event.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(5)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
@@ -3028,7 +3011,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   // We should not see a resource-does-not-exist event, because the
   // resource was already cached, so the server can optimize by not
   // resending it.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -3050,7 +3033,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
           .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
   // Watcher will not see any update, since the resource is unchanged.
-  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(1)));
+  EXPECT_TRUE(watcher->ExpectNoEvent());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -3760,7 +3743,6 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
 }
 
 TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
-  const absl::Duration timeout = absl::Seconds(5) * grpc_test_slowdown_factor();
   InitXdsClient();
   // Start watches for "foo1" and "foo2".
   auto watcher1 = StartFooWatch("foo1");
@@ -3813,11 +3795,11 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  EXPECT_TRUE(stream->WaitForReadsStarted(1, timeout));
+  EXPECT_TRUE(stream->WaitForReadsStarted(1));
   resource1->read_delay_handle.reset();
-  EXPECT_TRUE(stream->WaitForReadsStarted(1, timeout));
+  EXPECT_TRUE(stream->WaitForReadsStarted(1));
   resource2->read_delay_handle.reset();
-  EXPECT_TRUE(stream->WaitForReadsStarted(2, timeout));
+  EXPECT_TRUE(stream->WaitForReadsStarted(2));
   resource1 = watcher1->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
@@ -3830,9 +3812,9 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"2", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  EXPECT_TRUE(stream->WaitForReadsStarted(2, timeout));
+  EXPECT_TRUE(stream->WaitForReadsStarted(2));
   resource1->read_delay_handle.reset();
-  EXPECT_TRUE(stream->WaitForReadsStarted(3, timeout));
+  EXPECT_TRUE(stream->WaitForReadsStarted(3));
   // Cancel watch.
   CancelFooWatch(watcher1.get(), "foo1");
   request = WaitForRequest(stream.get());
