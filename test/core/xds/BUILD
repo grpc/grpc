@@ -145,7 +145,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:xds_client",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -174,8 +174,8 @@ grpc_cc_test(
         ":xds_transport_fake",
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
     ],
@@ -208,7 +208,7 @@ grpc_proto_fuzzer(
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
-        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
     ],
 )
