@@ -88,14 +88,14 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
         << "Accept on phony socket unexpectedly accepted actual connection.";
     ASSERT_TRUE(WSAGetLastError() == WSAEWOULDBLOCK)
         << "OpenAndCloseSocketsStressLoop accept on socket " +
-               std::to_string(sockets[i]) +
+               std::to_string(s) +
                " failed in "
                "an unexpected way. "
                "WSA error: " +
                std::to_string(WSAGetLastError()) +
                ". Socket use-after-close bugs are likely.";
-    ASSERT_TRUE(closesocket(sockets[i]) != SOCKET_ERROR)
-        << "Failed to close socket: " + std::to_string(sockets[i]) +
+    ASSERT_TRUE(closesocket(s) != SOCKET_ERROR)
+        << "Failed to close socket: " + std::to_string(s) +
                ". WSA error: " + std::to_string(WSAGetLastError());
   }
   return;
