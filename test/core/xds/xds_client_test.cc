@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -734,6 +735,7 @@ class XdsClientTest : public ::testing::Test {
   void SetUp() override {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
 

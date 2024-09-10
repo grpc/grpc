@@ -32,6 +32,7 @@
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
@@ -60,6 +61,7 @@ class Fuzzer {
   explicit Fuzzer(absl::string_view bootstrap_json) {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
     if (!bootstrap.ok()) {
