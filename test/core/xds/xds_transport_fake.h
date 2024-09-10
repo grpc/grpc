@@ -34,6 +34,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -61,6 +62,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         std::unique_ptr<StreamingCall::EventHandler> event_handler)
         : transport_(std::move(transport)),
           method_(method),
+          event_engine_(transport_->factory()->event_engine_),
           event_handler_(MakeRefCounted<RefCountedEventHandler>(
               std::move(event_handler))) {}
 
@@ -126,6 +128,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     RefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
     Mutex mu_;
     CondVar cv_reads_started_;
@@ -140,8 +143,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   };
 
   explicit FakeXdsTransportFactory(
-      std::function<void()> too_many_pending_reads_callback)
-      : too_many_pending_reads_callback_(
+      std::function<void()> too_many_pending_reads_callback,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr)
+      : event_engine_(
+            event_engine != nullptr
+               ? std::move(event_engine)
+               : grpc_event_engine::experimental::GetDefaultEventEngine()),
+        too_many_pending_reads_callback_(
             std::move(too_many_pending_reads_callback)) {}
 
   using XdsTransportFactory::Ref;  // Make it public.
@@ -189,6 +198,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
           auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
+          event_engine_(factory_->event_engine_),
           on_connectivity_failure_(
               MakeRefCounted<RefCountedOnConnectivityFailure>(
                   std::move(on_connectivity_failure))) {}
@@ -242,6 +252,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const XdsBootstrap::XdsServer& server_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
     Mutex mu_;
     CondVar cv_;
@@ -258,6 +269,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   RefCountedPtr<FakeXdsTransport> GetTransport(
       const XdsBootstrap::XdsServer& server);
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   Mutex mu_;
   std::map<std::string /*XdsServer key*/, RefCountedPtr<FakeXdsTransport>>

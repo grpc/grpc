@@ -793,15 +793,15 @@ class XdsClientTest : public ::testing::Test {
         timeout * grpc_test_slowdown_factor());
   }
 
-  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
-                                absl::Status status) {
-    transport_factory_->TriggerConnectionFailure(xds_server, std::move(status));
-  }
-
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
       absl::Duration timeout = absl::Seconds(5)) {
     return WaitForAdsStream(*xds_client_->bootstrap().servers().front(),
                             timeout);
+  }
+
+  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
+                                absl::Status status) {
+    transport_factory_->TriggerConnectionFailure(xds_server, std::move(status));
   }
 
   // Gets the latest request sent to the fake xDS server.

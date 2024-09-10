@@ -29,14 +29,11 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "test/core/test_util/test_config.h"
-
-using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 namespace grpc_core {
 
@@ -60,8 +57,8 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
   // synchronously, since those operations will trigger code in
   // XdsClient that acquires its mutex, but it was already holding its
   // mutex when it called us, so it would deadlock.
-  GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
-                                status_sent = status_sent_]() mutable {
+  event_engine_->Run([event_handler = std::move(event_handler_),
+                      status_sent = status_sent_]() mutable {
     ExecCtx exec_ctx;
     if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
     event_handler.reset();
@@ -113,12 +110,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::
   // Can't call event_handler_->OnRequestSent() synchronously, since that
   // operation will trigger code in XdsClient that acquires its mutex, but it
   // was already holding its mutex when it called us, so it would deadlock.
-  GetDefaultEventEngine()->Run(
-      [event_handler = event_handler_->Ref(), ok]() mutable {
-        ExecCtx exec_ctx;
-        event_handler->OnRequestSent(ok);
-        event_handler.reset();
-      });
+  event_engine_->Run([event_handler = event_handler_->Ref(), ok]() mutable {
+    ExecCtx exec_ctx;
+    event_handler->OnRequestSent(ok);
+    event_handler.reset();
+  });
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
@@ -139,9 +135,9 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   if (!to_client_messages_.empty()) {
     // Dispatch pending message (if there's one) on a separate thread to avoid
     // recursion
-    GetDefaultEventEngine()->Run([call = RefAsSubclass<FakeStreamingCall>()]() {
-      call->MaybeDeliverMessageToClient();
-    });
+    event_engine_->Run([call = RefAsSubclass<FakeStreamingCall>()]() {
+                         call->MaybeDeliverMessageToClient();
+                       });
   }
 }
 
@@ -217,18 +213,18 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
       factory_->transport_map_.erase(it);
     }
   }
-  factory_.reset();
   {
     MutexLock lock(&mu_);
     // Can't destroy on_connectivity_failure_ synchronously, since that
     // operation will trigger code in XdsClient that acquires its mutex, but
     // it was already holding its mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run([on_connectivity_failure = std::move(
-                                      on_connectivity_failure_)]() mutable {
+    event_engine_->Run([on_connectivity_failure = std::move(
+                            on_connectivity_failure_)]() mutable {
       ExecCtx exec_ctx;
       on_connectivity_failure.reset();
     });
   }
+  factory_.reset();
   Unref();
 }
 
