@@ -454,7 +454,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update->lrs_load_reporting_server.emplace(
+    cds_update->lrs_load_reporting_server = std::make_shared<GrpcXdsServer>(
         static_cast<const GrpcXdsServer&>(context.server));
   }
   // Protocol options.

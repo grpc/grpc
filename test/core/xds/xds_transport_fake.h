@@ -58,7 +58,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   class FakeStreamingCall : public XdsTransport::StreamingCall {
    public:
     FakeStreamingCall(
-        RefCountedPtr<FakeXdsTransport> transport, const char* method,
+        WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler)
         : transport_(std::move(transport)),
           method_(method),
@@ -69,6 +69,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     ~FakeStreamingCall() override;
 
     void Orphan() override;
+
+    bool IsOrphaned();
 
     void StartRecvMessage() override;
 
@@ -87,8 +89,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
-
-    bool Orphaned();
 
     bool WaitForReadsStarted(size_t expected, absl::Duration timeout) {
       MutexLock lock(&mu_);
@@ -126,7 +126,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
     void MaybeDeliverMessageToClient();
 
-    RefCountedPtr<FakeXdsTransport> transport_;
+    WeakRefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
@@ -152,8 +152,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
                : grpc_event_engine::experimental::GetDefaultEventEngine()),
         too_many_pending_reads_callback_(
             std::move(too_many_pending_reads_callback)) {}
-
-  using XdsTransportFactory::Ref;  // Make it public.
 
   void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
                                 absl::Status status);
@@ -183,14 +181,13 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server, const char* method,
       absl::Duration timeout);
 
-  void Orphan() override { Unref(); }
+  void Orphaned() override {}
 
  private:
   class FakeXdsTransport : public XdsTransport {
    public:
-    FakeXdsTransport(RefCountedPtr<FakeXdsTransportFactory> factory,
+    FakeXdsTransport(WeakRefCountedPtr<FakeXdsTransportFactory> factory,
                      const XdsBootstrap::XdsServer& server,
-                     std::function<void(absl::Status)> on_connectivity_failure,
                      bool auto_complete_messages_from_client,
                      bool abort_on_undrained_messages)
         : factory_(std::move(factory)),
@@ -198,12 +195,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
           auto_complete_messages_from_client_(
               auto_complete_messages_from_client),
           abort_on_undrained_messages_(abort_on_undrained_messages),
-          event_engine_(factory_->event_engine_),
-          on_connectivity_failure_(
-              MakeRefCounted<RefCountedOnConnectivityFailure>(
-                  std::move(on_connectivity_failure))) {}
+          event_engine_(factory_->event_engine_) {}
 
-    void Orphan() override;
+    void Orphaned() override;
 
     bool auto_complete_messages_from_client() const {
       return auto_complete_messages_from_client_;
@@ -212,8 +206,6 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool abort_on_undrained_messages() const {
       return abort_on_undrained_messages_;
     }
-
-    using XdsTransport::Ref;  // Make it public.
 
     void TriggerConnectionFailure(absl::Status status);
 
@@ -227,20 +219,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const XdsBootstrap::XdsServer* server() const { return &server_; }
 
    private:
-    class RefCountedOnConnectivityFailure
-        : public RefCounted<RefCountedOnConnectivityFailure> {
-     public:
-      explicit RefCountedOnConnectivityFailure(
-          std::function<void(absl::Status)> on_connectivity_failure)
-          : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
-
-      void Run(absl::Status status) {
-        on_connectivity_failure_(std::move(status));
-      }
-
-     private:
-      std::function<void(absl::Status)> on_connectivity_failure_;
-    };
+    void StartConnectivityFailureWatch(
+        RefCountedPtr<ConnectivityFailureWatcher> watcher) override;
+    void StopConnectivityFailureWatch(
+        const RefCountedPtr<ConnectivityFailureWatcher>& watcher) override;
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
@@ -248,7 +230,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void ResetBackoff() override {}
 
-    RefCountedPtr<FakeXdsTransportFactory> factory_;
+    WeakRefCountedPtr<FakeXdsTransportFactory> factory_;
     const XdsBootstrap::XdsServer& server_;
     const bool auto_complete_messages_from_client_;
     const bool abort_on_undrained_messages_;
@@ -256,25 +238,28 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     Mutex mu_;
     CondVar cv_;
-    RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure_
+    std::set<RefCountedPtr<ConnectivityFailureWatcher>> watchers_
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
   };
 
-  OrphanablePtr<XdsTransport> Create(
-      const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
-      absl::Status* status) override;
+  // Returns an existing transport or creates a new one.
+  RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServer& server, absl::Status* /*status*/) override;
 
+  // Returns an existing transport, if any, or nullptr.
   RefCountedPtr<FakeXdsTransport> GetTransport(
       const XdsBootstrap::XdsServer& server);
+
+  RefCountedPtr<FakeXdsTransport> GetTransportLocked(const std::string& key)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   Mutex mu_;
-  std::map<std::string /*XdsServer key*/, RefCountedPtr<FakeXdsTransport>>
-      transport_map_ ABSL_GUARDED_BY(&mu_);
+  std::map<std::string /*XdsServer key*/, FakeXdsTransport*> transport_map_
+      ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
   bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;
   std::function<void()> too_many_pending_reads_callback_;
