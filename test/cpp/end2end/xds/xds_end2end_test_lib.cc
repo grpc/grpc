@@ -72,7 +72,7 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   cond_.Signal();
 }
 
-void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
+bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
     WaitOnServingStatusChange(const std::string& uri,
                               grpc::StatusCode expected_status,
                               absl::Duration timeout) {
@@ -81,11 +81,15 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
-    ASSERT_FALSE(cond_.WaitWithDeadline(&mu_, deadline))
-        << "\nExpected status: " << expected_status << "\nActual:"
-        << (it == status_map.end() ? "Entry not found in map"
-                                   : absl::StrCat(it->second.error_code()));
+    if (cond_.WaitWithDeadline(&mu_, deadline)) {
+      LOG(ERROR) << "\nExpected status: " << expected_status << "\nActual:"
+                 << (it == status_map.end()
+                         ? "Entry not found in map"
+                         : absl::StrCat(it->second.error_code()));
+      return false;
+    }
   }
+  return true;
 }
 
 //
