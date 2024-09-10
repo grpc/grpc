@@ -190,6 +190,7 @@ grpc_proto_fuzzer(
     proto = "xds_client_fuzzer.proto",
     proto_deps = [
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     ],
     tags = ["no_windows"],
     uses_event_engine = True,

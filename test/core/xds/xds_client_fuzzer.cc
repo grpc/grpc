@@ -58,9 +58,10 @@ namespace grpc_core {
 
 class Fuzzer {
  public:
-  explicit Fuzzer(absl::string_view bootstrap_json) {
+  Fuzzer(absl::string_view bootstrap_json,
+         const fuzzing_event_engine::Actions& fuzzing_ee_actions) {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
-        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+        FuzzingEventEngine::Options(), fuzzing_ee_actions);
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
@@ -354,7 +355,8 @@ class Fuzzer {
 bool squelch = true;
 
 DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Msg& message) {
-  grpc_core::Fuzzer fuzzer(message.bootstrap());
+  grpc_core::Fuzzer fuzzer(message.bootstrap(),
+                           message.fuzzing_event_engine_actions());
   for (int i = 0; i < message.actions_size(); i++) {
     fuzzer.Act(message.actions(i));
   }
