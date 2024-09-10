@@ -229,7 +229,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gesundheit"  # @unused
 
-core_version = "43.0.0"  # @unused
+core_version = "44.0.0"  # @unused
 
 version = "1.67.0-dev"  # @unused
 

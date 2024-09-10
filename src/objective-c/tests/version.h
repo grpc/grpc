@@ -23,4 +23,4 @@
 // `tools/buildgen/generate_projects.sh`.
 
 #define GRPC_OBJC_VERSION_STRING @"1.67.0-dev"
-#define GRPC_C_VERSION_STRING @"43.0.0"
+#define GRPC_C_VERSION_STRING @"44.0.0"
