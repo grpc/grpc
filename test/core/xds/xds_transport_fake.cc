@@ -134,8 +134,8 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
     // Dispatch pending message (if there's one) on a separate thread to avoid
     // recursion
     event_engine_->Run([call = RefAsSubclass<FakeStreamingCall>()]() {
-                         call->MaybeDeliverMessageToClient();
-                       });
+      call->MaybeDeliverMessageToClient();
+    });
   }
 }
 
@@ -235,8 +235,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphaned() {
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
-FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(
-    const char* method) {
+FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
   while (true) {
     event_engine_->Tick();
     MutexLock lock(&mu_);
