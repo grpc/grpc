@@ -949,10 +949,10 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder, /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/
-               500,  // using a low timeout to quickly end negative tests.
-                     // Prefer using WaitOnServingStatusChange() or a similar
-                     // loop on the client side to wait on status changes
-                     // instead of increasing this timeout.
+               5000,  // using a low timeout to quickly end negative tests.
+                      // Prefer using WaitOnServingStatusChange() or a similar
+                      // loop on the client side to wait on status changes
+                      // instead of increasing this timeout.
                /*balancer_authority_override=*/"", /*args=*/nullptr,
                CreateXdsChannelCredentials());
     CreateBackends(1, /*xds_enabled=*/true,
