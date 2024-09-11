@@ -3,7 +3,8 @@
  *     xds/annotations/v3/versioning.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_H_
 #define XDS_ANNOTATIONS_V3_VERSIONING_PROTO_UPB_H_

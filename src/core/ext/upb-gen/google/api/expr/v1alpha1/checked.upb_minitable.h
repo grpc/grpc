@@ -3,7 +3,8 @@
  *     google/api/expr/v1alpha1/checked.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_MINITABLE_H_
 #define GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPB_MINITABLE_H_
@@ -18,18 +19,31 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__CheckedExpr_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Type_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Type_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Type__ListType_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Type__ListType_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Type__MapType_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Type__MapType_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Type__FunctionType_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Type__FunctionType_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Type__AbstractType_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Type__AbstractType_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Decl_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Decl_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Decl__IdentDecl_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Decl__IdentDecl_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_msg_init_ptr;
 extern const upb_MiniTable google__api__expr__v1alpha1__Reference_msg_init;
+extern const upb_MiniTable* google__api__expr__v1alpha1__Reference_msg_init_ptr;
 
 extern const upb_MiniTableFile google_api_expr_v1alpha1_checked_proto_upb_file_layout;
 

@@ -3300,6 +3300,7 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3342,6 +3343,7 @@ libs:
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3502,6 +3504,7 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3537,12 +3540,15 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/text/encode.h
+  - third_party/upb/upb/text/internal/encode.h
+  - third_party/upb/upb/text/options.h
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3561,6 +3567,7 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/text/encode.c
+  - third_party/upb/upb/text/internal/encode.c
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
