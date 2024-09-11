@@ -33,8 +33,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
-#include "third_party/absl/log/log.h"
 
 #include <grpc/support/sync.h>
 
