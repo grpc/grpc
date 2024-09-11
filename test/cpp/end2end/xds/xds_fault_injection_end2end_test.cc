@@ -240,12 +240,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   // Send kNumRpcs RPCs and count the delays.
   RpcOptions rpc_options =
       RpcOptions().set_timeout(kRpcTimeout).set_skip_cancelled_check(true);
-  std::vector<ConcurrentRpc> rpcs =
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
       SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
+    if (rpc->status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
     ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
@@ -295,12 +295,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
                                .set_metadata(metadata)
                                .set_timeout(kRpcTimeout)
                                .set_skip_cancelled_check(true);
-  std::vector<ConcurrentRpc> rpcs =
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
       SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
+    if (rpc->status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
     ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
@@ -381,12 +381,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
-  std::vector<ConcurrentRpc> rpcs =
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
       SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time, kFixedDelay * grpc_test_slowdown_factor());
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ("Fault injected", rpc.status.error_message());
+    EXPECT_GE(rpc->elapsed_time, kFixedDelay * grpc_test_slowdown_factor());
+    if (rpc->status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ("Fault injected", rpc->status.error_message());
     ++num_aborted;
   }
   // The abort rate should be roughly equal to the expectation.
@@ -438,12 +438,12 @@ TEST_P(FaultInjectionTest,
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
-  std::vector<ConcurrentRpc> rpcs =
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
       SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time, kFixedDelay * grpc_test_slowdown_factor());
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ("Fault injected", rpc.status.error_message());
+    EXPECT_GE(rpc->elapsed_time, kFixedDelay * grpc_test_slowdown_factor());
+    if (rpc->status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ("Fault injected", rpc->status.error_message());
     ++num_aborted;
   }
   // The abort rate should be roughly equal to the expectation.
@@ -481,11 +481,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   // active faults quota.
   int num_delayed = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout(kRpcTimeout);
-  std::vector<ConcurrentRpc> rpcs =
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs =
       SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
+    if (rpc->status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
     ++num_delayed;
   }
   // Only kMaxFault number of RPC should be fault injected.
@@ -495,8 +495,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   num_delayed = 0;
   rpcs = SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
+    if (rpc->status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc->status.error_code());
     ++num_delayed;
   }
   // Only kMaxFault number of RPC should be fault injected. If the max fault

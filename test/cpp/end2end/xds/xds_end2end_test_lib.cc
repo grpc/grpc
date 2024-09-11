@@ -72,15 +72,26 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   cond_.Signal();
 }
 
-void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(std::string uri,
-                              grpc::StatusCode expected_status) {
+bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
+    WaitOnServingStatusChange(const std::string& uri,
+                              grpc::StatusCode expected_status,
+                              absl::Duration timeout) {
   grpc_core::MutexLock lock(&mu_);
+  absl::Time deadline = absl::Now() + timeout * grpc_test_slowdown_factor();
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
-    cond_.Wait(&mu_);
+    if (cond_.WaitWithDeadline(&mu_, deadline)) {
+      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
+                    "change\nExpected status: "
+                 << expected_status << "\nActual:"
+                 << (it == status_map.end()
+                         ? "Entry not found in map"
+                         : absl::StrCat(it->second.error_code()));
+      return false;
+    }
   }
+  return true;
 }
 
 //
@@ -714,33 +725,37 @@ Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
   return status_;
 }
 
-std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
+std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>
+XdsEnd2endTest::SendConcurrentRpcs(
     const grpc_core::DebugLocation& debug_location,
     grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
     const RpcOptions& rpc_options) {
   // Variables for RPCs.
-  std::vector<ConcurrentRpc> rpcs(num_rpcs);
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs;
+  rpcs.reserve(num_rpcs);
   EchoRequest request;
   // Variables for synchronization
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
   size_t completed = 0;
   // Set-off callback RPCs
-  for (size_t i = 0; i < num_rpcs; i++) {
-    ConcurrentRpc* rpc = &rpcs[i];
+  for (size_t i = 0; i < num_rpcs; ++i) {
+    auto rpc = std::make_unique<ConcurrentRpc>();
     rpc_options.SetupRpc(&rpc->context, &request);
     grpc_core::Timestamp t0 = NowFromCycleCounter();
-    stub->async()->Echo(&rpc->context, &request, &rpc->response,
-                        [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
-                          rpc->status = s;
-                          rpc->elapsed_time = NowFromCycleCounter() - t0;
-                          bool done;
-                          {
-                            grpc_core::MutexLock lock(&mu);
-                            done = (++completed) == num_rpcs;
-                          }
-                          if (done) cv.Signal();
-                        });
+    stub->async()->Echo(
+        &rpc->context, &request, &rpc->response,
+        [rpc = rpc.get(), &mu, &completed, &cv, num_rpcs, t0](Status s) {
+          rpc->status = s;
+          rpc->elapsed_time = NowFromCycleCounter() - t0;
+          bool done;
+          {
+            grpc_core::MutexLock lock(&mu);
+            done = (++completed) == num_rpcs;
+          }
+          if (done) cv.Signal();
+        });
+    rpcs.push_back(std::move(rpc));
   }
   {
     grpc_core::MutexLock lock(&mu);

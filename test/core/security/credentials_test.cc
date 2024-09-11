@@ -2492,6 +2492,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   ExecCtx exec_ctx;
   creds_->AddResult(MakeToken("foo", kExpirationTime));
   // First request will trigger a fetch.
+  LOG(INFO) << "First request";
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2499,6 +2500,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   EXPECT_EQ(creds_->num_fetches(), 1);
   // Second request while fetch is still outstanding will be delayed but
   // will not trigger a new fetch.
+  LOG(INFO) << "Second request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2507,6 +2509,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   // Now tick to finish the fetch.
   event_engine_->TickUntilIdle();
   // Next request will be served from cache with no delay.
+  LOG(INFO) << "Third request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2519,6 +2522,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   // Next request will trigger a new fetch but will still use the
   // cached token.
   creds_->AddResult(MakeToken("bar"));
+  LOG(INFO) << "Fourth request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2526,6 +2530,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   EXPECT_EQ(creds_->num_fetches(), 2);
   event_engine_->TickUntilIdle();
   // Next request will use the new data.
+  LOG(INFO) << "Fifth request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: bar", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,

@@ -134,9 +134,12 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                      endpoint) mutable {
             ExecCtx exec_ctx;
             if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
-              ExecCtx::Run(DEBUG_LOCATION,
-                           std::exchange(self->notify_, nullptr),
-                           GRPC_ERROR_CREATE("connect endpoint failed"));
+              MutexLock lock(&self->mu_);
+              if (self->notify_ != nullptr) {
+                ExecCtx::Run(DEBUG_LOCATION,
+                             std::exchange(self->notify_, nullptr),
+                             GRPC_ERROR_CREATE("connect endpoint failed"));
+              }
               return;
             }
             auto* chaotic_good_ext =
@@ -240,9 +243,9 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                    GRPC_ERROR_CREATE("connector shutdown"));
       return;
     }
+    notify_ = notify;
   }
   args_ = args;
-  notify_ = notify;
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
@@ -253,11 +256,14 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               endpoint) mutable {
         ExecCtx exec_ctx;
         if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
-          auto endpoint_status = endpoint.status();
-          auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
-                                                     &endpoint_status, 1);
-          ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
-                       error);
+          MutexLock lock(&self->mu_);
+          if (self->notify_ != nullptr) {
+            auto endpoint_status = endpoint.status();
+            auto error = GRPC_ERROR_CREATE_REFERENCING(
+                "connect endpoint failed", &endpoint_status, 1);
+            ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
+                         error);
+          }
           return;
         }
         auto* chaotic_good_ext =
@@ -320,8 +326,8 @@ void ChaoticGoodConnector::OnHandshakeDone(
         [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "ChaoticGoodConnector::OnHandshakeDone: " << status;
+          MutexLock lock(&self->mu_);
           if (status.ok()) {
-            MutexLock lock(&self->mu_);
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
                 std::move(self->data_endpoint_), self->args_.channel_args,

@@ -21269,8 +21269,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/scoped_env_var.h
+  headers: []
   src:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
@@ -22618,12 +22617,12 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
   - https://github.com/envoyproxy/data-plane-api/archive/f8b75d1efa92bbf534596a013d9ca5873f79dd30.tar.gz
 - destination: third_party/googleapis
-  hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
+  hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
   proto_prefix: third_party/googleapis/
-  strip_prefix: googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
+  strip_prefix: googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
-  - https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
+  - https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
 - destination: third_party/opencensus-proto/src
   hash: b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
   proto_prefix: third_party/opencensus-proto/src/
