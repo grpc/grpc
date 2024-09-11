@@ -268,10 +268,10 @@ class XdsClient::XdsChannel::AdsCall final
               << XdsClient::ConstructFullXdsResourceName(
                      name_.authority, type_->type_url(), name_.key)
               << "} from xds server";
+          resource_seen_ = true;
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
           ads_call_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
               state.watchers, ReadDelayHandle::NoWait());
-          resource_seen_ = true;
         }
       }
       ads_call_->xds_client()->work_serializer_.DrainQueue();
