@@ -357,7 +357,8 @@ void RoundRobin::RoundRobinEndpointList::
   //   (This may cause the channel to go from READY to TRANSIENT_FAILURE,
   //   but we're doing what the control plane told us to do.)
   if (round_robin->latest_pending_endpoint_list_.get() == this &&
-      (round_robin->endpoint_list_->num_ready_ == 0 ||
+      (round_robin->endpoint_list_ == nullptr ||
+       round_robin->endpoint_list_->num_ready_ == 0 ||
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {

@@ -943,7 +943,7 @@ void WeightedRoundRobin::WrrEndpointList::
   //   (This may cause the channel to go from READY to TRANSIENT_FAILURE,
   //   but we're doing what the control plane told us to do.)
   if (wrr->latest_pending_endpoint_list_.get() == this &&
-      (wrr->endpoint_list_->num_ready_ == 0 ||
+      (wrr->endpoint_list_ == nullptr || wrr->endpoint_list_->num_ready_ == 0 ||
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
