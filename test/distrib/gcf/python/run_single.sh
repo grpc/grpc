@@ -45,8 +45,6 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # Deploy
 
-gcloud config get account
-
 DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_publish --runtime "${RUNTIME}" --trigger-http --allow-unauthenticated --no-gen2)
 HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 
