@@ -346,7 +346,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                 DEBUG_LOCATION);
           },
           DEBUG_LOCATION);
-      notification.WaitForNotification();
+      while (!notification.HasBeenNotified()) {
+        test_->fuzzing_ee_->Tick();
+      }
+//      notification.WaitForNotification();
       LOG(INFO) << "Health notifications delivered";
     }
 
@@ -390,7 +393,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             notification.Notify();
           },
           DEBUG_LOCATION);
-      notification.WaitForNotification();
+      while (!notification.HasBeenNotified()) {
+        test_->fuzzing_ee_->Tick();
+      }
+//      notification.WaitForNotification();
       return num_watchers;
     }
 
@@ -515,7 +521,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               notification->Notify();
             },
             DEBUG_LOCATION);
-        notification.WaitForNotification();
+        while (!notification.HasBeenNotified()) {
+          test_->fuzzing_ee_->Tick();
+        }
+//        notification.WaitForNotification();
       }
 
       LoadBalancingPolicy::PickResult Pick(
@@ -704,7 +713,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             fuzzing_event_engine::Actions());
     grpc_init();
     event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
-    work_serializer_ = std::make_shared<WorkSerializer>(event_engine_);
+    work_serializer_ = std::make_shared<WorkSerializer>(fuzzing_ee_);
     auto helper = std::make_unique<FakeHelper>(this);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
@@ -734,6 +743,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     fuzzing_ee_->TickUntilIdle();
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(event_engine_));
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(fuzzing_ee_));
     event_engine_.reset();
     grpc_shutdown_blocking();
     fuzzing_ee_.reset();
@@ -847,7 +858,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
+//    notification.WaitForNotification();
     LOG(INFO) << "health notifications delivered";
     return status;
   }
@@ -866,7 +880,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
+//    notification.WaitForNotification();
   }
 
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -891,6 +908,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         LOG(INFO) << "WaitForStateUpdate() returning true";
         return true;
       }
+// FIXME: maybe?
+//      fuzzing_ee_->Tick();
     }
   }
 
@@ -1434,7 +1453,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
-    notification.WaitForNotification();
+    while (!notification.HasBeenNotified()) {
+      fuzzing_ee_->Tick();
+    }
+//    notification.WaitForNotification();
     LOG(INFO) << "WorkSerializer flush complete";
   }
 
