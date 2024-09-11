@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "third_party/absl/log/log.h"
 
 #include <grpc/support/sync.h>
 
@@ -46,7 +47,11 @@ namespace {
 
 #ifdef GPR_WINDOWS
 void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
-  // no-op on windows
+  // TODO(apolcyn): re-enable this on windows if we can debug the failure.
+  // Previously, this was causing test flakes for a while b/c bind calls
+  // would fail with WSAEACCESS. Not clear if we were just making windows
+  // unhappy.
+  LOG(INFO) << "OpenAndCloseSocketsStressLoop is a no-op for windows";
   return;
 }
 #else
