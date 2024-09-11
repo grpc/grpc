@@ -943,16 +943,14 @@ void WeightedRoundRobin::WrrEndpointList::
   //   (This may cause the channel to go from READY to TRANSIENT_FAILURE,
   //   but we're doing what the control plane told us to do.)
   if (wrr->latest_pending_endpoint_list_.get() == this &&
-      (wrr->endpoint_list_ == nullptr || wrr->endpoint_list_->num_ready_ == 0 ||
+      (wrr->endpoint_list_->num_ready_ == 0 ||
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      const std::string old_counters_string =
-          wrr->endpoint_list_ != nullptr ? wrr->endpoint_list_->CountersString()
-                                         : "";
       LOG(INFO) << "[WRR " << wrr << "] swapping out endpoint list "
-                << wrr->endpoint_list_.get() << " (" << old_counters_string
-                << ") in favor of " << this << " (" << CountersString() << ")";
+                << wrr->endpoint_list_.get() << " ("
+                << wrr->endpoint_list_->CountersString() << ") in favor of "
+                << this << " (" << CountersString() << ")";
     }
     wrr->endpoint_list_ = std::move(wrr->latest_pending_endpoint_list_);
   }
