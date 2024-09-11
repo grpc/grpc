@@ -785,7 +785,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Duration elapsed_time;
     EchoResponse response;
   };
-  std::vector<ConcurrentRpc> SendConcurrentRpcs(
+  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
       const grpc_core::DebugLocation& debug_location,
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options);
