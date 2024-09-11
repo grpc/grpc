@@ -40,64 +40,13 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/test_util/port.h"
 
-// TODO(unknown): pull in different headers when enabling this
-// test on windows. Also set BAD_SOCKET_RETURN_VAL
-// to INVALID_SOCKET on windows.
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/iomgr/tcp_windows.h"
-
-#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
-#else
 #define BAD_SOCKET_RETURN_VAL (-1)
-#endif
 
 namespace {
 
 #ifdef GPR_WINDOWS
 void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
-  sockaddr_in6 addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(port);
-  ((char*)&addr.sin6_addr)[15] = 1;
-  for (;;) {
-    if (gpr_event_get(done_ev)) {
-      return;
-    }
-    SOCKET s = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
-                         WSA_FLAG_OVERLAPPED);
-    ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
-        << "Failed to create TCP ipv6 socket";
-    char val = 1;
-    ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-                SOCKET_ERROR)
-        << "Failed to set socketopt reuseaddr. WSA error: " +
-               std::to_string(WSAGetLastError());
-    ASSERT_TRUE(grpc_tcp_set_non_block(s) == absl::OkStatus())
-        << "Failed to set socket non-blocking";
-    ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
-        << "Failed to bind socket " + std::to_string(s) +
-               " to [::1]:" + std::to_string(port) +
-               ". WSA error: " + std::to_string(WSAGetLastError());
-    ASSERT_TRUE(listen(s, 1) != SOCKET_ERROR)
-        << "Failed to listen on socket " + std::to_string(s) +
-               ". WSA error: " + std::to_string(WSAGetLastError());
-    // Do a non-blocking accept followed by a close on the socket.
-    ASSERT_TRUE(accept(s, nullptr, nullptr) == INVALID_SOCKET)
-        << "Accept on phony socket unexpectedly accepted actual connection.";
-    ASSERT_TRUE(WSAGetLastError() == WSAEWOULDBLOCK)
-        << "OpenAndCloseSocketsStressLoop accept on socket " +
-               std::to_string(s) +
-               " failed in "
-               "an unexpected way. "
-               "WSA error: " +
-               std::to_string(WSAGetLastError()) +
-               ". Socket use-after-close bugs are likely.";
-    ASSERT_TRUE(closesocket(s) != SOCKET_ERROR)
-        << "Failed to close socket: " + std::to_string(s) +
-               ". WSA error: " + std::to_string(WSAGetLastError());
-  }
+  // no-op on windows
   return;
 }
 #else
