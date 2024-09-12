@@ -296,7 +296,9 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.startTestRun."""
         super(TerminalResult, self).startTestRun()
         self.out.write(
-            _Colors.HEADER + "[{}]Testing gRPC Python...\n".format(datetime.datetime.now()) + _Colors.END
+            _Colors.HEADER
+            + "[{}]Testing gRPC Python...\n".format(datetime.datetime.now())
+            + _Colors.END
         )
 
     def stopTestRun(self):
@@ -325,7 +327,11 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addSuccess."""
         super(TerminalResult, self).addSuccess(test)
         self.out.write(
-            _Colors.OK + "[{}]SUCCESS       {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
+            _Colors.OK
+            + "[{}]SUCCESS       {}\n".format(
+                datetime.datetime.now(), test.id()
+            )
+            + _Colors.END
         )
         self.out.flush()
 
