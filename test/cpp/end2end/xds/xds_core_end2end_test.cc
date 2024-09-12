@@ -1060,7 +1060,7 @@ TEST_P(XdsFederationTest, FederationServer) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateBackends(2, /*xds_enabled=*/true);
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -1099,6 +1099,13 @@ TEST_P(XdsFederationTest, FederationServer) {
                                      new_server_route_config,
                                      ServerHcmAccessor());
   }
+  // Start backends and wait for them to start serving.
+  StartAllBackends();
+  for (const auto& backend : backends_) {
+    ASSERT_TRUE(backend->notifier()->WaitOnServingStatusChange(
+        grpc_core::LocalIpAndPort(backend->port()), grpc::StatusCode::OK));
+  }
+  // Make sure everything works.
   WaitForAllBackends(DEBUG_LOCATION);
 }
 
