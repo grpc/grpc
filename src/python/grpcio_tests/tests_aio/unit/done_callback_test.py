@@ -59,7 +59,6 @@ class TestClientSideDoneCallback(AioTestBase):
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
         await validation
-        self.assertEqual(1, 2)
 
     async def test_unary_stream(self):
         request = messages_pb2.StreamingOutputCallRequest()
