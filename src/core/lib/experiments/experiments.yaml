@@ -59,6 +59,10 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: event_engine_application_callbacks
+  description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
+  expiry: 2024/10/31
+  owner: hork@google.com
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2024/10/01
@@ -141,6 +145,11 @@
   expiry: 2024/12/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
+- name: time_caching_in_party
+  description: Disable time caching in exec_ctx, and enable it only in a single party execution.
+  owner: ctiller@google.com
+  expiry: 2024/12/12
+  test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
   expiry: 2024/12/01

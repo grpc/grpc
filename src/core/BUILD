@@ -4994,6 +4994,48 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gcp_authentication_filter",
+    srcs = [
+        "ext/filters/gcp_authentication/gcp_authentication_filter.cc",
+        "ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc",
+    ],
+    hdrs = [
+        "ext/filters/gcp_authentication/gcp_authentication_filter.h",
+        "ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "arena",
+        "channel_args",
+        "channel_fwd",
+        "context",
+        "gcp_service_account_identity_credentials",
+        "grpc_resolver_xds_attributes",
+        "grpc_service_config",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "lru_cache",
+        "service_config_parser",
+        "validation_errors",
+        "xds_config",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "load_balancing/grpclb/client_load_reporting_filter.cc",
@@ -5192,6 +5234,23 @@ grpc_cc_library(
         "//:rls_upb",
         "//:work_serializer",
     ],
+)
+
+grpc_cc_library(
+    name = "lru_cache",
+    hdrs = [
+        "util/lru_cache.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    # TODO(roth): Remove this unnecessary dependency once
+    # yaqs/eng/q/6510477728410501120 is resolved.
+    deps = ["//:grpc_public_hdrs"],
 )
 
 grpc_cc_library(
@@ -5495,6 +5554,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_metadata",
+    srcs = [
+        "xds/grpc/xds_metadata.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_metadata.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/container:flat_hash_map",
+        "absl/strings",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "down_cast",
+        "json",
+        "json_writer",
+        "validation_errors",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_cluster",
     srcs = [
         "xds/grpc/xds_cluster.cc",
@@ -5518,6 +5600,7 @@ grpc_cc_library(
         "time",
         "xds_common_types",
         "xds_health_status",
+        "xds_metadata",
         "xds_server_grpc",
         "//:xds_client",
     ],
@@ -5560,10 +5643,12 @@ grpc_cc_library(
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
+        "xds/grpc/xds_http_gcp_authn_filter.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_lb_policy_registry.cc",
         "xds/grpc/xds_listener_parser.cc",
+        "xds/grpc/xds_metadata_parser.cc",
         "xds/grpc/xds_route_config_parser.cc",
         "xds/grpc/xds_routing.cc",
         "xds/grpc/xds_transport_grpc.cc",
@@ -5578,10 +5663,12 @@ grpc_cc_library(
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
+        "xds/grpc/xds_http_gcp_authn_filter.h",
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_lb_policy_registry.h",
         "xds/grpc/xds_listener_parser.h",
+        "xds/grpc/xds_metadata_parser.h",
         "xds/grpc/xds_route_config_parser.h",
         "xds/grpc/xds_routing.h",
         "xds/grpc/xds_transport_grpc.h",
@@ -5639,6 +5726,8 @@ grpc_cc_library(
         "envoy_extensions_filters_common_fault_upb",
         "envoy_extensions_filters_http_fault_upb",
         "envoy_extensions_filters_http_fault_upbdefs",
+        "envoy_extensions_filters_http_gcp_authn_upb",
+        "envoy_extensions_filters_http_gcp_authn_upbdefs",
         "envoy_extensions_filters_http_rbac_upb",
         "envoy_extensions_filters_http_rbac_upbdefs",
         "envoy_extensions_filters_http_router_upb",
@@ -5668,6 +5757,7 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "error_utils",
+        "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",
         "grpc_fake_credentials",
@@ -5725,6 +5815,7 @@ grpc_cc_library(
         "xds_health_status",
         "xds_http_filter",
         "xds_listener",
+        "xds_metadata",
         "xds_route_config",
         "xds_server_grpc",
         "xds_type_upb",
@@ -8479,6 +8570,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_fault_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_gcp_authn_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_gcp_authn_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
 )
 
 grpc_upb_proto_library(

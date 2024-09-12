@@ -49,6 +49,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -686,7 +687,13 @@ class CoreEnd2endTestRegistry {
   class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
    public:                                                                   \
     CoreEnd2endTest_##suite##_##name() {}                                    \
-    void TestBody() override { RunTest(); }                                  \
+    void TestBody() override {                                               \
+      if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&            \
+          (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {         \
+        GTEST_SKIP() << "call-v3 not supported with poll poller";            \
+      }                                                                      \
+      RunTest();                                                             \
+    }                                                                        \
     void RunTest() override;                                                 \
                                                                              \
    private:                                                                  \
