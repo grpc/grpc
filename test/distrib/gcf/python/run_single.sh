@@ -45,8 +45,7 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # Deploy
 
-gcloud functions add-iam-policy-binding ${FUNCTION_NAME} --region=us-central1 --member=allUsers --role=roles/cloudfunctions.invoker
-DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_publish --runtime "${RUNTIME}" --trigger-http --allow-unauthenticated)
+DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_publish --runtime "${RUNTIME}" --trigger-http --allow-unauthenticated --no-gen2)
 HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 
 # Send Requests
