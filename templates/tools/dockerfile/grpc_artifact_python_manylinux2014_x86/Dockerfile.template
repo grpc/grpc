@@ -29,5 +29,4 @@
   <%include file="../ccache_old.include"/>
   
   
-  RUN git config --global --add safe.directory /var/local/jenkins/grpc
-  RUN git config --global protocol.file.allow always
+  <%include file="../git_config.include"/>

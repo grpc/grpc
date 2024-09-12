@@ -24,6 +24,7 @@ RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl
 
 #===================================
 # Install Python build requirements
+# TODO: Update cython bounds as we are using cython 3.0.0 now
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade 'cython<3.0.0rc1'
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade 'cython<3.0.0rc1'
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython<3.0.0rc1'
