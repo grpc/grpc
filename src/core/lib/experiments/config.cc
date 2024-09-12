@@ -93,7 +93,7 @@ class TestExperiments {
   // Overloading [] operator to access elements in array style
   bool operator[](int index) { return enabled_[index]; }
 
-  ~TestExperiments() { delete enabled_; }
+  ~TestExperiments() { delete[] enabled_; }
 
  private:
   bool* enabled_;
