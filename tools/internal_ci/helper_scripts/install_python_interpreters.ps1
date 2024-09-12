@@ -151,7 +151,7 @@ $Python312x64Config = @{
 Install-Python @Python312x64Config
 
 # Python 3.13
-$Python312x86Config = @{
+$Python313x86Config = @{
     PythonVersion = "3.13.0"
     PythonInstaller = "python-3.13.0rc2"
     PythonInstallPath = "C:\Python313_32bit"
@@ -159,7 +159,7 @@ $Python312x86Config = @{
 }
 Install-Python @Python313x86Config
 
-$Python312x64Config = @{
+$Python313x64Config = @{
     PythonVersion = "3.13.0"
     PythonInstaller = "python-3.13.0rc2-amd64"
     PythonInstallPath = "C:\Python313"
