@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -109,6 +110,8 @@ CORE_END2END_TEST(Http2Test, MaxAgeForciblyClose) {
   // The connection should be closed immediately after the max age grace period,
   // the in-progress RPC should fail.
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_THAT(server_status.message(),
+              ::testing::MatchesRegex("max connection age"));
 }
 
 CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
