@@ -46,8 +46,6 @@ INSTALL_REQUIRES = (
 )
 SETUP_REQUIRES = INSTALL_REQUIRES
 
-min_python_version = python_version.MIN_PYTHON_VERSION
-
 setuptools.setup(
     name="grpcio-csds",
     version=grpc_version.VERSION,
@@ -60,7 +58,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=f">={min_python_version}",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
 )

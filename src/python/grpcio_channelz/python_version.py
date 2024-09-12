@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_version.py.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/python_version.py.template`!!!
 
-SUPPORTED_PYTHON_VERSIONS = ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+SUPPORTED_PYTHON_VERSIONS = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
 MIN_PYTHON_VERSION = 3.8
 MAX_PYTHON_VERSION = 3.13

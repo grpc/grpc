@@ -45,7 +45,6 @@ INSTALL_REQUIRES = [
 
 SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools>=1.49.0"]
 
-min_python_version = python_version.MIN_PYTHON_VERSION
 
 setuptools.setup(
     name="xds-protos",
@@ -58,7 +57,7 @@ setuptools.setup(
     author_email="grpc-io@googlegroups.com",
     url="https://grpc.io",
     license="Apache License 2.0",
-    python_requires=f">={min_python_version}",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     classifiers=CLASSIFIERS,

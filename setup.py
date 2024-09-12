@@ -96,18 +96,21 @@ import python_version
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
-supported_python_versions = python_version.SUPPORTED_PYTHON_VERSIONS
-min_python_version = python_version.MIN_PYTHON_VERSION
 
 LICENSE = "Apache License 2.0"
 
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3"
-    ] + \
-    [f"Programming Language :: Python :: {x}" for x in supported_python_versions] + \
-    ["License :: OSI Approved :: Apache Software License"]
+CLASSIFIERS = (
+    [
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+    ]
+    + [
+        f"Programming Language :: Python :: {x}"
+        for x in python_version.SUPPORTED_PYTHON_VERSIONS
+    ]
+    + ["License :: OSI Approved :: Apache Software License"]
+)
 
 
 def _env_bool_value(env_name, default):
@@ -596,7 +599,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=f">={min_python_version}",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

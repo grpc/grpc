@@ -43,8 +43,6 @@ INSTALL_REQUIRES = (
     "protobuf>=5.26.1,<6.0dev",
 )
 
-min_python_version = python_version.MIN_PYTHON_VERSION
-
 setuptools.setup(
     name="grpcio-csm-observability",
     version=grpc_version.VERSION,
@@ -61,6 +59,6 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=f">={min_python_version}",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
 )

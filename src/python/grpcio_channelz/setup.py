@@ -45,14 +45,18 @@ class _NoOpCommand(setuptools.Command):
         pass
 
 
-supported_python_versions = python_version.SUPPORTED_PYTHON_VERSIONS
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3"
-    ] + \
-    [f"Programming Language :: Python :: {x}" for x in supported_python_versions] + \
-    ["License :: OSI Approved :: Apache Software License"]
+CLASSIFIERS = (
+    [
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+    ]
+    + [
+        f"Programming Language :: Python :: {x}"
+        for x in python_version.SUPPORTED_PYTHON_VERSIONS
+    ]
+    + ["License :: OSI Approved :: Apache Software License"]
+)
 
 
 PACKAGE_DIRECTORIES = {
@@ -84,7 +88,6 @@ except ImportError:
         "build_package_protos": _NoOpCommand,
     }
 
-min_python_version = python_version.MIN_PYTHON_VERSION
 
 setuptools.setup(
     name="grpcio-channelz",
@@ -98,7 +101,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=f">={min_python_version}",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,

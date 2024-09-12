@@ -29,7 +29,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
 import grpc_version
-import python_version
 
 LICENSE = "Apache License 2.0"
 

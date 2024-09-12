@@ -271,8 +271,6 @@ def extension_modules():
 
 PACKAGES = setuptools.find_packages(PYTHON_STEM)
 
-min_python_version = python_version.MIN_PYTHON_VERSION
-
 setuptools.setup(
     name="grpcio-observability",
     version=grpc_version.VERSION,
@@ -290,7 +288,7 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=list(PACKAGES),
-    python_requires=f">={min_python_version}",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
         "setuptools>=59.6.0",

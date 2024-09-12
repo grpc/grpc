@@ -18,6 +18,7 @@ creates custom strings for the minimum and maximum supported python versions.
 
 """
 
+
 def mako_plugin(dictionary):
     """Expand version numbers:
     - for each language, ensure there's a language_version tag in
