@@ -1436,7 +1436,8 @@ TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_);
   SetLdsUpdate("", "", "", "", false);
-  SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {});
+  SendRpc([this]() { return CreateInsecureChannel(); },
+          RpcOptions().set_wait_for_ready(true), {}, {});
 }
 
 TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
