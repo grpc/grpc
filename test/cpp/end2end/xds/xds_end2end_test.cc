@@ -1084,7 +1084,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       const std::vector<std::string>& expected_server_identity,
       const std::vector<std::string>& expected_client_identity,
       bool test_expects_failure = false,
-      absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
+      absl::optional<grpc::StatusCode> expected_status = absl::nullopt,
+      absl::string_view expected_error_message_regex = "") {
     LOG(INFO) << "Sending RPC";
     int num_tries = 0;
     constexpr int kRetryCount = 100;
@@ -1117,6 +1118,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                      << *expected_status << ")";
           continue;
         }
+        EXPECT_THAT(status.error_message(),
+                    ::testing::MatchesRegex(expected_error_message_regex));
       } else {
         if (!status.ok()) {
           LOG(ERROR) << "RPC failed. code=" << status.error_code()
@@ -1192,8 +1195,13 @@ TEST_P(XdsServerSecurityTest,
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
   g_fake1_cert_data_map->Set({});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtls) {
@@ -1219,7 +1227,9 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
           client_authenticated_identity_);
   SetLdsUpdate("fake_plugin2", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
@@ -1247,7 +1257,9 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeTlsHandshakeFailureRegex(
+              "failed to connect to all addresses; last error: "));
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
@@ -1270,7 +1282,9 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
           client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "bad", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
@@ -1387,7 +1401,9 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
@@ -1405,7 +1421,9 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
           {});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateTlsChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
@@ -1500,7 +1518,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
       grpc_core::LocalIpAndPort(backends_[0]->port()),
       grpc::StatusCode::UNAVAILABLE));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
@@ -1530,7 +1550,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
       grpc_core::LocalIpAndPort(backends_[0]->port()),
       grpc::StatusCode::UNAVAILABLE));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
   // Send a valid LDS update to change to serving status
   SetValidLdsUpdate();
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
@@ -1555,7 +1577,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
       grpc_core::LocalIpAndPort(backends_[0]->port()),
       grpc::StatusCode::NOT_FOUND));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
@@ -1573,7 +1597,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
         grpc_core::LocalIpAndPort(backends_[0]->port()),
         grpc::StatusCode::NOT_FOUND));
     SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-            true /* test_expects_failure */);
+            true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+            MakeConnectionFailureRegex(
+                "failed to connect to all addresses; last error: "));
   }
 }
 
@@ -1610,7 +1636,9 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
       grpc_core::LocalIpAndPort(backends_[0]->port()),
       grpc::StatusCode::NOT_FOUND));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
   for (int i = 0; i < kNumChannels; i++) {
     EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
     streaming_rpcs[i].stream->Read(&response);
@@ -1678,6 +1706,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
         << status.error_code() << ", " << status.error_message() << ", "
         << status.error_details() << ", "
         << streaming_rpcs[i].context.debug_error_string();
+    EXPECT_EQ(status.error_message(),
+              "Drain grace time expired. Closing connection immediately.");
   }
 }
 
@@ -1740,7 +1770,9 @@ TEST_P(XdsServerFilterChainMatchTest,
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
@@ -1759,7 +1791,9 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1779,7 +1813,9 @@ TEST_P(XdsServerFilterChainMatchTest,
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -1799,7 +1835,9 @@ TEST_P(XdsServerFilterChainMatchTest,
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          MakeConnectionFailureRegex(
+              "failed to connect to all addresses; last error: "));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -2040,7 +2078,8 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
+          "UNAVAILABLE:matching route has unsupported action");
 }
 
 // Test that non-inline route configuration also works for non-default filter
@@ -2088,7 +2127,8 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
   ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
       grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   SendRpc([this]() { return CreateInsecureChannel(); }, RpcOptions(), {}, {},
-          true /* test_expects_failure */);
+          true /* test_expects_failure */, grpc::StatusCode::NOT_FOUND,
+          "Requested route config does not exist");
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
@@ -2322,7 +2362,7 @@ TEST_P(XdsRbacTestWithActionPermutations, EmptyRbacPolicy) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAnyPrincipal) {
@@ -2340,7 +2380,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
@@ -2363,7 +2403,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
@@ -2385,12 +2425,12 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test that an RPC with PUT method is handled properly.
   SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
@@ -2412,7 +2452,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // TODO(yashykt): When we start supporting GET requests in the future, this
   // should be modified to test that they are accepted with this rule.
 }
@@ -2437,13 +2477,13 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test that an RPC with a PUT method gets accepted
   SendRpc(
       [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
@@ -2462,7 +2502,7 @@ TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test an RPC with a different URL path
   auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
   ClientContext context;
@@ -2496,7 +2536,7 @@ TEST_P(XdsRbacTestWithActionPermutations, DestinationIpPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   policy.clear_permissions();
   range = policy.add_permissions()->mutable_destination_ip();
@@ -2510,7 +2550,7 @@ TEST_P(XdsRbacTestWithActionPermutations, DestinationIpPermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations,
@@ -2529,7 +2569,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   policy.clear_permissions();
   policy.add_permissions()->set_destination_port(1);
@@ -2539,7 +2579,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MetadataPermissionAnyPrincipal) {
@@ -2558,7 +2598,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MetadataPermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test metadata with inverted match
   policy.clear_permissions();
   policy.add_permissions()->mutable_metadata()->set_invert(true);
@@ -2567,7 +2607,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MetadataPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
@@ -2587,7 +2627,7 @@ TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   policy.clear_permissions();
   policy.add_permissions()->mutable_requested_server_name()->set_exact("");
   (*rules->mutable_policies())["policy"] = policy;
@@ -2595,7 +2635,7 @@ TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, NotRulePermissionAnyPrincipal) {
@@ -2616,7 +2656,7 @@ TEST_P(XdsRbacTestWithActionPermutations, NotRulePermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   policy.clear_permissions();
   policy.add_permissions()->mutable_not_rule()->set_any(true);
@@ -2626,7 +2666,7 @@ TEST_P(XdsRbacTestWithActionPermutations, NotRulePermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AndRulePermissionAnyPrincipal) {
@@ -2646,7 +2686,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AndRulePermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   and_rules = (*policy.mutable_permissions())[0].mutable_and_rules();
   (*and_rules->mutable_rules())[1].set_destination_port(1);
@@ -2656,7 +2696,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AndRulePermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, OrRulePermissionAnyPrincipal) {
@@ -2676,7 +2716,7 @@ TEST_P(XdsRbacTestWithActionPermutations, OrRulePermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   or_rules = (*policy.mutable_permissions())[0].mutable_or_rules();
   (*or_rules->mutable_rules())[1].set_destination_port(1);
@@ -2686,7 +2726,7 @@ TEST_P(XdsRbacTestWithActionPermutations, OrRulePermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
@@ -2708,12 +2748,12 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test that an RPC with PUT method is handled properly.
   SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
@@ -2735,7 +2775,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // TODO(yashykt): When we start supporting GET requests in the future, this
   // should be modified to test that they are accepted with this rule.
 }
@@ -2760,13 +2800,13 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
       [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
@@ -2785,7 +2825,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test an RPC with a different URL path
   auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
   ClientContext context;
@@ -2820,7 +2860,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   policy.clear_principals();
   range = policy.add_principals()->mutable_direct_remote_ip();
@@ -2834,7 +2874,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionRemoteIpPrincipal) {
@@ -2855,7 +2895,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionRemoteIpPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   policy.clear_principals();
   range = policy.add_principals()->mutable_remote_ip();
@@ -2869,7 +2909,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionRemoteIpPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
@@ -2906,7 +2946,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
           client_authenticated_identity_,
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMetadataPrincipal) {
@@ -2925,7 +2965,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMetadataPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Test metadata with inverted match
   policy.clear_principals();
   policy.add_principals()->mutable_metadata()->set_invert(true);
@@ -2934,7 +2974,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMetadataPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionNotIdPrincipal) {
@@ -2956,7 +2996,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionNotIdPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   policy.clear_principals();
   policy.add_principals()->mutable_not_id()->set_any(true);
@@ -2966,7 +3006,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionNotIdPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAndIdPrincipal) {
@@ -2987,7 +3027,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAndIdPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   and_ids = (*policy.mutable_principals())[0].mutable_and_ids();
   (*and_ids->mutable_ids())[1].mutable_url_path()->mutable_path()->set_exact(
@@ -2998,7 +3038,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAndIdPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
@@ -3019,7 +3059,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Change the policy itself for a negative test where there is no match.
   or_ids = (*policy.mutable_principals())[0].mutable_or_ids();
   (*or_ids->mutable_ids())[1].mutable_url_path()->mutable_path()->set_exact(
@@ -3030,7 +3070,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
 }
 
 TEST_P(XdsRbacTestWithActionPermutations,
@@ -3055,7 +3095,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
       [this]() { return CreateInsecureChannel(); },
       RpcOptions().set_wait_for_ready(true), {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::StatusCode::PERMISSION_DENIED);
+      grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
 }
 
@@ -3096,7 +3136,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // If the second rbac denies the rpc, only one log from the first rbac.
   // Otherwise, all three rbacs log.
   std::vector<absl::string_view> expected(
@@ -3143,7 +3183,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // Only the second rbac logs if it denies the rpc.
   std::vector<absl::string_view> expected;
   if (GetParam().rbac_action() == RBAC_Action_DENY) {
@@ -3192,7 +3232,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   // If the second rbac denies the request, the last rbac won't log. Otherwise
   // all rbacs log.
   std::vector<absl::string_view> expected = {
@@ -3242,7 +3282,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
 }
 
@@ -3276,7 +3316,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   SendRpc([this]() { return CreateInsecureChannel(); },
           RpcOptions().set_wait_for_ready(true), {}, {},
           /*test_expects_failure=*/action == RBAC_Action_DENY,
-          grpc::StatusCode::PERMISSION_DENIED);
+          grpc::StatusCode::PERMISSION_DENIED, "Unauthorized RPC rejected");
   auto audit_condition = GetParam().rbac_audit_condition();
   bool should_log =
       (audit_condition ==
