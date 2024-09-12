@@ -321,7 +321,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
-        LOG(INFO) << "running timer callback...";
+        LOG(INFO) << "incrementing time...";
         // Increment time and run any timer callbacks.
         IncrementTimeBy(Duration::Seconds(1));
       }
@@ -694,8 +694,12 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
-  // to recompute weights.
-  IncrementTimeBy(Duration::Seconds(2));
+  // to recompute weights.  Note that the timer will run every second,
+  // but the next scheduled timer is less than 1 second in the future at
+  // this point, in which case the following timer will fire less than 2
+  // seconds in the future.  To ensure that the timer runs at least 2
+  // seconds after the last weight update, we need to advance 3 seconds.
+  IncrementTimeBy(Duration::Seconds(3));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -721,8 +725,12 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
-  // to recompute weights.
-  IncrementTimeBy(Duration::Seconds(2));
+  // to recompute weights.  Note that the timer will run every second,
+  // but the next scheduled timer is less than 1 second in the future at
+  // this point, in which case the following timer will fire less than 2
+  // seconds in the future.  To ensure that the timer runs at least 2
+  // seconds after the last weight update, we need to advance 3 seconds.
+  IncrementTimeBy(Duration::Seconds(3));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -739,8 +747,9 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time past the blackout period.  This should cause the
-  // weights to be used.
-  IncrementTimeBy(Duration::Seconds(1));
+  // weights to be used.  As above, we need to advance an extra second,
+  // because the timer schedule may not line up exactly.
+  IncrementTimeBy(Duration::Seconds(2));
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 1}});
@@ -785,8 +794,11 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Advance time to exceed the blackout period and trigger the timer
-  // callback to recompute weights.
-  IncrementTimeBy(Duration::Seconds(1));
+  // callback to recompute weights.  Note that the timer will run every
+  // second, but the next scheduled timer is less than 1 second in the
+  // future at this point.  To ensure that the timer runs at least 1 second
+  // after the last weight update, we need to advance 2 seconds.
+  IncrementTimeBy(Duration::Seconds(2));
   ExpectWeightedRoundRobinPicks(
       picker.get(),
       {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,
@@ -834,7 +846,9 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
        {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}},
-      /*timeout=*/absl::Seconds(5), /*run_timer_callbacks=*/false);
+      /*timeout=*/absl::Seconds(5),
+// FIXME: does this work?
+      /*run_timer_callbacks=*/false);
 }
 
 TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
@@ -1133,6 +1147,27 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                   ::testing::DoubleNear(111.111115, 0.000001),
                   ::testing::DoubleNear(333.333344, 0.000001),
                   ::testing::DoubleNear(333.333344, 0.000001))));
+
+#if 0
+                  0,
+                  0,
+                  0, 0,
+                  0, 0,
+                  0, 0, 0,
+                  0, 0, 0,
+                  ::testing::DoubleNear(111.111115, 0.000001),
+                  ::testing::DoubleNear(333.333344, 0.000001),
+                  0,
+                  ::testing::DoubleNear(111.111115, 0.000001),
+                  ::testing::DoubleNear(333.333344, 0.000001),
+                  0,
+                  ::testing::DoubleNear(111.111115, 0.000001),
+                  ::testing::DoubleNear(333.333344, 0.000001),
+                  ::testing::DoubleNear(333.333344, 0.000001),
+#endif
+
+
+
   // RR fallback should trigger for the first 5 updates above, because
   // there are less than two endpoints with valid weights.
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kRrFallback, kLabelValues,
@@ -1149,9 +1184,13 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                   kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(0));
   // Advance time to make weights stale and trigger the timer callback
-  // to recompute weights.
+  // to recompute weights.  Note that the timer will run every second,
+  // but the next scheduled timer is less than 1 second in the future at
+  // this point, in which case the following timer will fire less than 2
+  // seconds in the future.  To ensure that the timer runs at least 2
+  // seconds after the last weight update, we need to advance 3 seconds.
   LOG(INFO) << "advancing time to trigger staleness...";
-  IncrementTimeBy(Duration::Seconds(2));
+  IncrementTimeBy(Duration::Seconds(3));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
