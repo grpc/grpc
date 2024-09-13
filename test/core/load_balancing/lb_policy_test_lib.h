@@ -85,6 +85,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/json/json.h"
+#include "test/core/event_engine/delegating_event_engine.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -607,6 +608,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+      if (test_->timer_intercepting_ee_ != nullptr) {
+        return test_->timer_intercepting_ee_.get();
+      }
       return test_->fuzzing_ee_.get();
     }
 
@@ -698,10 +702,43 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     const absl::optional<BackendMetricData> backend_metric_data_;
   };
 
+  // An EventEngine wrapper that intercepts timers, thus allowing the test
+  // more control over when the timer callbacks run.
+  class TimerInterceptingEventEngine
+      : public grpc_event_engine::experimental::DelegatingEventEngine {
+   public:
+    explicit TimerInterceptingEventEngine(LoadBalancingPolicyTest* test)
+        : DelegatingEventEngine(test->fuzzing_ee_), test_(test) {}
+
+    TaskHandle RunAfter(Duration when,
+                        absl::AnyInvocable<void()> callback) override {
+      intptr_t key = test_->next_key_++;
+      test_->timer_callbacks_[key] = std::move(callback);
+      return grpc_event_engine::experimental::EventEngine::TaskHandle{key, 0};
+    }
+
+    bool Cancel(TaskHandle handle) override {
+      auto it = test_->timer_callbacks_.find(handle.keys[0]);
+      if (it == test_->timer_callbacks_.end()) return false;
+      test_->timer_callbacks_.erase(it);
+      return true;
+    }
+
+   private:
+    LoadBalancingPolicyTest* test_;
+  };
+
   explicit LoadBalancingPolicyTest(absl::string_view lb_policy_name,
-                                   ChannelArgs channel_args = ChannelArgs())
+                                   ChannelArgs channel_args = ChannelArgs(),
+                                   bool intercept_timers = false)
       : lb_policy_name_(lb_policy_name),
-        channel_args_(std::move(channel_args)) {}
+        channel_args_(std::move(channel_args)),
+        intercept_timers_(intercept_timers) {}
+
+  ~LoadBalancingPolicyTest() override {
+    EXPECT_TRUE(timer_callbacks_.empty())
+        << "WARNING: timer callbacks remain at end of test";
+  }
 
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
@@ -712,6 +749,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
             fuzzing_event_engine::Actions());
     grpc_init();
+    if (intercept_timers_) {
+      timer_intercepting_ee_ =
+          std::make_shared<TimerInterceptingEventEngine>(this);
+    }
     event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
     work_serializer_ = std::make_shared<WorkSerializer>(fuzzing_ee_);
     auto helper = std::make_unique<FakeHelper>(this);
@@ -740,6 +781,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // queued events, so the failure will be harder to diagnose.)
     helper_->ExpectQueueEmpty();
     lb_policy_.reset();
+    timer_intercepting_ee_.reset();
     fuzzing_ee_->TickUntilIdle();
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(event_engine_));
@@ -1469,6 +1511,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     WaitForWorkSerializerToFlush();
   }
 
+// FIXME: maybe pull this out of FuzzingEventEngine and into
+// TimerInterceptingEventEngine?
   void SetExpectedTimerDuration(
       absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
           duration,
@@ -1487,8 +1531,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
   }
 
+  void RunTimerCallback() {
+    ASSERT_EQ(timer_callbacks_.size(), 1UL);
+    auto it = timer_callbacks_.begin();
+    ASSERT_NE(it->second, nullptr);
+    std::exchange(it->second, nullptr)();
+    timer_callbacks_.erase(it);
+  }
+
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       fuzzing_ee_;
+// FIXME: remove
   // TODO(ctiller): this is a normal event engine, yet it gets its time measure
   // from fuzzing_ee_ -- results are likely to be a little funky, but seem to do
   // well enough for the tests we have today.
@@ -1507,6 +1560,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
   std::string target_ = "dns:server.example.com";
   std::string authority_ = "server.example.com";
+
+  const bool intercept_timers_;
+  std::shared_ptr<TimerInterceptingEventEngine> timer_intercepting_ee_;
+  std::map<intptr_t, absl::AnyInvocable<void()>> timer_callbacks_;
+  intptr_t next_key_ = 1;
 };
 
 }  // namespace testing
