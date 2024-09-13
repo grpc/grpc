@@ -95,6 +95,8 @@ namespace testing {
 
 class LoadBalancingPolicyTest : public ::testing::Test {
  protected:
+  using EventEngine = grpc_event_engine::experimental::EventEngine;
+
   using CallAttributes =
       std::vector<ServiceConfigCallData::CallAttributeInterface*>;
 
@@ -607,7 +609,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return nullptr;
     }
 
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
+    EventEngine* GetEventEngine() override {
       if (test_->timer_intercepting_ee_ != nullptr) {
         return test_->timer_intercepting_ee_.get();
       }
@@ -712,9 +714,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     TaskHandle RunAfter(Duration when,
                         absl::AnyInvocable<void()> callback) override {
+      if (test_->run_after_duration_callback_ != nullptr) {
+        test_->run_after_duration_callback_(when);
+      }
       intptr_t key = test_->next_key_++;
       test_->timer_callbacks_[key] = std::move(callback);
-      return grpc_event_engine::experimental::EventEngine::TaskHandle{key, 0};
+      return EventEngine::TaskHandle{key, 0};
     }
 
     bool Cancel(TaskHandle handle) override {
@@ -1511,27 +1516,30 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     WaitForWorkSerializerToFlush();
   }
 
-// FIXME: maybe pull this out of FuzzingEventEngine and into
-// TimerInterceptingEventEngine?
-  void SetExpectedTimerDuration(
-      absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
-          duration,
-      SourceLocation location = SourceLocation()) {
-    if (duration.has_value()) {
-      fuzzing_ee_->SetRunAfterDurationCallback(
-          [expected = *duration, location = location](
-              grpc_event_engine::experimental::EventEngine::Duration duration) {
-            EXPECT_EQ(duration, expected)
-                << "Expected: " << expected.count()
-                << "ns\n  Actual: " << duration.count() << "ns\n"
-                << location.file() << ":" << location.line();
-          });
-    } else {
-      fuzzing_ee_->SetRunAfterDurationCallback(nullptr);
-    }
+  void SetRunAfterDurationCallback(
+      absl::AnyInvocable<void(EventEngine::Duration)> callback) {
+    CHECK(intercept_timers_)
+        << "SetRunAfterDurationCallback() requires intercepting timers";
+    run_after_duration_callback_ = std::move(callback);
+  }
+
+  void SetExpectedTimerDuration(EventEngine::Duration duration,
+                                SourceLocation location = SourceLocation()) {
+    CHECK(intercept_timers_)
+        << "SetExpectedTimerDuration() requires intercepting timers";
+    SetRunAfterDurationCallback(
+        [expected = duration, location = location](
+            EventEngine::Duration duration) {
+          EXPECT_EQ(duration, expected)
+              << "Expected: " << expected.count()
+              << "ns\n  Actual: " << duration.count() << "ns\n"
+              << location.file() << ":" << location.line();
+        });
   }
 
   void RunTimerCallback() {
+    CHECK(intercept_timers_)
+        << "RunTimerCallback() requires intercepting timers";
     ASSERT_EQ(timer_callbacks_.size(), 1UL);
     auto it = timer_callbacks_.begin();
     ASSERT_NE(it->second, nullptr);
@@ -1565,6 +1573,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   std::shared_ptr<TimerInterceptingEventEngine> timer_intercepting_ee_;
   std::map<intptr_t, absl::AnyInvocable<void()>> timer_callbacks_;
   intptr_t next_key_ = 1;
+  absl::AnyInvocable<void(EventEngine::Duration)> run_after_duration_callback_;
 };
 
 }  // namespace testing
