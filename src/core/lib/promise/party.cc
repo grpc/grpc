@@ -46,7 +46,7 @@ GRPC_MUST_USE_RESULT bool Party::RefIfNonZero() {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
     // zero
-    if (count == 0) {
+    if ((count & kRefMask) == 0) {
       return false;
     }
   } while (!state_.compare_exchange_weak(count, count + kOneRef,
