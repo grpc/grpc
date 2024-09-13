@@ -20,14 +20,14 @@ ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
 #===================================
 # Install Python build requirements
 # TODO: Update cython bounds as we are using cython 3.0.0 now
-RUN /opt/python/cp36-cp36m/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp37-cp37m/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<3.0.0rc1'
-RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython<3.0.0rc1'
+RUN /opt/python/cp36-cp36m/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp37-cp37m/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython<4.0.0rc1'
 
 RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY
 #=================
