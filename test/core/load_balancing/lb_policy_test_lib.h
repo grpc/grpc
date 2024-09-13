@@ -747,8 +747,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
-    // grpc_init(), and the POSIX EE (which is used by the WorkSerializer)
-    // needs to be created after grpc_init().
+    // grpc_init().
     fuzzing_ee_ =
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
@@ -758,7 +757,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       timer_intercepting_ee_ =
           std::make_shared<TimerInterceptingEventEngine>(this);
     }
-    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
     work_serializer_ = std::make_shared<WorkSerializer>(fuzzing_ee_);
     auto helper = std::make_unique<FakeHelper>(this);
     helper_ = helper.get();
@@ -789,10 +787,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     timer_intercepting_ee_.reset();
     fuzzing_ee_->TickUntilIdle();
     grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
-    grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(fuzzing_ee_));
-    event_engine_.reset();
     grpc_shutdown_blocking();
     fuzzing_ee_.reset();
   }
@@ -955,8 +950,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         LOG(INFO) << "WaitForStateUpdate() returning true";
         return true;
       }
-// FIXME: maybe?
-//      fuzzing_ee_->Tick();
     }
   }
 
@@ -1549,16 +1542,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       fuzzing_ee_;
-// FIXME: remove
-  // TODO(ctiller): this is a normal event engine, yet it gets its time measure
-  // from fuzzing_ee_ -- results are likely to be a little funky, but seem to do
-  // well enough for the tests we have today.
-  // We should transition everything here to just use fuzzing_ee_, but that
-  // needs some thought on how to Tick() at appropriate times, as there are
-  // Notification objects buried everywhere in this code, and
-  // WaitForNotification is deeply incompatible with a single threaded event
-  // engine that doesn't run callbacks until its public Tick method is called.
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;

@@ -145,7 +145,8 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : LoadBalancingPolicyTest("outlier_detection_experimental") {}
+      : LoadBalancingPolicyTest("outlier_detection_experimental",
+                                ChannelArgs(), /*intercept_timers=*/true) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
@@ -222,6 +223,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
+  RunTimerCallback();
   LOG(INFO) << "### ejection complete";
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
@@ -231,6 +233,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   WaitForRoundRobinListChange(kAddresses, remaining_addresses);
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
+  RunTimerCallback();
   LOG(INFO) << "### un-ejection complete";
   // Expect a picker update.
   WaitForRoundRobinListChange(remaining_addresses, kAddresses);
@@ -240,7 +243,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
-  SetExpectedTimerDuration(absl::nullopt);
+  SetRunAfterDurationCallback(nullptr);
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
@@ -297,6 +300,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   }
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
+  RunTimerCallback();
   LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
@@ -327,6 +331,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   LOG(INFO) << "### done changing address of ejected endpoint";
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
+  RunTimerCallback();
   LOG(INFO) << "### un-ejection complete";
   // The ejected endpoint should come back using the new address.
   WaitForRoundRobinListChange(
@@ -338,7 +343,7 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
-  SetExpectedTimerDuration(absl::nullopt);
+  SetRunAfterDurationCallback(nullptr);
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
@@ -393,6 +398,7 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   }
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
+  RunTimerCallback();
   LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
@@ -413,7 +419,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
-  SetExpectedTimerDuration(absl::nullopt);
+  SetRunAfterDurationCallback(nullptr);
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
   // Send initial update.
@@ -454,6 +460,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
+  RunTimerCallback();
   LOG(INFO) << "### ejection timer pass complete";
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
