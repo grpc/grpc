@@ -96,7 +96,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
              {"chttp2_transport.cc",
               std::regex("Sending goaway.*Channel Destroyed")},
              {"chaotic_good_server.cc",
-              std::regex("Failed to bind some addresses for.*")},
+              std::regex("(Failed to bind some addresses "
+                         "for.*|ActiveConnection::Done.*)")},
              {"log.cc",
               std::regex("Prefer WARNING or ERROR. However if you see this "
                          "message in a debug environmenmt or test environmenmt "
@@ -118,6 +119,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     auto it = allowed_logs_by_module->find(filename);
     if (it != allowed_logs_by_module->end() &&
         std::regex_search(std::string(entry.text_message()), it->second)) {
+      VLOG(2) << "Allow listed log entry : " << filename << ":"
+              << entry.source_line();
       return;
     }
 
