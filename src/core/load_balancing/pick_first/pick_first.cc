@@ -1553,7 +1553,8 @@ void OldPickFirst::HealthWatcher::OnConnectivityStateChange(
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       policy_->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-          MakeRefCounted<TransientFailurePicker>(status));
+          MakeRefCounted<TransientFailurePicker>(absl::UnavailableError(
+              absl::StrCat("health watch: ", status.message()))));
       break;
     case GRPC_CHANNEL_SHUTDOWN:
       Crash("health watcher reported state SHUTDOWN");
