@@ -119,8 +119,8 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     auto it = allowed_logs_by_module->find(filename);
     if (it != allowed_logs_by_module->end() &&
         std::regex_search(std::string(entry.text_message()), it->second)) {
-      DLOG(INFO) << "Allow listed log entry : " << filename << ":"
-                 << entry.source_line();
+      DVLOG(2) << "Allow listed log entry : " << filename << ":"
+               << entry.source_line();
       return;
     }
 
