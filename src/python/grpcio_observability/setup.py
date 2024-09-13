@@ -34,9 +34,9 @@ sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import observability_lib_deps
+import python_version
 
 import grpc_version
-import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 

@@ -88,10 +88,10 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
+import python_version
 
 import commands
 import grpc_version
-import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
