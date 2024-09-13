@@ -83,7 +83,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   Mutex mu_;
   Args args_;
   Result* result_ ABSL_GUARDED_BY(mu_);
-  grpc_closure* notify_ = nullptr;
+  grpc_closure* notify_ ABSL_GUARDED_BY(mu_) = nullptr;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;

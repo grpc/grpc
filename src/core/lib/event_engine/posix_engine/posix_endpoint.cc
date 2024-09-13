@@ -236,7 +236,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
        iov_size++) {
     MutableSlice& slice = internal::SliceCast<MutableSlice>(
         buf_.MutableSliceAt(out_offset_.slice_idx));
-    iov[iov_size].iov_base = slice.begin();
+    iov[iov_size].iov_base = slice.begin() + out_offset_.byte_idx;
     iov[iov_size].iov_len = slice.length() - out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
     ++(out_offset_.slice_idx);

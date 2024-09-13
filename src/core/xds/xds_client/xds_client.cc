@@ -210,6 +210,7 @@ class XdsClient::XdsChannel::AdsCall final
       if (timer_handle_.has_value() &&
           ads_call_->xds_client()->engine()->Cancel(*timer_handle_)) {
         timer_handle_.reset();
+        ads_call_.reset();
       }
     }
 
@@ -250,24 +251,28 @@ class XdsClient::XdsChannel::AdsCall final
     }
 
     void OnTimer() {
-      GRPC_TRACE_LOG(xds_client, INFO)
-          << "[xds_client " << ads_call_->xds_client() << "] xds server "
-          << ads_call_->xds_channel()->server_.server_uri()
-          << ": timeout obtaining resource {type=" << type_->type_url()
-          << " name="
-          << XdsClient::ConstructFullXdsResourceName(
-                 name_.authority, type_->type_url(), name_.key)
-          << "} from xds server";
       {
         MutexLock lock(&ads_call_->xds_client()->mu_);
         timer_handle_.reset();
-        resource_seen_ = true;
         auto& authority_state =
             ads_call_->xds_client()->authority_state_map_[name_.authority];
         ResourceState& state = authority_state.resource_map[type_][name_.key];
-        state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-        ads_call_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
-            state.watchers, ReadDelayHandle::NoWait());
+        // We might have received the resource after the timer fired but before
+        // the callback ran.
+        if (state.resource == nullptr) {
+          GRPC_TRACE_LOG(xds_client, INFO)
+              << "[xds_client " << ads_call_->xds_client() << "] xds server "
+              << ads_call_->xds_channel()->server_.server_uri()
+              << ": timeout obtaining resource {type=" << type_->type_url()
+              << " name="
+              << XdsClient::ConstructFullXdsResourceName(
+                     name_.authority, type_->type_url(), name_.key)
+              << "} from xds server";
+          resource_seen_ = true;
+          state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
+          ads_call_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
+              state.watchers, ReadDelayHandle::NoWait());
+        }
       }
       ads_call_->xds_client()->work_serializer_.DrainQueue();
       ads_call_.reset();

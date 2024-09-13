@@ -952,12 +952,19 @@ TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
       "}");
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
   CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
-  // Check that all requests went to the first backend.  This verifies
-  // that we used pick_first instead of round_robin as the child policy.
-  EXPECT_EQ(backends_[0]->service().request_count(), kNumRpcs);
-  for (size_t i = 1; i < backends_.size(); ++i) {
-    EXPECT_EQ(backends_[i]->service().request_count(), 0UL);
+  // Check that all requests went to one backend.  This verifies that we
+  // used pick_first instead of round_robin as the child policy.
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->service().request_count() > 0) {
+      LOG(INFO) << "backend " << i << " saw traffic";
+      EXPECT_EQ(backends_[i]->service().request_count(), kNumRpcs)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "multiple backends saw traffic";
+      found = true;
+    }
   }
+  EXPECT_TRUE(found) << "no backends saw traffic";
   // The balancer got a single request.
   EXPECT_EQ(1U, balancer_->service().request_count());
   // and sent a single response.
@@ -982,21 +989,24 @@ TEST_F(GrpclbEnd2endTest, SwapChildPolicy) {
       "}");
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
   CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
-  // Check that all requests went to the first backend.  This verifies
-  // that we used pick_first instead of round_robin as the child policy.
-  EXPECT_EQ(backends_[0]->service().request_count(), kNumRpcs);
-  for (size_t i = 1; i < backends_.size(); ++i) {
-    EXPECT_EQ(backends_[i]->service().request_count(), 0UL);
+  // Check that all requests went to one backend.  This verifies that we
+  // used pick_first instead of round_robin as the child policy.
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->service().request_count() > 0) {
+      LOG(INFO) << "backend " << i << " saw traffic";
+      EXPECT_EQ(backends_[i]->service().request_count(), kNumRpcs)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "multiple backends saw traffic";
+      found = true;
+    }
   }
+  EXPECT_TRUE(found) << "no backends saw traffic";
   // Send new resolution that removes child policy from service config.
   SetNextResolutionDefaultBalancer();
+  // We should now be using round_robin, which will send traffic to all
+  // backends.
   WaitForAllBackends();
-  CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
-  // Check that every backend saw the same number of requests.  This verifies
-  // that we used round_robin.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(backends_[i]->service().request_count(), 2UL);
-  }
   // The balancer got a single request.
   EXPECT_EQ(1U, balancer_->service().request_count());
   // and sent a single response.

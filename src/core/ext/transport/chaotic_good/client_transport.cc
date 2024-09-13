@@ -254,13 +254,14 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
   const uint32_t stream_id = next_stream_id_++;
   stream_map_.emplace(stream_id, call_handler);
   lock.Release();
-  call_handler.OnDone([this, stream_id](bool cancelled) {
+  call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
+                       stream_id](bool cancelled) {
     if (cancelled) {
-      outgoing_frames_.MakeSender().UnbufferedImmediateSend(
+      self->outgoing_frames_.MakeSender().UnbufferedImmediateSend(
           CancelFrame{stream_id});
     }
-    MutexLock lock(&mu_);
-    stream_map_.erase(stream_id);
+    MutexLock lock(&self->mu_);
+    self->stream_map_.erase(stream_id);
   });
   return stream_id;
 }

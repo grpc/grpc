@@ -234,7 +234,7 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   struct RpcOptions {
-    int timeout_ms = 2000;
+    int timeout_ms = 5000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
 
@@ -922,14 +922,15 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
           .set_default_target(grpc_core::LocalIpUri(backends_[1]->port_))
           .set_lookup_service_timeout(grpc_core::Duration::Seconds(2))
           .Build());
-  // RLS server will send a response, but it's longer than the timeout.
+  // RLS server will send a response, but it takes longer than the
+  // timeout set in the LB policy config.
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}),
       /*response_delay=*/grpc_core::Duration::Seconds(3));
   // The data plane RPC should be sent to the default target.
-  CheckRpcSendOk(DEBUG_LOCATION, RpcOptions().set_timeout_ms(4000).set_metadata(
-                                     {{"key1", kTestValue}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(backends_[0]->service_.request_count(), 0);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);

@@ -2518,16 +2518,17 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
   // updated before we queue it.
   // We need to unref pickers in the WorkSerializer.
   std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup([&]() {
-    if (IsWorkSerializerDispatchEnabled()) return;
-    chand_->work_serializer_->Run(
-        [pickers = std::move(pickers)]() mutable {
-          for (auto& picker : pickers) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
-  });
+  auto cleanup = absl::MakeCleanup(
+      [work_serializer = chand_->work_serializer_, &pickers]() {
+        if (IsWorkSerializerDispatchEnabled()) return;
+        work_serializer->Run(
+            [pickers = std::move(pickers)]() mutable {
+              for (auto& picker : pickers) {
+                picker.reset(DEBUG_LOCATION, "PickSubchannel");
+              }
+            },
+            DEBUG_LOCATION);
+      });
   absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
       set_picker;
   if (!IsWorkSerializerDispatchEnabled()) {
