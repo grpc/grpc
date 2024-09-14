@@ -14,7 +14,10 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM dockcross/manylinux2014-aarch64:20230905-7b2d74f
+  # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64/Dockerfile.template`!!!
+
+  FROM dockcross/manylinux2014-aarch64:20240812-60fa1b0
+  # 20230905-7b2d74f
   
   # manylinux_2_17 is the preferred alias of manylinux2014
   ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
@@ -22,6 +25,6 @@
   <%include file="../python_pip_builds.include"/>
   
   RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY
-  <%include file="../ccache_old.include"/>
+  <%include file="../ccache.include"/>
 
   <%include file="../git_config.include"/>

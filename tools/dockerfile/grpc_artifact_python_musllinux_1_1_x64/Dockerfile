@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/pypa/musllinux_1_1_x86_64:2023-09-17-ae90a16
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_1_x64/Dockerfile.template`!!!
+
+FROM quay.io/pypa/musllinux_1_1_x86_64:2024-09-09-f386546
+# 2023-09-17-ae90a16
 
 #===================================
 # Install Python build requirements
@@ -27,18 +30,18 @@ RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<4.0.0rc1'
 RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython<4.0.0rc1'
 
 #=================
-# Install ccache (use slighly older release of ccache that works older compilers and cmake)
+# Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
+    && cd ccache-4.7.5 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
+    && rm -rf ccache-4.7.5 ccache.tar.gz
 
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
