@@ -40,6 +40,11 @@ class GRPCXX_DLL CertificateProviderInterface {
  public:
   virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
+
+  // Returns an OK status if the credentials held by the provider are valid.
+  // What it means for a credential to be valid is determined by the provider
+  // implementation.
+  virtual absl::Status ValidateCredentials() const { return absl::OkStatus(); }
 };
 
 // A struct that stores the credential data presented to the peer in handshake
@@ -71,6 +76,12 @@ class GRPCXX_DLL StaticDataCertificateProvider
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
+  // Returns an OK status if the following conditions hold:
+  // - the root certificates consist of one or more valid PEM blocks, and
+  // - every identity key-cert pair has a certificate chain that consists of
+  //   valid PEM blocks and has a private key is a valid PEM block.
+  absl::Status ValidateCredentials() const override;
+
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
@@ -92,30 +103,6 @@ class GRPCXX_DLL StaticDataCertificateProvider
 class GRPCXX_DLL FileWatcherCertificateProvider final
     : public CertificateProviderInterface {
  public:
-  // Creates a CertificateProviderInterface instance that periodically reads
-  // from root certificates and identity credentials file paths. Both root
-  // certificates and identity credentials are validated on first read to ensure
-  // that they consist of valid PEM blocks.
-  //
-  // @param private_key_path is the file path of the private key.
-  // @param identity_certificate_path is the file path of the identity
-  // certificate chain.
-  // @param root_cert_path is the file path to the root certificate bundle.
-  // @param refresh_interval_sec is the refreshing interval that we will check
-  // the files for updates.
-  static absl::StatusOr<std::unique_ptr<CertificateProviderInterface>> Create(
-      const std::string& private_key_path,
-      const std::string& identity_certificate_path,
-      const std::string& root_cert_path, unsigned int refresh_interval_sec);
-  static absl::StatusOr<std::unique_ptr<CertificateProviderInterface>> Create(
-      const std::string& private_key_path,
-      const std::string& identity_certificate_path,
-      unsigned int refresh_interval_sec);
-  static absl::StatusOr<std::unique_ptr<CertificateProviderInterface>> Create(
-      const std::string& root_cert_path, unsigned int refresh_interval_sec);
-
-  // Deprecated: Please use the static factory instead (above).
-  //
   // Constructor to get credential updates from root and identity file paths.
   //
   // @param private_key_path is the file path of the private key.
@@ -144,6 +131,14 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   ~FileWatcherCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  // Returns an OK status if the following conditions hold:
+  // - the currently-loaded root certificates, if any, consist of one or more
+  // valid PEM blocks, and
+  // - every currently-loaded identity key-cert pair, if any, has a certificate
+  // chain that consists of
+  //   valid PEM blocks and has a private key is a valid PEM block.
+  absl::Status ValidateCredentials() const override;
 
  private:
   explicit FileWatcherCertificateProvider(

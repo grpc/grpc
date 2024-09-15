@@ -28,12 +28,15 @@
 #include <grpcpp/security/tls_crl_provider.h>
 
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
+#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
+#define MALFORMED_KEY_PATH "src/core/tsi/test_creds/malformed-key.pem"
 
 namespace {
 
@@ -42,10 +45,6 @@ constexpr const char* kRootCertContents = "root_cert_contents";
 constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
-constexpr const char* kMalformedCertPemPath =
-    "src/core/tsi/test_creds/malformed-cert.pem";
-constexpr const char* kMalformedKeyPemPath =
-    "src/core/tsi/test_creds/malformed-key.pem";
 
 using ::grpc::experimental::CreateStaticCrlProvider;
 using ::grpc::experimental::ExternalCertificateVerifier;
@@ -54,6 +53,7 @@ using ::grpc::experimental::NoOpCertificateVerifier;
 using ::grpc::experimental::StaticDataCertificateProvider;
 using ::grpc::experimental::TlsServerCredentials;
 using ::grpc::experimental::TlsServerCredentialsOptions;
+using ::grpc_core::testing::GetFileContents;
 
 }  // namespace
 
@@ -121,47 +121,103 @@ TEST(
 }
 
 TEST(CredentialsTest,
+     StaticDataCertificateProviderValidationSuccessWithAllCredentials) {
+  std::string root_certificates = GetFileContents(CA_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair = {
+      .private_key = GetFileContents(SERVER_KEY_PATH),
+      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
+  };
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest,
+     StaticDataCertificateProviderValidationSuccessWithRootOnly) {
+  std::string root_certificates = GetFileContents(CA_CERT_PATH);
+  StaticDataCertificateProvider provider(root_certificates);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest,
+     StaticDataCertificateProviderValidationSuccessWithIdentityOnly) {
+  experimental::IdentityKeyCertPair key_cert_pair = {
+      .private_key = GetFileContents(SERVER_KEY_PATH),
+      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
+  };
+  StaticDataCertificateProvider provider({key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
+  std::string root_certificates = GetFileContents(MALFORMED_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair = {
+      .private_key = GetFileContents(SERVER_KEY_PATH),
+      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
+  };
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityCert) {
+  std::string root_certificates = GetFileContents(CA_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair = {
+      .private_key = GetFileContents(SERVER_KEY_PATH),
+      .certificate_chain = GetFileContents(MALFORMED_CERT_PATH),
+  };
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityKey) {
+  std::string root_certificates = GetFileContents(CA_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair = {
+      .private_key = GetFileContents(MALFORMED_KEY_PATH),
+      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
+  };
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::NotFoundError("No private key found."));
+}
+
+TEST(CredentialsTest,
      FileWatcherCertificateProviderValidationSuccessWithAllCredentials) {
-  auto certificate_provider = FileWatcherCertificateProvider::Create(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  EXPECT_EQ(certificate_provider.status(), absl::OkStatus());
-  EXPECT_NE(*certificate_provider, nullptr);
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
 TEST(CredentialsTest,
      FileWatcherCertificateProviderValidationSuccessWithRootOnly) {
-  auto certificate_provider =
-      FileWatcherCertificateProvider::Create(CA_CERT_PATH, 1);
-  EXPECT_EQ(certificate_provider.status(), absl::OkStatus());
-  EXPECT_NE(*certificate_provider, nullptr);
+  FileWatcherCertificateProvider provider(CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
 TEST(CredentialsTest,
      FileWatcherCertificateProviderValidationSuccessWithIdentityOnly) {
-  auto certificate_provider = FileWatcherCertificateProvider::Create(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, 1);
-  EXPECT_EQ(certificate_provider.status(), absl::OkStatus());
-  EXPECT_NE(*certificate_provider, nullptr);
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
 TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
-  auto certificate_provider = FileWatcherCertificateProvider::Create(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, kMalformedCertPemPath, 1);
-  EXPECT_EQ(certificate_provider.status(),
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          MALFORMED_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
 }
 
 TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedIdentityCert) {
-  auto certificate_provider = FileWatcherCertificateProvider::Create(
-      SERVER_KEY_PATH, kMalformedCertPemPath, CA_CERT_PATH, 1);
-  EXPECT_EQ(certificate_provider.status(),
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, MALFORMED_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
 }
 
 TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedIdentityKey) {
-  auto certificate_provider = FileWatcherCertificateProvider::Create(
-      kMalformedKeyPemPath, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  EXPECT_EQ(certificate_provider.status(),
+  FileWatcherCertificateProvider provider(MALFORMED_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
             absl::NotFoundError("No private key found."));
 }
 

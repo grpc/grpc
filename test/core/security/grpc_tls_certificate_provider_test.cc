@@ -41,6 +41,8 @@
 #define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
 #define INVALID_PATH "invalid/path"
+#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
+#define MALFORMED_KEY_PATH "src/core/tsi/test_creds/malformed-key.pem"
 
 namespace grpc_core {
 
@@ -167,6 +169,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     root_cert_2_ = GetFileContents(CA_CERT_PATH_2);
     cert_chain_2_ = GetFileContents(SERVER_CERT_PATH_2);
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
+    malformed_cert_ = GetFileContents(MALFORMED_CERT_PATH);
+    malformed_key_ = GetFileContents(MALFORMED_KEY_PATH);
   }
 
   WatcherState* MakeWatcher(
@@ -200,6 +204,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   std::string root_cert_2_;
   std::string private_key_2_;
   std::string cert_chain_2_;
+  std::string malformed_cert_;
+  std::string malformed_key_;
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   // Use a std::list<> here to avoid the address invalidation caused by internal
   // reallocation of std::vector<>.
@@ -236,6 +242,40 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithGoodPathsAndCredentialValidation) {
+  StaticDataCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithMalformedRootCertificate) {
+  StaticDataCertificateProvider provider(
+      malformed_cert_,
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithMalformedIdentityCertificate) {
+  StaticDataCertificateProvider provider(
+      root_cert_,
+      MakeCertKeyPairs(private_key_.c_str(), malformed_cert_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       StaticDataCertificateProviderWithMalformedIdentityKey) {
+  StaticDataCertificateProvider provider(
+      root_cert_,
+      MakeCertKeyPairs(malformed_key_.c_str(), cert_chain_.c_str()));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::NotFoundError("No private key found."));
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPaths) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 1);
@@ -265,54 +305,33 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPathsAndCredentialValidation) {
-  auto provider = FileWatcherCertificateProvider::Create(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-  EXPECT_EQ(provider.status(), absl::OkStatus());
-  auto cert_provider = *provider;
-
-  // Watcher watching both root and identity certs.
-  WatcherState* watcher_state_1 =
-      MakeWatcher(cert_provider->distributor(), kCertName, kCertName);
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
-              ::testing::ElementsAre(CredentialInfo(
-                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str()))));
-  CancelWatch(watcher_state_1);
-  // Watcher watching only root certs.
-  WatcherState* watcher_state_2 =
-      MakeWatcher(cert_provider->distributor(), kCertName, absl::nullopt);
-  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
-              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
-  CancelWatch(watcher_state_2);
-  // Watcher watching only identity certs.
-  WatcherState* watcher_state_3 =
-      MakeWatcher(cert_provider->distributor(), absl::nullopt, kCertName);
-  EXPECT_THAT(
-      watcher_state_3->GetCredentialQueue(),
-      ::testing::ElementsAre(CredentialInfo(
-          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
-  CancelWatch(watcher_state_3);
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedRootCertificate) {
-  auto provider = FileWatcherCertificateProvider::Create(
-      SERVER_KEY_PATH_2, SERVER_CERT_PATH_2, kMalformedCertPemPath, 1);
-  EXPECT_EQ(provider.status(), absl::FailedPreconditionError("Invalid PEM."));
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
+                                          kMalformedCertPemPath, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedIdentityCertificate) {
-  auto provider = FileWatcherCertificateProvider::Create(
+  FileWatcherCertificateProvider provider(
       SERVER_KEY_PATH_2, kMalformedCertPemPath, CA_CERT_PATH_2, 1);
-  EXPECT_EQ(provider.status(), absl::FailedPreconditionError("Invalid PEM."));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError("Invalid PEM."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedIdentityKey) {
-  auto provider = FileWatcherCertificateProvider::Create(
+  FileWatcherCertificateProvider provider(
       kMalformedKeyPemPath, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
-  EXPECT_EQ(provider.status(), absl::NotFoundError("No private key found."));
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::NotFoundError("No private key found."));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,

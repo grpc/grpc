@@ -77,6 +77,11 @@ struct grpc_tls_certificate_provider
   // instances of that provider implementation.
   virtual grpc_core::UniqueTypeName type() const = 0;
 
+  // Returns an OK status if the credentials held by the provider are valid.
+  // What it means for a credential to be valid is determined by the provider
+  // implementation.
+  virtual absl::Status ValidateCredentials() const { return absl::OkStatus(); }
+
   static absl::string_view ChannelArgName();
   static int ChannelArgsCompare(const grpc_tls_certificate_provider* a,
                                 const grpc_tls_certificate_provider* b) {
@@ -108,6 +113,8 @@ class StaticDataCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const override;
+
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
@@ -134,11 +141,6 @@ class StaticDataCertificateProvider final
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
-  static absl::StatusOr<RefCountedPtr<grpc_tls_certificate_provider>> Create(
-      std::string private_key_path, std::string identity_certificate_path,
-      std::string root_cert_path, int64_t refresh_interval_sec);
-
-  // Deprecated: Please use the static factory instead (above).
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
                                  std::string root_cert_path,
@@ -150,19 +152,9 @@ class FileWatcherCertificateProvider final
     return distributor_;
   }
 
-  absl::optional<std::string> root_certificates() {
-    MutexLock lock(&mu_);
-    if (root_certificate_.empty()) return absl::nullopt;
-    return root_certificate_;
-  }
-
-  absl::optional<PemKeyCertPairList> pem_key_cert_pairs() {
-    MutexLock lock(&mu_);
-    if (pem_key_cert_pairs_.empty()) return absl::nullopt;
-    return pem_key_cert_pairs_;
-  }
-
   UniqueTypeName type() const override;
+
+  absl::Status ValidateCredentials() const override;
 
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
@@ -200,7 +192,7 @@ class FileWatcherCertificateProvider final
   gpr_event shutdown_event_;
 
   // Guards members below.
-  Mutex mu_;
+  mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);

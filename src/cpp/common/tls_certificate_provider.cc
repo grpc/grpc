@@ -46,35 +46,8 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
-absl::StatusOr<std::unique_ptr<CertificateProviderInterface>>
-FileWatcherCertificateProvider::Create(
-    const std::string& private_key_path,
-    const std::string& identity_certificate_path,
-    const std::string& root_cert_path, unsigned int refresh_interval_sec) {
-  auto provider = grpc_core::FileWatcherCertificateProvider::Create(
-      private_key_path, identity_certificate_path, root_cert_path,
-      refresh_interval_sec);
-  if (!provider.ok()) {
-    return provider.status();
-  }
-  return absl::WrapUnique(
-      new FileWatcherCertificateProvider(provider->release()));
-}
-
-absl::StatusOr<std::unique_ptr<CertificateProviderInterface>>
-FileWatcherCertificateProvider::Create(
-    const std::string& private_key_path,
-    const std::string& identity_certificate_path,
-    unsigned int refresh_interval_sec) {
-  return Create(private_key_path, identity_certificate_path,
-                /*root_cert_path=*/"", refresh_interval_sec);
-}
-
-absl::StatusOr<std::unique_ptr<CertificateProviderInterface>>
-FileWatcherCertificateProvider::Create(const std::string& root_cert_path,
-                                       unsigned int refresh_interval_sec) {
-  return Create(/*private_key_path=*/"", /*identity_certificate_path=*/"",
-                root_cert_path, refresh_interval_sec);
+absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
+  return c_provider_->ValidateCredentials();
 }
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
@@ -96,6 +69,10 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
+
+absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
+  return c_provider_->ValidateCredentials();
+}
 
 }  // namespace experimental
 }  // namespace grpc

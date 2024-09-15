@@ -48,6 +48,7 @@ namespace grpc_core {
 namespace {
 
 absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
+  if (root_certificates.empty()) return absl::OkStatus();
   absl::StatusOr<std::vector<X509*>> parsed_roots =
       ParsePemCertificateChain(root_certificates);
   if (!parsed_roots.ok()) {
@@ -61,6 +62,7 @@ absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
 
 absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
                                     absl::string_view private_key) {
+  if (cert_chain.empty() && private_key.empty()) return absl::OkStatus();
   // Check that the cert chain consists of valid PEM blocks.
   absl::StatusOr<std::vector<X509*>> parsed_certs =
       ParsePemCertificateChain(cert_chain);
@@ -141,6 +143,21 @@ UniqueTypeName StaticDataCertificateProvider::type() const {
   return kFactory.Create();
 }
 
+absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
 namespace {
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
@@ -151,35 +168,6 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 }  // namespace
 
 static constexpr int64_t kMinimumFileWatcherRefreshIntervalSeconds = 1;
-
-absl::StatusOr<RefCountedPtr<grpc_tls_certificate_provider>>
-FileWatcherCertificateProvider::Create(std::string private_key_path,
-                                       std::string identity_certificate_path,
-                                       std::string root_cert_path,
-                                       int64_t refresh_interval_sec) {
-  auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
-      std::move(private_key_path), std::move(identity_certificate_path),
-      std::move(root_cert_path), refresh_interval_sec);
-  absl::optional<std::string> root_certificates = provider->root_certificates();
-  if (root_certificates.has_value()) {
-    absl::Status status = ValidateRootCertificates(*root_certificates);
-    if (!status.ok()) {
-      return status;
-    }
-  }
-  absl::optional<PemKeyCertPairList> pem_key_cert_pairs =
-      provider->pem_key_cert_pairs();
-  if (pem_key_cert_pairs.has_value()) {
-    for (const PemKeyCertPair& pair : *pem_key_cert_pairs) {
-      absl::Status status =
-          ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
-      if (!status.ok()) {
-        return status;
-      }
-    }
-  }
-  return provider;
-}
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
@@ -272,6 +260,22 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
 UniqueTypeName FileWatcherCertificateProvider::type() const {
   static UniqueTypeName::Factory kFactory("FileWatcher");
   return kFactory.Create();
+}
+
+absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
+  MutexLock lock(&mu_);
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
