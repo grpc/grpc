@@ -38,7 +38,7 @@ Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(
   size_t buffered = 0;
   if (auto* buffering = absl::get_if<Buffering>(&state_)) {
     buffering->buffered += message->payload()->Length();
-    buffered = buffering->buffered;
+    if (winner_ == nullptr) buffered = buffering->buffered;
     buffering->messages.push_back(std::move(message));
   } else {
     auto& streaming = absl::get<Streaming>(state_);
@@ -81,7 +81,8 @@ void RequestBuffer::SwitchToStreaming(Reader* winner) {
   winner_ = winner;
   if (auto* buffering = absl::get_if<Buffering>(&state_)) {
     if (buffering->initial_metadata != nullptr &&
-        winner->message_index_ == buffering->messages.size()) {
+        winner->message_index_ == buffering->messages.size() &&
+        winner->pulled_client_initial_metadata_) {
       state_.emplace<Streaming>();
     }
   } else if (auto* buffered = absl::get_if<Buffered>(&state_)) {
@@ -111,9 +112,11 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
     if (buffering->initial_metadata.get() == nullptr) {
       return buffer_->PendingPull(this);
     }
+    pulled_client_initial_metadata_ = true;
     return ClaimObject(buffering->initial_metadata);
   }
   if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
+    pulled_client_initial_metadata_ = true;
     return ClaimObject(buffered->initial_metadata);
   }
   error_ = absl::get<Cancelled>(buffer_->state_).error;

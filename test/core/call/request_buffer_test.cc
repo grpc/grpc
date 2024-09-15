@@ -300,6 +300,52 @@ TEST(RequestBufferTest, PullEndOfStream) {
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
 
+TEST(RequestBufferTest, PullEndOfStream_SwitchBeforePullMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  buffer.SwitchToStreaming(&reader);
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
+TEST(RequestBufferTest, PullEndOfStream_SwitchBeforePushMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  buffer.SwitchToStreaming(&reader);
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(0));
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
 TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
@@ -322,22 +368,201 @@ TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
 
+TEST(RequestBufferTest,
+     PullEndOfStreamQueuedWithMessage_SwitchBeforePushMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  buffer.SwitchToStreaming(&reader);
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(0));
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
+TEST(RequestBufferTest,
+     PullEndOfStreamQueuedWithMessage_SwitchBeforePullMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  buffer.SwitchToStreaming(&reader);
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
+TEST(RequestBufferTest,
+     PullEndOfStreamQueuedWithMessage_SwitchDuringPullMessage) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pull_msg = reader.PullMessage();
+  buffer.SwitchToStreaming(&reader);
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_FALSE(poll_msg.value().value().has_value());
+}
+
 TEST(RequestBufferTest, PushThenPullMessageRepeatedly) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
-  for (int i = 0; i < 100; i++) {
-    auto pusher = buffer.PushMessage(TestMessage());
+  for (int i = 0; i < 10; i++) {
+    auto pusher = buffer.PushMessage(TestMessage(i));
     EXPECT_THAT(pusher(), IsReady(40 + 9 * (i + 1)));
     auto pull_msg = reader.PullMessage();
     auto poll_msg = pull_msg();
     ASSERT_THAT(poll_msg, IsReady());
     ASSERT_TRUE(poll_msg.value().ok());
     ASSERT_TRUE(poll_msg.value().value().has_value());
-    EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+    EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage(i));
   }
+}
+
+TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  for (int i = 0; i < 10; i++) {
+    auto pusher = buffer.PushMessage(TestMessage(i));
+    EXPECT_THAT(pusher(), IsReady(40 + 9 * (i + 1)));
+  }
+  buffer.SwitchToStreaming(&reader);
+  for (int i = 0; i < 10; i++) {
+    auto pull_msg = reader.PullMessage();
+    auto poll_msg = pull_msg();
+    ASSERT_THAT(poll_msg, IsReady());
+    ASSERT_TRUE(poll_msg.value().ok());
+    ASSERT_TRUE(poll_msg.value().value().has_value());
+    EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage(i));
+  }
+  for (int i = 0; i < 10; i++) {
+    auto pusher = buffer.PushMessage(TestMessage(i));
+    EXPECT_THAT(pusher(), IsReady(0));
+    auto pull_msg = reader.PullMessage();
+    auto poll_msg = pull_msg();
+    ASSERT_THAT(poll_msg, IsReady());
+    ASSERT_TRUE(poll_msg.value().ok());
+    ASSERT_TRUE(poll_msg.value().value().has_value());
+    EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage(i));
+  }
+}
+
+TEST(RequestBufferTest, HedgeReadMetadata) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader1(&buffer);
+  RequestBuffer::Reader reader2(&buffer);
+  auto pull_md1 = reader1.PullClientInitialMetadata();
+  auto pull_md2 = reader2.PullClientInitialMetadata();
+  auto poll_md1 = pull_md1();
+  auto poll_md2 = pull_md2();
+  ASSERT_THAT(poll_md1, IsReady());
+  ASSERT_THAT(poll_md2, IsReady());
+  auto value1 = std::move(poll_md1.value());
+  auto value2 = std::move(poll_md2.value());
+  ASSERT_TRUE(value1.ok());
+  ASSERT_TRUE(value2.ok());
+  EXPECT_THAT(*value1, IsTestMetadata());
+  EXPECT_THAT(*value2, IsTestMetadata());
+}
+
+TEST(RequestBufferTest, HedgeReadMetadata_SwitchBeforeFirstRead) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader1(&buffer);
+  buffer.SwitchToStreaming(&reader1);
+  RequestBuffer::Reader reader2(&buffer);
+  auto pull_md1 = reader1.PullClientInitialMetadata();
+  auto pull_md2 = reader2.PullClientInitialMetadata();
+  auto poll_md1 = pull_md1();
+  auto poll_md2 = pull_md2();
+  ASSERT_THAT(poll_md1, IsReady());
+  ASSERT_THAT(poll_md2, IsReady());
+  auto value1 = std::move(poll_md1.value());
+  auto value2 = std::move(poll_md2.value());
+  ASSERT_TRUE(value1.ok());
+  EXPECT_FALSE(value2.ok());
+  EXPECT_THAT(*value1, IsTestMetadata());
+}
+
+TEST(RequestBufferTest, HedgeReadMetadataLate) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader1(&buffer);
+  auto pull_md1 = reader1.PullClientInitialMetadata();
+  auto poll_md1 = pull_md1();
+  ASSERT_THAT(poll_md1, IsReady());
+  auto value1 = std::move(poll_md1.value());
+  ASSERT_TRUE(value1.ok());
+  EXPECT_THAT(*value1, IsTestMetadata());
+  RequestBuffer::Reader reader2(&buffer);
+  auto pull_md2 = reader2.PullClientInitialMetadata();
+  auto poll_md2 = pull_md2();
+  ASSERT_THAT(poll_md2, IsReady());
+  auto value2 = std::move(poll_md2.value());
+  ASSERT_TRUE(value2.ok());
+  EXPECT_THAT(*value2, IsTestMetadata());
+}
+
+TEST(RequestBufferTest, HedgeReadMetadataLate_SwitchAfterPullInitialMetadata) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  RequestBuffer::Reader reader1(&buffer);
+  auto pull_md1 = reader1.PullClientInitialMetadata();
+  auto poll_md1 = pull_md1();
+  ASSERT_THAT(poll_md1, IsReady());
+  auto value1 = std::move(poll_md1.value());
+  ASSERT_TRUE(value1.ok());
+  EXPECT_THAT(*value1, IsTestMetadata());
+  RequestBuffer::Reader reader2(&buffer);
+  buffer.SwitchToStreaming(&reader1);
+  auto pull_md2 = reader2.PullClientInitialMetadata();
+  auto poll_md2 = pull_md2();
+  ASSERT_THAT(poll_md2, IsReady());
+  auto value2 = std::move(poll_md2.value());
+  EXPECT_FALSE(value2.ok());
 }
 
 }  // namespace grpc_core

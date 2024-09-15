@@ -66,6 +66,7 @@ class RequestBuffer {
     }
 
     RequestBuffer* const buffer_;
+    bool pulled_client_initial_metadata_ = false;
     size_t message_index_ = 0;
     absl::Status error_;
     Waker pull_waker_;
