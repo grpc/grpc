@@ -60,12 +60,6 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   CHECK_NE(c_provider_, nullptr);
 };
 
-FileWatcherCertificateProvider::FileWatcherCertificateProvider(
-    grpc_tls_certificate_provider* provider) {
-  CHECK_NE(provider, nullptr);
-  c_provider_ = provider;
-}
-
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };

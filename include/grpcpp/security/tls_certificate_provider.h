@@ -134,16 +134,13 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
 
   // Returns an OK status if the following conditions hold:
   // - the currently-loaded root certificates, if any, consist of one or more
-  // valid PEM blocks, and
+  //   valid PEM blocks, and
   // - every currently-loaded identity key-cert pair, if any, has a certificate
-  // chain that consists of
-  //   valid PEM blocks and has a private key is a valid PEM block.
+  //   chain that consists of valid PEM blocks and has a private key is a valid
+  //   PEM block.
   absl::Status ValidateCredentials() const override;
 
  private:
-  explicit FileWatcherCertificateProvider(
-      grpc_tls_certificate_provider* provider);
-
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 

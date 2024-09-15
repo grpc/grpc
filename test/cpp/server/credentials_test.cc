@@ -123,10 +123,9 @@ TEST(
 TEST(CredentialsTest,
      StaticDataCertificateProviderValidationSuccessWithAllCredentials) {
   std::string root_certificates = GetFileContents(CA_CERT_PATH);
-  experimental::IdentityKeyCertPair key_cert_pair = {
-      .private_key = GetFileContents(SERVER_KEY_PATH),
-      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
-  };
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
@@ -140,20 +139,18 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      StaticDataCertificateProviderValidationSuccessWithIdentityOnly) {
-  experimental::IdentityKeyCertPair key_cert_pair = {
-      .private_key = GetFileContents(SERVER_KEY_PATH),
-      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
-  };
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider({key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
 TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
   std::string root_certificates = GetFileContents(MALFORMED_CERT_PATH);
-  experimental::IdentityKeyCertPair key_cert_pair = {
-      .private_key = GetFileContents(SERVER_KEY_PATH),
-      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
-  };
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
@@ -161,10 +158,9 @@ TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
 
 TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityCert) {
   std::string root_certificates = GetFileContents(CA_CERT_PATH);
-  experimental::IdentityKeyCertPair key_cert_pair = {
-      .private_key = GetFileContents(SERVER_KEY_PATH),
-      .certificate_chain = GetFileContents(MALFORMED_CERT_PATH),
-  };
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(MALFORMED_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
@@ -172,10 +168,9 @@ TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityCert) {
 
 TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityKey) {
   std::string root_certificates = GetFileContents(CA_CERT_PATH);
-  experimental::IdentityKeyCertPair key_cert_pair = {
-      .private_key = GetFileContents(MALFORMED_KEY_PATH),
-      .certificate_chain = GetFileContents(SERVER_CERT_PATH),
-  };
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(MALFORMED_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
   StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::NotFoundError("No private key found."));

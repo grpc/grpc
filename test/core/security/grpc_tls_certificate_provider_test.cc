@@ -52,10 +52,6 @@ constexpr const char* kCertName = "cert_name";
 constexpr const char* kRootError = "Unable to get latest root certificates.";
 constexpr const char* kIdentityError =
     "Unable to get latest identity certificates.";
-constexpr const char* kMalformedCertPemPath =
-    "src/core/tsi/test_creds/malformed-cert.pem";
-constexpr const char* kMalformedKeyPemPath =
-    "src/core/tsi/test_creds/malformed-key.pem";
 
 class GrpcTlsCertificateProviderTest : public ::testing::Test {
  protected:
@@ -313,7 +309,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedRootCertificate) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
-                                          kMalformedCertPemPath, 1);
+                                          MALFORMED_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
 }
@@ -321,7 +317,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedIdentityCertificate) {
   FileWatcherCertificateProvider provider(
-      SERVER_KEY_PATH_2, kMalformedCertPemPath, CA_CERT_PATH_2, 1);
+      SERVER_KEY_PATH_2, MALFORMED_CERT_PATH, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
 }
@@ -329,7 +325,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedIdentityKey) {
   FileWatcherCertificateProvider provider(
-      kMalformedKeyPemPath, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
+      MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::NotFoundError("No private key found."));
 }
