@@ -49,4 +49,5 @@ RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
 
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
 RUN git config --global protocol.file.allow always
