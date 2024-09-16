@@ -90,3 +90,4 @@ if __name__ == "__main__":
                 stdout_file.seek(0)
                 for line in stdout_file:
                     print(line)
+
