@@ -217,8 +217,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      void WaitOnServingStatusChange(std::string uri,
-                                     grpc::StatusCode expected_status);
+      GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
+          const std::string& uri, grpc::StatusCode expected_status,
+          absl::Duration timeout = absl::Seconds(10));
 
      private:
       grpc_core::Mutex mu_;
@@ -785,7 +786,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Duration elapsed_time;
     EchoResponse response;
   };
-  std::vector<ConcurrentRpc> SendConcurrentRpcs(
+  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
       const grpc_core::DebugLocation& debug_location,
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options);
@@ -964,6 +965,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Returns a regex that can be matched against an RPC failure status
   // message for a connection failure.
   static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a Tls handshake failure.
+  static std::string MakeTlsHandshakeFailureRegex(absl::string_view prefix);
 
   // Returns a private key pair, read from local files.
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(
