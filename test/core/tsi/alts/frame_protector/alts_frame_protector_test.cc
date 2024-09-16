@@ -402,6 +402,19 @@ TEST(AltsFrameProtectorTest, MainTest) {
   alts_test_do_round_trip_all(/*rekey=*/true);
 }
 
+TEST(AltsFrameProtectorTest, MemoryLeakTest) {
+  tsi_frame_protector* client_frame_protector = nullptr;
+  // Create a key with a wrong key length (off-by-one).
+  uint8_t* key = nullptr;
+  size_t key_length = kAes128GcmKeyLength - 1;
+  gsec_test_random_array(&key, key_length);
+  EXPECT_EQ(alts_create_frame_protector(key, key_length, /*is_client=*/true,
+                                        /*rekey=*/false, nullptr,
+                                        &client_frame_protector),
+            TSI_INTERNAL_ERROR);
+  gpr_free(key);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
