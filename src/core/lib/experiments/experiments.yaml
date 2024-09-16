@@ -42,7 +42,7 @@
 # state of each experiment.
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2024/09/30
+  expiry: 2025/02/01
   owner: roth@google.com
   test_tags: []
 - name: canary_client_privacy
