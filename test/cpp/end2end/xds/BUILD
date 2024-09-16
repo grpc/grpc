@@ -281,6 +281,7 @@ grpc_cc_test(
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 5,
     tags = [
+        "no_mac",
         "no_test_ios",
         "no_windows",
         "xds_end2end_test",
