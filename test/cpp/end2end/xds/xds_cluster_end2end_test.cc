@@ -1107,15 +1107,13 @@ TEST_P(EdsTest, DropConfigUpdate) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 1 sees traffic, so that we know the client has
   // seen the update.
-  WaitForBackend(
-      DEBUG_LOCATION, 1,
-      [&](const RpcResult& result) {
-        if (!result.status.ok()) {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_THAT(result.status.error_message(),
-                      ::testing::StartsWith(kStatusMessageDropPrefix));
-        }
-      });
+  WaitForBackend(DEBUG_LOCATION, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::StartsWith(kStatusMessageDropPrefix));
+    }
+  });
   // Send kNumRpcsBoth RPCs and count the drops.
   LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
