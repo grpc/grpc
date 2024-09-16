@@ -168,10 +168,7 @@ class ClientChannel::SubchannelWrapper
   void CancelDataWatcher(DataWatcherInterface* watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
   void ThrottleKeepaliveTime(int new_keepalive_time);
-  std::string address_string() const override {
-    return grpc_sockaddr_to_string(&subchannel_->address(), true)
-        .value_or("unknown address");
-  }
+  std::string address() const override { return subchannel_->address(); }
 
  private:
   class WatcherWrapper;

@@ -174,7 +174,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           watcher_->OnConnectivityStateChange(
               GRPC_CHANNEL_TRANSIENT_FAILURE,
               absl::UnavailableError(
-                  absl::StrCat(subchannel_wrapper_->address_string(),
+                  absl::StrCat(subchannel_wrapper_->address(),
                                ": subchannel ejected by outlier detection")));
         }
       }
@@ -196,7 +196,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           if (ejected_) {
             new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
             status = absl::UnavailableError(
-                absl::StrCat(subchannel_wrapper_->address_string(),
+                absl::StrCat(subchannel_wrapper_->address(),
                              ": subchannel ejected by outlier detection"));
           }
           watcher_->OnConnectivityStateChange(new_state, status);

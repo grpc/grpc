@@ -121,7 +121,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
       SubchannelState* state() const { return state_; }
 
-      std::string address_string() const override { return "fake"; }
+      std::string address() const override { return state_->address_; }
 
      private:
       // Converts between

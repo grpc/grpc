@@ -103,7 +103,8 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
   // make this API public.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
 
-  virtual std::string address_string() const = 0;
+  // Return the address in URI format.
+  virtual std::string address() const = 0;
 
  protected:
   void Orphaned() override {}
@@ -139,8 +140,8 @@ class DelegatingSubchannel : public SubchannelInterface {
     wrapped_subchannel_->CancelDataWatcher(watcher);
   }
 
-  std::string address_string() const override {
-    return wrapped_subchannel_->address_string();
+  std::string address() const override {
+    return wrapped_subchannel_->address();
   }
 
  private:
