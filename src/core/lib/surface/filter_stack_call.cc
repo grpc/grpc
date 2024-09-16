@@ -542,7 +542,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
     error = absl::OkStatus();
   }
 
-  GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
+  GRPC_TRACE_VLOG(call, 2) << "DO NOT SUBMIT: COMPLETION: tag:" << completion_data_.notify_tag.tag
                            << " batch_error=" << error << " op:"
                            << grpc_transport_stream_op_batch_string(&op_,
                                                                     false);
@@ -601,6 +601,13 @@ void FilterStackCall::BatchControl::FinishStep(PendingOp op) {
 }
 
 void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
+  GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
+                           << " ProcessDataAfterMetadata "
+                           << "receiving_slice_buffer.has_value="
+                           << call_->receiving_slice_buffer_.has_value()
+                           << "receiving_message_=" << call_->receiving_message_
+                           << " recv_state="
+                           << gpr_atm_no_barrier_load(&call_->recv_state_);
   FilterStackCall* call = call_;
   if (!call->receiving_slice_buffer_.has_value()) {
     *call->receiving_buffer_ = nullptr;
@@ -652,6 +659,12 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
 
 void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_error_handle error) {
+  GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
+                           << " ReceivingInitialMetadataReady error=" << error
+                           << " receiving_slice_buffer.has_value="
+                           << call_->receiving_slice_buffer_.has_value()
+                           << " recv_state="
+                           << gpr_atm_no_barrier_load(&call_->recv_state_);
   FilterStackCall* call = call_;
 
   GRPC_CALL_COMBINER_STOP(call->call_combiner(), "recv_initial_metadata_ready");
@@ -676,7 +689,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state_);
     // Should only receive initial metadata once
     CHECK_NE(rsr_bctlp, 1);
-    if (rsr_bctlp == 0) {
+    if (rsr_bctlp == kRecvNone) {
       // We haven't seen initial metadata and messages before, thus initial
       // metadata is received first.
       // no_barrier_cas is used, as this function won't access the batch_control
@@ -698,11 +711,10 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
       break;
     }
   }
+  FinishStep(PendingOp::kRecvInitialMetadata);
   if (saved_rsr_closure != nullptr) {
     GrpcClosure::Run(DEBUG_LOCATION, saved_rsr_closure, error);
   }
-
-  FinishStep(PendingOp::kRecvInitialMetadata);
 }
 
 void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(

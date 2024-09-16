@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <cstddef>
 #include <string>
 #include <utility>
 
@@ -81,6 +82,10 @@ typedef struct {
 
   grpc_metadata_array c2p_initial_metadata;
   grpc_metadata_array p2s_initial_metadata;
+
+  grpc_core::Mutex initial_metadata_mu;
+  bool p2s_initial_metadata_received ABSL_GUARDED_BY(initial_metadata_mu);
+  grpc_op* deferred_trailing_metadata_op ABSL_GUARDED_BY(initial_metadata_mu);
 
   grpc_byte_buffer* c2p_msg;
   grpc_byte_buffer* p2s_msg;
@@ -176,7 +181,17 @@ static void refpc(proxy_call* pc, const char* /*reason*/) {
 
 static void on_c2p_sent_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
+  LOG(INFO)
+      << "--- DO NOT SUBMIT ---: on_c2p_sent_initial_metadata (the client "
+         "has read the server's initial metadata)";
   unrefpc(pc, "on_c2p_sent_initial_metadata");
+}
+
+static void on_c2p_sent_status(void* arg, int /*success*/) {
+  proxy_call* pc = static_cast<proxy_call*>(arg);
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_sent_status (the proxy has "
+               "finished the call to the client)";
+  unrefpc(pc, "on_c2p_sent_status");
 }
 
 static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
@@ -184,8 +199,14 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   grpc_op op;
   grpc_call_error err;
 
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_recv_initial_metadata. (the "
+               "proxy has received initial metadata from the server).";
+
   memset(&op, 0, sizeof(op));
   if (!pc->proxy->shutdown && !grpc_call_is_trailers_only(pc->p2s)) {
+    LOG(INFO)
+        << "--- DO NOT SUBMIT ---: on_p2s_recv_initial_metadata: (next "
+           "op: send to the client: the initial metadata from the server)";
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
     op.flags = 0;
     op.reserved = nullptr;
@@ -196,6 +217,26 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
                                 new_closure(on_c2p_sent_initial_metadata, pc),
                                 nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
+    grpc_op* deferred_trailing_metadata_op = nullptr;
+    {
+      grpc_core::MutexLock lock(&pc->initial_metadata_mu);
+      pc->p2s_initial_metadata_received = true;
+      // Start the batch without the mutex held, just in case.
+      // This will be nullptr if the trailing metadata has not yet been seen.
+      deferred_trailing_metadata_op = pc->deferred_trailing_metadata_op;
+    }
+    if (deferred_trailing_metadata_op != nullptr) {
+      refpc(pc, "on_c2p_sent_status");
+      err = grpc_call_start_batch(pc->c2p, deferred_trailing_metadata_op, 1,
+                                  new_closure(on_c2p_sent_status, pc), nullptr);
+      CHECK_EQ(err, GRPC_CALL_OK);
+    }
+  } else {
+    LOG(INFO)
+        << "--- DO NOT SUBMIT ---: on_p2s_recv_initial_metadata failed "
+           "(!pc->proxy->shutdown && success). No batch started. shutdown="
+        << pc->proxy->shutdown << ", or grpc_call_is_trailers_only(pc->p2s) = "
+        << grpc_call_is_trailers_only(pc->p2s) << ". No batch.";
   }
 
   unrefpc(pc, "on_p2s_recv_initial_metadata");
@@ -203,6 +244,9 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
 
 static void on_p2s_sent_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_sent_initial_metadata (the "
+               "client's metadata, via proxy, has been read by the server). No "
+               "batch.";
   unrefpc(pc, "on_p2s_sent_initial_metadata");
 }
 
@@ -215,6 +259,9 @@ static void on_p2s_sent_message(void* arg, int success) {
 
   grpc_byte_buffer_destroy(std::exchange(pc->c2p_msg, nullptr));
   if (!pc->proxy->shutdown && success) {
+    LOG(INFO)
+        << "--- DO NOT SUBMIT ---: on_p2s_sent_message. msg is *not* null. "
+           "Sending message.";
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.reserved = nullptr;
@@ -223,6 +270,11 @@ static void on_p2s_sent_message(void* arg, int success) {
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
+  } else {
+    LOG(INFO)
+        << "--- DO NOT SUBMIT ---: on_p2s_sent_initial_metadata failed "
+           "(!pc->proxy->shutdown && success). No batch started. shutdown="
+        << pc->proxy->shutdown << ", success=" << success;
   }
 
   unrefpc(pc, "on_p2s_sent_message");
@@ -230,6 +282,7 @@ static void on_p2s_sent_message(void* arg, int success) {
 
 static void on_p2s_sent_close(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_sent_close";
   unrefpc(pc, "on_p2s_sent_close");
 }
 
@@ -238,8 +291,13 @@ static void on_c2p_recv_msg(void* arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_recv_msg (the client has read an "
+               "entire message from the proxy)";
+
   if (!pc->proxy->shutdown && success) {
     if (pc->c2p_msg != nullptr) {
+      LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_recv_msg, msg is *not* null. "
+                   "Sending message.";
       op.op = GRPC_OP_SEND_MESSAGE;
       op.flags = 0;
       op.reserved = nullptr;
@@ -249,6 +307,8 @@ static void on_c2p_recv_msg(void* arg, int success) {
           pc->p2s, &op, 1, new_closure(on_p2s_sent_message, pc), nullptr);
       CHECK_EQ(err, GRPC_CALL_OK);
     } else {
+      LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_recv_msg, msg is null. "
+                   "Sending close from client.";
       op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
       op.flags = 0;
       op.reserved = nullptr;
@@ -258,6 +318,10 @@ static void on_c2p_recv_msg(void* arg, int success) {
       CHECK_EQ(err, GRPC_CALL_OK);
     }
   } else {
+    LOG(INFO)
+        << "--- DO NOT SUBMIT ---: on_c2p_recv_msg failed "
+           "(!pc->proxy->shutdown && success). No batch started. shutdown="
+        << pc->proxy->shutdown << ", success=" << success;
     if (pc->c2p_msg != nullptr) {
       grpc_byte_buffer_destroy(pc->c2p_msg);
     }
@@ -275,6 +339,8 @@ static void on_c2p_sent_message(void* arg, int success) {
 
   grpc_byte_buffer_destroy(pc->p2s_msg);
   if (!pc->proxy->shutdown && success) {
+    LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_sent_message starting batch "
+                 "GRPC_OP_RECV_MESSAGE";
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.reserved = nullptr;
@@ -283,6 +349,11 @@ static void on_c2p_sent_message(void* arg, int success) {
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
+  } else {
+    LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_sent_message failed "
+                 "(!pc->proxy->shutdown && success) check. No batch started. "
+                 "shutdown="
+              << pc->proxy->shutdown << ", success=" << success;
   }
 
   unrefpc(pc, "on_c2p_sent_message");
@@ -293,30 +364,37 @@ static void on_p2s_recv_msg(void* arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_recv_msg (the proxy has received "
+               "a full message from the server)";
+
   if (!pc->proxy->shutdown && success && pc->p2s_msg) {
+    LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_recv_msg starting batch "
+                 "GRPC_OP_SEND_MESSAGE";
     op.op = GRPC_OP_SEND_MESSAGE;
     op.flags = 0;
     op.reserved = nullptr;
     op.data.send_message.send_message = pc->p2s_msg;
     refpc(pc, "on_c2p_sent_message");
+    LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_recv_msg (next op: the proxy "
+                 "is sending the server's method to the client)";
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
   } else {
+    LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_recv_msg either shutdown or "
+                 "!success or no message to send. No batch.";
     grpc_byte_buffer_destroy(pc->p2s_msg);
   }
   unrefpc(pc, "on_p2s_recv_msg");
-}
-
-static void on_c2p_sent_status(void* arg, int /*success*/) {
-  proxy_call* pc = static_cast<proxy_call*>(arg);
-  unrefpc(pc, "on_c2p_sent_status");
 }
 
 static void on_p2s_status(void* arg, int success) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   grpc_op op[2];  // Possibly send empty initial metadata also if trailers-only
   grpc_call_error err;
+
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_p2s_status (the server has finished "
+               "the call to the proxy)";
 
   memset(op, 0, sizeof(op));
 
@@ -325,8 +403,17 @@ static void on_p2s_status(void* arg, int success) {
 
     int op_count = 0;
     if (grpc_call_is_trailers_only(pc->p2s)) {
+      LOG(INFO)
+          << "--- DO NOT SUBMIT ---: on_p2s_status. Call is trailer-only, "
+             "so the next op is GRPC_OP_SEND_INITIAL_METADATA instead of "
+             "GRPC_OP_SEND_STATUS_FROM_SERVER.";
       op[op_count].op = GRPC_OP_SEND_INITIAL_METADATA;
       op_count++;
+    } else {
+      LOG(INFO)
+          << "--- DO NOT SUBMIT ---: on_p2s_status (next op: send to client: "
+             "finishing status from the server). Why: The proxy is not shut "
+             "down, and this is not trailer-only";
     }
 
     op[op_count].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -340,10 +427,29 @@ static void on_p2s_status(void* arg, int success) {
     op[op_count].data.send_status_from_server.status_details =
         &pc->p2s_status_details;
     op_count++;
-    refpc(pc, "on_c2p_sent_status");
-    err = grpc_call_start_batch(pc->c2p, op, op_count,
-                                new_closure(on_c2p_sent_status, pc), nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+
+    // TODO(ctiller): The current core implementation requires initial
+    // metadata batches to be started *after* initial metadata batches have
+    // been completed. The C++ Callback API does this accounting too, for
+    // example.
+    //
+    // This entire fixture will need a redesign when the batch API goes away.
+    bool op_deferred = false;
+    {
+      grpc_core::MutexLock lock(&pc->initial_metadata_mu);
+      if (!pc->p2s_initial_metadata_received) {
+        op_deferred = true;
+        pc->deferred_trailing_metadata_op =
+            static_cast<grpc_op*>(gpr_malloc(sizeof(op)));
+        memcpy(pc->deferred_trailing_metadata_op, &op, sizeof(op));
+      }
+    }
+    if (!op_deferred) {
+      refpc(pc, "on_c2p_sent_status");
+      err = grpc_call_start_batch(pc->c2p, op, op_count,
+                                  new_closure(on_c2p_sent_status, pc), nullptr);
+      CHECK_EQ(err, GRPC_CALL_OK);
+    }
   }
 
   unrefpc(pc, "on_p2s_status");
@@ -351,12 +457,18 @@ static void on_p2s_status(void* arg, int success) {
 
 static void on_c2p_closed(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
+  LOG(INFO) << "--- DO NOT SUBMIT ---: on_c2p_closed (client knows that the "
+               "proxy has seen GRPC_OP_SEND_CLOSE_FROM_CLIENT)";
   unrefpc(pc, "on_c2p_closed");
 }
 
 static void on_new_call(void* arg, int success) {
   grpc_end2end_proxy* proxy = static_cast<grpc_end2end_proxy*>(arg);
   grpc_call_error err;
+
+  LOG(INFO)
+      << "--- DO NOT SUBMIT ---: on_new_call (the proxy server has received a "
+         "new call from the client). Starting a bunch of batches.";
 
   if (success) {
     grpc_op op;
@@ -365,6 +477,8 @@ static void on_new_call(void* arg, int success) {
     memset(pc, 0, sizeof(*pc));
     pc->proxy = proxy;
     std::swap(pc->c2p_initial_metadata, proxy->new_call_metadata);
+    pc->p2s_initial_metadata_received = false;
+    pc->deferred_trailing_metadata_op = nullptr;
     pc->c2p = proxy->new_call;
     pc->p2s = grpc_channel_create_call(
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,
@@ -374,6 +488,7 @@ static void on_new_call(void* arg, int success) {
 
     op.reserved = nullptr;
 
+    // Proxy: receive initial metadata from the server
     op.op = GRPC_OP_RECV_INITIAL_METADATA;
     op.flags = 0;
     op.data.recv_initial_metadata.recv_initial_metadata =
@@ -384,6 +499,7 @@ static void on_new_call(void* arg, int success) {
                                 nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
 
+    // Proxy: send initial metadata to the server
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
     op.flags = 0;
     op.data.send_initial_metadata.count = pc->c2p_initial_metadata.count;
@@ -394,6 +510,7 @@ static void on_new_call(void* arg, int success) {
                                 nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
 
+    // Client: receive message from the proxy
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.data.recv_message.recv_message = &pc->c2p_msg;
@@ -402,6 +519,7 @@ static void on_new_call(void* arg, int success) {
                                 new_closure(on_c2p_recv_msg, pc), nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
 
+    // Proxy: receive message from the server
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
     op.data.recv_message.recv_message = &pc->p2s_msg;
@@ -410,6 +528,7 @@ static void on_new_call(void* arg, int success) {
                                 new_closure(on_p2s_recv_msg, pc), nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
 
+    // Proxy: receive status from the server
     op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op.flags = 0;
     op.data.recv_status_on_client.trailing_metadata =
@@ -421,6 +540,7 @@ static void on_new_call(void* arg, int success) {
                                 nullptr);
     CHECK_EQ(err, GRPC_CALL_OK);
 
+    // Client: receive close-ack from the proxy
     op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     op.flags = 0;
     op.data.recv_close_on_server.cancelled = &pc->c2p_server_cancelled;
