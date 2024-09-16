@@ -63,6 +63,7 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
@@ -614,6 +615,11 @@ class ClientChannelFilter::SubchannelWrapper final
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
+  }
+
+  std::string address_string() const override {
+    return grpc_sockaddr_to_string(&subchannel_->address(), true)
+        .value_or("unknown address");
   }
 
  private:

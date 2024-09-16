@@ -118,6 +118,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
       return call_destination_;
     }
 
+    std::string address_string() const override { return "test"; }
+
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
   };

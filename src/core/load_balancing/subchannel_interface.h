@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
@@ -102,6 +103,8 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
   // make this API public.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
 
+  virtual std::string address_string() const = 0;
+
  protected:
   void Orphaned() override {}
 };
@@ -134,6 +137,10 @@ class DelegatingSubchannel : public SubchannelInterface {
   }
   void CancelDataWatcher(DataWatcherInterface* watcher) override {
     wrapped_subchannel_->CancelDataWatcher(watcher);
+  }
+
+  std::string address_string() const override {
+    return wrapped_subchannel_->address_string();
   }
 
  private:
