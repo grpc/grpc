@@ -25,7 +25,6 @@
 
 #include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 // This public slice definition largely based of the internal grpc_core::Slice

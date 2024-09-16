@@ -586,11 +586,9 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     std::shared_ptr<const XdsListenerResource> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
-    LOG(INFO) << "[ListenerWatcher " << this
-              << "] Received LDS update from xds client " << xds_client_.get()
-              << ": " << listener->ToString();
-  }
+  GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+      << "[ListenerWatcher " << this << "] Received LDS update from xds client "
+      << xds_client_.get() << ": " << listener->ToString();
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&listener->listener);
   if (tcp_listener == nullptr) {
@@ -679,8 +677,16 @@ void XdsServerConfigFetcher::ListenerWatcher::
     // It should get cleaned up eventually. Ignore this update.
     return;
   }
+  bool first_good_update = filter_chain_match_manager_ == nullptr;
+  // Promote the pending FilterChainMatchManager
+  filter_chain_match_manager_ = std::move(pending_filter_chain_match_manager_);
+  // TODO(yashykt): Right now, the server_config_watcher_ does not invoke
+  // XdsServerConfigFetcher while holding a lock, but that might change in the
+  // future in which case we would want to execute this update outside the
+  // critical region through a WorkSerializer similar to XdsClient.
+  server_config_watcher_->UpdateConnectionManager(filter_chain_match_manager_);
   // Let the logger know about the update if there was no previous good update.
-  if (filter_chain_match_manager_ == nullptr) {
+  if (first_good_update) {
     if (serving_status_notifier_.on_serving_status_update != nullptr) {
       serving_status_notifier_.on_serving_status_update(
           serving_status_notifier_.user_data, listening_address_.c_str(),
@@ -690,13 +696,6 @@ void XdsServerConfigFetcher::ListenerWatcher::
                 << listening_address_;
     }
   }
-  // Promote the pending FilterChainMatchManager
-  filter_chain_match_manager_ = std::move(pending_filter_chain_match_manager_);
-  // TODO(yashykt): Right now, the server_config_watcher_ does not invoke
-  // XdsServerConfigFetcher while holding a lock, but that might change in the
-  // future in which case we would want to execute this update outside the
-  // critical region through a WorkSerializer similar to XdsClient.
-  server_config_watcher_->UpdateConnectionManager(filter_chain_match_manager_);
 }
 
 //
@@ -1178,7 +1177,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
-      auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
           http_filter_registry, http_filters, vhost, route, nullptr,
           ChannelArgs());
       if (!result.ok()) return result.status();

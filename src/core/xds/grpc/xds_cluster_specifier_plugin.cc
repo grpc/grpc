@@ -30,7 +30,6 @@
 #include "upb/mem/arena.hpp"
 
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/util/json/json.h"

@@ -400,9 +400,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
       if (pool_->IsQuiesced()) break;
     } else {
       lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
-          absl::Milliseconds(
-              (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
-                  .millis()));
+          absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
     }
     MaybeStartNewThread();
   }
@@ -556,8 +554,8 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     // No closures were retrieved from anywhere.
     // Quit the thread if the pool has been shut down.
     if (pool_->IsShutdown()) break;
-    bool timed_out = pool_->work_signal()->WaitWithTimeout(
-        backoff_.NextAttemptTime() - grpc_core::Timestamp::Now());
+    bool timed_out =
+        pool_->work_signal()->WaitWithTimeout(backoff_.NextAttemptDelay());
     if (pool_->IsForking() || pool_->IsShutdown()) break;
     // Quit a thread if the pool has more than it requires, and this thread
     // has been idle long enough.

@@ -121,6 +121,7 @@ grpc_cc_library(
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
         "absl/log:globals",
+        "absl/log:initialize",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -168,6 +169,7 @@ grpc_cc_library(
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
+        "absl/log:initialize",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -393,7 +395,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "grpc_test_util",

@@ -64,7 +64,7 @@ class RingBuffer {
 
     T operator*() { return buffer_->data_[head_]; }
 
-    RingBufferIterator() : buffer_(nullptr), head_(0), size_(0){};
+    RingBufferIterator() : buffer_(nullptr), head_(0), size_(0) {};
     RingBufferIterator(const RingBufferIterator& other) = default;
     explicit RingBufferIterator(const RingBuffer<T, kCapacity>* buffer)
         : buffer_(buffer), head_(buffer->head_), size_(buffer->size_) {

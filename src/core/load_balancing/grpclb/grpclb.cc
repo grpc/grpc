@@ -851,14 +851,12 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
       parent()->lb_calld_->client_stats() != nullptr) {
     client_stats = parent()->lb_calld_->client_stats()->Ref();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    GRPC_TRACE_LOG(glb, INFO)
-        << "[grpclb " << parent() << " helper " << this
-        << "] state=" << ConnectivityStateName(state) << " ("
-        << status.ToString() << ") wrapping child picker " << picker.get()
-        << " (serverlist=" << serverlist.get()
-        << ", client_stats=" << client_stats.get() << ")";
-  }
+  GRPC_TRACE_LOG(glb, INFO)
+      << "[grpclb " << parent() << " helper " << this
+      << "] state=" << ConnectivityStateName(state) << " (" << status.ToString()
+      << ") wrapping child picker " << picker.get()
+      << " (serverlist=" << serverlist.get()
+      << ", client_stats=" << client_stats.get() << ")";
   parent()->channel_control_helper()->UpdateState(
       state, status,
       MakeRefCounted<Picker>(std::move(serverlist), std::move(picker),
@@ -1657,12 +1655,12 @@ void GrpcLb::StartBalancerCallLocked() {
 }
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
-  Duration timeout = lb_call_backoff_.NextAttemptTime() - Timestamp::Now();
+  Duration delay = lb_call_backoff_.NextAttemptDelay();
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     LOG(INFO) << "[grpclb " << this << "] Connection to LB server lost...";
-    if (timeout > Duration::Zero()) {
+    if (delay > Duration::Zero()) {
       LOG(INFO) << "[grpclb " << this << "] ... retry_timer_active in "
-                << timeout.millis() << "ms.";
+                << delay.millis() << "ms.";
     } else {
       LOG(INFO) << "[grpclb " << this
                 << "] ... retry_timer_active immediately.";
@@ -1670,7 +1668,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   }
   lb_call_retry_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
-          timeout,
+          delay,
           [self = RefAsSubclass<GrpcLb>(
                DEBUG_LOCATION, "on_balancer_call_retry_timer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;

@@ -159,11 +159,10 @@ ServerMetadataHandle CheckPayload(const Message& msg,
                                   absl::optional<uint32_t> max_length,
                                   bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    LOG(INFO) << GetContext<Activity>()->DebugTag() << "[message_size] "
-              << (is_send ? "send" : "recv")
-              << " len:" << msg.payload()->Length() << " max:" << *max_length;
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << "[message_size] "
+      << (is_send ? "send" : "recv") << " len:" << msg.payload()->Length()
+      << " max:" << *max_length;
   if (msg.payload()->Length() <= *max_length) return nullptr;
   return ServerMetadataFromStatus(
       GRPC_STATUS_RESOURCE_EXHAUSTED,
@@ -189,12 +188,12 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
     if (config_from_call_context->max_send_size().has_value() &&
         (!max_send_size.has_value() ||
          *config_from_call_context->max_send_size() < *max_send_size)) {
-      max_send_size = *config_from_call_context->max_send_size();
+      max_send_size = config_from_call_context->max_send_size();
     }
     if (config_from_call_context->max_recv_size().has_value() &&
         (!max_recv_size.has_value() ||
          *config_from_call_context->max_recv_size() < *max_recv_size)) {
-      max_recv_size = *config_from_call_context->max_recv_size();
+      max_recv_size = config_from_call_context->max_recv_size();
     }
     limits_ = MessageSizeParsedConfig(max_send_size, max_recv_size);
   }

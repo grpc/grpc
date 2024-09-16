@@ -22,7 +22,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpcpp/support/slice.h>
 
 #include "src/core/lib/gprpp/crash.h"

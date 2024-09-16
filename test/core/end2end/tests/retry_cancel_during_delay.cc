@@ -56,7 +56,7 @@ void TestRetryCancelDuringDelay(
           35 * grpc_test_slowdown_factor())));
   auto expect_finish_before = test.TimestampAfterDuration(Duration::Minutes(2));
   auto c = test.NewClientCall("/service/method")
-               .Timeout(Duration::Seconds(30))
+               .Timeout(Duration::Seconds(20))
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch with all 6 ops.

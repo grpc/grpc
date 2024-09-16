@@ -44,71 +44,6 @@ constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 }  // namespace
 
 //
-// XdsDependencyManager::XdsConfig::ClusterConfig
-//
-
-XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
-    std::shared_ptr<const XdsClusterResource> cluster,
-    std::shared_ptr<const XdsEndpointResource> endpoints,
-    std::string resolution_note)
-    : cluster(std::move(cluster)),
-      children(absl::in_place_type_t<EndpointConfig>(), std::move(endpoints),
-               std::move(resolution_note)) {}
-
-XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
-    std::shared_ptr<const XdsClusterResource> cluster,
-    std::vector<absl::string_view> leaf_clusters)
-    : cluster(std::move(cluster)),
-      children(absl::in_place_type_t<AggregateConfig>(),
-               std::move(leaf_clusters)) {}
-
-//
-// XdsDependencyManager::XdsConfig
-//
-
-std::string XdsDependencyManager::XdsConfig::ToString() const {
-  std::vector<std::string> parts = {
-      "{\n  listener: {",     listener->ToString(),
-      "}\n  route_config: {", route_config->ToString(),
-      "}\n  virtual_host: {", virtual_host->ToString(),
-      "}\n  clusters: {\n"};
-  for (const auto& p : clusters) {
-    parts.push_back(absl::StrCat("    \"", p.first, "\": "));
-    if (!p.second.ok()) {
-      parts.push_back(p.second.status().ToString());
-      parts.push_back("\n");
-    } else {
-      parts.push_back(
-          absl::StrCat("      {\n"
-                       "        cluster: {",
-                       p.second->cluster->ToString(), "}\n"));
-      Match(
-          p.second->children,
-          [&](const ClusterConfig::EndpointConfig& endpoint_config) {
-            parts.push_back(
-                absl::StrCat("        endpoints: {",
-                             endpoint_config.endpoints == nullptr
-                                 ? "<null>"
-                                 : endpoint_config.endpoints->ToString(),
-                             "}\n"
-                             "        resolution_note: \"",
-                             endpoint_config.resolution_note, "\"\n"));
-          },
-          [&](const ClusterConfig::AggregateConfig& aggregate_config) {
-            parts.push_back(absl::StrCat(
-                "        leaf_clusters: [",
-                absl::StrJoin(aggregate_config.leaf_clusters, ", "), "]\n"));
-          });
-      parts.push_back(
-          "      }\n"
-          "    ]\n");
-    }
-  }
-  parts.push_back("  }\n}");
-  return absl::StrJoin(parts, "");
-}
-
-//
 // XdsDependencyManager::ListenerWatcher
 //
 
@@ -374,9 +309,8 @@ XdsDependencyManager::XdsDependencyManager(
 }
 
 void XdsDependencyManager::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this << "] shutting down";
   if (listener_watcher_ != nullptr) {
     XdsListenerResourceType::CancelWatch(
         xds_client_.get(), listener_resource_name_, listener_watcher_,
@@ -450,11 +384,9 @@ void XdsDependencyManager::OnListenerUpdate(
           }
           // Start watch for the new RDS resource name.
           route_config_name_ = rds_name;
-          if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-            LOG(INFO) << "[XdsDependencyManager " << this
-                      << "] starting watch for route config "
-                      << route_config_name_;
-          }
+          GRPC_TRACE_LOG(xds_resolver, INFO)
+              << "[XdsDependencyManager " << this
+              << "] starting watch for route config " << route_config_name_;
           auto watcher =
               MakeRefCounted<RouteConfigWatcher>(Ref(), route_config_name_);
           route_config_watcher_ = watcher.get();
@@ -537,11 +469,9 @@ absl::flat_hash_set<absl::string_view> GetClustersFromVirtualHost(
 void XdsDependencyManager::OnRouteConfigUpdate(
     const std::string& name,
     std::shared_ptr<const XdsRouteConfigResource> route_config) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this
-              << "] received RouteConfig update for "
-              << (name.empty() ? "<inline>" : name);
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO) << "[XdsDependencyManager " << this
+                                     << "] received RouteConfig update for "
+                                     << (name.empty() ? "<inline>" : name);
   if (xds_client_ == nullptr) return;
   // Ignore updates for stale names.
   if (name.empty()) {
@@ -572,20 +502,18 @@ void XdsDependencyManager::OnRouteConfigUpdate(
 }
 
 void XdsDependencyManager::OnError(std::string context, absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this
-              << "] received Listener or RouteConfig error: " << context << " "
-              << status;
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this
+      << "] received Listener or RouteConfig error: " << context << " "
+      << status;
   if (xds_client_ == nullptr) return;
   if (current_virtual_host_ != nullptr) return;
   watcher_->OnError(context, std::move(status));
 }
 
 void XdsDependencyManager::OnResourceDoesNotExist(std::string context) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_resolver)) {
-    LOG(INFO) << "[XdsDependencyManager " << this << "] " << context;
-  }
+  GRPC_TRACE_LOG(xds_resolver, INFO)
+      << "[XdsDependencyManager " << this << "] " << context;
   if (xds_client_ == nullptr) return;
   current_virtual_host_ = nullptr;
   watcher_->OnResourceDoesNotExist(std::move(context));

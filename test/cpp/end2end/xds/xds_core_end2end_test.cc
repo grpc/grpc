@@ -1060,7 +1060,7 @@ TEST_P(XdsFederationTest, FederationServer) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateBackends(2, /*xds_enabled=*/true);
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -1099,6 +1099,13 @@ TEST_P(XdsFederationTest, FederationServer) {
                                      new_server_route_config,
                                      ServerHcmAccessor());
   }
+  // Start backends and wait for them to start serving.
+  StartAllBackends();
+  for (const auto& backend : backends_) {
+    ASSERT_TRUE(backend->notifier()->WaitOnServingStatusChange(
+        grpc_core::LocalIpAndPort(backend->port()), grpc::StatusCode::OK));
+  }
+  // Make sure everything works.
   WaitForAllBackends(DEBUG_LOCATION);
 }
 
@@ -1244,7 +1251,10 @@ TEST_P(XdsMetricsTest, MetricValues) {
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION);
+  // Use wait_for_ready and increase timeout, in case the client takes a
+  // little while to get connected.
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_wait_for_ready(true).set_timeout_ms(15000));
   stats_plugin_->TriggerCallbacks();
   // Check client metrics.
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
