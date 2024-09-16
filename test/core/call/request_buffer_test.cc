@@ -161,7 +161,7 @@ TEST(RequestBufferTest, PushThenPullMessage) {
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
-TEST(RequestBufferTest, PushThenPullMessage_StreamBeforeInitialMetadata) {
+TEST(RequestBufferTest, PushThenPullMessageStreamBeforeInitialMetadata) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   auto pusher = buffer.PushMessage(TestMessage());
@@ -178,7 +178,7 @@ TEST(RequestBufferTest, PushThenPullMessage_StreamBeforeInitialMetadata) {
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
-TEST(RequestBufferTest, PushThenPullMessage_StreamBeforeFirstMessage) {
+TEST(RequestBufferTest, PushThenPullMessageStreamBeforeFirstMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   auto pusher = buffer.PushMessage(TestMessage());
@@ -215,7 +215,7 @@ TEST(RequestBufferTest, PullThenPushMessage) {
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
-TEST(RequestBufferTest, PullThenPushMessage_SwitchBeforePullMessage) {
+TEST(RequestBufferTest, PullThenPushMessageSwitchBeforePullMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
@@ -236,7 +236,7 @@ TEST(RequestBufferTest, PullThenPushMessage_SwitchBeforePullMessage) {
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
-TEST(RequestBufferTest, PullThenPushMessage_SwitchBeforePushMessage) {
+TEST(RequestBufferTest, PullThenPushMessageSwitchBeforePushMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
@@ -257,7 +257,7 @@ TEST(RequestBufferTest, PullThenPushMessage_SwitchBeforePushMessage) {
   EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
 }
 
-TEST(RequestBufferTest, PullThenPushMessage_SwitchAfterPushMessage) {
+TEST(RequestBufferTest, PullThenPushMessageSwitchAfterPushMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
@@ -300,7 +300,7 @@ TEST(RequestBufferTest, PullEndOfStream) {
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
 
-TEST(RequestBufferTest, PullEndOfStream_SwitchBeforePullMessage) {
+TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePullMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   auto pusher = buffer.PushMessage(TestMessage());
@@ -323,7 +323,7 @@ TEST(RequestBufferTest, PullEndOfStream_SwitchBeforePullMessage) {
   ASSERT_FALSE(poll_msg.value().value().has_value());
 }
 
-TEST(RequestBufferTest, PullEndOfStream_SwitchBeforePushMessage) {
+TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePushMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   RequestBuffer::Reader reader(&buffer);
@@ -369,7 +369,7 @@ TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
 }
 
 TEST(RequestBufferTest,
-     PullEndOfStreamQueuedWithMessage_SwitchBeforePushMessage) {
+     PullEndOfStreamQueuedWithMessageSwitchBeforePushMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   RequestBuffer::Reader reader(&buffer);
@@ -393,7 +393,7 @@ TEST(RequestBufferTest,
 }
 
 TEST(RequestBufferTest,
-     PullEndOfStreamQueuedWithMessage_SwitchBeforePullMessage) {
+     PullEndOfStreamQueuedWithMessageSwitchBeforePullMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   auto pusher = buffer.PushMessage(TestMessage());
@@ -417,7 +417,7 @@ TEST(RequestBufferTest,
 }
 
 TEST(RequestBufferTest,
-     PullEndOfStreamQueuedWithMessage_SwitchDuringPullMessage) {
+     PullEndOfStreamQueuedWithMessageSwitchDuringPullMessage) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   auto pusher = buffer.PushMessage(TestMessage());
@@ -508,7 +508,7 @@ TEST(RequestBufferTest, HedgeReadMetadata) {
   EXPECT_THAT(*value2, IsTestMetadata());
 }
 
-TEST(RequestBufferTest, HedgeReadMetadata_SwitchBeforeFirstRead) {
+TEST(RequestBufferTest, HedgeReadMetadataSwitchBeforeFirstRead) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   RequestBuffer::Reader reader1(&buffer);
@@ -546,7 +546,7 @@ TEST(RequestBufferTest, HedgeReadMetadataLate) {
   EXPECT_THAT(*value2, IsTestMetadata());
 }
 
-TEST(RequestBufferTest, HedgeReadMetadataLate_SwitchAfterPullInitialMetadata) {
+TEST(RequestBufferTest, HedgeReadMetadataLateSwitchAfterPullInitialMetadata) {
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
   RequestBuffer::Reader reader1(&buffer);
