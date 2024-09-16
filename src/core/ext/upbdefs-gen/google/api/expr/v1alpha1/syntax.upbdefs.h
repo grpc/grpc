@@ -73,6 +73,16 @@ UPB_INLINE const upb_MessageDef *google_api_expr_v1alpha1_SourceInfo_getmsgdef(u
   return upb_DefPool_FindMessageByName(s, "google.api.expr.v1alpha1.SourceInfo");
 }
 
+UPB_INLINE const upb_MessageDef *google_api_expr_v1alpha1_SourceInfo_Extension_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_api_expr_v1alpha1_syntax_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.api.expr.v1alpha1.SourceInfo.Extension");
+}
+
+UPB_INLINE const upb_MessageDef *google_api_expr_v1alpha1_SourceInfo_Extension_Version_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_api_expr_v1alpha1_syntax_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.api.expr.v1alpha1.SourceInfo.Extension.Version");
+}
+
 UPB_INLINE const upb_MessageDef *google_api_expr_v1alpha1_SourceInfo_PositionsEntry_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &google_api_expr_v1alpha1_syntax_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "google.api.expr.v1alpha1.SourceInfo.PositionsEntry");

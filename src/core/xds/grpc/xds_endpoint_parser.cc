@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
@@ -126,16 +127,15 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   auto status = XdsHealthStatus::FromUpb(health_status);
   if (!status.has_value()) return absl::nullopt;
   // load_balancing_weight
-  uint32_t weight = 1;
+  uint32_t weight;
   {
     ValidationErrors::ScopedField field(errors, ".load_balancing_weight");
-    const google_protobuf_UInt32Value* load_balancing_weight =
-        envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
-    if (load_balancing_weight != nullptr) {
-      weight = google_protobuf_UInt32Value_value(load_balancing_weight);
-      if (weight == 0) {
-        errors->AddError("must be greater than 0");
-      }
+    weight = ParseUInt32Value(
+                 envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(
+                     lb_endpoint))
+                 .value_or(1);
+    if (weight == 0) {
+      errors->AddError("must be greater than 0");
     }
   }
   // endpoint
@@ -207,11 +207,11 @@ absl::optional<ParsedLocality> LocalityParse(
   // load_balancing_weight
   // If LB weight is not specified or 0, it means this locality is assigned
   // no load.
-  const google_protobuf_UInt32Value* lb_weight =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
-          locality_lb_endpoints);
   parsed_locality.locality.lb_weight =
-      lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
+      ParseUInt32Value(
+          envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
+              locality_lb_endpoints))
+          .value_or(0);
   if (parsed_locality.locality.lb_weight == 0) return absl::nullopt;
   // locality
   const envoy_config_core_v3_Locality* locality =

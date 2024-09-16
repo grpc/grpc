@@ -65,23 +65,25 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
   VALUE callback_source_info =
       rb_funcall(callback_func, rb_intern("source_location"), 0);
+
+  grpc_absl_log_str(
+      GPR_DEBUG, "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:",
+      StringValueCStr(callback_func_str));
+
   if (callback_source_info != Qnil) {
     VALUE source_filename = rb_ary_entry(callback_source_info, 0);
     VALUE source_line_number =
         rb_funcall(rb_ary_entry(callback_source_info, 1), rb_intern("to_s"), 0);
-    gpr_log(GPR_DEBUG,
-            "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
-            "source_filename:%s line_number:%s with arguments:|%s|",
-            StringValueCStr(callback_func_str),
-            StringValueCStr(source_filename),
-            StringValueCStr(source_line_number),
-            StringValueCStr(callback_args_str));
+    grpc_absl_log_str(GPR_DEBUG, "GRPC_RUBY: source_filename: ",
+                      StringValueCStr(source_filename));
+    grpc_absl_log_str(GPR_DEBUG, "GRPC_RUBY: source_line_number: ",
+                      StringValueCStr(source_line_number));
+    grpc_absl_log_str(GPR_DEBUG, "GRPC_RUBY: Arguments: ",
+                      StringValueCStr(callback_args_str));
   } else {
-    gpr_log(GPR_DEBUG,
-            "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
-            "(failed to get source filename and line) with arguments:|%s|",
-            StringValueCStr(callback_func_str),
-            StringValueCStr(callback_args_str));
+    grpc_absl_log_str(
+        GPR_DEBUG, "(failed to get source filename and line) with arguments: ",
+        StringValueCStr(callback_args_str));
   }
 
   VALUE metadata =
@@ -112,10 +114,15 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
   VALUE rb_exception_info =
       rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY call credentials callback failed, exception inspect:|%s| "
-          "backtrace:|%s|",
-          StringValueCStr(rb_exception_info), StringValueCStr(backtrace_str));
+
+  grpc_absl_log_str(
+      GPR_DEBUG,
+      "GRPC_RUBY call credentials callback failed, exception inspect: ",
+      StringValueCStr(rb_exception_info));
+  grpc_absl_log_str(GPR_DEBUG,
+                    "GRPC_RUBY call credentials callback failed, backtrace: ",
+                    StringValueCStr(backtrace_str));
+
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   rb_hash_aset(result, rb_str_new2("status"),
                INT2NUM(GRPC_STATUS_UNAUTHENTICATED));

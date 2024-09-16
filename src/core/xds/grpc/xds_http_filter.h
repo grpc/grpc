@@ -60,6 +60,7 @@ class XdsHttpFilterImpl {
     // The value of this field in the method config will be a JSON array,
     // which will be populated with the elements returned by each filter
     // instance.
+    // Entry will be skipped if this field is empty.
     std::string service_config_field_name;
     // The element to add to the JSON array.
     std::string element;
@@ -80,12 +81,14 @@ class XdsHttpFilterImpl {
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::optional<FilterConfig> GenerateFilterConfig(
+      absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
@@ -106,9 +109,16 @@ class XdsHttpFilterImpl {
   // The filter_config_override comes from the first of the ClusterWeight,
   // Route, or VirtualHost entries that it is found in, or null if
   // there is no override in any of those locations.
-  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const = 0;
+
+  // Function to convert the Configs into a JSON string to be added to the
+  // top level of the service config.
+  // The hcm_filter_config comes from the HttpConnectionManager config.
+  // Currently used only on the client side.
+  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+      const FilterConfig& hcm_filter_config) const = 0;
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;

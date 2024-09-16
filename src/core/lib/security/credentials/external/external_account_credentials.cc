@@ -45,7 +45,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
@@ -591,10 +590,7 @@ ExternalAccountCredentials::Create(
 ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : event_engine_(
-          event_engine == nullptr
-              ? grpc_event_engine::experimental::GetDefaultEventEngine()
-              : std::move(event_engine)),
+    : TokenFetcherCredentials(std::move(event_engine)),
       options_(std::move(options)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
