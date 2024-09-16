@@ -217,7 +217,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   channelz::SubchannelNode* channelz_node();
 
   std::string address() const {
-    return grpc_sockaddr_to_string(&key_.address(), true)
+    return grpc_sockaddr_to_uri(&key_.address())
         .value_or("<unknown address type>");
   }
 
