@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.67.0-dev'
+  version = '1.68.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -199,7 +199,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.36'
+    ss.dependency 'BoringSSL-GRPC', '0.0.37'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -297,6 +297,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                       'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc',
                       'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h',
+                      'src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc',
+                      'src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h',
+                      'src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc',
+                      'src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h',
                       'src/core/ext/filters/http/client/http_client_filter.cc',
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -1686,6 +1690,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/external/url_external_account_credentials.h',
                       'src/core/lib/security/credentials/fake/fake_credentials.cc',
                       'src/core/lib/security/credentials/fake/fake_credentials.h',
+                      'src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.cc',
+                      'src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h',
                       'src/core/lib/security/credentials/google_default/credentials_generic.cc',
                       'src/core/lib/security/credentials/google_default/google_default_credentials.cc',
                       'src/core/lib/security/credentials/google_default/google_default_credentials.h',
@@ -2029,7 +2035,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/util/alloc.cc',
                       'src/core/util/alloc.h',
-                      'src/core/util/android/log.cc',
                       'src/core/util/atm.cc',
                       'src/core/util/gcp_metadata_query.cc',
                       'src/core/util/gcp_metadata_query.h',
@@ -2056,11 +2061,10 @@ Pod::Spec.new do |s|
                       'src/core/util/latent_see.cc',
                       'src/core/util/latent_see.h',
                       'src/core/util/linux/cpu.cc',
-                      'src/core/util/linux/log.cc',
                       'src/core/util/log.cc',
+                      'src/core/util/lru_cache.h',
                       'src/core/util/msys/tmpfile.cc',
                       'src/core/util/posix/cpu.cc',
-                      'src/core/util/posix/log.cc',
                       'src/core/util/posix/string.cc',
                       'src/core/util/posix/sync.cc',
                       'src/core/util/posix/time.cc',
@@ -2079,7 +2083,6 @@ Pod::Spec.new do |s|
                       'src/core/util/upb_utils.h',
                       'src/core/util/useful.h',
                       'src/core/util/windows/cpu.cc',
-                      'src/core/util/windows/log.cc',
                       'src/core/util/windows/string.cc',
                       'src/core/util/windows/string_util.cc',
                       'src/core/util/windows/sync.cc',
@@ -2118,6 +2121,8 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_http_filter.h',
                       'src/core/xds/grpc/xds_http_filter_registry.cc',
                       'src/core/xds/grpc/xds_http_filter_registry.h',
+                      'src/core/xds/grpc/xds_http_gcp_authn_filter.cc',
+                      'src/core/xds/grpc/xds_http_gcp_authn_filter.h',
                       'src/core/xds/grpc/xds_http_rbac_filter.cc',
                       'src/core/xds/grpc/xds_http_rbac_filter.h',
                       'src/core/xds/grpc/xds_http_stateful_session_filter.cc',
@@ -2416,6 +2421,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h',
                               'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                               'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h',
+                              'src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h',
+                              'src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h',
                               'src/core/ext/filters/http/client/http_client_filter.h',
                               'src/core/ext/filters/http/client_authority_filter.h',
                               'src/core/ext/filters/http/message_compress/compression_filter.h',
@@ -3221,6 +3228,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/external/file_external_account_credentials.h',
                               'src/core/lib/security/credentials/external/url_external_account_credentials.h',
                               'src/core/lib/security/credentials/fake/fake_credentials.h',
+                              'src/core/lib/security/credentials/gcp_service_account_identity/gcp_service_account_identity_credentials.h',
                               'src/core/lib/security/credentials/google_default/google_default_credentials.h',
                               'src/core/lib/security/credentials/iam/iam_credentials.h',
                               'src/core/lib/security/credentials/insecure/insecure_credentials.h',
@@ -3403,6 +3411,7 @@ Pod::Spec.new do |s|
                               'src/core/util/json/json_util.h',
                               'src/core/util/json/json_writer.h',
                               'src/core/util/latent_see.h',
+                              'src/core/util/lru_cache.h',
                               'src/core/util/ring_buffer.h',
                               'src/core/util/spinlock.h',
                               'src/core/util/string.h',
@@ -3428,6 +3437,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_http_fault_filter.h',
                               'src/core/xds/grpc/xds_http_filter.h',
                               'src/core/xds/grpc/xds_http_filter_registry.h',
+                              'src/core/xds/grpc/xds_http_gcp_authn_filter.h',
                               'src/core/xds/grpc/xds_http_rbac_filter.h',
                               'src/core/xds/grpc/xds_http_stateful_session_filter.h',
                               'src/core/xds/grpc/xds_lb_policy_registry.h',

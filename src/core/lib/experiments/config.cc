@@ -220,9 +220,6 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
   return (*g_test_experiments)[experiment_id];
 }
 
-// This is VLOG(2) for Open Source gRPC because of a lot of log noise
-// complaints. However, internally we want LOG(INFO) so that it is easier for us
-// to debug prod issues.
 #define GRPC_EXPERIMENT_LOG VLOG(2)
 
 void PrintExperimentsList() {

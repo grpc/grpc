@@ -161,7 +161,7 @@ std::string GcpServiceAccountIdentityCallCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName GcpServiceAccountIdentityCallCredentials::type() const {
+UniqueTypeName GcpServiceAccountIdentityCallCredentials::Type() {
   static UniqueTypeName::Factory kFactory("GcpServiceAccountIdentity");
   return kFactory.Create();
 }

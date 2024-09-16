@@ -395,7 +395,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "grpc_test_util",

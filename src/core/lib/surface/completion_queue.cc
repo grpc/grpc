@@ -40,6 +40,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -317,7 +318,9 @@ struct cq_pluck_data {
 
 struct cq_callback_data {
   explicit cq_callback_data(grpc_completion_queue_functor* shutdown_callback)
-      : shutdown_callback(shutdown_callback) {}
+      : shutdown_callback(shutdown_callback),
+        event_engine(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+  }
 
   ~cq_callback_data() {
 #ifndef NDEBUG
@@ -338,6 +341,8 @@ struct cq_callback_data {
 
   /// A callback that gets invoked when the CQ completes shutdown
   grpc_completion_queue_functor* shutdown_callback;
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 }  // namespace
@@ -847,13 +852,22 @@ static void cq_end_op_for_callback(
     cq_finish_shutdown_callback(cq);
   }
 
+  auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
+  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
+    // Run the callback on EventEngine threads.
+    cqd->event_engine->Run(
+        [engine = cqd->event_engine, functor, ok = error.ok()]() {
+          grpc_core::ExecCtx exec_ctx;
+          (*functor->functor_run)(functor, ok);
+        });
+    return;
+  }
   // If possible, schedule the callback onto an existing thread-local
   // ApplicationCallbackExecCtx, which is a work queue. This is possible for:
   // 1. The callback is internally-generated and there is an ACEC available
   // 2. The callback is marked inlineable and there is an ACEC available
   // 3. We are already running in a background poller thread (which always has
   //    an ACEC available at the base of the stack).
-  auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
   if (((internal || functor->inlineable) &&
        grpc_core::ApplicationCallbackExecCtx::Available()) ||
       grpc_iomgr_is_any_background_poller_thread()) {
@@ -1334,6 +1348,14 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   CHECK(cqd->shutdown_called);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
+
+  if (grpc_core::IsEventEngineApplicationCallbacksEnabled()) {
+    cqd->event_engine->Run([engine = cqd->event_engine, callback]() {
+      grpc_core::ExecCtx exec_ctx;
+      callback->functor_run(callback, /*true=*/1);
+    });
+    return;
+  }
   if (grpc_iomgr_is_any_background_poller_thread()) {
     grpc_core::ApplicationCallbackExecCtx::Enqueue(callback, true);
     return;

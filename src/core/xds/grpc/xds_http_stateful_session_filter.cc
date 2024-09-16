@@ -141,6 +141,7 @@ Json::Object ValidateStatefulSession(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -164,6 +165,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -211,13 +213,19 @@ ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpStatefulSessionFilter::GenerateServiceConfig(
+XdsHttpStatefulSessionFilter::GenerateMethodConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   const Json& config = filter_config_override != nullptr
                            ? filter_config_override->config
                            : hcm_filter_config.config;
   return ServiceConfigJsonEntry{"stateful_session", JsonDump(config)};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpStatefulSessionFilter::GenerateServiceConfig(
+    const FilterConfig& /*hcm_filter_config*/) const {
+  return ServiceConfigJsonEntry{"", ""};
 }
 
 }  // namespace grpc_core
