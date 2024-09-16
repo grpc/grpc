@@ -24,7 +24,6 @@
   
   <%include file="../python_pip_builds.include"/>
   
-  RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY
-  <%include file="../ccache.include"/>
+  <%include file="../ccache_crosscompile.include"/>
 
   <%include file="../git_config.include"/>

@@ -32,13 +32,13 @@ RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython<4.0.0rc1'
 RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<4.0.0rc1'
 RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython<4.0.0rc1'
 
-RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY
 #=================
-# Install ccache
+# Install ccache 
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
+    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.7.5 \
     && mkdir build && cd build \
