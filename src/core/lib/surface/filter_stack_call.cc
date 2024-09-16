@@ -542,7 +542,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
     error = absl::OkStatus();
   }
 
-  GRPC_TRACE_VLOG(call, 2) << "DO NOT SUBMIT: COMPLETION: tag:" << completion_data_.notify_tag.tag
+  GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
                            << " batch_error=" << error << " op:"
                            << grpc_transport_stream_op_batch_string(&op_,
                                                                     false);
