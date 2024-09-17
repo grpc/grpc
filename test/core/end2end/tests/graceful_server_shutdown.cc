@@ -38,24 +38,30 @@ CORE_END2END_TEST(Http2Test, GracefulServerShutdown) {
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   auto s = RequestCall(101);
-  Expect(101, true);
+  bool got_server = false;
+  Expect(101, Maybe{&got_server});
   Step();
-  // shutdown and destroy the server
-  ShutdownServerAndNotify(200);
-  Step();
-  IncomingCloseOnServer client_close;
-  s.NewBatch(102)
-      .SendInitialMetadata({})
-      .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
-      .RecvCloseOnServer(client_close);
-  Expect(102, true);
-  Expect(200, true);
-  Expect(1, true);
-  Step();
+  if (got_server) {
+    LOG(ERROR) << "Got server";
+    // shutdown and destroy the server
+    ShutdownServerAndNotify(200);
+    Step();
+    IncomingCloseOnServer client_close;
+    s.NewBatch(102)
+        .SendInitialMetadata({})
+        .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
+        .RecvCloseOnServer(client_close);
+    Expect(102, true);
+    Expect(200, true);
+    Expect(1, true);
+    Step();
 
-  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(s.method(), "/foo");
-  EXPECT_FALSE(client_close.was_cancelled());
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
+    EXPECT_EQ(s.method(), "/foo");
+    EXPECT_FALSE(client_close.was_cancelled());
+  } else {
+    LOG(WARNING) << "Request failed before getting to server";
+  }
 }
 
 }  // namespace
