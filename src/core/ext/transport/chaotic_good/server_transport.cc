@@ -237,10 +237,11 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {
-      call_destination_->StartCall(std::move(call.handler));
       call_initiator->SpawnGuarded(
           "server-write", [this, stream_id = frame_header.stream_id,
-                           call_initiator = *call_initiator]() {
+                           call_initiator = *call_initiator,
+                           call_handler = std::move(call.handler)]() mutable {
+            call_destination_->StartCall(std::move(call_handler));
             return CallOutboundLoop(stream_id, call_initiator);
           });
     } else {

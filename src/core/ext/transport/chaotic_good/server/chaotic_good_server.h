@@ -111,7 +111,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     };
 
    private:
-    void Done(absl::optional<absl::string_view> error = absl::nullopt);
+    void Done();
     void NewConnectionID();
     RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
     const RefCountedPtr<ChaoticGoodServerListener> listener_;

@@ -41,18 +41,18 @@ namespace grpc_core {
 // PartySyncUsingAtomics
 
 GRPC_MUST_USE_RESULT bool Party::RefIfNonZero() {
-  auto count = state_.load(std::memory_order_relaxed);
+  auto state = state_.load(std::memory_order_relaxed);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
     // zero
-    if (count == 0) {
+    if ((state & kRefMask) == 0) {
       return false;
     }
-  } while (!state_.compare_exchange_weak(count, count + kOneRef,
+  } while (!state_.compare_exchange_weak(state, state + kOneRef,
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed));
-  LogStateChange("RefIfNonZero", count, count + kOneRef);
+  LogStateChange("RefIfNonZero", state, state + kOneRef);
   return true;
 }
 
