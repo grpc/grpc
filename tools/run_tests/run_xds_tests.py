@@ -1436,7 +1436,7 @@ def test_api_listener(
         )
         if not gcp.service_port:
             raise Exception(
-                "Faied to find a valid port for the forwarding rule"
+                "Failed to find a valid port for the forwarding rule"
             )
         potential_ip_addresses = []
         max_attempts = 10
@@ -2870,7 +2870,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                 ok = False
             finally:
                 if ok:
-                    # Successfully fetched xDS config, and they looks good.
+                    # Successfully fetched xDS config, and it looks good.
                     logger.info("success")
                     return
         logger.info("test_csds attempt %d failed", cnt)

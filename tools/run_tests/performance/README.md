@@ -317,7 +317,7 @@ This approach is much more involved than using the gRPC OSS benchmarks framework
 
 In general the benchmark workers and driver build scripts expect
 [linux_performance_worker_init.sh](../../gce/linux_performance_worker_init.sh)
-to have been ran already.
+to have been run already.
 
 ### To run benchmarks locally:
 
