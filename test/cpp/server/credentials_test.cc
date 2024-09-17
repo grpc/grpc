@@ -36,7 +36,6 @@
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
 #define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
-#define MALFORMED_KEY_PATH "src/core/tsi/test_creds/malformed-key.pem"
 
 namespace {
 
@@ -130,22 +129,6 @@ TEST(CredentialsTest,
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
-TEST(CredentialsTest,
-     StaticDataCertificateProviderValidationSuccessWithRootOnly) {
-  std::string root_certificates = GetFileContents(CA_CERT_PATH);
-  StaticDataCertificateProvider provider(root_certificates);
-  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
-}
-
-TEST(CredentialsTest,
-     StaticDataCertificateProviderValidationSuccessWithIdentityOnly) {
-  experimental::IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
-  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
-  StaticDataCertificateProvider provider({key_cert_pair});
-  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
-}
-
 TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
   std::string root_certificates = GetFileContents(MALFORMED_CERT_PATH);
   experimental::IdentityKeyCertPair key_cert_pair;
@@ -156,42 +139,10 @@ TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
             absl::FailedPreconditionError("Invalid PEM."));
 }
 
-TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityCert) {
-  std::string root_certificates = GetFileContents(CA_CERT_PATH);
-  experimental::IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
-  key_cert_pair.certificate_chain = GetFileContents(MALFORMED_CERT_PATH);
-  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
-  EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
-}
-
-TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedIdentityKey) {
-  std::string root_certificates = GetFileContents(CA_CERT_PATH);
-  experimental::IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key = GetFileContents(MALFORMED_KEY_PATH);
-  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
-  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
-  EXPECT_EQ(provider.ValidateCredentials(),
-            absl::NotFoundError("No private key found."));
-}
-
 TEST(CredentialsTest,
      FileWatcherCertificateProviderValidationSuccessWithAllCredentials) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 1);
-  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
-}
-
-TEST(CredentialsTest,
-     FileWatcherCertificateProviderValidationSuccessWithRootOnly) {
-  FileWatcherCertificateProvider provider(CA_CERT_PATH, 1);
-  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
-}
-
-TEST(CredentialsTest,
-     FileWatcherCertificateProviderValidationSuccessWithIdentityOnly) {
-  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
@@ -200,20 +151,6 @@ TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
                                           MALFORMED_CERT_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError("Invalid PEM."));
-}
-
-TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedIdentityCert) {
-  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, MALFORMED_CERT_PATH,
-                                          CA_CERT_PATH, 1);
-  EXPECT_EQ(provider.ValidateCredentials(),
-            absl::FailedPreconditionError("Invalid PEM."));
-}
-
-TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedIdentityKey) {
-  FileWatcherCertificateProvider provider(MALFORMED_KEY_PATH, SERVER_CERT_PATH,
-                                          CA_CERT_PATH, 1);
-  EXPECT_EQ(provider.ValidateCredentials(),
-            absl::NotFoundError("No private key found."));
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {

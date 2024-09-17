@@ -40,11 +40,6 @@ class GRPCXX_DLL CertificateProviderInterface {
  public:
   virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
-
-  // Returns an OK status if the credentials held by the provider are valid.
-  // What it means for a credential to be valid is determined by the provider
-  // implementation.
-  virtual absl::Status ValidateCredentials() const { return absl::OkStatus(); }
 };
 
 // A struct that stores the credential data presented to the peer in handshake
@@ -80,7 +75,7 @@ class GRPCXX_DLL StaticDataCertificateProvider
   // - the root certificates consist of one or more valid PEM blocks, and
   // - every identity key-cert pair has a certificate chain that consists of
   //   valid PEM blocks and has a private key is a valid PEM block.
-  absl::Status ValidateCredentials() const override;
+  absl::Status ValidateCredentials() const;
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;
@@ -138,7 +133,7 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   // - every currently-loaded identity key-cert pair, if any, has a certificate
   //   chain that consists of valid PEM blocks and has a private key is a valid
   //   PEM block.
-  absl::Status ValidateCredentials() const override;
+  absl::Status ValidateCredentials() const;
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;

@@ -77,11 +77,6 @@ struct grpc_tls_certificate_provider
   // instances of that provider implementation.
   virtual grpc_core::UniqueTypeName type() const = 0;
 
-  // Returns an OK status if the credentials held by the provider are valid.
-  // What it means for a credential to be valid is determined by the provider
-  // implementation.
-  virtual absl::Status ValidateCredentials() const { return absl::OkStatus(); }
-
   static absl::string_view ChannelArgName();
   static int ChannelArgsCompare(const grpc_tls_certificate_provider* a,
                                 const grpc_tls_certificate_provider* b) {
@@ -113,7 +108,7 @@ class StaticDataCertificateProvider final
 
   UniqueTypeName type() const override;
 
-  absl::Status ValidateCredentials() const override;
+  absl::Status ValidateCredentials() const;
 
  private:
   struct WatcherInfo {
@@ -154,7 +149,7 @@ class FileWatcherCertificateProvider final
 
   UniqueTypeName type() const override;
 
-  absl::Status ValidateCredentials() const override;
+  absl::Status ValidateCredentials() const;
 
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 

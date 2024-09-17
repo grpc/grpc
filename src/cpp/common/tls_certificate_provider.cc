@@ -47,7 +47,9 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 };
 
 absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
-  return c_provider_->ValidateCredentials();
+  auto* provider =
+      reinterpret_cast<grpc_core::StaticDataCertificateProvider*>(c_provider_);
+  return provider->ValidateCredentials();
 }
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
@@ -65,7 +67,9 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
 };
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
-  return c_provider_->ValidateCredentials();
+  auto* provider =
+      reinterpret_cast<grpc_core::FileWatcherCertificateProvider*>(c_provider_);
+  return provider->ValidateCredentials();
 }
 
 }  // namespace experimental
