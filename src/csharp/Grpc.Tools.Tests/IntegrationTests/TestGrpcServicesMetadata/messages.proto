@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package grpc_tools_tests.integration_tests.test_grpc_services;
 
-// No service defintions in this file
+// No service definitions in this file
 
 // The request message containing the user's name.
 message HelloRequest {
