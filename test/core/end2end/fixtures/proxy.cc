@@ -194,17 +194,20 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   grpc_op op;
   grpc_call_error err;
   memset(&op, 0, sizeof(op));
-  if (!pc->proxy->shutdown && !grpc_call_is_trailers_only(pc->p2s)) {
-    op.op = GRPC_OP_SEND_INITIAL_METADATA;
-    op.flags = 0;
-    op.reserved = nullptr;
-    op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
-    op.data.send_initial_metadata.metadata = pc->p2s_initial_metadata.metadata;
-    refpc(pc, "on_c2p_sent_initial_metadata");
-    err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                new_closure(on_c2p_sent_initial_metadata, pc),
-                                nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+  if (!pc->proxy->shutdown) {
+    if (!grpc_call_is_trailers_only(pc->p2s)) {
+      op.op = GRPC_OP_SEND_INITIAL_METADATA;
+      op.flags = 0;
+      op.reserved = nullptr;
+      op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
+      op.data.send_initial_metadata.metadata =
+          pc->p2s_initial_metadata.metadata;
+      refpc(pc, "on_c2p_sent_initial_metadata");
+      err = grpc_call_start_batch(pc->c2p, &op, 1,
+                                  new_closure(on_c2p_sent_initial_metadata, pc),
+                                  nullptr);
+      CHECK_EQ(err, GRPC_CALL_OK);
+    }
     grpc_op* deferred_trailing_metadata_op = nullptr;
     {
       grpc_core::MutexLock lock(&pc->initial_metadata_mu);
@@ -212,6 +215,7 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
       // Start the batch without the mutex held, just in case.
       // This will be nullptr if the trailing metadata has not yet been seen.
       deferred_trailing_metadata_op = pc->deferred_trailing_metadata_op;
+      pc->deferred_trailing_metadata_op = nullptr;
     }
     if (deferred_trailing_metadata_op != nullptr) {
       refpc(pc, "on_c2p_sent_status");
@@ -401,8 +405,11 @@ static void on_new_call(void* arg, int success) {
     memset(pc, 0, sizeof(*pc));
     pc->proxy = proxy;
     std::swap(pc->c2p_initial_metadata, proxy->new_call_metadata);
-    pc->p2s_initial_metadata_received = false;
-    pc->deferred_trailing_metadata_op = nullptr;
+    {
+      grpc_core::MutexLock lock(&pc->initial_metadata_mu);
+      pc->p2s_initial_metadata_received = false;
+      pc->deferred_trailing_metadata_op = nullptr;
+    }
     pc->c2p = proxy->new_call;
     pc->p2s = grpc_channel_create_call(
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,
