@@ -72,6 +72,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -749,6 +750,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
             fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     if (intercept_timers_) {
       timer_intercepting_ee_ =
@@ -781,12 +783,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // queued events, so the failure will be harder to diagnose.)
     helper_->ExpectQueueEmpty();
     lb_policy_.reset();
-    timer_intercepting_ee_.reset();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(timer_intercepting_ee_));
     fuzzing_ee_->TickUntilIdle();
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
-    fuzzing_ee_.reset();
   }
 
   LoadBalancingPolicy* lb_policy() const {
