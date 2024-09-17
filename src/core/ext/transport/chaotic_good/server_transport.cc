@@ -164,7 +164,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
   // messages.
   return ForEach(
       OutgoingMessages(call_initiator),
-      // Capture the call_initator to ensure the underlying call
+      // Capture the call_initiator to ensure the underlying call
       // spine is alive until the SendFragment promise completes.
       [stream_id, outgoing_frames, call_initiator,
        aligned_bytes = aligned_bytes_](MessageHandle message) mutable {
@@ -226,7 +226,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
                 return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
-          // Capture the call_initator to ensure the underlying call_spine
+          // Capture the call_initiator to ensure the underlying call_spine
           // is alive until the SendFragment promise completes.
           [stream_id, outgoing_frames,
            call_initiator](ServerMetadataHandle md) mutable {

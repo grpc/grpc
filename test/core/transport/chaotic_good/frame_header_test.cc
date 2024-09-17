@@ -44,7 +44,7 @@ TEST(FrameHeaderTest, SimpleSerialize) {
                 0x04, 0x03, 0x02, 0x01,  // stream_id
                 0x08, 0x07, 0x06, 0x05,  // header_length
                 0x0c, 0x0b, 0x0a, 0x09,  // message_length
-                0x34, 0x00, 0x00, 0x00,  // mesage_padding
+                0x34, 0x00, 0x00, 0x00,  // message_padding
                 0x10, 0x0f, 0x0e, 0x0d   // trailer_length
             }));
 }
@@ -55,7 +55,7 @@ TEST(FrameHeaderTest, SimpleDeserialize) {
                 0x04, 0x03, 0x02, 0x01,  // stream_id
                 0x08, 0x07, 0x06, 0x05,  // header_length
                 0x0c, 0x0b, 0x0a, 0x09,  // message_length
-                0x34, 0x00, 0x00, 0x00,  // mesage_padding
+                0x34, 0x00, 0x00, 0x00,  // message_padding
                 0x10, 0x0f, 0x0e, 0x0d   // trailer_length
             })),
             absl::StatusOr<FrameHeader>(FrameHeader{
@@ -66,7 +66,7 @@ TEST(FrameHeaderTest, SimpleDeserialize) {
                             0x04, 0x03, 0x02, 0x01,  // stream_id
                             0x08, 0x07, 0x06, 0x05,  // header_length
                             0x0c, 0x0b, 0x0a, 0x09,  // message_length
-                            0x34, 0x00, 0x00, 0x00,  // mesage_padding
+                            0x34, 0x00, 0x00, 0x00,  // message_padding
                             0x10, 0x0f, 0x0e, 0x0d   // trailer_length
                         }))
                 .status(),

@@ -708,7 +708,7 @@ double PressureController::Update(double error) {
     // The first switchover will have last_control_ being 0, and max_ being 2,
     // so we'll immediately choose 1.0 which will tend to really slow down
     // progress.
-    // If we end up targetting too low, we'll eventually move it back towards
+    // If we end up targeting too low, we'll eventually move it back towards
     // 1.0 after max_ticks_same_ ticks.
     ticks_same_ = 0;
     max_ = (last_control_ + max_) / 2.0;

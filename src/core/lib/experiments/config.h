@@ -31,7 +31,7 @@ namespace grpc_core {
 struct ExperimentMetadata {
   const char* name;
   const char* description;
-  const char* additional_constaints;
+  const char* additional_constraints;
   const uint8_t* required_experiments;
   uint8_t num_required_experiments;
   bool default_value;

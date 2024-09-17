@@ -325,7 +325,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
           on_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);
@@ -357,7 +357,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
           on_first_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_first_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);
