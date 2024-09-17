@@ -174,6 +174,12 @@ FaultInjectionFilter::MakeInjectionDecision(
     fi_policy = method_params->fault_injection_policy(index_);
   }
 
+  // Shouldn't ever be null, but just in case, return a no-op decision.
+  if (fi_policy == nullptr) {
+    return InjectionDecision(/*max_faults=*/0, /*delay_time=*/Duration::Zero(),
+                             /*abort_request=*/absl::nullopt);
+  }
+
   grpc_status_code abort_code = fi_policy->abort_code;
   uint32_t abort_percentage_numerator = fi_policy->abort_percentage_numerator;
   uint32_t delay_percentage_numerator = fi_policy->delay_percentage_numerator;
