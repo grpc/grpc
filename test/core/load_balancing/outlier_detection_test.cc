@@ -224,6 +224,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   LOG(INFO) << "### ejection complete";
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
@@ -234,6 +235,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   LOG(INFO) << "### un-ejection complete";
   // Expect a picker update.
   WaitForRoundRobinListChange(remaining_addresses, kAddresses);
@@ -301,6 +303,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
@@ -332,6 +335,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   LOG(INFO) << "### un-ejection complete";
   // The ejected endpoint should come back using the new address.
   WaitForRoundRobinListChange(
@@ -399,6 +403,7 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
@@ -461,6 +466,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   LOG(INFO) << "### ejection timer pass complete";
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
