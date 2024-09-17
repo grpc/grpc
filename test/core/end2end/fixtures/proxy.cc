@@ -83,7 +83,7 @@ typedef struct {
   grpc_metadata_array c2p_initial_metadata;
   grpc_metadata_array p2s_initial_metadata;
 
-  grpc_core::Mutex initial_metadata_mu;
+  grpc_core::Mutex* initial_metadata_mu;
   bool p2s_initial_metadata_received ABSL_GUARDED_BY(initial_metadata_mu);
   grpc_op* deferred_trailing_metadata_op ABSL_GUARDED_BY(initial_metadata_mu);
 
@@ -171,6 +171,13 @@ static void unrefpc(proxy_call* pc, const char* /*reason*/) {
     grpc_metadata_array_destroy(&pc->p2s_initial_metadata);
     grpc_metadata_array_destroy(&pc->p2s_trailing_metadata);
     grpc_slice_unref(pc->p2s_status_details);
+    {
+      grpc_core::MutexLock lock(pc->initial_metadata_mu);
+      if (pc->deferred_trailing_metadata_op != nullptr) {
+        gpr_free(pc->deferred_trailing_metadata_op);
+      }
+    }
+    delete pc->initial_metadata_mu;
     gpr_free(pc);
   }
 }
@@ -210,12 +217,11 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
     }
     grpc_op* deferred_trailing_metadata_op = nullptr;
     {
-      grpc_core::MutexLock lock(&pc->initial_metadata_mu);
-      pc->p2s_initial_metadata_received = true;
+      grpc_core::MutexLock lock(pc->initial_metadata_mu);
       // Start the batch without the mutex held, just in case.
       // This will be nullptr if the trailing metadata has not yet been seen.
       deferred_trailing_metadata_op = pc->deferred_trailing_metadata_op;
-      pc->deferred_trailing_metadata_op = nullptr;
+      pc->p2s_initial_metadata_received = true;
     }
     if (deferred_trailing_metadata_op != nullptr) {
       refpc(pc, "on_c2p_sent_status");
@@ -370,7 +376,7 @@ static void on_p2s_status(void* arg, int success) {
     // This entire fixture will need a redesign when the batch API goes away.
     bool op_deferred = false;
     {
-      grpc_core::MutexLock lock(&pc->initial_metadata_mu);
+      grpc_core::MutexLock lock(pc->initial_metadata_mu);
       if (!pc->p2s_initial_metadata_received) {
         op_deferred = true;
         pc->deferred_trailing_metadata_op =
@@ -405,8 +411,9 @@ static void on_new_call(void* arg, int success) {
     memset(pc, 0, sizeof(*pc));
     pc->proxy = proxy;
     std::swap(pc->c2p_initial_metadata, proxy->new_call_metadata);
+    pc->initial_metadata_mu = new grpc_core::Mutex();
     {
-      grpc_core::MutexLock lock(&pc->initial_metadata_mu);
+      grpc_core::MutexLock lock(pc->initial_metadata_mu);
       pc->p2s_initial_metadata_received = false;
       pc->deferred_trailing_metadata_op = nullptr;
     }
