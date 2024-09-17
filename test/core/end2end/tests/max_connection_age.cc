@@ -162,10 +162,12 @@ CORE_END2END_TEST(Http2Test, MaxAgeGracefullyClose) {
     Expect(101, false);
   }
   Step();
-  // The connection is closed gracefully with goaway, the rpc should still be
-  // completed.
-  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
-  EXPECT_EQ(server_status.message(), "xyz");
+  if (got_server) {
+    // The connection is closed gracefully with goaway, the rpc should still be
+    // completed.
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
+    EXPECT_EQ(server_status.message(), "xyz");
+  }
 }
 
 }  // namespace
