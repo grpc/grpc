@@ -115,7 +115,7 @@ NS_ASSUME_NONNULL_BEGIN
 /** The path to the RPC call. */
 @property(copy, readonly) NSString *path;
 /**
- * Specify whether the call is idempotent or cachable. gRPC may select different HTTP verbs for the
+ * Specify whether the call is idempotent or cacheable. gRPC may select different HTTP verbs for the
  * call based on this information. The default verb used by gRPC is POST.
  */
 @property(readonly) GRPCCallSafety safety;
