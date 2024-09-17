@@ -107,7 +107,7 @@ class Calculator < Math::Math::Service
   end
 
   def sum(call)
-    # the requests are accesible as the Enumerator call#each_request
+    # the requests are accessible as the Enumerator call#each_request
     nums = call.each_remote_read.collect(&:num)
     sum = nums.inject { |s, x| s + x }
     Math::Num.new(num: sum)

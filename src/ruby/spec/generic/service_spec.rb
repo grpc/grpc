@@ -228,7 +228,7 @@ describe GenericService do
     end
 
     describe 'the generated instances' do
-      it 'can be instanciated with just a hostname and credentials' do
+      it 'can be instantiated with just a hostname and credentials' do
         s = Class.new do
           include GenericService
           rpc :AnRpc, GoodMsg, GoodMsg
