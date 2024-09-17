@@ -1073,7 +1073,7 @@ TEST_P(EdsTest, DropPerTenThousand) {
 
 // Tests that drop is working correctly after update.
 TEST_P(EdsTest, DropConfigUpdate) {
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(2);
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kErrorTolerance = 0.05;
@@ -1085,8 +1085,8 @@ TEST_P(EdsTest, DropConfigUpdate) {
       ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   const size_t kNumRpcsBoth =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
-  // The first ADS response contains one drop category.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  // The first EDS response contains backend 0 and one drop category.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
@@ -1100,32 +1100,20 @@ TEST_P(EdsTest, DropConfigUpdate) {
   LOG(INFO) << "First batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate,
               ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
-  // The second ADS response contains two drop categories, send an update EDS
-  // response.
+  // The second EDS response contains both backends and two drop categories.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until the drop rate increases to the middle of the two configs,
-  // which implies that the update has been in effect.
-  const double kDropRateThreshold =
-      (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
-  size_t num_rpcs = kNumRpcsBoth;
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        ++num_rpcs;
-        if (result.status.ok()) {
-          EXPECT_EQ(result.response.message(), kRequestMessage);
-        } else {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_THAT(result.status.error_message(),
-                      ::testing::StartsWith(kStatusMessageDropPrefix));
-          ++num_drops;
-        }
-        seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
-        return seen_drop_rate < kDropRateThreshold;
-      },
-      /*timeout_ms=*/40000);
+  // Wait until backend 1 sees traffic, so that we know the client has
+  // seen the update.
+  WaitForBackend(DEBUG_LOCATION, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::StartsWith(kStatusMessageDropPrefix));
+    }
+  });
   // Send kNumRpcsBoth RPCs and count the drops.
   LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
@@ -1563,8 +1551,6 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // When backend 2 gets traffic, we know the second update has been seen.
   WaitForBackend(DEBUG_LOCATION, 2);
-  // The xDS server got at least 1 response.
-  EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
 }
 
 // This tests a bug triggered by the xds_cluster_resolver policy reusing

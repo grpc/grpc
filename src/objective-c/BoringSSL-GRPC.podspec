@@ -132,7 +132,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/ssl/*.{h,c,cc}',
                       'src/ssl/**/*.{h,c,cc}',
                       'src/crypto/*.{h,c,cc}',
-                      'src/crypto/**/*.{h,c,cc}',
+                      'src/crypto/**/*.{h,c,cc,inc}',
                       # We have to include fiat because spake25519 depends on it
                       'src/third_party/fiat/*.{h,c,cc}',
                       # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
@@ -143,11 +143,7 @@ Pod::Spec.new do |s|
                               'src/crypto/*.h',
                               'src/crypto/**/*.h',
                               'src/third_party/fiat/*.h'
-    # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
-    # explicitly exclude it from the pod.
-    # TODO (mxyan): Work with BoringSSL team to remove this hack.
-    ss.exclude_files = 'src/crypto/fipsmodule/bcm.c',
-                       'src/**/*_test.*',
+    ss.exclude_files = 'src/**/*_test.*',
                        'src/**/test_*.*',
                        'src/**/test/*.*'
 
@@ -713,10 +709,10 @@ Pod::Spec.new do |s|
     EOF
 
     # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
-    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
+    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' -or -path '*.inc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
 
     # Include of boringssl_prefix_symbols.h does not follow Xcode import style. We add the package
     # name here so that Xcode knows where to find it.
-    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
+    find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' -or -path '*.inc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
   END_OF_COMMAND
 end

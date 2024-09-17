@@ -187,11 +187,7 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
       connection_id_, std::make_shared<InterActivityLatch<PromiseEndpoint>>());
 }
 
-void ChaoticGoodServerListener::ActiveConnection::Done(
-    absl::optional<absl::string_view> error) {
-  if (error.has_value()) {
-    LOG(ERROR) << "ActiveConnection::Done:" << this << " " << *error;
-  }
+void ChaoticGoodServerListener::ActiveConnection::Done() {
   // Can easily be holding various locks here: bounce through EE to ensure no
   // deadlocks.
   listener_->event_engine_->Run([self = Ref()]() {
@@ -387,13 +383,15 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    connection_->Done(
-        absl::StrCat("Handshake failed: ", result.status().ToString()));
+    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
+    connection_->Done();
     return;
   }
   CHECK_NE(*result, nullptr);
   if ((*result)->endpoint == nullptr) {
-    connection_->Done("Server handshake done but has empty endpoint.");
+    LOG_EVERY_N_SEC(ERROR, 5)
+        << "Server handshake done but has empty endpoint.";
+    connection_->Done();
     return;
   }
   CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
@@ -429,12 +427,10 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       EventEngineWakeupScheduler(connection_->listener_->event_engine_),
       [self = Ref()](absl::Status status) {
         if (!status.ok()) {
-          self->connection_->Done(
-              absl::StrCat("Server setting frame handling failed: ",
-                           StatusToString(status)));
-        } else {
-          self->connection_->Done();
+          GRPC_TRACE_LOG(chaotic_good, ERROR)
+              << "Server setting frame handling failed: " << status;
         }
+        self->connection_->Done();
       },
       connection_->arena_.get());
   MutexLock lock(&connection_->mu_);
