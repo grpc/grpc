@@ -79,7 +79,7 @@ inDocComment==1 {
     docComment = docComment"\n"$0
 }
 
-# class document, must match ' * class <clasName>'
+# class document, must match ' * class <className>'
 inDocComment==1 && $0 ~ classLineRegex {
     className = sed_gensub(classLineRegex, "\\1", "g");
 }
