@@ -42,7 +42,6 @@ CORE_END2END_TEST(Http2Test, GracefulServerShutdown) {
   Expect(101, Maybe{&got_server});
   Step();
   if (got_server) {
-    LOG(ERROR) << "Got server";
     // shutdown and destroy the server
     ShutdownServerAndNotify(200);
     Step();
