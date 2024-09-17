@@ -19,7 +19,7 @@ cd /d %~dp0\..\..\..
 @rem is on PATH. To avoid picking up the older version protoc.exe, we change the path to something non-existent.
 set PATH=%PATH:ProtoC=DontPickupProtoC%
 
-@rem Install into ./testinstall, but use absolute path and foward slashes
+@rem Install into ./testinstall, but use absolute path and forward slashes
 set INSTALL_DIR=%cd:\=/%/testinstall
 
 @rem Download OpenSSL-Win32 originally installed from https://slproweb.com/products/Win32OpenSSL.html

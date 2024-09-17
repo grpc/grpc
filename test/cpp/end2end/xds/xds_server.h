@@ -132,9 +132,9 @@ class AdsServiceImpl
   // Sets a callback to be invoked on request messages with respoonse_nonce
   // set.  The callback is passed the resource type and version.
   void SetCheckVersionCallback(
-      std::function<void(absl::string_view, int)> check_version_callack) {
+      std::function<void(absl::string_view, int)> check_version_callback) {
     grpc_core::MutexLock lock(&ads_mu_);
-    check_version_callack_ = std::move(check_version_callack);
+    check_version_callback_ = std::move(check_version_callback);
   }
 
   // Get the list of response state for each resource type.
@@ -369,8 +369,8 @@ class AdsServiceImpl
         CHECK(absl::SimpleAtoi(request.version_info(),
                                &client_resource_type_version));
       }
-      if (check_version_callack_ != nullptr) {
-        check_version_callack_(request.type_url(),
+      if (check_version_callback_ != nullptr) {
+        check_version_callback_(request.type_url(),
                                client_resource_type_version);
       }
     } else {
@@ -587,7 +587,7 @@ class AdsServiceImpl
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
-  std::function<void(absl::string_view, int)> check_version_callack_
+  std::function<void(absl::string_view, int)> check_version_callback_
       ABSL_GUARDED_BY(ads_mu_);
   // An instance data member containing the current state of all resources.
   // Note that an entry will exist whenever either of the following is true:

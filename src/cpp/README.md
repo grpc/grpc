@@ -18,7 +18,7 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
   them.
   .
 
-* Best Effort: We do not have continous integration tests for these, but we are
+* Best Effort: We do not have continuous integration tests for these, but we are
   fairly confident that gRPC C++ would work on them. We will make our best
   effort to support them, and we welcome patches for such platforms, but we
   might need to declare bankruptcy on some issues.

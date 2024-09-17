@@ -186,7 +186,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
     EXPECT_LE(absl::Now(), deadline);
     if (absl::Now() >= deadline) break;
   }
-  // 1 backend should be ejected, trafficed picked up by another backend.
+  // 1 backend should be ejected, traffic picked up by another backend.
   // No other backend should be ejected.
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
@@ -600,7 +600,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
     EXPECT_LE(absl::Now(), deadline);
     if (absl::Now() >= deadline) break;
   }
-  // 1 backend should be ejected, trafficed picked up by another backend.
+  // 1 backend should be ejected, traffic picked up by another backend.
   // No other backend should be ejected.
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
