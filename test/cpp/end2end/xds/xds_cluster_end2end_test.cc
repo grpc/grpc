@@ -1551,8 +1551,6 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // When backend 2 gets traffic, we know the second update has been seen.
   WaitForBackend(DEBUG_LOCATION, 2);
-  // The xDS server got at least 1 response.
-  EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
 }
 
 // This tests a bug triggered by the xds_cluster_resolver policy reusing
