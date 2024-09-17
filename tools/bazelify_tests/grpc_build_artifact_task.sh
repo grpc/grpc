@@ -54,7 +54,7 @@ SCRIPT_EXIT_CODE=0
 ../"${BUILD_SCRIPT}" >"../${SCRIPT_LOG_FILE}" 2>&1  || SCRIPT_EXIT_CODE="$?"
 
 # Store build script's exitcode in a file.
-# Note that the build atifacts task will terminate with success even when
+# Note that the build artifacts task will terminate with success even when
 # there was an error building the artifacts.
 # The error status (an associated log) will be reported by an associated
 # bazel test.

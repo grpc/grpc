@@ -95,7 +95,7 @@ def isCompileTarget(target, args):
 def modifyCompileCommand(target, args):
     cc, options = target["command"].split(" ", 1)
 
-    # Workaround for bazel added C++14 options, those doesn't affect build itself but
+    # Workaround for bazel added C++14 options, those don't affect the build itself but
     # clang-tidy will misinterpret them.
     options = options.replace("-std=c++0x ", "")
     options = options.replace("-std=c++14 ", "")

@@ -526,7 +526,7 @@ profile_output_files = []
 
 # Collect perf text reports and flamegraphs if perf_cmd was used
 # Note the base names of perf text reports are used when creating and processing
-# perf data. The scenario name uniqifies the output name in the final
+# perf data. The scenario name uniquifies the output name in the final
 # perf reports directory.
 # Also, the perf profiles need to be fetched and processed after each scenario
 # in order to avoid clobbering the output files.

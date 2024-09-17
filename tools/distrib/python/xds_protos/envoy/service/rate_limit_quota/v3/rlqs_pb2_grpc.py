@@ -8,7 +8,7 @@ from envoy.service.rate_limit_quota.v3 import rlqs_pb2 as envoy_dot_service_dot_
 class RateLimitQuotaServiceStub(object):
     """[#protodoc-title: Rate Limit Quota Service (RLQS)]
 
-    The Rate Limit Quota Service (RLQS) is a Envoy global rate limiting service that allows to
+    The Rate Limit Quota Service (RLQS) is an Envoy global rate limiting service that allows to
     delegate rate limit decisions to a remote service. The service will aggregate the usage reports
     from multiple data plane instances, and distribute Rate Limit Assignments to each instance
     based on its business logic. The logic is outside of the scope of the protocol API.
@@ -61,7 +61,7 @@ class RateLimitQuotaServiceStub(object):
 class RateLimitQuotaServiceServicer(object):
     """[#protodoc-title: Rate Limit Quota Service (RLQS)]
 
-    The Rate Limit Quota Service (RLQS) is a Envoy global rate limiting service that allows to
+    The Rate Limit Quota Service (RLQS) is an Envoy global rate limiting service that allows to
     delegate rate limit decisions to a remote service. The service will aggregate the usage reports
     from multiple data plane instances, and distribute Rate Limit Assignments to each instance
     based on its business logic. The logic is outside of the scope of the protocol API.
@@ -124,7 +124,7 @@ def add_RateLimitQuotaServiceServicer_to_server(servicer, server):
 class RateLimitQuotaService(object):
     """[#protodoc-title: Rate Limit Quota Service (RLQS)]
 
-    The Rate Limit Quota Service (RLQS) is a Envoy global rate limiting service that allows to
+    The Rate Limit Quota Service (RLQS) is an Envoy global rate limiting service that allows to
     delegate rate limit decisions to a remote service. The service will aggregate the usage reports
     from multiple data plane instances, and distribute Rate Limit Assignments to each instance
     based on its business logic. The logic is outside of the scope of the protocol API.
