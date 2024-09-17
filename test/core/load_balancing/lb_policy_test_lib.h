@@ -1529,6 +1529,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void RunTimerCallback() {
     CHECK(intercept_timers_)
         << "RunTimerCallback() requires intercepting timers";
+    LOG(INFO) << "running timer callback...";
     ASSERT_EQ(timer_callbacks_.size(), 1UL);
     auto it = timer_callbacks_.begin();
     ASSERT_NE(it->second, nullptr);

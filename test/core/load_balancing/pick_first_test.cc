@@ -542,6 +542,7 @@ TEST_F(PickFirstTest, HappyEyeballs) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -597,6 +598,7 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -716,6 +718,7 @@ TEST_F(PickFirstTest,
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -798,6 +801,7 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the first IPv6
   // subchannel.
   EXPECT_TRUE(subchannel_ipv6_1->ConnectionRequested());
@@ -812,6 +816,7 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
@@ -825,6 +830,7 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv6
   // subchannel.
   EXPECT_TRUE(subchannel_ipv6_2->ConnectionRequested());
@@ -837,6 +843,7 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the third IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
@@ -848,6 +855,7 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the fourth IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_4->ConnectionRequested());
@@ -895,6 +903,7 @@ TEST_F(PickFirstTest,
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the first IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_1->ConnectionRequested());
@@ -909,6 +918,7 @@ TEST_F(PickFirstTest,
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv6
   // subchannel.
   EXPECT_TRUE(subchannel_ipv6_2->ConnectionRequested());
@@ -922,6 +932,7 @@ TEST_F(PickFirstTest,
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the second IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_2->ConnectionRequested());
@@ -934,6 +945,7 @@ TEST_F(PickFirstTest,
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the third IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_3->ConnectionRequested());
@@ -945,6 +957,7 @@ TEST_F(PickFirstTest,
   // The timer fires before the connection attempt completes.
   IncrementTimeBy(Duration::Milliseconds(250));
   RunTimerCallback();
+  WaitForWorkSerializerToFlush();
   // This causes the LB policy to start connecting to the fourth IPv4
   // subchannel.
   EXPECT_TRUE(subchannel_ipv4_4->ConnectionRequested());
