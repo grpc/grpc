@@ -352,7 +352,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
-//      notification.WaitForNotification();
       LOG(INFO) << "Health notifications delivered";
     }
 
@@ -399,7 +398,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       while (!notification.HasBeenNotified()) {
         test_->fuzzing_ee_->Tick();
       }
-//      notification.WaitForNotification();
       return num_watchers;
     }
 
@@ -527,7 +525,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         while (!notification.HasBeenNotified()) {
           test_->fuzzing_ee_->Tick();
         }
-//        notification.WaitForNotification();
       }
 
       LoadBalancingPolicy::PickResult Pick(
@@ -903,7 +900,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
-//    notification.WaitForNotification();
     LOG(INFO) << "health notifications delivered";
     return status;
   }
@@ -925,7 +921,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
-//    notification.WaitForNotification();
   }
 
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -1496,7 +1491,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     while (!notification.HasBeenNotified()) {
       fuzzing_ee_->Tick();
     }
-//    notification.WaitForNotification();
     LOG(INFO) << "WorkSerializer flush complete";
   }
 

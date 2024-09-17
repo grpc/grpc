@@ -488,7 +488,6 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
   while (!notification.HasBeenNotified()) {
     fuzzing_ee_->Tick();
   }
-//  notification.WaitForNotification();
   // The LB policy should have created subchannels for the new addresses.
   auto* subchannel3 = FindSubchannel(kNewAddresses[0]);
   ASSERT_NE(subchannel3, nullptr);
