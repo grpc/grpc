@@ -55,8 +55,8 @@ namespace {
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
   XdsOverrideHostTest()
-      : LoadBalancingPolicyTest("xds_override_host_experimental",
-                                ChannelArgs(), /*intercept_timers=*/true) {}
+      : LoadBalancingPolicyTest("xds_override_host_experimental", ChannelArgs(),
+                                /*intercept_timers=*/true) {}
 
   static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
@@ -674,9 +674,9 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   // expiration time.  There will be a bit of sub-second time skew here
   // due to the FuzzingEventEngine incrementing time while it runs
   // WorkSerializer callbacks.
-  EXPECT_THAT(timer_durations, ::testing::ElementsAre(
-      ::testing::AllOf(::testing::Le(std::chrono::seconds(55)),
-                       ::testing::Ge(std::chrono::seconds(54)))));
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(::testing::AllOf(
+                                   ::testing::Le(std::chrono::seconds(55)),
+                                   ::testing::Ge(std::chrono::seconds(54)))));
   timer_durations.clear();
   picker = ExpectState(GRPC_CHANNEL_READY);
   // Make sure subchannels get orphaned in the WorkSerializer.
@@ -717,9 +717,9 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   // will be until endpoint 1 should be unreffed.  There will be a bit of
   // sub-second time skew here due to the FuzzingEventEngine incrementing
   // time while it runs WorkSerializer callbacks.
-  EXPECT_THAT(timer_durations, ::testing::ElementsAre(
-      ::testing::AllOf(::testing::Le(std::chrono::seconds(55)),
-                       ::testing::Ge(std::chrono::seconds(54)))));
+  EXPECT_THAT(timer_durations, ::testing::ElementsAre(::testing::AllOf(
+                                   ::testing::Le(std::chrono::seconds(55)),
+                                   ::testing::Ge(std::chrono::seconds(54)))));
 }
 
 }  // namespace

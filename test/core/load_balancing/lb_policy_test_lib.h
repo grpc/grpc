@@ -786,8 +786,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     grpc_event_engine::experimental::WaitForSingleOwner(
         std::move(timer_intercepting_ee_));
     fuzzing_ee_->TickUntilIdle();
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(fuzzing_ee_));
+    grpc_event_engine::experimental::WaitForSingleOwner(std::move(fuzzing_ee_));
     grpc_shutdown_blocking();
   }
 
@@ -1516,14 +1515,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                 SourceLocation location = SourceLocation()) {
     CHECK(intercept_timers_)
         << "SetExpectedTimerDuration() requires intercepting timers";
-    SetRunAfterDurationCallback(
-        [expected = duration, location = location](
-            EventEngine::Duration duration) {
-          EXPECT_EQ(duration, expected)
-              << "Expected: " << expected.count()
-              << "ns\n  Actual: " << duration.count() << "ns\n"
-              << location.file() << ":" << location.line();
-        });
+    SetRunAfterDurationCallback([expected = duration, location = location](
+                                    EventEngine::Duration duration) {
+      EXPECT_EQ(duration, expected)
+          << "Expected: " << expected.count()
+          << "ns\n  Actual: " << duration.count() << "ns\n"
+          << location.file() << ":" << location.line();
+    });
   }
 
   void RunTimerCallback() {

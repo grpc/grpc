@@ -145,8 +145,8 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : LoadBalancingPolicyTest("outlier_detection_experimental",
-                                ChannelArgs(), /*intercept_timers=*/true) {}
+      : LoadBalancingPolicyTest("outlier_detection_experimental", ChannelArgs(),
+                                /*intercept_timers=*/true) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();

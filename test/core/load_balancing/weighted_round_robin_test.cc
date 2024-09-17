@@ -109,8 +109,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   WeightedRoundRobinTest()
       : LoadBalancingPolicyTest(
             "weighted_round_robin",
-            ChannelArgs().Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD,
-                              kLocalityName),
+            ChannelArgs().Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD, kLocalityName),
             /*intercept_timers=*/true) {}
 
   void SetUp() override {

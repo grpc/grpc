@@ -36,16 +36,17 @@ class DelegatingEventEngine : public EventEngine {
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
-          override {
-    return wrapped_ee_->CreateListener(
-        std::move(on_accept), std::move(on_shutdown), config,
-        std::move(memory_allocator_factory));
+      override {
+    return wrapped_ee_->CreateListener(std::move(on_accept),
+                                       std::move(on_shutdown), config,
+                                       std::move(memory_allocator_factory));
   }
 
-  ConnectionHandle Connect(
-      OnConnectCallback on_connect, const ResolvedAddress& addr,
-      const EndpointConfig& args, MemoryAllocator memory_allocator,
-      Duration timeout) override {
+  ConnectionHandle Connect(OnConnectCallback on_connect,
+                           const ResolvedAddress& addr,
+                           const EndpointConfig& args,
+                           MemoryAllocator memory_allocator,
+                           Duration timeout) override {
     return wrapped_ee_->Connect(std::move(on_connect), addr, args,
                                 std::move(memory_allocator), timeout);
   }
