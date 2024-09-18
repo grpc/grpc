@@ -50,4 +50,20 @@ RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fbloaty
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fxds
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fgoogleapis
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fgoogletest
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopentelemetry
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopencensus-proto
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fboringssl-with-bazel
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fenvoy-api
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fprotobuf
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fzlib
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fbenchmark
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fre2
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fabseil-cpp
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopentelemetry-cpp
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fprotoc-gen-validate
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fcares%2fcares
 RUN git config --global protocol.file.allow always

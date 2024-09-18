@@ -15,6 +15,8 @@
 # The aarch64 wheels are being crosscompiled to allow running the build
 # on x64 machine. The dockcross/linux-armv7 image is a x86_64
 # image with crosscompilation toolchain installed
+
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.template`!!!
 FROM dockcross/linux-armv7
 
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
@@ -35,24 +37,27 @@ ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
 
 #=================
-# Install ccache
+# Install ccache 
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD \
-    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
+    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
+    && cd ccache-4.7.5 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
+    && rm -rf ccache-4.7.5 ccache.tar.gz
+
 
 # The dockcross base of this image sets CC and CXX to absolute paths, which makes it impossible to redirect their invocations
 # to ccache via a symlink. Use relative paths instead.
+
 ENV CC ${CROSS_TRIPLE}-gcc
 ENV CXX ${CROSS_TRIPLE}-g++
+
 
 # For historical reasons, task_runner.py the script under docker container using "bash -l"
 # which loads /etc/profile on startup. dockcross/linux-armv7 is based on an image where
@@ -64,4 +69,21 @@ ENV CXX ${CROSS_TRIPLE}-g++
 RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fbloaty
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fxds
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fgoogleapis
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fgoogletest
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopentelemetry
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopencensus-proto
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fboringssl-with-bazel
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fenvoy-api
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fprotobuf
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fzlib
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fbenchmark
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fre2
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fabseil-cpp
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopentelemetry-cpp
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fprotoc-gen-validate
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fcares%2fcares
 RUN git config --global protocol.file.allow always
