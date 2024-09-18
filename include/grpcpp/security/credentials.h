@@ -247,7 +247,7 @@ class MetadataCredentialsPlugin {
   /// Type of credentials this plugin is implementing.
   virtual const char* GetType() const { return ""; }
 
-  /// Gets the auth metatada produced by this plugin.
+  /// Gets the auth metadata produced by this plugin.
   /// The fully qualified method name is:
   /// service_url + "/" + method_name.
   /// The channel_auth_context contains (among other things), the identity of
@@ -295,7 +295,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
 
 /// Creates STS credentials options from the $STS_CREDENTIALS environment
 /// variable. This environment variable points to the path of a JSON file
-/// comforming to the schema described above.
+/// conforming to the schema described above.
 grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 
 std::shared_ptr<CallCredentials> StsCredentials(

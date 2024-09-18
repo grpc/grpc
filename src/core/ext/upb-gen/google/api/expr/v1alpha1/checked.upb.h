@@ -186,6 +186,18 @@ UPB_INLINE bool google_api_expr_v1alpha1_CheckedExpr_has_source_info(const googl
   const upb_MiniTableField field = {5, UPB_SIZE(24, 40), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void google_api_expr_v1alpha1_CheckedExpr_clear_expr_version(google_api_expr_v1alpha1_CheckedExpr* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_StringView google_api_expr_v1alpha1_CheckedExpr_expr_version(const google_api_expr_v1alpha1_CheckedExpr* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void google_api_expr_v1alpha1_CheckedExpr_reference_map_clear(google_api_expr_v1alpha1_CheckedExpr* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -260,6 +272,10 @@ UPB_INLINE struct google_api_expr_v1alpha1_SourceInfo* google_api_expr_v1alpha1_
     if (sub) google_api_expr_v1alpha1_CheckedExpr_set_source_info(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void google_api_expr_v1alpha1_CheckedExpr_set_expr_version(google_api_expr_v1alpha1_CheckedExpr *msg, upb_StringView value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* google.api.expr.v1alpha1.CheckedExpr.ReferenceMapEntry */

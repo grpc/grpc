@@ -336,11 +336,9 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    LOG(INFO) << "[call " << this
-              << "] UpdateDeadline from=" << deadline_.ToString()
-              << " to=" << deadline.ToString();
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
+      << " to=" << deadline.ToString();
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
     lock.Release();
@@ -494,6 +492,13 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 void grpc_call_tracer_set(grpc_call* call,
                           grpc_core::ClientCallTracer* tracer) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
+  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+}
+
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  arena->ManagedNew<ClientCallTracerWrapper>(tracer);
   return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
 }
 

@@ -20,7 +20,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/config.h"

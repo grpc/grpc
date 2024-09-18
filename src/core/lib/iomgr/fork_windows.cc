@@ -25,7 +25,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/fork.h>
-#include <grpc/support/log.h>
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

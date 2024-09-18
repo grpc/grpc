@@ -140,14 +140,12 @@ class TestFixture : public SecureFixture {
 
 typedef enum { SUCCESS, FAIL } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)                              \
-  {                                                                            \
-    {TEST_NAME(request_type, cert_type, result),                               \
-     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
-     "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
-        result                                                                 \
-  }
+#define SSL_TEST(request_type, cert_type, result)                             \
+  {{TEST_NAME(request_type, cert_type, result),                               \
+    FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
+    "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
+   result}
 
 // All test configurations
 struct CoreTestConfigWrapper {

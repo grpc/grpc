@@ -809,7 +809,7 @@ struct call_run_batch_args {
 };
 
 static void cancel_call_unblock_func(void* arg) {
-  gpr_log(GPR_DEBUG, "GRPC_RUBY: cancel_call_unblock_func");
+  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: cancel_call_unblock_func");
   grpc_call* call = (grpc_call*)arg;
   grpc_call_cancel(call, NULL);
 }

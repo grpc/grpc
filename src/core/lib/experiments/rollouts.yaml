@@ -53,6 +53,8 @@
     windows: broken
 - name: client_privacy
   default: false
+- name: event_engine_application_callbacks
+  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all
@@ -96,6 +98,8 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
+- name: time_caching_in_party
+  default: true
 - name: trace_record_callops
   default: true
 - name: unconstrained_max_quota_buffer_size

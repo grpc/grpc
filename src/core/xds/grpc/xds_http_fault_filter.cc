@@ -87,6 +87,7 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -195,12 +196,12 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     }
   }
   // Section 3: Parse the maximum active faults
-  const auto* max_fault_wrapper =
+  auto max_fault_wrapper = ParseUInt32Value(
       envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
-          http_fault);
-  if (max_fault_wrapper != nullptr) {
+          http_fault));
+  if (max_fault_wrapper.has_value()) {
     fault_injection_policy_json["maxFaults"] =
-        Json::FromNumber(google_protobuf_UInt32Value_value(max_fault_wrapper));
+        Json::FromNumber(*max_fault_wrapper);
   }
   return FilterConfig{ConfigProtoName(),
                       Json::FromObject(std::move(fault_injection_policy_json))};
@@ -208,11 +209,13 @@ XdsHttpFaultFilter::GenerateFilterConfig(
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
+    absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(context, std::move(extension), errors);
+  return GenerateFilterConfig(instance_name, context, std::move(extension),
+                              errors);
 }
 
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
@@ -229,7 +232,7 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpFaultFilter::GenerateServiceConfig(
+XdsHttpFaultFilter::GenerateMethodConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
   Json policy_json = filter_config_override != nullptr
@@ -237,6 +240,12 @@ XdsHttpFaultFilter::GenerateServiceConfig(
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
   return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpFaultFilter::GenerateServiceConfig(
+    const FilterConfig& /*hcm_filter_config*/) const {
+  return ServiceConfigJsonEntry{"", ""};
 }
 
 }  // namespace grpc_core

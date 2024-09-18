@@ -29,7 +29,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -208,7 +207,7 @@ void LegacyMaxAgeFilter::PostInit() {
           // OnDone -- close the connection if the promise completed
           // successfully.
           // (if it did not, it was cancelled)
-          if (status.ok()) CloseChannel();
+          if (status.ok()) CloseChannel("max connection age");
         },
         std::move(arena)));
   }
@@ -274,16 +273,16 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
   activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
       [channel_stack, this](absl::Status status) {
-        if (status.ok()) CloseChannel();
+        if (status.ok()) CloseChannel("connection idle");
       },
       std::move(arena)));
 }
 
-void LegacyChannelIdleFilter::CloseChannel() {
+void LegacyChannelIdleFilter::CloseChannel(absl::string_view reason) {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("enter idle"),
-      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
+      GRPC_ERROR_CREATE(reason), StatusIntProperty::ChannelConnectivityState,
+      GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);

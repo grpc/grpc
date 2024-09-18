@@ -61,7 +61,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -273,7 +272,7 @@ void AresResolver::LookupHostname(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {
@@ -352,7 +351,7 @@ void AresResolver::LookupSRV(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {
@@ -387,7 +386,7 @@ void AresResolver::LookupTXT(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {

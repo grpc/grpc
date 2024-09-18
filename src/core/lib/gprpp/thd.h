@@ -29,7 +29,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 

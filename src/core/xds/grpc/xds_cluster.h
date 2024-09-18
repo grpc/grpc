@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
@@ -28,6 +29,7 @@
 #include "src/core/xds/grpc/xds_client_stats.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
@@ -89,8 +91,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  RefCountedStringValue service_telemetry_label;
-  RefCountedStringValue namespace_telemetry_label;
+  XdsMetadataMap metadata;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
@@ -102,8 +103,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
            override_host_statuses == other.override_host_statuses &&
-           service_telemetry_label == other.service_telemetry_label &&
-           namespace_telemetry_label == other.namespace_telemetry_label;
+           metadata == other.metadata;
   }
 
   std::string ToString() const;

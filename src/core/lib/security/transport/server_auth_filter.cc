@@ -131,12 +131,10 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    LOG(ERROR) << GetContext<Activity>()->DebugTag()
-               << "[server-auth]: Delegate to application: filter=" << filter
-               << " this=" << this
-               << " auth_ctx=" << filter->auth_context_.get();
-  }
+  GRPC_TRACE_LOG(call, ERROR)
+      << GetContext<Activity>()->DebugTag()
+      << "[server-auth]: Delegate to application: filter=" << filter
+      << " this=" << this << " auth_ctx=" << filter->auth_context_.get();
   filter->server_credentials_->auth_metadata_processor().process(
       filter->server_credentials_->auth_metadata_processor().state,
       filter->auth_context_.get(), state_->md.metadata, state_->md.count,

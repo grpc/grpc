@@ -203,10 +203,9 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
       Map(SendCallInitialMetadataAndBody(stream_id, outgoing_frames,
                                          call_initiator),
           [stream_id](absl::Status main_body_result) {
-            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-              VLOG(2) << "CHAOTIC_GOOD: CallOutboundLoop: stream_id="
-                      << stream_id << " main_body_result=" << main_body_result;
-            }
+            GRPC_TRACE_VLOG(chaotic_good, 2)
+                << "CHAOTIC_GOOD: CallOutboundLoop: stream_id=" << stream_id
+                << " main_body_result=" << main_body_result;
             return Empty{};
           }),
       call_initiator.PullServerTrailingMetadata(),
@@ -238,10 +237,11 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {
-      call_destination_->StartCall(std::move(call.handler));
       call_initiator->SpawnGuarded(
           "server-write", [this, stream_id = frame_header.stream_id,
-                           call_initiator = *call_initiator]() {
+                           call_initiator = *call_initiator,
+                           call_handler = std::move(call.handler)]() mutable {
+            call_destination_->StartCall(std::move(call_handler));
             return CallOutboundLoop(stream_id, call_initiator);
           });
     } else {
