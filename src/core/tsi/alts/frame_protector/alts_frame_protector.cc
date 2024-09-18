@@ -380,7 +380,6 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to create ALTS crypters, " << error_details;
     gpr_free(error_details);
-    gpr_free(impl);
     return TSI_INTERNAL_ERROR;
   }
   ///
