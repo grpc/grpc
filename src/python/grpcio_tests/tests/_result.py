@@ -305,7 +305,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.startTest."""
         super(TerminalResult, self).startTest(test)
         self.out.write(
-            _Colors.FAIL + "[{}]START         {}\n".format(test.id(), datetime.datetime.now()) + _Colors.END
+            _Colors.FAIL + "[{}]START         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
@@ -319,7 +319,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addError."""
         super(TerminalResult, self).addError(test, err)
         self.out.write(
-            _Colors.FAIL + "[{}]ERROR         {}\n".format(test.id(), datetime.datetime.now()) + _Colors.END
+            _Colors.FAIL + "[{}]ERROR         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
