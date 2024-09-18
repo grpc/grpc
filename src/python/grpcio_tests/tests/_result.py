@@ -297,7 +297,7 @@ class TerminalResult(CoverageResult):
         super(TerminalResult, self).startTestRun()
         self.out.write(
             _Colors.HEADER
-            + "[{}]Testing gRPC Python...\n".format(datetime.datetime.now())
+            + " [{}]Testing gRPC Python...\n".format(datetime.datetime.now())
             + _Colors.END
         )
 
@@ -305,7 +305,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.startTest."""
         super(TerminalResult, self).startTest(test)
         self.out.write(
-            _Colors.FAIL + "[{}]START         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
+            _Colors.FAIL + " [{}]START         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
@@ -319,7 +319,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addError."""
         super(TerminalResult, self).addError(test, err)
         self.out.write(
-            _Colors.FAIL + "[{}]ERROR         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
+            _Colors.FAIL + " [{}]ERROR         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
@@ -327,7 +327,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addFailure."""
         super(TerminalResult, self).addFailure(test, err)
         self.out.write(
-            _Colors.FAIL + "[{}]FAILURE       {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
+            _Colors.FAIL + " [{}]FAILURE       {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
@@ -336,7 +336,7 @@ class TerminalResult(CoverageResult):
         super(TerminalResult, self).addSuccess(test)
         self.out.write(
             _Colors.OK
-            + "[{}]SUCCESS       {}\n".format(
+            + " [{}]SUCCESS       {}\n".format(
                 datetime.datetime.now(), test.id()
             )
             + _Colors.END

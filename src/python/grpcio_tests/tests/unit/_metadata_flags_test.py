@@ -291,6 +291,7 @@ class MetadataFlagsTest(unittest.TestCase):
 
         if not unhandled_exceptions.empty():
             raise unhandled_exceptions.get(True)
+        self.assertEqual(1, 2)
 
 
 if __name__ == "__main__":
