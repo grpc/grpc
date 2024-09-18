@@ -21,7 +21,7 @@
 
 namespace grpc_core {
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* key, size_t key_length) {
   tsi_test_frame_protector_fixture* fixture =
       tsi_test_frame_protector_fixture_create();
   tsi_frame_protector* client_frame_protector = nullptr;
@@ -31,7 +31,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   // Create a client frame protector.
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
-  if (alts_create_frame_protector(data, size, /*is_client=*/true,
+  if (alts_create_frame_protector(key, key_length, /*is_client=*/true,
                                   /*is_rekey=*/false,
                                   client_max_output_protected_frame_size == 0
                                       ? nullptr
@@ -43,7 +43,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   // Create a server frame protector.
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
-  if (alts_create_frame_protector(data, size, /*is_client=*/false,
+  if (alts_create_frame_protector(key, key_length, /*is_client=*/false,
                                   /*is_rekey=*/false,
                                   server_max_output_protected_frame_size == 0
                                       ? nullptr
@@ -64,6 +64,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, server_frame_protector, server_received_message,
       &server_received_message_size, /*is_client=*/false);
+  // Check server received the same message as client sent.
   if (config->client_message_size != server_received_message_size) {
     abort();
   }
@@ -82,6 +83,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       config, channel, client_frame_protector, client_received_message,
       &client_received_message_size,
       /*is_client=*/true);
+  // Check client received the same message as server sent.
   if (config->server_message_size != client_received_message_size) {
     abort();
   }
