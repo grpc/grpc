@@ -327,7 +327,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addFailure."""
         super(TerminalResult, self).addFailure(test, err)
         self.out.write(
-            _Colors.FAIL + "[{}]FAILURE       {}\n".format(test.id()) + _Colors.END
+            _Colors.FAIL + "[{}]FAILURE       {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
