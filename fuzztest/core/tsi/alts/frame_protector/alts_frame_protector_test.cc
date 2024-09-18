@@ -19,7 +19,8 @@
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 
-namespace grpc_core {
+bool squelch = true;
+bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* key, size_t key_length) {
   tsi_test_frame_protector_fixture* fixture =
@@ -97,5 +98,3 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* key, size_t key_length) {
   tsi_test_frame_protector_fixture_destroy(fixture);
   return 0;
 }
-
-}  // namespace grpc_core
