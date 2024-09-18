@@ -43,7 +43,7 @@ void DNSServiceResolverImpl::LookupHostname(
   if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
     engine_->Run([on_resolve = std::move(on_resolve),
                   status = absl::InvalidArgumentError(
-                      absl::StrCat("Unparseable name: ", name))]() mutable {
+                      absl::StrCat("Unparsable name: ", name))]() mutable {
       on_resolve(status);
     });
     return;

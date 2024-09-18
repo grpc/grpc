@@ -32,7 +32,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
-TEST(ServerChttp2, UnparseableTarget) {
+TEST(ServerChttp2, UnparsableTarget) {
   grpc_channel_args args = {0, nullptr};
   grpc_server* server = grpc_server_create(&args, nullptr);
   grpc_server_credentials* server_creds =

@@ -757,9 +757,9 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   // - Priority 0: locality0
   // - Priority 1: locality1, locality2
   EdsResourceArgs args1({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
-      {"locality2", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality2", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -829,7 +829,7 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   const char* kNewClusterName2 = "new_cluster_2";
   const char* kNewEdsServiceName2 = "new_eds_service_name_2";
   // Populate EDS resource for cluster 1 with unreachable endpoint.
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName1));
   // Populate CDS resource for cluster 1.
