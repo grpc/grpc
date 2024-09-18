@@ -36,6 +36,15 @@
 
 namespace grpc_core {
 
+inline bool LrsServersEqual(
+    const std::shared_ptr<const GrpcXdsServer>& lrs_server1,
+    const std::shared_ptr<const GrpcXdsServer>& lrs_server2) {
+  if (lrs_server1 == nullptr) return lrs_server2 == nullptr;
+  if (lrs_server2 == nullptr) return false;
+  // Neither one is null, so compare them.
+  return *lrs_server1 == *lrs_server2;
+}
+
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
     // If empty, defaults to the cluster name.
@@ -72,8 +81,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // Note: Remaining fields are not used for aggregate clusters.
 
   // The LRS server to use for load reporting.
-  // If not set, load reporting will be disabled.
-  absl::optional<GrpcXdsServer> lrs_load_reporting_server;
+  // If null, load reporting will be disabled.
+  std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
   // The set of metrics to propagate from ORCA to LRS.
   RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
 
@@ -95,7 +104,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
-           lrs_load_reporting_server == other.lrs_load_reporting_server &&
+           LrsServersEqual(lrs_load_reporting_server,
+                           other.lrs_load_reporting_server) &&
            lrs_backend_metric_propagation ==
                other.lrs_backend_metric_propagation &&
            common_tls_context == other.common_tls_context &&

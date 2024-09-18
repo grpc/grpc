@@ -73,7 +73,7 @@
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 
 namespace grpc_core {
 
@@ -189,13 +189,13 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
  private:
   class StatsSubchannelWrapper final : public DelegatingSubchannel {
    public:
-    // If load reporting is enabled and we have an XdsClusterLocalityStats
+    // If load reporting is enabled and we have a ClusterLocalityStats
     // object, that object already contains the locality label.  We
     // need to store the locality label directly only in the case where
     // load reporting is disabled.
     using LocalityData = absl::variant<
         RefCountedStringValue /*locality*/,
-        RefCountedPtr<XdsClusterLocalityStats> /*locality_stats*/>;
+        RefCountedPtr<LrsClient::ClusterLocalityStats> /*locality_stats*/>;
 
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
@@ -213,20 +213,20 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
       return Match(
           locality_data_,
           [](RefCountedStringValue locality) { return locality; },
-          [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
+          [](const RefCountedPtr<LrsClient::ClusterLocalityStats>&
+                 locality_stats) {
             return locality_stats->locality_name()->human_readable_string();
           });
     }
 
-    XdsClusterLocalityStats* locality_stats() const {
+    LrsClient::ClusterLocalityStats* locality_stats() const {
       return Match(
           locality_data_,
           [](const RefCountedStringValue&) {
-            return static_cast<XdsClusterLocalityStats*>(nullptr);
+            return static_cast<LrsClient::ClusterLocalityStats*>(nullptr);
           },
-          [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
-            return locality_stats.get();
-          });
+          [](const RefCountedPtr<LrsClient::ClusterLocalityStats>&
+                 locality_stats) { return locality_stats.get(); });
     }
 
     RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation()
@@ -261,7 +261,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
     RefCountedStringValue service_telemetry_label_;
     RefCountedStringValue namespace_telemetry_label_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
-    RefCountedPtr<XdsClusterDropStats> drop_stats_;
+    RefCountedPtr<LrsClient::ClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
   };
 
@@ -315,7 +315,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
   RefCountedPtr<GrpcXdsClient> xds_client_;
 
   // The stats for client-side load reporting.
-  RefCountedPtr<XdsClusterDropStats> drop_stats_;
+  RefCountedPtr<LrsClient::ClusterDropStats> drop_stats_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -335,7 +335,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
   SubchannelCallTracker(
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           original_subchannel_call_tracker,
-      RefCountedPtr<XdsClusterLocalityStats> locality_stats,
+      RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats,
       RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation,
       RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter)
       : original_subchannel_call_tracker_(
@@ -390,7 +390,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
  private:
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
-  RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
+  RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats_;
   RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation_;
   RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
 #ifndef NDEBUG
@@ -465,7 +465,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
           subchannel_wrapper->locality());
     }
     // Handle load reporting.
-    RefCountedPtr<XdsClusterLocalityStats> locality_stats;
+    RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats;
     if (subchannel_wrapper->locality_stats() != nullptr) {
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
@@ -630,14 +630,15 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Note: We need a drop stats object whenever load reporting is enabled,
   // even if we have no EDS drop config, because we also use it when
   // reporting circuit breaker drops.
-  if (!new_cluster_config.cluster->lrs_load_reporting_server.has_value()) {
+  if (new_cluster_config.cluster->lrs_load_reporting_server == nullptr) {
     drop_stats_.reset();
   } else if (cluster_resource_ == nullptr ||
              old_eds_service_name != new_eds_service_name ||
-             cluster_resource_->lrs_load_reporting_server !=
-                 new_cluster_config.cluster->lrs_load_reporting_server) {
-    drop_stats_ = xds_client_->AddClusterDropStats(
-        *new_cluster_config.cluster->lrs_load_reporting_server,
+             !LrsServersEqual(
+                 cluster_resource_->lrs_load_reporting_server,
+                 new_cluster_config.cluster->lrs_load_reporting_server)) {
+    drop_stats_ = xds_client_->lrs_client().AddClusterDropStats(
+        new_cluster_config.cluster->lrs_load_reporting_server,
         new_config->cluster_name(), new_eds_service_name);
     if (drop_stats_ == nullptr) {
       LOG(ERROR)
@@ -831,12 +832,13 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   // (if load reporting is enabled) the locality stats object, which
   // will be used by the picker.
   auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
-  RefCountedPtr<XdsClusterLocalityStats> locality_stats;
-  if (parent()->cluster_resource_->lrs_load_reporting_server.has_value()) {
-    locality_stats = parent()->xds_client_->AddClusterLocalityStats(
-        parent()->cluster_resource_->lrs_load_reporting_server.value(),
-        parent()->config_->cluster_name(),
-        GetEdsResourceName(*parent()->cluster_resource_), locality_name);
+  RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats;
+  if (parent()->cluster_resource_->lrs_load_reporting_server != nullptr) {
+    locality_stats =
+        parent()->xds_client_->lrs_client().AddClusterLocalityStats(
+            parent()->cluster_resource_->lrs_load_reporting_server,
+            parent()->config_->cluster_name(),
+            GetEdsResourceName(*parent()->cluster_resource_), locality_name);
     if (locality_stats == nullptr) {
       LOG(ERROR)
           << "[xds_cluster_impl_lb " << parent()

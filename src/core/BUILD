@@ -5630,6 +5630,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_backend_metric_propagation",
+    hdrs = [
+        "xds/xds_client/xds_backend_metric_propagation.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:xds_client_core"],
+    deps = [
+        "ref_counted",
+    ],
+)
+
 # TODO(roth): Split this up into individual targets.
 grpc_cc_library(
     name = "grpc_xds_client",
@@ -5676,6 +5692,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
+        "absl/container:flat_hash_map",
         "absl/functional:bind_front",
         "absl/log:check",
         "absl/log:log",
