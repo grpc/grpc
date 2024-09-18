@@ -73,23 +73,23 @@ cdef extern from "<mutex>" namespace "std" nogil:
     void unlock()
 
 
-# Protects access to GIL from _destroy() and to g_cython_shutting_down.
-cdef mutex g_cython_shutdown_mu
-cdef int g_cython_shutting_down = 0
+# Protects access to GIL from _destroy() and to g_shutting_down.
+cdef mutex g_shutdown_mu
+cdef int g_shutting_down = 0
 
 # This is called by C-core when the plugin is destroyed, which may race between
 # GIL destruction during process shutdown. Since GIL destruction happens after
 # Python's exit handlers, we mark that Python is shutting down from an exit
 # handler and don't grab GIL in this function afterwards using a C mutex.
-# Access to g_cython_shutting_down and GIL must be mutex protected here.
+# Access to g_shutting_down and GIL must be mutex protected here.
 cdef void _destroy(void *state) nogil:
-  global g_cython_shutdown_mu
-  global g_cython_shutting_down
-  g_cython_shutdown_mu.lock()
-  if g_cython_shutting_down == 0:
+  global g_shutdown_mu
+  global g_shutting_down
+  g_shutdown_mu.lock()
+  if g_shutting_down == 0:
     with gil:
       cpython.Py_DECREF(<object>state)
-  g_cython_shutdown_mu.unlock()
+  g_shutdown_mu.unlock()
   grpc_shutdown()
 
 
@@ -103,16 +103,11 @@ def _maybe_register_shutdown_handler():
   atexit.register(_on_shutdown)
 
 def _on_shutdown():
-  global g_cython_shutdown_mu
-  global g_cython_shutting_down
-  g_cython_shutdown_mu.lock()
-  g_cython_shutting_down = 1
-  g_cython_shutdown_mu.unlock()
-
-
-cdef void _destroy(void *state) except * with gil:
-  cpython.Py_DECREF(<object>state)
-  grpc_shutdown()
+  global g_shutdown_mu
+  global g_shutting_down
+  g_shutdown_mu.lock()
+  g_shutting_down = 1
+  g_shutdown_mu.unlock()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
