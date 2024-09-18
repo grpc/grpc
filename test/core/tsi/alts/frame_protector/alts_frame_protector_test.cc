@@ -409,7 +409,7 @@ TEST(AltsFrameProtectorTest, MemoryLeakTest) {
   size_t key_length = kAes128GcmKeyLength - 1;
   gsec_test_random_array(&key, key_length);
   EXPECT_EQ(alts_create_frame_protector(key, key_length, /*is_client=*/true,
-                                        /*rekey=*/false, nullptr,
+                                        /*is_rekey=*/false, nullptr,
                                         &client_frame_protector),
             TSI_INTERNAL_ERROR);
   gpr_free(key);
