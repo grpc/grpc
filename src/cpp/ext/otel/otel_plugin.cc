@@ -302,6 +302,15 @@ void OpenTelemetryPluginImpl::CallbackMetricReporter::ReportInt64(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
+  if ((*callback_gauge_state)->caches.find(key_) ==
+      (*callback_gauge_state)->caches.end()) {
+    LOG(ERROR) << "This may occur when the gauge used in AddCallback is "
+                  "different from the gauge used in Report. This indicates a "
+                  "misuse of the API. The value "
+               << value << " will not be recorded for instrument "
+               << handle.index;
+    return;
+  }
   auto& cell = (*callback_gauge_state)->caches.at(key_);
   std::vector<std::string> key;
   key.reserve(label_values.size() +
@@ -330,6 +339,15 @@ void OpenTelemetryPluginImpl::CallbackMetricReporter::ReportDouble(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
   CHECK(descriptor.label_keys.size() == label_values.size());
   CHECK(descriptor.optional_label_keys.size() == optional_values.size());
+  if ((*callback_gauge_state)->caches.find(key_) ==
+      (*callback_gauge_state)->caches.end()) {
+    LOG(ERROR) << "This may occur when the gauge used in AddCallback is "
+                  "different from the gauge used in Report. This indicates a "
+                  "misuse of the API. The value "
+               << value << " will not be recorded for instrument "
+               << handle.index;
+    return;
+  }
   auto& cell = (*callback_gauge_state)->caches.at(key_);
   std::vector<std::string> key;
   key.reserve(label_values.size() +
