@@ -54,7 +54,8 @@ static void alts_test_do_round_trip_check_frames(
                                       ? nullptr
                                       : &client_max_output_protected_frame_size,
                                   &client_frame_protector),
-      TSI_OK);  // Create a server frame protector.
+      TSI_OK);
+  // Create a server frame protector.
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
   ASSERT_EQ(
