@@ -69,7 +69,7 @@ class LegacyChannelIdleFilter : public ChannelFilter {
   grpc_channel_stack* channel_stack() { return channel_stack_; };
 
   virtual void Shutdown();
-  void CloseChannel();
+  void CloseChannel(absl::string_view reason);
 
   void IncreaseCallCount();
   void DecreaseCallCount();

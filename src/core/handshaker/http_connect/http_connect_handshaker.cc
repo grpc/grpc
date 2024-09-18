@@ -278,7 +278,7 @@ void HttpConnectHandshaker::DoHandshake(
     for (size_t i = 0; i < num_header_strings; ++i) {
       char* sep = strchr(header_strings[i], ':');
       if (sep == nullptr) {
-        LOG(ERROR) << "skipping unparseable HTTP CONNECT header: "
+        LOG(ERROR) << "skipping unparsable HTTP CONNECT header: "
                    << header_strings[i];
         continue;
       }
