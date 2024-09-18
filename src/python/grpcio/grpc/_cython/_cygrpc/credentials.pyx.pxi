@@ -66,13 +66,6 @@ cdef int _get_metadata(void *state,
   return 0  # Asynchronous return
 
 
-cdef extern from "<mutex>" namespace "std" nogil:
-  cdef cppclass mutex:
-    mutex()
-    void lock()
-    void unlock()
-
-
 # Protects access to GIL from _destroy() and to g_shutting_down.
 cdef mutex g_shutdown_mu
 cdef int g_shutting_down = 0
