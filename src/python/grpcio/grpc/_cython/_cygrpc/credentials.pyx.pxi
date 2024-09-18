@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
@@ -65,6 +66,50 @@ cdef int _get_metadata(void *state,
   return 0  # Asynchronous return
 
 
+cdef extern from "<mutex>" namespace "std" nogil:
+  cdef cppclass mutex:
+    mutex()
+    void lock()
+    void unlock()
+
+
+# Protects access to GIL from _destroy() and to g_cython_shutting_down.
+cdef mutex g_cython_shutdown_mu
+cdef int g_cython_shutting_down = 0
+
+# This is called by C-core when the plugin is destroyed, which may race between
+# GIL destruction during process shutdown. Since GIL destruction happens after
+# Python's exit handlers, we mark that Python is shutting down from an exit
+# handler and don't grab GIL in this function afterwards using a C mutex.
+# Access to g_cython_shutting_down and GIL must be mutex protected here.
+cdef void _destroy(void *state) nogil:
+  global g_cython_shutdown_mu
+  global g_cython_shutting_down
+  g_cython_shutdown_mu.lock()
+  if g_cython_shutting_down == 0:
+    with gil:
+      cpython.Py_DECREF(<object>state)
+  g_cython_shutdown_mu.unlock()
+  grpc_shutdown()
+
+
+g_shutdown_handler_registered = False
+
+def _maybe_register_shutdown_handler():
+  global g_shutdown_handler_registered
+  if g_shutdown_handler_registered:
+    return
+  g_shutdown_handler_registered = True
+  atexit.register(_on_shutdown)
+
+def _on_shutdown():
+  global g_cython_shutdown_mu
+  global g_cython_shutting_down
+  g_cython_shutdown_mu.lock()
+  g_cython_shutting_down = 1
+  g_cython_shutdown_mu.unlock()
+
+
 cdef void _destroy(void *state) except * with gil:
   cpython.Py_DECREF(<object>state)
   grpc_shutdown()
@@ -83,6 +128,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.state = <void *>self._metadata_plugin
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
+    _maybe_register_shutdown_handler()
     fork_handlers_and_grpc_init()
     # TODO(yihuazhang): Expose min_security_level via the Python API so that
     # applications can decide what minimum security level their plugins require.
