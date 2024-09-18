@@ -305,7 +305,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.startTest."""
         super(TerminalResult, self).startTest(test)
         self.out.write(
-            _Colors.FAIL + " [{}]START         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
+            _Colors.INFO + " [{}]START         {}\n".format(datetime.datetime.now(), test.id()) + _Colors.END
         )
         self.out.flush()
 
