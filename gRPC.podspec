@@ -64,7 +64,6 @@ Pod::Spec.new do |s|
 
     ss.public_header_files = "src/objective-c/GRPCClient/GRPCCall+ChannelArg.h",
                              "src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h",
-                             "src/objective-c/GRPCClient/GRPCCall+Cronet.h",
                              "src/objective-c/GRPCClient/GRPCCall+OAuth2.h",
                              "src/objective-c/GRPCClient/GRPCCall+Tests.h",
                              "src/objective-c/GRPCClient/GRPCCallLegacy.h",
@@ -72,7 +71,6 @@ Pod::Spec.new do |s|
 
     ss.source_files = "src/objective-c/GRPCClient/GRPCCall+ChannelArg.h",
                       "src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h",
-                      "src/objective-c/GRPCClient/GRPCCall+Cronet.h",
                       "src/objective-c/GRPCClient/GRPCCall+OAuth2.h",
                       "src/objective-c/GRPCClient/GRPCCall+Tests.h",
                       "src/objective-c/GRPCClient/GRPCCallLegacy.h",
@@ -127,7 +125,6 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
     ss.public_header_files = 'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
-                             'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
                              'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
                              'src/objective-c/GRPCClient/GRPCCall+Tests.h',
                              'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h'
@@ -137,8 +134,6 @@ Pod::Spec.new do |s|
                       'src/objective-c/GRPCClient/GRPCCall+ChannelArg.mm',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.mm',
-                      'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
-                      'src/objective-c/GRPCClient/GRPCCall+Cronet.mm',
                       'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
                       'src/objective-c/GRPCClient/GRPCCall+OAuth2.mm',
                       'src/objective-c/GRPCClient/GRPCCall+Tests.h',
@@ -159,20 +154,6 @@ Pod::Spec.new do |s|
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
-  end
-
-  s.subspec 'GRPCCoreCronet' do |ss|
-    ss.header_mappings_dir = 'src/objective-c/GRPCClient'
-
-    ss.source_files = 'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
-                      'src/objective-c/GRPCClient/GRPCCall+Cronet.mm',
-                      'src/objective-c/GRPCClient/private/GRPCCore/GRPCCoreCronet/*.{h,mm}'
-    ss.dependency "#{s.name}/GRPCCore", version
-    ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'gRPC-Core/Cronet-Implementation', version
-    ss.dependency 'CronetFramework'
-
-    ss.ios.deployment_target = '10.0'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.

@@ -3611,28 +3611,6 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Implementation", version
   end
 
-  s.subspec 'Cronet-Interface' do |ss|
-    ss.header_mappings_dir = 'include/grpc'
-    ss.source_files = 'include/grpc/grpc_cronet.h'
-  end
-
-  s.subspec 'Cronet-Implementation' do |ss|
-    ss.header_mappings_dir = '.'
-
-    ss.dependency "#{s.name}/Interface", version
-    ss.dependency "#{s.name}/Implementation", version
-    ss.dependency "#{s.name}/Privacy", version
-    ss.dependency "#{s.name}/Cronet-Interface", version
-
-    ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
-                      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
-                      'src/core/ext/transport/cronet/transport/cronet_status.cc',
-                      'src/core/ext/transport/cronet/transport/cronet_status.h',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.cc',
-                      'src/core/ext/transport/cronet/transport/cronet_transport.h',
-                      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
-  end
-
   # patch include of openssl to openssl_grpc
   s.prepare_command = <<-END_OF_COMMAND
     set -e

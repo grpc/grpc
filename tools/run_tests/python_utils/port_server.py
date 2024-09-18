@@ -57,78 +57,6 @@ pool = []
 in_use = {}
 mu = threading.Lock()
 
-# Cronet restricts the following ports to be used (see
-# https://cs.chromium.org/chromium/src/net/base/port_util.cc). When one of these
-# ports is used in a Cronet test, the test would fail (see issue #12149). These
-# ports must be excluded from pool.
-cronet_restricted_ports = [
-    1,
-    7,
-    9,
-    11,
-    13,
-    15,
-    17,
-    19,
-    20,
-    21,
-    22,
-    23,
-    25,
-    37,
-    42,
-    43,
-    53,
-    77,
-    79,
-    87,
-    95,
-    101,
-    102,
-    103,
-    104,
-    109,
-    110,
-    111,
-    113,
-    115,
-    117,
-    119,
-    123,
-    135,
-    139,
-    143,
-    179,
-    389,
-    465,
-    512,
-    513,
-    514,
-    515,
-    526,
-    530,
-    531,
-    532,
-    540,
-    556,
-    563,
-    587,
-    601,
-    636,
-    993,
-    995,
-    2049,
-    3659,
-    4045,
-    6000,
-    6665,
-    6666,
-    6667,
-    6668,
-    6669,
-    6697,
-]
-
 
 def can_connect(port):
     # this test is only really useful on unices where SO_REUSE_PORT is available
@@ -159,11 +87,7 @@ def can_bind(port, proto):
 
 def refill_pool(max_timeout, req):
     """Scan for ports not marked for being in use"""
-    chk = [
-        port
-        for port in range(1025, 32766)
-        if port not in cronet_restricted_ports
-    ]
+    chk = [port for port in range(1025, 32766)]
     random.shuffle(chk)
     for i in chk:
         if len(pool) > 100:

@@ -2844,25 +2844,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/proto_utils.h'
   end
 
-  s.subspec 'Cronet-Interface' do |ss|
-    ss.header_mappings_dir = 'include/grpcpp'
-    ss.public_header_files = "include/grpcpp/security/cronet_credentials.h",
-                             "include/grpcpp/security/cronet_credentials_impl.h"
-    ss.source_files = "include/grpcpp/security/cronet_credentials.h",
-                      "include/grpcpp/security/cronet_credentials_impl.h"
-  end
-
-  s.subspec 'Cronet-Implementation' do |ss|
-    ss.header_mappings_dir = '.'
-    ss.dependency "#{s.name}/Cronet-Interface", version
-    ss.dependency "#{s.name}/Implementation", version
-    ss.dependency "#{s.name}/Privacy", version
-
-    ss.dependency 'gRPC-Core/Cronet-Implementation', version
-
-    ss.source_files = "src/cpp/client/cronet_credentials.cc"
-  end
-
   # patch include of openssl to openssl_grpc
   s.prepare_command = <<-END_OF_COMMAND
     set -e

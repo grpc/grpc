@@ -154,8 +154,6 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
   GRPCTransportTypeDefault = 0,
   /** gRPC internal HTTP/2 stack with BoringSSL */
   GRPCTransportTypeChttp2BoringSSL = 0,
-  /** Cronet stack */
-  GRPCTransportTypeCronet,
   /** Insecure channel. FOR TEST ONLY! */
   GRPCTransportTypeInsecure,
 };
