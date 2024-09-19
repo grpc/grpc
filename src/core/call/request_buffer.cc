@@ -20,7 +20,8 @@
 
 namespace grpc_core {
 
-StatusFlag RequestBuffer::PushClientInitialMetadata(ClientMetadataHandle md) {
+ValueOrFailure<size_t> RequestBuffer::PushClientInitialMetadata(
+    ClientMetadataHandle md) {
   MutexLock lock(&mu_);
   if (absl::get_if<Cancelled>(&state_)) return Failure{};
   auto& buffering = absl::get<Buffering>(state_);
@@ -28,7 +29,7 @@ StatusFlag RequestBuffer::PushClientInitialMetadata(ClientMetadataHandle md) {
   buffering.initial_metadata = std::move(md);
   buffering.buffered += buffering.initial_metadata->TransportSize();
   WakeupAsyncAllPullers();
-  return Success{};
+  return buffering.buffered;
 }
 
 Poll<ValueOrFailure<size_t>> RequestBuffer::PollPushMessage(

@@ -85,8 +85,9 @@ class RequestBuffer {
   };
 
   // Push ClientInitialMetadata into the buffer.
-  // This is instantaneous, and returns success or failure.
-  StatusFlag PushClientInitialMetadata(ClientMetadataHandle md);
+  // This is instantaneous, and returns success with the amount of data
+  // buffered, or failure.
+  ValueOrFailure<size_t> PushClientInitialMetadata(ClientMetadataHandle md);
   // Resolves to a ValueOrFailure<size_t> where the size_t is the amount of data
   // buffered (or 0 if we're in streaming mode).
   GRPC_MUST_USE_RESULT auto PushMessage(MessageHandle message) {
