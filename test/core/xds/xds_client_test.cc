@@ -3504,7 +3504,7 @@ TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
       << *error;
 }
 
-TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
+TEST_F(XdsClientTest, FederationWithUnparsableXdstpResourceName) {
   // Note: Not adding authority to bootstrap config.
   InitXdsClient();
   // Start a watch for the xdstp resource name.

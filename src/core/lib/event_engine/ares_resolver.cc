@@ -272,7 +272,7 @@ void AresResolver::LookupHostname(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {
@@ -351,7 +351,7 @@ void AresResolver::LookupSRV(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {
@@ -386,7 +386,7 @@ void AresResolver::LookupTXT(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {

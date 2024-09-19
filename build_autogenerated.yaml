@@ -21872,7 +21872,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
 - name: xds_gcp_authn_end2end_test
   gtest: true
   build: test
