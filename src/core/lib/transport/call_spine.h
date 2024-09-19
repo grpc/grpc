@@ -394,8 +394,6 @@ struct CallInitiatorAndHandler {
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
-CallHandler MakeFailedCall(absl::Status error);
-
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {
   struct Wrapper {
