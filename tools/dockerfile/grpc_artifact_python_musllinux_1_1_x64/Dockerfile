@@ -46,20 +46,20 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fbloaty
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fxds
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fgoogleapis
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fgoogletest
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopentelemetry
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopencensus-proto
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fboringssl-with-bazel
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fenvoy-api
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fprotobuf
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fzlib
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fbenchmark
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fre2
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fabseil-cpp
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fopentelemetry-cpp
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fprotoc-gen-validate
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party%2fcares%2fcares
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate
+RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares
 RUN git config --global protocol.file.allow always
