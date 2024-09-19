@@ -571,6 +571,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:log",
+        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -642,6 +643,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:log",
+        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,

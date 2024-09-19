@@ -20,6 +20,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
@@ -215,4 +217,20 @@ void grpc_maybe_wait_for_async_shutdown(void) {
   while (g_shutting_down) {
     g_shutting_down_cv->Wait(g_init_mu);
   }
+}
+
+bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
+  GRPC_TRACE_LOG(api, INFO) << "grpc_wait_for_shutdown_with_timeout()";
+  const auto started = absl::Now();
+  gpr_once_init(&g_basic_init, do_basic_init);
+  grpc_core::MutexLock lock(g_init_mu);
+  while (g_initializations != 0) {
+    if (g_shutting_down_cv->WaitWithTimeout(g_init_mu, timeout)) {
+      LOG(ERROR) << "grpc_wait_for_shutdown_with_timeout() timed out.";
+      return false;
+    }
+  }
+  LOG(INFO) << "grpc_wait_for_shutdown_with_timeout() took "
+            << absl::Now() - started;
+  return true;
 }
