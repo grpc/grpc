@@ -44,9 +44,13 @@ class RequestBuffer {
     Reader(const Reader&) = delete;
     Reader& operator=(const Reader&) = delete;
 
+    // Pull client initial metadata. Returns a promise that resolves to
+    // ValueOrFailure<ClientMetadataHandle>.
     GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
       return [this]() { return PollPullClientInitialMetadata(); };
     }
+    // Pull a message. Returns a promise that resolves to a
+    // ValueOrFailure<absl::optional<MessageHandle>>.
     GRPC_MUST_USE_RESULT auto PullMessage() {
       return [this]() { return PollPullMessage(); };
     }
@@ -100,11 +104,17 @@ class RequestBuffer {
   void SwitchToStreaming(Reader* winner);
 
  private:
+  // Buffering state: we're collecting metadata and messages.
   struct Buffering {
+    // Initial metadata, or nullptr if not yet received.
     ClientMetadataHandle initial_metadata;
+    // Buffered messages.
     absl::InlinedVector<MessageHandle, 1> messages;
+    // Amount of data buffered.
     size_t buffered = 0;
   };
+  // Buffered state: all messages have been collected (the client has finished
+  // sending).
   struct Buffered {
     Buffered(ClientMetadataHandle md,
              absl::InlinedVector<MessageHandle, 1> msgs)
@@ -112,10 +122,13 @@ class RequestBuffer {
     ClientMetadataHandle initial_metadata;
     absl::InlinedVector<MessageHandle, 1> messages;
   };
+  // Streaming state: we're streaming messages to the server.
+  // This implies winner_ is set.
   struct Streaming {
     MessageHandle message;
     bool end_of_stream;
   };
+  // Cancelled state: the request has been cancelled.
   struct Cancelled {
     explicit Cancelled(absl::Status error) : error(std::move(error)) {}
     absl::Status error;
