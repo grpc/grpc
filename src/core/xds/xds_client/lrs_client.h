@@ -42,6 +42,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -117,10 +118,23 @@ class LrsClient : public DualRefCounted<LrsClient> {
       uint64_t num_requests_finished_with_metric = 0;
       double total_metric_value = 0;
 
+      BackendMetric() = default;
+
+      BackendMetric(uint64_t num_requests_finished, double value)
+          : num_requests_finished_with_metric(num_requests_finished),
+            total_metric_value(value) {}
+
       BackendMetric(BackendMetric&& other)
           : num_requests_finished_with_metric(
                 std::exchange(other.num_requests_finished_with_metric, 0)),
             total_metric_value(std::exchange(other.total_metric_value, 0)) {}
+
+      BackendMetric& operator=(BackendMetric&& other) {
+        num_requests_finished_with_metric =
+            std::exchange(other.num_requests_finished_with_metric, 0);
+        total_metric_value = std::exchange(other.total_metric_value, 0);
+        return *this;
+      }
 
       BackendMetric& operator+=(const BackendMetric& other) {
         num_requests_finished_with_metric +=
@@ -173,19 +187,19 @@ class LrsClient : public DualRefCounted<LrsClient> {
       }
     };
 
-    ClusterLocalityStats(RefCountedPtr<LrsClient> lrs_client,
-                         absl::string_view lrs_server,
-                         absl::string_view cluster_name,
-                         absl::string_view eds_service_name,
-                         RefCountedPtr<XdsLocalityName> name);
+    ClusterLocalityStats(
+        RefCountedPtr<LrsClient> lrs_client, absl::string_view lrs_server,
+        absl::string_view cluster_name, absl::string_view eds_service_name,
+        RefCountedPtr<XdsLocalityName> name,
+        RefCountedPtr<const BackendMetricPropagation>
+            backend_metric_propagation);
     ~ClusterLocalityStats() override;
 
     // Returns a snapshot of this instance and resets all the counters.
     Snapshot GetSnapshotAndReset();
 
     void AddCallStarted();
-    void AddCallFinished(const BackendMetricPropagation& propagation,
-                         const BackendMetricData* backend_metrics,
+    void AddCallFinished(const BackendMetricData* backend_metrics,
                          bool fail = false);
 
     XdsLocalityName* locality_name() const { return name_.get(); }
@@ -210,6 +224,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     absl::string_view cluster_name_;
     absl::string_view eds_service_name_;
     RefCountedPtr<XdsLocalityName> name_;
+    RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation_;
     PerCpu<Stats> stats_{PerCpuOptions().SetMaxShards(32).SetCpusPerShard(4)};
   };
 
@@ -230,7 +245,8 @@ class LrsClient : public DualRefCounted<LrsClient> {
   RefCountedPtr<ClusterLocalityStats> AddClusterLocalityStats(
       std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
       absl::string_view cluster_name, absl::string_view eds_service_name,
-      RefCountedPtr<XdsLocalityName> locality);
+      RefCountedPtr<XdsLocalityName> locality,
+      RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -283,7 +299,9 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
   struct LoadReportState {
     struct LocalityState {
-      ClusterLocalityStats* locality_stats = nullptr;
+      std::map<RefCountedPtr<const BackendMetricPropagation>,
+               ClusterLocalityStats*, BackendMetricPropagation::Less>
+          propagation_stats;
       ClusterLocalityStats::Snapshot deleted_locality_stats;
     };
 
@@ -337,6 +355,8 @@ class LrsClient : public DualRefCounted<LrsClient> {
       absl::string_view lrs_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       const RefCountedPtr<XdsLocalityName>& locality,
+      const RefCountedPtr<const BackendMetricPropagation>&
+          backend_metric_propagation,
       ClusterLocalityStats* cluster_locality_stats);
 
   // Creates an initial LRS request.

@@ -199,13 +199,9 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        LocalityData locality_data,
-        RefCountedPtr<const BackendMetricPropagation>
-            backend_metric_propagation,
-        absl::string_view hostname)
+        LocalityData locality_data, absl::string_view hostname)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
           locality_data_(std::move(locality_data)),
-          backend_metric_propagation_(std::move(backend_metric_propagation)),
           hostname_(grpc_event_engine::experimental::Slice::FromCopiedString(
               hostname)) {}
 
@@ -229,19 +225,12 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
                  locality_stats) { return locality_stats.get(); });
     }
 
-    RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation()
-        const {
-      return backend_metric_propagation_;
-    }
-
-
     const grpc_event_engine::experimental::Slice& hostname() const {
       return hostname_;
     }
 
    private:
     LocalityData locality_data_;
-    RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation_;
     grpc_event_engine::experimental::Slice hostname_;
   };
 
@@ -336,12 +325,10 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           original_subchannel_call_tracker,
       RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats,
-      RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation,
       RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter)
       : original_subchannel_call_tracker_(
             std::move(original_subchannel_call_tracker)),
         locality_stats_(std::move(locality_stats)),
-        backend_metric_propagation_(std::move(backend_metric_propagation)),
         call_counter_(std::move(call_counter)) {}
 
   ~SubchannelCallTracker() override {
@@ -376,7 +363,6 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
       locality_stats_->AddCallFinished(
-          *backend_metric_propagation_,
           args.backend_metric_accessor->GetBackendMetricData(),
           !args.status.ok());
     }
@@ -391,7 +377,6 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
   RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats_;
-  RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation_;
   RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
 #ifndef NDEBUG
   bool started_ = false;
@@ -491,7 +476,6 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         std::make_unique<SubchannelCallTracker>(
             std::move(complete_pick->subchannel_call_tracker),
             std::move(locality_stats),
-            subchannel_wrapper->backend_metric_propagation(),
             call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
   } else {
     // TODO(roth): We should ideally also record call failures here in the case
@@ -838,7 +822,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
         parent()->xds_client_->lrs_client().AddClusterLocalityStats(
             parent()->cluster_resource_->lrs_load_reporting_server,
             parent()->config_->cluster_name(),
-            GetEdsResourceName(*parent()->cluster_resource_), locality_name);
+            GetEdsResourceName(*parent()->cluster_resource_), locality_name,
+            parent()->cluster_resource_->lrs_backend_metric_propagation);
     if (locality_stats == nullptr) {
       LOG(ERROR)
           << "[xds_cluster_impl_lb " << parent()
@@ -861,9 +846,6 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
       std::move(locality_data),
-// FIXME: consider saving this in the XdsClusterLocalityStats object, so
-// that we don't need to store a pointer both per-subchannel and per-call?
-      parent()->cluster_resource_->lrs_backend_metric_propagation,
       per_address_args.GetString(GRPC_ARG_ADDRESS_NAME).value_or(""));
 }
 

@@ -5598,6 +5598,7 @@ grpc_cc_library(
         "json_writer",
         "match",
         "time",
+        "xds_backend_metric_propagation",
         "xds_common_types",
         "xds_health_status",
         "xds_metadata",
@@ -5632,17 +5633,23 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_backend_metric_propagation",
+    srcs = [
+        "xds/xds_client/xds_backend_metric_propagation.cc",
+    ],
     hdrs = [
         "xds/xds_client/xds_backend_metric_propagation.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/strings",
     ],
     language = "c++",
     tags = ["nofixdeps"],
     visibility = ["@grpc:xds_client_core"],
     deps = [
         "ref_counted",
+        "useful",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -5822,6 +5829,7 @@ grpc_cc_library(
         "upb_utils",
         "useful",
         "validation_errors",
+        "xds_backend_metric_propagation",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_cluster",

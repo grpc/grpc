@@ -55,11 +55,12 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_client_stats.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
+#include "src/core/xds/xds_client/lrs_client.h"
+#include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 
 namespace grpc_core {
 
@@ -477,7 +478,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         if (metric_name == "*") {
           propagation->propagation_bits &= propagation->kApplicationUtilization;
         } else {
-          propagation->named_metric_keys.insert(metric_name);
+          propagation->named_metric_keys.emplace(metric_name);
         }
       }
     }
