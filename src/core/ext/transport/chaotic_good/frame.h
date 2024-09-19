@@ -43,8 +43,7 @@ struct BufferPair {
 };
 
 struct FrameLimits {
-  size_t max_message_size = 1024 * 1024 * 1024;
-  size_t max_padding = 63;
+  size_t max_payload_length = 1024 * 1024 * 1024;
 
   absl::Status ValidateMessage(const FrameHeader& header);
 };
@@ -55,8 +54,8 @@ class FrameInterface {
                                    const FrameHeader& header,
                                    absl::BitGenRef bitsrc, Arena* arena,
                                    BufferPair buffers, FrameLimits limits) = 0;
-  virtual BufferPair Serialize(HPackCompressor* encoder,
-                               bool& saw_encoding_errors) const = 0;
+  virtual void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                         BufferPair* buffers) const = 0;
   virtual std::string ToString() const = 0;
 
   template <typename Sink>
@@ -86,73 +85,82 @@ struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
   ClientMetadataHandle headers;
   std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }
 };
 
-struct FragmentMessage {
-  FragmentMessage(MessageHandle message, uint32_t padding, uint32_t length)
-      : message(std::move(message)), padding(padding), length(length) {}
-
-  MessageHandle message;
-  uint32_t padding;
-  uint32_t length;
-
-  std::string ToString() const;
-
-  static bool EqVal(const Message& a, const Message& b) {
-    return a.payload()->JoinIntoString() == b.payload()->JoinIntoString() &&
-           a.flags() == b.flags();
-  }
-
-  bool operator==(const FragmentMessage& other) const {
-    if (length != other.length) return false;
-    if (message == nullptr && other.message == nullptr) return true;
-    if (message == nullptr || other.message == nullptr) return false;
-    return EqVal(*message, *other.message);
-  }
-};
-
-struct ClientFragmentFrame final : public FrameInterface {
+struct ClientInitialMetadataFrame : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
   ClientMetadataHandle headers;
-  absl::optional<FragmentMessage> message;
-  bool end_of_stream = false;
-
-  bool operator==(const ClientFragmentFrame& other) const {
-    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           message == other.message && end_of_stream == other.end_of_stream;
-  }
 };
 
-struct ServerFragmentFrame final : public FrameInterface {
+struct MessageFrame : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
+  MessageHandle message;
+};
+
+struct ClientEndOfStream : public FrameInterface {
+  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc, Arena* arena,
+                           BufferPair buffers, FrameLimits limits) override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
+};
+
+struct ServerInitialMetadataFrame : public FrameInterface {
+  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc, Arena* arena,
+                           BufferPair buffers, FrameLimits limits) override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
   ServerMetadataHandle headers;
-  absl::optional<FragmentMessage> message;
-  ServerMetadataHandle trailers;
+};
 
-  bool operator==(const ServerFragmentFrame& other) const {
-    return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
-           message == other.message && EqHdl(trailers, other.trailers);
-  }
+struct ServerTrailingMetadataFrame : public FrameInterface {
+  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc, Arena* arena,
+                           BufferPair buffers, FrameLimits limits) override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
+  std::string ToString() const override;
+
+  uint32_t stream_id;
+  ServerMetadataHandle trailers;
+};
+
+struct PaddingFrame : public FrameInterface {
+  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
+                           absl::BitGenRef bitsrc, Arena* arena,
+                           BufferPair buffers, FrameLimits limits) override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
+  std::string ToString() const override;
+
+  uint32_t length;
 };
 
 struct CancelFrame final : public FrameInterface {
@@ -162,8 +170,8 @@ struct CancelFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
-  BufferPair Serialize(HPackCompressor* encoder,
-                       bool& saw_encoding_errors) const override;
+  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+                 BufferPair* buffers) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -173,20 +181,31 @@ struct CancelFrame final : public FrameInterface {
   }
 };
 
-using ClientFrame = absl::variant<ClientFragmentFrame, CancelFrame>;
-using ServerFrame = absl::variant<ServerFragmentFrame>;
+using ClientFrame = absl::variant<ClientInitialMetadataFrame, MessageFrame,
+                                  CancelFrame, PaddingFrame>;
+using ServerFrame = absl::variant<ServerInitialMetadataFrame, MessageFrame,
+                                  ServerTrailingMetadataFrame, PaddingFrame>;
 
 inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
   return MatchMutable(
       &frame,
-      [](ClientFragmentFrame* frame) -> FrameInterface& { return *frame; },
+      [](ClientInitialMetadataFrame* frame) -> FrameInterface& {
+        return *frame;
+      },
+      [](MessageFrame* frame) -> FrameInterface& { return *frame; },
       [](CancelFrame* frame) -> FrameInterface& { return *frame; });
 }
 
 inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
   return MatchMutable(
       &frame,
-      [](ServerFragmentFrame* frame) -> FrameInterface& { return *frame; });
+      [](ServerInitialMetadataFrame* frame) -> FrameInterface& {
+        return *frame;
+      },
+      [](MessageFrame* frame) -> FrameInterface& { return *frame; },
+      [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
+        return *frame;
+      });
 }
 
 }  // namespace chaotic_good

@@ -30,16 +30,28 @@ namespace chaotic_good {
 
 enum class FrameType : uint8_t {
   kSettings = 0x00,
-  kFragment = 0x80,
-  kCancel = 0x81,
+  kPadding = 0x10,
+  kClientInitialMetadata = 0x80,
+  kMessage = 0x81,
+  kServerInitialMetadata = 0x82,
+  kServerTrailingMetadata = 0x83,
+  kCancel = 0x84,
 };
 
 inline std::ostream& operator<<(std::ostream& out, FrameType type) {
   switch (type) {
     case FrameType::kSettings:
       return out << "Settings";
-    case FrameType::kFragment:
-      return out << "Fragment";
+    case FrameType::kPadding:
+      return out << "Padding";
+    case FrameType::kClientInitialMetadata:
+      return out << "ClientInitialMetadata";
+    case FrameType::kMessage:
+      return out << "Message";
+    case FrameType::kServerInitialMetadata:
+      return out << "ServerInitialMetadata";
+    case FrameType::kServerTrailingMetadata:
+      return out << "ServerTrailingMetadata";
     case FrameType::kCancel:
       return out << "Cancel";
     default:
@@ -49,31 +61,24 @@ inline std::ostream& operator<<(std::ostream& out, FrameType type) {
 
 struct FrameHeader {
   FrameType type = FrameType::kCancel;
-  BitSet<3> flags;
+  uint16_t payload_connection_id = 0;
   uint32_t stream_id = 0;
-  uint32_t header_length = 0;
-  uint32_t message_length = 0;
-  uint32_t message_padding = 0;
-  uint32_t trailer_length = 0;
+  uint32_t payload_length = 0;
 
-  // Parses a frame header from a buffer of 24 bytes. All 24 bytes are consumed.
+  // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
   static absl::StatusOr<FrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of 24 bytes.
+  // Serializes a frame header into a buffer of 12 bytes.
   void Serialize(uint8_t* data) const;
-  // Compute frame sizes from the header.
-  uint32_t GetFrameLength() const;
   // Report contents as a string
   std::string ToString() const;
 
   bool operator==(const FrameHeader& h) const {
-    return type == h.type && flags == h.flags && stream_id == h.stream_id &&
-           header_length == h.header_length &&
-           message_length == h.message_length &&
-           message_padding == h.message_padding &&
-           trailer_length == h.trailer_length;
+    return type == h.type && stream_id == h.stream_id &&
+           payload_connection_id == h.payload_connection_id &&
+           payload_length == h.payload_length;
   }
-  // Frame header size is fixed to 24 bytes.
-  static constexpr size_t kFrameHeaderSize = 24;
+  // Frame header size is fixed to 12 bytes.
+  static constexpr size_t kFrameHeaderSize = 12;
 };
 
 }  // namespace chaotic_good

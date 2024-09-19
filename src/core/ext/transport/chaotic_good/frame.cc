@@ -51,63 +51,36 @@ const NoDestruct<Slice> kZeroSlice{[] {
   return slice;
 }()};
 
-class FrameSerializer {
- public:
-  explicit FrameSerializer(FrameType frame_type, uint32_t stream_id) {
-    output_.control.AppendIndexed(kZeroSlice->Copy());
-    header_.type = frame_type;
-    header_.stream_id = stream_id;
-    header_.flags.SetAll(false);
+void AddFrame(FrameType frame_type, uint32_t stream_id, SliceBuffer payload,
+              BufferPair* out) {
+  FrameHeader header;
+  header.type = frame_type;
+  header.stream_id = stream_id;
+  header.payload_length = payload.Length();
+  header.payload_connection_id = header.payload_length > 1024 ? 1 : 0;
+  header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
+  if (header.payload_connection_id == 0) {
+    out->control.Append(payload);
+  } else {
+    out->data.Append(payload);
   }
+}
 
-  // If called, must be called before AddTrailers, Finish.
-  SliceBuffer& AddHeaders() {
-    header_.flags.set(0);
-    return output_.control;
-  }
-
-  void AddMessage(const FragmentMessage& msg) {
-    header_.flags.set(1);
-    header_.message_length = msg.length;
-    header_.message_padding = msg.padding;
-    output_.data = msg.message->payload()->Copy();
-    if (msg.padding != 0) {
-      output_.data.Append(Slice::FromStaticBuffer(kZeros, msg.padding));
-    }
-  }
-
-  // If called, must be called before Finish.
-  SliceBuffer& AddTrailers() {
-    header_.flags.set(2);
-    header_.header_length =
-        output_.control.Length() - FrameHeader::kFrameHeaderSize;
-    return output_.control;
-  }
-
-  BufferPair Finish() {
-    // Calculate frame header_length or trailer_length if available.
-    if (header_.flags.is_set(2)) {
-      // Header length is already known in AddTrailers().
-      header_.trailer_length = output_.control.Length() -
-                               header_.header_length -
-                               FrameHeader::kFrameHeaderSize;
-    } else {
-      if (header_.flags.is_set(0)) {
-        // Calculate frame header length in Finish() since AddTrailers() isn't
-        // called.
-        header_.header_length =
-            output_.control.Length() - FrameHeader::kFrameHeaderSize;
-      }
-    }
-    header_.Serialize(
-        GRPC_SLICE_START_PTR(output_.control.c_slice_buffer()->slices[0]));
-    return std::move(output_);
-  }
-
- private:
-  FrameHeader header_;
-  BufferPair output_;
-};
+template <typename F>
+void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
+                    BufferPair* out) {
+  const size_t header_slice = out->control.AppendIndexed(kZeroSlice->Copy());
+  const size_t size_before = out->control.Length();
+  gen_frame(out->control);
+  const size_t size_after = out->control.Length();
+  FrameHeader header;
+  header.type = frame_type;
+  header.stream_id = stream_id;
+  header.payload_length = size_after - size_before;
+  header.payload_connection_id = 0;
+  header.Serialize(const_cast<uint8_t*>(
+      GRPC_SLICE_START_PTR(out->control.c_slice_at(header_slice))));
+}
 
 class FrameDeserializer {
  public:
@@ -175,15 +148,10 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }  // namespace
 
 absl::Status FrameLimits::ValidateMessage(const FrameHeader& header) {
-  if (header.message_length > max_message_size) {
+  if (header.payload_length > max_payload_length) {
     return absl::InvalidArgumentError(
-        absl::StrCat("Message length ", header.message_length,
-                     " exceeds maximum allowed ", max_message_size));
-  }
-  if (header.message_padding > max_padding) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Message padding ", header.message_padding,
-                     " exceeds maximum allowed ", max_padding));
+        absl::StrCat("Payload length ", header.payload_length,
+                     " exceeds maximum allowed ", max_payload_length));
   }
   return absl::OkStatus();
 }
@@ -217,14 +185,15 @@ absl::Status SettingsFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair SettingsFrame::Serialize(HPackCompressor* encoder,
-                                    bool& saw_encoding_errors) const {
-  FrameSerializer serializer(FrameType::kSettings, 0);
-  if (headers.get() != nullptr) {
-    saw_encoding_errors |=
-        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
-  }
-  return serializer.Finish();
+void SettingsFrame::Serialize(HPackCompressor* encoder,
+                              bool& saw_encoding_errors,
+                              BufferPair* out) const {
+  AddInlineFrame(
+      FrameType::kSettings, 0,
+      [&saw_encoding_errors, encoder, this](SliceBuffer& out) {
+        saw_encoding_errors |= !encoder->EncodeRawHeaders(*headers, out);
+      },
+      out);
 }
 
 std::string SettingsFrame::ToString() const { return "SettingsFrame{}"; }
