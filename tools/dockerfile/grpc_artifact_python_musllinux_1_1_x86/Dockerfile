@@ -64,3 +64,9 @@ RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/module
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares
 RUN git config --global protocol.file.allow always
+
+# Install Rust and Cargo needed by the cryptography package 
+# (requires a separate installation as it's not included with the base image)
+ENV RUST_VERSION 1.81.0
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RUST_VERSION}
+ENV PATH "${HOME}/.cargo/bin:${PATH}"
