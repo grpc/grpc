@@ -304,6 +304,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         if (request->has_param() && request->param().has_backend_metrics()) {
           const auto& request_metrics = request->param().backend_metrics();
           auto* recorder = context->ExperimentalGetCallMetricRecorder();
+          if (request_metrics.cpu_utilization() != 0) {
+            recorder->RecordCpuUtilizationMetric(
+                request_metrics.cpu_utilization());
+          }
+          if (request_metrics.mem_utilization() != 0) {
+            recorder->RecordMemoryUtilizationMetric(
+                request_metrics.mem_utilization());
+          }
+          if (request_metrics.application_utilization() != 0) {
+            recorder->RecordApplicationUtilizationMetric(
+                request_metrics.application_utilization());
+          }
           for (const auto& p : request_metrics.named_metrics()) {
             char* key = static_cast<char*>(
                 grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));

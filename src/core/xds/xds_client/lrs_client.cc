@@ -1095,6 +1095,23 @@ std::string LrsClient::CreateLrsInitialRequest() {
 
 namespace {
 
+void MaybeAddLoadMetric(
+    const LrsApiContext& context,
+    envoy_config_endpoint_v3_UpstreamLocalityStats* output,
+    absl::string_view metric_name,
+    const LrsClient::ClusterLocalityStats::BackendMetric& backend_metric) {
+  if (backend_metric.IsZero()) return;
+  envoy_config_endpoint_v3_EndpointLoadMetricStats* load_metric =
+      envoy_config_endpoint_v3_UpstreamLocalityStats_add_load_metric_stats(
+          output, context.arena);
+  envoy_config_endpoint_v3_EndpointLoadMetricStats_set_metric_name(
+      load_metric, StdStringToUpbString(metric_name));
+  envoy_config_endpoint_v3_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
+      load_metric, backend_metric.num_requests_finished_with_metric);
+  envoy_config_endpoint_v3_EndpointLoadMetricStats_set_total_metric_value(
+      load_metric, backend_metric.total_metric_value);
+}
+
 void LocalityStatsPopulate(
     const LrsApiContext& context,
     envoy_config_endpoint_v3_UpstreamLocalityStats* output,
@@ -1126,19 +1143,17 @@ void LocalityStatsPopulate(
   envoy_config_endpoint_v3_UpstreamLocalityStats_set_total_issued_requests(
       output, snapshot.total_issued_requests);
   // Add backend metrics.
+  MaybeAddLoadMetric(context, output, "cpu_utilization",
+                     snapshot.cpu_utilization);
+  MaybeAddLoadMetric(context, output, "mem_utilization",
+                     snapshot.mem_utilization);
+  MaybeAddLoadMetric(context, output, "application_utilization",
+                     snapshot.application_utilization);
   for (const auto& p : snapshot.backend_metrics) {
     const std::string& metric_name = p.first;
     const LrsClient::ClusterLocalityStats::BackendMetric& metric_value =
         p.second;
-    envoy_config_endpoint_v3_EndpointLoadMetricStats* load_metric =
-        envoy_config_endpoint_v3_UpstreamLocalityStats_add_load_metric_stats(
-            output, context.arena);
-    envoy_config_endpoint_v3_EndpointLoadMetricStats_set_metric_name(
-        load_metric, StdStringToUpbString(metric_name));
-    envoy_config_endpoint_v3_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
-        load_metric, metric_value.num_requests_finished_with_metric);
-    envoy_config_endpoint_v3_EndpointLoadMetricStats_set_total_metric_value(
-        load_metric, metric_value.total_metric_value);
+    MaybeAddLoadMetric(context, output, metric_name, metric_value);
   }
 }
 
