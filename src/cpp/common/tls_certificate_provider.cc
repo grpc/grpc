@@ -48,7 +48,8 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 
 absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
   auto* provider =
-      reinterpret_cast<grpc_core::StaticDataCertificateProvider*>(c_provider_);
+      grpc_core::DownCast<grpc_core::StaticDataCertificateProvider*>(
+          c_provider_);
   return provider->ValidateCredentials();
 }
 
@@ -68,7 +69,8 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   auto* provider =
-      reinterpret_cast<grpc_core::FileWatcherCertificateProvider*>(c_provider_);
+      grpc_core::DownCast<grpc_core::FileWatcherCertificateProvider*>(
+          c_provider_);
   return provider->ValidateCredentials();
 }
 
