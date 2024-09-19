@@ -116,7 +116,7 @@ TEST(RequestBufferTest, NoOp) { RequestBuffer buffer; }
 
 TEST(RequestBufferTest, PushThenPullClientInitialMetadata) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto poll = reader.PullClientInitialMetadata()();
   ASSERT_THAT(poll, IsReady());
@@ -135,9 +135,8 @@ TEST(RequestBufferTest, PullThenPushClientInitialMetadata) {
   EXPECT_THAT(poll, IsPending());
   ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Append("key", Slice::FromStaticString("value"), CrashOnParseError);
-  EXPECT_WAKEUP(
-      activity,
-      EXPECT_EQ(buffer.PushClientInitialMetadata(std::move(md)), Success{}));
+  EXPECT_WAKEUP(activity,
+                EXPECT_EQ(buffer.PushClientInitialMetadata(std::move(md)), 40));
   poll = poller();
   ASSERT_THAT(poll, IsReady());
   auto value = std::move(poll.value());
@@ -147,7 +146,7 @@ TEST(RequestBufferTest, PullThenPushClientInitialMetadata) {
 
 TEST(RequestBufferTest, PushThenPullMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   RequestBuffer::Reader reader(&buffer);
@@ -163,11 +162,11 @@ TEST(RequestBufferTest, PushThenPullMessage) {
 
 TEST(RequestBufferTest, PushThenPullMessageStreamBeforeInitialMetadata) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   RequestBuffer::Reader reader(&buffer);
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
@@ -180,13 +179,13 @@ TEST(RequestBufferTest, PushThenPullMessageStreamBeforeInitialMetadata) {
 
 TEST(RequestBufferTest, PushThenPullMessageStreamBeforeFirstMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
@@ -199,7 +198,7 @@ TEST(RequestBufferTest, PullThenPushMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
@@ -219,11 +218,11 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchBeforePullMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   EXPECT_THAT(poll_msg, IsPending());
@@ -240,14 +239,14 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchBeforePushMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   EXPECT_THAT(poll_msg, IsPending());
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(0)));
   poll_msg = pull_msg();
@@ -261,7 +260,7 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchAfterPushMessage) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
@@ -270,7 +269,7 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchAfterPushMessage) {
   EXPECT_THAT(poll_msg, IsPending());
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_WAKEUP(activity, EXPECT_THAT(pusher(), IsReady(49)));
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
   ASSERT_TRUE(poll_msg.value().ok());
@@ -280,7 +279,7 @@ TEST(RequestBufferTest, PullThenPushMessageSwitchAfterPushMessage) {
 
 TEST(RequestBufferTest, PullEndOfStream) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   RequestBuffer::Reader reader(&buffer);
@@ -302,13 +301,13 @@ TEST(RequestBufferTest, PullEndOfStream) {
 
 TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePullMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
@@ -325,9 +324,9 @@ TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePullMessage) {
 
 TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePushMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(0));
   auto pull_md = reader.PullClientInitialMetadata();
@@ -348,7 +347,7 @@ TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePushMessage) {
 
 TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   EXPECT_EQ(buffer.FinishSends(), Success{});
@@ -371,9 +370,9 @@ TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
 TEST(RequestBufferTest,
      PullEndOfStreamQueuedWithMessageSwitchBeforePushMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(0));
   EXPECT_EQ(buffer.FinishSends(), Success{});
@@ -395,14 +394,14 @@ TEST(RequestBufferTest,
 TEST(RequestBufferTest,
      PullEndOfStreamQueuedWithMessageSwitchBeforePullMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   EXPECT_EQ(buffer.FinishSends(), Success{});
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
@@ -419,7 +418,7 @@ TEST(RequestBufferTest,
 TEST(RequestBufferTest,
      PullEndOfStreamQueuedWithMessageSwitchDuringPullMessage) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   auto pusher = buffer.PushMessage(TestMessage());
   EXPECT_THAT(pusher(), IsReady(49));
   EXPECT_EQ(buffer.FinishSends(), Success{});
@@ -427,7 +426,7 @@ TEST(RequestBufferTest,
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   auto poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
   ASSERT_TRUE(poll_msg.value().ok());
@@ -442,7 +441,7 @@ TEST(RequestBufferTest,
 
 TEST(RequestBufferTest, PushThenPullMessageRepeatedly) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
@@ -460,7 +459,7 @@ TEST(RequestBufferTest, PushThenPullMessageRepeatedly) {
 
 TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   auto pull_md = reader.PullClientInitialMetadata();
   EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
@@ -468,7 +467,7 @@ TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
     auto pusher = buffer.PushMessage(TestMessage(i));
     EXPECT_THAT(pusher(), IsReady(40 + 9 * (i + 1)));
   }
-  buffer.SwitchToStreaming(&reader);
+  buffer.Commit(&reader);
   for (int i = 0; i < 10; i++) {
     auto pull_msg = reader.PullMessage();
     auto poll_msg = pull_msg();
@@ -491,7 +490,7 @@ TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
 
 TEST(RequestBufferTest, HedgeReadMetadata) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader1(&buffer);
   RequestBuffer::Reader reader2(&buffer);
   auto pull_md1 = reader1.PullClientInitialMetadata();
@@ -510,9 +509,9 @@ TEST(RequestBufferTest, HedgeReadMetadata) {
 
 TEST(RequestBufferTest, HedgeReadMetadataSwitchBeforeFirstRead) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader1(&buffer);
-  buffer.SwitchToStreaming(&reader1);
+  buffer.Commit(&reader1);
   RequestBuffer::Reader reader2(&buffer);
   auto pull_md1 = reader1.PullClientInitialMetadata();
   auto pull_md2 = reader2.PullClientInitialMetadata();
@@ -529,7 +528,7 @@ TEST(RequestBufferTest, HedgeReadMetadataSwitchBeforeFirstRead) {
 
 TEST(RequestBufferTest, HedgeReadMetadataLate) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader1(&buffer);
   auto pull_md1 = reader1.PullClientInitialMetadata();
   auto poll_md1 = pull_md1();
@@ -548,7 +547,7 @@ TEST(RequestBufferTest, HedgeReadMetadataLate) {
 
 TEST(RequestBufferTest, HedgeReadMetadataLateSwitchAfterPullInitialMetadata) {
   RequestBuffer buffer;
-  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Success{});
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader1(&buffer);
   auto pull_md1 = reader1.PullClientInitialMetadata();
   auto poll_md1 = pull_md1();
@@ -557,7 +556,7 @@ TEST(RequestBufferTest, HedgeReadMetadataLateSwitchAfterPullInitialMetadata) {
   ASSERT_TRUE(value1.ok());
   EXPECT_THAT(*value1, IsTestMetadata());
   RequestBuffer::Reader reader2(&buffer);
-  buffer.SwitchToStreaming(&reader1);
+  buffer.Commit(&reader1);
   auto pull_md2 = reader2.PullClientInitialMetadata();
   auto poll_md2 = pull_md2();
   ASSERT_THAT(poll_md2, IsReady());

@@ -76,7 +76,7 @@ void RequestBuffer::Cancel(absl::Status error) {
   WakeupAsyncAllPullers();
 }
 
-void RequestBuffer::SwitchToStreaming(Reader* winner) {
+void RequestBuffer::Commit(Reader* winner) {
   MutexLock lock(&mu_);
   CHECK_EQ(winner_, nullptr);
   winner_ = winner;

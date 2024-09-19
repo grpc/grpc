@@ -26,9 +26,10 @@ namespace grpc_core {
 // Outbound request buffer.
 // Collects client->server metadata and messages whilst in its initial buffering
 // mode. In buffering mode it can have zero or more Reader objects attached to
-// it. The buffer can later be switched to streaming mode, at which point it
+// it.
+// The buffer can later be switched to committed mode, at which point it
 // will have exactly one Reader object attached to it.
-// Callers can choose to switch to streaming mode based upon policy of their
+// Callers can choose to switch to committed mode based upon policy of their
 // choice.
 class RequestBuffer {
  public:
@@ -89,7 +90,7 @@ class RequestBuffer {
   // buffered, or failure.
   ValueOrFailure<size_t> PushClientInitialMetadata(ClientMetadataHandle md);
   // Resolves to a ValueOrFailure<size_t> where the size_t is the amount of data
-  // buffered (or 0 if we're in streaming mode).
+  // buffered (or 0 if we're in committed mode).
   GRPC_MUST_USE_RESULT auto PushMessage(MessageHandle message) {
     return [this, message = std::move(message)]() mutable {
       return PollPushMessage(message);
@@ -100,9 +101,9 @@ class RequestBuffer {
   // Cancel the request, propagate failure to all readers.
   void Cancel(absl::Status error = absl::CancelledError());
 
-  // Switch to streaming mode - needs to be called exactly once with the winning
+  // Switch to committed mode - needs to be called exactly once with the winning
   // reader. All other readers will see failure.
-  void SwitchToStreaming(Reader* winner);
+  void Commit(Reader* winner);
 
  private:
   // Buffering state: we're collecting metadata and messages.
