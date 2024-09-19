@@ -45,6 +45,15 @@ inline bool LrsServersEqual(
   return *lrs_server1 == *lrs_server2;
 }
 
+inline bool LrsBackendMetricPropagationEqual(
+    const RefCountedPtr<const BackendMetricPropagation>& p1,
+    const RefCountedPtr<const BackendMetricPropagation>& p2) {
+  if (p1 == nullptr) return p2 == nullptr;
+  if (p2 == nullptr) return false;
+  // Neither one is null, so compare them.
+  return *p1 == *p2;
+}
+
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
     // If empty, defaults to the cluster name.
@@ -106,8 +115,9 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
            LrsServersEqual(lrs_load_reporting_server,
                            other.lrs_load_reporting_server) &&
-           lrs_backend_metric_propagation ==
-               other.lrs_backend_metric_propagation &&
+           LrsBackendMetricPropagationEqual(
+               lrs_backend_metric_propagation,
+               other.lrs_backend_metric_propagation) &&
            common_tls_context == other.common_tls_context &&
            connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&
