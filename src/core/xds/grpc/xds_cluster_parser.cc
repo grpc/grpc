@@ -469,14 +469,14 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     for (size_t i = 0; i < size; ++i) {
       absl::string_view metric_name = UpbStringToAbsl(metrics[i]);
       if (metric_name == "cpu_utilization") {
-        propagation->propagation_bits &= propagation->kCpuUtilization;
+        propagation->propagation_bits |= propagation->kCpuUtilization;
       } else if (metric_name == "mem_utilization") {
-        propagation->propagation_bits &= propagation->kMemUtilization;
+        propagation->propagation_bits |= propagation->kMemUtilization;
       } else if (metric_name == "application_utilization") {
-        propagation->propagation_bits &= propagation->kApplicationUtilization;
+        propagation->propagation_bits |= propagation->kApplicationUtilization;
       } else if (absl::ConsumePrefix(&metric_name, "named_metrics.")) {
         if (metric_name == "*") {
-          propagation->propagation_bits &= propagation->kApplicationUtilization;
+          propagation->propagation_bits |= propagation->kNamedMetricsAll;
         } else {
           propagation->named_metric_keys.emplace(metric_name);
         }

@@ -35,11 +35,15 @@ std::string BackendMetricPropagation::AsString() const {
   if (propagation_bits & kNamedMetricsAll) {
     parts.push_back("named_metrics.*");
   } else {
-    for (const auto& key : named_metric_keys) {
+    // Output keys in sorted order for consistency.
+    std::vector<absl::string_view> keys(named_metric_keys.begin(),
+                                        named_metric_keys.end());
+    std::sort(keys.begin(), keys.end());
+    for (const auto& key : keys) {
       parts.push_back(absl::StrCat("named_metrics.", key));
     }
   }
-  return absl::StrJoin(parts, ",");
+  return absl::StrCat("{", absl::StrJoin(parts, ","), "}");
 }
 
 bool BackendMetricPropagation::operator<(
