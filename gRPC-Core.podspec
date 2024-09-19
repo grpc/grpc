@@ -2151,6 +2151,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/lrs_client.h',
                       'src/core/xds/xds_client/xds_api.cc',
                       'src/core/xds/xds_client/xds_api.h',
+                      'src/core/xds/xds_client/xds_backend_metric_propagation.cc',
                       'src/core/xds/xds_client/xds_backend_metric_propagation.h',
                       'src/core/xds/xds_client/xds_bootstrap.cc',
                       'src/core/xds/xds_client/xds_bootstrap.h',

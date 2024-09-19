@@ -2019,6 +2019,7 @@
     <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_backend_metric_propagation.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_backend_metric_propagation.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_bootstrap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_bootstrap.h" role="src" />
