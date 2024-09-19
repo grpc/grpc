@@ -187,12 +187,13 @@ class LrsClient : public DualRefCounted<LrsClient> {
       }
     };
 
-    ClusterLocalityStats(
-        RefCountedPtr<LrsClient> lrs_client, absl::string_view lrs_server,
-        absl::string_view cluster_name, absl::string_view eds_service_name,
-        RefCountedPtr<XdsLocalityName> name,
-        RefCountedPtr<const BackendMetricPropagation>
-            backend_metric_propagation);
+    ClusterLocalityStats(RefCountedPtr<LrsClient> lrs_client,
+                         absl::string_view lrs_server,
+                         absl::string_view cluster_name,
+                         absl::string_view eds_service_name,
+                         RefCountedPtr<XdsLocalityName> name,
+                         RefCountedPtr<const BackendMetricPropagation>
+                             backend_metric_propagation);
     ~ClusterLocalityStats() override;
 
     // Returns a snapshot of this instance and resets all the counters.

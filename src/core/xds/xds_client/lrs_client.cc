@@ -178,7 +178,10 @@ LrsClient::ClusterLocalityStats::GetSnapshotAndReset() {
         percpu_stats.total_requests_in_progress.load(std::memory_order_relaxed),
         GetAndResetCounter(&percpu_stats.total_error_requests),
         GetAndResetCounter(&percpu_stats.total_issued_requests),
-        {}, {}, {}, {}};
+        {},
+        {},
+        {},
+        {}};
     {
       MutexLock lock(&percpu_stats.backend_metrics_mu);
       percpu_snapshot.cpu_utilization = std::move(percpu_stats.cpu_utilization);

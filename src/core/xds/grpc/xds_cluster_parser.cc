@@ -464,8 +464,8 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
   if (XdsOrcaLrsPropagationChangesEnabled()) {
     size_t size;
     upb_StringView const* metrics =
-        envoy_config_cluster_v3_Cluster_lrs_report_endpoint_metrics(
-            cluster, &size);
+        envoy_config_cluster_v3_Cluster_lrs_report_endpoint_metrics(cluster,
+                                                                    &size);
     for (size_t i = 0; i < size; ++i) {
       absl::string_view metric_name = UpbStringToAbsl(metrics[i]);
       if (metric_name == "cpu_utilization") {
