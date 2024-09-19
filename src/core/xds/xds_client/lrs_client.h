@@ -124,12 +124,12 @@ class LrsClient : public DualRefCounted<LrsClient> {
           : num_requests_finished_with_metric(num_requests_finished),
             total_metric_value(value) {}
 
-      BackendMetric(BackendMetric&& other)
+      BackendMetric(BackendMetric&& other) noexcept
           : num_requests_finished_with_metric(
                 std::exchange(other.num_requests_finished_with_metric, 0)),
             total_metric_value(std::exchange(other.total_metric_value, 0)) {}
 
-      BackendMetric& operator=(BackendMetric&& other) {
+      BackendMetric& operator=(BackendMetric&& other) noexcept {
         num_requests_finished_with_metric =
             std::exchange(other.num_requests_finished_with_metric, 0);
         total_metric_value = std::exchange(other.total_metric_value, 0);
