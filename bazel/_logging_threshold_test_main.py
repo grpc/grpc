@@ -23,14 +23,12 @@ _OK_TEST_REGEX = r"^-+.*Ran ([\d]+) tests* in ([\d.]+)s.*OK(?: \(skipped=(\d+)\)
 # Tests with known exception logs.
 # TODO(sourabhsinghs): Investigate and enable _rpc_part_1_test and _rpc_part_2_test tests.
 _SKIP_TESTS = [
-    "_rpc_part_1_test",
     "_server_shutdown_test",
     "_xds_credentials_test",
     "_server_test",
     "_invalid_metadata_test",
     "_reconnect_test",
     "_channel_close_test",
-    "_rpc_part_2_test",
     "_invocation_defects_test",
     "_dynamic_stubs_test",
     "_channel_connectivity_test",

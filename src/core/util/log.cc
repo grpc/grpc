@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 
 #include <stdio.h>
@@ -127,4 +128,8 @@ void gpr_log_verbosity_init(void) {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
+}
+
+GPRAPI void grpc_absl_log_init(void) {
+  absl::InitializeLog();
 }

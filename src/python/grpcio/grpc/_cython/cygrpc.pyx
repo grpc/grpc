@@ -84,5 +84,7 @@ cdef _initialize():
   grpc_set_ssl_roots_override_callback(
           <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 
-
 _initialize()
+
+# initialize absl logging
+grpc_absl_log_init()
