@@ -23,7 +23,7 @@
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -33,8 +33,8 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"

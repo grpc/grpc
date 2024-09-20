@@ -289,7 +289,7 @@ with open("src/core/telemetry/stats_data.h", "w") as H:
     print("#include <stdint.h>", file=H)
     print('#include "src/core/telemetry/histogram_view.h"', file=H)
     print('#include "absl/strings/string_view.h"', file=H)
-    print('#include "src/core/lib/gprpp/per_cpu.h"', file=H)
+    print('#include "src/core/util/per_cpu.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
 

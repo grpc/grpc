@@ -25,7 +25,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_binder {
 

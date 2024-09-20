@@ -25,12 +25,12 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV

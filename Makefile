@@ -1068,8 +1068,6 @@ LIBGRPC_SRC = \
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/backoff/random_early_detection.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1085,7 +1083,6 @@ LIBGRPC_SRC = \
     src/core/lib/config/config_vars_non_generated.cc \
     src/core/lib/config/core_configuration.cc \
     src/core/lib/config/load_config.cc \
-    src/core/lib/debug/event_log.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
@@ -1137,34 +1134,6 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
-    src/core/lib/gprpp/crash.cc \
-    src/core/lib/gprpp/dump_args.cc \
-    src/core/lib/gprpp/examine_stack.cc \
-    src/core/lib/gprpp/fork.cc \
-    src/core/lib/gprpp/glob.cc \
-    src/core/lib/gprpp/host_port.cc \
-    src/core/lib/gprpp/linux/env.cc \
-    src/core/lib/gprpp/load_file.cc \
-    src/core/lib/gprpp/mpscq.cc \
-    src/core/lib/gprpp/per_cpu.cc \
-    src/core/lib/gprpp/posix/directory_reader.cc \
-    src/core/lib/gprpp/posix/env.cc \
-    src/core/lib/gprpp/posix/stat.cc \
-    src/core/lib/gprpp/posix/thd.cc \
-    src/core/lib/gprpp/ref_counted_string.cc \
-    src/core/lib/gprpp/status_helper.cc \
-    src/core/lib/gprpp/strerror.cc \
-    src/core/lib/gprpp/tchar.cc \
-    src/core/lib/gprpp/time.cc \
-    src/core/lib/gprpp/time_averaged_stats.cc \
-    src/core/lib/gprpp/time_util.cc \
-    src/core/lib/gprpp/uuid_v4.cc \
-    src/core/lib/gprpp/validation_errors.cc \
-    src/core/lib/gprpp/windows/directory_reader.cc \
-    src/core/lib/gprpp/windows/env.cc \
-    src/core/lib/gprpp/windows/stat.cc \
-    src/core/lib/gprpp/windows/thd.cc \
-    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
@@ -1188,11 +1157,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
     src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
@@ -1241,7 +1205,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
@@ -1361,7 +1324,6 @@ LIBGRPC_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
@@ -1456,7 +1418,21 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security_grpc.cc \
     src/core/util/alloc.cc \
     src/core/util/atm.cc \
+    src/core/util/backoff.cc \
+    src/core/util/crash.cc \
+    src/core/util/dump_args.cc \
+    src/core/util/event_log.cc \
+    src/core/util/examine_stack.cc \
+    src/core/util/fork.cc \
     src/core/util/gcp_metadata_query.cc \
+    src/core/util/gethostname_fallback.cc \
+    src/core/util/gethostname_host_name_max.cc \
+    src/core/util/gethostname_sysconf.cc \
+    src/core/util/glob.cc \
+    src/core/util/gpr_time.cc \
+    src/core/util/grpc_if_nametoindex_posix.cc \
+    src/core/util/grpc_if_nametoindex_unsupported.cc \
+    src/core/util/host_port.cc \
     src/core/util/http_client/format_request.cc \
     src/core/util/http_client/httpcli.cc \
     src/core/util/http_client/httpcli_security_connector.cc \
@@ -1468,24 +1444,48 @@ LIBGRPC_SRC = \
     src/core/util/json/json_writer.cc \
     src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
+    src/core/util/linux/env.cc \
+    src/core/util/load_file.cc \
     src/core/util/log.cc \
+    src/core/util/matchers.cc \
+    src/core/util/mpscq.cc \
     src/core/util/msys/tmpfile.cc \
+    src/core/util/per_cpu.cc \
     src/core/util/posix/cpu.cc \
+    src/core/util/posix/directory_reader.cc \
+    src/core/util/posix/env.cc \
+    src/core/util/posix/stat.cc \
     src/core/util/posix/string.cc \
     src/core/util/posix/sync.cc \
+    src/core/util/posix/thd.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
+    src/core/util/random_early_detection.cc \
+    src/core/util/ref_counted_string.cc \
+    src/core/util/status_helper.cc \
+    src/core/util/strerror.cc \
     src/core/util/string.cc \
     src/core/util/sync.cc \
     src/core/util/sync_abseil.cc \
+    src/core/util/tchar.cc \
     src/core/util/time.cc \
+    src/core/util/time_averaged_stats.cc \
     src/core/util/time_precise.cc \
+    src/core/util/time_util.cc \
+    src/core/util/uri.cc \
+    src/core/util/uuid_v4.cc \
+    src/core/util/validation_errors.cc \
     src/core/util/windows/cpu.cc \
+    src/core/util/windows/directory_reader.cc \
+    src/core/util/windows/env.cc \
+    src/core/util/windows/stat.cc \
     src/core/util/windows/string.cc \
     src/core/util/windows/string_util.cc \
     src/core/util/windows/sync.cc \
+    src/core/util/windows/thd.cc \
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \
+    src/core/util/work_serializer.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
