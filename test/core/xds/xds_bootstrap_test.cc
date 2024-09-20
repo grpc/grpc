@@ -41,7 +41,6 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -50,7 +49,6 @@
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -94,16 +92,6 @@ TEST(XdsBootstrapTest, Basic) {
       "        }"
       "      ],"
       "      \"ignore\": 0"
-      "    },"
-      "    {"
-      "      \"server_uri\": \"fake:///lb2\","
-      "      \"channel_creds\": ["
-      "        {"
-      "          \"type\": \"fake\","
-      "          \"ignore\": 0"
-      "        }"
-      "      ],"
-      "      \"ignore\": 0"
       "    }"
       "  ],"
       "  \"authorities\": {"
@@ -123,15 +111,6 @@ TEST(XdsBootstrapTest, Basic) {
       "            \"xds_v3\","
       "            \"ignore_resource_deletion\""
       "          ]"
-      "        },"
-      "        {"
-      "          \"server_uri\": \"fake:///xds_server2\","
-      "          \"channel_creds\": ["
-      "            {"
-      "              \"type\": \"fake\""
-      "            }"
-      "          ],"
-      "          \"server_features\": [\"xds_v3\"]"
       "        }"
       "      ]"
       "    },"
@@ -744,8 +723,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
   EXPECT_EQ(*xds_server, *output_xds_server);
 }
 
-TEST(XdsBootstrapTest, NoXdsServersEnvVar) {
-  ScopedEnvVar fallback_enabled("GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
+TEST(XdsBootstrapTest, MultipleXdsServers) {
   const char* json_str =
       "{"
       "  \"xds_servers\": ["

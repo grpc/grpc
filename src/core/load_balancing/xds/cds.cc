@@ -78,8 +78,6 @@ bool XdsAggregateClusterBackwardCompatibilityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-using XdsConfig = XdsDependencyManager::XdsConfig;
-
 constexpr absl::string_view kCds = "cds_experimental";
 
 // Config for this LB policy.

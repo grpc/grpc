@@ -35,9 +35,8 @@
 namespace grpc_core {
 
 /// Stores the service config data associated with an individual call.
-/// A pointer to this object is stored in the call_context
-/// GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA element, so that filters can
-/// easily access method and global parameters for the call.
+/// A pointer to this object is stored in the call context, so that
+/// filters can easily access method and global parameters for the call.
 ///
 /// Must be accessed when holding the call combiner (legacy filter) or from
 /// inside the activity (promise-based filter).

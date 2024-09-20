@@ -1485,7 +1485,6 @@ class CallFilters {
                   std::move(value));
             }
           }
-          call_state_.FinishPullServerTrailingMetadata();
           return value;
         });
   }
@@ -1496,6 +1495,10 @@ class CallFilters {
   // errors.
   GRPC_MUST_USE_RESULT auto WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
+  }
+  // Returns true if server trailing metadata has been pulled
+  bool WasServerTrailingMetadataPulled() const {
+    return call_state_.WasServerTrailingMetadataPulled();
   }
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);

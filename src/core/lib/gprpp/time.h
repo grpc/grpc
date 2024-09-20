@@ -24,7 +24,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -296,6 +295,14 @@ class Duration {
 
   int64_t millis_;
 };
+
+inline std::ostream& operator<<(std::ostream& out, const Duration& d) {
+  return out << d.ToString();
+}
+
+inline std::ostream& operator<<(std::ostream& out, const Timestamp& d) {
+  return out << d.ToString();
+}
 
 inline Duration operator+(Duration lhs, Duration rhs) {
   return Duration::Milliseconds(

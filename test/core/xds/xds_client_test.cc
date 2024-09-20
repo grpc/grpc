@@ -44,7 +44,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -3507,7 +3506,7 @@ TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
       << *error;
 }
 
-TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
+TEST_F(XdsClientTest, FederationWithUnparsableXdstpResourceName) {
   // Note: Not adding authority to bootstrap config.
   InitXdsClient();
   // Start a watch for the xdstp resource name.

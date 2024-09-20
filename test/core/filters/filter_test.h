@@ -163,7 +163,7 @@ class FilterTestBase : public ::testing::Test {
     // metadata.
     void FinishNextFilter(ServerMetadataHandle md);
 
-    Arena* arena();
+    Arena* arena() const;
 
    private:
     friend class Channel;
@@ -222,7 +222,7 @@ class FilterTest : public FilterTestBase {
   };
 
   absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args) {
-    auto filter = Filter::Create(args, ChannelFilter::Args());
+    auto filter = Filter::Create(args, ChannelFilter::Args(/*instance_id=*/0));
     if (!filter.ok()) return filter.status();
     return Channel(std::move(*filter), this);
   }

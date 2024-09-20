@@ -28,7 +28,6 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -111,7 +110,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
     error =
-        GRPC_ERROR_CREATE(absl::StrFormat("unparseable host:port: '%s'", name));
+        GRPC_ERROR_CREATE(absl::StrFormat("unparsable host:port: '%s'", name));
     goto done;
   }
   if (port.empty()) {

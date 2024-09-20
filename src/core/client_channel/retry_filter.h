@@ -30,7 +30,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"

@@ -29,7 +29,6 @@
 #include "absl/types/span.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 

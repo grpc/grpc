@@ -28,7 +28,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"

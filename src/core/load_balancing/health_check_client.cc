@@ -166,11 +166,9 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
   // Prepend the subchannel's address to the status if needed.
   absl::Status use_status;
   if (!status.ok()) {
-    std::string address_str =
-        grpc_sockaddr_to_uri(&producer_->subchannel_->address())
-            .value_or("<unknown address type>");
     use_status = absl::Status(
-        status.code(), absl::StrCat(address_str, ": ", status.message()));
+        status.code(), absl::StrCat(producer_->subchannel_->address(), ": ",
+                                    status.message()));
   }
   work_serializer_->Schedule(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
@@ -458,12 +456,11 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   if (created) producer_->Start(subchannel->Ref());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
-    LOG(INFO) << "HealthWatcher " << this << ": registered with producer "
-              << producer_.get() << " (created=" << created
-              << ", health_check_service_name=\""
-              << health_check_service_name_.value_or("N/A") << "\")";
-  }
+  GRPC_TRACE_LOG(health_check_client, INFO)
+      << "HealthWatcher " << this << ": registered with producer "
+      << producer_.get() << " (created=" << created
+      << ", health_check_service_name=\""
+      << health_check_service_name_.value_or("N/A") << "\")";
 }
 
 void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {

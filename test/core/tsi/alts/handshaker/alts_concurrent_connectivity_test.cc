@@ -57,6 +57,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/test_util/build.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -279,8 +280,8 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
-        10 /* per connect deadline seconds */, 10 /* loops */,
-        GRPC_CHANNEL_READY /* expected connectivity states */,
+        10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+        10 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
         0 /* reconnect_backoff_ms unset */);
   }
 }
@@ -293,13 +294,16 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   {
     TestServer test_server;
     size_t num_concurrent_connects = 50;
+    if (BuiltUnderMsan()) {
+      num_concurrent_connects = 25;
+    }
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
-          15 /* per connect deadline seconds */, 5 /* loops */,
-          GRPC_CHANNEL_READY /* expected connectivity states */,
+          15 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          5 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
@@ -336,7 +340,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 3 /* loops */,
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
@@ -368,7 +373,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          20 /* per connect deadline seconds */, 2 /* loops */,
+          20 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
@@ -400,7 +406,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 2 /* loops */,
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           100 /* reconnect_backoff_ms */));
     }

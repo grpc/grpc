@@ -30,7 +30,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/gprpp/crash.h"

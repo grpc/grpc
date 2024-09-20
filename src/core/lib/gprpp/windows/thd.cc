@@ -27,7 +27,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>

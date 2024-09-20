@@ -105,7 +105,7 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   // Populate new EDS resources.
   EdsResourceArgs args1({
-      {"locality0", {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()}},
+      {"locality0", {MakeNonExistentEndpoint(), MakeNonExistentEndpoint()}},
   });
   EdsResourceArgs args2({
       {"locality0", CreateEndpointsForBackends()},
@@ -166,11 +166,11 @@ TEST_P(RingHashTest,
   // Populate EDS resource.
   EdsResourceArgs args({
       {"locality0",
-       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       {MakeNonExistentEndpoint(), MakeNonExistentEndpoint()},
        kDefaultLocalityWeight,
        0},
       {"locality1",
-       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       {MakeNonExistentEndpoint(), MakeNonExistentEndpoint()},
        kDefaultLocalityWeight,
        1},
   });
@@ -234,11 +234,11 @@ TEST_P(RingHashTest,
   // Populate EDS resource.
   EdsResourceArgs args({
       {"locality0",
-       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       {MakeNonExistentEndpoint(), MakeNonExistentEndpoint()},
        kDefaultLocalityWeight,
        0},
       {"locality1",
-       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       {MakeNonExistentEndpoint(), MakeNonExistentEndpoint()},
        kDefaultLocalityWeight,
        1},
   });
@@ -786,9 +786,9 @@ TEST_P(RingHashTest, IdleToReady) {
 TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
   // Create EDS resource.
   CreateAndStartBackends(1);
-  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  auto non_existent_endpoint = MakeNonExistentEndpoint();
   EdsResourceArgs args(
-      {{"locality0", {non_existant_endpoint, CreateEndpoint(0)}}});
+      {{"locality0", {non_existent_endpoint, CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Change CDS resource to use RING_HASH.
   auto cluster = default_cluster_;
@@ -804,12 +804,12 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
   // Start connection attempt injector and add a hold for the P0
   // connection attempt.
   ConnectionAttemptInjector injector;
-  auto hold = injector.AddHold(non_existant_endpoint.port);
+  auto hold = injector.AddHold(non_existent_endpoint.port);
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
-       CreateMetadataValueThatHashesToBackendPort(non_existant_endpoint.port)}};
+       CreateMetadataValueThatHashesToBackendPort(non_existent_endpoint.port)}};
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
                                 std::move(metadata)));
   // Wait for the RPC to trigger the P0 connection attempt, then cancel it,
@@ -829,12 +829,12 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
 TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
   // Create EDS resource.
   CreateAndStartBackends(1);
-  auto non_existant_endpoint0 = MakeNonExistantEndpoint();
-  auto non_existant_endpoint1 = MakeNonExistantEndpoint();
-  auto non_existant_endpoint2 = MakeNonExistantEndpoint();
+  auto non_existent_endpoint0 = MakeNonExistentEndpoint();
+  auto non_existent_endpoint1 = MakeNonExistentEndpoint();
+  auto non_existent_endpoint2 = MakeNonExistentEndpoint();
   EdsResourceArgs args({{"locality0",
-                         {non_existant_endpoint0, non_existant_endpoint1,
-                          non_existant_endpoint2, CreateEndpoint(0)}}});
+                         {non_existent_endpoint0, non_existent_endpoint1,
+                          non_existent_endpoint2, CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Change CDS resource to use RING_HASH.
   auto cluster = default_cluster_;
@@ -849,59 +849,59 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
                                    new_route_config);
   // Start connection attempt injector.
   ConnectionAttemptInjector injector;
-  auto hold_non_existant0 = injector.AddHold(non_existant_endpoint0.port);
-  auto hold_non_existant1 = injector.AddHold(non_existant_endpoint1.port);
-  auto hold_non_existant2 = injector.AddHold(non_existant_endpoint2.port);
+  auto hold_non_existent0 = injector.AddHold(non_existent_endpoint0.port);
+  auto hold_non_existent1 = injector.AddHold(non_existent_endpoint1.port);
+  auto hold_non_existent2 = injector.AddHold(non_existent_endpoint2.port);
   auto hold_good = injector.AddHold(backends_[0]->port());
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackendPort(
-                           non_existant_endpoint0.port)}};
+                           non_existent_endpoint0.port)}};
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
                                 std::move(metadata)));
   // Wait for the RPC to trigger a connection attempt to the first address,
   // then cancel the RPC.  No other connection attempts should be started yet.
-  hold_non_existant0->Wait();
+  hold_non_existent0->Wait();
   rpc.CancelRpc();
-  EXPECT_FALSE(hold_non_existant1->IsStarted());
-  EXPECT_FALSE(hold_non_existant2->IsStarted());
+  EXPECT_FALSE(hold_non_existent1->IsStarted());
+  EXPECT_FALSE(hold_non_existent2->IsStarted());
   EXPECT_FALSE(hold_good->IsStarted());
   // Allow the connection attempt to the first address to resume and wait
   // for the attempt for the second address.  No other connection
   // attempts should be started yet.
-  auto hold_non_existant0_again = injector.AddHold(non_existant_endpoint0.port);
-  hold_non_existant0->Resume();
-  hold_non_existant1->Wait();
-  EXPECT_FALSE(hold_non_existant0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existant2->IsStarted());
+  auto hold_non_existent0_again = injector.AddHold(non_existent_endpoint0.port);
+  hold_non_existent0->Resume();
+  hold_non_existent1->Wait();
+  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent2->IsStarted());
   EXPECT_FALSE(hold_good->IsStarted());
   // Allow the connection attempt to the second address to resume and wait
   // for the attempt for the third address.  No other connection
   // attempts should be started yet.
-  auto hold_non_existant1_again = injector.AddHold(non_existant_endpoint1.port);
-  hold_non_existant1->Resume();
-  hold_non_existant2->Wait();
-  EXPECT_FALSE(hold_non_existant0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existant1_again->IsStarted());
+  auto hold_non_existent1_again = injector.AddHold(non_existent_endpoint1.port);
+  hold_non_existent1->Resume();
+  hold_non_existent2->Wait();
+  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent1_again->IsStarted());
   EXPECT_FALSE(hold_good->IsStarted());
   // Allow the connection attempt to the third address to resume and wait
   // for the attempt for the final address.  No other connection
   // attempts should be started yet.
-  auto hold_non_existant2_again = injector.AddHold(non_existant_endpoint2.port);
-  hold_non_existant2->Resume();
+  auto hold_non_existent2_again = injector.AddHold(non_existent_endpoint2.port);
+  hold_non_existent2->Resume();
   hold_good->Wait();
-  EXPECT_FALSE(hold_non_existant0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existant1_again->IsStarted());
-  EXPECT_FALSE(hold_non_existant2_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent1_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent2_again->IsStarted());
   // Allow the final attempt to resume.
   hold_good->Resume();
   // Wait for channel to become connected without any pending RPC.
   EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(10)));
   // No other connection attempts should have been started.
-  EXPECT_FALSE(hold_non_existant0_again->IsStarted());
-  EXPECT_FALSE(hold_non_existant1_again->IsStarted());
-  EXPECT_FALSE(hold_non_existant2_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent0_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent1_again->IsStarted());
+  EXPECT_FALSE(hold_non_existent2_again->IsStarted());
   // RPC should have been cancelled.
   EXPECT_EQ(StatusCode::CANCELLED, rpc.GetStatus().error_code());
   // Make sure the backend did not get any requests.
@@ -940,7 +940,7 @@ TEST_P(RingHashTest, TransientFailureCheckNextOne) {
 // Test that when a backend goes down, we will move on to the next subchannel
 // (with a lower priority).  When the backend comes back up, traffic will move
 // back.
-TEST_P(RingHashTest, SwitchToLowerPrioirtyAndThenBack) {
+TEST_P(RingHashTest, SwitchToLowerPriorityAndThenBack) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -990,7 +990,7 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   EdsResourceArgs args(
-      {{"locality0", {MakeNonExistantEndpoint(), CreateEndpoint(0)}}});
+      {{"locality0", {MakeNonExistentEndpoint(), CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -1024,8 +1024,8 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   // Make sure we include some unused ports to fill the ring.
   EdsResourceArgs args({
       {"locality0",
-       {CreateEndpoint(0), CreateEndpoint(1), MakeNonExistantEndpoint(),
-        MakeNonExistantEndpoint()}},
+       {CreateEndpoint(0), CreateEndpoint(1), MakeNonExistentEndpoint(),
+        MakeNonExistentEndpoint()}},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -1124,7 +1124,7 @@ TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
 }
 
-// Test unspported hash policy types are all ignored before a supported
+// Test unsupported hash policy types are all ignored before a supported
 // policy.
 TEST_P(RingHashTest, UnsupportedHashPolicyUntilChannelIdHashing) {
   CreateAndStartBackends(2);

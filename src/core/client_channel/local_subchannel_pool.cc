@@ -24,8 +24,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/client_channel/subchannel.h"
 
 namespace grpc_core {
