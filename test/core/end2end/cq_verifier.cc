@@ -45,10 +45,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/match.h"
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/test_config.h"
 

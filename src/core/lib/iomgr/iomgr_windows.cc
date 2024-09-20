@@ -25,7 +25,6 @@
 #include "absl/log/check.h"
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
 
 extern grpc_tcp_server_vtable grpc_windows_tcp_server_vtable;
 extern grpc_tcp_server_vtable grpc_windows_event_engine_tcp_server_vtable;

@@ -40,12 +40,12 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_listener.h"
@@ -134,7 +134,7 @@ TEST_F(XdsListenerTest, Definition) {
   EXPECT_TRUE(resource_type->AllResourcesRequiredInSotW());
 }
 
-TEST_F(XdsListenerTest, UnparseableProto) {
+TEST_F(XdsListenerTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsListenerResourceType::Get();
   auto decode_result =
@@ -911,7 +911,7 @@ TEST_F(ApiListenerTest, DoesNotContainHttpConnectionManager) {
       << decode_result.resource.status();
 }
 
-TEST_F(ApiListenerTest, UnparseableHttpConnectionManagerConfig) {
+TEST_F(ApiListenerTest, UnparsableHttpConnectionManagerConfig) {
   Listener listener;
   listener.set_name("foo");
   auto* any = listener.mutable_api_listener()->mutable_api_listener();
@@ -1753,7 +1753,7 @@ TEST_F(TcpListenerTest, UnknownTransportSocketType) {
       << decode_result.resource.status();
 }
 
-TEST_F(TcpListenerTest, UnparseableDownstreamTlsContext) {
+TEST_F(TcpListenerTest, UnparsableDownstreamTlsContext) {
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;

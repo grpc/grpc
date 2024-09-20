@@ -35,14 +35,14 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/test_config.h"
@@ -240,7 +240,7 @@ const address_sorting_source_addr_factory_vtable
 
 }  // namespace
 
-TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
+TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvailable) {
   if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
@@ -326,7 +326,7 @@ TEST_F(ResolveAddressTest, InvalidIPv6Addresses) {
   TestInvalidIPAddress(this, "[2001:db8::11111]:1");
 }
 
-void TestUnparseableHostPort(ResolveAddressTest* test, const char* target) {
+void TestUnparsableHostPort(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::GetDNSResolver()->LookupHostname(
       absl::bind_front(&ResolveAddressTest::MustFail, test), target, "1",
@@ -335,28 +335,28 @@ void TestUnparseableHostPort(ResolveAddressTest* test, const char* target) {
   test->PollPollsetUntilRequestDone();
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsOnlyBracket) {
-  TestUnparseableHostPort(this, "[");
+TEST_F(ResolveAddressTest, UnparsableHostPortsOnlyBracket) {
+  TestUnparsableHostPort(this, "[");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsMissingRightBracket) {
-  TestUnparseableHostPort(this, "[::1");
+TEST_F(ResolveAddressTest, UnparsableHostPortsMissingRightBracket) {
+  TestUnparsableHostPort(this, "[::1");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadPort) {
-  TestUnparseableHostPort(this, "[::1]bad");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadPort) {
+  TestUnparsableHostPort(this, "[::1]bad");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadIPv6) {
-  TestUnparseableHostPort(this, "[1.2.3.4]");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadIPv6) {
+  TestUnparsableHostPort(this, "[1.2.3.4]");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhost) {
-  TestUnparseableHostPort(this, "[localhost]");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadLocalhost) {
+  TestUnparsableHostPort(this, "[localhost]");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhostWithPort) {
-  TestUnparseableHostPort(this, "[localhost]:1");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadLocalhostWithPort) {
+  TestUnparsableHostPort(this, "[localhost]:1");
 }
 
 // Kick off a simple DNS resolution and then immediately cancel. This
