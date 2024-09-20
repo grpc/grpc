@@ -19,7 +19,7 @@
 
 #include "envoy/config/core/v3/base.upb.h"
 
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 

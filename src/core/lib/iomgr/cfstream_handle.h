@@ -29,9 +29,9 @@
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
 
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
+#include "src/core/util/memory.h"
 
 class GrpcLibraryInitHolder {
  public:
