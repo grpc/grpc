@@ -27,6 +27,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
