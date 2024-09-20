@@ -52,6 +52,10 @@ inline absl::optional<uint32_t> ParseUInt32Value(
   return google_protobuf_UInt32Value_value(proto);
 }
 
+// Returns the IP address in URI form.
+absl::optional<grpc_resolved_address> ParseXdsAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors);
+
 CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*

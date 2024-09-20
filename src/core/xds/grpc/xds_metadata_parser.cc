@@ -81,6 +81,40 @@ std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
   return std::make_unique<XdsGcpAuthnAudienceMetadataValue>(url);
 }
 
+std::unique_ptr<XdsMetadataValue> ParseAddress(
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) {
+  absl::string_view* serialized_proto =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_proto == nullptr) {
+    errors->AddError("could not parse address metadata");
+    return nullptr;
+  }
+  auto* proto = envoy_config_core_v3_Address_parse(
+      serialized_proto->data(), serialized_proto->size(), context.arena);
+  if (proto == nullptr) {
+    errors->AddError("could not parse address metadata");
+    return nullptr;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+    const upb_MessageDef* msg_type =
+        envoy_config_core_v3_Address_getmsgdef(context.symtab);
+    char buf[10240];
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(proto), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
+    VLOG(2) << "[xds_client " << context.client
+            << "] cluster metadata Address: " << buf;
+  }
+  auto addr = ParseXdsAddress(proto, errors);
+  if (!addr.has_value()) return nullptr;
+  auto addr_uri = grpc_sockaddr_to_string(&*addr, /*normalize=*/false);
+  if (!addr_uri.ok()) {
+    errors->AddError(addr_uri.status().message());
+    return nullptr;
+  }
+  return std::make_unqiue<XdsAddressMetadataValue>(std::move(*addr_uri));
+}
+
 }  // namespace
 
 XdsMetadataMap ParseXdsMetadataMap(

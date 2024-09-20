@@ -52,8 +52,10 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_metadata_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
 // IWYU pragma: no_include "absl/meta/type_traits.h"
@@ -84,38 +86,6 @@ void MaybeLogClusterLoadAssignment(
     VLOG(2) << "[xds_client " << context.client
             << "] ClusterLoadAssignment: " << buf;
   }
-}
-
-absl::optional<grpc_resolved_address> ParseCoreAddress(
-    const envoy_config_core_v3_Address* address, ValidationErrors* errors) {
-  if (address == nullptr) {
-    errors->AddError("field not present");
-    return absl::nullopt;
-  }
-  ValidationErrors::ScopedField field(errors, ".socket_address");
-  const envoy_config_core_v3_SocketAddress* socket_address =
-      envoy_config_core_v3_Address_socket_address(address);
-  if (socket_address == nullptr) {
-    errors->AddError("field not present");
-    return absl::nullopt;
-  }
-  std::string address_str = UpbStringToStdString(
-      envoy_config_core_v3_SocketAddress_address(socket_address));
-  uint32_t port;
-  {
-    ValidationErrors::ScopedField field(errors, ".port_value");
-    port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
-    if (GPR_UNLIKELY(port >> 16) != 0) {
-      errors->AddError("invalid port");
-      return absl::nullopt;
-    }
-  }
-  auto addr = StringToSockaddr(address_str, port);
-  if (!addr.ok()) {
-    errors->AddError(addr.status().message());
-    return absl::nullopt;
-  }
-  return *addr;
 }
 
 absl::optional<EndpointAddresses> EndpointAddressesParse(
@@ -151,7 +121,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
     }
     {
       ValidationErrors::ScopedField field(errors, ".address");
-      auto address = ParseCoreAddress(
+      auto address = ParseXdsAddress(
           envoy_config_endpoint_v3_Endpoint_address(endpoint), errors);
       if (address.has_value()) addresses.push_back(*address);
     }
@@ -163,7 +133,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
       for (size_t i = 0; i < size; ++i) {
         ValidationErrors::ScopedField field(
             errors, absl::StrCat(".additional_addresses[", i, "].address"));
-        auto address = ParseCoreAddress(
+        auto address = ParseXdsAddress(
             envoy_config_endpoint_v3_Endpoint_AdditionalAddress_address(
                 additional_addresses[i]),
             errors);
@@ -233,6 +203,16 @@ absl::optional<ParsedLocality> LocalityParse(
       UpbStringToStdString(envoy_config_core_v3_Locality_sub_zone(locality));
   parsed_locality.locality.name = MakeRefCounted<XdsLocalityName>(
       std::move(region), std::move(zone), std::move(sub_zone));
+  // metadata
+  const envoy_config_core_v3_Metadata* metadata =
+      envoy_config_endpoint_v3_LocalityLbEndpoints_metadata(
+          locality_lb_endpoints);
+  if (XdsHttpConnectEnabled() && metadata != nullptr) {
+    XdsMetadataMap metadata_map =
+        ParseXdsMetadataMap(context, metadata, errors);
+// FIXME
+
+  }
   // lb_endpoints
   size_t size;
   const envoy_config_endpoint_v3_LbEndpoint* const* lb_endpoints =
