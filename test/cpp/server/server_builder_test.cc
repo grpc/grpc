@@ -26,7 +26,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"

@@ -34,8 +34,8 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 static int ncpus = 0;
 

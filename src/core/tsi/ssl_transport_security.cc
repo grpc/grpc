@@ -63,13 +63,13 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 // --- Constants. ---

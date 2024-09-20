@@ -34,8 +34,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -43,6 +41,8 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/sync.h"
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
