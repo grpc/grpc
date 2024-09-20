@@ -121,3 +121,20 @@ Add the `--secure true` flag to the invocation outlined above.
 ```
 python client.py xds:///my-backend --secure true
 ```
+
+## Building Docker
+
+From the gRPC workspace folder:
+
+Client:
+```
+docker build -f examples/python/xds/Dockerfile.client -t "us-docker.pkg.dev/grpc-testing/examples/xds-example-python-client" .
+```
+
+Server:
+```
+docker build -f examples/python/xds/Dockerfile.server -t "us-docker.pkg.dev/grpc-testing/examples/xds-example-python-server" .
+```
+
+And then push the tagged image using `docker push`.
+
