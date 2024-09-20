@@ -57,6 +57,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/test_util/build.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -293,6 +294,9 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   {
     TestServer test_server;
     size_t num_concurrent_connects = 50;
+    if (BuiltUnderMsan()) {
+      num_concurrent_connects = 25;
+    }
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
