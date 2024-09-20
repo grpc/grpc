@@ -53,6 +53,8 @@ uploaded daily to [packages.grpc.io](https://packages.grpc.io).
 
 Contributions are welcome!
 
+[![Open in DevZero](https://assets.devzero.io/open-in-devzero.svg)](https://www.devzero.io/dashboard/recipes/new?repo-url=https://github.com/grpc/grpc)
+
 Please read [How to contribute](CONTRIBUTING.md) which will guide you through
 the entire workflow of how to build the source code, how to run the tests, and
 how to contribute changes to the gRPC codebase. The "How to contribute" document
