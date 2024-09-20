@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-set -e
+set -ex
 
 export TEST=${TEST:-false}
 

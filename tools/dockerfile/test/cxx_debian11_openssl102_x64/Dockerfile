@@ -130,5 +130,8 @@ RUN cd /tmp && \
     rm -rf /tmp/openssl-1.0.2u*
 ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
+
 # Define the default command.
 CMD ["bash"]

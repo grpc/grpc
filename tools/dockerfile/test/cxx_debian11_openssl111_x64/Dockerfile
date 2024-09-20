@@ -117,6 +117,8 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 RUN mkdir /var/local/jenkins
 
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
 
 # Install openssl 1.1.1 by installing libssl-dev on debian:11
 RUN apt-get update && apt-get install -y build-essential zlib1g-dev libssl-dev

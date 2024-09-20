@@ -134,6 +134,8 @@ RUN mkdir /var/local/jenkins
 # Required by XDS interop test harness.
 RUN python3 -m pip install virtualenv==16.7.9
 
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
 
 # Define the default command.
 CMD ["bash"]

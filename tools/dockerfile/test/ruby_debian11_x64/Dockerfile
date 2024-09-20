@@ -141,6 +141,8 @@ RUN python3 -m pip install virtualenv==16.7.9
 RUN apt-get update && apt-get install -y sudo && apt-get clean
 RUN echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
 
 # Define the default command.
 CMD ["bash"]

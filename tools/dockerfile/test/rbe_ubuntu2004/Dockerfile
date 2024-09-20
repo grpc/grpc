@@ -81,5 +81,8 @@ ENV UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 # TODO(jtattermusch): Remove python2 once some tests stop failing without it.
 RUN apt-get update && apt-get install -y python2 && apt-get clean
 
+RUN if [ -f ./generate_artifacts.sh ]; then ./generate_artifacts.sh; fi
+
+
 # Define the default command.
 CMD ["bash"]

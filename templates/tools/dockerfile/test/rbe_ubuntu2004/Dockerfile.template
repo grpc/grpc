@@ -59,5 +59,7 @@
   # TODO(jtattermusch): Remove python2 once some tests stop failing without it.
   RUN apt-get update && apt-get install -y python2 && apt-get clean
 
+  <%include file="../../generate_artifacts.include"/>
+
   # Define the default command.
   CMD ["bash"]
