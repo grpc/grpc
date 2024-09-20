@@ -231,7 +231,7 @@ bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
       return false;
     }
   }
-  LOG(INFO) << "grpc_wait_for_shutdown_with_timeout() took "
-            << absl::Now() - started;
+  GRPC_TRACE_LOG(api, INFO) << "grpc_wait_for_shutdown_with_timeout() took "
+                            << absl::Now() - started;
   return true;
 }
