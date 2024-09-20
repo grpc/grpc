@@ -326,7 +326,7 @@ class TerminalResult(CoverageResult):
         duration = end_time - self.start_time
         self.out.write(
             _Colors.FAIL
-            + " [{}]ERROR         {}[Took {}s]\n".format(
+            + " [{}]ERROR         {}[Duration: {}s]\n".format(
                 datetime.datetime.now(), test.id(), duration
             )
             + _Colors.END
@@ -340,7 +340,7 @@ class TerminalResult(CoverageResult):
         duration = end_time - self.start_time
         self.out.write(
             _Colors.FAIL
-            + " [{}]FAILURE       {}[Took {}s]\n".format(
+            + " [{}]FAILURE       {}[Duration: {}]\n".format(
                 datetime.datetime.now(), test.id(), duration
             )
             + _Colors.END
@@ -354,7 +354,7 @@ class TerminalResult(CoverageResult):
         duration = end_time - self.start_time
         self.out.write(
             _Colors.OK
-            + " [{}]SUCCESS       {}[Took {}s]\n".format(
+            + " [{}]SUCCESS       {}[Duration: {}s]\n".format(
                 end_time, test.id(), duration
             )
             + _Colors.END
