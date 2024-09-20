@@ -24102,12 +24102,6 @@ add_executable(request_buffer_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -24139,7 +24133,13 @@ add_executable(request_buffer_test
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/call/request_buffer_test.cc
 )
 if(WIN32 AND MSVC)
