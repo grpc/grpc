@@ -45,10 +45,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -58,7 +54,11 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 

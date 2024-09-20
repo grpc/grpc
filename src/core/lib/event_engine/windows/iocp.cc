@@ -27,8 +27,8 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {

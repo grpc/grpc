@@ -26,7 +26,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {

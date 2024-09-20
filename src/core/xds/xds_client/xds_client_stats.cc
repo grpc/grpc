@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {

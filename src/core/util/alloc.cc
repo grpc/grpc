@@ -25,7 +25,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 void* gpr_malloc(size_t size) {
   void* p;

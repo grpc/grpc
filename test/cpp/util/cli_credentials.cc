@@ -24,8 +24,8 @@
 #include <grpc/slice.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/load_file.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/load_file.h"
 
 ABSL_RETIRED_FLAG(bool, enable_ssl, false,
                   "Replaced by --channel_creds_type=ssl.");

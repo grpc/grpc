@@ -70,13 +70,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -104,8 +97,15 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 
 //
 // Client channel filter
@@ -1621,7 +1621,7 @@ void ClientChannelFilter::UpdateStateAndPickerLocked(
 
 namespace {
 
-// TODO(roth): Remove this in favor of the gprpp Match() function once
+// TODO(roth): Remove this in favor of src/core/util/match.h once
 // we can do that without breaking lock annotations.
 template <typename T>
 T HandlePickResult(

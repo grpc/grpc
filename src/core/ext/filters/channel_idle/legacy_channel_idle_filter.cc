@@ -35,12 +35,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -54,6 +48,12 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

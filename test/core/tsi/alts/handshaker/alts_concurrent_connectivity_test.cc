@@ -47,14 +47,14 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/build.h"

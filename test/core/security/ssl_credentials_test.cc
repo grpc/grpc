@@ -26,9 +26,9 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
