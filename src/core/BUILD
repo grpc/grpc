@@ -3606,7 +3606,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "subchannel_interface",
     hdrs = ["load_balancing/subchannel_interface.h"],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
     deps = [
         "dual_ref_counted",
         "iomgr_fwd",

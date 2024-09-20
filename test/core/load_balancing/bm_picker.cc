@@ -124,6 +124,8 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 
     void CancelDataWatcher(DataWatcherInterface* watcher) override {}
 
+    std::string address() const override { return "test"; }
+
    private:
     void AddConnectivityWatcherInternal(
         std::shared_ptr<ConnectivityStateWatcherInterface> watcher) {

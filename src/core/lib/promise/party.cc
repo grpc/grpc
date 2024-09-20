@@ -322,7 +322,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
             (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef,
             std::memory_order_acq_rel, std::memory_order_acquire)) {
       LogStateChange("Run:End", prev_state,
-                     prev_state & (kRefMask | kAllocatedMask) - kOneRef);
+                     (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef);
       if ((prev_state & kRefMask) == kOneRef) {
         // We're done with the party.
         PartyIsOver();

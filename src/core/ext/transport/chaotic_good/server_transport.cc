@@ -439,8 +439,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   if (stream_id <= last_seen_new_stream_id_) {
     return absl::InternalError("Stream id is not increasing");
   }
-  stream_map_.emplace(stream_id, call_initiator);
-  call_initiator.OnDone(
+  const bool on_done_added = call_initiator.OnDone(
       [self = RefAsSubclass<ChaoticGoodServerTransport>(), stream_id](bool) {
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD " << self.get() << " OnDone " << stream_id;
@@ -454,6 +453,10 @@ absl::Status ChaoticGoodServerTransport::NewStream(
           });
         }
       });
+  if (!on_done_added) {
+    return absl::CancelledError();
+  }
+  stream_map_.emplace(stream_id, call_initiator);
   return absl::OkStatus();
 }
 
