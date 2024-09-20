@@ -86,9 +86,7 @@ class LoggingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_TRUE(req.message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(

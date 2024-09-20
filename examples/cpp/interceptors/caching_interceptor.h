@@ -64,9 +64,7 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
         keyvaluestore::Request req_msg;
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
-        CHECK(grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(
-                  &copied_buffer, &req_msg)
-                  .ok());
+        CHECK(grpc::Deserialize(&copied_buffer, &req_msg).ok());
         requested_key = req_msg.key();
       }
 

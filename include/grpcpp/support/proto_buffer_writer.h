@@ -25,6 +25,7 @@
 #include "absl/strings/cord.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -59,8 +60,10 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
   /// \param[out] byte_buffer A pointer to the grpc::ByteBuffer created
   /// \param block_size How big are the chunks to allocate at a time
   /// \param total_size How many total bytes are required for this proto
-  ProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size)
-      : block_size_(block_size),
+  ProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size,
+                    grpc_event_engine::experimental::MemoryAllocator* allocator)
+      : allocator_(allocator),
+        block_size_(block_size),
         total_size_(total_size),
         byte_count_(0),
         have_backup_(false) {
@@ -100,9 +103,9 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
       // But make sure the allocated slice is not inlined.
       size_t allocate_length =
           remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
-      slice_ = grpc_slice_malloc(allocate_length > GRPC_SLICE_INLINED_SIZE
-                                     ? allocate_length
-                                     : GRPC_SLICE_INLINED_SIZE + 1);
+      slice_ = allocator_->MakeSlice(allocate_length > GRPC_SLICE_INLINED_SIZE
+                                         ? allocate_length
+                                         : GRPC_SLICE_INLINED_SIZE + 1);
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
@@ -204,6 +207,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
  private:
   // friend for testing purposes only
   friend class internal::ProtoBufferWriterPeer;
+  grpc_event_engine::experimental::MemoryAllocator* const allocator_;
   const int block_size_;  ///< size to alloc for each new \a grpc_slice needed
   const int total_size_;  ///< byte size of proto being serialized
   int64_t byte_count_;    ///< bytes written since this object was created

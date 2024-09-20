@@ -24,6 +24,7 @@
 #include "absl/log/absl_check.h"
 
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
@@ -41,8 +42,9 @@ namespace grpc {
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>
-Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
-                        bool* own_buffer) {
+Status GenericSerialize(
+    grpc_event_engine::experimental::MemoryAllocator* allocator,
+    const grpc::protobuf::MessageLite& msg, ByteBuffer* bb, bool* own_buffer) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyOutputStream,
                                 ProtoBufferWriter>::value,
                 "ProtoBufferWriter must be a subclass of "
@@ -59,7 +61,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
 
     return grpc::Status::OK;
   }
-  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
+  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size,
+                           allocator);
   protobuf::io::CodedOutputStream cs(&writer);
   msg.SerializeWithCachedSizes(&cs);
   return !cs.HadError()
@@ -103,8 +106,10 @@ class SerializationTraits<
     T, typename std::enable_if<
            std::is_base_of<grpc::protobuf::MessageLite, T>::value>::type> {
  public:
-  static Status Serialize(const grpc::protobuf::MessageLite& msg,
-                          ByteBuffer* bb, bool* own_buffer) {
+  static Status Serialize(
+      grpc_event_engine::experimental::MemoryAllocator* allocator,
+      const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
+      bool* own_buffer) {
     return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
   }
 
