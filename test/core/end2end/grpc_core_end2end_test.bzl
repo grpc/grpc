@@ -132,7 +132,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "end2end_test_iomgr_main",
             "%s_library" % name,
         ],
-        tags = ["core_end2end_iomgr_test", "no_test_ios"] + tags,
+        tags = ["core_end2end_iomgr_test", "no_test_ios", "bazel_only"] + tags,
     )
 
     grpc_proto_fuzzer(
