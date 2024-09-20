@@ -323,14 +323,18 @@ TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePullMessage) {
 }
 
 TEST(RequestBufferTest, PullEndOfStreamSwitchBeforePushMessage) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   buffer.Commit(&reader);
   auto pusher = buffer.PushMessage(TestMessage());
-  EXPECT_THAT(pusher(), IsReady(0));
+  EXPECT_THAT(pusher(), IsPending());
   auto pull_md = reader.PullClientInitialMetadata();
-  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_md(), IsReady()));  // value tested elsewhere
+  EXPECT_THAT(pusher(), IsReady(0));
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
@@ -369,15 +373,19 @@ TEST(RequestBufferTest, PullEndOfStreamQueuedWithMessage) {
 
 TEST(RequestBufferTest,
      PullEndOfStreamQueuedWithMessageSwitchBeforePushMessage) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);
   buffer.Commit(&reader);
   auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsPending());
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_md(), IsReady()));  // value tested elsewhere
   EXPECT_THAT(pusher(), IsReady(0));
   EXPECT_EQ(buffer.FinishSends(), Success{});
-  auto pull_md = reader.PullClientInitialMetadata();
-  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
   auto pull_msg = reader.PullMessage();
   auto poll_msg = pull_msg();
   ASSERT_THAT(poll_msg, IsReady());
@@ -458,6 +466,8 @@ TEST(RequestBufferTest, PushThenPullMessageRepeatedly) {
 }
 
 TEST(RequestBufferTest, PushSomeSwitchThenPushPullMessages) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
   RequestBuffer buffer;
   EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
   RequestBuffer::Reader reader(&buffer);

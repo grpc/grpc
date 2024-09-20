@@ -128,7 +128,7 @@ class RequestBuffer {
   // This implies winner_ is set.
   struct Streaming {
     MessageHandle message;
-    bool end_of_stream;
+    bool end_of_stream = false;
   };
   // Cancelled state: the request has been cancelled.
   struct Cancelled {
@@ -145,6 +145,13 @@ class RequestBuffer {
   Pending PendingPush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     push_waker_ = Activity::current()->MakeOwningWaker();
     return Pending{};
+  }
+  void MaybeSwitchToStreaming() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    auto& buffering = absl::get<Buffering>(state_);
+    if (winner_ == nullptr) return;
+    if (winner_->message_index_ < buffering.messages.size()) return;
+    state_.emplace<Streaming>();
+    push_waker_.Wakeup();
   }
 
   void WakeupAsyncAllPullers() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
