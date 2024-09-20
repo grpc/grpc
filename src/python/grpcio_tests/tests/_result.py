@@ -291,6 +291,7 @@ class TerminalResult(CoverageResult):
         """
         super(TerminalResult, self).__init__(id_map=id_map)
         self.out = out
+        self.start_time = None
 
     def startTestRun(self):
         """See unittest.TestResult.startTestRun."""
@@ -304,11 +305,10 @@ class TerminalResult(CoverageResult):
     def startTest(self, test):
         """See unittest.TestResult.startTest."""
         super(TerminalResult, self).startTest(test)
+        self.start_time = datetime.datetime.now()
         self.out.write(
             _Colors.INFO
-            + " [{}]START         {}\n".format(
-                datetime.datetime.now(), test.id()
-            )
+            + " [{}]START         {}\n".format(self.start_time, test.id())
             + _Colors.END
         )
         self.out.flush()
@@ -346,11 +346,16 @@ class TerminalResult(CoverageResult):
     def addSuccess(self, test):
         """See unittest.TestResult.addSuccess."""
         super(TerminalResult, self).addSuccess(test)
+        end_time = datetime.datetime.now()
+        duration = end_time - self.start_time
         self.out.write(
             _Colors.OK
-            + " [{}]SUCCESS       {}\n".format(
-                datetime.datetime.now(), test.id()
-            )
+            + " [{}]SUCCESS       {}\n".format(end_time, test.id())
+            + _Colors.END
+        )
+        self.out.write(
+            _Colors.OK
+            + " {} Took:       {}\n".format(test.id(), duration)
             + _Colors.END
         )
         self.out.flush()
