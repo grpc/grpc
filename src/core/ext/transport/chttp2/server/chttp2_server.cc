@@ -609,6 +609,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
               self.reset(DEBUG_LOCATION, "drain_grace_timer");
             });
       }
+      // Shutdown the handshaker if it's still in progress.
       if (handshaking_state_ != nullptr) {
         handshaking_state_->ShutdownLocked(
             absl::UnavailableError("Connection going away"));
