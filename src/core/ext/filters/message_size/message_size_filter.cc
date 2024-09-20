@@ -188,12 +188,12 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
     if (config_from_call_context->max_send_size().has_value() &&
         (!max_send_size.has_value() ||
          *config_from_call_context->max_send_size() < *max_send_size)) {
-      max_send_size = *config_from_call_context->max_send_size();
+      max_send_size = config_from_call_context->max_send_size();
     }
     if (config_from_call_context->max_recv_size().has_value() &&
         (!max_recv_size.has_value() ||
          *config_from_call_context->max_recv_size() < *max_recv_size)) {
-      max_recv_size = *config_from_call_context->max_recv_size();
+      max_recv_size = config_from_call_context->max_recv_size();
     }
     limits_ = MessageSizeParsedConfig(max_send_size, max_recv_size);
   }

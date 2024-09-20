@@ -57,6 +57,7 @@ class JwtTokenFetcherCallCredentials : public TokenFetcherCredentials {
 };
 
 // GCP service account identity call credentials.
+// See gRFC A83 (https://github.com/grpc/proposal/pull/438).
 class GcpServiceAccountIdentityCallCredentials
     : public JwtTokenFetcherCallCredentials {
  public:
@@ -65,7 +66,9 @@ class GcpServiceAccountIdentityCallCredentials
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override;
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
   absl::string_view audience() const { return audience_; }
 

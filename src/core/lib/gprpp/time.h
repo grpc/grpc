@@ -296,6 +296,14 @@ class Duration {
   int64_t millis_;
 };
 
+inline std::ostream& operator<<(std::ostream& out, const Duration& d) {
+  return out << d.ToString();
+}
+
+inline std::ostream& operator<<(std::ostream& out, const Timestamp& d) {
+  return out << d.ToString();
+}
+
 inline Duration operator+(Duration lhs, Duration rhs) {
   return Duration::Milliseconds(
       time_detail::MillisAdd(lhs.millis(), rhs.millis()));

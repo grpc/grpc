@@ -178,9 +178,9 @@ class ChannelzSampler final {
     return get_socket_response.socket();
   }
 
-  // get the descedent channels/subchannels/sockets of a channel
-  // push descedent channels/subchannels to queue for layer traverse
-  // store descedent channels/subchannels/sockets for dumping data
+  // get the descendant channels/subchannels/sockets of a channel
+  // push descendant channels/subchannels to queue for layer traverse
+  // store descendant channels/subchannels/sockets for dumping data
   void GetChannelDescedence(
       const grpc::channelz::v1::Channel& channel,
       std::queue<grpc::channelz::v1::Channel>& channel_queue,
@@ -232,9 +232,9 @@ class ChannelzSampler final {
     std::cout << std::endl;
   }
 
-  // get the descedent channels/subchannels/sockets of a subchannel
-  // push descedent channels/subchannels to queue for layer traverse
-  // store descedent channels/subchannels/sockets for dumping data
+  // get the descendant channels/subchannels/sockets of a subchannel
+  // push descendant channels/subchannels to queue for layer traverse
+  // store descendant channels/subchannels/sockets for dumping data
   void GetSubchannelDescedence(
       grpc::channelz::v1::Subchannel& subchannel,
       std::queue<grpc::channelz::v1::Channel>& channel_queue,

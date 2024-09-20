@@ -83,9 +83,9 @@ TEST_F(ChannelzRegistryTest, RegisterManyItems) {
 TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
   RefCountedPtr<BaseNode> channelz_channel = CreateTestNode();
   // try to pull out a uuid that does not exist.
-  RefCountedPtr<BaseNode> nonexistant =
+  RefCountedPtr<BaseNode> nonexistent =
       ChannelzRegistry::Get(channelz_channel->uuid() + 1);
-  EXPECT_EQ(nonexistant, nullptr);
+  EXPECT_EQ(nonexistent, nullptr);
   RefCountedPtr<BaseNode> retrieved =
       ChannelzRegistry::Get(channelz_channel->uuid());
   EXPECT_EQ(channelz_channel, retrieved);

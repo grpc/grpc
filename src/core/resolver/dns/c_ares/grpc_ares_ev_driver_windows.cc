@@ -72,7 +72,7 @@ namespace {
 // instantiated at the top of the virtual socket function callstack.
 class WSAErrorContext final {
  public:
-  explicit WSAErrorContext(){};
+  explicit WSAErrorContext() {};
 
   ~WSAErrorContext() {
     if (error_ != 0) {
