@@ -26,10 +26,10 @@
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/env.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 

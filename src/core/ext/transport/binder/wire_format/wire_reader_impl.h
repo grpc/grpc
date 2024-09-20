@@ -29,7 +29,7 @@
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
 
 namespace grpc_binder {
 

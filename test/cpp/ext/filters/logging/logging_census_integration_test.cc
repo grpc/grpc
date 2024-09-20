@@ -32,7 +32,7 @@
 
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"

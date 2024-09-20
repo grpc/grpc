@@ -33,8 +33,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -85,8 +85,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   chan = grpc_channel_create(addr.c_str(), creds, args);
   grpc_channel_credentials_release(creds);
-  grpc_slice host = grpc_slice_from_static_string("nonexistant");
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
+  grpc_slice host = grpc_slice_from_static_string("nonexistent");
+  gpr_timespec deadline =
+      grpc_timeout_seconds_to_deadline(wait_for_ready ? 2 : 600);
   call =
       grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/service/method"),
