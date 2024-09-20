@@ -35,7 +35,7 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/util/gethostname.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

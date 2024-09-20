@@ -61,7 +61,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/cpp/server/load_reporter/constants.h"
 
 // IWYU pragma: no_include "opencensus/stats/recording.h"

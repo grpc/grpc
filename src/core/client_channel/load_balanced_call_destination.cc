@@ -53,7 +53,7 @@ class LbCallState : public ClientChannelLbCallState {
   }
 };
 
-// TODO(roth): Remove this in favor of the gprpp Match() function once
+// TODO(roth): Remove this in favor of src/core/util/match.h function once
 // we can do that without breaking lock annotations.
 template <typename T>
 T HandlePickResult(

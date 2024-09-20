@@ -26,11 +26,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/fuzzer_util.h"
 #include "test/core/test_util/test_config.h"
 

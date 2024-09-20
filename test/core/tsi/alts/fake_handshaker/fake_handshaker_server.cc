@@ -33,7 +33,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/async_stream.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
