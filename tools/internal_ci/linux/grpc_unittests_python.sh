@@ -20,7 +20,7 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/distribtest/python_dev_ubuntu2204_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_unittests_python_in_docker.sh
+export DOCKER_RUN_SCRIPT=tools/distrib/install_all_python_modules.sh
 export GRPC_TEST_REPORT_BASE_DIR=reports
 
 exec tools/run_tests/dockerize/build_and_run_docker.sh
