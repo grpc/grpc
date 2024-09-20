@@ -22,6 +22,7 @@ EXPERIMENT_ENABLES = {
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
+    "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
@@ -42,6 +43,7 @@ EXPERIMENT_ENABLES = {
 EXPERIMENT_POLLERS = [
     "event_engine_client",
     "event_engine_dns",
+    "event_engine_dns_non_client_channel",
     "event_engine_listener",
 ]
 
@@ -50,6 +52,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -96,6 +101,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -128,6 +136,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
