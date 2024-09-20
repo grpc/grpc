@@ -16,6 +16,8 @@
 //
 //
 
+struct grpc_chttp2_stream;
+
 namespace grpc_core {
 
 // A CallTracer wrapper that updates both the legacy and new APIs for
