@@ -322,10 +322,12 @@ class TerminalResult(CoverageResult):
     def addError(self, test, err):
         """See unittest.TestResult.addError."""
         super(TerminalResult, self).addError(test, err)
+        end_time = datetime.datetime.now()
+        duration = end_time - self.start_time
         self.out.write(
             _Colors.FAIL
-            + " [{}]ERROR         {}\n".format(
-                datetime.datetime.now(), test.id()
+            + " [{}]ERROR         {}[{}s]\n".format(
+                datetime.datetime.now(), test.id(), duration
             )
             + _Colors.END
         )
@@ -334,10 +336,12 @@ class TerminalResult(CoverageResult):
     def addFailure(self, test, err):
         """See unittest.TestResult.addFailure."""
         super(TerminalResult, self).addFailure(test, err)
+        end_time = datetime.datetime.now()
+        duration = end_time - self.start_time
         self.out.write(
             _Colors.FAIL
-            + " [{}]FAILURE       {}\n".format(
-                datetime.datetime.now(), test.id()
+            + " [{}]FAILURE       {}[{}s]\n".format(
+                datetime.datetime.now(), test.id(), duration
             )
             + _Colors.END
         )
@@ -350,12 +354,9 @@ class TerminalResult(CoverageResult):
         duration = end_time - self.start_time
         self.out.write(
             _Colors.OK
-            + " [{}]SUCCESS       {}\n".format(end_time, test.id())
-            + _Colors.END
-        )
-        self.out.write(
-            _Colors.OK
-            + " {} Took:       {}\n".format(test.id(), duration)
+            + " [{}]SUCCESS       {}[{}s]\n".format(
+                end_time, test.id(), duration
+            )
             + _Colors.END
         )
         self.out.flush()
