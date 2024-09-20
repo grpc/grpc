@@ -229,7 +229,6 @@ class MetadataFlagsTest(unittest.TestCase):
                 self.check_connection_does_failfast(
                     perform_call, channel, wait_for_ready=False
                 )
-        self.assertEqual(1, 2)
 
     def test_call_wait_for_ready_enabled(self):
         # To test the wait mechanism, Python thread is required to make
