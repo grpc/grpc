@@ -473,7 +473,7 @@ TEST_F(RetryParserTest,
       << service_config.status();
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
+TEST_F(RetryParserTest, InvalidRetryPolicyUnparsableRetryableStatusCodes) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"
@@ -614,7 +614,7 @@ TEST_F(RetryParserTest,
   EXPECT_TRUE(parsed_config->retryable_status_codes().Empty());
 }
 
-TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
+TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparsable) {
   const char* test_json =
       "{\n"
       "  \"methodConfig\": [ {\n"

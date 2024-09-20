@@ -63,6 +63,7 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
@@ -615,6 +616,8 @@ class ClientChannelFilter::SubchannelWrapper final
   void ThrottleKeepaliveTime(int new_keepalive_time) {
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
   }
+
+  std::string address() const override { return subchannel_->address(); }
 
  private:
   // This wrapper provides a bridge between the internal Subchannel API
@@ -2518,16 +2521,17 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
   // updated before we queue it.
   // We need to unref pickers in the WorkSerializer.
   std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup([&]() {
-    if (IsWorkSerializerDispatchEnabled()) return;
-    chand_->work_serializer_->Run(
-        [pickers = std::move(pickers)]() mutable {
-          for (auto& picker : pickers) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
-  });
+  auto cleanup = absl::MakeCleanup(
+      [work_serializer = chand_->work_serializer_, &pickers]() {
+        if (IsWorkSerializerDispatchEnabled()) return;
+        work_serializer->Run(
+            [pickers = std::move(pickers)]() mutable {
+              for (auto& picker : pickers) {
+                picker.reset(DEBUG_LOCATION, "PickSubchannel");
+              }
+            },
+            DEBUG_LOCATION);
+      });
   absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
       set_picker;
   if (!IsWorkSerializerDispatchEnabled()) {

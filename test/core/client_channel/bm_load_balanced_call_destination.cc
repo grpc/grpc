@@ -80,6 +80,8 @@ class LoadBalancedCallDestinationTraits {
       return call_destination_;
     }
 
+    std::string address() const override { return "test"; }
+
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
   };

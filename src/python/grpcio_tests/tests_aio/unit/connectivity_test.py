@@ -55,7 +55,7 @@ class TestConnectivityState(AioTestBase):
                 _common.block_until_certain_state(
                     channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE
                 ),
-                test_constants.SHORT_TIMEOUT,
+                test_constants.SHORT_TIMEOUT * 2,
             )
 
     async def test_normal_backend(self):

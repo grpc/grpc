@@ -70,12 +70,12 @@ class StatusTest extends \PHPUnit\Framework\TestCase
         $status = [
             'code' => \Grpc\STATUS_INVALID_ARGUMENT,
             'details' => 'invalid argument',
-            'metadata' => ['trailiingMeta' => 100]
+            'metadata' => ['trailingMeta' => 100]
         ];
         $return = \Grpc\Status::status(
             \Grpc\STATUS_INVALID_ARGUMENT,
             "invalid argument",
-            ['trailiingMeta' => 100]
+            ['trailingMeta' => 100]
         );
         $this->assertEquals($status, $return);
     }
