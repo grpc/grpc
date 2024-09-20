@@ -28,7 +28,7 @@ function maybe_run_command () {
   fi
 }
 
-python3 -m pip install --upgrade "cython<3.0.0rc1";
+python3 -m pip install --upgrade "cython==3.0.0";
 python3 setup.py install;
 
 # Build and install grpcio_tools
@@ -63,7 +63,7 @@ popd;
 # Run tests for grpcio_tests
 pushd src/python/grpcio_tests;
   python3 setup.py test_lite
-# python setup.py test_aio
+  python setup.py test_aio
   python3 setup.py test_py3_only
 popd;
 
