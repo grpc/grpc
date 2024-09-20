@@ -210,6 +210,8 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
+        "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc",
+        "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list_entry.h",
