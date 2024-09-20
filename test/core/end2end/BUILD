@@ -263,6 +263,30 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): This is to test iomgr exclusively, until iomgr is deleted.
+# Initial idea: use iomgr to test one fixture across all end2end tests.
+grpc_cc_library(
+    name = "end2end_test_iomgr_main",
+    testonly = 1,
+    srcs = [
+        "end2end_test_iomgr_main.cc",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "end2end_test_lib",
+        "end2end_test_suites",
+        "fixture_support",
+        "//:config_vars",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "end2end_test_fuzzer",
     testonly = 1,

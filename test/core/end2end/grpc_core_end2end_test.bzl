@@ -114,6 +114,27 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
         tags = ["core_end2end_test", "thready_tsan"] + tags,
     )
 
+    # TODO(hork): delete this when iomgr no longer needs to be tested.
+    grpc_cc_test(
+        name = "%s_iomgr_test" % name,
+        data = END2END_TEST_DATA,
+        uses_event_engine = False,
+        external_deps = [
+            "absl/functional:any_invocable",
+            "absl/status",
+            "absl/status:statusor",
+            "absl/strings",
+            "absl/strings:str_format",
+            "absl/types:optional",
+            "gtest",
+        ],
+        deps = [
+            "end2end_test_iomgr_main",
+            "%s_library" % name,
+        ],
+        tags = ["core_end2end_iomgr_test", "no_test_ios"] + tags,
+    )
+
     grpc_proto_fuzzer(
         name = "%s_fuzzer" % name,
         srcs = [
