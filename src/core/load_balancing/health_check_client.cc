@@ -403,13 +403,17 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
       << ": subchannel state update: state=" << ConnectivityStateName(state)
       << " status=" << status;
   MutexLock lock(&mu_);
-  state_ = state;
-  status_ = status;
   if (state == GRPC_CHANNEL_READY) {
     connected_subchannel_ = subchannel_->connected_subchannel();
+    // If the subchannel became disconnected again before we got this
+    // notification, then just ignore the READY notification.  We should
+    // get another notification shortly indicating a different state.
+    if (connected_subchannel_ == nullptr) return;
   } else {
     connected_subchannel_.reset();
   }
+  state_ = state;
+  status_ = status;
   for (const auto& p : health_checkers_) {
     p.second->OnConnectivityStateChangeLocked(state, status);
   }
