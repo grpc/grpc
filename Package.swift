@@ -256,6 +256,7 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/ping_rate_policy.cc",
         "src/core/ext/transport/chttp2/transport/ping_rate_policy.h",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
+        "src/core/ext/transport/chttp2/transport/stream_lists.h",
         "src/core/ext/transport/chttp2/transport/varint.cc",
         "src/core/ext/transport/chttp2/transport/varint.h",
         "src/core/ext/transport/chttp2/transport/write_size_policy.cc",
