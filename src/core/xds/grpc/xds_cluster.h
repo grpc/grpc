@@ -74,6 +74,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // If not set, load reporting will be disabled.
   absl::optional<GrpcXdsServer> lrs_load_reporting_server;
 
+  bool use_http_connect = false;
+
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
 

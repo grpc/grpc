@@ -1,0 +1,43 @@
+// Copyright 2024 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.http_11_proxy.v3;
+
+import "src/proto/grpc/testing/xds/v3/base.proto";
+
+// [#protodoc-title: Upstream HTTP/1.1 Proxy]
+// [#extension: envoy.transport_sockets.http_11_proxy]
+
+// Configuration for HTTP/1.1 proxy transport sockets.
+// This is intended for use in Envoy Mobile, though may eventually be extended
+// for upstream Envoy use.
+// If this transport socket is configured, and an intermediate filter adds the
+// stream info necessary for proxying to the stream info (as the test filter
+// does :repo:`here <test/integration/filters/header_to_proxy_filter.cc>`) then
+//
+// * Upstream connections will be directed to the specified proxy address rather
+//   than the host's address
+// * Upstream TLS connections will have a raw HTTP/1.1 CONNECT header prefaced
+//   to the payload, and 200 response stripped (if less than 200 bytes)
+// * Plaintext HTTP/1.1 connections will be sent with a fully qualified URL.
+//
+// This transport socket is not compatible with HTTP/3, plaintext HTTP/2, or raw TCP.
+message Http11ProxyUpstreamTransport {
+  // The underlying transport socket being wrapped.
+  config.core.v3.TransportSocket transport_socket = 1;
+}

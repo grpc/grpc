@@ -319,6 +319,16 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "upstream_http_11_connect_proto",
+    srcs = [
+        "upstream_http_11_connect.proto",
+    ],
+    deps = [
+        "base_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "config_dump_proto",
     srcs = [
         "config_dump.proto",
