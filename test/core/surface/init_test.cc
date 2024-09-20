@@ -29,8 +29,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
 
 static void test(int rounds) {
