@@ -33,7 +33,6 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/per_cpu.h"
@@ -41,6 +40,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
