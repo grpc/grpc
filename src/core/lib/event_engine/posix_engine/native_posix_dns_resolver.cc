@@ -50,7 +50,7 @@ LookupHostnameBlocking(absl::string_view name, absl::string_view default_port) {
   // parse name, splitting it into host and port parts
   grpc_core::SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    return absl::InvalidArgumentError(absl::StrCat("Unparseable name: ", name));
+    return absl::InvalidArgumentError(absl::StrCat("Unparsable name: ", name));
   }
   if (port.empty()) {
     if (default_port.empty()) {

@@ -75,7 +75,7 @@
   "application/grpc"                  \
   "\x10\x07:status\x03" #STATUS_CODE
 
-#define UNPARSEABLE_RESP "Bad Request\n"
+#define UNPARSABLE_RESP "Bad Request\n"
 
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
@@ -394,10 +394,10 @@ int main(int argc, char** argv) {
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
   run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-  // unparseable response. RPC should fail immediately due to a connect
+  // unparsable response. RPC should fail immediately due to a connect
   // failure.
   //
-  run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
+  run_test(false, false, UNPARSABLE_RESP, sizeof(UNPARSABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
   // http1 response. RPC should fail immediately due to a connect failure.

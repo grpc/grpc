@@ -166,11 +166,9 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
   // Prepend the subchannel's address to the status if needed.
   absl::Status use_status;
   if (!status.ok()) {
-    std::string address_str =
-        grpc_sockaddr_to_uri(&producer_->subchannel_->address())
-            .value_or("<unknown address type>");
     use_status = absl::Status(
-        status.code(), absl::StrCat(address_str, ": ", status.message()));
+        status.code(), absl::StrCat(producer_->subchannel_->address(), ": ",
+                                    status.message()));
   }
   work_serializer_->Schedule(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
