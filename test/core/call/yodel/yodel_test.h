@@ -23,13 +23,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"

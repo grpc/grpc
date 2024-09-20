@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
+#ifndef GRPC_SRC_CORE_CALL_CALL_SPINE_H
+#define GRPC_SRC_CORE_CALL_CALL_SPINE_H
 
 #include "absl/log/check.h"
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/call/call_filters.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
@@ -30,7 +31,6 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -421,4 +421,4 @@ void ForwardCall(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
+#endif  // GRPC_SRC_CORE_CALL_CALL_SPINE_H

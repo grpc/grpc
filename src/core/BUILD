@@ -8060,14 +8060,15 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_filters",
     srcs = [
-        "lib/transport/call_filters.cc",
+        "call/call_filters.cc",
     ],
     hdrs = [
-        "lib/transport/call_filters.h",
+        "call/call_filters.h",
     ],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
     ],
     deps = [
         "call_final_info",
@@ -8110,7 +8111,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_destination",
     hdrs = [
-        "lib/transport/call_destination.h",
+        "call/call_destination.h",
     ],
     deps = [
         "call_spine",
@@ -8176,10 +8177,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_spine",
     srcs = [
-        "lib/transport/call_spine.cc",
+        "call/call_spine.cc",
     ],
     hdrs = [
-        "lib/transport/call_spine.h",
+        "call/call_spine.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",

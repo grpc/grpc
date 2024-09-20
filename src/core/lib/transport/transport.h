@@ -39,6 +39,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/call/call_destination.h"
+#include "src/core/call/call_spine.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -54,9 +56,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
