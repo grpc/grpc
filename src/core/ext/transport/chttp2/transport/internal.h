@@ -88,10 +88,6 @@
 //   bits being used for flags defined above)
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
-namespace grpc_core {
-class Chttp2CallTracerWrapper;
-}
-
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list
 typedef enum {
@@ -558,8 +554,6 @@ typedef enum {
   GRPC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
 
-using grpc_core::Chttp2CallTracerWrapper;
-
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
                      const void* server_data, grpc_core::Arena* arena);
@@ -659,7 +653,7 @@ struct grpc_chttp2_stream {
   /// Number of times written
   int64_t write_counter = 0;
 
-  Chttp2CallTracerWrapper call_tracer_wrapper;
+  grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
 
   /// Only set when enabled.
   // TODO(roth): Remove this when the call_tracer_in_transport

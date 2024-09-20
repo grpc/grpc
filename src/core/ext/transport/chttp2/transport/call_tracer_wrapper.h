@@ -16,6 +16,12 @@
 //
 //
 
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CALL_TRACER_WRAPPER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CALL_TRACER_WRAPPER_H
+
+#include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+
 struct grpc_chttp2_stream;
 
 namespace grpc_core {
@@ -62,3 +68,5 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CALL_TRACER_WRAPPER_H
