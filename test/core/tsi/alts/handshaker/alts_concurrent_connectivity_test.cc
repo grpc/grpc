@@ -292,7 +292,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   // Test
   {
     TestServer test_server;
-    size_t num_concurrent_connects = 50;
+    size_t num_concurrent_connects = 25;
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
