@@ -87,9 +87,9 @@ cdef extern from "grpc/support/alloc.h":
   void gpr_free(void *ptr) nogil
   void *gpr_realloc(void *p, size_t size) nogil
 
-cdef extern from "grpc/support/log.h":
+cdef extern from "absl/log/initialize.h" namespace "absl":
 
-  void grpc_absl_log_init() nogil
+  void InitializeLog() nogil
 
 cdef extern from "grpc/byte_buffer_reader.h":
 

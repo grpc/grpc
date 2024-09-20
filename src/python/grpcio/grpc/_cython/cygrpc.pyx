@@ -87,4 +87,4 @@ cdef _initialize():
 _initialize()
 
 # initialize absl logging
-grpc_absl_log_init()
+InitializeLog()

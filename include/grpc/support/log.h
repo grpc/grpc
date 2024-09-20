@@ -79,8 +79,6 @@ GPRAPI void grpc_absl_log_str(const char* file, int line,
 
 GPRAPI void gpr_log_verbosity_init(void);
 
-GPRAPI void grpc_absl_log_init(void);
-
 #ifdef __cplusplus
 }
 #endif
