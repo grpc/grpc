@@ -18,9 +18,10 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
-#include <cstdlib>
 #include <limits.h>
 #include <string.h>
+
+#include <cstdlib>
 
 #include <grpc/support/port_platform.h>
 
@@ -195,9 +196,7 @@ static void init_openssl(void) {
   // OPENSSL registers an exit handler to clean up global objects, which
   // otherwise may happen before gRPC removes all references to OPENSSL. Below
   // exit handler is guaranteed to run after OPENSSL's.
-  std::atexit([](){
-    grpc_wait_for_shutdown_with_timeout(absl::Seconds(2));
-  });
+  std::atexit([]() { grpc_wait_for_shutdown_with_timeout(absl::Seconds(2)); });
 #else
   SSL_library_init();
   SSL_load_error_strings();

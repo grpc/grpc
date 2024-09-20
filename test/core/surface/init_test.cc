@@ -116,7 +116,6 @@ TEST(Init, Repeatedly) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-
 TEST(Init, WaitForShutdownBeforeInit) {
   EXPECT_TRUE(grpc_wait_for_shutdown_with_timeout(absl::ZeroDuration()));
 }
@@ -134,15 +133,13 @@ TEST(Init, WaitForShutdownWithTimeout) {
   grpc_core::Thread t0(
       "init_test",
       [](void*) {
-        EXPECT_FALSE(
-            grpc_wait_for_shutdown_with_timeout(absl::Seconds(0.5)));
+        EXPECT_FALSE(grpc_wait_for_shutdown_with_timeout(absl::Seconds(0.5)));
       },
       nullptr);
   grpc_core::Thread t1(
       "init_test",
       [](void*) {
-        EXPECT_TRUE(
-            grpc_wait_for_shutdown_with_timeout(absl::Seconds(1.5)));
+        EXPECT_TRUE(grpc_wait_for_shutdown_with_timeout(absl::Seconds(1.5)));
       },
       nullptr);
   t0.Start();
