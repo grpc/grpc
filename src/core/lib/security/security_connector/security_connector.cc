@@ -28,8 +28,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
 
 grpc_channel_security_connector::grpc_channel_security_connector(

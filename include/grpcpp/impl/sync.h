@@ -36,9 +36,9 @@
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
 // Make sure any change to this file is also reflected in
-// src/core/lib/gprpp/sync.h too.
+// src/core/util/sync.h too.
 //
-// Whenever possible, prefer "src/core/lib/gprpp/sync.h" over this file,
+// Whenever possible, prefer "src/core/util/sync.h" over this file,
 // since in core we do not rely on g_core_codegen_interface and hence do not
 // pay the costs of virtual function calls.
 

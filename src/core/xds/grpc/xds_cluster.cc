@@ -19,9 +19,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {

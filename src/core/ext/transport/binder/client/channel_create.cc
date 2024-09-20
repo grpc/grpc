@@ -29,7 +29,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
