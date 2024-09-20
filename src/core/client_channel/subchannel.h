@@ -33,6 +33,7 @@
 
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -215,7 +216,10 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
-  const grpc_resolved_address& address() const { return key_.address(); }
+  std::string address() const {
+    return grpc_sockaddr_to_uri(&key_.address())
+        .value_or("<unknown address type>");
+  }
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
