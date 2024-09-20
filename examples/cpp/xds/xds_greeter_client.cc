@@ -34,7 +34,7 @@
 #endif
 
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
-ABSL_FLAG(bool, secure, true, "Secure mode");
+ABSL_FLAG(bool, xds_creds, true, "Secure mode");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   GreeterClient greeter(grpc::CreateChannel(
       absl::GetFlag(FLAGS_target),
-      absl::GetFlag(FLAGS_secure)
+      absl::GetFlag(FLAGS_xds_creds)
           ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
           : grpc::InsecureChannelCredentials()));
   std::string user("world");
