@@ -16,7 +16,11 @@
 # This script is invoked by build_and_run_docker.sh inside a docker
 # container. You should never need to call this script on your own.
 
-set -e
+set -ex
+
+if [ -f ./generate_artifacts.sh ]; then
+  ./generate_artifacts.sh; 
+fi
 
 if [ "${RELATIVE_COPY_PATH}" == "" ]
 then
