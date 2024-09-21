@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
@@ -131,6 +132,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.state = <void *>self._metadata_plugin
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
+    _maybe_register_shutdown_handler()
     fork_handlers_and_grpc_init()
     # TODO(yihuazhang): Expose min_security_level via the Python API so that
     # applications can decide what minimum security level their plugins require.
