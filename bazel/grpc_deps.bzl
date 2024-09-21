@@ -414,3 +414,22 @@ def grpc_test_only_deps():
             strip_prefix = "libprotobuf-mutator-1f95f8083066f5b38fd2db172e7e7f9aa7c49d2d",
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
         )
+
+    if "pantor_inja" not in native.existing_rules():
+        http_archive(
+            name = "pantor_inja",
+            urls = [
+                "https://github.com/pantor/inja/archive/refs/tags/v3.4.0.tar.gz"
+            ],
+            strip_prefix = "inja-3.4.0",
+            build_file = "@com_github_grpc_grpc//third_party:inja.BUILD",
+        )
+
+    if "nlohmann_json" not in native.existing_rules():
+        http_archive(
+            name = "nlohmann_json",
+            urls = [
+                "https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz",
+            ],
+            strip_prefix = "json-3.11.3",
+        )
