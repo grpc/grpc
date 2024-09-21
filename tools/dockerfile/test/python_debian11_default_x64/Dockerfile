@@ -179,7 +179,7 @@ RUN python3.12 -m ensurepip && \
 RUN apt-get update && apt-get install -y libsqlite3-dev
 
 # 3.9 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
+RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip python3-yaml python3-mako
 
 # for Python test coverage reporting
 RUN python3.9 -m pip install coverage
