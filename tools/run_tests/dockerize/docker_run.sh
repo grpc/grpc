@@ -18,10 +18,6 @@
 
 set -ex
 
-if [ -f ./generate_artifacts.sh ]; then
-  ./generate_artifacts.sh; 
-fi
-
 if [ "${RELATIVE_COPY_PATH}" == "" ]
 then
   mkdir -p /var/local/git
@@ -37,6 +33,10 @@ else
 fi
 
 cd /var/local/git/grpc
+
+if [ -f ./generate_artifacts.sh ]; then
+  ./generate_artifacts.sh; 
+fi
 
 # whatever is written to the reports/ dir will be made available outside of the docker container.
 ln -s "${EXTERNAL_GIT_ROOT}/reports" reports
