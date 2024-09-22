@@ -47,6 +47,11 @@ exports_files(
     visibility = ["//:__subpackages__"],
 )
 
+exports_files(
+    ["build_handwritten.yaml"],
+    visibility = ["//tools/codegen/core:__pkg__"],
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},

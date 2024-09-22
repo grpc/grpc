@@ -419,10 +419,11 @@ def grpc_test_only_deps():
         http_archive(
             name = "pantor_inja",
             urls = [
-                "https://github.com/pantor/inja/archive/refs/tags/v3.4.0.tar.gz"
+                "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.tar.gz"
             ],
-            strip_prefix = "inja-3.4.0",
+            strip_prefix = "inja-3.3.0",
             build_file = "@com_github_grpc_grpc//third_party:inja.BUILD",
+            integrity = "sha256-5ijZlHYtzaqal/Y6m4tz2a9Rrw/6Ws6mvbugrOr47iU=",
         )
 
     if "nlohmann_json" not in native.existing_rules():
@@ -432,4 +433,15 @@ def grpc_test_only_deps():
                 "https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz",
             ],
             strip_prefix = "json-3.11.3",
+            integrity = "sha256-DY71r3+XlOMmNIAZPEkVSbK6bMdLsBiQYgKtpJinlAY=",
+        )
+
+    if "jbeder_yaml_cpp" not in native.existing_rules():
+        http_archive(
+            name = "jbeder_yaml_cpp",
+            urls = [
+                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+            ],
+            strip_prefix = "yaml-cpp-0.8.0",
+            integrity = "sha256-++dLvc7iHWVnFWiHBto8i+z9lG2SzURwXMYJi7I7OhY=",
         )

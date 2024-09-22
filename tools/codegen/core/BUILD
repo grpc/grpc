@@ -41,3 +41,24 @@ grpc_cc_binary(
         "//src/core:match",
     ],
 )
+
+grpc_cc_binary(
+    name = "gen_artifacts",
+    srcs = ["gen_artifacts.cc"],
+    external_deps = [
+        "pantor_inja",
+        "nlohmann_json",
+        "jbeder_yaml_cpp",
+        "absl/log",
+        "absl/log:initialize",
+        "runfiles",
+        "absl/flags:parse",
+        "absl/log:flags",
+    ],
+    data = [
+        "//:build_handwritten.yaml",
+    ],
+    visibility = [
+        "//:__subpackages__",
+    ],
+)
