@@ -20,8 +20,10 @@ import subprocess
 build_targets = []
 generated_files = []
 
+
 def flatten(fq_name):
     return fq_name.removeprefix("//").replace(":", "/")
+
 
 def genrule(query_path, name, outs, **kwargs):
     global build_targets
@@ -29,19 +31,27 @@ def genrule(query_path, name, outs, **kwargs):
     build_targets.append(f"{query_path}:{name}")
     generated_files.extend(flatten(out) for out in outs)
 
+
 source = ""
 for query_path in ["//src/core"]:
     source = f"# {query_path}\n"
-    cmd = ["bazel", "query", "--output=build", f"attr('tags', '\\bgrpc_generated_artifact\\b', {query_path}/...)"]
+    cmd = [
+        "bazel",
+        "query",
+        "--output=build",
+        f"attr('tags', '\\bgrpc_generated_artifact\\b', {query_path}/...)",
+    ]
     source += subprocess.check_output(cmd).decode("utf-8")
     source += "\n"
 
     exec(
         source,
         {
-            'genrule': lambda **kwargs: genrule(query_path=query_path, **kwargs),
+            "genrule": lambda **kwargs: genrule(
+                query_path=query_path, **kwargs
+            ),
         },
-        {}
+        {},
     )
 
 cmd = ["bazel", "build"] + build_targets
