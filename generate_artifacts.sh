@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC authors.
+#!/bin/bash
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/_metadata.py.template`!!!
+set -ex
 
-__version__ = """1.68.0.dev0"""
+cd $(dirname "$0")
+
+git submodule update --init
+tools/buildgen/generate_projects.sh
+

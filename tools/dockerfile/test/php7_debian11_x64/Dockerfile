@@ -73,6 +73,7 @@ RUN apt-get update && apt-get install -y \
   python3-pip \
   python3-setuptools \
   python3-yaml \
+  python3-mako \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
@@ -141,6 +142,7 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
+
 
 # Define the default command.
 CMD ["bash"]

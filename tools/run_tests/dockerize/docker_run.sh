@@ -16,7 +16,7 @@
 # This script is invoked by build_and_run_docker.sh inside a docker
 # container. You should never need to call this script on your own.
 
-set -e
+set -ex
 
 if [ "${RELATIVE_COPY_PATH}" == "" ]
 then
@@ -33,6 +33,10 @@ else
 fi
 
 cd /var/local/git/grpc
+
+if [ -f ./generate_artifacts.sh ]; then
+  ./generate_artifacts.sh; 
+fi
 
 # whatever is written to the reports/ dir will be made available outside of the docker container.
 ln -s "${EXTERNAL_GIT_ROOT}/reports" reports
