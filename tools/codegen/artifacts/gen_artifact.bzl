@@ -20,4 +20,3 @@ def gen_artifact(file):
         tools = ["//tools/codegen/artifacts:gen_artifacts"],
         cmd = "$(location //tools/codegen/artifacts:gen_artifacts) $(location %s.template) > $@" % file,
     )
-    

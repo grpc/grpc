@@ -17,6 +17,9 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
 grpc_cc_binary(
     name = "gen_artifacts",
     srcs = ["gen_artifacts.cc"],
+    data = [
+        "//:build_handwritten.yaml",
+    ],
     external_deps = [
         "pantor_inja",
         "nlohmann_json",
@@ -26,9 +29,6 @@ grpc_cc_binary(
         "runfiles",
         "absl/flags:parse",
         "absl/log:flags",
-    ],
-    data = [
-        "//:build_handwritten.yaml",
     ],
     visibility = [
         "//:__subpackages__",
