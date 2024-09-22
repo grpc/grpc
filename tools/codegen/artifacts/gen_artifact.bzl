@@ -19,5 +19,5 @@ def gen_artifact(file):
         outs = [file],
         tools = ["//tools/codegen/artifacts:gen_artifacts"],
         cmd = "$(location //tools/codegen/artifacts:gen_artifacts) $(location %s.template) > $@" % file,
-        tags = ["grpc_generated_artifact"]
+        tags = ["grpc_generated_artifact"],
     )
