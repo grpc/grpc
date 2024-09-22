@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <filesystem>
+#include <fstream>
+#include <sstream>
 
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
@@ -54,6 +55,13 @@ nlohmann::json YamlToJson(YAML::Node node) {
 nlohmann::json LoadYaml(const std::string& filename) {
   return YamlToJson(YAML::LoadFile(filename));
 }
+
+std::string LoadString(const std::string& filename) {
+  std::ifstream file(filename);
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  return buffer.str();
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -71,7 +79,7 @@ int main(int argc, char** argv) {
   auto build_handwritten = LoadYaml(
       runfiles->Rlocation("com_github_grpc_grpc/build_handwritten.yaml"));
   LOG(INFO) << "Loaded build_handwritten.yaml: " << build_handwritten.dump();
-  auto template_json = LoadYaml(positional_args[1]).template get<std::string>();
+  auto template_json = LoadString(positional_args[1]);
   std::cout << inja::render(template_json, build_handwritten);
   return 0;
 }
