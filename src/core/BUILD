@@ -20,6 +20,11 @@ load(
     "grpc_upb_proto_reflection_library",
 )
 
+load(
+    "//tools/codegen/artifacts:gen_artifact.bzl",
+    "gen_artifact",
+)
+
 licenses(["reciprocal"])
 
 package(
@@ -8818,10 +8823,4 @@ WELL_KNOWN_PROTO_TARGETS = [
 
 grpc_generate_one_off_internal_targets()
 
-genrule(
-    name = "gen_version_cc",
-    srcs = ["lib/surface/version.cc.template"],
-    outs = ["lib/surface/version.cc"],
-    tools = ["//tools/codegen/core:gen_artifacts"],
-    cmd = "$(location //tools/codegen/core:gen_artifacts) $(location lib/surface/version.cc.template) > $@",
-)
+gen_artifact("lib/surface/version.cc")

@@ -49,7 +49,7 @@ exports_files(
 
 exports_files(
     ["build_handwritten.yaml"],
-    visibility = ["//tools/codegen/core:__pkg__"],
+    visibility = ["//tools/codegen/artifacts:__pkg__"],
 )
 
 config_setting(

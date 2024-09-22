@@ -14,30 +14,23 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
 
-exports_files(
-    glob(
-        ["**"],
-        exclude = [],
-    ),
-    visibility = ["//:__subpackages__"],
-)
-
 grpc_cc_binary(
-    name = "gen_huffman_decompressor",
-    srcs = ["gen_huffman_decompressor.cc"],
+    name = "gen_artifacts",
+    srcs = ["gen_artifacts.cc"],
     external_deps = [
-        "absl/strings",
-        "absl/memory",
-        "absl/types:optional",
-        "absl/types:variant",
-        "libcrypto",
+        "pantor_inja",
+        "nlohmann_json",
+        "jbeder_yaml_cpp",
+        "absl/log",
+        "absl/log:initialize",
+        "runfiles",
+        "absl/flags:parse",
+        "absl/log:flags",
+    ],
+    data = [
+        "//:build_handwritten.yaml",
     ],
     visibility = [
-        "//test/cpp/microbenchmarks/huffman_geometries:__pkg__",
-    ],
-    deps = [
-        "//src/core:env",
-        "//src/core:huffsyms",
-        "//src/core:match",
+        "//:__subpackages__",
     ],
 )
