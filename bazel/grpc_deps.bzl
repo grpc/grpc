@@ -419,7 +419,7 @@ def grpc_test_only_deps():
         http_archive(
             name = "pantor_inja",
             urls = [
-                "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.tar.gz"
+                "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.tar.gz",
             ],
             strip_prefix = "inja-3.3.0",
             build_file = "@com_github_grpc_grpc//third_party:inja.BUILD",

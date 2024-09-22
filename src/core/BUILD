@@ -19,7 +19,6 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
-
 load(
     "//tools/codegen/artifacts:gen_artifact.bzl",
     "gen_artifact",
