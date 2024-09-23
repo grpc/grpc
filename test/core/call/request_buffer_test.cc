@@ -125,6 +125,18 @@ TEST(RequestBufferTest, PushThenPullClientInitialMetadata) {
   EXPECT_THAT(*value, IsTestMetadata());
 }
 
+TEST(RequestBufferTest, PushThenFinishThenPullClientInitialMetadata) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  buffer.FinishSends();
+  RequestBuffer::Reader reader(&buffer);
+  auto poll = reader.PullClientInitialMetadata()();
+  ASSERT_THAT(poll, IsReady());
+  auto value = std::move(poll.value());
+  ASSERT_TRUE(value.ok());
+  EXPECT_THAT(*value, IsTestMetadata());
+}
+
 TEST(RequestBufferTest, PullThenPushClientInitialMetadata) {
   StrictMock<MockActivity> activity;
   RequestBuffer buffer;
@@ -647,6 +659,59 @@ TEST(RequestBufferTest, NothingAfterEndOfStream) {
   ASSERT_THAT(poll_msg, IsReady());
   ASSERT_TRUE(poll_msg.value().ok());
   EXPECT_FALSE(poll_msg.value().value().has_value());
+}
+
+TEST(RequestBufferTest, CancelBeforeInitialMetadataPush) {
+  RequestBuffer buffer;
+  buffer.Cancel();
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), Failure{});
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  auto poll_md = pull_md();
+  ASSERT_THAT(poll_md, IsReady());
+  ASSERT_FALSE(poll_md.value().ok());
+}
+
+TEST(RequestBufferTest, CancelBeforeInitialMetadataPull) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  buffer.Cancel();
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  auto poll_md = pull_md();
+  ASSERT_THAT(poll_md, IsReady());
+  ASSERT_FALSE(poll_md.value().ok());
+}
+
+TEST(RequestBufferTest, CancelBeforeMessagePush) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  buffer.Cancel();
+  auto pusher = buffer.PushMessage(TestMessage());
+  auto poll = pusher();
+  ASSERT_THAT(poll, IsReady());
+  ASSERT_FALSE(poll.value().ok());
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  auto poll_md = pull_md();
+  ASSERT_THAT(poll_md, IsReady());
+  ASSERT_FALSE(poll_md.value().ok());
+}
+
+TEST(RequestBufferTest, CancelBeforeMessagePushButAfterInitialMetadataPull) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  auto poll_md = pull_md();
+  ASSERT_THAT(poll_md, IsReady());
+  ASSERT_TRUE(poll_md.value().ok());
+  EXPECT_THAT(*poll_md.value(), IsTestMetadata());
+  buffer.Cancel();
+  auto pusher = buffer.PushMessage(TestMessage());
+  auto poll = pusher();
+  ASSERT_THAT(poll, IsReady());
+  ASSERT_FALSE(poll.value().ok());
 }
 
 }  // namespace grpc_core
