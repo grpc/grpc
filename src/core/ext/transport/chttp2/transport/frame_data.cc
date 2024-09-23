@@ -30,10 +30,10 @@
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/status_helper.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
                                                  uint32_t stream_id,

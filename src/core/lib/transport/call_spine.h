@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/dual_ref_counted.h"
 
 namespace grpc_core {
 

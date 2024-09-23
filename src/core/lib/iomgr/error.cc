@@ -30,15 +30,15 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
 #endif
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/useful.h"
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,

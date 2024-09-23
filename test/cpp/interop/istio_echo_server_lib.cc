@@ -27,7 +27,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
 
 using proto::EchoRequest;
