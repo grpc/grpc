@@ -81,6 +81,10 @@ struct FrameHeader {
   static constexpr size_t kFrameHeaderSize = 12;
 };
 
+inline std::ostream& operator<<(std::ostream& out, const FrameHeader& h) {
+  return out << h.ToString();
+}
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
