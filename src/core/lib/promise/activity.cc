@@ -25,7 +25,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/atomic_utils.h"
+#include "src/core/util/atomic_utils.h"
 
 namespace grpc_core {
 

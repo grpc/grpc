@@ -34,7 +34,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 char* gpr_strdup(const char* src) {
