@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 namespace grpc_core {
