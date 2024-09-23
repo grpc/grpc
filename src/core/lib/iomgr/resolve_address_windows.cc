@@ -34,9 +34,6 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -45,7 +42,10 @@
 #include "src/core/lib/iomgr/resolve_address_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/string.h"
+#include "src/core/util/thd.h"
 
 namespace grpc_core {
 namespace {

@@ -29,8 +29,8 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/env.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

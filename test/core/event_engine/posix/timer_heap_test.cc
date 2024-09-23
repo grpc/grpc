@@ -29,7 +29,7 @@
 #include "gtest/gtest.h"
 
 #include "src/core/lib/event_engine/posix_engine/timer.h"
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 
 using testing::Contains;
 using testing::Not;

@@ -28,8 +28,8 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
