@@ -41,14 +41,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
@@ -62,12 +54,20 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
@@ -78,8 +78,6 @@
 namespace grpc_core {
 
 namespace {
-
-using XdsConfig = XdsDependencyManager::XdsConfig;
 
 //
 // global circuit breaker atomic map
@@ -648,17 +646,21 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // Update config state, now that we're done comparing old and new fields.
   config_ = std::move(new_config);
   cluster_resource_ = new_cluster_config.cluster;
-  auto it2 =
-      cluster_resource_->metadata.find("com.google.csm.telemetry_labels");
-  if (it2 != cluster_resource_->metadata.end()) {
-    auto& json_object = it2->second.object();
-    auto it3 = json_object.find("service_name");
-    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
-      service_telemetry_label_ = RefCountedStringValue(it3->second.string());
+  const XdsMetadataValue* metadata_value =
+      cluster_resource_->metadata.Find("com.google.csm.telemetry_labels");
+  if (metadata_value != nullptr &&
+      metadata_value->type() == XdsStructMetadataValue::Type()) {
+    const Json::Object& json_object =
+        DownCast<const XdsStructMetadataValue*>(metadata_value)
+            ->json()
+            .object();
+    auto it = json_object.find("service_name");
+    if (it != json_object.end() && it->second.type() == Json::Type::kString) {
+      service_telemetry_label_ = RefCountedStringValue(it->second.string());
     }
-    it3 = json_object.find("service_namespace");
-    if (it3 != json_object.end() && it3->second.type() == Json::Type::kString) {
-      namespace_telemetry_label_ = RefCountedStringValue(it3->second.string());
+    it = json_object.find("service_namespace");
+    if (it != json_object.end() && it->second.type() == Json::Type::kString) {
+      namespace_telemetry_label_ = RefCountedStringValue(it->second.string());
     }
   }
   drop_config_ = endpoint_config->endpoints != nullptr

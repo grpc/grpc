@@ -27,13 +27,13 @@
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
-#include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/util/single_set_ptr.h"
 
 namespace grpc_core {
 
@@ -149,7 +149,7 @@ class ClientChannel : public Channel {
       RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void UpdateServiceConfigInDataPlaneLocked()
+  void UpdateServiceConfigInDataPlaneLocked(const ChannelArgs& args)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateStateLocked(grpc_connectivity_state state,

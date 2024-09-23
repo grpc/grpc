@@ -68,21 +68,9 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/uuid_v4.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -103,11 +91,23 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/uuid_v4.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -526,7 +526,7 @@ class RlsLb final : public LoadBalancingPolicy {
      private:
       class BackoffTimer final : public InternallyRefCounted<BackoffTimer> {
        public:
-        BackoffTimer(RefCountedPtr<Entry> entry, Timestamp backoff_time);
+        BackoffTimer(RefCountedPtr<Entry> entry, Duration delay);
 
         // Note: We are forced to disable lock analysis here because
         // Orphan() is called by OrphanablePtr<>, which cannot have lock
@@ -1138,12 +1138,11 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
 //
 
 RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
-                                                Timestamp backoff_time)
+                                                Duration delay)
     : entry_(std::move(entry)) {
   backoff_timer_task_handle_ =
       entry_->lb_policy_->channel_control_helper()->GetEventEngine()->RunAfter(
-          backoff_time - Timestamp::Now(),
-          [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
+          delay, [self = Ref(DEBUG_LOCATION, "BackoffTimer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
@@ -1311,11 +1310,12 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
     } else {
       backoff_state_ = MakeCacheEntryBackoff();
     }
-    backoff_time_ = backoff_state_->NextAttemptTime();
-    Timestamp now = Timestamp::Now();
-    backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
+    const Duration delay = backoff_state_->NextAttemptDelay();
+    const Timestamp now = Timestamp::Now();
+    backoff_time_ = now + delay;
+    backoff_expiration_time_ = now + delay * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
-        Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
+        Ref(DEBUG_LOCATION, "BackoffTimer"), delay);
     lb_policy_->UpdatePickerAsync();
     return {};
   }
@@ -2590,7 +2590,7 @@ class RlsLbFactory final : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     return LoadFromJson<RefCountedPtr<RlsLbConfig>>(
-        json, JsonArgs(), "errors validing RLS LB policy config");
+        json, JsonArgs(), "errors validating RLS LB policy config");
   }
 };
 

@@ -35,9 +35,9 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/per_cpu.h"
 #include "src/core/util/ring_buffer.h"
+#include "src/core/util/sync.h"
 
 #define TAGGED_POINTER_SIZE_BITS 48
 
@@ -156,7 +156,7 @@ class Log {
   static std::atomic<uintptr_t> free_bins_;
   absl::AnyInvocable<void(absl::string_view)> stats_flusher_ = nullptr;
   struct Fragment {
-    Fragment() : active(&primary){};
+    Fragment() : active(&primary) {};
     Mutex mu;
     RingBuffer<RecordedEvent, Log::kMaxEventsPerCpu>* active
         ABSL_GUARDED_BY(mu);

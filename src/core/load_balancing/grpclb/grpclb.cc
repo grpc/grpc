@@ -97,20 +97,10 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -139,11 +129,21 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -1655,12 +1655,12 @@ void GrpcLb::StartBalancerCallLocked() {
 }
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
-  Duration timeout = lb_call_backoff_.NextAttemptTime() - Timestamp::Now();
+  Duration delay = lb_call_backoff_.NextAttemptDelay();
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     LOG(INFO) << "[grpclb " << this << "] Connection to LB server lost...";
-    if (timeout > Duration::Zero()) {
+    if (delay > Duration::Zero()) {
       LOG(INFO) << "[grpclb " << this << "] ... retry_timer_active in "
-                << timeout.millis() << "ms.";
+                << delay.millis() << "ms.";
     } else {
       LOG(INFO) << "[grpclb " << this
                 << "] ... retry_timer_active immediately.";
@@ -1668,7 +1668,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   }
   lb_call_retry_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
-          timeout,
+          delay,
           [self = RefAsSubclass<GrpcLb>(
                DEBUG_LOCATION, "on_balancer_call_retry_timer")]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;

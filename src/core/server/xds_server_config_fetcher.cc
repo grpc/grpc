@@ -54,12 +54,6 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -71,13 +65,19 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"
 #include "src/core/server/xds_channel_stack_modifier.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/uri.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_certificate_provider.h"
@@ -677,8 +677,16 @@ void XdsServerConfigFetcher::ListenerWatcher::
     // It should get cleaned up eventually. Ignore this update.
     return;
   }
+  bool first_good_update = filter_chain_match_manager_ == nullptr;
+  // Promote the pending FilterChainMatchManager
+  filter_chain_match_manager_ = std::move(pending_filter_chain_match_manager_);
+  // TODO(yashykt): Right now, the server_config_watcher_ does not invoke
+  // XdsServerConfigFetcher while holding a lock, but that might change in the
+  // future in which case we would want to execute this update outside the
+  // critical region through a WorkSerializer similar to XdsClient.
+  server_config_watcher_->UpdateConnectionManager(filter_chain_match_manager_);
   // Let the logger know about the update if there was no previous good update.
-  if (filter_chain_match_manager_ == nullptr) {
+  if (first_good_update) {
     if (serving_status_notifier_.on_serving_status_update != nullptr) {
       serving_status_notifier_.on_serving_status_update(
           serving_status_notifier_.user_data, listening_address_.c_str(),
@@ -688,13 +696,6 @@ void XdsServerConfigFetcher::ListenerWatcher::
                 << listening_address_;
     }
   }
-  // Promote the pending FilterChainMatchManager
-  filter_chain_match_manager_ = std::move(pending_filter_chain_match_manager_);
-  // TODO(yashykt): Right now, the server_config_watcher_ does not invoke
-  // XdsServerConfigFetcher while holding a lock, but that might change in the
-  // future in which case we would want to execute this update outside the
-  // critical region through a WorkSerializer similar to XdsClient.
-  server_config_watcher_->UpdateConnectionManager(filter_chain_match_manager_);
 }
 
 //
@@ -1176,7 +1177,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
-      auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
           http_filter_registry, http_filters, vhost, route, nullptr,
           ChannelArgs());
       if (!result.ok()) return result.status();

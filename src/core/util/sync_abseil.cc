@@ -32,8 +32,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time_util.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time_util.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex),

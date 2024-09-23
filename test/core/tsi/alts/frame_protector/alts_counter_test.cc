@@ -22,7 +22,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 const size_t kSmallCounterSize = 4;

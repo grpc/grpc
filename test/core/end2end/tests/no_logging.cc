@@ -37,7 +37,7 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -99,7 +99,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
               std::regex("Failed to bind some addresses for.*")},
              {"log.cc",
               std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environmenmt or test environmenmt "
+                         "message in a debug environment or test environment "
                          "it is safe to ignore this message.")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {

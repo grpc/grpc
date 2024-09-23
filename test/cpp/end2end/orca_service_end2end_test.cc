@@ -32,7 +32,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.pb.h"
 #include "test/core/test_util/port.h"

@@ -58,15 +58,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -75,7 +66,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
@@ -84,6 +74,16 @@
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
+#include "src/core/util/xxhash_inline.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -139,8 +139,7 @@ class XdsResolver final : public Resolver {
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
 
-    void OnUpdate(
-        RefCountedPtr<const XdsDependencyManager::XdsConfig> config) override {
+    void OnUpdate(RefCountedPtr<const XdsConfig> config) override {
       resolver_->OnUpdate(std::move(config));
     }
 
@@ -363,7 +362,7 @@ class XdsResolver final : public Resolver {
     return it->second->Ref();
   }
 
-  void OnUpdate(RefCountedPtr<const XdsDependencyManager::XdsConfig> config);
+  void OnUpdate(RefCountedPtr<const XdsConfig> config);
   void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist(std::string context);
 
@@ -382,7 +381,7 @@ class XdsResolver final : public Resolver {
   const uint64_t channel_id_;
 
   OrphanablePtr<XdsDependencyManager> dependency_mgr_;
-  RefCountedPtr<const XdsDependencyManager::XdsConfig> current_config_;
+  RefCountedPtr<const XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
 };
 
@@ -511,7 +510,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   // Handle xDS HTTP filters.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
       resolver->current_config_->listener->listener);
-  auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+  auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
       hcm.http_filters, *resolver->current_config_->virtual_host, route,
@@ -976,8 +975,7 @@ void XdsResolver::ShutdownLocked() {
   }
 }
 
-void XdsResolver::OnUpdate(
-    RefCountedPtr<const XdsDependencyManager::XdsConfig> config) {
+void XdsResolver::OnUpdate(RefCountedPtr<const XdsConfig> config) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "[xds_resolver " << this << "] received updated xDS config";
   if (xds_client_ == nullptr) return;
@@ -1043,18 +1041,27 @@ XdsResolver::CreateServiceConfig() {
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_cluster_manager_experimental\":{\n"
-      "      \"children\":{\n");
-  config_parts.push_back(absl::StrJoin(clusters, ",\n"));
-  config_parts.push_back(
-      "    }\n"
-      "    } }\n"
-      "  ]\n"
-      "}");
-  std::string json = absl::StrJoin(config_parts, "");
-  return ServiceConfigImpl::Create(args_, json.c_str());
+      absl::StrCat("  \"loadBalancingConfig\":[\n"
+                   "    { \"xds_cluster_manager_experimental\":{\n"
+                   "      \"children\":{\n",
+                   absl::StrJoin(clusters, ",\n"),
+                   "    }\n"
+                   "    } }\n"
+                   "  ]"));
+  auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+      current_config_->listener->listener);
+  auto filter_configs =
+      XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
+          static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+              .http_filter_registry(),
+          hcm.http_filters, args_);
+  if (!filter_configs.ok()) return filter_configs.status();
+  for (const auto& p : filter_configs->per_filter_configs) {
+    config_parts.emplace_back(absl::StrCat(
+        "  \"", p.first, "\": [\n", absl::StrJoin(p.second, ",\n"), "\n  ]"));
+  }
+  std::string json = absl::StrCat("{", absl::StrJoin(config_parts, ",\n"), "}");
+  return ServiceConfigImpl::Create(filter_configs->args, json.c_str());
 }
 
 void XdsResolver::GenerateResult() {

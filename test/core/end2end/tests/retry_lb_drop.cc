@@ -31,12 +31,12 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_lb_policies.h"
 

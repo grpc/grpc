@@ -34,15 +34,15 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/stat.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 namespace {

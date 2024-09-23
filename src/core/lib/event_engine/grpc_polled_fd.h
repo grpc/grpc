@@ -27,7 +27,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {

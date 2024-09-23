@@ -61,6 +61,8 @@ namespace grpc_core {
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
+inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
@@ -76,6 +78,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TIME_CACHING_IN_PARTY
+inline bool IsTimeCachingInPartyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -88,6 +92,8 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
+inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -106,6 +112,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TIME_CACHING_IN_PARTY
+inline bool IsTimeCachingInPartyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -118,6 +126,8 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
+inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
@@ -135,6 +145,8 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TIME_CACHING_IN_PARTY
+inline bool IsTimeCachingInPartyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -148,6 +160,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientPrivacy,
+  kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineListener,
@@ -161,6 +174,7 @@ enum ExperimentIds {
   kExperimentIdServerPrivacy,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
+  kExperimentIdTimeCachingInParty,
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdWorkSerializerClearsTimeCache,
@@ -178,6 +192,10 @@ inline bool IsCanaryClientPrivacyEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
   return IsExperimentEnabled<kExperimentIdClientPrivacy>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
+inline bool IsEventEngineApplicationCallbacksEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineApplicationCallbacks>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
@@ -230,6 +248,10 @@ inline bool IsTcpFrameSizeTuningEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_RCV_LOWAT
 inline bool IsTcpRcvLowatEnabled() {
   return IsExperimentEnabled<kExperimentIdTcpRcvLowat>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TIME_CACHING_IN_PARTY
+inline bool IsTimeCachingInPartyEnabled() {
+  return IsExperimentEnabled<kExperimentIdTimeCachingInParty>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() {

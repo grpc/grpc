@@ -22,20 +22,31 @@ static const upb_MiniTableSub google_api_expr_v1alpha1_CheckedExpr_submsgs[4] = 
   {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__SourceInfo_msg_init},
 };
 
-static const upb_MiniTableField google_api_expr_v1alpha1_CheckedExpr__fields[4] = {
+static const upb_MiniTableField google_api_expr_v1alpha1_CheckedExpr__fields[5] = {
   {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(20, 32), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(24, 40), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr_msg_init = {
   &google_api_expr_v1alpha1_CheckedExpr_submsgs[0],
   &google_api_expr_v1alpha1_CheckedExpr__fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.CheckedExpr",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000003f000032, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
 static const upb_MiniTableSub google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[1] = {

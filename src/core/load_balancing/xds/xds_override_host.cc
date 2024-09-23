@@ -55,14 +55,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -77,10 +69,18 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 
 namespace grpc_core {
@@ -738,8 +738,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   }
   auto new_config = args.config.TakeAsSubclass<XdsOverrideHostLbConfig>();
   // Get xDS config.
-  auto new_xds_config =
-      args.args.GetObjectRef<XdsDependencyManager::XdsConfig>();
+  auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
   if (new_xds_config == nullptr) {
     // Should never happen.
     absl::Status status = absl::InternalError(

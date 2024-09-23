@@ -24,8 +24,8 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
@@ -38,6 +38,18 @@ inline bool ParseBoolValue(const google_protobuf_BoolValue* bool_value_proto,
                            bool default_value = false) {
   if (bool_value_proto == nullptr) return default_value;
   return google_protobuf_BoolValue_value(bool_value_proto);
+}
+
+inline absl::optional<uint64_t> ParseUInt64Value(
+    const google_protobuf_UInt64Value* proto) {
+  if (proto == nullptr) return absl::nullopt;
+  return google_protobuf_UInt64Value_value(proto);
+}
+
+inline absl::optional<uint32_t> ParseUInt32Value(
+    const google_protobuf_UInt32Value* proto) {
+  if (proto == nullptr) return absl::nullopt;
+  return google_protobuf_UInt32Value_value(proto);
 }
 
 CommonTlsContext CommonTlsContextParse(

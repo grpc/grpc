@@ -22,12 +22,10 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/util/match.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_endpoint_parser.h"
 #include "src/core/xds/grpc/xds_listener_parser.h"
@@ -42,71 +40,6 @@ namespace {
 constexpr int kMaxXdsAggregateClusterRecursionDepth = 16;
 
 }  // namespace
-
-//
-// XdsDependencyManager::XdsConfig::ClusterConfig
-//
-
-XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
-    std::shared_ptr<const XdsClusterResource> cluster,
-    std::shared_ptr<const XdsEndpointResource> endpoints,
-    std::string resolution_note)
-    : cluster(std::move(cluster)),
-      children(absl::in_place_type_t<EndpointConfig>(), std::move(endpoints),
-               std::move(resolution_note)) {}
-
-XdsDependencyManager::XdsConfig::ClusterConfig::ClusterConfig(
-    std::shared_ptr<const XdsClusterResource> cluster,
-    std::vector<absl::string_view> leaf_clusters)
-    : cluster(std::move(cluster)),
-      children(absl::in_place_type_t<AggregateConfig>(),
-               std::move(leaf_clusters)) {}
-
-//
-// XdsDependencyManager::XdsConfig
-//
-
-std::string XdsDependencyManager::XdsConfig::ToString() const {
-  std::vector<std::string> parts = {
-      "{\n  listener: {",     listener->ToString(),
-      "}\n  route_config: {", route_config->ToString(),
-      "}\n  virtual_host: {", virtual_host->ToString(),
-      "}\n  clusters: {\n"};
-  for (const auto& p : clusters) {
-    parts.push_back(absl::StrCat("    \"", p.first, "\": "));
-    if (!p.second.ok()) {
-      parts.push_back(p.second.status().ToString());
-      parts.push_back("\n");
-    } else {
-      parts.push_back(
-          absl::StrCat("      {\n"
-                       "        cluster: {",
-                       p.second->cluster->ToString(), "}\n"));
-      Match(
-          p.second->children,
-          [&](const ClusterConfig::EndpointConfig& endpoint_config) {
-            parts.push_back(
-                absl::StrCat("        endpoints: {",
-                             endpoint_config.endpoints == nullptr
-                                 ? "<null>"
-                                 : endpoint_config.endpoints->ToString(),
-                             "}\n"
-                             "        resolution_note: \"",
-                             endpoint_config.resolution_note, "\"\n"));
-          },
-          [&](const ClusterConfig::AggregateConfig& aggregate_config) {
-            parts.push_back(absl::StrCat(
-                "        leaf_clusters: [",
-                absl::StrJoin(aggregate_config.leaf_clusters, ", "), "]\n"));
-          });
-      parts.push_back(
-          "      }\n"
-          "    ]\n");
-    }
-  }
-  parts.push_back("  }\n}");
-  return absl::StrJoin(parts, "");
-}
 
 //
 // XdsDependencyManager::ListenerWatcher

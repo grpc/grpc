@@ -34,10 +34,10 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/sync.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
@@ -82,7 +82,7 @@ grpc_slice FlattenIovec(const struct iovec* iov, int iov_count) {
 // instantiated at the top of the virtual socket function callstack.
 class WSAErrorContext {
  public:
-  explicit WSAErrorContext(){};
+  explicit WSAErrorContext() {};
 
   ~WSAErrorContext() {
     if (error_ != 0) {
