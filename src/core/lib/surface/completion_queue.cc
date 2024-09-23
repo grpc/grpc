@@ -41,11 +41,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/atomic_utils.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -54,7 +49,12 @@
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/atomic_utils.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/spinlock.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/experiments/experiments.h"

@@ -32,13 +32,13 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 // Interface for a grpc_tls_certificate_provider that handles the process to
@@ -108,6 +108,8 @@ class StaticDataCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const;
+
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
@@ -147,6 +149,8 @@ class FileWatcherCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const;
+
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
  private:
@@ -183,7 +187,7 @@ class FileWatcherCertificateProvider final
   gpr_event shutdown_event_;
 
   // Guards members below.
-  Mutex mu_;
+  mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);

@@ -1129,6 +1129,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx glob_test)
   add_dependencies(buildtests_cxx goaway_server_test)
   add_dependencies(buildtests_cxx google_c2p_resolver_test)
+  add_dependencies(buildtests_cxx gpr_time_test)
   add_dependencies(buildtests_cxx graceful_server_shutdown_test)
   add_dependencies(buildtests_cxx graceful_shutdown_test)
   add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
@@ -1483,7 +1484,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
-  add_dependencies(buildtests_cxx test_core_gprpp_time_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
   add_dependencies(buildtests_cxx test_core_security_ssl_credentials_test)
@@ -1536,7 +1536,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx unique_ptr_with_bitset_test)
   add_dependencies(buildtests_cxx unique_type_name_test)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
-  add_dependencies(buildtests_cxx uri_parser_test)
+  add_dependencies(buildtests_cxx uri_test)
   add_dependencies(buildtests_cxx useful_test)
   add_dependencies(buildtests_cxx uuid_v4_test)
   add_dependencies(buildtests_cxx validation_errors_test)
@@ -1692,41 +1692,41 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
-  src/core/lib/gprpp/crash.cc
-  src/core/lib/gprpp/examine_stack.cc
-  src/core/lib/gprpp/fork.cc
-  src/core/lib/gprpp/host_port.cc
-  src/core/lib/gprpp/linux/env.cc
-  src/core/lib/gprpp/mpscq.cc
-  src/core/lib/gprpp/posix/env.cc
-  src/core/lib/gprpp/posix/stat.cc
-  src/core/lib/gprpp/posix/thd.cc
-  src/core/lib/gprpp/strerror.cc
-  src/core/lib/gprpp/tchar.cc
-  src/core/lib/gprpp/time_util.cc
-  src/core/lib/gprpp/windows/env.cc
-  src/core/lib/gprpp/windows/stat.cc
-  src/core/lib/gprpp/windows/thd.cc
   src/core/util/alloc.cc
   src/core/util/atm.cc
+  src/core/util/crash.cc
+  src/core/util/examine_stack.cc
+  src/core/util/fork.cc
+  src/core/util/gpr_time.cc
+  src/core/util/host_port.cc
   src/core/util/iphone/cpu.cc
   src/core/util/linux/cpu.cc
+  src/core/util/linux/env.cc
   src/core/util/log.cc
+  src/core/util/mpscq.cc
   src/core/util/msys/tmpfile.cc
   src/core/util/posix/cpu.cc
+  src/core/util/posix/env.cc
+  src/core/util/posix/stat.cc
   src/core/util/posix/string.cc
   src/core/util/posix/sync.cc
+  src/core/util/posix/thd.cc
   src/core/util/posix/time.cc
   src/core/util/posix/tmpfile.cc
+  src/core/util/strerror.cc
   src/core/util/string.cc
   src/core/util/sync.cc
   src/core/util/sync_abseil.cc
-  src/core/util/time.cc
+  src/core/util/tchar.cc
   src/core/util/time_precise.cc
+  src/core/util/time_util.cc
   src/core/util/windows/cpu.cc
+  src/core/util/windows/env.cc
+  src/core/util/windows/stat.cc
   src/core/util/windows/string.cc
   src/core/util/windows/string_util.cc
   src/core/util/windows/sync.cc
+  src/core/util/windows/thd.cc
   src/core/util/windows/time.cc
   src/core/util/windows/tmpfile.cc
 )
@@ -2257,8 +2257,6 @@ add_library(grpc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/backoff/random_early_detection.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -2271,7 +2269,6 @@ add_library(grpc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -2322,19 +2319,6 @@ add_library(grpc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/posix/directory_reader.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/uuid_v4.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/windows/directory_reader.cc
-  src/core/lib/gprpp/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -2358,11 +2342,6 @@ add_library(grpc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/gethostname_fallback.cc
-  src/core/lib/iomgr/gethostname_host_name_max.cc
-  src/core/lib/iomgr/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -2411,7 +2390,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
@@ -2531,7 +2509,6 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/lib/uri/uri_parser.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
@@ -2624,7 +2601,16 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
   src/core/util/gcp_metadata_query.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/http_client/format_request.cc
   src/core/util/http_client/httpcli.cc
   src/core/util/http_client/httpcli_security_connector.cc
@@ -2634,6 +2620,20 @@ add_library(grpc
   src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/load_file.cc
+  src/core/util/matchers.cc
+  src/core/util/per_cpu.cc
+  src/core/util/posix/directory_reader.cc
+  src/core/util/random_early_detection.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/uuid_v4.cc
+  src/core/util/validation_errors.cc
+  src/core/util/windows/directory_reader.cc
+  src/core/util/work_serializer.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3064,8 +3064,6 @@ add_library(grpc_unsecure
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/backoff/random_early_detection.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -3078,7 +3076,6 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -3129,17 +3126,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/uuid_v4.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -3163,11 +3149,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/gethostname_fallback.cc
-  src/core/lib/iomgr/gethostname_host_name_max.cc
-  src/core/lib/iomgr/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -3299,7 +3280,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/lib/uri/uri_parser.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
@@ -3355,6 +3335,15 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/http_client/format_request.cc
   src/core/util/http_client/httpcli.cc
   src/core/util/http_client/parser.cc
@@ -3362,6 +3351,17 @@ add_library(grpc_unsecure
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/random_early_detection.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/uuid_v4.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
@@ -5285,7 +5285,6 @@ add_library(grpc_authorization_provider
   src/core/handshaker/security/security_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -5298,7 +5297,6 @@ add_library(grpc_authorization_provider
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -5349,16 +5347,6 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -5382,11 +5370,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/gethostname_fallback.cc
-  src/core/lib/iomgr/gethostname_host_name_max.cc
-  src/core/lib/iomgr/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -5435,7 +5418,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
@@ -5516,7 +5498,6 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/lib/uri/uri_parser.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
   src/core/resolver/endpoint_addresses.cc
@@ -5531,9 +5512,28 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/load_file.cc
+  src/core/util/matchers.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -6092,11 +6092,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(activity_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6370,7 +6370,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(all_ok_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/promise/all_ok_test.cc
 )
 if(WIN32 AND MSVC)
@@ -7425,7 +7425,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(avl_test
-  test/core/avl/avl_test.cc
+  test/core/util/avl_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -7578,7 +7578,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(backoff_test
-  test/core/backoff/backoff_test.cc
+  test/core/util/backoff_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8373,7 +8373,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(bitset_test
-  test/core/gprpp/bitset_test.cc
+  test/core/util/bitset_test.cc
 )
 target_compile_features(bitset_test PUBLIC cxx_std_14)
 target_include_directories(bitset_test
@@ -8410,13 +8410,13 @@ add_executable(blackboard_test
   src/core/filter/blackboard.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/uri/uri_parser.cc
   src/core/resolver/endpoint_addresses.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/time.cc
+  src/core/util/uri.cc
   test/core/filters/blackboard_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8716,12 +8716,6 @@ add_executable(call_filters_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -8750,7 +8744,13 @@ add_executable(call_filters_test
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/transport/call_filters_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8963,12 +8963,12 @@ if(gRPC_BUILD_TESTS)
 add_executable(call_state_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
   src/core/lib/transport/call_state.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/transport/call_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9070,7 +9070,6 @@ add_executable(call_utils_test
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -9083,7 +9082,6 @@ add_executable(call_utils_test
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -9134,16 +9132,6 @@ add_executable(call_utils_test
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -9167,11 +9155,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/gethostname_fallback.cc
-  src/core/lib/iomgr/gethostname_host_name_max.cc
-  src/core/lib/iomgr/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -9277,7 +9260,6 @@ add_executable(call_utils_test
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/lib/uri/uri_parser.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
   src/core/resolver/endpoint_addresses.cc
@@ -9290,8 +9272,26 @@ add_executable(call_utils_test
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   test/core/call/call_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9717,11 +9717,6 @@ add_executable(cancel_callback_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -9738,7 +9733,12 @@ add_executable(cancel_callback_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/cancel_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10817,11 +10817,6 @@ add_executable(chunked_vector_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -10838,8 +10833,13 @@ add_executable(chunked_vector_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
-  test/core/gprpp/chunked_vector_test.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  test/core/util/chunked_vector_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12440,7 +12440,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cpp_impl_of_test
-  test/core/gprpp/cpp_impl_of_test.cc
+  test/core/util/cpp_impl_of_test.cc
 )
 target_compile_features(cpp_impl_of_test PUBLIC cxx_std_14)
 target_include_directories(cpp_impl_of_test
@@ -12827,7 +12827,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(directory_reader_test
-  test/core/gprpp/directory_reader_test.cc
+  test/core/util/directory_reader_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13016,7 +13016,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(down_cast_test
-  test/core/gprpp/down_cast_test.cc
+  test/core/util/down_cast_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13058,7 +13058,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dual_ref_counted_test
-  test/core/gprpp/dual_ref_counted_test.cc
+  test/core/util/dual_ref_counted_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13145,8 +13145,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dump_args_test
-  src/core/lib/gprpp/dump_args.cc
-  test/core/gprpp/dump_args_test.cc
+  src/core/util/dump_args.cc
+  test/core/util/dump_args_test.cc
 )
 target_compile_features(dump_args_test PUBLIC cxx_std_14)
 target_include_directories(dump_args_test
@@ -13572,9 +13572,9 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_config_test
   src/core/lib/channel/channel_args.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/surface/channel_stack_type.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/time.cc
   test/core/event_engine/endpoint_config_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14012,7 +14012,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(examine_stack_test
-    test/core/gprpp/examine_stack_test.cc
+    test/core/util/examine_stack_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -14120,11 +14120,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -14135,7 +14130,12 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14914,11 +14914,6 @@ add_executable(flow_control_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -14936,7 +14931,12 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/transport/chttp2/flow_control_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14993,11 +14993,6 @@ add_executable(for_each_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -15014,7 +15009,12 @@ add_executable(for_each_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/for_each_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15065,7 +15065,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(fork_test
-    test/core/gprpp/fork_test.cc
+    test/core/util/fork_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -15111,7 +15111,7 @@ add_executable(forkable_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/forkable.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/event_engine/forkable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15256,10 +15256,10 @@ add_executable(frame_test
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/glob.cc
   test/core/transport/chttp2/frame_test.cc
 )
 if(WIN32 AND MSVC)
@@ -15520,7 +15520,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(glob_test
-  test/core/gprpp/glob_test.cc
+  test/core/util/glob_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -15642,6 +15642,48 @@ target_link_libraries(google_c2p_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(gpr_time_test
+  test/core/util/gpr_time_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(gpr_time_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(gpr_time_test PUBLIC cxx_std_14)
+target_include_directories(gpr_time_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gpr_time_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -17521,7 +17563,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(host_port_test
-  test/core/gprpp/host_port_test.cc
+  test/core/util/host_port_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18168,7 +18210,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(if_list_test
-  test/core/gprpp/if_list_test.cc
+  test/core/util/if_list_test.cc
 )
 target_compile_features(if_list_test PUBLIC cxx_std_14)
 target_include_directories(if_list_test
@@ -18482,11 +18524,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18581,11 +18623,6 @@ add_executable(interceptor_list_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -18602,7 +18639,12 @@ add_executable(interceptor_list_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/interceptor_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18964,7 +19006,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/promise/join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19366,11 +19408,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(latch_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19645,7 +19687,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(load_file_test
-  test/core/gprpp/load_file_test.cc
+  test/core/util/load_file_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19733,7 +19775,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(loop_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/promise/loop_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19820,11 +19862,6 @@ add_executable(map_pipe_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -19841,7 +19878,12 @@ add_executable(map_pipe_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/map_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19891,7 +19933,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(match_test
-  test/core/gprpp/match_test.cc
+  test/core/util/match_test.cc
 )
 target_compile_features(match_test PUBLIC cxx_std_14)
 target_include_directories(match_test
@@ -19923,7 +19965,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
-  test/core/matchers/matchers_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -19933,6 +19974,7 @@ add_executable(matchers_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/matchers_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20757,11 +20799,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(mpsc_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20809,7 +20851,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(mpscq_test
-    test/core/gprpp/mpscq_test.cc
+    test/core/util/mpscq_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -20915,7 +20957,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(no_destruct_test
-  test/core/gprpp/no_destruct_test.cc
+  test/core/util/no_destruct_test.cc
 )
 target_compile_features(no_destruct_test PUBLIC cxx_std_14)
 target_include_directories(no_destruct_test
@@ -21175,7 +21217,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(notification_test
-  test/core/gprpp/notification_test.cc
+  test/core/util/notification_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21260,11 +21302,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(observable_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21412,7 +21454,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(orphanable_test
-  test/core/gprpp/orphanable_test.cc
+  test/core/util/orphanable_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21689,7 +21731,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(overload_test
-  test/core/gprpp/overload_test.cc
+  test/core/util/overload_test.cc
 )
 target_compile_features(overload_test PUBLIC cxx_std_14)
 target_include_directories(overload_test
@@ -22057,10 +22099,6 @@ add_executable(periodic_update_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -22071,7 +22109,11 @@ add_executable(periodic_update_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/resource_quota/periodic_update_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23137,11 +23179,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_mutex_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23724,8 +23766,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(random_early_detection_test
-  src/core/lib/backoff/random_early_detection.cc
-  test/core/backoff/random_early_detection_test.cc
+  src/core/util/random_early_detection.cc
+  test/core/util/random_early_detection_test.cc
 )
 target_compile_features(random_early_detection_test PUBLIC cxx_std_14)
 target_include_directories(random_early_detection_test
@@ -23918,7 +23960,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_ptr_test
-  test/core/gprpp/ref_counted_ptr_test.cc
+  test/core/util/ref_counted_ptr_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23960,7 +24002,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_test
-  test/core/gprpp/ref_counted_test.cc
+  test/core/util/ref_counted_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27272,7 +27314,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/promise/seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -28817,7 +28859,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(single_set_ptr_test
-  test/core/gprpp/single_set_ptr_test.cc
+  test/core/util/single_set_ptr_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28902,9 +28944,9 @@ if(gRPC_BUILD_TESTS)
 add_executable(slice_string_helpers_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/glob.cc
   test/core/slice/slice_string_helpers_test.cc
 )
 if(WIN32 AND MSVC)
@@ -29128,7 +29170,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sorted_pack_test
-  test/core/gprpp/sorted_pack_test.cc
+  test/core/util/sorted_pack_test.cc
 )
 target_compile_features(sorted_pack_test PUBLIC cxx_std_14)
 target_include_directories(sorted_pack_test
@@ -29336,7 +29378,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(stat_test
-  test/core/gprpp/stat_test.cc
+  test/core/util/stat_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29556,7 +29598,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(status_helper_test
-  test/core/gprpp/status_helper_test.cc
+  test/core/util/status_helper_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -30126,7 +30168,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(table_test
-  test/core/gprpp/table_test.cc
+  test/core/util/table_test.cc
 )
 target_compile_features(table_test PUBLIC cxx_std_14)
 target_include_directories(table_test
@@ -30523,8 +30565,8 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
   test/core/event_engine/posix/timer_heap_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30569,8 +30611,8 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_event_engine_posix_timer_list_test
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
   test/core/event_engine/posix/timer_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30619,10 +30661,10 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/glob.cc
   test/core/event_engine/slice_buffer_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30660,49 +30702,6 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   absl::hash
   absl::statusor
   absl::utility
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_gprpp_time_test
-  src/core/lib/gprpp/time.cc
-  test/core/gprpp/time_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_gprpp_time_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_gprpp_time_test PUBLIC cxx_std_14)
-target_include_directories(test_core_gprpp_time_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_gprpp_time_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  absl::statusor
   gpr
 )
 
@@ -31019,6 +31018,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_util_time_test
+  src/core/util/time.cc
   test/core/util/time_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31026,7 +31026,6 @@ if(WIN32 AND MSVC)
     target_compile_definitions(test_core_util_time_test
     PRIVATE
       "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31053,7 +31052,8 @@ target_include_directories(test_core_util_time_test
 target_link_libraries(test_core_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  absl::statusor
+  gpr
 )
 
 
@@ -31350,7 +31350,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thd_test
-  test/core/gprpp/thd_test.cc
+  test/core/util/thd_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31684,7 +31684,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(time_util_test
-  test/core/gprpp/time_util_test.cc
+  test/core/util/time_util_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32531,7 +32531,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(try_join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/promise/try_join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32621,7 +32621,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(try_seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/glob.cc
+  src/core/util/glob.cc
   test/core/promise/try_seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32700,7 +32700,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(unique_type_name_test
-  test/core/gprpp/unique_type_name_test.cc
+  test/core/util/unique_type_name_test.cc
 )
 target_compile_features(unique_type_name_test PUBLIC cxx_std_14)
 target_include_directories(unique_type_name_test
@@ -32779,20 +32779,20 @@ target_link_libraries(unknown_frame_bad_client_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(uri_parser_test
-  test/core/uri/uri_parser_test.cc
+add_executable(uri_test
+  test/core/util/uri_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(uri_parser_test
+    target_compile_definitions(uri_test
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
-target_compile_features(uri_parser_test PUBLIC cxx_std_14)
-target_include_directories(uri_parser_test
+target_compile_features(uri_test PUBLIC cxx_std_14)
+target_include_directories(uri_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -32811,7 +32811,7 @@ target_include_directories(uri_parser_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(uri_parser_test
+target_link_libraries(uri_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util_unsecure
@@ -32856,7 +32856,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uuid_v4_test
-  test/core/gprpp/uuid_v4_test.cc
+  test/core/util/uuid_v4_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32898,7 +32898,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(validation_errors_test
-  test/core/gprpp/validation_errors_test.cc
+  test/core/util/validation_errors_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32984,11 +32984,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(wait_for_callback_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/glob.cc
-  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33530,7 +33530,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(work_serializer_test
     test/core/event_engine/event_engine_test_utils.cc
-    test/core/gprpp/work_serializer_test.cc
+    test/core/util/work_serializer_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -33700,7 +33700,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(write_size_policy_test
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/time.cc
   test/core/transport/chttp2/write_size_policy_test.cc
 )
 if(WIN32 AND MSVC)

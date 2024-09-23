@@ -29,12 +29,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/lru_cache.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
