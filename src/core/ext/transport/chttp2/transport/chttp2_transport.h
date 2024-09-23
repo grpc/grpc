@@ -98,61 +98,6 @@ CopyContextFn GrpcHttp2GetCopyContextFn();
 // operation.
 void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
                                     grpc_error_handle error);
-
-class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
- public:
-  enum class Type : uint8_t {
-    kUnknown = 0,
-    // When the first byte enters the HTTP transport.
-    kStart,
-    // When the first byte leaves the HTTP transport.
-    kHeadWritten,
-    // When the last byte leaves the HTTP transport.
-    kEnd,
-  };
-
-  // A snapshot of write stats to export.
-  struct WriteStats {
-    size_t target_write_size;
-  };
-
-  HttpAnnotation(Type type, gpr_timespec time);
-
-  HttpAnnotation& Add(const chttp2::TransportFlowControl::Stats& stats) {
-    transport_stats_ = stats;
-    return *this;
-  }
-
-  HttpAnnotation& Add(const chttp2::StreamFlowControl::Stats& stats) {
-    stream_stats_ = stats;
-    return *this;
-  }
-
-  HttpAnnotation& Add(const WriteStats& stats) {
-    write_stats_ = stats;
-    return *this;
-  }
-
-  std::string ToString() const override;
-
-  Type http_type() const { return type_; }
-  gpr_timespec time() const { return time_; }
-  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
-    return transport_stats_;
-  }
-  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
-    return stream_stats_;
-  }
-  absl::optional<WriteStats> write_stats() const { return write_stats_; }
-
- private:
-  const Type type_;
-  const gpr_timespec time_;
-  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
-  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
-  absl::optional<WriteStats> write_stats_;
-};
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H

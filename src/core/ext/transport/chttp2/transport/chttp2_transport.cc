@@ -330,37 +330,6 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
   delete context_list;
 }
 
-HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)
-    : CallTracerAnnotationInterface::Annotation(
-          CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
-      type_(type),
-      time_(time) {}
-
-std::string HttpAnnotation::ToString() const {
-  std::string s = "HttpAnnotation type: ";
-  switch (type_) {
-    case Type::kStart:
-      absl::StrAppend(&s, "Start");
-      break;
-    case Type::kHeadWritten:
-      absl::StrAppend(&s, "HeadWritten");
-      break;
-    case Type::kEnd:
-      absl::StrAppend(&s, "End");
-      break;
-    default:
-      absl::StrAppend(&s, "Unknown");
-  }
-  absl::StrAppend(&s, " time: ", gpr_format_timespec(time_));
-  if (transport_stats_.has_value()) {
-    absl::StrAppend(&s, " transport:[", transport_stats_->ToString(), "]");
-  }
-  if (stream_stats_.has_value()) {
-    absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
-  }
-  return s;
-}
-
 }  // namespace grpc_core
 
 //
