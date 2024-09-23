@@ -361,14 +361,10 @@ void RoundRobin::RoundRobinEndpointList::
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      const std::string old_counters_string =
-          round_robin->endpoint_list_ != nullptr
-              ? round_robin->endpoint_list_->CountersString()
-              : "";
       LOG(INFO) << "[RR " << round_robin << "] swapping out child list "
                 << round_robin->endpoint_list_.get() << " ("
-                << old_counters_string << ") in favor of " << this << " ("
-                << CountersString() << ")";
+                << round_robin->endpoint_list_->CountersString()
+                << ") in favor of " << this << " (" << CountersString() << ")";
     }
     round_robin->endpoint_list_ =
         std::move(round_robin->latest_pending_endpoint_list_);
