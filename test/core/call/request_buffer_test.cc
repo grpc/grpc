@@ -574,6 +574,81 @@ TEST(RequestBufferTest, HedgeReadMetadataLateSwitchAfterPullInitialMetadata) {
   EXPECT_FALSE(value2.ok());
 }
 
+TEST(RequestBufferTest, StreamingPushBeforeLastMessagePulled) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  buffer.Commit(&reader);
+  auto pusher1 = buffer.PushMessage(TestMessage(1));
+  EXPECT_THAT(pusher1(), IsReady(0));
+  auto pusher2 = buffer.PushMessage(TestMessage(2));
+  EXPECT_THAT(pusher2(), IsPending());
+  auto pull1 = reader.PullMessage();
+  EXPECT_WAKEUP(activity, auto poll1 = pull1());
+  ASSERT_THAT(poll1, IsReady());
+  ASSERT_TRUE(poll1.value().ok());
+  ASSERT_TRUE(poll1.value().value().has_value());
+  EXPECT_THAT(poll1.value().value().value(), IsTestMessage(1));
+  auto pull2 = reader.PullMessage();
+  auto poll2 = pull2();
+  EXPECT_THAT(poll2, IsPending());
+  EXPECT_WAKEUP(activity, EXPECT_THAT(pusher2(), IsReady(0)));
+  poll2 = pull2();
+  ASSERT_THAT(poll2, IsReady());
+  ASSERT_TRUE(poll2.value().ok());
+  ASSERT_TRUE(poll2.value().value().has_value());
+  EXPECT_THAT(poll2.value().value().value(), IsTestMessage(2));
+}
+
+TEST(RequestBufferTest, SwitchAfterEndOfStream) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  buffer.Commit(&reader);
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  EXPECT_FALSE(poll_msg.value().value().has_value());
+}
+
+TEST(RequestBufferTest, NothingAfterEndOfStream) {
+  RequestBuffer buffer;
+  EXPECT_EQ(buffer.PushClientInitialMetadata(TestMetadata()), 40);
+  RequestBuffer::Reader reader(&buffer);
+  auto pull_md = reader.PullClientInitialMetadata();
+  EXPECT_THAT(pull_md(), IsReady());  // value tested elsewhere
+  auto pusher = buffer.PushMessage(TestMessage());
+  EXPECT_THAT(pusher(), IsReady(49));
+  EXPECT_EQ(buffer.FinishSends(), Success{});
+  auto pull_msg = reader.PullMessage();
+  auto poll_msg = pull_msg();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  ASSERT_TRUE(poll_msg.value().value().has_value());
+  EXPECT_THAT(poll_msg.value().value().value(), IsTestMessage());
+  auto pull_msg2 = reader.PullMessage();
+  poll_msg = pull_msg2();
+  ASSERT_THAT(poll_msg, IsReady());
+  ASSERT_TRUE(poll_msg.value().ok());
+  EXPECT_FALSE(poll_msg.value().value().has_value());
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
