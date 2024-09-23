@@ -128,12 +128,12 @@ From the gRPC workspace folder:
 
 Client:
 ```
-docker build -f examples/python/xds/Dockerfile.client -t "us-docker.pkg.dev/grpc-testing/examples/xds-example-python-client" .
+docker build -f examples/python/xds/Dockerfile.client -t "${xds-example-python-client-tag}" .
 ```
 
 Server:
 ```
-docker build -f examples/python/xds/Dockerfile.server -t "us-docker.pkg.dev/grpc-testing/examples/xds-example-python-server" .
+docker build -f examples/python/xds/Dockerfile.server -t "${xds-example-python-server-tag}" .
 ```
 
 And then push the tagged image using `docker push`.
