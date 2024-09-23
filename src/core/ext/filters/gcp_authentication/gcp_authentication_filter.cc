@@ -176,19 +176,13 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
         "gcp_auth: xds config not found in channel args");
   }
   // Get existing cache or create new one.
-  RefCountedPtr<CallCredentialsCache> cache;
-  if (filter_args.old_blackboard() != nullptr) {
-    cache = filter_args.old_blackboard()->Get<CallCredentialsCache>(
-        filter_config->filter_instance_name);
-    cache->SetMaxSize(filter_config->cache_size);
-  }
-  if (cache == nullptr) {
-    cache = MakeRefCounted<CallCredentialsCache>(filter_config->cache_size);
-  }
-  if (filter_args.new_blackboard() != nullptr) {
-    filter_args.new_blackboard()->Set(filter_config->filter_instance_name,
-                                      cache);
-  }
+  auto cache = filter_args.GetOrCreateState<CallCredentialsCache>(
+      filter_config->filter_instance_name, [&]() {
+        return MakeRefCounted<CallCredentialsCache>(filter_config->cache_size);
+      });
+  // Make sure size is updated, in case we're reusing a pre-existing
+  // cache but it has the wrong size.
+  cache->SetMaxSize(filter_config->cache_size);
   // Instantiate filter.
   return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
       filter_config, std::move(xds_config), std::move(cache)));

@@ -42,6 +42,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -121,8 +122,20 @@ class ChannelFilter {
           [](const V3Based& v3) { return v3.instance_id; });
     }
 
-    const Blackboard* old_blackboard() const { return old_blackboard_; }
-    Blackboard* new_blackboard() const { return new_blackboard_; }
+    // If a filter state object of type T exists for key from a previous
+    // filter stack, retains it for the new filter stack we're constructing.
+    // Otherwise, invokes create_func() to create a new filter state
+    // object for the new filter stack.  Returns the new filter state object.
+    template <typename T>
+    RefCountedPtr<T> GetOrCreateState(
+        const std::string& key,
+        absl::FunctionRef<RefCountedPtr<T>()> create_func) {
+      RefCountedPtr<T> state;
+      if (old_blackboard_ != nullptr) state = old_blackboard_->Get<T>(key);
+      if (state == nullptr) state = create_func();
+      if (new_blackboard_ != nullptr) new_blackboard_->Set(key, state);
+      return state;
+    }
 
    private:
     friend class ChannelFilter;
