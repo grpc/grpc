@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_LISTS_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_LISTS_H
+
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
@@ -58,3 +61,5 @@ bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport* t,
                                             grpc_chttp2_stream** s);
 bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s);
+
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_LISTS_H
