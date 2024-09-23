@@ -26,6 +26,10 @@ load(
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
+load(
+    "//tools/codegen/artifacts:gen_artifact.bzl",
+    "gen_artifact",
+)
 
 licenses(["reciprocal"])
 
@@ -5257,3 +5261,5 @@ filegroup(
     ],
     visibility = ["//visibility:public"],
 )
+
+gen_artifact("include/grpcpp/version_info.h")

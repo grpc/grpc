@@ -18,10 +18,10 @@
 #ifndef GRPCPP_VERSION_INFO_H
 #define GRPCPP_VERSION_INFO_H
 
-#define GRPC_CPP_VERSION_MAJOR 1
-#define GRPC_CPP_VERSION_MINOR 68
-#define GRPC_CPP_VERSION_PATCH 0
-#define GRPC_CPP_VERSION_TAG "dev"
-#define GRPC_CPP_VERSION_STRING "1.68.0-dev"
+#define GRPC_CPP_VERSION_MAJOR ${settings.cpp_version.major}
+#define GRPC_CPP_VERSION_MINOR ${settings.cpp_version.minor}
+#define GRPC_CPP_VERSION_PATCH ${settings.cpp_version.patch}
+#define GRPC_CPP_VERSION_TAG "${settings.cpp_version.tag or ''}"
+#define GRPC_CPP_VERSION_STRING "${settings.cpp_version}"
 
 #endif  // GRPCPP_VERSION_INFO_H
