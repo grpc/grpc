@@ -29,14 +29,14 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/single_set_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -69,7 +69,7 @@ class LegacyChannelIdleFilter : public ChannelFilter {
   grpc_channel_stack* channel_stack() { return channel_stack_; };
 
   virtual void Shutdown();
-  void CloseChannel();
+  void CloseChannel(absl::string_view reason);
 
   void IncreaseCallCount();
   void DecreaseCallCount();

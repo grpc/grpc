@@ -19,9 +19,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
@@ -49,7 +49,7 @@ std::string XdsClusterResource::ToString() const {
       });
   contents.push_back(absl::StrCat("lb_policy_config=",
                                   JsonDump(Json::FromArray(lb_policy_config))));
-  if (lrs_load_reporting_server.has_value()) {
+  if (lrs_load_reporting_server != nullptr) {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
   }

@@ -18,6 +18,8 @@ this_dir = File.expand_path(File.dirname(__FILE__))
 grpc_lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(grpc_lib_dir) unless $LOAD_PATH.include?(grpc_lib_dir)
 
+require_relative './sanity_check_dlopen'
+
 def check_to_status(error)
   my_status = error.to_status
   fail('GRPC BadStatus#to_status not expected to return nil') if my_status.nil?

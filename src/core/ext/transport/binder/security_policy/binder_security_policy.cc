@@ -27,7 +27,7 @@
 #include "absl/log/log.h"
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #endif
 

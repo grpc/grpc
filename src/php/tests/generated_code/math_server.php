@@ -63,7 +63,7 @@ class MathService extends Math\MathStub
 
     public function DivMany(
         \Grpc\ServerCallReader $reader,
-        \Grpc\ServerCallWriter $writter,
+        \Grpc\ServerCallWriter $writer,
         \Grpc\ServerContext $context
     ): void {
         while ($divArgs = $reader->read()) {
@@ -74,7 +74,7 @@ class MathService extends Math\MathStub
                     \Grpc\STATUS_INVALID_ARGUMENT,
                     'Cannot divide by zero'
                 ));
-                $writter->finish();
+                $writer->finish();
                 return;
             }
             $quotient = intdiv($dividend, $divisor);
@@ -83,14 +83,14 @@ class MathService extends Math\MathStub
                 'quotient' => $quotient,
                 'remainder' => $remainder,
             ]);
-            $writter->write($reply);
+            $writer->write($reply);
         }
-        $writter->finish();
+        $writer->finish();
     }
 
     public function Fib(
         \Math\FibArgs $request,
-        \Grpc\ServerCallWriter $writter,
+        \Grpc\ServerCallWriter $writer,
         \Grpc\ServerContext $context
     ): void {
         $previous = 0;
@@ -99,12 +99,12 @@ class MathService extends Math\MathStub
         for ($i = 0; $i < $limit; $i++) {
             $num = new \Math\Num();
             $num->setNum($current);
-            $writter->write($num);
+            $writer->write($num);
             $next = $previous + $current;
             $previous = $current;
             $current = $next;
         }
-        $writter->finish();
+        $writer->finish();
     }
 
     /**
