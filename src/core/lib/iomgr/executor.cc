@@ -30,10 +30,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace_impl.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 #include "src/core/util/useful.h"
 
 #define MAX_DEPTH 2

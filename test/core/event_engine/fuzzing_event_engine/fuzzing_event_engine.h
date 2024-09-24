@@ -42,8 +42,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/time_util.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
 

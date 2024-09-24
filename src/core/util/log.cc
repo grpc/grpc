@@ -33,7 +33,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {

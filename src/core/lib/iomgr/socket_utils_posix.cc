@@ -29,16 +29,16 @@
 
 #include <grpc/impl/grpc_types.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/crash.h"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/strerror.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 

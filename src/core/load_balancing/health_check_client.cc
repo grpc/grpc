@@ -47,11 +47,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -61,6 +56,11 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/work_serializer.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
 namespace grpc_core {
@@ -166,11 +166,9 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
   // Prepend the subchannel's address to the status if needed.
   absl::Status use_status;
   if (!status.ok()) {
-    std::string address_str =
-        grpc_sockaddr_to_uri(&producer_->subchannel_->address())
-            .value_or("<unknown address type>");
     use_status = absl::Status(
-        status.code(), absl::StrCat(address_str, ": ", status.message()));
+        status.code(), absl::StrCat(producer_->subchannel_->address(), ": ",
+                                    status.message()));
   }
   work_serializer_->Schedule(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
@@ -405,13 +403,17 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
       << ": subchannel state update: state=" << ConnectivityStateName(state)
       << " status=" << status;
   MutexLock lock(&mu_);
-  state_ = state;
-  status_ = status;
   if (state == GRPC_CHANNEL_READY) {
     connected_subchannel_ = subchannel_->connected_subchannel();
+    // If the subchannel became disconnected again before we got this
+    // notification, then just ignore the READY notification.  We should
+    // get another notification shortly indicating a different state.
+    if (connected_subchannel_ == nullptr) return;
   } else {
     connected_subchannel_.reset();
   }
+  state_ = state;
+  status_ = status;
   for (const auto& p : health_checkers_) {
     p.second->OnConnectivityStateChangeLocked(state, status);
   }
