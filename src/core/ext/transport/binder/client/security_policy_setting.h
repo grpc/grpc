@@ -21,7 +21,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/binder_security_policy.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_binder {
 

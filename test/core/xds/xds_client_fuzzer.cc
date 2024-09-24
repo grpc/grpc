@@ -31,8 +31,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
@@ -336,7 +336,7 @@ class Fuzzer {
 
 bool squelch = true;
 
-DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Message& message) {
+DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Msg& message) {
   grpc_init();
   grpc_core::Fuzzer fuzzer(message.bootstrap());
   for (int i = 0; i < message.actions_size(); i++) {

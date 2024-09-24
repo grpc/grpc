@@ -32,4 +32,6 @@ exports_files([
     "multi-domain.pem",
     "leaf_signed_by_intermediate.key",
     "leaf_and_intermediate_chain.pem",
+    "malformed-cert.pem",
+    "malformed-key.pem",
 ])

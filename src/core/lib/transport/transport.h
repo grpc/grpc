@@ -40,8 +40,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -62,6 +60,8 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 
 // Minimum and maximum protocol accepted versions.
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
@@ -190,10 +190,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #ifndef NDEBUG
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    VLOG(2) << refcount->object_type << " " << refcount << ":"
-            << refcount->destroy.cb_arg << " REF " << reason;
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " REF " << reason;
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
 #else
@@ -207,10 +206,9 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
-    VLOG(2) << refcount->object_type << " " << refcount << ":"
-            << refcount->destroy.cb_arg << " UNREF " << reason;
-  }
+  GRPC_TRACE_VLOG(stream_refcount, 2)
+      << refcount->object_type << " " << refcount << ":"
+      << refcount->destroy.cb_arg << " UNREF " << reason;
   if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
     grpc_stream_destroy(refcount);
   }

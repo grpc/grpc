@@ -56,7 +56,7 @@ EXCLUDE_PROTO_PACKAGES_LIST = tuple(
     )
 )
 
-# Compute the pathes
+# Compute the paths
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
 ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")

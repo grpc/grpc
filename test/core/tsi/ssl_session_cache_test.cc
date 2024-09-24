@@ -26,9 +26,8 @@
 #include "absl/log/check.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

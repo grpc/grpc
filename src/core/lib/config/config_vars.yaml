@@ -120,3 +120,7 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
+- name: cpp_experimental_disable_reflection
+  type: bool
+  description: "EXPERIMENTAL. Only respected when there is a dependency on :grpc++_reflection. If true, no reflection server will be automatically added."
+  default: false

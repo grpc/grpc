@@ -169,6 +169,25 @@ grpc_proto_fuzzer(
 )
 
 grpc_proto_fuzzer(
+    name = "server_fuzzer_chttp2_fake_creds",
+    srcs = ["server_fuzzer_chttp2_fake_creds.cc"],
+    corpus = "server_fuzzer_chttp2_fake_creds_corpus",
+    end2end_fuzzer = True,
+    language = "C++",
+    proto = None,
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":server_fuzzer",
+        "//:grpc",
+    ],
+)
+
+grpc_proto_fuzzer(
     name = "server_fuzzer_chaotic_good",
     srcs = ["server_fuzzer_chaotic_good.cc"],
     corpus = "server_fuzzer_chaotic_good_corpus",
@@ -185,5 +204,62 @@ grpc_proto_fuzzer(
     deps = [
         ":server_fuzzer",
         "//src/core:chaotic_good_server",
+    ],
+)
+
+grpc_cc_library(
+    name = "connector_fuzzer",
+    srcs = ["connector_fuzzer.cc"],
+    hdrs = ["connector_fuzzer.h"],
+    external_deps = ["absl/log:check"],
+    deps = [
+        "fuzzer_input_proto",
+        "fuzzing_common",
+        "network_input",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "connector_fuzzer_chttp2",
+    srcs = ["connector_fuzzer_chttp2.cc"],
+    corpus = "connector_fuzzer_chttp2_corpus",
+    end2end_fuzzer = True,
+    language = "C++",
+    proto = None,
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":connector_fuzzer",
+        "//:grpc",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "connector_fuzzer_chttp2_fakesec",
+    srcs = ["connector_fuzzer_chttp2_fakesec.cc"],
+    corpus = "connector_fuzzer_chttp2_fakesec_corpus",
+    end2end_fuzzer = True,
+    language = "C++",
+    proto = None,
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":connector_fuzzer",
+        "//:grpc",
     ],
 )

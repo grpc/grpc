@@ -40,9 +40,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -58,6 +55,9 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 
@@ -131,12 +131,10 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    LOG(ERROR) << GetContext<Activity>()->DebugTag()
-               << "[server-auth]: Delegate to application: filter=" << filter
-               << " this=" << this
-               << " auth_ctx=" << filter->auth_context_.get();
-  }
+  GRPC_TRACE_LOG(call, ERROR)
+      << GetContext<Activity>()->DebugTag()
+      << "[server-auth]: Delegate to application: filter=" << filter
+      << " this=" << this << " auth_ctx=" << filter->auth_context_.get();
   filter->server_credentials_->auth_metadata_processor().process(
       filter->server_credentials_->auth_metadata_processor().state,
       filter->auth_context_.get(), state_->md.metadata, state_->md.count,

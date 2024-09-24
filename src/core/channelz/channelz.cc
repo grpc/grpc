@@ -29,7 +29,6 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -39,9 +38,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

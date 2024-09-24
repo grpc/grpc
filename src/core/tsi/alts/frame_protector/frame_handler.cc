@@ -29,8 +29,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 
 // Use little endian to interpret a string of bytes as uint32_t.
 static uint32_t load_32_le(const unsigned char* buffer) {

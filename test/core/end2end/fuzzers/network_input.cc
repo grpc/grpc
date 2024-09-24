@@ -267,6 +267,13 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
   return out;
 }
 
+void store32_little_endian(uint32_t value, unsigned char* buf) {
+  buf[3] = static_cast<unsigned char>((value >> 24) & 0xFF);
+  buf[2] = static_cast<unsigned char>((value >> 16) & 0xFF);
+  buf[1] = static_cast<unsigned char>((value >> 8) & 0xFF);
+  buf[0] = static_cast<unsigned char>((value) & 0xFF);
+}
+
 grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
   switch (segment.payload_case()) {
     case fuzzer_input::InputSegment::kRawBytes:
@@ -333,6 +340,38 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
           .JoinIntoSlice()
           .TakeCSlice();
     } break;
+    case fuzzer_input::InputSegment::kFakeTransportFrame: {
+      auto generate = [](absl::string_view payload) {
+        uint32_t length = payload.length();
+        std::vector<unsigned char> bytes;
+        bytes.resize(4);
+        store32_little_endian(length + 4, bytes.data());
+        for (auto c : payload) {
+          bytes.push_back(static_cast<unsigned char>(c));
+        }
+        return grpc_slice_from_copied_buffer(
+            reinterpret_cast<const char*>(bytes.data()), bytes.size());
+      };
+      switch (segment.fake_transport_frame().payload_case()) {
+        case fuzzer_input::FakeTransportFrame::kRawBytes:
+          return generate(segment.fake_transport_frame().raw_bytes());
+        case fuzzer_input::FakeTransportFrame::kMessageString:
+          switch (segment.fake_transport_frame().message_string()) {
+            default:
+              return generate("UNKNOWN");
+            case fuzzer_input::FakeTransportFrame::CLIENT_INIT:
+              return generate("CLIENT_INIT");
+            case fuzzer_input::FakeTransportFrame::SERVER_INIT:
+              return generate("SERVER_INIT");
+            case fuzzer_input::FakeTransportFrame::CLIENT_FINISHED:
+              return generate("CLIENT_FINISHED");
+            case fuzzer_input::FakeTransportFrame::SERVER_FINISHED:
+              return generate("SERVER_FINISHED");
+          }
+        case fuzzer_input::FakeTransportFrame::PAYLOAD_NOT_SET:
+          return generate("");
+      }
+    }
     case fuzzer_input::InputSegment::PAYLOAD_NOT_SET:
       break;
   }
@@ -543,6 +582,17 @@ Duration ScheduleConnection(
             Duration::Milliseconds(connect_timeout_ms));
       });
   return delay;
+}
+
+void ScheduleWrites(
+    const fuzzer_input::NetworkInput& network_input,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
+  auto schedule = MakeSchedule(network_input);
+  auto ep = std::shared_ptr<EventEngine::Endpoint>(std::move(endpoint));
+  ReadForever(ep);
+  ScheduleWritesForReads(ep, event_engine, std::move(schedule));
 }
 
 }  // namespace grpc_core

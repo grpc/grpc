@@ -19,7 +19,7 @@ echo $ANDROID_HOME
 echo $ANDROID_NDK_HOME
 
 # Android platforms only works with Bazel >= 7.0
-export OVERRIDE_BAZEL_VERSION=7.1.0
+export OVERRIDE_BAZEL_VERSION=7.3.1
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_binder_example_app
 bazel_binder_example_app/bazel_wrapper \

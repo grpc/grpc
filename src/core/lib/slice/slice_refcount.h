@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/util/debug_location.h"
 
 // grpc_slice_refcount : A reference count for grpc_slice.
 struct grpc_slice_refcount {
@@ -46,17 +46,15 @@ struct grpc_slice_refcount {
 
   void Ref(grpc_core::DebugLocation location) {
     auto prev_refs = ref_.fetch_add(1, std::memory_order_relaxed);
-    if (GRPC_TRACE_FLAG_ENABLED(slice_refcount)) {
-      LOG(INFO).AtLocation(location.file(), location.line())
-          << "REF " << this << " " << prev_refs << "->" << prev_refs + 1;
-    }
+    GRPC_TRACE_LOG(slice_refcount, INFO)
+            .AtLocation(location.file(), location.line())
+        << "REF " << this << " " << prev_refs << "->" << prev_refs + 1;
   }
   void Unref(grpc_core::DebugLocation location) {
     auto prev_refs = ref_.fetch_sub(1, std::memory_order_acq_rel);
-    if (GRPC_TRACE_FLAG_ENABLED(slice_refcount)) {
-      LOG(INFO).AtLocation(location.file(), location.line())
-          << "UNREF " << this << " " << prev_refs << "->" << prev_refs - 1;
-    }
+    GRPC_TRACE_LOG(slice_refcount, INFO)
+            .AtLocation(location.file(), location.line())
+        << "UNREF " << this << " " << prev_refs << "->" << prev_refs - 1;
     if (prev_refs == 1) {
       destroyer_fn_(this);
     }

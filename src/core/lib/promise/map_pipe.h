@@ -18,7 +18,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_factory.h"

@@ -36,8 +36,6 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -53,6 +51,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -250,14 +250,20 @@ void ChaoticGoodClientTransport::AbortWithError() {
 }
 
 uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
-  ReleasableMutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   const uint32_t stream_id = next_stream_id_++;
+  const bool on_done_added =
+      call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
+                           stream_id](bool cancelled) {
+        if (cancelled) {
+          self->outgoing_frames_.MakeSender().UnbufferedImmediateSend(
+              CancelFrame{stream_id});
+        }
+        MutexLock lock(&self->mu_);
+        self->stream_map_.erase(stream_id);
+      });
+  if (!on_done_added) return 0;
   stream_map_.emplace(stream_id, call_handler);
-  lock.Release();
-  call_handler.OnDone([this, stream_id]() {
-    MutexLock lock(&mu_);
-    stream_map_.erase(stream_id);
-  });
   return stream_id;
 }
 
@@ -280,10 +286,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
       // Wait for initial metadata then send it out.
       call_handler.PullClientInitialMetadata(),
       [send_fragment](ClientMetadataHandle md) mutable {
-        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-          LOG(INFO) << "CHAOTIC_GOOD: Sending initial metadata: "
-                    << md->DebugString();
-        }
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Sending initial metadata: " << md->DebugString();
         ClientFragmentFrame frame;
         frame.headers = std::move(md);
         return send_fragment(std::move(frame));
@@ -319,24 +323,30 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
       "outbound_loop", [self = RefAsSubclass<ChaoticGoodClientTransport>(),
                         call_handler]() mutable {
         const uint32_t stream_id = self->MakeStream(call_handler);
-        return Map(self->CallOutboundLoop(stream_id, call_handler),
-                   [stream_id, sender = self->outgoing_frames_.MakeSender()](
-                       absl::Status result) mutable {
-                     GRPC_TRACE_LOG(chaotic_good, INFO)
-                         << "CHAOTIC_GOOD: Call " << stream_id
-                         << " finished with " << result.ToString();
-                     if (!result.ok()) {
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "CHAOTIC_GOOD: Send cancel";
-                       CancelFrame frame;
-                       frame.stream_id = stream_id;
-                       if (!sender.UnbufferedImmediateSend(std::move(frame))) {
-                         GRPC_TRACE_LOG(chaotic_good, INFO)
-                             << "CHAOTIC_GOOD: Send cancel failed";
-                       }
-                     }
-                     return result;
-                   });
+        return If(
+            stream_id != 0,
+            [stream_id, call_handler = std::move(call_handler),
+             self = std::move(self)]() {
+              return Map(
+                  self->CallOutboundLoop(stream_id, call_handler),
+                  [stream_id, sender = self->outgoing_frames_.MakeSender()](
+                      absl::Status result) mutable {
+                    GRPC_TRACE_LOG(chaotic_good, INFO)
+                        << "CHAOTIC_GOOD: Call " << stream_id
+                        << " finished with " << result.ToString();
+                    if (!result.ok()) {
+                      GRPC_TRACE_LOG(chaotic_good, INFO)
+                          << "CHAOTIC_GOOD: Send cancel";
+                      if (!sender.UnbufferedImmediateSend(
+                              CancelFrame{stream_id})) {
+                        GRPC_TRACE_LOG(chaotic_good, INFO)
+                            << "CHAOTIC_GOOD: Send cancel failed";
+                      }
+                    }
+                    return result;
+                  });
+            },
+            []() { return absl::OkStatus(); });
       });
 }
 

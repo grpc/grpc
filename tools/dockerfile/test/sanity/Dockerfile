@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:17-bookworm
+FROM silkeh/clang:18-bookworm
 
 #=================
 # Basic C core dependencies
@@ -67,13 +67,13 @@ RUN git config --global protocol.file.allow always
 # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                             libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
-tar -xf Python-3.7.9.tar.xz && \
-cd Python-3.7.9 && \
+RUN curl -O https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tar.xz && \
+tar -xf Python-3.7.17.tar.xz && \
+cd Python-3.7.17 && \
 ./configure && \
 make -j 4 && \
 make install
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+RUN curl https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -108,7 +108,7 @@ RUN apt-get update && apt-get install -y jq git && apt-get clean
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 7.1.0
+ENV BAZEL_VERSION 7.3.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

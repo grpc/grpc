@@ -26,7 +26,7 @@
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -43,7 +43,7 @@ void DNSServiceResolverImpl::LookupHostname(
   if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
     engine_->Run([on_resolve = std::move(on_resolve),
                   status = absl::InvalidArgumentError(
-                      absl::StrCat("Unparseable name: ", name))]() mutable {
+                      absl::StrCat("Unparsable name: ", name))]() mutable {
       on_resolve(status);
     });
     return;

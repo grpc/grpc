@@ -87,7 +87,7 @@ class InterarrivalTimer {
       thread_posns_.push_back(random_table_.begin() + (entries * i) / threads);
     }
   }
-  virtual ~InterarrivalTimer(){};
+  virtual ~InterarrivalTimer() {};
 
   int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);

@@ -42,7 +42,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
@@ -51,8 +50,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -74,6 +71,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -131,10 +130,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame,
-                                 uint32_t stream_id);
+                                 absl::Status error, ClientFragmentFrame frame);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame, uint32_t stream_id);
+                            ClientFragmentFrame frame);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;

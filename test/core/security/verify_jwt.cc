@@ -25,13 +25,12 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/cmdline.h"
 
