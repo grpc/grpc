@@ -7701,7 +7701,6 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "status_helper",
-        "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
         "//:hpack_encoder",

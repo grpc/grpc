@@ -29,38 +29,48 @@ namespace grpc_core {
 namespace chaotic_good {
 namespace {
 
-FrameLimits TestFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
-
 template <typename T>
-void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
+void AssertRoundTrips(const T& input, FrameType expected_frame_type, uint32_t alignment) {
   HPackCompressor hpack_compressor;
   bool saw_encoding_errors = false;
-  auto serialized = input.Serialize(&hpack_compressor, saw_encoding_errors);
-  CHECK_GE(serialized.control.Length(),
-           24);  // Initial output buffer size is 64 byte.
-  uint8_t header_bytes[24];
-  serialized.control.MoveFirstNBytesIntoBuffer(24, header_bytes);
+  SerializeContext ser_ctx{alignment, &hpack_compressor, saw_encoding_errors};
+  BufferPair output_buffer;
+  input.Serialize(ser_ctx, &output_buffer);
+  EXPECT_GE(output_buffer.control.Length(),
+           FrameHeader::kFrameHeaderSize);
+  uint8_t header_bytes[FrameHeader::kFrameHeaderSize];
+  output_buffer.control.MoveFirstNBytesIntoBuffer(FrameHeader::kFrameHeaderSize, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
-    Crash("Failed to parse header");
+    LOG(FATAL) << "Failed to parse header: " << header.status();
   }
-  CHECK_EQ(header->type, expected_frame_type);
+  EXPECT_EQ(header->type, expected_frame_type);
+  if (header->type == FrameType::kSettings) {
+    EXPECT_EQ(header->payload_connection_id, 0);
+  }
+  SliceBuffer payload;
+  if (header->payload_connection_id == 0) {
+    payload = std::move(output_buffer.control);
+    EXPECT_EQ(output_buffer.data.Length(), 0);
+  } else {
+    output_buffer.data.MoveFirstNBytesIntoSliceBuffer(header->payload_length, payload);
+    EXPECT_EQ(output_buffer.control.Length(), 0);
+    EXPECT_EQ(output_buffer.data.Length(), header->Padding(alignment));
+  }
   T output;
   HPackParser hpack_parser;
   absl::BitGen bitgen;
-  MemoryAllocator allocator = MakeResourceQuota("test-quota")
-                                  ->memory_quota()
-                                  ->CreateMemoryAllocator("test-allocator");
-  RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+  DeserializeContext deser_ctx{alignment, &hpack_parser, absl::BitGenRef(bitgen)};
   auto deser =
-      output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
-                         arena.get(), std::move(serialized), TestFrameLimits());
+      output.Deserialize(deser_ctx, header.value(),
+                      std::move(payload));
   CHECK_OK(deser);
   if (!saw_encoding_errors) CHECK_EQ(output, input);
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {
-  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings);
+  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings, 64);
+  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings, 128);
 }
 
 }  // namespace

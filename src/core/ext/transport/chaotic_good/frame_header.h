@@ -71,6 +71,14 @@ struct FrameHeader {
   void Serialize(uint8_t* data) const;
   // Report contents as a string
   std::string ToString() const;
+  // Required padding to maintain alignment.
+  uint32_t Padding(uint32_t alignment) const {
+    if (payload_connection_id == 0) 
+      return 0;
+    if (payload_length % alignment == 0) 
+      return 0;
+    return alignment - (payload_length % alignment);
+  }
 
   bool operator==(const FrameHeader& h) const {
     return type == h.type && stream_id == h.stream_id &&
@@ -78,7 +86,7 @@ struct FrameHeader {
            payload_length == h.payload_length;
   }
   // Frame header size is fixed to 12 bytes.
-  static constexpr size_t kFrameHeaderSize = 12;
+  enum { kFrameHeaderSize = 12};
 };
 
 inline std::ostream& operator<<(std::ostream& out, const FrameHeader& h) {

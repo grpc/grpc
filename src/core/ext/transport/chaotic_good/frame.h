@@ -41,13 +41,24 @@ struct BufferPair {
   SliceBuffer data;
 };
 
+struct DeserializeContext {
+  uint32_t alignment;
+  HPackParser* const parser;
+  absl::BitGenRef bitsrc;
+};
+
+struct SerializeContext {
+  uint32_t alignment;
+  HPackCompressor* encoder;
+  bool& saw_encoding_errors;
+};
+
 class FrameInterface {
  public:
-  virtual absl::Status Deserialize(HPackParser* parser,
+  virtual absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
-                                   absl::BitGenRef bitsrc,
                                    SliceBuffer payload) = 0;
-  virtual void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
+  virtual void Serialize(const SerializeContext& ctx,
                          BufferPair* out) const = 0;
   virtual std::string ToString() const = 0;
 
@@ -75,11 +86,11 @@ inline std::ostream& operator<<(std::ostream& os, const FrameInterface& frame) {
 }
 
 struct SettingsFrame final : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   ClientMetadataHandle headers;
   std::string ToString() const override;
 
@@ -87,11 +98,11 @@ struct SettingsFrame final : public FrameInterface {
 };
 
 struct ClientInitialMetadataFrame : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -99,11 +110,11 @@ struct ClientInitialMetadataFrame : public FrameInterface {
 };
 
 struct MessageFrame : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -111,22 +122,22 @@ struct MessageFrame : public FrameInterface {
 };
 
 struct ClientEndOfStream : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
 };
 
 struct ServerInitialMetadataFrame : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -134,11 +145,11 @@ struct ServerInitialMetadataFrame : public FrameInterface {
 };
 
 struct ServerTrailingMetadataFrame : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -146,25 +157,26 @@ struct ServerTrailingMetadataFrame : public FrameInterface {
 };
 
 struct PaddingFrame : public FrameInterface {
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t length;
+  uint16_t connection_id;
 };
 
 struct CancelFrame final : public FrameInterface {
   CancelFrame() = default;
   explicit CancelFrame(uint32_t stream_id) : stream_id(stream_id) {}
 
-  absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
-                           absl::BitGenRef bitsrc,
-                           SliceBuffer payload) override;
-  void Serialize(HPackCompressor* encoder, bool& saw_encoding_errors,
-                 BufferPair* out) const override;
+  absl::Status Deserialize(const DeserializeContext& ctx,
+                                   const FrameHeader& header,
+                                   SliceBuffer payload) override;
+  void Serialize(const SerializeContext& ctx,
+                         BufferPair* out) const override;
   std::string ToString() const override;
 
   uint32_t stream_id;
@@ -186,7 +198,8 @@ inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
         return *frame;
       },
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
-      [](CancelFrame* frame) -> FrameInterface& { return *frame; });
+      [](CancelFrame* frame) -> FrameInterface& { return *frame; },
+      [](PaddingFrame* frame) -> FrameInterface& { return *frame; });
 }
 
 inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
@@ -198,7 +211,7 @@ inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
       [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
         return *frame;
-      });
+      }, [](PaddingFrame* frame) -> FrameInterface& { return *frame; });
 }
 
 }  // namespace chaotic_good
