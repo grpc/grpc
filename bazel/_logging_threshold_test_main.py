@@ -20,20 +20,6 @@ import tempfile
 
 _OK_TEST_REGEX = r"^-+.*Ran ([\d]+) tests* in ([\d.]+)s.*OK(?: \(skipped=(\d+)\))?\n$"
 
-# Tests with known exception logs.
-# TODO(sourabhsinghs): Investigate and enable _rpc_part_1_test and _rpc_part_2_test tests.
-_SKIP_TESTS = [
-    "_server_shutdown_test",
-    "_xds_credentials_test",
-    "_server_test",
-    "_invalid_metadata_test",
-    "_reconnect_test",
-    "_channel_close_test",
-    "_invocation_defects_test",
-    "_dynamic_stubs_test",
-    "_channel_connectivity_test",
-]
-
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
@@ -41,10 +27,6 @@ if __name__ == "__main__":
 
     test_script = sys.argv[1]
     target_module = sys.argv[2]
-
-    if target_module in _SKIP_TESTS:
-        print(f"Skipping {target_module}")
-        sys.exit(0)
 
     command = [
         sys.executable,
