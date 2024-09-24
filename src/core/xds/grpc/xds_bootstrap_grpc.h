@@ -28,10 +28,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"

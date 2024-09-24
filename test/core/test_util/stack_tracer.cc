@@ -26,7 +26,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/util/examine_stack.h"
 
 namespace {
 

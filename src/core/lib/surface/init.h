@@ -18,8 +18,13 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_INIT_H
 
+#include "absl/time/time.h"
+
 #include <grpc/support/port_platform.h>
 
 void grpc_maybe_wait_for_async_shutdown(void);
+
+// Returns false if the timeout expired before fully shut down.
+bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout);
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_INIT_H

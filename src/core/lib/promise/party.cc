@@ -25,14 +25,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
+#include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
 
 namespace grpc_core {
@@ -322,7 +322,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
             (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef,
             std::memory_order_acq_rel, std::memory_order_acquire)) {
       LogStateChange("Run:End", prev_state,
-                     prev_state & (kRefMask | kAllocatedMask) - kOneRef);
+                     (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef);
       if ((prev_state & kRefMask) == kOneRef) {
         // We're done with the party.
         PartyIsOver();

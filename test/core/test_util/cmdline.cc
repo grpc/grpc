@@ -33,7 +33,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 
