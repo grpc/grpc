@@ -165,7 +165,7 @@ class EnvironmentAutoDetectHelper
  private:
   struct Attribute {
     std::string resource_attribute;
-    std::string metadata_server_attribute;
+    std::string metadata_server_atttribute;
   };
 
   void PollLoop() {
