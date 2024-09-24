@@ -2662,10 +2662,10 @@ add_library(grpc
   src/core/xds/grpc/xds_routing.cc
   src/core/xds/grpc/xds_server_grpc.cc
   src/core/xds/grpc/xds_transport_grpc.cc
+  src/core/xds/xds_client/lrs_client.cc
   src/core/xds/xds_client/xds_api.cc
   src/core/xds/xds_client/xds_bootstrap.cc
   src/core/xds/xds_client/xds_client.cc
-  src/core/xds/xds_client/xds_client_stats.cc
 )
 
 target_compile_features(grpc PUBLIC cxx_std_14)
