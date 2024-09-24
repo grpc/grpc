@@ -118,8 +118,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   absl::Status DeserializeFrame(FrameHeader header, BufferPair buffers,
-                                Arena* arena, FrameInterface& frame,
-                                FrameLimits limits) {
+                                Arena* arena, FrameInterface& frame) {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
     GRPC_TRACE_LOG(chaotic_good, INFO)
