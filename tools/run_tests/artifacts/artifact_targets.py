@@ -165,6 +165,7 @@ class PythonArtifact:
         elif "manylinux" in self.platform:
             if self.arch == "x86":
                 environ["SETARCH_CMD"] = "linux32"
+                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
             # Inside the manylinux container, the python installations are located in
             # special places...
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -201,6 +202,10 @@ class PythonArtifact:
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
+
+            if self.arch == "x86":
+                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+                
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"

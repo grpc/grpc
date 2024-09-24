@@ -25,5 +25,3 @@
   <%include file="../ccache.include"/>
   
   <%include file="../git_config.include"/>
-
-  <%include file="../python_linux_artifacts_rust_install.include"/>
