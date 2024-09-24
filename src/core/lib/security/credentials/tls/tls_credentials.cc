@@ -145,7 +145,7 @@ TlsServerCredentials::create_security_connector(
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }
 
-grpc_core::UniqueTypeName TlsServerCredentials::type() const {
+grpc_core::UniqueTypeName TlsServerCredentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("Tls");
   return kFactory.Create();
 }

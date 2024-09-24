@@ -50,7 +50,9 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override;
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   OrphanablePtr<FetchBody> RetrieveSubjectToken(

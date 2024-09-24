@@ -46,7 +46,9 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override;
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   class FileFetchBody final : public FetchBody {

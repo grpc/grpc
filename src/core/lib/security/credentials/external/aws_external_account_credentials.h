@@ -51,7 +51,9 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override;
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   // A FetchBody impl that itself performs a sequence of FetchBody operations.
