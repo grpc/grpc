@@ -3,7 +3,8 @@
  *     envoy/config/cluster/v3/cluster.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPB_H_
 #define ENVOY_CONFIG_CLUSTER_V3_CLUSTER_PROTO_UPB_H_
@@ -206,6 +207,7 @@ UPB_INLINE const struct xds_core_v3_CollectionEntry* envoy_config_cluster_v3_Clu
   const struct xds_core_v3_CollectionEntry* default_val = NULL;
   const struct xds_core_v3_CollectionEntry* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CollectionEntry_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -217,6 +219,7 @@ UPB_INLINE bool envoy_config_cluster_v3_ClusterCollection_has_entries(const envo
 
 UPB_INLINE void envoy_config_cluster_v3_ClusterCollection_set_entries(envoy_config_cluster_v3_ClusterCollection *msg, struct xds_core_v3_CollectionEntry* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__CollectionEntry_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_core_v3_CollectionEntry* envoy_config_cluster_v3_ClusterCollection_mutable_entries(envoy_config_cluster_v3_ClusterCollection* msg, upb_Arena* arena) {
@@ -323,6 +326,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_EdsClusterConfig* envoy_config_
   const envoy_config_cluster_v3_Cluster_EdsClusterConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_EdsClusterConfig* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(12, 56), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__EdsClusterConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -339,6 +343,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(16, 64), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -355,6 +360,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {5, UPB_SIZE(20, 72), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -381,6 +387,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_clear_health_checks(envoy_config
 }
 UPB_INLINE const struct envoy_config_core_v3_HealthCheck* const* envoy_config_cluster_v3_Cluster_health_checks(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {8, UPB_SIZE(28, 80), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthCheck_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -392,6 +399,7 @@ UPB_INLINE const struct envoy_config_core_v3_HealthCheck* const* envoy_config_cl
 }
 UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_health_checks_upb_array(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {8, UPB_SIZE(28, 80), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthCheck_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -400,6 +408,7 @@ UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_health_checks_upb_a
 }
 UPB_INLINE upb_Array* _envoy_config_cluster_v3_Cluster_health_checks_mutable_upb_array(envoy_config_cluster_v3_Cluster* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {8, UPB_SIZE(28, 80), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthCheck_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -415,6 +424,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -431,6 +441,7 @@ UPB_INLINE const struct envoy_config_cluster_v3_CircuitBreakers* envoy_config_cl
   const struct envoy_config_cluster_v3_CircuitBreakers* default_val = NULL;
   const struct envoy_config_cluster_v3_CircuitBreakers* ret;
   const upb_MiniTableField field = {10, UPB_SIZE(36, 96), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__CircuitBreakers_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -447,6 +458,7 @@ UPB_INLINE const struct envoy_config_core_v3_Http1ProtocolOptions* envoy_config_
   const struct envoy_config_core_v3_Http1ProtocolOptions* default_val = NULL;
   const struct envoy_config_core_v3_Http1ProtocolOptions* ret;
   const upb_MiniTableField field = {13, UPB_SIZE(40, 104), 69, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Http1ProtocolOptions_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -463,6 +475,7 @@ UPB_INLINE const struct envoy_config_core_v3_Http2ProtocolOptions* envoy_config_
   const struct envoy_config_core_v3_Http2ProtocolOptions* default_val = NULL;
   const struct envoy_config_core_v3_Http2ProtocolOptions* ret;
   const upb_MiniTableField field = {14, UPB_SIZE(44, 112), 70, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Http2ProtocolOptions_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -479,6 +492,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {16, UPB_SIZE(48, 120), 71, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -505,6 +519,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_clear_dns_resolvers(envoy_config
 }
 UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_cluster_v3_Cluster_dns_resolvers(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {18, UPB_SIZE(56, 128), 0, 9, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -516,6 +531,7 @@ UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_cluste
 }
 UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_dns_resolvers_upb_array(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {18, UPB_SIZE(56, 128), 0, 9, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -524,6 +540,7 @@ UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_dns_resolvers_upb_a
 }
 UPB_INLINE upb_Array* _envoy_config_cluster_v3_Cluster_dns_resolvers_mutable_upb_array(envoy_config_cluster_v3_Cluster* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {18, UPB_SIZE(56, 128), 0, 9, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -539,6 +556,7 @@ UPB_INLINE const struct envoy_config_cluster_v3_OutlierDetection* envoy_config_c
   const struct envoy_config_cluster_v3_OutlierDetection* default_val = NULL;
   const struct envoy_config_cluster_v3_OutlierDetection* ret;
   const upb_MiniTableField field = {19, UPB_SIZE(60, 136), 72, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__OutlierDetection_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -555,6 +573,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {20, UPB_SIZE(64, 144), 73, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -571,6 +590,7 @@ UPB_INLINE const struct envoy_config_core_v3_BindConfig* envoy_config_cluster_v3
   const struct envoy_config_core_v3_BindConfig* default_val = NULL;
   const struct envoy_config_core_v3_BindConfig* ret;
   const upb_MiniTableField field = {21, UPB_SIZE(68, 152), 74, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__BindConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -587,6 +607,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_LbSubsetConfig* envoy_config_cl
   const envoy_config_cluster_v3_Cluster_LbSubsetConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_LbSubsetConfig* ret;
   const upb_MiniTableField field = {22, UPB_SIZE(72, 160), 75, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -603,6 +624,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_RingHashLbConfig* envoy_config_
   const envoy_config_cluster_v3_Cluster_RingHashLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_RingHashLbConfig* ret;
   const upb_MiniTableField field = {23, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__RingHashLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -619,6 +641,7 @@ UPB_INLINE const struct envoy_config_core_v3_TransportSocket* envoy_config_clust
   const struct envoy_config_core_v3_TransportSocket* default_val = NULL;
   const struct envoy_config_core_v3_TransportSocket* ret;
   const upb_MiniTableField field = {24, UPB_SIZE(76, 168), 76, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TransportSocket_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -635,6 +658,7 @@ UPB_INLINE const struct envoy_config_core_v3_Metadata* envoy_config_cluster_v3_C
   const struct envoy_config_core_v3_Metadata* default_val = NULL;
   const struct envoy_config_core_v3_Metadata* ret;
   const upb_MiniTableField field = {25, UPB_SIZE(80, 176), 77, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Metadata_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -663,6 +687,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_CommonLbConfig* envoy_config_cl
   const envoy_config_cluster_v3_Cluster_CommonLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_CommonLbConfig* ret;
   const upb_MiniTableField field = {27, UPB_SIZE(88, 184), 78, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -691,6 +716,7 @@ UPB_INLINE const struct envoy_config_core_v3_HttpProtocolOptions* envoy_config_c
   const struct envoy_config_core_v3_HttpProtocolOptions* default_val = NULL;
   const struct envoy_config_core_v3_HttpProtocolOptions* ret;
   const upb_MiniTableField field = {29, UPB_SIZE(92, 208), 79, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpProtocolOptions_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -707,6 +733,7 @@ UPB_INLINE const envoy_config_cluster_v3_UpstreamConnectionOptions* envoy_config
   const envoy_config_cluster_v3_UpstreamConnectionOptions* default_val = NULL;
   const envoy_config_cluster_v3_UpstreamConnectionOptions* ret;
   const upb_MiniTableField field = {30, UPB_SIZE(96, 216), 80, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__UpstreamConnectionOptions_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -747,6 +774,7 @@ UPB_INLINE const struct envoy_config_endpoint_v3_ClusterLoadAssignment* envoy_co
   const struct envoy_config_endpoint_v3_ClusterLoadAssignment* default_val = NULL;
   const struct envoy_config_endpoint_v3_ClusterLoadAssignment* ret;
   const upb_MiniTableField field = {33, UPB_SIZE(104, 224), 81, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -763,6 +791,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* envoy_conf
   const envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* ret;
   const upb_MiniTableField field = {34, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__OriginalDstLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -782,22 +811,30 @@ UPB_INLINE size_t envoy_config_cluster_v3_Cluster_typed_extension_protocol_optio
 }
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_get(const envoy_config_cluster_v3_Cluster* msg, upb_StringView key, struct google_protobuf_Any** val) {
   const upb_MiniTableField field = {36, UPB_SIZE(108, 232), 0, 22, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TypedExtensionProtocolOptionsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
 UPB_INLINE const envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry* envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_next(const envoy_config_cluster_v3_Cluster* msg, size_t* iter) {
   const upb_MiniTableField field = {36, UPB_SIZE(108, 232), 0, 22, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TypedExtensionProtocolOptionsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (const envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE const upb_Map* _envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_upb_map(envoy_config_cluster_v3_Cluster* msg) {
   const upb_MiniTableField field = {36, UPB_SIZE(108, 232), 0, 22, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TypedExtensionProtocolOptionsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_Map* _envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_mutable_upb_map(envoy_config_cluster_v3_Cluster* msg, upb_Arena* a) {
   const upb_MiniTableField field = {36, UPB_SIZE(108, 232), 0, 22, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TypedExtensionProtocolOptionsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, sizeof(struct google_protobuf_Any*), a);
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_clear_least_request_lb_config(envoy_config_cluster_v3_Cluster* msg) {
@@ -808,6 +845,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* envoy_con
   const envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* ret;
   const upb_MiniTableField field = {37, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 23, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LeastRequestLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -824,6 +862,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_CustomClusterType* envoy_config
   const envoy_config_cluster_v3_Cluster_CustomClusterType* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_CustomClusterType* ret;
   const upb_MiniTableField field = {38, UPB_SIZE(188, 344), UPB_SIZE(-113, -29), 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CustomClusterType_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -850,6 +889,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_clear_filters(envoy_config_clust
 }
 UPB_INLINE const struct envoy_config_cluster_v3_Filter* const* envoy_config_cluster_v3_Cluster_filters(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {40, UPB_SIZE(120, 240), 0, 25, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Filter_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -861,6 +901,7 @@ UPB_INLINE const struct envoy_config_cluster_v3_Filter* const* envoy_config_clus
 }
 UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_filters_upb_array(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {40, UPB_SIZE(120, 240), 0, 25, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Filter_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -869,6 +910,7 @@ UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_filters_upb_array(c
 }
 UPB_INLINE upb_Array* _envoy_config_cluster_v3_Cluster_filters_mutable_upb_array(envoy_config_cluster_v3_Cluster* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {40, UPB_SIZE(120, 240), 0, 25, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Filter_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -884,6 +926,7 @@ UPB_INLINE const envoy_config_cluster_v3_LoadBalancingPolicy* envoy_config_clust
   const envoy_config_cluster_v3_LoadBalancingPolicy* default_val = NULL;
   const envoy_config_cluster_v3_LoadBalancingPolicy* ret;
   const upb_MiniTableField field = {41, UPB_SIZE(124, 248), 82, 26, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -900,6 +943,7 @@ UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_
   const struct envoy_config_core_v3_ConfigSource* default_val = NULL;
   const struct envoy_config_core_v3_ConfigSource* ret;
   const upb_MiniTableField field = {42, UPB_SIZE(128, 256), 83, 27, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ConfigSource_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -914,6 +958,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_clear_transport_socket_matches(e
 }
 UPB_INLINE const envoy_config_cluster_v3_Cluster_TransportSocketMatch* const* envoy_config_cluster_v3_Cluster_transport_socket_matches(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {43, UPB_SIZE(132, 264), 0, 28, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TransportSocketMatch_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -925,6 +970,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_TransportSocketMatch* const* en
 }
 UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_transport_socket_matches_upb_array(const envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   const upb_MiniTableField field = {43, UPB_SIZE(132, 264), 0, 28, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TransportSocketMatch_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -933,6 +979,7 @@ UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_transport_socket_ma
 }
 UPB_INLINE upb_Array* _envoy_config_cluster_v3_Cluster_transport_socket_matches_mutable_upb_array(envoy_config_cluster_v3_Cluster* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {43, UPB_SIZE(132, 264), 0, 28, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TransportSocketMatch_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -948,6 +995,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_RefreshRate* envoy_config_clust
   const envoy_config_cluster_v3_Cluster_RefreshRate* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_RefreshRate* ret;
   const upb_MiniTableField field = {44, UPB_SIZE(136, 272), 84, 29, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__RefreshRate_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -976,6 +1024,7 @@ UPB_INLINE const struct envoy_config_core_v3_UpstreamHttpProtocolOptions* envoy_
   const struct envoy_config_core_v3_UpstreamHttpProtocolOptions* default_val = NULL;
   const struct envoy_config_core_v3_UpstreamHttpProtocolOptions* ret;
   const upb_MiniTableField field = {46, UPB_SIZE(144, 280), 85, 30, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__UpstreamHttpProtocolOptions_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1004,6 +1053,7 @@ UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
   const upb_MiniTableField field = {48, UPB_SIZE(152, 288), 86, 31, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1020,6 +1070,7 @@ UPB_INLINE const envoy_config_cluster_v3_TrackClusterStats* envoy_config_cluster
   const envoy_config_cluster_v3_TrackClusterStats* default_val = NULL;
   const envoy_config_cluster_v3_TrackClusterStats* ret;
   const upb_MiniTableField field = {49, UPB_SIZE(156, 296), 87, 32, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__TrackClusterStats_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1036,6 +1087,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_PreconnectPolicy* envoy_config_
   const envoy_config_cluster_v3_Cluster_PreconnectPolicy* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_PreconnectPolicy* ret;
   const upb_MiniTableField field = {50, UPB_SIZE(160, 304), 88, 33, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__PreconnectPolicy_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1064,6 +1116,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_MaglevLbConfig* envoy_config_cl
   const envoy_config_cluster_v3_Cluster_MaglevLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_MaglevLbConfig* ret;
   const upb_MiniTableField field = {52, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 34, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__MaglevLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1080,6 +1133,7 @@ UPB_INLINE const struct envoy_config_core_v3_DnsResolutionConfig* envoy_config_c
   const struct envoy_config_core_v3_DnsResolutionConfig* default_val = NULL;
   const struct envoy_config_core_v3_DnsResolutionConfig* ret;
   const upb_MiniTableField field = {53, UPB_SIZE(168, 312), 89, 35, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DnsResolutionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1096,6 +1150,7 @@ UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_cluster_v3_Clust
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
   const upb_MiniTableField field = {54, UPB_SIZE(172, 320), 90, 36, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1112,6 +1167,7 @@ UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
   const upb_MiniTableField field = {55, UPB_SIZE(176, 328), 91, 37, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1128,6 +1184,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_RoundRobinLbConfig* envoy_confi
   const envoy_config_cluster_v3_Cluster_RoundRobinLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_RoundRobinLbConfig* ret;
   const upb_MiniTableField field = {56, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 38, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__RoundRobinLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1179,6 +1236,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_type(envoy_config_cluster_v3
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_eds_cluster_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_EdsClusterConfig* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 56), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__EdsClusterConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_EdsClusterConfig* envoy_config_cluster_v3_Cluster_mutable_eds_cluster_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1191,6 +1249,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_EdsClusterConfig* envoy_config
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_connect_timeout(envoy_config_cluster_v3_Cluster *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(16, 64), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_mutable_connect_timeout(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1203,6 +1262,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_muta
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_per_connection_buffer_limit_bytes(envoy_config_cluster_v3_Cluster *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 72), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_mutable_per_connection_buffer_limit_bytes(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1219,6 +1279,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_lb_policy(envoy_config_clust
 }
 UPB_INLINE struct envoy_config_core_v3_HealthCheck** envoy_config_cluster_v3_Cluster_mutable_health_checks(envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   upb_MiniTableField field = {8, UPB_SIZE(28, 80), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthCheck_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -1235,6 +1296,7 @@ UPB_INLINE struct envoy_config_core_v3_HealthCheck** envoy_config_cluster_v3_Clu
 }
 UPB_INLINE struct envoy_config_core_v3_HealthCheck* envoy_config_cluster_v3_Cluster_add_health_checks(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
   upb_MiniTableField field = {8, UPB_SIZE(28, 80), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthCheck_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -1249,6 +1311,7 @@ UPB_INLINE struct envoy_config_core_v3_HealthCheck* envoy_config_cluster_v3_Clus
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_max_requests_per_connection(envoy_config_cluster_v3_Cluster *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(32, 88), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_mutable_max_requests_per_connection(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1261,6 +1324,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_m
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_circuit_breakers(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_cluster_v3_CircuitBreakers* value) {
   const upb_MiniTableField field = {10, UPB_SIZE(36, 96), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__CircuitBreakers_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_CircuitBreakers* envoy_config_cluster_v3_Cluster_mutable_circuit_breakers(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1273,6 +1337,7 @@ UPB_INLINE struct envoy_config_cluster_v3_CircuitBreakers* envoy_config_cluster_
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_http_protocol_options(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_Http1ProtocolOptions* value) {
   const upb_MiniTableField field = {13, UPB_SIZE(40, 104), 69, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Http1ProtocolOptions_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_config_cluster_v3_Cluster_mutable_http_protocol_options(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1285,6 +1350,7 @@ UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions* envoy_config_cluste
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_http2_protocol_options(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_Http2ProtocolOptions* value) {
   const upb_MiniTableField field = {14, UPB_SIZE(44, 112), 70, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Http2ProtocolOptions_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_config_cluster_v3_Cluster_mutable_http2_protocol_options(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1297,6 +1363,7 @@ UPB_INLINE struct envoy_config_core_v3_Http2ProtocolOptions* envoy_config_cluste
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_dns_refresh_rate(envoy_config_cluster_v3_Cluster *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {16, UPB_SIZE(48, 120), 71, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_mutable_dns_refresh_rate(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1313,6 +1380,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_dns_lookup_family(envoy_conf
 }
 UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_cluster_v3_Cluster_mutable_dns_resolvers(envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   upb_MiniTableField field = {18, UPB_SIZE(56, 128), 0, 9, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -1329,6 +1397,7 @@ UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_cluster_v3_Cluster
 }
 UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_cluster_v3_Cluster_add_dns_resolvers(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
   upb_MiniTableField field = {18, UPB_SIZE(56, 128), 0, 9, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -1343,6 +1412,7 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_cluster_v3_Cluster_
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_outlier_detection(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_cluster_v3_OutlierDetection* value) {
   const upb_MiniTableField field = {19, UPB_SIZE(60, 136), 72, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__OutlierDetection_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_OutlierDetection* envoy_config_cluster_v3_Cluster_mutable_outlier_detection(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1355,6 +1425,7 @@ UPB_INLINE struct envoy_config_cluster_v3_OutlierDetection* envoy_config_cluster
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_cleanup_interval(envoy_config_cluster_v3_Cluster *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {20, UPB_SIZE(64, 144), 73, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_mutable_cleanup_interval(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1367,6 +1438,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_muta
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_upstream_bind_config(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_BindConfig* value) {
   const upb_MiniTableField field = {21, UPB_SIZE(68, 152), 74, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__BindConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_BindConfig* envoy_config_cluster_v3_Cluster_mutable_upstream_bind_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1379,6 +1451,7 @@ UPB_INLINE struct envoy_config_core_v3_BindConfig* envoy_config_cluster_v3_Clust
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_lb_subset_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_LbSubsetConfig* value) {
   const upb_MiniTableField field = {22, UPB_SIZE(72, 160), 75, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_LbSubsetConfig* envoy_config_cluster_v3_Cluster_mutable_lb_subset_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1391,6 +1464,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_LbSubsetConfig* envoy_config_c
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_ring_hash_lb_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_RingHashLbConfig* value) {
   const upb_MiniTableField field = {23, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__RingHashLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_RingHashLbConfig* envoy_config_cluster_v3_Cluster_mutable_ring_hash_lb_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1403,6 +1477,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_RingHashLbConfig* envoy_config
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_transport_socket(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_TransportSocket* value) {
   const upb_MiniTableField field = {24, UPB_SIZE(76, 168), 76, 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TransportSocket_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_config_cluster_v3_Cluster_mutable_transport_socket(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1415,6 +1490,7 @@ UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_config_cluster_v3_
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_metadata(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_Metadata* value) {
   const upb_MiniTableField field = {25, UPB_SIZE(80, 176), 77, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Metadata_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Metadata* envoy_config_cluster_v3_Cluster_mutable_metadata(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1431,6 +1507,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_protocol_selection(envoy_con
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_common_lb_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_CommonLbConfig* value) {
   const upb_MiniTableField field = {27, UPB_SIZE(88, 184), 78, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig* envoy_config_cluster_v3_Cluster_mutable_common_lb_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1447,6 +1524,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_alt_stat_name(envoy_config_c
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_common_http_protocol_options(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_HttpProtocolOptions* value) {
   const upb_MiniTableField field = {29, UPB_SIZE(92, 208), 79, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpProtocolOptions_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HttpProtocolOptions* envoy_config_cluster_v3_Cluster_mutable_common_http_protocol_options(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1459,6 +1537,7 @@ UPB_INLINE struct envoy_config_core_v3_HttpProtocolOptions* envoy_config_cluster
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_upstream_connection_options(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_UpstreamConnectionOptions* value) {
   const upb_MiniTableField field = {30, UPB_SIZE(96, 216), 80, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__UpstreamConnectionOptions_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_UpstreamConnectionOptions* envoy_config_cluster_v3_Cluster_mutable_upstream_connection_options(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1479,6 +1558,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_ignore_health_on_host_remova
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_load_assignment(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_endpoint_v3_ClusterLoadAssignment* value) {
   const upb_MiniTableField field = {33, UPB_SIZE(104, 224), 81, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_endpoint_v3_ClusterLoadAssignment* envoy_config_cluster_v3_Cluster_mutable_load_assignment(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1491,6 +1571,7 @@ UPB_INLINE struct envoy_config_endpoint_v3_ClusterLoadAssignment* envoy_config_c
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_original_dst_lb_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* value) {
   const upb_MiniTableField field = {34, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__OriginalDstLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* envoy_config_cluster_v3_Cluster_mutable_original_dst_lb_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1509,6 +1590,8 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_typed_extension_protocol_options
 }
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_set(envoy_config_cluster_v3_Cluster* msg, upb_StringView key, struct google_protobuf_Any* val, upb_Arena* a) {
   const upb_MiniTableField field = {36, UPB_SIZE(108, 232), 0, 22, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TypedExtensionProtocolOptionsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
                                                     &field, 0, sizeof(val), a);
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
@@ -1522,12 +1605,15 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_typed_extension_protocol_options
 }
 UPB_INLINE envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry* envoy_config_cluster_v3_Cluster_typed_extension_protocol_options_nextmutable(envoy_config_cluster_v3_Cluster* msg, size_t* iter) {
   const upb_MiniTableField field = {36, UPB_SIZE(108, 232), 0, 22, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TypedExtensionProtocolOptionsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_least_request_lb_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* value) {
   const upb_MiniTableField field = {37, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 23, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LeastRequestLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* envoy_config_cluster_v3_Cluster_mutable_least_request_lb_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1540,6 +1626,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* envoy_co
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_cluster_type(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_CustomClusterType* value) {
   const upb_MiniTableField field = {38, UPB_SIZE(188, 344), UPB_SIZE(-113, -29), 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CustomClusterType_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_CustomClusterType* envoy_config_cluster_v3_Cluster_mutable_cluster_type(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1556,6 +1643,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_respect_dns_ttl(envoy_config
 }
 UPB_INLINE struct envoy_config_cluster_v3_Filter** envoy_config_cluster_v3_Cluster_mutable_filters(envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   upb_MiniTableField field = {40, UPB_SIZE(120, 240), 0, 25, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Filter_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -1572,6 +1660,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Filter** envoy_config_cluster_v3_Clust
 }
 UPB_INLINE struct envoy_config_cluster_v3_Filter* envoy_config_cluster_v3_Cluster_add_filters(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
   upb_MiniTableField field = {40, UPB_SIZE(120, 240), 0, 25, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Filter_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -1586,6 +1675,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Filter* envoy_config_cluster_v3_Cluste
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_load_balancing_policy(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_LoadBalancingPolicy* value) {
   const upb_MiniTableField field = {41, UPB_SIZE(124, 248), 82, 26, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_config_cluster_v3_Cluster_mutable_load_balancing_policy(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1598,6 +1688,7 @@ UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_config_clus
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_lrs_server(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_ConfigSource* value) {
   const upb_MiniTableField field = {42, UPB_SIZE(128, 256), 83, 27, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ConfigSource_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_v3_Cluster_mutable_lrs_server(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1610,6 +1701,7 @@ UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_v3_Clu
 }
 UPB_INLINE envoy_config_cluster_v3_Cluster_TransportSocketMatch** envoy_config_cluster_v3_Cluster_mutable_transport_socket_matches(envoy_config_cluster_v3_Cluster* msg, size_t* size) {
   upb_MiniTableField field = {43, UPB_SIZE(132, 264), 0, 28, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TransportSocketMatch_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -1626,6 +1718,7 @@ UPB_INLINE envoy_config_cluster_v3_Cluster_TransportSocketMatch** envoy_config_c
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_TransportSocketMatch* envoy_config_cluster_v3_Cluster_add_transport_socket_matches(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
   upb_MiniTableField field = {43, UPB_SIZE(132, 264), 0, 28, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__TransportSocketMatch_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -1640,6 +1733,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_TransportSocketMatch* envoy_co
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_dns_failure_refresh_rate(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_RefreshRate* value) {
   const upb_MiniTableField field = {44, UPB_SIZE(136, 272), 84, 29, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__RefreshRate_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_RefreshRate* envoy_config_cluster_v3_Cluster_mutable_dns_failure_refresh_rate(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1656,6 +1750,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_use_tcp_for_dns_lookups(envo
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_upstream_http_protocol_options(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_UpstreamHttpProtocolOptions* value) {
   const upb_MiniTableField field = {46, UPB_SIZE(144, 280), 85, 30, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__UpstreamHttpProtocolOptions_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_UpstreamHttpProtocolOptions* envoy_config_cluster_v3_Cluster_mutable_upstream_http_protocol_options(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1672,6 +1767,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_track_timeout_budgets(envoy_
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_upstream_config(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {48, UPB_SIZE(152, 288), 86, 31, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluster_v3_Cluster_mutable_upstream_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1684,6 +1780,7 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluste
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_track_cluster_stats(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_TrackClusterStats* value) {
   const upb_MiniTableField field = {49, UPB_SIZE(156, 296), 87, 32, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__TrackClusterStats_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_TrackClusterStats* envoy_config_cluster_v3_Cluster_mutable_track_cluster_stats(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1696,6 +1793,7 @@ UPB_INLINE struct envoy_config_cluster_v3_TrackClusterStats* envoy_config_cluste
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_preconnect_policy(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_PreconnectPolicy* value) {
   const upb_MiniTableField field = {50, UPB_SIZE(160, 304), 88, 33, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__PreconnectPolicy_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_PreconnectPolicy* envoy_config_cluster_v3_Cluster_mutable_preconnect_policy(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1712,6 +1810,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_set_connection_pool_per_downstre
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_maglev_lb_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_MaglevLbConfig* value) {
   const upb_MiniTableField field = {52, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 34, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__MaglevLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_MaglevLbConfig* envoy_config_cluster_v3_Cluster_mutable_maglev_lb_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1724,6 +1823,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_MaglevLbConfig* envoy_config_c
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_dns_resolution_config(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_DnsResolutionConfig* value) {
   const upb_MiniTableField field = {53, UPB_SIZE(168, 312), 89, 35, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DnsResolutionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DnsResolutionConfig* envoy_config_cluster_v3_Cluster_mutable_dns_resolution_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1736,6 +1836,7 @@ UPB_INLINE struct envoy_config_core_v3_DnsResolutionConfig* envoy_config_cluster
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_wait_for_warm_on_init(envoy_config_cluster_v3_Cluster *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {54, UPB_SIZE(172, 320), 90, 36, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_cluster_v3_Cluster_mutable_wait_for_warm_on_init(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1748,6 +1849,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_cluster_v3_Cluster_mut
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_typed_dns_resolver_config(envoy_config_cluster_v3_Cluster *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {55, UPB_SIZE(176, 328), 91, 37, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluster_v3_Cluster_mutable_typed_dns_resolver_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1760,6 +1862,7 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluste
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_set_round_robin_lb_config(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_RoundRobinLbConfig* value) {
   const upb_MiniTableField field = {56, UPB_SIZE(192, 352), UPB_SIZE(-181, -37), 38, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__RoundRobinLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_RoundRobinLbConfig* envoy_config_cluster_v3_Cluster_mutable_round_robin_lb_config(envoy_config_cluster_v3_Cluster* msg, upb_Arena* arena) {
@@ -1855,6 +1958,7 @@ UPB_INLINE const struct google_protobuf_Struct* envoy_config_cluster_v3_Cluster_
   const struct google_protobuf_Struct* default_val = NULL;
   const struct google_protobuf_Struct* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1871,6 +1975,7 @@ UPB_INLINE const struct envoy_config_core_v3_TransportSocket* envoy_config_clust
   const struct envoy_config_core_v3_TransportSocket* default_val = NULL;
   const struct envoy_config_core_v3_TransportSocket* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TransportSocket_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1886,6 +1991,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_TransportSocketMatch_set_name(en
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_TransportSocketMatch_set_match(envoy_config_cluster_v3_Cluster_TransportSocketMatch *msg, struct google_protobuf_Struct* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_config_cluster_v3_Cluster_TransportSocketMatch_mutable_match(envoy_config_cluster_v3_Cluster_TransportSocketMatch* msg, upb_Arena* arena) {
@@ -1898,6 +2004,7 @@ UPB_INLINE struct google_protobuf_Struct* envoy_config_cluster_v3_Cluster_Transp
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_TransportSocketMatch_set_transport_socket(envoy_config_cluster_v3_Cluster_TransportSocketMatch *msg, struct envoy_config_core_v3_TransportSocket* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TransportSocket_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TransportSocket* envoy_config_cluster_v3_Cluster_TransportSocketMatch_mutable_transport_socket(envoy_config_cluster_v3_Cluster_TransportSocketMatch* msg, upb_Arena* arena) {
@@ -1965,6 +2072,7 @@ UPB_INLINE const struct google_protobuf_Any* envoy_config_cluster_v3_Cluster_Cus
   const struct google_protobuf_Any* default_val = NULL;
   const struct google_protobuf_Any* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -1980,6 +2088,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_CustomClusterType_set_name(envoy
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CustomClusterType_set_typed_config(envoy_config_cluster_v3_Cluster_CustomClusterType *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_cluster_v3_Cluster_CustomClusterType_mutable_typed_config(envoy_config_cluster_v3_Cluster_CustomClusterType* msg, upb_Arena* arena) {
@@ -2035,6 +2144,7 @@ UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_
   const struct envoy_config_core_v3_ConfigSource* default_val = NULL;
   const struct envoy_config_core_v3_ConfigSource* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ConfigSource_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2058,6 +2168,7 @@ UPB_INLINE upb_StringView envoy_config_cluster_v3_Cluster_EdsClusterConfig_servi
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_EdsClusterConfig_set_eds_config(envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg, struct envoy_config_core_v3_ConfigSource* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ConfigSource_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_v3_Cluster_EdsClusterConfig_mutable_eds_config(envoy_config_cluster_v3_Cluster_EdsClusterConfig* msg, upb_Arena* arena) {
@@ -2129,6 +2240,7 @@ UPB_INLINE const struct google_protobuf_Struct* envoy_config_cluster_v3_Cluster_
   const struct google_protobuf_Struct* default_val = NULL;
   const struct google_protobuf_Struct* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2143,6 +2255,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_LbSubsetConfig_clear_subset_sele
 }
 UPB_INLINE const envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector* const* envoy_config_cluster_v3_Cluster_LbSubsetConfig_subset_selectors(const envoy_config_cluster_v3_Cluster_LbSubsetConfig* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig__LbSubsetSelector_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -2154,6 +2267,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector
 }
 UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_LbSubsetConfig_subset_selectors_upb_array(const envoy_config_cluster_v3_Cluster_LbSubsetConfig* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig__LbSubsetSelector_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -2162,6 +2276,7 @@ UPB_INLINE const upb_Array* _envoy_config_cluster_v3_Cluster_LbSubsetConfig_subs
 }
 UPB_INLINE upb_Array* _envoy_config_cluster_v3_Cluster_LbSubsetConfig_subset_selectors_mutable_upb_array(envoy_config_cluster_v3_Cluster_LbSubsetConfig* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig__LbSubsetSelector_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -2236,6 +2351,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_LbSubsetConfig_set_fallback_poli
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_LbSubsetConfig_set_default_subset(envoy_config_cluster_v3_Cluster_LbSubsetConfig *msg, struct google_protobuf_Struct* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_config_cluster_v3_Cluster_LbSubsetConfig_mutable_default_subset(envoy_config_cluster_v3_Cluster_LbSubsetConfig* msg, upb_Arena* arena) {
@@ -2248,6 +2364,7 @@ UPB_INLINE struct google_protobuf_Struct* envoy_config_cluster_v3_Cluster_LbSubs
 }
 UPB_INLINE envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector** envoy_config_cluster_v3_Cluster_LbSubsetConfig_mutable_subset_selectors(envoy_config_cluster_v3_Cluster_LbSubsetConfig* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(20, 32), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig__LbSubsetSelector_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -2264,6 +2381,7 @@ UPB_INLINE envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector** env
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector* envoy_config_cluster_v3_Cluster_LbSubsetConfig_add_subset_selectors(envoy_config_cluster_v3_Cluster_LbSubsetConfig* msg, upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(20, 32), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__LbSubsetConfig__LbSubsetSelector_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -2531,6 +2649,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2547,6 +2666,7 @@ UPB_INLINE const struct envoy_config_core_v3_RuntimeDouble* envoy_config_cluster
   const struct envoy_config_core_v3_RuntimeDouble* default_val = NULL;
   const struct envoy_config_core_v3_RuntimeDouble* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeDouble_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2563,6 +2683,7 @@ UPB_INLINE const struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_S
   const struct envoy_type_v3_Percent* default_val = NULL;
   const struct envoy_type_v3_Percent* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2574,6 +2695,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_SlowStartConfig_has_min_weight_p
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_SlowStartConfig_set_slow_start_window(envoy_config_cluster_v3_Cluster_SlowStartConfig *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_SlowStartConfig_mutable_slow_start_window(envoy_config_cluster_v3_Cluster_SlowStartConfig* msg, upb_Arena* arena) {
@@ -2586,6 +2708,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_Slow
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_SlowStartConfig_set_aggression(envoy_config_cluster_v3_Cluster_SlowStartConfig *msg, struct envoy_config_core_v3_RuntimeDouble* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeDouble_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_config_cluster_v3_Cluster_SlowStartConfig_mutable_aggression(envoy_config_cluster_v3_Cluster_SlowStartConfig* msg, upb_Arena* arena) {
@@ -2598,6 +2721,7 @@ UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_config_cluster_v3_Cl
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_SlowStartConfig_set_min_weight_percent(envoy_config_cluster_v3_Cluster_SlowStartConfig *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_SlowStartConfig_mutable_min_weight_percent(envoy_config_cluster_v3_Cluster_SlowStartConfig* msg, upb_Arena* arena) {
@@ -2653,6 +2777,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_SlowStartConfig* envoy_config_c
   const envoy_config_cluster_v3_Cluster_SlowStartConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_SlowStartConfig* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__SlowStartConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2664,6 +2789,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_has_slow_star
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_set_slow_start_config(envoy_config_cluster_v3_Cluster_RoundRobinLbConfig *msg, envoy_config_cluster_v3_Cluster_SlowStartConfig* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__SlowStartConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_SlowStartConfig* envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_mutable_slow_start_config(envoy_config_cluster_v3_Cluster_RoundRobinLbConfig* msg, upb_Arena* arena) {
@@ -2719,6 +2845,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2735,6 +2862,7 @@ UPB_INLINE const struct envoy_config_core_v3_RuntimeDouble* envoy_config_cluster
   const struct envoy_config_core_v3_RuntimeDouble* default_val = NULL;
   const struct envoy_config_core_v3_RuntimeDouble* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeDouble_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2751,6 +2879,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_SlowStartConfig* envoy_config_c
   const envoy_config_cluster_v3_Cluster_SlowStartConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_SlowStartConfig* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__SlowStartConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2762,6 +2891,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_has_slow_st
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_set_choice_count(envoy_config_cluster_v3_Cluster_LeastRequestLbConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_mutable_choice_count(envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* msg, upb_Arena* arena) {
@@ -2774,6 +2904,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_L
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_set_active_request_bias(envoy_config_cluster_v3_Cluster_LeastRequestLbConfig *msg, struct envoy_config_core_v3_RuntimeDouble* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeDouble_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_mutable_active_request_bias(envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* msg, upb_Arena* arena) {
@@ -2786,6 +2917,7 @@ UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_config_cluster_v3_Cl
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_set_slow_start_config(envoy_config_cluster_v3_Cluster_LeastRequestLbConfig *msg, envoy_config_cluster_v3_Cluster_SlowStartConfig* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__SlowStartConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_SlowStartConfig* envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_mutable_slow_start_config(envoy_config_cluster_v3_Cluster_LeastRequestLbConfig* msg, upb_Arena* arena) {
@@ -2841,6 +2973,7 @@ UPB_INLINE const struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt64Value* default_val = NULL;
   const struct google_protobuf_UInt64Value* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2869,6 +3002,7 @@ UPB_INLINE const struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt64Value* default_val = NULL;
   const struct google_protobuf_UInt64Value* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2880,6 +3014,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_RingHashLbConfig_has_maximum_rin
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_RingHashLbConfig_set_minimum_ring_size(envoy_config_cluster_v3_Cluster_RingHashLbConfig *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Cluster_RingHashLbConfig_mutable_minimum_ring_size(envoy_config_cluster_v3_Cluster_RingHashLbConfig* msg, upb_Arena* arena) {
@@ -2896,6 +3031,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_RingHashLbConfig_set_hash_functi
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_RingHashLbConfig_set_maximum_ring_size(envoy_config_cluster_v3_Cluster_RingHashLbConfig *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Cluster_RingHashLbConfig_mutable_maximum_ring_size(envoy_config_cluster_v3_Cluster_RingHashLbConfig* msg, upb_Arena* arena) {
@@ -2951,6 +3087,7 @@ UPB_INLINE const struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt64Value* default_val = NULL;
   const struct google_protobuf_UInt64Value* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -2962,6 +3099,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_MaglevLbConfig_has_table_size(co
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_MaglevLbConfig_set_table_size(envoy_config_cluster_v3_Cluster_MaglevLbConfig *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Cluster_MaglevLbConfig_mutable_table_size(envoy_config_cluster_v3_Cluster_MaglevLbConfig* msg, upb_Arena* arena) {
@@ -3041,6 +3179,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3057,6 +3196,7 @@ UPB_INLINE const struct envoy_type_metadata_v3_MetadataKey* envoy_config_cluster
   const struct envoy_type_metadata_v3_MetadataKey* default_val = NULL;
   const struct envoy_type_metadata_v3_MetadataKey* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__metadata__v3__MetadataKey_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3076,6 +3216,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_set_http_hea
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_set_upstream_port_override(envoy_config_cluster_v3_Cluster_OriginalDstLbConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_mutable_upstream_port_override(envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* msg, upb_Arena* arena) {
@@ -3088,6 +3229,7 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_O
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_set_metadata_key(envoy_config_cluster_v3_Cluster_OriginalDstLbConfig *msg, struct envoy_type_metadata_v3_MetadataKey* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__metadata__v3__MetadataKey_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKey* envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_mutable_metadata_key(envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* msg, upb_Arena* arena) {
@@ -3153,6 +3295,7 @@ UPB_INLINE const struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_C
   const struct envoy_type_v3_Percent* default_val = NULL;
   const struct envoy_type_v3_Percent* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3169,6 +3312,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfi
   const envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(36, 56), UPB_SIZE(-17, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig__ZoneAwareLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3185,6 +3329,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeighted
   const envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(36, 56), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig__LocalityWeightedLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3201,6 +3346,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3241,6 +3387,7 @@ UPB_INLINE const envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashin
   const envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig* default_val = NULL;
   const envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig* ret;
   const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig__ConsistentHashingLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3257,6 +3404,7 @@ UPB_INLINE const struct envoy_config_core_v3_HealthStatusSet* envoy_config_clust
   const struct envoy_config_core_v3_HealthStatusSet* default_val = NULL;
   const struct envoy_config_core_v3_HealthStatusSet* ret;
   const upb_MiniTableField field = {8, UPB_SIZE(32, 48), 67, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthStatusSet_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3268,6 +3416,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_CommonLbConfig_has_override_host
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_healthy_panic_threshold(envoy_config_cluster_v3_Cluster_CommonLbConfig *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_CommonLbConfig_mutable_healthy_panic_threshold(envoy_config_cluster_v3_Cluster_CommonLbConfig* msg, upb_Arena* arena) {
@@ -3280,6 +3429,7 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_CommonL
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_zone_aware_lb_config(envoy_config_cluster_v3_Cluster_CommonLbConfig *msg, envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(36, 56), UPB_SIZE(-17, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig__ZoneAwareLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig* envoy_config_cluster_v3_Cluster_CommonLbConfig_mutable_zone_aware_lb_config(envoy_config_cluster_v3_Cluster_CommonLbConfig* msg, upb_Arena* arena) {
@@ -3292,6 +3442,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConf
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_locality_weighted_lb_config(envoy_config_cluster_v3_Cluster_CommonLbConfig *msg, envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(36, 56), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig__LocalityWeightedLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig* envoy_config_cluster_v3_Cluster_CommonLbConfig_mutable_locality_weighted_lb_config(envoy_config_cluster_v3_Cluster_CommonLbConfig* msg, upb_Arena* arena) {
@@ -3304,6 +3455,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeighte
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_update_merge_window(envoy_config_cluster_v3_Cluster_CommonLbConfig *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 32), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_CommonLbConfig_mutable_update_merge_window(envoy_config_cluster_v3_Cluster_CommonLbConfig* msg, upb_Arena* arena) {
@@ -3324,6 +3476,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_close_connect
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_consistent_hashing_lb_config(envoy_config_cluster_v3_Cluster_CommonLbConfig *msg, envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 66, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__Cluster__CommonLbConfig__ConsistentHashingLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig* envoy_config_cluster_v3_Cluster_CommonLbConfig_mutable_consistent_hashing_lb_config(envoy_config_cluster_v3_Cluster_CommonLbConfig* msg, upb_Arena* arena) {
@@ -3336,6 +3489,7 @@ UPB_INLINE struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashi
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_set_override_host_status(envoy_config_cluster_v3_Cluster_CommonLbConfig *msg, struct envoy_config_core_v3_HealthStatusSet* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(32, 48), 67, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HealthStatusSet_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HealthStatusSet* envoy_config_cluster_v3_Cluster_CommonLbConfig_mutable_override_host_status(envoy_config_cluster_v3_Cluster_CommonLbConfig* msg, upb_Arena* arena) {
@@ -3391,6 +3545,7 @@ UPB_INLINE const struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_C
   const struct envoy_type_v3_Percent* default_val = NULL;
   const struct envoy_type_v3_Percent* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3407,6 +3562,7 @@ UPB_INLINE const struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt64Value* default_val = NULL;
   const struct google_protobuf_UInt64Value* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3430,6 +3586,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_set_routing_enabled(envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_mutable_routing_enabled(envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena) {
@@ -3442,6 +3599,7 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_config_cluster_v3_Cluster_CommonL
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_set_min_cluster_size(envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_mutable_min_cluster_size(envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena) {
@@ -3551,6 +3709,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Clu
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3566,6 +3725,7 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashing
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_set_hash_balance_factor(envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_mutable_hash_balance_factor(envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig* msg, upb_Arena* arena) {
@@ -3621,6 +3781,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3637,6 +3798,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_Cluste
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3648,6 +3810,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_RefreshRate_has_max_interval(con
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_RefreshRate_set_base_interval(envoy_config_cluster_v3_Cluster_RefreshRate *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_RefreshRate_mutable_base_interval(envoy_config_cluster_v3_Cluster_RefreshRate* msg, upb_Arena* arena) {
@@ -3660,6 +3823,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_Refr
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_RefreshRate_set_max_interval(envoy_config_cluster_v3_Cluster_RefreshRate *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_RefreshRate_mutable_max_interval(envoy_config_cluster_v3_Cluster_RefreshRate* msg, upb_Arena* arena) {
@@ -3715,6 +3879,7 @@ UPB_INLINE const struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Clu
   const struct google_protobuf_DoubleValue* default_val = NULL;
   const struct google_protobuf_DoubleValue* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__DoubleValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3731,6 +3896,7 @@ UPB_INLINE const struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Clu
   const struct google_protobuf_DoubleValue* default_val = NULL;
   const struct google_protobuf_DoubleValue* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__DoubleValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3742,6 +3908,7 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_PreconnectPolicy_has_predictive_
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_PreconnectPolicy_set_per_upstream_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, struct google_protobuf_DoubleValue* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__DoubleValue_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PreconnectPolicy_mutable_per_upstream_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy* msg, upb_Arena* arena) {
@@ -3754,6 +3921,7 @@ UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_P
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_PreconnectPolicy_set_predictive_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, struct google_protobuf_DoubleValue* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__DoubleValue_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PreconnectPolicy_mutable_predictive_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy* msg, upb_Arena* arena) {
@@ -3828,6 +3996,7 @@ UPB_INLINE void envoy_config_cluster_v3_LoadBalancingPolicy_clear_policies(envoy
 }
 UPB_INLINE const envoy_config_cluster_v3_LoadBalancingPolicy_Policy* const* envoy_config_cluster_v3_LoadBalancingPolicy_policies(const envoy_config_cluster_v3_LoadBalancingPolicy* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy__Policy_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -3839,6 +4008,7 @@ UPB_INLINE const envoy_config_cluster_v3_LoadBalancingPolicy_Policy* const* envo
 }
 UPB_INLINE const upb_Array* _envoy_config_cluster_v3_LoadBalancingPolicy_policies_upb_array(const envoy_config_cluster_v3_LoadBalancingPolicy* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy__Policy_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -3847,6 +4017,7 @@ UPB_INLINE const upb_Array* _envoy_config_cluster_v3_LoadBalancingPolicy_policie
 }
 UPB_INLINE upb_Array* _envoy_config_cluster_v3_LoadBalancingPolicy_policies_mutable_upb_array(envoy_config_cluster_v3_LoadBalancingPolicy* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy__Policy_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -3857,6 +4028,7 @@ UPB_INLINE upb_Array* _envoy_config_cluster_v3_LoadBalancingPolicy_policies_muta
 
 UPB_INLINE envoy_config_cluster_v3_LoadBalancingPolicy_Policy** envoy_config_cluster_v3_LoadBalancingPolicy_mutable_policies(envoy_config_cluster_v3_LoadBalancingPolicy* msg, size_t* size) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy__Policy_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -3873,6 +4045,7 @@ UPB_INLINE envoy_config_cluster_v3_LoadBalancingPolicy_Policy** envoy_config_clu
 }
 UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy_Policy* envoy_config_cluster_v3_LoadBalancingPolicy_add_policies(envoy_config_cluster_v3_LoadBalancingPolicy* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy__Policy_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -3930,6 +4103,7 @@ UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -3941,6 +4115,7 @@ UPB_INLINE bool envoy_config_cluster_v3_LoadBalancingPolicy_Policy_has_typed_ext
 
 UPB_INLINE void envoy_config_cluster_v3_LoadBalancingPolicy_Policy_set_typed_extension_config(envoy_config_cluster_v3_LoadBalancingPolicy_Policy *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluster_v3_LoadBalancingPolicy_Policy_mutable_typed_extension_config(envoy_config_cluster_v3_LoadBalancingPolicy_Policy* msg, upb_Arena* arena) {
@@ -3996,6 +4171,7 @@ UPB_INLINE const struct envoy_config_core_v3_TcpKeepalive* envoy_config_cluster_
   const struct envoy_config_core_v3_TcpKeepalive* default_val = NULL;
   const struct envoy_config_core_v3_TcpKeepalive* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TcpKeepalive_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -4024,6 +4200,7 @@ UPB_INLINE const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballs
   const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* default_val = NULL;
   const envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -4035,6 +4212,7 @@ UPB_INLINE bool envoy_config_cluster_v3_UpstreamConnectionOptions_has_happy_eyeb
 
 UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_set_tcp_keepalive(envoy_config_cluster_v3_UpstreamConnectionOptions *msg, struct envoy_config_core_v3_TcpKeepalive* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TcpKeepalive_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TcpKeepalive* envoy_config_cluster_v3_UpstreamConnectionOptions_mutable_tcp_keepalive(envoy_config_cluster_v3_UpstreamConnectionOptions* msg, upb_Arena* arena) {
@@ -4051,6 +4229,7 @@ UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_set_set_local_
 }
 UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_set_happy_eyeballs_config(envoy_config_cluster_v3_UpstreamConnectionOptions *msg, envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__UpstreamConnectionOptions__HappyEyeballsConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* envoy_config_cluster_v3_UpstreamConnectionOptions_mutable_happy_eyeballs_config(envoy_config_cluster_v3_UpstreamConnectionOptions* msg, upb_Arena* arena) {
@@ -4118,6 +4297,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_Ups
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -4133,6 +4313,7 @@ UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsC
 }
 UPB_INLINE void envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_set_first_address_family_count(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig_mutable_first_address_family_count(envoy_config_cluster_v3_UpstreamConnectionOptions_HappyEyeballsConfig* msg, upb_Arena* arena) {

@@ -3658,6 +3658,7 @@ add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/lex/strtod.c
   third_party/upb/upb/lex/unicode.c
   third_party/upb/upb/message/copy.c
+  third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3912,6 +3913,7 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/lex/strtod.c
   third_party/upb/upb/lex/unicode.c
   third_party/upb/upb/message/copy.c
+  third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
   third_party/upb/upb/reflection/desc_state.c
@@ -3930,6 +3932,7 @@ add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/reflection/oneof_def.c
   third_party/upb/upb/reflection/service_def.c
   third_party/upb/upb/text/encode.c
+  third_party/upb/upb/text/internal/encode.c
 )
 
 target_compile_features(upb_textformat_lib PUBLIC cxx_std_14)

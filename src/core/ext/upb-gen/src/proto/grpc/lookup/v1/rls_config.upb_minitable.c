@@ -3,7 +3,8 @@
  *     src/proto/grpc/lookup/v1/rls_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,6 +14,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField grpc_lookup_v1_NameMatcher__fields[3] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -34,11 +36,12 @@ const upb_MiniTable grpc__lookup__v1__NameMatcher_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_lookup_v1_GrpcKeyBuilder_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init},
+const upb_MiniTable* grpc__lookup__v1__NameMatcher_msg_init_ptr = &grpc__lookup__v1__NameMatcher_msg_init;
+static const upb_MiniTableSubInternal grpc_lookup_v1_GrpcKeyBuilder_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_lookup_v1_GrpcKeyBuilder__fields[4] = {
@@ -63,6 +66,7 @@ const upb_MiniTable grpc__lookup__v1__GrpcKeyBuilder_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__lookup__v1__GrpcKeyBuilder_msg_init_ptr = &grpc__lookup__v1__GrpcKeyBuilder_msg_init;
 static const upb_MiniTableField grpc_lookup_v1_GrpcKeyBuilder_Name__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -83,6 +87,7 @@ const upb_MiniTable grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init_ptr = &grpc__lookup__v1__GrpcKeyBuilder__Name_msg_init;
 static const upb_MiniTableField grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys__fields[3] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -104,6 +109,7 @@ const upb_MiniTable grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init_ptr = &grpc__lookup__v1__GrpcKeyBuilder__ExtraKeys_msg_init;
 static const upb_MiniTableField grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -124,10 +130,11 @@ const upb_MiniTable grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init
   })
 };
 
-static const upb_MiniTableSub grpc_lookup_v1_HttpKeyBuilder_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init},
+const upb_MiniTable* grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init_ptr = &grpc__lookup__v1__GrpcKeyBuilder__ConstantKeysEntry_msg_init;
+static const upb_MiniTableSubInternal grpc_lookup_v1_HttpKeyBuilder_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__NameMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_lookup_v1_HttpKeyBuilder__fields[5] = {
@@ -157,6 +164,7 @@ const upb_MiniTable grpc__lookup__v1__HttpKeyBuilder_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__lookup__v1__HttpKeyBuilder_msg_init_ptr = &grpc__lookup__v1__HttpKeyBuilder_msg_init;
 static const upb_MiniTableField grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -177,12 +185,13 @@ const upb_MiniTable grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init
   })
 };
 
-static const upb_MiniTableSub grpc_lookup_v1_RouteLookupConfig_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__HttpKeyBuilder_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init_ptr = &grpc__lookup__v1__HttpKeyBuilder__ConstantKeysEntry_msg_init;
+static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupConfig_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__HttpKeyBuilder_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__GrpcKeyBuilder_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_lookup_v1_RouteLookupConfig__fields[9] = {
@@ -224,8 +233,9 @@ const upb_MiniTable grpc__lookup__v1__RouteLookupConfig_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_lookup_v1_RouteLookupClusterSpecifier_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__RouteLookupConfig_msg_init},
+const upb_MiniTable* grpc__lookup__v1__RouteLookupConfig_msg_init_ptr = &grpc__lookup__v1__RouteLookupConfig_msg_init;
+static const upb_MiniTableSubInternal grpc_lookup_v1_RouteLookupClusterSpecifier_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &grpc__lookup__v1__RouteLookupConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_lookup_v1_RouteLookupClusterSpecifier__fields[1] = {
@@ -241,6 +251,7 @@ const upb_MiniTable grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init = {
 #endif
 };
 
+const upb_MiniTable* grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init_ptr = &grpc__lookup__v1__RouteLookupClusterSpecifier_msg_init;
 static const upb_MiniTable *messages_layout[9] = {
   &grpc__lookup__v1__NameMatcher_msg_init,
   &grpc__lookup__v1__GrpcKeyBuilder_msg_init,
