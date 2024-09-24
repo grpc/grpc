@@ -638,34 +638,34 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
           }},
 #endif
 
-        CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
-                              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                  FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                  FEATURE_MASK_IS_HTTP2 |
-                                  FEATURE_MASK_DO_NOT_FUZZ |
-                                  FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-                                  FEATURE_MASK_IS_LOCAL_TCP_CREDS,
-                              nullptr,
-                              [](const ChannelArgs& /*client_args*/,
-                                 const ChannelArgs& /*server_args*/) {
-                                int port = grpc_pick_unused_port_or_die();
-                                return std::make_unique<LocalTestFixture>(
-                                    JoinHostPort("127.0.0.1", port), LOCAL_TCP);
-                              }},
-        CoreTestConfiguration{"Chttp2FullstackLocalIpv6",
-                              FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                  FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                                  FEATURE_MASK_IS_HTTP2 |
-                                  FEATURE_MASK_DO_NOT_FUZZ |
-                                  FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
-                                  FEATURE_MASK_IS_LOCAL_TCP_CREDS,
-                              nullptr,
-                              [](const ChannelArgs& /*client_args*/,
-                                 const ChannelArgs& /*server_args*/) {
-                                int port = grpc_pick_unused_port_or_die();
-                                return std::make_unique<LocalTestFixture>(
-                                    JoinHostPort("[::1]", port), LOCAL_TCP);
-                              }},
+      CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+                                FEATURE_MASK_IS_HTTP2 |
+                                FEATURE_MASK_DO_NOT_FUZZ |
+                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
+                            nullptr,
+                            [](const ChannelArgs& /*client_args*/,
+                               const ChannelArgs& /*server_args*/) {
+                              int port = grpc_pick_unused_port_or_die();
+                              return std::make_unique<LocalTestFixture>(
+                                  JoinHostPort("127.0.0.1", port), LOCAL_TCP);
+                            }},
+      CoreTestConfiguration{"Chttp2FullstackLocalIpv6",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
+                                FEATURE_MASK_IS_HTTP2 |
+                                FEATURE_MASK_DO_NOT_FUZZ |
+                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
+                            nullptr,
+                            [](const ChannelArgs& /*client_args*/,
+                               const ChannelArgs& /*server_args*/) {
+                              int port = grpc_pick_unused_port_or_die();
+                              return std::make_unique<LocalTestFixture>(
+                                  JoinHostPort("[::1]", port), LOCAL_TCP);
+                            }},
 #ifdef GRPC_HAVE_UNIX_SOCKET
       CoreTestConfiguration{
           "Chttp2FullstackLocalUdsPercentEncoded",

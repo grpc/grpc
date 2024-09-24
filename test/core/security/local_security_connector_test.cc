@@ -18,52 +18,40 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/impl/grpc_types.h>
+
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/test_util/test_config.h"
-#include "src/core/client_channel/client_channel_filter.h"
-#include "include/grpc/impl/grpc_types.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-absl::string_view GetLocalUnixAddress(grpc_endpoint* /*ep*/) {
-  return "unix:";
-}
+absl::string_view GetLocalUnixAddress(grpc_endpoint* /*ep*/) { return "unix:"; }
 
-const grpc_endpoint_vtable kUnixEndpointVtable = {nullptr,
-                                                 nullptr,
-                                                 nullptr,
-                                                 nullptr,
-                                                 nullptr,
-                                                 nullptr,
-                                                 nullptr,
-                                                 GetLocalUnixAddress,
-                                                 nullptr,
-                                                 nullptr};
+const grpc_endpoint_vtable kUnixEndpointVtable = {
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, GetLocalUnixAddress,
+    nullptr, nullptr};
 
 absl::string_view GetLocalTcpAddress(grpc_endpoint* /*ep*/) {
   return "ipv4:127.0.0.1:12667";
 }
 
-const grpc_endpoint_vtable kTcpEndpointVtable = {nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  GetLocalTcpAddress,
-                                                  nullptr,
-                                                  nullptr};
+const grpc_endpoint_vtable kTcpEndpointVtable = {
+    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, GetLocalTcpAddress,
+    nullptr, nullptr};
 
 std::string GetSecurityLevelForServer(grpc_local_connect_type connect_type,
-                                            grpc_endpoint& ep) {
-  grpc_server_credentials* server_creds = grpc_local_server_credentials_create(connect_type);
+                                      grpc_endpoint& ep) {
+  grpc_server_credentials* server_creds =
+      grpc_local_server_credentials_create(connect_type);
   ChannelArgs args;
-  RefCountedPtr<grpc_server_security_connector> connector = server_creds->
-      create_security_connector(args);
+  RefCountedPtr<grpc_server_security_connector> connector =
+      server_creds->create_security_connector(args);
   tsi_peer peer;
   CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
 
@@ -75,7 +63,7 @@ std::string GetSecurityLevelForServer(grpc_local_connect_type connect_type,
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   std::string actual_level;
   if (prop != nullptr) {
-      actual_level = std::string(prop->value, prop->value_length);
+    actual_level = std::string(prop->value, prop->value_length);
   }
   connector.reset();
   auth_context.reset();
@@ -84,12 +72,13 @@ std::string GetSecurityLevelForServer(grpc_local_connect_type connect_type,
 }
 
 std::string GetSecurityLevelForChannel(grpc_local_connect_type connect_type,
-                                             grpc_endpoint& ep) {
-  grpc_channel_credentials* channel_creds = grpc_local_credentials_create(connect_type);
+                                       grpc_endpoint& ep) {
+  grpc_channel_credentials* channel_creds =
+      grpc_local_credentials_create(connect_type);
   ChannelArgs args;
-  args = args.Set((char*) GRPC_ARG_SERVER_URI, (char*) "unix:");
-  RefCountedPtr<grpc_channel_security_connector> connector = channel_creds->
-      create_security_connector(nullptr, "unix:", &args);
+  args = args.Set((char*)GRPC_ARG_SERVER_URI, (char*)"unix:");
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      channel_creds->create_security_connector(nullptr, "unix:", &args);
   tsi_peer peer;
   CHECK(tsi_construct_peer(0, &peer) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -100,7 +89,7 @@ std::string GetSecurityLevelForChannel(grpc_local_connect_type connect_type,
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   std::string actual_level;
   if (prop != nullptr) {
-      actual_level = std::string(prop->value, prop->value_length);
+    actual_level = std::string(prop->value, prop->value_length);
   }
   connector.reset();
   auth_context.reset();
@@ -112,30 +101,36 @@ TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionServer) {
   grpc_endpoint ep;
   ep.vtable = &kUnixEndpointVtable;
   std::string actual_level = GetSecurityLevelForServer(UDS, ep);
-  ASSERT_EQ(actual_level, tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
+  ASSERT_EQ(actual_level,
+            tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
 }
 
 TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionServer) {
   grpc_endpoint ep;
   ep.vtable = &kTcpEndpointVtable;
   std::string actual_level = GetSecurityLevelForServer(LOCAL_TCP, ep);
-  ASSERT_EQ(actual_level, IsLocalConnectorSecureEnabled() ? 
-    tsi_security_level_to_string(TSI_SECURITY_NONE) : tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
+  ASSERT_EQ(actual_level,
+            IsLocalConnectorSecureEnabled()
+                ? tsi_security_level_to_string(TSI_SECURITY_NONE)
+                : tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
 }
 
 TEST(LocalSecurityConnectorTest, CheckSecurityLevelOfUdsConnectionChannel) {
   grpc_endpoint ep;
   ep.vtable = &kUnixEndpointVtable;
   std::string actual_level = GetSecurityLevelForChannel(UDS, ep);
-  ASSERT_EQ(actual_level, tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
+  ASSERT_EQ(actual_level,
+            tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
 }
 
 TEST(LocalSecurityConnectorTest, SecurityLevelOfTcpConnectionChannel) {
   grpc_endpoint ep;
   ep.vtable = &kTcpEndpointVtable;
   std::string actual_level = GetSecurityLevelForChannel(LOCAL_TCP, ep);
-  ASSERT_EQ(actual_level, IsLocalConnectorSecureEnabled() ? 
-    tsi_security_level_to_string(TSI_SECURITY_NONE) : tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
+  ASSERT_EQ(actual_level,
+            IsLocalConnectorSecureEnabled()
+                ? tsi_security_level_to_string(TSI_SECURITY_NONE)
+                : tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY));
 }
 
 }  // namespace

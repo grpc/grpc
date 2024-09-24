@@ -144,10 +144,11 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   }
   if (peer.properties != nullptr) gpr_free(peer.properties);
   peer.properties = new_properties;
-  // Set security level to PRIVACY_AND_INTEGRITY for UDS, or NONE otherwise.  
+  // Set security level to PRIVACY_AND_INTEGRITY for UDS, or NONE otherwise.
   const char* security_level;
   if (grpc_core::IsLocalConnectorSecureEnabled()) {
-    security_level = tsi_security_level_to_string(type == UDS ? TSI_PRIVACY_AND_INTEGRITY : TSI_SECURITY_NONE);
+    security_level = tsi_security_level_to_string(
+        type == UDS ? TSI_PRIVACY_AND_INTEGRITY : TSI_SECURITY_NONE);
   } else {
     security_level = tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
   }

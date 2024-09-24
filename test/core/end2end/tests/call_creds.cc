@@ -264,7 +264,7 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
 }
 
 CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
-  if (grpc_core::IsLocalConnectorSecureEnabled()) {
+  if (IsLocalConnectorSecureEnabled()) {
     SKIP_IF_LOCAL_TCP_CREDS();
   }
   TestRequestResponseWithPayloadAndCallCreds(*this, true);
@@ -272,7 +272,7 @@ CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
 
 CORE_END2END_TEST(PerCallCredsTest,
                   RequestResponseWithPayloadAndOverriddenCallCreds) {
-  if (grpc_core::IsLocalConnectorSecureEnabled()) {
+  if (IsLocalConnectorSecureEnabled()) {
     SKIP_IF_LOCAL_TCP_CREDS();
   }
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, true);
