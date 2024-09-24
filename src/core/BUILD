@@ -4099,6 +4099,7 @@ grpc_cc_library(
         "channel_args",
         "closure",
         "error",
+        "experiments",
         "grpc_sockaddr",
         "iomgr_fwd",
         "resolved_address",
@@ -4120,7 +4121,6 @@ grpc_cc_library(
         "//:sockaddr_utils",
         "//:tsi_base",
         "//:uri",
-        "//src/core:experiments",
     ],
 )
 
