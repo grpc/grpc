@@ -60,11 +60,3 @@ pushd src/python;
   done
 popd;
 
-# Run tests for grpcio_tests
-pushd src/python/grpcio_tests;
-  python3 setup.py test_lite
-  python3 setup.py test_aio
-  python3 setup.py test_py3_only
-popd;
-
-chmod -R 755 src/

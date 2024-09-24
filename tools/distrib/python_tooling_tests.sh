@@ -14,13 +14,15 @@
 # limitations under the License.
 
 set -ex
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+BASEDIR=$(dirname "$0")/../..
+cd "$BASEDIR";
 
-export DOCKERFILE_DIR=tools/dockerfile/distribtest/python_dev_ubuntu2204_x64
-export DOCKER_RUN_SCRIPT=tools/distrib/install_python_modules_and_run_tests.sh
-export GRPC_TEST_REPORT_BASE_DIR=reports
+# Run tests for grpcio_tests
+pushd src/python/grpcio_tests;
+  python3 setup.py test_lite
+  python3 setup.py test_aio
+  python3 setup.py test_py3_only
+popd;
 
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+chmod -R 755 src/
