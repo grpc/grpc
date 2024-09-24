@@ -27,7 +27,6 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -204,13 +203,6 @@ struct grpc_chttp2_stream_link {
   grpc_chttp2_stream* next;
   grpc_chttp2_stream* prev;
 };
-
-typedef enum {
-  GRPC_CHTTP2_NO_GOAWAY_SEND,
-  GRPC_CHTTP2_GRACEFUL_GOAWAY,
-  GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED,
-  GRPC_CHTTP2_FINAL_GOAWAY_SENT,
-} grpc_chttp2_sent_goaway_state;
 
 typedef struct grpc_chttp2_write_cb {
   int64_t call_at_byte;

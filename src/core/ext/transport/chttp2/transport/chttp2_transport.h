@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/random/random.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice.h>
@@ -29,16 +30,38 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+
+struct grpc_chttp2_stream_list;
+
+struct grpc_chttp2_stream;
+
+typedef enum {
+  GRPC_CHTTP2_KEEPALIVE_STATE_WAITING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_PINGING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_DYING,
+  GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
+} grpc_chttp2_keepalive_state;
+
+typedef enum {
+  GRPC_CHTTP2_NO_GOAWAY_SEND,
+  GRPC_CHTTP2_GRACEFUL_GOAWAY,
+  GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_FINAL_GOAWAY_SENT,
+} grpc_chttp2_sent_goaway_state;
 
 struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                                      public grpc_core::KeepsGrpcInitialized {
