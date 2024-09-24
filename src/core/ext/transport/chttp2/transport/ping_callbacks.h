@@ -31,7 +31,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

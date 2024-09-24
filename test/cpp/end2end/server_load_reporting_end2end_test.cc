@@ -32,7 +32,7 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

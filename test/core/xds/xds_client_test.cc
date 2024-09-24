@@ -47,14 +47,14 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -729,14 +729,12 @@ class XdsClientTest : public ::testing::Test {
   void InitXdsClient(
       FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
       Duration resource_request_timeout = Duration::Seconds(15)) {
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+    transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         []() { FAIL() << "Multiple concurrent reads"; });
-    transport_factory_ =
-        transport_factory->Ref().TakeAsSubclass<FakeXdsTransportFactory>();
     auto metrics_reporter = std::make_unique<MetricsReporter>();
     metrics_reporter_ = metrics_reporter.get();
     xds_client_ = MakeRefCounted<XdsClient>(
-        bootstrap_builder.Build(), std::move(transport_factory),
+        bootstrap_builder.Build(), transport_factory_,
         grpc_event_engine::experimental::GetDefaultEventEngine(),
         std::move(metrics_reporter), "foo agent", "foo version",
         resource_request_timeout * grpc_test_slowdown_factor());
@@ -986,7 +984,7 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
   // Check metric data.
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::ElementsAre(::testing::Pair(
@@ -1081,7 +1079,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
@@ -1185,7 +1183,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   ASSERT_FALSE(WaitForRequest(stream.get()));
   // Now cancel the second watcher.
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, SubscribeToMultipleResources) {
@@ -1319,7 +1317,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
@@ -1441,7 +1439,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailure) {
@@ -1568,7 +1566,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
@@ -1767,7 +1765,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   CancelFooWatch(watcher2.get(), "foo2", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher3.get(), "foo3", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher4.get(), "foo4");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
@@ -1882,7 +1880,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
@@ -1949,7 +1947,7 @@ TEST_F(XdsClientTest, WildcardCapableResponseWithEmptyResource) {
                /*resource_names=*/{"wc1"});
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // This tests resource removal triggered by the server when using a
@@ -2079,7 +2077,7 @@ TEST_F(XdsClientTest, ResourceDeletion) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // This tests that when we ignore resource deletions from the server
@@ -2213,7 +2211,7 @@ TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
   // Cancel watch.
   CancelWildcardCapableWatch(watcher.get(), "wc1");
   CancelWildcardCapableWatch(watcher2.get(), "wc1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServer) {
@@ -2262,7 +2260,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   // XdsClient should NOT report error to watcher, because we saw a
   // response on the stream before it failed.
   // Stream should be orphaned.
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
   // Check metric data.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
@@ -2306,7 +2304,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
@@ -2390,7 +2388,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ConnectionFails) {
@@ -2486,7 +2484,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
@@ -2572,7 +2570,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   CancelFooWatch(watcher2.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
@@ -2687,7 +2685,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
                /*resource_names=*/{"foo1"});
   // Cancel watcher.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
@@ -2765,7 +2763,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   stream->CompleteSendMessageFromClient();
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // In https://github.com/grpc/grpc/issues/29583, we ran into a case
@@ -2921,7 +2919,7 @@ TEST_F(XdsClientTest,
   // Cancel watches.
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
@@ -3041,7 +3039,7 @@ TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
@@ -3096,7 +3094,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, MultipleResourceTypes) {
@@ -3211,7 +3209,7 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   // Now cancel watch for "bar1".
   CancelBarWatch(watcher2.get(), "bar1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, Federation) {
@@ -3360,10 +3358,10 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream2->Orphaned());
+  EXPECT_TRUE(stream2->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
@@ -3486,7 +3484,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
                /*resource_names=*/{kXdstpResourceName});
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
@@ -3566,7 +3564,7 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch.
   CancelFooWatch(watcher.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
@@ -3719,10 +3717,10 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
           ::testing::Pair(authority_server.server_uri(), 1))));
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
-  EXPECT_TRUE(stream2->Orphaned());
+  EXPECT_TRUE(stream2->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
@@ -3808,7 +3806,7 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo2"});
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 TEST_F(XdsClientTest, FallbackAndRecover) {
@@ -4017,7 +4015,7 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
   // Result (remote): The stream to the fallback server has been orphaned.
-  EXPECT_TRUE(stream2->Orphaned());
+  EXPECT_TRUE(stream2->IsOrphaned());
   // Result (local): Resources are delivered to watchers.
   resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
@@ -4038,7 +4036,7 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
   // Result (remote): The stream to the primary server has been orphaned.
-  EXPECT_TRUE(stream->Orphaned());
+  EXPECT_TRUE(stream->IsOrphaned());
 }
 
 // Test for both servers being unavailable
@@ -4165,7 +4163,7 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
           .set_nonce("D")
           .AddFooResource(XdsFooResource("foo1", 42))
           .Serialize());
-  EXPECT_TRUE(fallback_stream->Orphaned());
+  EXPECT_TRUE(fallback_stream->IsOrphaned());
   resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");

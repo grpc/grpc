@@ -20,12 +20,12 @@
 #include <set>
 #include <string>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {

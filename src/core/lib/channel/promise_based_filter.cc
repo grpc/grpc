@@ -34,12 +34,12 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 namespace promise_filter_detail {
