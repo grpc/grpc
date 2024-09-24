@@ -668,11 +668,13 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 inline Pending IntraActivityWaiter::pending() {
-  const auto new_wakeups = GetContext<Activity>()->CurrentParticipant();
-  GRPC_TRACE_LOG(promise_primitives, INFO)
-      << "IntraActivityWaiter::pending: "
-      << GRPC_DUMP_ARGS(this, new_wakeups, wakeups_);
-  wakeups_ |= new_wakeups;
+  if (Activity::current()) {
+      const auto new_wakeups = GetContext<Activity>()->CurrentParticipant();
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "IntraActivityWaiter::pending: "
+            << GRPC_DUMP_ARGS(this, new_wakeups, wakeups_);
+      wakeups_ |= new_wakeups;
+  }
   return Pending();
 }
 
