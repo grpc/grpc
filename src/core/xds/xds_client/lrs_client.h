@@ -33,16 +33,16 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -242,7 +242,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
       absl::string_view cluster_name, absl::string_view eds_service_name);
 
   // Adds locality stats for cluster_name and eds_service_name for the
-  // specified locality.
+  // specified locality with the specified backend metric propagation.
   RefCountedPtr<ClusterLocalityStats> AddClusterLocalityStats(
       std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
       absl::string_view cluster_name, absl::string_view eds_service_name,

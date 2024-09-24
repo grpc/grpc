@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

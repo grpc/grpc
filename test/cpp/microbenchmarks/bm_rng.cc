@@ -22,7 +22,7 @@
 
 #include "absl/random/random.h"
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 static void BM_OneRngFromFreshBitSet(benchmark::State& state) {
   for (auto _ : state) {

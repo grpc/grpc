@@ -40,8 +40,8 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "test/cpp/qps/histogram.h"

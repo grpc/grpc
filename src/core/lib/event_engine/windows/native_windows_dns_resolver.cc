@@ -26,9 +26,9 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_event_engine {
 namespace experimental {

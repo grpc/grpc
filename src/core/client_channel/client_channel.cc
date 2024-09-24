@@ -57,15 +57,12 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -93,8 +90,12 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 
@@ -167,6 +168,7 @@ class ClientChannel::SubchannelWrapper
   void CancelDataWatcher(DataWatcherInterface* watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
   void ThrottleKeepaliveTime(int new_keepalive_time);
+  std::string address() const override { return subchannel_->address(); }
 
  private:
   class WatcherWrapper;

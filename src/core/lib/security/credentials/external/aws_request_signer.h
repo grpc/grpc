@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
