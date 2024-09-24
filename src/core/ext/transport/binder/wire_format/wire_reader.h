@@ -22,7 +22,7 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/util/orphanable.h"
 
 namespace grpc_binder {
 

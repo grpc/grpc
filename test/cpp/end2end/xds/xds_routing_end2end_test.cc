@@ -472,7 +472,7 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 }
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
@@ -531,7 +531,7 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the
 // matching route has an action other than RouteAction.
 TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   // Set a route with an inappropriate route action
@@ -1548,10 +1548,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const char* kNewCluster3Name = "new_cluster_3";
   const char* kNewEdsService3Name = "new_eds_service_name_3";
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args2({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args3({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args2({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args3({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -1661,9 +1661,9 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args2({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args2({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -1749,7 +1749,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
   const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -1784,7 +1784,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
 TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
   CheckRpcSendFailure(

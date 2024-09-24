@@ -25,10 +25,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

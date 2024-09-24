@@ -46,15 +46,15 @@
 #include <grpc/support/json.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"

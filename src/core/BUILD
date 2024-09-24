@@ -51,10 +51,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "dump_args",
     srcs = [
-        "lib/gprpp/dump_args.cc",
+        "util/dump_args.cc",
     ],
     hdrs = [
-        "lib/gprpp/dump_args.h",
+        "util/dump_args.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -211,7 +211,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
-    public_hdrs = ["lib/gprpp/atomic_utils.h"],
+    public_hdrs = ["util/atomic_utils.h"],
     deps = ["//:gpr"],
 )
 
@@ -305,10 +305,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "examine_stack",
     srcs = [
-        "lib/gprpp/examine_stack.cc",
+        "util/examine_stack.cc",
     ],
     hdrs = [
-        "lib/gprpp/examine_stack.h",
+        "util/examine_stack.h",
     ],
     external_deps = ["absl/types:optional"],
     deps = ["//:gpr_platform"],
@@ -340,7 +340,7 @@ grpc_cc_library(
     name = "gpr_manual_constructor",
     srcs = [],
     hdrs = [
-        "lib/gprpp/manual_constructor.h",
+        "util/manual_constructor.h",
     ],
     language = "c++",
     deps = [
@@ -365,12 +365,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "env",
     srcs = [
-        "lib/gprpp/linux/env.cc",
-        "lib/gprpp/posix/env.cc",
-        "lib/gprpp/windows/env.cc",
+        "util/linux/env.cc",
+        "util/posix/env.cc",
+        "util/windows/env.cc",
     ],
     hdrs = [
-        "lib/gprpp/env.h",
+        "util/env.h",
     ],
     external_deps = ["absl/types:optional"],
     deps = [
@@ -382,11 +382,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "directory_reader",
     srcs = [
-        "lib/gprpp/posix/directory_reader.cc",
-        "lib/gprpp/windows/directory_reader.cc",
+        "util/posix/directory_reader.cc",
+        "util/windows/directory_reader.cc",
     ],
     hdrs = [
-        "lib/gprpp/directory_reader.h",
+        "util/directory_reader.h",
     ],
     external_deps = [
         "absl/functional:function_ref",
@@ -402,7 +402,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chunked_vector",
-    hdrs = ["lib/gprpp/chunked_vector.h"],
+    hdrs = ["util/chunked_vector.h"],
     external_deps = [
         "absl/log:check",
     ],
@@ -416,17 +416,17 @@ grpc_cc_library(
 grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
-    public_hdrs = ["lib/gprpp/construct_destruct.h"],
+    public_hdrs = ["util/construct_destruct.h"],
     deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
     name = "status_helper",
     srcs = [
-        "lib/gprpp/status_helper.cc",
+        "util/status_helper.cc",
     ],
     hdrs = [
-        "lib/gprpp/status_helper.h",
+        "util/status_helper.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -451,7 +451,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "unique_type_name",
-    hdrs = ["lib/gprpp/unique_type_name.h"],
+    hdrs = ["util/unique_type_name.h"],
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
@@ -463,10 +463,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "validation_errors",
     srcs = [
-        "lib/gprpp/validation_errors.cc",
+        "util/validation_errors.cc",
     ],
     hdrs = [
-        "lib/gprpp/validation_errors.h",
+        "util/validation_errors.h",
     ],
     external_deps = [
         "absl/log:log",
@@ -480,7 +480,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "overload",
     language = "c++",
-    public_hdrs = ["lib/gprpp/overload.h"],
+    public_hdrs = ["util/overload.h"],
     deps = ["//:gpr_platform"],
 )
 
@@ -488,7 +488,7 @@ grpc_cc_library(
     name = "match",
     external_deps = ["absl/types:variant"],
     language = "c++",
-    public_hdrs = ["lib/gprpp/match.h"],
+    public_hdrs = ["util/match.h"],
     deps = [
         "overload",
         "//:gpr_platform",
@@ -502,7 +502,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     language = "c++",
-    public_hdrs = ["lib/gprpp/table.h"],
+    public_hdrs = ["util/table.h"],
     deps = [
         "bitset",
         "//:gpr_platform",
@@ -511,7 +511,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "packed_table",
-    hdrs = ["lib/gprpp/packed_table.h"],
+    hdrs = ["util/packed_table.h"],
     language = "c++",
     deps = [
         "sorted_pack",
@@ -523,7 +523,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "bitset",
     language = "c++",
-    public_hdrs = ["lib/gprpp/bitset.h"],
+    public_hdrs = ["util/bitset.h"],
     deps = [
         "useful",
         "//:gpr_platform",
@@ -533,7 +533,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "no_destruct",
     language = "c++",
-    public_hdrs = ["lib/gprpp/no_destruct.h"],
+    public_hdrs = ["util/no_destruct.h"],
     deps = [
         "construct_destruct",
         "//:gpr_platform",
@@ -543,10 +543,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tchar",
     srcs = [
-        "lib/gprpp/tchar.cc",
+        "util/tchar.cc",
     ],
     hdrs = [
-        "lib/gprpp/tchar.h",
+        "util/tchar.h",
     ],
     deps = ["//:gpr_platform"],
 )
@@ -1264,7 +1264,7 @@ grpc_cc_library(
         "absl/log:log",
     ],
     language = "c++",
-    public_hdrs = ["lib/gprpp/ref_counted.h"],
+    public_hdrs = ["util/ref_counted.h"],
     deps = [
         "atomic_utils",
         "down_cast",
@@ -1281,7 +1281,7 @@ grpc_cc_library(
         "absl/log:log",
     ],
     language = "c++",
-    public_hdrs = ["lib/gprpp/dual_ref_counted.h"],
+    public_hdrs = ["util/dual_ref_counted.h"],
     deps = [
         "down_cast",
         "ref_counted",
@@ -1295,10 +1295,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ref_counted_string",
     srcs = [
-        "lib/gprpp/ref_counted_string.cc",
+        "util/ref_counted_string.cc",
     ],
     hdrs = [
-        "lib/gprpp/ref_counted_string.h",
+        "util/ref_counted_string.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -1311,10 +1311,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "uuid_v4",
-    srcs = ["lib/gprpp/uuid_v4.cc"],
+    srcs = ["util/uuid_v4.cc"],
     external_deps = ["absl/strings:str_format"],
     language = "c++",
-    public_hdrs = ["lib/gprpp/uuid_v4.h"],
+    public_hdrs = ["util/uuid_v4.h"],
     deps = ["//:gpr"],
 )
 
@@ -1387,7 +1387,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:parse_address",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -1609,6 +1609,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "request_buffer",
+    srcs = [
+        "call/request_buffer.cc",
+    ],
+    hdrs = [
+        "call/request_buffer.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "call_spine",
+        "message",
+        "metadata",
+        "wait_set",
+    ],
+)
+
+grpc_cc_library(
     name = "slice_refcount",
     hdrs = [
         "lib/slice/slice_refcount.h",
@@ -1727,10 +1744,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "time",
     srcs = [
-        "lib/gprpp/time.cc",
+        "util/time.cc",
     ],
     hdrs = [
-        "lib/gprpp/time.h",
+        "util/time.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -1787,7 +1804,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "avl",
     hdrs = [
-        "lib/avl/avl.h",
+        "util/avl.h",
     ],
     deps = [
         "ref_counted",
@@ -1799,9 +1816,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time_averaged_stats",
-    srcs = ["lib/gprpp/time_averaged_stats.cc"],
+    srcs = ["util/time_averaged_stats.cc"],
     hdrs = [
-        "lib/gprpp/time_averaged_stats.h",
+        "util/time_averaged_stats.h",
     ],
     deps = ["//:gpr"],
 )
@@ -2707,7 +2724,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:parse_address",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -3041,10 +3058,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "per_cpu",
     srcs = [
-        "lib/gprpp/per_cpu.cc",
+        "util/per_cpu.cc",
     ],
     hdrs = [
-        "lib/gprpp/per_cpu.h",
+        "util/per_cpu.h",
     ],
     deps = [
         "useful",
@@ -3055,10 +3072,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_log",
     srcs = [
-        "lib/debug/event_log.cc",
+        "util/event_log.cc",
     ],
     hdrs = [
-        "lib/debug/event_log.h",
+        "util/event_log.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3075,10 +3092,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "load_file",
     srcs = [
-        "lib/gprpp/load_file.cc",
+        "util/load_file.cc",
     ],
     hdrs = [
-        "lib/gprpp/load_file.h",
+        "util/load_file.h",
     ],
     external_deps = [
         "absl/cleanup",
@@ -3160,7 +3177,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "single_set_ptr",
     hdrs = [
-        "lib/gprpp/single_set_ptr.h",
+        "util/single_set_ptr.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3218,7 +3235,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "notification",
     hdrs = [
-        "lib/gprpp/notification.h",
+        "util/notification.h",
     ],
     external_deps = ["absl/time"],
     deps = ["//:gpr"],
@@ -3606,7 +3623,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "subchannel_interface",
     hdrs = ["load_balancing/subchannel_interface.h"],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
     deps = [
         "dual_ref_counted",
         "iomgr_fwd",
@@ -3719,7 +3739,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:parse_address",
         "//:sockaddr_utils",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -3783,7 +3803,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "sorted_pack",
     hdrs = [
-        "lib/gprpp/sorted_pack.h",
+        "util/sorted_pack.h",
     ],
     language = "c++",
     deps = [
@@ -3795,7 +3815,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "type_list",
     hdrs = [
-        "lib/gprpp/type_list.h",
+        "util/type_list.h",
     ],
     language = "c++",
 )
@@ -3803,7 +3823,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "if_list",
     hdrs = [
-        "lib/gprpp/if_list.h",
+        "util/if_list.h",
     ],
     language = "c++",
     deps = ["//:gpr_platform"],
@@ -3913,7 +3933,7 @@ grpc_cc_library(
         "//:parse_address",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4099,7 +4119,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:tsi_base",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4202,17 +4222,17 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
 grpc_cc_library(
     name = "strerror",
     srcs = [
-        "lib/gprpp/strerror.cc",
+        "util/strerror.cc",
     ],
     hdrs = [
-        "lib/gprpp/strerror.h",
+        "util/strerror.h",
     ],
     external_deps = ["absl/strings:str_format"],
     deps = ["//:gpr_platform"],
@@ -4396,7 +4416,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4451,7 +4471,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4508,7 +4528,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -4564,10 +4584,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_matchers",
     srcs = [
-        "lib/matchers/matchers.cc",
+        "util/matchers.cc",
     ],
     hdrs = [
-        "lib/matchers/matchers.h",
+        "util/matchers.h",
     ],
     external_deps = [
         "absl/status",
@@ -5131,10 +5151,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "random_early_detection",
     srcs = [
-        "lib/backoff/random_early_detection.cc",
+        "util/random_early_detection.cc",
     ],
     hdrs = [
-        "lib/backoff/random_early_detection.h",
+        "util/random_early_detection.h",
     ],
     external_deps = [
         "absl/random:bit_gen_ref",
@@ -5843,7 +5863,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:tsi_ssl_credentials",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
         "//:xds_client",
     ],
@@ -5929,7 +5949,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
-        "//:uri_parser",
+        "//:uri",
         "//:xds_client",
     ],
 )
@@ -6327,7 +6347,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "down_cast",
-    hdrs = ["lib/gprpp/down_cast.h"],
+    hdrs = ["util/down_cast.h"],
     external_deps = [
         "absl/base:config",
         "absl/log:check",
@@ -6337,8 +6357,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "glob",
-    srcs = ["lib/gprpp/glob.cc"],
-    hdrs = ["lib/gprpp/glob.h"],
+    srcs = ["util/glob.cc"],
+    hdrs = ["util/glob.h"],
     external_deps = ["absl/strings"],
 )
 
@@ -6400,7 +6420,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xxhash_inline",
-    hdrs = ["lib/gprpp/xxhash_inline.h"],
+    hdrs = ["util/xxhash_inline.h"],
     external_deps = ["xxhash"],
     language = "c++",
     deps = ["//:gpr_platform"],
@@ -6837,7 +6857,7 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:parse_address",
         "//:promise",
-        "//:uri_parser",
+        "//:uri",
     ],
     alwayslink = 1,
 )
@@ -6913,7 +6933,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
     ],
 )
@@ -6986,7 +7006,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7049,7 +7069,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7074,7 +7094,7 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:orphanable",
         "//:parse_address",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7101,7 +7121,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_resolver",
         "//:orphanable",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7236,7 +7256,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
         "//:xds_client",
     ],
@@ -7273,7 +7293,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
         "//:work_serializer",
         "//:xds_client",
     ],
@@ -7596,7 +7616,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server",
         "//:sockaddr_utils",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7761,7 +7781,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
@@ -7827,7 +7847,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
-        "//:uri_parser",
+        "//:uri",
     ],
 )
 
