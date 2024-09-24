@@ -27,9 +27,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/thd.h"
 
 struct completed_thread {
   grpc_core::Thread thd;
