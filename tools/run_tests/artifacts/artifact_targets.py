@@ -205,7 +205,7 @@ class PythonArtifact:
 
             if self.arch == "x86":
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
-                
+
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"
