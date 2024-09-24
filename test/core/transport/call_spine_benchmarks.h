@@ -21,13 +21,13 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/notification.h"
 
 namespace grpc_core {
 
@@ -288,7 +288,10 @@ class UnstartedCallDestinationFixture {
         event_engine_.get());
     auto p =
         MakeCallPair(traits_->MakeClientInitialMetadata(), std::move(arena));
-    top_destination_->StartCall(std::move(p.handler));
+    p.handler.SpawnInfallible("initiator_setup", [&]() {
+      top_destination_->StartCall(std::move(p.handler));
+      return Empty{};
+    });
     auto handler = bottom_destination_->TakeHandler();
     absl::optional<CallHandler> started_handler;
     Notification started;

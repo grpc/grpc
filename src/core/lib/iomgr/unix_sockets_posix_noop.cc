@@ -26,10 +26,6 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
-
 void grpc_create_socketpair_if_unix(int /* sv */[2]) {
   // TODO: Either implement this for the non-Unix socket case or make
   // sure that it is never called in any such case. Until then, leave an

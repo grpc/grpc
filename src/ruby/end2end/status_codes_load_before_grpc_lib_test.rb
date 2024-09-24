@@ -18,6 +18,8 @@ this_dir = File.expand_path(File.dirname(__FILE__))
 grpc_lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(grpc_lib_dir) unless $LOAD_PATH.include?(grpc_lib_dir)
 
+require_relative './sanity_check_dlopen'
+
 def main
   fail('GRPC constant loaded before expected') if Object.const_defined?(:GRPC)
   require 'grpc/core/status_codes'

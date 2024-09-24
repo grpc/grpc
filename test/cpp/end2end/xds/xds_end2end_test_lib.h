@@ -217,8 +217,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      void WaitOnServingStatusChange(std::string uri,
-                                     grpc::StatusCode expected_status);
+      GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
+          const std::string& uri, grpc::StatusCode expected_status,
+          absl::Duration timeout = absl::Seconds(10));
 
      private:
       grpc_core::Mutex mu_;
@@ -475,11 +476,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1, std::vector<size_t> additional_backend_indxes = {},
+      int lb_weight = 1, std::vector<size_t> additional_backend_indexes = {},
       absl::string_view hostname = "") {
     std::vector<int> additional_ports;
-    additional_ports.reserve(additional_backend_indxes.size());
-    for (size_t idx : additional_backend_indxes) {
+    additional_ports.reserve(additional_backend_indexes.size());
+    for (size_t idx : additional_backend_indexes) {
       additional_ports.push_back(backends_[idx]->port());
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
@@ -497,7 +498,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns an endpoint for an unused port, for use in constructing an
   // EDS resource.
-  EdsResourceArgs::Endpoint MakeNonExistantEndpoint() {
+  EdsResourceArgs::Endpoint MakeNonExistentEndpoint() {
     return EdsResourceArgs::Endpoint(grpc_pick_unused_port_or_die());
   }
 
@@ -613,6 +614,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
+    bool echo_metadata_initially = false;
 
     RpcOptions() {}
 
@@ -689,6 +691,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       return *this;
     }
 
+    RpcOptions& set_echo_metadata_initially(bool value) {
+      echo_metadata_initially = value;
+      return *this;
+    }
+
     // Populates context and request.
     void SetupRpc(ClientContext* context, EchoRequest* request) const;
   };
@@ -741,7 +748,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                            const RpcOptions& rpc_options = RpcOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
-  // matching the specfied expected_message_prefix.
+  // matching the specified expected_message_prefix.
   // Any failure with a non-matching status or message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
       const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
@@ -779,7 +786,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Duration elapsed_time;
     EchoResponse response;
   };
-  std::vector<ConcurrentRpc> SendConcurrentRpcs(
+  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
       const grpc_core::DebugLocation& debug_location,
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options);
@@ -937,7 +944,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // sigma (standard deviation) to cover the probability area of 99.99994%. In
   // another word, for a sample with size "n" probability "p" error-tolerance
   // "k", we want the error always land within 5.00 sigma. The sigma of
-  // binominal distribution and be computed as sqrt(np(1-p)). Hence, we have
+  // binomial distribution and be computed as sqrt(np(1-p)). Hence, we have
   // the equation:
   //
   //   kn <= 5.00 * sqrt(np(1-p))
@@ -959,6 +966,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // message for a connection failure.
   static std::string MakeConnectionFailureRegex(absl::string_view prefix);
 
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a Tls handshake failure.
+  static std::string MakeTlsHandshakeFailureRegex(absl::string_view prefix);
+
   // Returns a private key pair, read from local files.
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(
       const char* key_path, const char* cert_path);
@@ -970,6 +981,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns XdsCredentials with mTLS fallback creds.
   static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials> CreateTlsChannelCredentials();
 
   // Creates various types of server credentials.
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();

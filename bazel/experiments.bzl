@@ -17,10 +17,10 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
-    "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
+    "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
@@ -28,14 +28,13 @@ EXPERIMENT_ENABLES = {
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
-    "peer_state_based_framing": "peer_state_based_framing",
     "pick_first_new": "pick_first_new",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
-    "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
+    "time_caching_in_party": "time_caching_in_party",
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
@@ -59,8 +58,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -107,8 +104,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
@@ -149,8 +144,6 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "multiping",
-                "peer_state_based_framing",
-                "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],

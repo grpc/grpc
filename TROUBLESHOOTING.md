@@ -22,9 +22,11 @@ Example
 ./helloworld_application_using_grpc --v=-1 --minloglevel=3
 ```
 
-## GRPC_VERBOSITY (DEPRECATED)
+## GRPC_VERBOSITY
 
-[Environment Variables Overview](doc/environment_variables.md)
+This is not recommended for gRPC C++. For gRPC C++ it is strongly recommended that you use absl to control gRPC verbosity. For Python, ObjC, PHP, and Ruby, GRPC_VERBOSITY will be supported. Users need to note that this will change settings for all libraries/binaries that use absl in the application. GRPC_VERBOSITY will alter the global absl settings, not just settings for gRPC.
+
+To learn how to set GRPC_VERBOSITY refer [Environment Variables Overview](doc/environment_variables.md)
 
 ## GRPC_TRACE
 

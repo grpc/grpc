@@ -29,8 +29,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config_parser.h"
@@ -39,6 +37,8 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 

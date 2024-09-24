@@ -28,12 +28,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
@@ -172,16 +172,13 @@ class ForEach {
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollReaderNext() {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      LOG(INFO) << DebugTag() << " PollReaderNext";
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO) << DebugTag() << " PollReaderNext";
     auto r = reader_next_();
     if (auto* p = r.value_if_ready()) {
       switch (NextValueTraits<ReaderResult>::Type(*p)) {
         case NextValueType::kValue: {
-          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            LOG(INFO) << DebugTag() << " PollReaderNext: got value";
-          }
+          GRPC_TRACE_LOG(promise_primitives, INFO)
+              << DebugTag() << " PollReaderNext: got value";
           Destruct(&reader_next_);
           auto action = action_factory_.Make(
               std::move(NextValueTraits<ReaderResult>::MutableValue(*p)));
@@ -190,15 +187,13 @@ class ForEach {
           return PollAction();
         }
         case NextValueType::kEndOfStream: {
-          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            LOG(INFO) << DebugTag() << " PollReaderNext: got end of stream";
-          }
+          GRPC_TRACE_LOG(promise_primitives, INFO)
+              << DebugTag() << " PollReaderNext: got end of stream";
           return Done<Result>::Make(false);
         }
         case NextValueType::kError: {
-          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-            LOG(INFO) << DebugTag() << " PollReaderNext: got error";
-          }
+          GRPC_TRACE_LOG(promise_primitives, INFO)
+              << DebugTag() << " PollReaderNext: got error";
           return Done<Result>::Make(true);
         }
       }
@@ -207,9 +202,7 @@ class ForEach {
   }
 
   Poll<Result> PollAction() {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      LOG(INFO) << DebugTag() << " PollAction";
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO) << DebugTag() << " PollAction";
     auto r = in_action_.promise();
     if (auto* p = r.value_if_ready()) {
       if (IsStatusOk(*p)) {

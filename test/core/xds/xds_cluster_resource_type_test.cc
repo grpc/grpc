@@ -36,13 +36,13 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
@@ -58,6 +58,7 @@
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/gcp_authn.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_protocol_options.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
@@ -70,6 +71,7 @@
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using envoy::extensions::filters::http::gcp_authn::v3::Audience;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
 using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
@@ -84,10 +86,9 @@ class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        &xds_cluster_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{
+            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error;
@@ -135,7 +136,7 @@ TEST_F(XdsClusterTest, Definition) {
   EXPECT_TRUE(resource_type->AllResourcesRequiredInSotW());
 }
 
-TEST_F(XdsClusterTest, UnparseableProto) {
+TEST_F(XdsClusterTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
@@ -585,7 +586,7 @@ TEST_F(ClusterTypeTest, AggregateClusterValid) {
               ::testing::ElementsAre("bar", "baz", "quux"));
 }
 
-TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
+TEST_F(ClusterTypeTest, AggregateClusterUnparsableProto) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
@@ -1030,7 +1031,7 @@ TEST_F(TlsConfigTest, UnknownTransportSocketType) {
       << decode_result.resource.status();
 }
 
-TEST_F(TlsConfigTest, UnparseableUpstreamTlsContext) {
+TEST_F(TlsConfigTest, UnparsableUpstreamTlsContext) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1274,7 +1275,7 @@ TEST_F(UpstreamConfigTest, UnknownUpstreamConfigType) {
       << decode_result.resource.status();
 }
 
-TEST_F(UpstreamConfigTest, UnparseableHttpProtocolOptions) {
+TEST_F(UpstreamConfigTest, UnparsableHttpProtocolOptions) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1643,87 +1644,22 @@ TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
   EXPECT_EQ(resource.override_host_statuses.ToString(), "{}");
 }
 
-using TelemetryLabelTest = XdsClusterTest;
+using MetadataTest = XdsClusterTest;
 
-TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
+MATCHER_P(JsonEq, json_str, "") {
+  std::string actual = JsonDump(arg);
+  bool ok = ::testing::ExplainMatchResult(json_str, actual, result_listener);
+  if (!ok) *result_listener << "Actual: " << actual;
+  return ok;
+}
+
+TEST_F(MetadataTest, UntypedMetadata) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
-  auto& label_map =
-      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
-  *label_map["service_name"].mutable_string_value() = "abc";
-  *label_map["service_namespace"].mutable_string_value() = "xyz";
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.service_telemetry_label.as_string_view(), "abc");
-  EXPECT_EQ(resource.namespace_telemetry_label.as_string_view(), "xyz");
-}
-
-TEST_F(TelemetryLabelTest, MissingMetadataField) {
-  Cluster cluster;
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-}
-
-TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
-  Cluster cluster;
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
-  auto& label_map = *filter_map["some_key"].mutable_fields();
-  *label_map["some_value"].mutable_string_value() = "abc";
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  auto& resource =
-      static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
-}
-
-TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {
-  Cluster cluster;
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
-  auto& label_map =
-      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
-  label_map["bool_value"].set_bool_value(true);
-  label_map["number_value"].set_number_value(3.14);
+  auto& label_map = *filter_map["filter_key"].mutable_fields();
   *label_map["string_value"].mutable_string_value() = "abc";
-  *label_map["service_name"].mutable_string_value() = "service";
-  label_map["null_value"].set_null_value(::google::protobuf::NULL_VALUE);
-  auto& list_value_values =
-      *label_map["list_value"].mutable_list_value()->mutable_values();
-  *list_value_values.Add()->mutable_string_value() = "efg";
-  list_value_values.Add()->set_number_value(3.14);
-  auto& struct_value_fields =
-      *label_map["struct_value"].mutable_struct_value()->mutable_fields();
-  struct_value_fields["bool_value"].set_bool_value(false);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
@@ -1732,9 +1668,41 @@ TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(), "service");
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
-              ::testing::IsEmpty());
+  ASSERT_EQ(resource.metadata.size(), 1);
+  auto* entry = resource.metadata.Find("filter_key");
+  ASSERT_NE(entry, nullptr);
+  ASSERT_EQ(entry->type(), XdsStructMetadataValue::Type());
+  EXPECT_THAT(DownCast<const XdsStructMetadataValue*>(entry)->json(),
+              JsonEq("{\"string_value\":\"abc\"}"));
+}
+
+// Test just one possible error from metadata validation, to make sure
+// they're being passed through.  A complete set of tests for metadata
+// validation is in xds_metadata_test.cc.
+TEST_F(MetadataTest, MetadataUnparseable) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map =
+      *cluster.mutable_metadata()->mutable_typed_filter_metadata();
+  auto& entry = filter_map["filter_key"];
+  entry.PackFrom(Audience());
+  entry.set_value(std::string("\0", 1));
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:metadata.typed_filter_metadata[filter_key].value["
+            "envoy.extensions.filters.http.gcp_authn.v3.Audience] "
+            "error:could not parse audience metadata]")
+      << decode_result.resource.status();
 }
 
 }  // namespace

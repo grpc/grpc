@@ -46,17 +46,17 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -687,7 +687,13 @@ class CoreEnd2endTestRegistry {
   class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
    public:                                                                   \
     CoreEnd2endTest_##suite##_##name() {}                                    \
-    void TestBody() override { RunTest(); }                                  \
+    void TestBody() override {                                               \
+      if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&            \
+          (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {         \
+        GTEST_SKIP() << "call-v3 not supported with poll poller";            \
+      }                                                                      \
+      RunTest();                                                             \
+    }                                                                        \
     void RunTest() override;                                                 \
                                                                              \
    private:                                                                  \

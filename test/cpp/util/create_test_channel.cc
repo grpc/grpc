@@ -21,11 +21,10 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(std::string, grpc_test_use_grpclb_with_child_policy, "",

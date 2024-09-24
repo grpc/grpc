@@ -35,9 +35,9 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/status_helper.h"
 
 grpc_slice grpc_chttp2_rst_stream_create(
     uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {
@@ -113,10 +113,9 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
-    if (GRPC_TRACE_FLAG_ENABLED(http)) {
-      LOG(INFO) << "[chttp2 transport=" << t << " stream=" << s
-                << "] received RST_STREAM(reason=" << reason << ")";
-    }
+    GRPC_TRACE_LOG(http, INFO)
+        << "[chttp2 transport=" << t << " stream=" << s
+        << "] received RST_STREAM(reason=" << reason << ")";
     grpc_error_handle error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(

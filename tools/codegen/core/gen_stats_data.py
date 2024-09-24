@@ -289,7 +289,7 @@ with open("src/core/telemetry/stats_data.h", "w") as H:
     print("#include <stdint.h>", file=H)
     print('#include "src/core/telemetry/histogram_view.h"', file=H)
     print('#include "absl/strings/string_view.h"', file=H)
-    print('#include "src/core/lib/gprpp/per_cpu.h"', file=H)
+    print('#include "src/core/util/per_cpu.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
 
@@ -302,6 +302,10 @@ with open("src/core/telemetry/stats_data.h", "w") as H:
         print(" public:", file=H)
         print("  static int BucketFor(int value);", file=H)
         print("  const uint64_t* buckets() const { return buckets_; }", file=H)
+        print(
+            "  size_t bucket_count() const { return %d; }" % shape.buckets,
+            file=H,
+        )
         print(
             "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left,"
             " const Histogram_%d_%d& right);"
