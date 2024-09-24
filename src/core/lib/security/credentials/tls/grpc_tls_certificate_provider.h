@@ -108,6 +108,8 @@ class StaticDataCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const;
+
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
@@ -147,6 +149,8 @@ class FileWatcherCertificateProvider final
 
   UniqueTypeName type() const override;
 
+  absl::Status ValidateCredentials() const;
+
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
  private:
@@ -183,7 +187,7 @@ class FileWatcherCertificateProvider final
   gpr_event shutdown_event_;
 
   // Guards members below.
-  Mutex mu_;
+  mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);
