@@ -1703,6 +1703,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
+    third_party/upb/upb/message/merge.c \
     third_party/upb/upb/message/message.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
@@ -1730,6 +1731,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
+    third_party/upb/upb/text/internal/encode.c \
     third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \

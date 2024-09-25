@@ -3110,6 +3110,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/map.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map_gencode_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map_sorter.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/merge.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/merge.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/tagged_ptr.h" role="src" />
@@ -3202,6 +3204,9 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text/internal/encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text/internal/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text/options.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/encode.c" role="src" />

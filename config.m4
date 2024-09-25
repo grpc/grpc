@@ -1365,6 +1365,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
+    third_party/upb/upb/message/merge.c \
     third_party/upb/upb/message/message.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
@@ -1392,6 +1393,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
+    third_party/upb/upb/text/internal/encode.c \
     third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
@@ -1717,6 +1719,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)

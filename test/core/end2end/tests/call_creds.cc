@@ -264,11 +264,17 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
 }
 
 CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
+  if (IsLocalConnectorSecureEnabled()) {
+    SKIP_IF_LOCAL_TCP_CREDS();
+  }
   TestRequestResponseWithPayloadAndCallCreds(*this, true);
 }
 
 CORE_END2END_TEST(PerCallCredsTest,
                   RequestResponseWithPayloadAndOverriddenCallCreds) {
+  if (IsLocalConnectorSecureEnabled()) {
+    SKIP_IF_LOCAL_TCP_CREDS();
+  }
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, true);
 }
 

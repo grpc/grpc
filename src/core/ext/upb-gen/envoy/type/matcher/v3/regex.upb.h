@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/regex.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
 #define ENVOY_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
@@ -85,6 +86,7 @@ UPB_INLINE const envoy_type_matcher_v3_RegexMatcher_GoogleRE2* envoy_type_matche
   const envoy_type_matcher_v3_RegexMatcher_GoogleRE2* default_val = NULL;
   const envoy_type_matcher_v3_RegexMatcher_GoogleRE2* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -108,6 +110,7 @@ UPB_INLINE upb_StringView envoy_type_matcher_v3_RegexMatcher_regex(const envoy_t
 
 UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_set_google_re2(envoy_type_matcher_v3_RegexMatcher *msg, envoy_type_matcher_v3_RegexMatcher_GoogleRE2* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher_GoogleRE2* envoy_type_matcher_v3_RegexMatcher_mutable_google_re2(envoy_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena) {
@@ -167,6 +170,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_type_matcher_v3_Regex
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -178,6 +182,7 @@ UPB_INLINE bool envoy_type_matcher_v3_RegexMatcher_GoogleRE2_has_max_program_siz
 
 UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_GoogleRE2_set_max_program_size(envoy_type_matcher_v3_RegexMatcher_GoogleRE2 *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_matcher_v3_RegexMatcher_GoogleRE2_mutable_max_program_size(envoy_type_matcher_v3_RegexMatcher_GoogleRE2* msg, upb_Arena* arena) {
@@ -233,6 +238,7 @@ UPB_INLINE const envoy_type_matcher_v3_RegexMatcher* envoy_type_matcher_v3_Regex
   const envoy_type_matcher_v3_RegexMatcher* default_val = NULL;
   const envoy_type_matcher_v3_RegexMatcher* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -256,6 +262,7 @@ UPB_INLINE upb_StringView envoy_type_matcher_v3_RegexMatchAndSubstitute_substitu
 
 UPB_INLINE void envoy_type_matcher_v3_RegexMatchAndSubstitute_set_pattern(envoy_type_matcher_v3_RegexMatchAndSubstitute *msg, envoy_type_matcher_v3_RegexMatcher* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_type_matcher_v3_RegexMatchAndSubstitute_mutable_pattern(envoy_type_matcher_v3_RegexMatchAndSubstitute* msg, upb_Arena* arena) {
