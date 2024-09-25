@@ -50,7 +50,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 
 namespace grpc_core {
 

@@ -3,7 +3,8 @@
  *     envoy/extensions/transport_sockets/tls/v3/common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -23,6 +24,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[5] = {
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -50,8 +52,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsParameter
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__TlsParameters_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__TlsParameters_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider__fields[3] = {
@@ -79,15 +82,16 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__PrivateKeyPr
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[8] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__WatchedDirectory_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[8] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__WatchedDirectory_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_TlsCertificate__fields[8] = {
@@ -120,8 +124,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsCertifica
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__TlsCertificate_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys__fields[1] = {
@@ -141,6 +146,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__TlsSessionTi
   })
 };
 
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__TlsSessionTicketKeys_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__TlsSessionTicketKeys_msg_init;
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -161,8 +167,9 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateP
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher__fields[3] = {
@@ -186,17 +193,18 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__SubjectAltNa
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[10] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__WatchedDirectory_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init},
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[10] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__WatchedDirectory_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateProviderPluginInstance_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__SubjectAltNameMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[15] = {
@@ -244,6 +252,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateV
   })
 };
 
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext_msg_init;
 const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init = {
   NULL,
   NULL,
@@ -253,6 +262,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__tls__v3__CertificateV
 #endif
 };
 
+const upb_MiniTable* envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init_ptr = &envoy__extensions__transport_0sockets__tls__v3__CertificateValidationContext__SystemRootCerts_msg_init;
 static const upb_MiniTable *messages_layout[8] = {
   &envoy__extensions__transport_0sockets__tls__v3__TlsParameters_msg_init,
   &envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init,

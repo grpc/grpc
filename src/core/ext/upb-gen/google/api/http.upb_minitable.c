@@ -3,7 +3,8 @@
  *     google/api/http.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,8 +13,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub google_api_Http_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal google_api_Http_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_Http__fields[2] = {
@@ -36,9 +38,10 @@ const upb_MiniTable google__api__Http_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_HttpRule_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__api__CustomHttpPattern_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init},
+const upb_MiniTable* google__api__Http_msg_init_ptr = &google__api__Http_msg_init;
+static const upb_MiniTableSubInternal google_api_HttpRule_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__api__CustomHttpPattern_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_HttpRule__fields[10] = {
@@ -81,6 +84,7 @@ const upb_MiniTable google__api__HttpRule_msg_init = {
   })
 };
 
+const upb_MiniTable* google__api__HttpRule_msg_init_ptr = &google__api__HttpRule_msg_init;
 static const upb_MiniTableField google_api_CustomHttpPattern__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -101,6 +105,7 @@ const upb_MiniTable google__api__CustomHttpPattern_msg_init = {
   })
 };
 
+const upb_MiniTable* google__api__CustomHttpPattern_msg_init_ptr = &google__api__CustomHttpPattern_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &google__api__Http_msg_init,
   &google__api__HttpRule_msg_init,

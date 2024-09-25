@@ -61,13 +61,12 @@ class Fuzzer {
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+    transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
         []() { Crash("Multiple concurrent reads"); });
-    transport_factory->SetAutoCompleteMessagesFromClient(false);
-    transport_factory->SetAbortOnUndrainedMessages(false);
-    transport_factory_ = transport_factory.get();
+    transport_factory_->SetAutoCompleteMessagesFromClient(false);
+    transport_factory_->SetAbortOnUndrainedMessages(false);
     xds_client_ = MakeRefCounted<XdsClient>(
-        std::move(*bootstrap), std::move(transport_factory),
+        std::move(*bootstrap), transport_factory_,
         grpc_event_engine::experimental::GetDefaultEventEngine(),
         /*metrics_reporter=*/nullptr, "foo agent", "foo version");
   }
@@ -322,7 +321,7 @@ class Fuzzer {
   }
 
   RefCountedPtr<XdsClient> xds_client_;
-  FakeXdsTransportFactory* transport_factory_;
+  RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
 
   // Maps of currently active watchers for each resource type, keyed by
   // resource name.

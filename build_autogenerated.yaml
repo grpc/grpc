@@ -1257,11 +1257,12 @@ libs:
   - src/core/xds/grpc/xds_routing.h
   - src/core/xds/grpc/xds_server_grpc.h
   - src/core/xds/grpc/xds_transport_grpc.h
+  - src/core/xds/xds_client/lrs_client.h
   - src/core/xds/xds_client/xds_api.h
   - src/core/xds/xds_client/xds_bootstrap.h
   - src/core/xds/xds_client/xds_channel_args.h
   - src/core/xds/xds_client/xds_client.h
-  - src/core/xds/xds_client/xds_client_stats.h
+  - src/core/xds/xds_client/xds_locality.h
   - src/core/xds/xds_client/xds_metrics.h
   - src/core/xds/xds_client/xds_resource_type.h
   - src/core/xds/xds_client/xds_resource_type_impl.h
@@ -2078,10 +2079,10 @@ libs:
   - src/core/xds/grpc/xds_routing.cc
   - src/core/xds/grpc/xds_server_grpc.cc
   - src/core/xds/grpc/xds_transport_grpc.cc
+  - src/core/xds/xds_client/lrs_client.cc
   - src/core/xds/xds_client/xds_api.cc
   - src/core/xds/xds_client/xds_bootstrap.cc
   - src/core/xds/xds_client/xds_client.cc
-  - src/core/xds/xds_client/xds_client_stats.cc
   deps:
   - upb_json_lib
   - upb_textformat_lib
@@ -3304,6 +3305,7 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3346,6 +3348,7 @@ libs:
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3506,6 +3509,7 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3541,12 +3545,15 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/text/encode.h
+  - third_party/upb/upb/text/internal/encode.h
+  - third_party/upb/upb/text/options.h
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3565,6 +3572,7 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/text/encode.c
+  - third_party/upb/upb/text/internal/encode.c
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
