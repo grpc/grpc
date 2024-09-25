@@ -271,7 +271,7 @@
   <Target Name="Protobuf_PrepareCompileOptions" Condition=" '@(Protobuf_Compile)' != '' ">
 
     <PropertyGroup Condition=" $(Protobuf_EnableNRT_Supported) == 'true' " >
-      <!-- Enable nullabe reference types if enabled in the project and not been overridden
+      <!-- Enable nullable reference types if enabled in the project and not been overridden
            by setting Protobuf_NullableReferenceTypes -->
       <Protobuf_NullableReferenceTypes Condition=" '$(Protobuf_NullableReferenceTypes)' == '' and '$(Nullable)' == 'Enable' ">Enable</Protobuf_NullableReferenceTypes>
     </PropertyGroup>

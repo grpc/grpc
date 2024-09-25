@@ -33,7 +33,7 @@
 
   <Target Name="_gRPC_PrepareCompileOptions" AfterTargets="Protobuf_PrepareCompileOptions">
 
-    <PropertyGroup>
+    <PropertyGroup Condition=" $(Protobuf_EnableNRT_Supported) == 'true' " >
       <!-- Enable nullabe reference types if enabled in the project and not been overridden
            by setting gRPC_NullableReferenceTypes -->
       <gRPC_NullableReferenceTypes Condition=" '$(gRPC_NullableReferenceTypes)' == '' and '$(Nullable)' == 'Enable' ">Enable</gRPC_NullableReferenceTypes>
