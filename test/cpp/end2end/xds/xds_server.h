@@ -371,7 +371,7 @@ class AdsServiceImpl
       }
       if (check_version_callback_ != nullptr) {
         check_version_callback_(request.type_url(),
-                               client_resource_type_version);
+                                client_resource_type_version);
       }
     } else {
       int client_nonce;
