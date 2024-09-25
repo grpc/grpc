@@ -1,5 +1,0 @@
-# Install Rust and Cargo needed by the cryptography package 
-# (requires a separate installation as it's not included with the base image)
-ENV RUST_VERSION 1.81.0
-<%text>RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RUST_VERSION}
-ENV PATH "${HOME}/.cargo/bin:${PATH}"</%text>

@@ -15,9 +15,7 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_1_x86/Dockerfile.template`!!!
 
 FROM quay.io/pypa/musllinux_1_1_i686:2024-09-09-f386546
-# 2023-09-17-ae90a16
 
-# Install Python build requirements
 #===================================
 # Install Python build requirements
 # TODO: Update cython bounds as we are using cython 3.0.0 now

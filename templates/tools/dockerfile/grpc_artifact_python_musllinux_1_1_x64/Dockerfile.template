@@ -17,7 +17,6 @@
   # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_1_x64/Dockerfile.template`!!!
   
   FROM quay.io/pypa/musllinux_1_1_x86_64:2024-09-09-f386546
-  # 2023-09-17-ae90a16
   
   <%include file="../python_pip_builds.include"/>
   

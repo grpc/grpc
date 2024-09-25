@@ -17,7 +17,6 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_x86/Dockerfile.template`!!!  
 
 FROM quay.io/pypa/manylinux2014_i686:2024-09-09-f386546
-# 2023-09-17-ae90a16
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
