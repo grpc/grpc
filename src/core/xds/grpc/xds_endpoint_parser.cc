@@ -246,8 +246,8 @@ absl::optional<ParsedLocality> LocalityParse(
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".lb_endpoints[", i, "]"));
-    auto endpoint = EndpointAddressesParse(
-        context, lb_endpoints[i], proxy_address, errors);
+    auto endpoint =
+        EndpointAddressesParse(context, lb_endpoints[i], proxy_address, errors);
     if (endpoint.has_value()) {
       for (const auto& address : endpoint->addresses()) {
         bool inserted = address_set->insert(address).second;

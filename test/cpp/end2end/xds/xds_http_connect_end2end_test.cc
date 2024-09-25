@@ -75,7 +75,10 @@ TEST_P(XdsHttpProxyTest, TransportProxyInClusterAndProxyAddressInEndpoint) {
   socket_address->set_address(grpc_core::LocalIp());
   socket_address->set_port_value(
       grpc_end2end_http_proxy_get_proxy_port(http_proxy_));
-  auto& metadata_map = *endpoints.mutable_endpoints(0)->mutable_lb_endpoints(0)->mutable_metadata()->mutable_typed_filter_metadata();
+  auto& metadata_map = *endpoints.mutable_endpoints(0)
+                            ->mutable_lb_endpoints(0)
+                            ->mutable_metadata()
+                            ->mutable_typed_filter_metadata();
   metadata_map["envoy.http11_proxy_transport_socket.proxy_address"].PackFrom(
       proxy_address_proto);
   balancer_->ads_service()->SetEdsResource(endpoints);
@@ -116,7 +119,10 @@ TEST_P(XdsHttpProxyTest, ProxyAddressInEndpointButNoTransportProxyInCluster) {
   socket_address->set_address(grpc_core::LocalIp());
   socket_address->set_port_value(
       grpc_end2end_http_proxy_get_proxy_port(http_proxy_));
-  auto& metadata_map = *endpoints.mutable_endpoints(0)->mutable_lb_endpoints(0)->mutable_metadata()->mutable_typed_filter_metadata();
+  auto& metadata_map = *endpoints.mutable_endpoints(0)
+                            ->mutable_lb_endpoints(0)
+                            ->mutable_metadata()
+                            ->mutable_typed_filter_metadata();
   metadata_map["envoy.http11_proxy_transport_socket.proxy_address"].PackFrom(
       proxy_address_proto);
   balancer_->ads_service()->SetEdsResource(endpoints);

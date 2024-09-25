@@ -136,7 +136,7 @@ CommonTlsContext Http11ProxyUpstreamTransportParse(
           http_11_proxy);
   if (transport_socket == nullptr) return {};
   ValidationErrors::ScopedField field(errors, ".transport_socket.typed_config");
-  const auto* typed_config = 
+  const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
   auto wrapped_extension = ExtractXdsExtension(context, typed_config, errors);
   if (!wrapped_extension.has_value()) return {};
@@ -481,8 +481,8 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
-    ValidationErrors::ScopedField field(
-        &errors, ".transport_socket.typed_config");
+    ValidationErrors::ScopedField field(&errors,
+                                        ".transport_socket.typed_config");
     const auto* typed_config =
         envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
     auto extension = ExtractXdsExtension(context, typed_config, &errors);

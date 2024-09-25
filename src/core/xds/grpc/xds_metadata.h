@@ -140,8 +140,7 @@ class XdsAddressMetadataValue : public XdsMetadataValue {
 
  private:
   bool Equals(const XdsMetadataValue& other) const override {
-    return address_ ==
-           DownCast<const XdsAddressMetadataValue&>(other).address_;
+    return address_ == DownCast<const XdsAddressMetadataValue&>(other).address_;
   }
 
   std::string address_;

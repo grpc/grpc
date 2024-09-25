@@ -1273,8 +1273,7 @@ TEST_F(XdsEndpointTest, HttpProxyInEndpoint) {
       *lb_endpoint->mutable_metadata()->mutable_typed_filter_metadata();
   typed_metadata_map["envoy.http11_proxy_transport_socket.proxy_address"]
       .PackFrom(address_proto);
-  socket_address = lb_endpoint
-                       ->mutable_endpoint()
+  socket_address = lb_endpoint->mutable_endpoint()
                        ->mutable_address()
                        ->mutable_socket_address();
   socket_address->set_address("127.0.0.1");
@@ -1330,8 +1329,7 @@ TEST_F(XdsEndpointTest, HttpProxyInLocality) {
   locality_name->set_zone("myzone");
   locality_name->set_sub_zone("mysubzone");
   auto* lb_endpoint = locality->add_lb_endpoints();
-  socket_address = lb_endpoint
-                       ->mutable_endpoint()
+  socket_address = lb_endpoint->mutable_endpoint()
                        ->mutable_address()
                        ->mutable_socket_address();
   socket_address->set_address("127.0.0.1");
@@ -1391,11 +1389,10 @@ TEST_F(XdsEndpointTest, HttpProxyEndpointSupercedesLocality) {
   socket_address->set_port_value(456);
   auto& endpoint_typed_metadata_map =
       *lb_endpoint->mutable_metadata()->mutable_typed_filter_metadata();
-  endpoint_typed_metadata_map[
-      "envoy.http11_proxy_transport_socket.proxy_address"]
-      .PackFrom(address_proto);
-  socket_address = lb_endpoint
-                       ->mutable_endpoint()
+  endpoint_typed_metadata_map
+      ["envoy.http11_proxy_transport_socket.proxy_address"]
+          .PackFrom(address_proto);
+  socket_address = lb_endpoint->mutable_endpoint()
                        ->mutable_address()
                        ->mutable_socket_address();
   socket_address->set_address("127.0.0.1");
@@ -1454,11 +1451,10 @@ TEST_F(XdsEndpointTest, HttpProxyIgnoredIfNotEnabled) {
   socket_address->set_port_value(456);
   auto& endpoint_typed_metadata_map =
       *lb_endpoint->mutable_metadata()->mutable_typed_filter_metadata();
-  endpoint_typed_metadata_map[
-      "envoy.http11_proxy_transport_socket.proxy_address"]
-      .PackFrom(address_proto);
-  socket_address = lb_endpoint
-                       ->mutable_endpoint()
+  endpoint_typed_metadata_map
+      ["envoy.http11_proxy_transport_socket.proxy_address"]
+          .PackFrom(address_proto);
+  socket_address = lb_endpoint->mutable_endpoint()
                        ->mutable_address()
                        ->mutable_socket_address();
   socket_address->set_address("127.0.0.1");

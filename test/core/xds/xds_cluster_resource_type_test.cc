@@ -75,9 +75,9 @@ using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using envoy::extensions::filters::http::gcp_authn::v3::Audience;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
-using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using envoy::extensions::transport_sockets::http_11_proxy::v3::
     Http11ProxyUpstreamTransport;
+using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using envoy::extensions::upstreams::http::v3::HttpProtocolOptions;
 using xds::type::v3::TypedStruct;
 

@@ -36,8 +36,8 @@ absl::optional<grpc_resolved_address> XdsHttpProxyMapper::MapAddress(
   if (!proxy_address_str.has_value()) return absl::nullopt;
   auto proxy_address = StringToSockaddr(*proxy_address_str);
   if (!proxy_address.ok()) {
-    LOG(ERROR) << "error parsing address \"" << *proxy_address_str << "\": "
-               << proxy_address.status();
+    LOG(ERROR) << "error parsing address \"" << *proxy_address_str
+               << "\": " << proxy_address.status();
     return absl::nullopt;
   }
   auto endpoint_address_str = grpc_sockaddr_to_string(&endpoint_address, true);

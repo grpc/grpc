@@ -152,8 +152,7 @@ XdsMetadataMap ParseXdsMetadataMap(
           ParseGcpAuthnAudience(context, std::move(*extension), errors);
     } else if (XdsHttpConnectEnabled() &&
                extension->type == XdsAddressMetadataValue::Type()) {
-      metadata_value =
-          ParseAddress(context, std::move(*extension), errors);
+      metadata_value = ParseAddress(context, std::move(*extension), errors);
     }
     if (metadata_value != nullptr) {
       metadata_map.Insert(key, std::move(metadata_value));
