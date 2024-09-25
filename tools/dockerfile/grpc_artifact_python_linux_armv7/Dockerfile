@@ -1,4 +1,4 @@
-# Copyright 2020 The gRPC Authors
+# Copyright 2024 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,6 +66,9 @@ ENV CXX ${CROSS_TRIPLE}-g++
 # TODO(jtattermusch): Remove this hack when possible.
 RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
 
+# TODO: simplify the list of third_party modules list
+# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
+# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule  
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty

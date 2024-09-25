@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2024 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ FROM quay.io/pypa/musllinux_1_1_i686:2024-09-09-f386546
 
 #===================================
 # Install Python build requirements
-# TODO: Update cython bounds as we are using cython 3.0.0 now
-RUN /opt/python/cp36-cp36m/bin/pip install --upgrade 'cython<4.0.0rc1'
-RUN /opt/python/cp37-cp37m/bin/pip install --upgrade 'cython<4.0.0rc1'
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython<4.0.0rc1'
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython<4.0.0rc1'
 RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython<4.0.0rc1'
@@ -43,6 +40,9 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && rm -rf ccache-4.7.5 ccache.tar.gz
 
 
+# TODO: simplify the list of third_party modules list
+# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
+# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule  
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
 RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty
