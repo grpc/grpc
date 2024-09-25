@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2024 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,25 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Contains build targets used by Starlark files in the bazel/ directory.
-"""
+set -ex
 
-licenses(["notice"])
+BASEDIR=$(dirname "$0")/../..
+cd "$BASEDIR";
 
-package(default_visibility = ["//:__subpackages__"])
+# Run tests for grpcio_tests
+pushd src/python/grpcio_tests;
+  python3 setup.py test_lite
+  python3 setup.py test_aio
+  python3 setup.py test_py3_only
+popd;
 
-filegroup(
-    name = "_single_module_tester",
-    srcs = ["_single_module_tester.py"],
-)
-
-filegroup(
-    name = "_gevent_test_main",
-    srcs = ["_gevent_test_main.py"],
-)
-
-filegroup(
-    name = "_logging_threshold_test_main",
-    srcs = ["_logging_threshold_test_main.py"],
-)
+chmod -R 755 src/

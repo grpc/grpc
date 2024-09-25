@@ -637,12 +637,14 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                 UDS);
           }},
 #endif
+
       CoreTestConfiguration{"Chttp2FullstackLocalIpv4",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                                 FEATURE_MASK_IS_HTTP2 |
                                 FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
                             nullptr,
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {
@@ -655,7 +657,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
                                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                                 FEATURE_MASK_IS_HTTP2 |
                                 FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+                                FEATURE_MASK_IS_LOCAL_TCP_CREDS,
                             nullptr,
                             [](const ChannelArgs& /*client_args*/,
                                const ChannelArgs& /*server_args*/) {

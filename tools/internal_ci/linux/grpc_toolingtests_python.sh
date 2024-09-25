@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2024 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,25 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Contains build targets used by Starlark files in the bazel/ directory.
-"""
+set -ex
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-licenses(["notice"])
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-package(default_visibility = ["//:__subpackages__"])
+export DOCKERFILE_DIR=tools/dockerfile/distribtest/python_dev_ubuntu2204_x64
+export DOCKER_RUN_SCRIPT=tools/distrib/install_python_modules_and_run_tests.sh
+export GRPC_TEST_REPORT_BASE_DIR=reports
 
-filegroup(
-    name = "_single_module_tester",
-    srcs = ["_single_module_tester.py"],
-)
-
-filegroup(
-    name = "_gevent_test_main",
-    srcs = ["_gevent_test_main.py"],
-)
-
-filegroup(
-    name = "_logging_threshold_test_main",
-    srcs = ["_logging_threshold_test_main.py"],
-)
+exec tools/run_tests/dockerize/build_and_run_docker.sh
