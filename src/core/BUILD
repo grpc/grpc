@@ -4099,6 +4099,7 @@ grpc_cc_library(
         "channel_args",
         "closure",
         "error",
+        "experiments",
         "grpc_sockaddr",
         "iomgr_fwd",
         "resolved_address",

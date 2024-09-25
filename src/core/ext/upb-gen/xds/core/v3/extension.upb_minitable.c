@@ -3,7 +3,8 @@
  *     xds/core/v3/extension.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -14,8 +15,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_core_v3_TypedExtensionConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_core_v3_TypedExtensionConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_core_v3_TypedExtensionConfig__fields[2] = {
@@ -36,6 +38,7 @@ const upb_MiniTable xds__core__v3__TypedExtensionConfig_msg_init = {
   })
 };
 
+const upb_MiniTable* xds__core__v3__TypedExtensionConfig_msg_init_ptr = &xds__core__v3__TypedExtensionConfig_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &xds__core__v3__TypedExtensionConfig_msg_init,
 };

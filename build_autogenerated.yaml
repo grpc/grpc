@@ -3303,6 +3303,7 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3345,6 +3346,7 @@ libs:
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3505,6 +3507,7 @@ libs:
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/message/copy.h
+  - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
   - third_party/upb/upb/reflection/def.h
   - third_party/upb/upb/reflection/def.hpp
@@ -3540,12 +3543,15 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/text/encode.h
+  - third_party/upb/upb/text/internal/encode.h
+  - third_party/upb/upb/text/options.h
   src:
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/message/copy.c
+  - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
   - third_party/upb/upb/reflection/def_type.c
   - third_party/upb/upb/reflection/desc_state.c
@@ -3564,6 +3570,7 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/text/encode.c
+  - third_party/upb/upb/text/internal/encode.c
   deps:
   - upb_mini_descriptor_lib
   - upb_wire_lib
@@ -12973,6 +12980,35 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: local_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  src:
+  - test/core/security/local_security_connector_test.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: log_too_many_open_files_test
   gtest: true
   build: test

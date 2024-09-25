@@ -3,7 +3,8 @@
  *     envoy/config/metrics/v3/metrics_service.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_METRICS_V3_METRICS_SERVICE_PROTO_UPB_H_
 #define ENVOY_CONFIG_METRICS_V3_METRICS_SERVICE_PROTO_UPB_H_
@@ -82,6 +83,7 @@ UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_metrics_v
   const struct envoy_config_core_v3_GrpcService* default_val = NULL;
   const struct envoy_config_core_v3_GrpcService* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -98,6 +100,7 @@ UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_metrics_v3_Metri
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -145,6 +148,7 @@ UPB_INLINE int32_t envoy_config_metrics_v3_MetricsServiceConfig_histogram_emit_m
 
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_grpc_service(envoy_config_metrics_v3_MetricsServiceConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_metrics_v3_MetricsServiceConfig_mutable_grpc_service(envoy_config_metrics_v3_MetricsServiceConfig* msg, upb_Arena* arena) {
@@ -157,6 +161,7 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_metrics_v3_Metr
 }
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_report_counters_as_deltas(envoy_config_metrics_v3_MetricsServiceConfig *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_metrics_v3_MetricsServiceConfig_mutable_report_counters_as_deltas(envoy_config_metrics_v3_MetricsServiceConfig* msg, upb_Arena* arena) {

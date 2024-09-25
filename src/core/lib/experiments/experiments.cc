@@ -47,6 +47,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -122,6 +126,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -190,6 +196,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -265,6 +275,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -333,6 +345,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -408,6 +424,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},

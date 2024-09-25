@@ -93,8 +93,6 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     static const auto* const allowed_logs_by_module =
         new std::map<absl::string_view, std::regex>(
             {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
-             {"chttp2_transport.cc",
-              std::regex("Sending goaway.*Channel Destroyed")},
              {"chaotic_good_server.cc",
               std::regex("Failed to bind some addresses for.*")},
              {"log.cc",
