@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-from typing import AsyncIterable
+from typing import AsyncIterable, Union
 
 import grpc
 from grpc.aio._metadata import Metadata
@@ -47,7 +47,7 @@ async def block_until_certain_state(
         state = channel.get_state()
 
 
-def inject_callbacks(call: aio.Call):
+def inject_callbacks(call: Union[aio.Call, aio.ServicerContext]):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):

@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#! /bin/bash -ex
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Contains build targets used by Starlark files in the bazel/ directory.
-"""
-
-licenses(["notice"])
-
-package(default_visibility = ["//:__subpackages__"])
-
-filegroup(
-    name = "_gevent_test_main",
-    srcs = ["_gevent_test_main.py"],
-)
-
-filegroup(
-    name = "_run_time_type_check_main",
-    srcs = ["_run_time_type_check_main.py"],
-)
+python3 -m pip install mypy==1.2.0
+mypy --explicit-package-bases --config "setup.cfg"

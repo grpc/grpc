@@ -34,6 +34,7 @@ def _async_to_sync_decorator(f: Callable, loop: asyncio.AbstractEventLoop):
 
 
 def _get_default_loop(debug=True):
+    loop: asyncio.AbstractEventLoop = None
     try:
         loop = asyncio.get_event_loop()
     except:
