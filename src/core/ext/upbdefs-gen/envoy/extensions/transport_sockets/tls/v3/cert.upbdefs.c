@@ -3,7 +3,8 @@
  *     envoy/extensions/transport_sockets/tls/v3/cert.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h"
