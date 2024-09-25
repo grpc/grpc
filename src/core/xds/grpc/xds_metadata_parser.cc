@@ -21,15 +21,19 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "upb/base/string_view.h"
 #include "upb/text/encode.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
@@ -112,7 +116,7 @@ std::unique_ptr<XdsMetadataValue> ParseAddress(
     errors->AddError(addr_uri.status().message());
     return nullptr;
   }
-  return std::make_unqiue<XdsAddressMetadataValue>(std::move(*addr_uri));
+  return std::make_unique<XdsAddressMetadataValue>(std::move(*addr_uri));
 }
 
 }  // namespace
@@ -139,15 +143,20 @@ XdsMetadataMap ParseXdsMetadataMap(
             typed_entry),
         errors);
     if (!extension.has_value()) continue;
-    // TODO(roth): If we ever need to support another type here, refactor
+    // TODO(roth): If we start to need a lot of types here, refactor
     // this into a separate registry.
+    std::unique_ptr<XdsMetadataValue> metadata_value;
     if (XdsGcpAuthFilterEnabled() &&
         extension->type == XdsGcpAuthnAudienceMetadataValue::Type()) {
-      auto metadata_value =
+      metadata_value =
           ParseGcpAuthnAudience(context, std::move(*extension), errors);
-      if (metadata_value != nullptr) {
-        metadata_map.Insert(key, std::move(metadata_value));
-      }
+    } else if (XdsHttpConnectEnabled() &&
+               extension->type == XdsAddressMetadataValue::Type()) {
+      metadata_value =
+          ParseAddress(context, std::move(*extension), errors);
+    }
+    if (metadata_value != nullptr) {
+      metadata_map.Insert(key, std::move(metadata_value));
     }
   }
   // Then, try filter_metadata.

@@ -624,6 +624,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
     "//src/core:grpc_stateful_session_filter",
+    "//src/core:xds_http_proxy_mapper",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -4958,6 +4959,11 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "envoy_config_core_upb",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 

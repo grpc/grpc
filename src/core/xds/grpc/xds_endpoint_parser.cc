@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
@@ -88,9 +89,27 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
+std::string GetProxyAddressFromMetadata(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_core_v3_Metadata* metadata, ValidationErrors* errors) {
+  if (XdsHttpConnectEnabled() && metadata != nullptr) {
+    XdsMetadataMap metadata_map =
+        ParseXdsMetadataMap(context, metadata, errors);
+    auto* proxy_address_entry =
+        metadata_map.Find("envoy.http11_proxy_transport_socket.proxy_address");
+    if (proxy_address_entry != nullptr &&
+        proxy_address_entry->type() == XdsAddressMetadataValue::Type()) {
+      return DownCast<const XdsAddressMetadataValue*>(proxy_address_entry)
+          ->address();
+    }
+  }
+  return "";
+}
+
 absl::optional<EndpointAddresses> EndpointAddressesParse(
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
-    ValidationErrors* errors) {
+    absl::string_view locality_proxy_address, ValidationErrors* errors) {
   // health_status
   const int32_t health_status =
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
@@ -108,6 +127,10 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
       errors->AddError("must be greater than 0");
     }
   }
+  // metadata
+  std::string proxy_address = GetProxyAddressFromMetadata(
+      context, envoy_config_endpoint_v3_LbEndpoint_metadata(lb_endpoint),
+      errors);
   // endpoint
   std::vector<grpc_resolved_address> addresses;
   absl::string_view hostname;
@@ -151,6 +174,11 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   if (!hostname.empty()) {
     args = args.Set(GRPC_ARG_ADDRESS_NAME, hostname);
   }
+  if (!proxy_address.empty()) {
+    args = args.Set(GRPC_ARG_XDS_HTTP_PROXY, proxy_address);
+  } else if (!locality_proxy_address.empty()) {
+    args = args.Set(GRPC_ARG_XDS_HTTP_PROXY, locality_proxy_address);
+  }
   return EndpointAddresses(addresses, args);
 }
 
@@ -170,6 +198,7 @@ using ResolvedAddressSet =
     std::set<grpc_resolved_address, ResolvedAddressLessThan>;
 
 absl::optional<ParsedLocality> LocalityParse(
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
     ResolvedAddressSet* address_set, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
@@ -204,15 +233,11 @@ absl::optional<ParsedLocality> LocalityParse(
   parsed_locality.locality.name = MakeRefCounted<XdsLocalityName>(
       std::move(region), std::move(zone), std::move(sub_zone));
   // metadata
-  const envoy_config_core_v3_Metadata* metadata =
+  std::string proxy_address = GetProxyAddressFromMetadata(
+      context,
       envoy_config_endpoint_v3_LocalityLbEndpoints_metadata(
-          locality_lb_endpoints);
-  if (XdsHttpConnectEnabled() && metadata != nullptr) {
-    XdsMetadataMap metadata_map =
-        ParseXdsMetadataMap(context, metadata, errors);
-// FIXME
-
-  }
+          locality_lb_endpoints),
+      errors);
   // lb_endpoints
   size_t size;
   const envoy_config_endpoint_v3_LbEndpoint* const* lb_endpoints =
@@ -221,7 +246,8 @@ absl::optional<ParsedLocality> LocalityParse(
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".lb_endpoints[", i, "]"));
-    auto endpoint = EndpointAddressesParse(lb_endpoints[i], errors);
+    auto endpoint = EndpointAddressesParse(
+        context, lb_endpoints[i], proxy_address, errors);
     if (endpoint.has_value()) {
       for (const auto& address : endpoint->addresses()) {
         bool inserted = address_set->insert(address).second;
@@ -293,7 +319,7 @@ void DropParseAndAppend(
 }
 
 absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
-    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment*
         cluster_load_assignment) {
   ValidationErrors errors;
@@ -308,7 +334,8 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
             cluster_load_assignment, &locality_size);
     for (size_t i = 0; i < locality_size; ++i) {
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
-      auto parsed_locality = LocalityParse(endpoints[i], &address_set, &errors);
+      auto parsed_locality =
+          LocalityParse(context, endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
         CHECK_NE(parsed_locality->locality.lb_weight, 0u);
         // Make sure prorities is big enough. Note that they might not
