@@ -26,10 +26,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/mpscq.h"
 
 typedef struct grpc_cq_completion {
   grpc_core::ManualConstructor<

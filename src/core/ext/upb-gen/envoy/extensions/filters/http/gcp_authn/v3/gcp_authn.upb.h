@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_GCP_AUTHN_V3_GCP_AUTHN_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_FILTERS_HTTP_GCP_AUTHN_V3_GCP_AUTHN_PROTO_UPB_H_
@@ -82,6 +83,7 @@ UPB_INLINE const struct envoy_config_core_v3_HttpUri* envoy_extensions_filters_h
   const struct envoy_config_core_v3_HttpUri* default_val = NULL;
   const struct envoy_config_core_v3_HttpUri* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpUri_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -98,6 +100,7 @@ UPB_INLINE const struct envoy_config_core_v3_RetryPolicy* envoy_extensions_filte
   const struct envoy_config_core_v3_RetryPolicy* default_val = NULL;
   const struct envoy_config_core_v3_RetryPolicy* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RetryPolicy_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -114,6 +117,7 @@ UPB_INLINE const envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* en
   const envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* default_val = NULL;
   const envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -130,6 +134,7 @@ UPB_INLINE const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* envoy_e
   const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* default_val = NULL;
   const envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -158,6 +163,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_extensions_filters_http_
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -169,6 +175,7 @@ UPB_INLINE bool envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_
 
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_set_http_uri(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig *msg, struct envoy_config_core_v3_HttpUri* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpUri_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HttpUri* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_mutable_http_uri(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg, upb_Arena* arena) {
@@ -181,6 +188,7 @@ UPB_INLINE struct envoy_config_core_v3_HttpUri* envoy_extensions_filters_http_gc
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_set_retry_policy(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig *msg, struct envoy_config_core_v3_RetryPolicy* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RetryPolicy_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RetryPolicy* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_mutable_retry_policy(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg, upb_Arena* arena) {
@@ -193,6 +201,7 @@ UPB_INLINE struct envoy_config_core_v3_RetryPolicy* envoy_extensions_filters_htt
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_set_cache_config(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig *msg, envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_mutable_cache_config(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg, upb_Arena* arena) {
@@ -205,6 +214,7 @@ UPB_INLINE struct envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* e
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_set_token_header(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig *msg, envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_gcp_authn_v3_TokenHeader* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_mutable_token_header(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg, upb_Arena* arena) {
@@ -221,6 +231,7 @@ UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_
 }
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_set_timeout(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_mutable_timeout(envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig* msg, upb_Arena* arena) {
@@ -330,6 +341,7 @@ UPB_INLINE const struct google_protobuf_UInt64Value* envoy_extensions_filters_ht
   const struct google_protobuf_UInt64Value* default_val = NULL;
   const struct google_protobuf_UInt64Value* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -341,6 +353,7 @@ UPB_INLINE bool envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_has_
 
 UPB_INLINE void envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_set_cache_size(envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_mutable_cache_size(envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig* msg, upb_Arena* arena) {

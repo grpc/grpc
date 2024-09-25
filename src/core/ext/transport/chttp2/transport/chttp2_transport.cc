@@ -75,12 +75,6 @@
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -108,8 +102,14 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
@@ -1361,10 +1361,7 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
   });
 }
 
-static void send_initial_metadata_locked(
-    grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
-    grpc_transport_stream_op_batch_payload* op_payload,
-    grpc_chttp2_transport* t, grpc_closure* on_complete) {
+static void trace_annotations(grpc_chttp2_stream* s) {
   if (!grpc_core::IsCallTracerInTransportEnabled()) {
     if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
@@ -1383,6 +1380,13 @@ static void send_initial_metadata_locked(
               .Add(s->flow_control.stats()));
     }
   }
+}
+
+static void send_initial_metadata_locked(
+    grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
+    grpc_transport_stream_op_batch_payload* op_payload,
+    grpc_chttp2_transport* t, grpc_closure* on_complete) {
+  trace_annotations(s);
   if (t->is_client && t->channelz_socket != nullptr) {
     t->channelz_socket->RecordStreamStartedFromLocal();
   }
@@ -2915,48 +2919,48 @@ static void next_bdp_ping_timer_expired_locked(
 }
 
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
-                                               bool is_client) {
+                                               const bool is_client) {
   grpc_chttp2_config_default_keepalive_args(grpc_core::ChannelArgs::FromC(args),
                                             is_client);
 }
 
-void grpc_chttp2_config_default_keepalive_args(
-    const grpc_core::ChannelArgs& channel_args, bool is_client) {
-  const auto keepalive_time =
+static void grpc_chttp2_config_default_keepalive_args_client(
+    const grpc_core::ChannelArgs& channel_args) {
+  g_default_client_keepalive_time =
       std::max(grpc_core::Duration::Milliseconds(1),
                channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
-                   .value_or(is_client ? g_default_client_keepalive_time
-                                       : g_default_server_keepalive_time));
-  if (is_client) {
-    g_default_client_keepalive_time = keepalive_time;
-  } else {
-    g_default_server_keepalive_time = keepalive_time;
-  }
-
-  const auto keepalive_timeout = std::max(
+                   .value_or(g_default_client_keepalive_time));
+  g_default_client_keepalive_timeout = std::max(
       grpc_core::Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
-          .value_or(is_client ? g_default_client_keepalive_timeout
-                              : g_default_server_keepalive_timeout));
-  if (is_client) {
-    g_default_client_keepalive_timeout = keepalive_timeout;
-  } else {
-    g_default_server_keepalive_timeout = keepalive_timeout;
-  }
-
-  const bool keepalive_permit_without_calls =
+          .value_or(g_default_client_keepalive_timeout));
+  g_default_client_keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-          .value_or(is_client
-                        ? g_default_client_keepalive_permit_without_calls
-                        : g_default_server_keepalive_permit_without_calls);
-  if (is_client) {
-    g_default_client_keepalive_permit_without_calls =
-        keepalive_permit_without_calls;
-  } else {
-    g_default_server_keepalive_permit_without_calls =
-        keepalive_permit_without_calls;
-  }
+          .value_or(g_default_client_keepalive_permit_without_calls);
+}
 
+static void grpc_chttp2_config_default_keepalive_args_server(
+    const grpc_core::ChannelArgs& channel_args) {
+  g_default_server_keepalive_time =
+      std::max(grpc_core::Duration::Milliseconds(1),
+               channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+                   .value_or(g_default_server_keepalive_time));
+  g_default_server_keepalive_timeout = std::max(
+      grpc_core::Duration::Zero(),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
+          .value_or(g_default_server_keepalive_timeout));
+  g_default_server_keepalive_permit_without_calls =
+      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+          .value_or(g_default_server_keepalive_permit_without_calls);
+}
+
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& channel_args, const bool is_client) {
+  if (is_client) {
+    grpc_chttp2_config_default_keepalive_args_client(channel_args);
+  } else {
+    grpc_chttp2_config_default_keepalive_args_server(channel_args);
+  }
   grpc_core::Chttp2PingAbusePolicy::SetDefaults(channel_args);
   grpc_core::Chttp2PingRatePolicy::SetDefaults(channel_args);
 }

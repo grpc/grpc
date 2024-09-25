@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -19,12 +20,13 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpUri_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpUri_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__fields[6] = {
@@ -55,6 +57,7 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFi
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init;
 static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_Audience__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -72,8 +75,9 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience_m
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig__fields[1] = {
@@ -89,6 +93,7 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenCache
 #endif
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__TokenCacheConfig_msg_init;
 static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_TokenHeader__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -109,6 +114,7 @@ const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenHeade
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init,
   &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init,

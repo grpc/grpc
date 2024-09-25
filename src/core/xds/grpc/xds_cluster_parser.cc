@@ -49,11 +49,11 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -454,7 +454,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update->lrs_load_reporting_server.emplace(
+    cds_update->lrs_load_reporting_server = std::make_shared<GrpcXdsServer>(
         static_cast<const GrpcXdsServer&>(context.server));
   }
   // Protocol options.

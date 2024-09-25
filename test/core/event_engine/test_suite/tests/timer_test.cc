@@ -35,7 +35,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/time_util.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
 using ::testing::ElementsAre;

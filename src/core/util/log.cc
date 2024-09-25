@@ -33,7 +33,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
@@ -104,15 +104,15 @@ void gpr_log_verbosity_init(void) {
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
     LOG_FIRST_N(WARNING, 1)
         << "Log level INFO is not suitable for production. Prefer WARNING or "
-           "ERROR. However if you see this message in a debug environmenmt or "
-           "test environmenmt it is safe to ignore this message.";
+           "ERROR. However if you see this message in a debug environment or "
+           "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
     LOG_FIRST_N(WARNING, 1)
         << "Log level DEBUG is not suitable for production. Prefer WARNING or "
-           "ERROR. However if you see this message in a debug environmenmt or "
-           "test environmenmt it is safe to ignore this message.";
+           "ERROR. However if you see this message in a debug environment or "
+           "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {

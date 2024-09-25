@@ -3,7 +3,8 @@
  *     envoy/type/tracing/v3/custom_tag.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -16,11 +17,12 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_tracing_v3_CustomTag_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Literal_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Environment_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Header_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Metadata_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_tracing_v3_CustomTag_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Literal_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Environment_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Header_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag__Metadata_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_tracing_v3_CustomTag__fields[5] = {
@@ -50,6 +52,7 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__tracing__v3__CustomTag_msg_init_ptr = &envoy__type__tracing__v3__CustomTag_msg_init;
 static const upb_MiniTableField envoy_type_tracing_v3_CustomTag_Literal__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -67,6 +70,7 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Literal_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__tracing__v3__CustomTag__Literal_msg_init_ptr = &envoy__type__tracing__v3__CustomTag__Literal_msg_init;
 static const upb_MiniTableField envoy_type_tracing_v3_CustomTag_Environment__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -87,6 +91,7 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Environment_msg_init = 
   })
 };
 
+const upb_MiniTable* envoy__type__tracing__v3__CustomTag__Environment_msg_init_ptr = &envoy__type__tracing__v3__CustomTag__Environment_msg_init;
 static const upb_MiniTableField envoy_type_tracing_v3_CustomTag_Header__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -107,9 +112,10 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Header_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_type_tracing_v3_CustomTag_Metadata_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKind_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKey_msg_init},
+const upb_MiniTable* envoy__type__tracing__v3__CustomTag__Header_msg_init_ptr = &envoy__type__tracing__v3__CustomTag__Header_msg_init;
+static const upb_MiniTableSubInternal envoy_type_tracing_v3_CustomTag_Metadata_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKind_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKey_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_tracing_v3_CustomTag_Metadata__fields[3] = {
@@ -133,6 +139,7 @@ const upb_MiniTable envoy__type__tracing__v3__CustomTag__Metadata_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__tracing__v3__CustomTag__Metadata_msg_init_ptr = &envoy__type__tracing__v3__CustomTag__Metadata_msg_init;
 static const upb_MiniTable *messages_layout[5] = {
   &envoy__type__tracing__v3__CustomTag_msg_init,
   &envoy__type__tracing__v3__CustomTag__Literal_msg_init,

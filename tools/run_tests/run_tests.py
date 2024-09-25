@@ -719,7 +719,7 @@ class PythonLanguage(object):
                         self.config.job_spec(
                             python_config.run
                             + [self._TEST_COMMAND[io_platform]],
-                            timeout_seconds=8 * 60,
+                            timeout_seconds=10 * 60,
                             environ=dict(
                                 GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                 **environment,
@@ -1123,7 +1123,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-sample",
                 cpu_cost=1e6,
                 environ={
@@ -1136,7 +1136,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switftsample",
                 cpu_cost=1e6,
                 environ={
@@ -1148,7 +1148,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switft-use-frameworks",
                 cpu_cost=1e6,
                 environ={

@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/status_code_input.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,6 +14,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init = {
   NULL,
   NULL,
@@ -22,6 +24,7 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_m
 #endif
 };
 
+const upb_MiniTable* envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init;
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init = {
   NULL,
   NULL,
@@ -31,6 +34,7 @@ const upb_MiniTable envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchIn
 #endif
 };
 
+const upb_MiniTable* envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__type__matcher__v3__HttpResponseStatusCodeMatchInput_msg_init,
   &envoy__type__matcher__v3__HttpResponseStatusCodeClassMatchInput_msg_init,

@@ -3,7 +3,8 @@
  *     opencensus/proto/trace/v1/trace_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_
 #define OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_
@@ -87,6 +88,7 @@ UPB_INLINE const opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto_
   const opencensus_proto_trace_v1_ProbabilitySampler* default_val = NULL;
   const opencensus_proto_trace_v1_ProbabilitySampler* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 48), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__ProbabilitySampler_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -103,6 +105,7 @@ UPB_INLINE const opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_tra
   const opencensus_proto_trace_v1_ConstantSampler* default_val = NULL;
   const opencensus_proto_trace_v1_ConstantSampler* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 48), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__ConstantSampler_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -119,6 +122,7 @@ UPB_INLINE const opencensus_proto_trace_v1_RateLimitingSampler* opencensus_proto
   const opencensus_proto_trace_v1_RateLimitingSampler* default_val = NULL;
   const opencensus_proto_trace_v1_RateLimitingSampler* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(12, 48), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__RateLimitingSampler_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -178,6 +182,7 @@ UPB_INLINE int64_t opencensus_proto_trace_v1_TraceConfig_max_number_of_links(con
 
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_probability_sampler(opencensus_proto_trace_v1_TraceConfig *msg, opencensus_proto_trace_v1_ProbabilitySampler* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 48), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__ProbabilitySampler_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto_trace_v1_TraceConfig_mutable_probability_sampler(opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena) {
@@ -190,6 +195,7 @@ UPB_INLINE struct opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_constant_sampler(opencensus_proto_trace_v1_TraceConfig *msg, opencensus_proto_trace_v1_ConstantSampler* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 48), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__ConstantSampler_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_trace_v1_TraceConfig_mutable_constant_sampler(opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena) {
@@ -202,6 +208,7 @@ UPB_INLINE struct opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_tr
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_rate_limiting_sampler(opencensus_proto_trace_v1_TraceConfig *msg, opencensus_proto_trace_v1_RateLimitingSampler* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 48), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__RateLimitingSampler_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_RateLimitingSampler* opencensus_proto_trace_v1_TraceConfig_mutable_rate_limiting_sampler(opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena) {
