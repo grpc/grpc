@@ -40,4 +40,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy);
 
+int grpc_end2end_http_proxy_get_proxy_port(grpc_end2end_http_proxy* proxy);
+size_t grpc_end2end_http_proxy_num_connections(grpc_end2end_http_proxy* proxy);
+
 #endif  // GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H
