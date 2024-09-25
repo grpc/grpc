@@ -3,7 +3,8 @@
  *     xds/core/v3/resource_locator.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_
 #define XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_
@@ -136,6 +137,7 @@ UPB_INLINE const struct xds_core_v3_ContextParams* xds_core_v3_ResourceLocator_e
   const struct xds_core_v3_ContextParams* default_val = NULL;
   const struct xds_core_v3_ContextParams* ret;
   const upb_MiniTableField field = {5, UPB_SIZE(20, 72), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -150,6 +152,7 @@ UPB_INLINE void xds_core_v3_ResourceLocator_clear_directives(xds_core_v3_Resourc
 }
 UPB_INLINE const xds_core_v3_ResourceLocator_Directive* const* xds_core_v3_ResourceLocator_directives(const xds_core_v3_ResourceLocator* msg, size_t* size) {
   const upb_MiniTableField field = {6, UPB_SIZE(16, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator__Directive_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -161,6 +164,7 @@ UPB_INLINE const xds_core_v3_ResourceLocator_Directive* const* xds_core_v3_Resou
 }
 UPB_INLINE const upb_Array* _xds_core_v3_ResourceLocator_directives_upb_array(const xds_core_v3_ResourceLocator* msg, size_t* size) {
   const upb_MiniTableField field = {6, UPB_SIZE(16, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator__Directive_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -169,6 +173,7 @@ UPB_INLINE const upb_Array* _xds_core_v3_ResourceLocator_directives_upb_array(co
 }
 UPB_INLINE upb_Array* _xds_core_v3_ResourceLocator_directives_mutable_upb_array(xds_core_v3_ResourceLocator* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {6, UPB_SIZE(16, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator__Directive_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -195,6 +200,7 @@ UPB_INLINE void xds_core_v3_ResourceLocator_set_resource_type(xds_core_v3_Resour
 }
 UPB_INLINE void xds_core_v3_ResourceLocator_set_exact_context(xds_core_v3_ResourceLocator *msg, struct xds_core_v3_ContextParams* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 72), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ContextParams_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_core_v3_ContextParams* xds_core_v3_ResourceLocator_mutable_exact_context(xds_core_v3_ResourceLocator* msg, upb_Arena* arena) {
@@ -207,6 +213,7 @@ UPB_INLINE struct xds_core_v3_ContextParams* xds_core_v3_ResourceLocator_mutable
 }
 UPB_INLINE xds_core_v3_ResourceLocator_Directive** xds_core_v3_ResourceLocator_mutable_directives(xds_core_v3_ResourceLocator* msg, size_t* size) {
   upb_MiniTableField field = {6, UPB_SIZE(16, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator__Directive_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -223,6 +230,7 @@ UPB_INLINE xds_core_v3_ResourceLocator_Directive** xds_core_v3_ResourceLocator_r
 }
 UPB_INLINE struct xds_core_v3_ResourceLocator_Directive* xds_core_v3_ResourceLocator_add_directives(xds_core_v3_ResourceLocator* msg, upb_Arena* arena) {
   upb_MiniTableField field = {6, UPB_SIZE(16, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator__Directive_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -290,6 +298,7 @@ UPB_INLINE const xds_core_v3_ResourceLocator* xds_core_v3_ResourceLocator_Direct
   const xds_core_v3_ResourceLocator* default_val = NULL;
   const xds_core_v3_ResourceLocator* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -317,6 +326,7 @@ UPB_INLINE bool xds_core_v3_ResourceLocator_Directive_has_entry(const xds_core_v
 
 UPB_INLINE void xds_core_v3_ResourceLocator_Directive_set_alt(xds_core_v3_ResourceLocator_Directive *msg, xds_core_v3_ResourceLocator* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__ResourceLocator_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_core_v3_ResourceLocator* xds_core_v3_ResourceLocator_Directive_mutable_alt(xds_core_v3_ResourceLocator_Directive* msg, upb_Arena* arena) {

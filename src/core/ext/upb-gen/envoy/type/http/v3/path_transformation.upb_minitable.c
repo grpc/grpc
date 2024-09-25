@@ -3,7 +3,8 @@
  *     envoy/type/http/v3/path_transformation.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -14,8 +15,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_http_v3_PathTransformation_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_http_v3_PathTransformation_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_http_v3_PathTransformation__fields[1] = {
@@ -35,9 +37,10 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_type_http_v3_PathTransformation_Operation_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init},
+const upb_MiniTable* envoy__type__http__v3__PathTransformation_msg_init_ptr = &envoy__type__http__v3__PathTransformation_msg_init;
+static const upb_MiniTableSubInternal envoy_type_http_v3_PathTransformation_Operation_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_http_v3_PathTransformation_Operation__fields[2] = {
@@ -60,6 +63,7 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation_msg_ini
   })
 };
 
+const upb_MiniTable* envoy__type__http__v3__PathTransformation__Operation_msg_init_ptr = &envoy__type__http__v3__PathTransformation__Operation_msg_init;
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init = {
   NULL,
   NULL,
@@ -69,6 +73,7 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__Normal
 #endif
 };
 
+const upb_MiniTable* envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init_ptr = &envoy__type__http__v3__PathTransformation__Operation__NormalizePathRFC3986_msg_init;
 const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init = {
   NULL,
   NULL,
@@ -78,6 +83,7 @@ const upb_MiniTable envoy__type__http__v3__PathTransformation__Operation__MergeS
 #endif
 };
 
+const upb_MiniTable* envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init_ptr = &envoy__type__http__v3__PathTransformation__Operation__MergeSlashes_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__type__http__v3__PathTransformation_msg_init,
   &envoy__type__http__v3__PathTransformation__Operation_msg_init,

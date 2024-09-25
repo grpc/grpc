@@ -35,3 +35,24 @@ $ export GRPC_XDS_BOOTSTRAP=/path/to/bootstrap.json
 $ tools/bazel run examples/cpp/xds:greeter_client
 ```
 
+## Building Docker
+
+From the gRPC workspace folder:
+
+Client:
+```
+docker build -f examples/cpp/xds/Dockerfile.client examples/cpp/xds
+```
+Server:
+```
+docker build -f examples/cpp/xds/Dockerfile.server examples/cpp/xds
+```
+
+To push to a registry, add a tag to the image either by adding a `-t` flag to `docker build` command above or run:
+
+```
+docker image tag ${sha from build command above} ${tag}
+```
+
+And then push the tagged image using `docker push`
+
