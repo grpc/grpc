@@ -31,8 +31,8 @@ namespace grpc_core {
 
 class XdsHttpProxyMapper final : public ProxyMapperInterface {
  public:
-  absl::optional<std::string> MapName(absl::string_view server_uri,
-                                      ChannelArgs* args) override {
+  absl::optional<std::string> MapName(absl::string_view /*server_uri*/,
+                                      ChannelArgs* /*args*/) override {
     return absl::nullopt;
   }
 
