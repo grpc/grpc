@@ -21,5 +21,5 @@ readonly UPB_TMP_OUTPUT="$(mktemp -d)"
 
 tools/codegen/core/gen_upb_api.sh "$UPB_TMP_OUTPUT"
 
-diff -r "$UPB_GENERATED_SRC" "$UPB_TMP_OUTPUT/upb-gen"
+diff -rq "$UPB_GENERATED_SRC" "$UPB_TMP_OUTPUT/upb-gen"
 diff -rq "$UPBDEFS_GENERATED_SRC" "$UPB_TMP_OUTPUT/upbdefs-gen"
