@@ -3,7 +3,8 @@
  *     envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPBDEFS_H_
 #define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_HTTP_11_PROXY_V3_UPSTREAM_HTTP_11_CONNECT_PROTO_UPBDEFS_H_

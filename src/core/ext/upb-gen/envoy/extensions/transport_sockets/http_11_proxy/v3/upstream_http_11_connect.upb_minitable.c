@@ -3,7 +3,8 @@
  *     envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,8 +16,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TransportSocket_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TransportSocket_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields[1] = {
@@ -32,6 +34,7 @@ const upb_MiniTable envoy__extensions__transport_0sockets__http_011_0proxy__v3__
 #endif
 };
 
+const upb_MiniTable* envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_ptr = &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init,
 };
