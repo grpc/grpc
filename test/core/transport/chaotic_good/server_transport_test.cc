@@ -170,14 +170,14 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
       .WillOnce(Return(false));
+  // With batching enabled, the control endpoint is expected to write
+  // the headers and message length frame in one go.
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 1, 1,
                              sizeof(kPathDemoServiceStep), 0, 0, 0),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 8, 56, 0)},
+                                          sizeof(kPathDemoServiceStep)),
+       SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 8, 56, 0)},
       nullptr);
   data_endpoint.ExpectWrite(
       {EventEngineSlice::FromCopiedString("87654321"), Zeros(56)}, nullptr);
