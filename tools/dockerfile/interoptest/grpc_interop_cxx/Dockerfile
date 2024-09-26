@@ -89,7 +89,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get -y install clang libc++-dev && apt-get clean
 
 #=================
 # Install cmake
