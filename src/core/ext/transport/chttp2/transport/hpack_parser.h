@@ -39,12 +39,12 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/random_early_detection.h"
 
 // IWYU pragma: no_include <type_traits>
 
@@ -235,6 +235,8 @@ class HPackParser {
     HPackTable hpack_table;
     // Error so far for this frame (set by class Input)
     HpackParseResult frame_error;
+    // Error so far for this field (set by class Input)
+    HpackParseResult field_error;
     // Length of frame so far.
     uint32_t frame_length = 0;
     // Length of the string being parsed

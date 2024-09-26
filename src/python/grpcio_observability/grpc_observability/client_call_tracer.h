@@ -140,9 +140,9 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   PythonCensusContext CreateCensusContextForCallAttempt();
 
   // Client method.
-  absl::string_view method_;
+  std::string method_;
   // Client target.
-  absl::string_view target_;
+  std::string target_;
   PythonCensusContext context_;
   bool tracing_enabled_;
   bool add_csm_optional_labels_;

@@ -34,8 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -46,6 +44,8 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -83,7 +83,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
       explicit HandshakingState(RefCountedPtr<ActiveConnection> connection);
-      ~HandshakingState() override{};
+      ~HandshakingState() override {};
       void Start(std::unique_ptr<
                  grpc_event_engine::experimental::EventEngine::Endpoint>
                      endpoint);
@@ -111,7 +111,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     };
 
    private:
-    void Done(absl::optional<absl::string_view> error = absl::nullopt);
+    void Done();
     void NewConnectionID();
     RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
     const RefCountedPtr<ChaoticGoodServerListener> listener_;

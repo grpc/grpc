@@ -45,16 +45,16 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/strerror.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -236,7 +236,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
        iov_size++) {
     MutableSlice& slice = internal::SliceCast<MutableSlice>(
         buf_.MutableSliceAt(out_offset_.slice_idx));
-    iov[iov_size].iov_base = slice.begin();
+    iov[iov_size].iov_base = slice.begin() + out_offset_.byte_idx;
     iov[iov_size].iov_len = slice.length() - out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
     ++(out_offset_.slice_idx);
@@ -348,7 +348,6 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     // We have read something in previous reads. We need to deliver those bytes
     // to the upper layer.
     if (read_bytes <= 0 && total_read_bytes >= 1) {
-      inq_ = 1;
       break;
     }
 
@@ -410,6 +409,12 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
   if (inq_ == 0) {
     FinishEstimate();
+    // If this is using the epoll poller, then it is edge-triggered.
+    // Since this read did not consume the edge (i.e., did not get EAGAIN), the
+    // next read on this endpoint must assume there is something to read.
+    // Otherwise, assuming there is nothing to read and waiting for an epoll
+    // edge event could cause the next read to wait indefinitely.
+    inq_ = 1;
   }
 
   DCHECK_GT(total_read_bytes, 0u);

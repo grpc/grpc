@@ -34,7 +34,7 @@ cd "$(dirname "$0")/../../.."
 # use the default docker image used for bazel builds
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 
-# Bazel RBE uses application default credentials from localhost to authenticate with RBE servers. Use a trick to make the credentails accessible from inside the docker container."
+# Bazel RBE uses application default credentials from localhost to authenticate with RBE servers. Use a trick to make the credentials accessible from inside the docker container."
 APPLICATION_DEFAULT_CREDENTIALS_DIR="$HOME/.config/gcloud"
 export DOCKER_EXTRA_ARGS="-v=${APPLICATION_DEFAULT_CREDENTIALS_DIR}:/application_default_credentials:ro -e=GOOGLE_APPLICATION_CREDENTIALS=/application_default_credentials/application_default_credentials.json"
 

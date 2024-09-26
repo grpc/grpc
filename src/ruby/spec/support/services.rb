@@ -41,14 +41,17 @@ class EchoService
   rpc :a_bidi_rpc, stream(EchoMsg), stream(EchoMsg)
   rpc :a_client_streaming_rpc_unimplemented, stream(EchoMsg), EchoMsg
   attr_reader :received_md
+  attr_accessor :on_call_started
 
   def initialize(**kw)
     @trailing_metadata = kw
     @received_md = []
+    @on_call_started = nil
   end
 
   def an_rpc(req, call)
     GRPC.logger.info('echo service received a request')
+    on_call_started&.call(call)
     call.output_metadata.update(@trailing_metadata)
     @received_md << call.metadata unless call.metadata.nil?
     req

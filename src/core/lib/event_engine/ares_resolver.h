@@ -37,23 +37,14 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
-
-#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)        \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {       \
-      LOG(INFO) << "(EventEngine c-ares resolver) "      \
-                << absl::StrFormat(format, __VA_ARGS__); \
-    }                                                    \
-  } while (0)
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:

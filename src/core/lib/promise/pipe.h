@@ -30,8 +30,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -40,6 +38,8 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -634,10 +634,9 @@ class Push {
 
   Poll<bool> operator()() {
     if (center_ == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        VLOG(2) << GetContext<Activity>()->DebugTag()
-                << " Pipe push has a null center";
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << GetContext<Activity>()->DebugTag()
+          << " Pipe push has a null center";
       return false;
     }
     if (auto* p = absl::get_if<T>(&state_)) {

@@ -25,16 +25,15 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

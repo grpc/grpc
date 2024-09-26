@@ -19,7 +19,6 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_CONTEXT_MUTATORS_H
 
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -28,7 +27,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {

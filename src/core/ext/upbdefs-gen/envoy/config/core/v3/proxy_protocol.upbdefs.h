@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/proxy_protocol.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CORE_V3_PROXY_PROTOCOL_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_CORE_V3_PROXY_PROTOCOL_PROTO_UPBDEFS_H_

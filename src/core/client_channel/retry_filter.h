@@ -30,7 +30,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -38,9 +37,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

@@ -35,17 +35,17 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/examine_stack.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/examine_stack.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
 
 #ifdef GPR_POSIX_SYNC
 #include <csignal>
@@ -400,9 +400,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
       if (pool_->IsQuiesced()) break;
     } else {
       lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
-          absl::Milliseconds(
-              (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
-                  .millis()));
+          absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
     }
     MaybeStartNewThread();
   }
@@ -556,8 +554,8 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     // No closures were retrieved from anywhere.
     // Quit the thread if the pool has been shut down.
     if (pool_->IsShutdown()) break;
-    bool timed_out = pool_->work_signal()->WaitWithTimeout(
-        backoff_.NextAttemptTime() - grpc_core::Timestamp::Now());
+    bool timed_out =
+        pool_->work_signal()->WaitWithTimeout(backoff_.NextAttemptDelay());
     if (pool_->IsForking() || pool_->IsShutdown()) break;
     // Quit a thread if the pool has more than it requires, and this thread
     // has been idle long enough.

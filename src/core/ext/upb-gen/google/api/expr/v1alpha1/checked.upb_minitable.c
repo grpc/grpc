@@ -3,7 +3,8 @@
  *     google/api/expr/v1alpha1/checked.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,31 +16,44 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_CheckedExpr_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Expr_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__SourceInfo_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_CheckedExpr_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Expr_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__SourceInfo_msg_init_ptr},
 };
 
-static const upb_MiniTableField google_api_expr_v1alpha1_CheckedExpr__fields[4] = {
+static const upb_MiniTableField google_api_expr_v1alpha1_CheckedExpr__fields[5] = {
   {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(20, 32), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(24, 40), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr_msg_init = {
   &google_api_expr_v1alpha1_CheckedExpr_submsgs[0],
   &google_api_expr_v1alpha1_CheckedExpr__fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.expr.v1alpha1.CheckedExpr",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003000003f000032, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Reference_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__CheckedExpr_msg_init_ptr = &google__api__expr__v1alpha1__CheckedExpr_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Reference_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry__fields[2] = {
@@ -60,8 +74,9 @@ const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init_ptr = &google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_CheckedExpr_TypeMapEntry__fields[2] = {
@@ -82,14 +97,15 @@ const upb_MiniTable google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_i
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Type_submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__ListType_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__MapType_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__FunctionType_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__AbstractType_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_init_ptr = &google__api__expr__v1alpha1__CheckedExpr__TypeMapEntry_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Type_submsgs[7] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__ListType_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__MapType_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__FunctionType_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type__AbstractType_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Type__fields[13] = {
@@ -135,8 +151,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Type_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Type_ListType_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Type_msg_init_ptr = &google__api__expr__v1alpha1__Type_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Type_ListType_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Type_ListType__fields[1] = {
@@ -152,9 +169,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Type__ListType_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Type_MapType_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Type__ListType_msg_init_ptr = &google__api__expr__v1alpha1__Type__ListType_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Type_MapType_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Type_MapType__fields[2] = {
@@ -171,9 +189,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Type__MapType_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Type_FunctionType_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Type__MapType_msg_init_ptr = &google__api__expr__v1alpha1__Type__MapType_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Type_FunctionType_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Type_FunctionType__fields[2] = {
@@ -196,8 +215,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Type__FunctionType_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Type_AbstractType_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Type__FunctionType_msg_init_ptr = &google__api__expr__v1alpha1__Type__FunctionType_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Type_AbstractType_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Type_AbstractType__fields[2] = {
@@ -220,9 +240,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Type__AbstractType_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Decl_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Decl__IdentDecl_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Type__AbstractType_msg_init_ptr = &google__api__expr__v1alpha1__Type__AbstractType_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Decl_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Decl__IdentDecl_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Decl__fields[3] = {
@@ -246,9 +267,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Decl_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Constant_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Decl_msg_init_ptr = &google__api__expr__v1alpha1__Decl_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Constant_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Decl_IdentDecl__fields[3] = {
@@ -272,8 +294,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Decl__IdentDecl_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Decl__IdentDecl_msg_init_ptr = &google__api__expr__v1alpha1__Decl__IdentDecl_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Decl_FunctionDecl__fields[1] = {
@@ -293,9 +316,10 @@ const upb_MiniTable google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init_ptr = &google__api__expr__v1alpha1__Decl__FunctionDecl_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Type_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Decl_FunctionDecl_Overload__fields[6] = {
@@ -326,8 +350,9 @@ const upb_MiniTable google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_ms
   })
 };
 
-static const upb_MiniTableSub google_api_expr_v1alpha1_Reference_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Constant_msg_init},
+const upb_MiniTable* google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_msg_init_ptr = &google__api__expr__v1alpha1__Decl__FunctionDecl__Overload_msg_init;
+static const upb_MiniTableSubInternal google_api_expr_v1alpha1_Reference_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__Constant_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_api_expr_v1alpha1_Reference__fields[3] = {
@@ -351,6 +376,7 @@ const upb_MiniTable google__api__expr__v1alpha1__Reference_msg_init = {
   })
 };
 
+const upb_MiniTable* google__api__expr__v1alpha1__Reference_msg_init_ptr = &google__api__expr__v1alpha1__Reference_msg_init;
 static const upb_MiniTable *messages_layout[13] = {
   &google__api__expr__v1alpha1__CheckedExpr_msg_init,
   &google__api__expr__v1alpha1__CheckedExpr__ReferenceMapEntry_msg_init,

@@ -25,7 +25,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,9 +33,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
@@ -49,6 +45,9 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 

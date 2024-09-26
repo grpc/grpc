@@ -84,7 +84,7 @@ class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
   }
 
   void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>*) override{};
+      std::vector<std::unique_ptr<ServerBuilderPlugin>>*) override {};
 
   MockSocketMutator* mock_socket_mutator_;
 };

@@ -246,7 +246,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/ruby/ruby_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessor_case.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessors.cc',
-    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/helpers.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/default_value.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/map.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/repeated_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_message.cc',
@@ -340,4 +340,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="63def39e881afa496502d9c410f4ea948e59490d"
+PROTOBUF_SUBMODULE_VERSION="10ef3f77683f77fb3c059bf47725c27b3ff41e63"

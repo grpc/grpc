@@ -27,8 +27,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/istio_echo_server_lib.h"

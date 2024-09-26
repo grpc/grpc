@@ -30,11 +30,10 @@
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/authorization/stdout_logger.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace experimental {

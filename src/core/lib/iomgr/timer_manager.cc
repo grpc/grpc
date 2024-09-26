@@ -27,9 +27,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/thd.h"
 
 struct completed_thread {
   grpc_core::Thread thd;
@@ -195,11 +195,10 @@ static bool wait_until(grpc_core::Timestamp next) {
 
     gpr_cv_wait(&g_cv_wait, &g_mu, next.as_timespec(GPR_CLOCK_MONOTONIC));
 
-    if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-      LOG(INFO) << "wait ended: was_timed:"
-                << (my_timed_waiter_generation == g_timed_waiter_generation)
-                << " kicked:" << g_kicked;
-    }
+    GRPC_TRACE_LOG(timer_check, INFO)
+        << "wait ended: was_timed:"
+        << (my_timed_waiter_generation == g_timed_waiter_generation)
+        << " kicked:" << g_kicked;
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if
     // there's work to do after checking timers (code above)

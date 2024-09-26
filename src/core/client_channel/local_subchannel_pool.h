@@ -24,7 +24,7 @@
 #include <map>
 
 #include "src/core/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 

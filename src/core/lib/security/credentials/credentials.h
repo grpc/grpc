@@ -32,18 +32,17 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 
 // --- Constants. ---
 
@@ -184,7 +183,7 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
 struct grpc_call_credentials
-    : public grpc_core::RefCounted<grpc_call_credentials> {
+    : public grpc_core::DualRefCounted<grpc_call_credentials> {
  public:
   // TODO(roth): Consider whether security connector actually needs to
   // be part of this interface.  Currently, it is here only for the

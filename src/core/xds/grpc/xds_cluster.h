@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
@@ -27,11 +28,21 @@
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
 namespace grpc_core {
+
+inline bool LrsServersEqual(
+    const std::shared_ptr<const GrpcXdsServer>& lrs_server1,
+    const std::shared_ptr<const GrpcXdsServer>& lrs_server2) {
+  if (lrs_server1 == nullptr) return lrs_server2 == nullptr;
+  if (lrs_server2 == nullptr) return false;
+  // Neither one is null, so compare them.
+  return *lrs_server1 == *lrs_server2;
+}
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct Eds {
@@ -69,8 +80,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // Note: Remaining fields are not used for aggregate clusters.
 
   // The LRS server to use for load reporting.
-  // If not set, load reporting will be disabled.
-  absl::optional<GrpcXdsServer> lrs_load_reporting_server;
+  // If null, load reporting will be disabled.
+  std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
 
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
@@ -86,19 +97,18 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  RefCountedStringValue service_telemetry_label;
-  RefCountedStringValue namespace_telemetry_label;
+  XdsMetadataMap metadata;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
-           lrs_load_reporting_server == other.lrs_load_reporting_server &&
+           LrsServersEqual(lrs_load_reporting_server,
+                           other.lrs_load_reporting_server) &&
            common_tls_context == other.common_tls_context &&
            connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
            override_host_statuses == other.override_host_statuses &&
-           service_telemetry_label == other.service_telemetry_label &&
-           namespace_telemetry_label == other.namespace_telemetry_label;
+           metadata == other.metadata;
   }
 
   std::string ToString() const;

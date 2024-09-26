@@ -31,8 +31,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 

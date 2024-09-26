@@ -27,10 +27,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/port_server_client.h"
 

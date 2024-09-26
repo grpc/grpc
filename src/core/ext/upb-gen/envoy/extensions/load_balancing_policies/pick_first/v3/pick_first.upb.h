@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_PICK_FIRST_V3_PICK_FIRST_PROTO_UPB_H_

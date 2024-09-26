@@ -25,14 +25,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
+#include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
 
 namespace grpc_core {
@@ -41,18 +41,18 @@ namespace grpc_core {
 // PartySyncUsingAtomics
 
 GRPC_MUST_USE_RESULT bool Party::RefIfNonZero() {
-  auto count = state_.load(std::memory_order_relaxed);
+  auto state = state_.load(std::memory_order_relaxed);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
     // zero
-    if ((count & kRefMask) == 0) {
+    if ((state & kRefMask) == 0) {
       return false;
     }
-  } while (!state_.compare_exchange_weak(count, count + kOneRef,
+  } while (!state_.compare_exchange_weak(state, state + kOneRef,
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed));
-  LogStateChange("RefIfNonZero", count, count + kOneRef);
+  LogStateChange("RefIfNonZero", state, state + kOneRef);
   return true;
 }
 
@@ -78,7 +78,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::* wakeup_method)(WakeupMask))
+                     void (Party::*wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -278,6 +278,12 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
+  absl::optional<ScopedTimeCache> time_cache;
+#if !TARGET_OS_IPHONE
+  if (IsTimeCachingInPartyEnabled()) {
+    time_cache.emplace();
+  }
+#endif
   for (;;) {
     uint64_t keep_allocated_mask = kAllocatedMask;
     // For each wakeup bit...
@@ -285,7 +291,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
       auto wakeup_mask = std::exchange(wakeup_mask_, 0);
       while (wakeup_mask != 0) {
         const uint64_t t = LowestOneBit(wakeup_mask);
-        const int i = CountTrailingZeros(t);
+        const int i = absl::countr_zero(t);
         wakeup_mask ^= t;
         // If the participant is null, skip.
         // This allows participants to complete whilst wakers still exist
@@ -325,7 +331,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
             (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef,
             std::memory_order_acq_rel, std::memory_order_acquire)) {
       LogStateChange("Run:End", prev_state,
-                     prev_state & (kRefMask | kAllocatedMask) - kOneRef);
+                     (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef);
       if ((prev_state & kRefMask) == kOneRef) {
         // We're done with the party.
         PartyIsOver();
@@ -373,7 +379,7 @@ void Party::AddParticipants(Participant** participants, size_t count) {
       }
       wakeup_mask |= new_mask;
       allocated |= new_mask;
-      slots[i] = CountTrailingZeros(new_mask);
+      slots[i] = absl::countr_zero(new_mask);
     }
     // Try to allocate this slot and take a ref (atomically).
     // Ref needs to be taken because once we store the participant it could be
@@ -415,7 +421,7 @@ void Party::AddParticipant(Participant* participant) {
         << "No available slots for new participant; allocated=" << allocated
         << " state=" << state << " wakeup_mask=" << wakeup_mask;
     allocated |= wakeup_mask;
-    slot = CountTrailingZeros(wakeup_mask);
+    slot = absl::countr_zero(wakeup_mask);
     // Try to allocate this slot and take a ref (atomically).
     // Ref needs to be taken because once we store the participant it could be
     // spuriously woken up and unref the party.

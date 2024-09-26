@@ -44,7 +44,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -372,10 +372,8 @@ CommonTlsContext CommonTlsContextParse(
 }
 
 //
-// ExtractXdsExtension
+// ParseProtobufStructToJson()
 //
-
-namespace {
 
 absl::StatusOr<Json> ParseProtobufStructToJson(
     const XdsResourceType::DecodeContext& context,
@@ -405,7 +403,9 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
   return std::move(*json);
 }
 
-}  // namespace
+//
+// ExtractXdsExtension()
+//
 
 absl::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
