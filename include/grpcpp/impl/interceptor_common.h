@@ -25,7 +25,6 @@
 #include "absl/log/absl_check.h"
 
 #include <grpc/impl/grpc_types.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/intercepted_channel.h>

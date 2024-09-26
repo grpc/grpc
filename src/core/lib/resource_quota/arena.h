@@ -35,10 +35,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
@@ -245,6 +245,11 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   template <typename T, typename... Args>
   static PoolPtr<T> MakePooled(Args&&... args) {
     return PoolPtr<T>(new T(std::forward<Args>(args)...), PooledDeleter());
+  }
+
+  template <typename T>
+  static PoolPtr<T> MakePooledForOverwrite() {
+    return PoolPtr<T>(new T, PooledDeleter());
   }
 
   // Make a unique_ptr to an array of T that is allocated from the arena.

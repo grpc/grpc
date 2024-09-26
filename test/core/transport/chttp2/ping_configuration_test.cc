@@ -28,9 +28,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
 
@@ -198,8 +199,6 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::ForceEnableExperiment("keepalive_fix", true);
-  grpc_core::ForceEnableExperiment("keepalive_server_fix", true);
   grpc_init();
   auto ret = RUN_ALL_TESTS();
   grpc_shutdown();

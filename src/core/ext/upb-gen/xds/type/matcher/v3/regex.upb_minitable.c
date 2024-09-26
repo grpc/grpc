@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/regex.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,8 +14,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_type_matcher_v3_RegexMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_type_matcher_v3_RegexMatcher_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_type_matcher_v3_RegexMatcher__fields[2] = {
@@ -26,6 +28,9 @@ const upb_MiniTable xds__type__matcher__v3__RegexMatcher_msg_init = {
   &xds_type_matcher_v3_RegexMatcher_submsgs[0],
   &xds_type_matcher_v3_RegexMatcher__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.RegexMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000080100000a, &upb_pom_1bt_max64b},
@@ -34,12 +39,17 @@ const upb_MiniTable xds__type__matcher__v3__RegexMatcher_msg_init = {
   })
 };
 
+const upb_MiniTable* xds__type__matcher__v3__RegexMatcher_msg_init_ptr = &xds__type__matcher__v3__RegexMatcher_msg_init;
 const upb_MiniTable xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.RegexMatcher.GoogleRE2",
+#endif
 };
 
+const upb_MiniTable* xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init_ptr = &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &xds__type__matcher__v3__RegexMatcher_msg_init,
   &xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init,

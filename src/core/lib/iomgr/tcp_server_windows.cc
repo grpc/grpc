@@ -46,7 +46,6 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -60,6 +59,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
@@ -386,8 +386,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
   // this is necessary in the read/write case, it's useless for the accept
   // case. We only need to adjust the pending callback count
   if (!error.ok()) {
-    LOG(INFO) << "Skipping on_accept due to error: "
-              << grpc_core::StatusToString(error);
+    VLOG(2) << "Skipping on_accept due to error: "
+            << grpc_core::StatusToString(error);
 
     gpr_mu_unlock(&sp->server->mu);
     return;

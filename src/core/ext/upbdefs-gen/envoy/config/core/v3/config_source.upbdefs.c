@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/config_source.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/config/core/v3/config_source.upbdefs.h"
@@ -20,7 +21,7 @@ extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
 extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
-static const char descriptor[3037] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'c', 'o', 
+static const char descriptor[3024] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'c', 'o', 
 'n', 'f', 'i', 'g', '_', 's', 'o', 'u', 'r', 'c', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 
 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 
 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 'o', 't', 'o', '\032', '$', 'e', 
@@ -133,15 +134,14 @@ static const char descriptor[3037] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', '
 ' ', '\001', '(', '\010', 'R', ' ', 'a', 'p', 'p', 'l', 'y', 'D', 'e', 'f', 'a', 'u', 'l', 't', 'C', 'o', 'n', 'f', 'i', 'g', 'W', 
 'i', 't', 'h', 'o', 'u', 't', 'W', 'a', 'r', 'm', 'i', 'n', 'g', '\022', '%', '\n', '\t', 't', 'y', 'p', 'e', '_', 'u', 'r', 'l', 
 's', '\030', '\004', ' ', '\003', '(', '\t', 'B', '\010', '\372', 'B', '\005', '\222', '\001', '\002', '\010', '\001', 'R', '\010', 't', 'y', 'p', 'e', 'U', 'r', 
-'l', 's', '*', '@', '\n', '\n', 'A', 'p', 'i', 'V', 'e', 'r', 's', 'i', 'o', 'n', '\022', '\025', '\n', '\004', 'A', 'U', 'T', 'O', '\020', 
-'\000', '\032', '\013', '\010', '\001', '\212', '\364', '\233', '\263', '\005', '\003', '3', '.', '0', '\022', '\023', '\n', '\002', 'V', '2', '\020', '\001', '\032', '\013', '\010', 
-'\001', '\212', '\364', '\233', '\263', '\005', '\003', '3', '.', '0', '\022', '\006', '\n', '\002', 'V', '3', '\020', '\002', 'B', '\205', '\001', '\n', '\"', 'i', 'o', 
-'.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 
-'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\021', 'C', 'o', 'n', 'f', 'i', 'g', 'S', 'o', 'u', 'r', 'c', 'e', 'P', 'r', 'o', 't', 
-'o', 'P', '\001', 'Z', 'B', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 
-'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 
-'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', ';', 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', 
-'\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'l', 's', '*', '3', '\n', '\n', 'A', 'p', 'i', 'V', 'e', 'r', 's', 'i', 'o', 'n', '\022', '\010', '\n', '\004', 'A', 'U', 'T', 'O', '\020', 
+'\000', '\022', '\023', '\n', '\002', 'V', '2', '\020', '\001', '\032', '\013', '\010', '\001', '\212', '\364', '\233', '\263', '\005', '\003', '3', '.', '0', '\022', '\006', '\n', 
+'\002', 'V', '3', '\020', '\002', 'B', '\205', '\001', '\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 
+'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\021', 'C', 'o', 'n', 'f', 
+'i', 'g', 'S', 'o', 'u', 'r', 'c', 'e', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'B', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 
+'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 
+'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', 
+'3', ';', 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static _upb_DefPool_Init *deps[12] = {
@@ -163,5 +163,5 @@ _upb_DefPool_Init envoy_config_core_v3_config_source_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_config_source_proto_upb_file_layout,
   "envoy/config/core/v3/config_source.proto",
-  UPB_STRINGVIEW_INIT(descriptor, 3037)
+  UPB_STRINGVIEW_INIT(descriptor, 3024)
 };

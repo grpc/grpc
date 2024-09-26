@@ -296,7 +296,7 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
  * Fails if the enum value is invalid. */
 VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
     grpc_compression_algorithm internal_value) {
-  char* algorithm_name = NULL;
+  const char* algorithm_name = NULL;
 
   if (!grpc_compression_algorithm_name(internal_value, &algorithm_name)) {
     rb_raise(rb_eArgError, "Failed to convert algorithm value to name");

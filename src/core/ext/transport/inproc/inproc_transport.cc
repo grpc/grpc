@@ -18,17 +18,16 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -36,6 +35,8 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 
 namespace grpc_core {
 
@@ -76,8 +77,8 @@ class InprocServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
-    gpr_log(GPR_INFO, "inproc server op: %s",
-            grpc_transport_op_string(op).c_str());
+    GRPC_TRACE_LOG(inproc, INFO)
+        << "inproc server op: " << grpc_transport_op_string(op);
     if (op->start_connectivity_watch != nullptr) {
       connected_state()->AddWatcher(op->start_connectivity_watch_state,
                                     std::move(op->start_connectivity_watch));
@@ -112,8 +113,10 @@ class InprocServerTransport final : public ServerTransport {
       case ConnectionState::kReady:
         break;
     }
-    auto server_call = MakeCallPair(std::move(md), event_engine_.get(),
-                                    call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto server_call = MakeCallPair(std::move(md), std::move(arena));
     unstarted_call_handler_->StartCall(std::move(server_call.handler));
     return std::move(server_call.initiator);
   }
@@ -237,8 +240,7 @@ InprocServerTransport::MakeClientTransport() {
 
 RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
-  gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
-          std::string(error.message()).c_str());
+  LOG(ERROR) << why << ": " << error.message();
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {

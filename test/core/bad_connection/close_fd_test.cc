@@ -36,8 +36,6 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -45,6 +43,8 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -57,11 +57,11 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }

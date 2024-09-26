@@ -19,12 +19,12 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_binder {
 

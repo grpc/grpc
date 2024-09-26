@@ -25,19 +25,22 @@ namespace grpc_core {
 class CallSpineFixture {
  public:
   BenchmarkCall MakeCall() {
-    auto p = MakeCallPair(Arena::MakePooled<ClientMetadata>(),
-                          event_engine_.get(), arena_allocator_->MakeArena());
+    auto arena = arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto p = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                          std::move(arena));
     return {std::move(p.initiator), p.handler.StartCall()};
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
   MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
  private:
@@ -54,10 +57,16 @@ GRPC_CALL_SPINE_BENCHMARK(CallSpineFixture);
 class ForwardCallFixture {
  public:
   BenchmarkCall MakeCall() {
-    auto p1 = MakeCallPair(Arena::MakePooled<ClientMetadata>(),
-                           event_engine_.get(), arena_allocator_->MakeArena());
-    auto p2 = MakeCallPair(Arena::MakePooled<ClientMetadata>(),
-                           event_engine_.get(), arena_allocator_->MakeArena());
+    auto arena1 = arena_allocator_->MakeArena();
+    auto arena2 = arena_allocator_->MakeArena();
+    arena1->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    arena2->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto p1 = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena1));
+    auto p2 = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena2));
     p1.handler.SpawnInfallible("initial_metadata", [&]() {
       auto p1_handler = p1.handler.StartCall();
       return Map(
@@ -77,13 +86,13 @@ class ForwardCallFixture {
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
   MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    return Arena::MakePooled<ServerMetadata>();
+    return Arena::MakePooledForOverwrite<ServerMetadata>();
   }
 
  private:

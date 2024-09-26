@@ -25,10 +25,8 @@
 #include "absl/log/log.h"
 #include "absl/types/variant.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #define RETURN_IF_ERROR(expr)           \
   do {                                  \
@@ -114,15 +112,13 @@ absl::Status WireWriterImpl::MakeBinderTransaction(
   if (static_cast<int32_t>(tx_code) >= kFirstCallId) {
     int64_t parcel_size = parcel->GetDataSize();
     if (parcel_size > 2 * kBlockSize) {
-      gpr_log(GPR_ERROR,
-              "Unexpected large transaction (possibly caused by a very large "
-              "metadata). This might overflow the binder "
-              "transaction buffer. Size: %" PRId64 " bytes",
-              parcel_size);
+      LOG(ERROR) << "Unexpected large transaction (possibly caused by a very "
+                    "large metadata). This might overflow the binder "
+                    "transaction buffer. Size: "
+                 << parcel_size << " bytes";
     }
     num_outgoing_bytes_ += parcel_size;
-    gpr_log(GPR_INFO, "Total outgoing bytes: %" PRId64,
-            num_outgoing_bytes_.load());
+    LOG(INFO) << "Total outgoing bytes: " << num_outgoing_bytes_.load();
   }
   CHECK(!is_transacting_);
   is_transacting_ = true;
@@ -333,10 +329,9 @@ void WireWriterImpl::OnAckReceived(int64_t num_bytes) {
     num_acknowledged_bytes_ = std::max(num_acknowledged_bytes_, num_bytes);
     int64_t num_outgoing_bytes = num_outgoing_bytes_;
     if (num_acknowledged_bytes_ > num_outgoing_bytes) {
-      gpr_log(GPR_ERROR,
-              "The other end of transport acked more bytes than we ever sent, "
-              "%" PRId64 " > %" PRId64,
-              num_acknowledged_bytes_, num_outgoing_bytes);
+      LOG(ERROR) << "The other end of transport acked more bytes than we ever "
+                    "sent, "
+                 << num_acknowledged_bytes_ << " > " << num_outgoing_bytes;
     }
   }
   TryScheduleTransaction();
@@ -366,11 +361,9 @@ void WireWriterImpl::TryScheduleTransaction() {
     int64_t num_non_acked_bytes_estimation =
         num_total_bytes_will_be_sent - num_acknowledged_bytes_;
     if (num_non_acked_bytes_estimation < 0) {
-      gpr_log(
-          GPR_ERROR,
-          "Something went wrong. `num_non_acked_bytes_estimation` should be "
-          "non-negative but it is %" PRId64,
-          num_non_acked_bytes_estimation);
+      LOG(ERROR) << "Something went wrong. `num_non_acked_bytes_estimation` "
+                    "should be non-negative but it is "
+                 << num_non_acked_bytes_estimation;
     }
     // If we can schedule another transaction (which has size estimation of
     // `kBlockSize`) without exceeding `kFlowControlWindowSize`, schedule it.
@@ -384,13 +377,13 @@ void WireWriterImpl::TryScheduleTransaction() {
     } else {
       // It is common to fill `kFlowControlWindowSize` completely because
       // transactions are send at faster rate than the other end of transport
-      // can handle it, so here we use `GPR_DEBUG` log level.
-      gpr_log(GPR_DEBUG,
-              "Some work cannot be scheduled yet due to slow ack from the "
-              "other end of transport. This transport might be blocked if this "
-              "number don't go down. pending_outgoing_tx_.size() = %zu "
-              "pending_outgoing_tx_.front() = %p",
-              pending_outgoing_tx_.size(), pending_outgoing_tx_.front());
+      // can handle it, so here we use VLOG(2).
+      VLOG(2) << "Some work cannot be scheduled yet due to slow ack from the "
+                 "other end of transport. This transport might be blocked if "
+                 "this number don't go down. pending_outgoing_tx_.size() = "
+              << pending_outgoing_tx_.size()
+              << " pending_outgoing_tx_.front() = "
+              << pending_outgoing_tx_.front();
       break;
     }
   }

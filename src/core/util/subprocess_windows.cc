@@ -30,10 +30,10 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/tchar.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "src/core/util/subprocess.h"
+#include "src/core/util/tchar.h"
 
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;
@@ -114,7 +114,7 @@ void gpr_subprocess_interrupt(gpr_subprocess* p) {
   DWORD dwExitCode;
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
     if (dwExitCode == STILL_ACTIVE) {
-      LOG(INFO) << "sending ctrl-break";
+      VLOG(2) << "sending ctrl-break";
       GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, p->pi.dwProcessId);
       p->joined = 1;
       p->interrupted = 1;

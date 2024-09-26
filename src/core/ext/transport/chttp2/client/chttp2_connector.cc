@@ -36,7 +36,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
@@ -55,24 +54,23 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "src/core/util/unique_type_name.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
@@ -158,13 +156,15 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     grpc_chttp2_transport_start_reading(
         result_->transport, (*result)->read_buffer.c_slice_buffer(),
         &on_receive_settings_, args_.interested_parties, nullptr);
-    timer_handle_ =
-        event_engine_->RunAfter(args_.deadline - Timestamp::Now(),
-                                [self = RefAsSubclass<Chttp2Connector>()] {
-                                  ApplicationCallbackExecCtx callback_exec_ctx;
-                                  ExecCtx exec_ctx;
-                                  self->OnTimeout();
-                                });
+    timer_handle_ = event_engine_->RunAfter(
+        args_.deadline - Timestamp::Now(),
+        [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          self->OnTimeout();
+          // Ensure the Chttp2Connector is deleted under an ExecCtx.
+          self.reset();
+        });
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
@@ -236,10 +236,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       const grpc_resolved_address& address, const ChannelArgs& args) override {
     absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
     if (!new_args.ok()) {
-      gpr_log(GPR_ERROR,
-              "Failed to create channel args during subchannel creation: %s; "
-              "Got args: %s",
-              new_args.status().ToString().c_str(), args.ToString().c_str());
+      LOG(ERROR) << "Failed to create channel args during subchannel creation: "
+                 << new_args.status() << "; Got args: " << args.ToString();
       return nullptr;
     }
     RefCountedPtr<Subchannel> s = Subchannel::Create(
@@ -311,8 +309,9 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_credentials* creds,
                                   const grpc_channel_args* c_args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
-                 (target, (void*)creds, (void*)c_args));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_secure_channel_create(target=" << target
+      << ", creds=" << (void*)creds << ", args=" << (void*)c_args << ")";
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   if (creds != nullptr) {
@@ -351,9 +350,9 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
                                           grpc_channel_credentials* creds,
                                           const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_channel_create_from_fd(target=%p, fd=%d, creds=%p, args=%p)", 4,
-      (target, fd, creds, args));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_create_from_fd(target=" << target << ", fd=" << fd
+      << ", creds=" << creds << ", args=" << args << ")";
   // For now, we only support insecure channel credentials.
   if (creds == nullptr ||
       creds->type() != grpc_core::InsecureCredentials::Type()) {

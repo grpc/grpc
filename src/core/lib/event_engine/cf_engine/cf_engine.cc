@@ -21,6 +21,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/cpu.h>
 
@@ -31,7 +32,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -64,9 +65,9 @@ CFEventEngine::~CFEventEngine() {
     grpc_core::MutexLock lock(&task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
-        gpr_log(GPR_ERROR,
-                "CFEventEngine:%p uncleared TaskHandle at shutdown:%s", this,
-                HandleToString(handle).c_str());
+        LOG(ERROR) << "CFEventEngine:" << this
+                   << " uncleared TaskHandle at shutdown:"
+                   << HandleToString(handle);
       }
     }
     CHECK(GPR_LIKELY(known_handles_.empty()));

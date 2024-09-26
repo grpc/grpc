@@ -127,3 +127,28 @@ grpc_cc_benchmark(
         "//test/core/transport:call_spine_benchmarks",
     ],
 )
+
+grpc_cc_benchmark(
+    name = "bm_load_balanced_call_destination",
+    srcs = ["bm_load_balanced_call_destination.cc"],
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//test/core/transport:call_spine_benchmarks",
+    ],
+)
+
+grpc_cc_test(
+    name = "lb_metadata_test",
+    srcs = ["lb_metadata_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:lb_metadata",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

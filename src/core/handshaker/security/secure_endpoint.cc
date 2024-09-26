@@ -38,15 +38,10 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -59,7 +54,11 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -109,7 +108,6 @@ struct secure_endpoint : public grpc_endpoint {
   }
 
   ~secure_endpoint() {
-    memory_owner.Reset();
     tsi_frame_protector_destroy(protector);
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
     grpc_slice_buffer_destroy(&source_buffer);
@@ -160,9 +158,8 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
-            val - 1);
+    VLOG(2).AtLocation(file, line) << "SECENDP unref " << ep << " : " << reason
+                                   << " " << val << " -> " << val - 1;
   }
   if (gpr_unref(&ep->ref)) {
     destroy(ep);
@@ -173,9 +170,8 @@ static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
   if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
-            val + 1);
+    VLOG(2).AtLocation(file, line) << "SECENDP   ref " << ep << " : " << reason
+                                   << " " << val << " -> " << val + 1;
   }
   gpr_ref(&ep->ref);
 }
@@ -199,10 +195,8 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-              gpr_log(GPR_INFO,
-                      "secure endpoint: benign reclamation to free memory");
-            }
+            GRPC_TRACE_LOG(resource_quota, INFO)
+                << "secure endpoint: benign reclamation to free memory";
             grpc_slice temp_read_slice;
             grpc_slice temp_write_slice;
 
@@ -258,6 +252,13 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
   {
     grpc_core::MutexLock l(&ep->read_mu);
+
+    // If we were shut down after this callback was scheduled with OK
+    // status but before it was invoked, we need to treat that as an error.
+    if (ep->wrapped_ep == nullptr && error.ok()) {
+      error = absl::CancelledError("secure endpoint shutdown");
+    }
+
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
@@ -296,8 +297,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
               &unprotected_buffer_size_written);
           gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
-            gpr_log(GPR_ERROR, "Decryption error: %s",
-                    tsi_result_to_string(result));
+            LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
             break;
           }
           message_bytes += processed_message_size;
@@ -385,13 +385,17 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 
 static void on_write(void* user_data, grpc_error_handle error) {
   secure_endpoint* ep = static_cast<secure_endpoint*>(user_data);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, std::exchange(ep->write_cb, nullptr),
-                          std::move(error));
+  grpc_closure* cb = ep->write_cb;
+  ep->write_cb = nullptr;
   SECURE_ENDPOINT_UNREF(ep, "write");
+  grpc_core::EnsureRunInExecCtx([cb, error = std::move(error)]() {
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
+  });
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                            grpc_closure* cb, void* arg, int max_frame_size) {
+  GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
@@ -448,8 +452,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                                                &protected_buffer_size_to_send);
           gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
-            gpr_log(GPR_ERROR, "Encryption error: %s",
-                    tsi_result_to_string(result));
+            LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
             break;
           }
           message_bytes += processed_message_size;
@@ -509,7 +512,10 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  ep->read_mu.Lock();
   ep->wrapped_ep.reset();
+  ep->memory_owner.Reset();
+  ep->read_mu.Unlock();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 

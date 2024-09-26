@@ -108,7 +108,7 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-// Tests round robin is not implacted by the endpoint weight, and that the
+// Tests round robin is not impacted by the endpoint weight, and that the
 // localities in a locality map are picked according to their weights.
 TEST_P(CdsTest, EndpointWeightDoesNotImpactWeightedRoundRobin) {
   CreateAndStartBackends(2);
@@ -507,7 +507,7 @@ TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
   CreateAndStartBackends(2);
   const size_t kNumRpcsPerAddress = 100;
   auto endpoints = CreateEndpointsForBackends();
-  endpoints.push_back(MakeNonExistantEndpoint());
+  endpoints.push_back(MakeNonExistentEndpoint());
   endpoints.back().health_status = HealthStatus::DRAINING;
   EdsResourceArgs args({
       {"locality0", std::move(endpoints), kDefaultLocalityWeight,
@@ -607,12 +607,12 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<EdsResourceArgs::Endpoint> endpoints;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    endpoints.emplace_back(MakeNonExistantEndpoint());
+    endpoints.emplace_back(MakeNonExistentEndpoint());
   }
   EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
-  // seconds, and we should disocver in that time that the target backend is
+  // seconds, and we should discover in that time that the target backend is
   // down.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
@@ -677,7 +677,7 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
 // of the invalid cases.
 TEST_P(EdsTest, NacksInvalidResource) {
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
@@ -1073,7 +1073,7 @@ TEST_P(EdsTest, DropPerTenThousand) {
 
 // Tests that drop is working correctly after update.
 TEST_P(EdsTest, DropConfigUpdate) {
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(2);
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kErrorTolerance = 0.05;
@@ -1085,8 +1085,8 @@ TEST_P(EdsTest, DropConfigUpdate) {
       ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   const size_t kNumRpcsBoth =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
-  // The first ADS response contains one drop category.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  // The first EDS response contains backend 0 and one drop category.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
@@ -1100,32 +1100,20 @@ TEST_P(EdsTest, DropConfigUpdate) {
   LOG(INFO) << "First batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate,
               ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
-  // The second ADS response contains two drop categories, send an update EDS
-  // response.
+  // The second EDS response contains both backends and two drop categories.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until the drop rate increases to the middle of the two configs,
-  // which implies that the update has been in effect.
-  const double kDropRateThreshold =
-      (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
-  size_t num_rpcs = kNumRpcsBoth;
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        ++num_rpcs;
-        if (result.status.ok()) {
-          EXPECT_EQ(result.response.message(), kRequestMessage);
-        } else {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_THAT(result.status.error_message(),
-                      ::testing::StartsWith(kStatusMessageDropPrefix));
-          ++num_drops;
-        }
-        seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
-        return seen_drop_rate < kDropRateThreshold;
-      },
-      /*timeout_ms=*/40000);
+  // Wait until backend 1 sees traffic, so that we know the client has
+  // seen the update.
+  WaitForBackend(DEBUG_LOCATION, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::StartsWith(kStatusMessageDropPrefix));
+    }
+  });
   // Send kNumRpcsBoth RPCs and count the drops.
   LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
@@ -1154,6 +1142,170 @@ TEST_P(EdsTest, DropAll) {
       DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
       kStatusMessageDropPrefix);
   EXPECT_EQ(num_drops, kNumRpcs);
+}
+
+class EdsAuthorityRewriteTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {}  // Individual tests call InitClient().
+};
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, EdsAuthorityRewriteTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  constexpr char kAltAuthority1[] = "alt_authority1";
+  constexpr char kAltAuthority2[] = "alt_authority2";
+  // Note: We use InsecureCreds, since FakeCreds are too picky about
+  // what authority gets sent.
+  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
+             /*lb_expected_authority=*/"",
+             /*xds_resource_does_not_exist_timeout_ms=*/0,
+             /*balancer_authority_override=*/"", /*args=*/nullptr,
+             InsecureChannelCredentials());
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create 3 backends.  Backend 0 does not have a hostname, but 1 and 2 do.
+  CreateAndStartBackends(3, /*xds_enabled=*/false, InsecureServerCredentials());
+  EdsResourceArgs args(
+      {{"locality0",
+        {
+            CreateEndpoint(0),
+            CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/kAltAuthority1),
+            CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                           /*hostname=*/kAltAuthority2),
+        }}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Send one RPC for each backend, check the authority headers seen on
+  // the servers, and make sure we see the expected ones.
+  std::set<std::string> authorities_seen;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EchoResponse response;
+    Status status = SendRpc(
+        RpcOptions().set_echo_host_from_authority_header(true), &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    authorities_seen.insert(response.param().host());
+  }
+  EXPECT_THAT(
+      authorities_seen,
+      ::testing::ElementsAre(kAltAuthority1, kAltAuthority2, kServerName));
+}
+
+TEST_P(EdsAuthorityRewriteTest, NoRewriteWithoutEnvVar) {
+  constexpr char kAltAuthority[] = "alt_authority";
+  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create a backend with a hostname in EDS.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                        /*hostname=*/kAltAuthority)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Send an RPC and check the authority seen on the server side.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
+}
+
+TEST_P(EdsAuthorityRewriteTest, NoRewriteIfServerNotTrustedInBootstrap) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  constexpr char kAltAuthority[] = "alt_authority";
+  InitClient();
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create a backend with a hostname in EDS.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                        /*hostname=*/kAltAuthority)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Send an RPC and check the authority seen on the server side.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
+}
+
+TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNoHostnameInEds) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
+  // Set auto_host_rewrite in the RouteConfig.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->mutable_auto_host_rewrite()
+      ->set_value(true);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Create a backend with no hostname in EDS.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", {CreateEndpoint(0)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Send an RPC and check the authority seen on the server side.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
+}
+
+TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNotEnabledInRoute) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
+  constexpr char kAltAuthority[] = "alt_authority";
+  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
+  // Create a backend with a hostname in EDS.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
+                        /*hostname=*/kAltAuthority)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Send an RPC and check the authority seen on the server side.
+  EchoResponse response;
+  Status status = SendRpc(
+      RpcOptions().set_echo_host_from_authority_header(true), &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(response.param().host(), kServerName);
 }
 
 //
@@ -1231,12 +1383,12 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
 TEST_P(FailoverTest, Failover) {
   CreateAndStartBackends(2);
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        2},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        3},
-      {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality3", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
@@ -1249,7 +1401,7 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
   CreateAndStartBackends(1);
   // Priority 0 will be unreachable, so we'll use priority 1.
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1306,8 +1458,8 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
 TEST_P(FailoverTest, UpdateInitialUnavailable) {
   CreateAndStartBackends(2);
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -1370,12 +1522,12 @@ TEST_P(FailoverTest, UpdatePriority) {
 // Moves all localities in the current priority to a higher priority.
 TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   CreateAndStartBackends(3);
-  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  auto non_existent_endpoint = MakeNonExistentEndpoint();
   // First update:
   // - Priority 0 is locality 0, containing an unreachable backend.
   // - Priority 1 is locality 1, containing backends 0 and 1.
   EdsResourceArgs args({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 2), kDefaultLocalityWeight,
        1},
   });
@@ -1392,15 +1544,13 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // - We add backend 2 to locality 1, just so we have a way to know
   //   when the update has been seen by the client.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 3), kDefaultLocalityWeight,
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // When backend 2 gets traffic, we know the second update has been seen.
   WaitForBackend(DEBUG_LOCATION, 2);
-  // The xDS server got at least 1 response.
-  EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
 }
 
 // This tests a bug triggered by the xds_cluster_resolver policy reusing
@@ -1408,13 +1558,13 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
 // present but deactivated.
 TEST_P(FailoverTest, PriorityChildNameChurn) {
   CreateAndStartBackends(4);
-  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  auto non_existent_endpoint = MakeNonExistentEndpoint();
   // Initial update:
   // - P0:locality0, child number 0 (unreachable)
   // - P1:locality1, child number 1
   // - P2:locality2, child number 2
   EdsResourceArgs args({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        1},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
@@ -1428,7 +1578,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P2:locality3, child number 3 (new child)
   // Child number 1 will be deactivated.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        1},
       {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
@@ -1442,7 +1592,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P2:locality3, child number 3
   // Child number 1 will be deactivated.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality4", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        1},
       {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,

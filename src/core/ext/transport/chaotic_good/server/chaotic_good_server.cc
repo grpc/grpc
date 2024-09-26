@@ -30,7 +30,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -45,11 +44,6 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/promise/activity.h"
@@ -69,6 +63,11 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -114,8 +113,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
       };
   auto shutdown_cb = [](absl::Status status) {
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "Server accept connection failed: %s",
-              StatusToString(status).c_str());
+      LOG(ERROR) << "Server accept connection failed: " << status;
     }
   };
   CHECK_NE(event_engine_, nullptr);
@@ -150,6 +148,8 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
     : listener_(std::move(listener)) {
+  arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
+      listener_->event_engine_.get());
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
@@ -187,11 +187,7 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
       connection_id_, std::make_shared<InterActivityLatch<PromiseEndpoint>>());
 }
 
-void ChaoticGoodServerListener::ActiveConnection::Done(
-    absl::optional<absl::string_view> error) {
-  if (error.has_value()) {
-    LOG(ERROR) << "ActiveConnection::Done:" << this << " " << *error;
-  }
+void ChaoticGoodServerListener::ActiveConnection::Done() {
   // Can easily be holding various locks here: bounce through EE to ensure no
   // deadlocks.
   listener_->event_engine_->Run([self = Ref()]() {
@@ -300,12 +296,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           },
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
-            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-              gpr_log(
-                  GPR_INFO, "%p Data endpoint setup done: shutdown=%s",
-                  self->connection_.get(),
-                  self->connection_->listener_->shutdown_ ? "true" : "false");
-            }
+            GRPC_TRACE_LOG(chaotic_good, INFO)
+                << self->connection_.get()
+                << " Data endpoint setup done: shutdown="
+                << (self->connection_->listener_->shutdown_ ? "true" : "false");
             if (self->connection_->listener_->shutdown_) {
               return absl::UnavailableError("Server shutdown");
             }
@@ -389,13 +383,15 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    connection_->Done(
-        absl::StrCat("Handshake failed: ", result.status().ToString()));
+    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: ", result.status();
+    connection_->Done();
     return;
   }
   CHECK_NE(*result, nullptr);
   if ((*result)->endpoint == nullptr) {
-    connection_->Done("Server handshake done but has empty endpoint.");
+    LOG_EVERY_N_SEC(ERROR, 5)
+        << "Server handshake done but has empty endpoint.";
+    connection_->Done();
     return;
   }
   CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
@@ -431,14 +427,12 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       EventEngineWakeupScheduler(connection_->listener_->event_engine_),
       [self = Ref()](absl::Status status) {
         if (!status.ok()) {
-          self->connection_->Done(
-              absl::StrCat("Server setting frame handling failed: ",
-                           StatusToString(status)));
-        } else {
-          self->connection_->Done();
+          GRPC_TRACE_LOG(chaotic_good, ERROR)
+              << "Server setting frame handling failed: " << status;
         }
+        self->connection_->Done();
       },
-      connection_->arena_.get(), connection_->listener_->event_engine_.get());
+      connection_->arena_.get());
   MutexLock lock(&connection_->mu_);
   if (connection_->orphaned_) return;
   connection_->receive_settings_activity_ = std::move(activity);
@@ -458,6 +452,7 @@ void ChaoticGoodServerListener::Orphan() {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
     MutexLock lock(&mu_);
     connection_list = std::move(connection_list_);
+    connection_list_.clear();
     shutdown_ = true;
   }
   ee_listener_.reset();
@@ -488,7 +483,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
         grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr);
     std::string addr_str =
         *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
-    LOG(INFO) << "BIND: " << addr_str;
+    GRPC_TRACE_LOG(chaotic_good, INFO) << "BIND: " << addr_str;
     auto bind_result = listener->Bind(ee_addr);
     if (!bind_result.ok()) {
       error_list.push_back(
@@ -510,7 +505,8 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   } else if (!error_list.empty()) {
     LOG(INFO) << "Failed to bind some addresses for " << addr;
     for (const auto& error : error_list) {
-      LOG(INFO) << "  " << error.first << ": " << error.second;
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "Binding Failed: " << error.first << ": " << error.second;
     }
   }
   return port_num;

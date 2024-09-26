@@ -39,19 +39,18 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
 
 namespace grpc_core {
 
@@ -64,7 +63,6 @@ class ClientCall final
              grpc_completion_queue* cq, Slice path,
              absl::optional<Slice> authority, bool registered_method,
              Timestamp deadline, grpc_compression_options compression_options,
-             grpc_event_engine::experimental::EventEngine* event_engine,
              RefCountedPtr<Arena> arena,
              RefCountedPtr<UnstartedCallDestination> destination);
 
@@ -151,7 +149,7 @@ class ClientCall final
   };
   std::atomic<uintptr_t> call_state_{kUnstarted};
   ClientMetadataHandle send_initial_metadata_{
-      Arena::MakePooled<ClientMetadata>()};
+      Arena::MakePooledForOverwrite<ClientMetadata>()};
   CallInitiator started_call_initiator_;
   // Status passed to CancelWithError;
   // if call_state_ == kCancelled then this is the authoritative status,
@@ -168,14 +166,13 @@ class ClientCall final
   std::atomic<bool> saw_trailing_metadata_{false};
 };
 
-grpc_call* MakeClientCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
-    bool registered_method, Timestamp deadline,
-    grpc_compression_options compression_options,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena,
-    RefCountedPtr<UnstartedCallDestination> destination);
+grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
+                          grpc_completion_queue* cq, Slice path,
+                          absl::optional<Slice> authority,
+                          bool registered_method, Timestamp deadline,
+                          grpc_compression_options compression_options,
+                          RefCountedPtr<Arena> arena,
+                          RefCountedPtr<UnstartedCallDestination> destination);
 
 }  // namespace grpc_core
 

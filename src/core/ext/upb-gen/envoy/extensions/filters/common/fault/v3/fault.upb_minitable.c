@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/common/fault/v3/fault.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,10 +18,11 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_common_fault_v3_FaultDelay__fields[3] = {
@@ -33,6 +35,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay_ms
   &envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultDelay__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultDelay",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -45,16 +50,21 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay_ms
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init_ptr = &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init;
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultDelay.HeaderDelay",
+#endif
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init},
+const upb_MiniTable* envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init_ptr = &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[3] = {
@@ -67,6 +77,9 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimi
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultRateLimit",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0018000c0100000a, &upb_pom_1bt_max64b},
@@ -75,6 +88,7 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimi
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init_ptr = &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init;
 static const upb_MiniTableField envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
@@ -83,18 +97,26 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimi
   NULL,
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultRateLimit.FixedLimit",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init_ptr = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init;
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.common.fault.v3.FaultRateLimit.HeaderLimit",
+#endif
 };
 
+const upb_MiniTable* envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init_ptr = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init;
 static const upb_MiniTable *messages_layout[5] = {
   &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init,
   &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init,

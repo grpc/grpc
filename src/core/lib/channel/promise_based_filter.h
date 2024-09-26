@@ -48,9 +48,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -72,6 +69,9 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -150,16 +150,6 @@ class ChannelFilter {
   virtual bool GetChannelInfo(const grpc_channel_info*) { return false; }
 
   virtual ~ChannelFilter() = default;
-
-  grpc_event_engine::experimental::EventEngine*
-  hack_until_per_channel_stack_event_engines_land_get_event_engine() {
-    return event_engine_.get();
-  }
-
- private:
-  // TODO(ctiller): remove once per-channel-stack EventEngines land
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 namespace promise_filter_detail {
@@ -953,12 +943,11 @@ class BaseCallData : public Activity, private Wakeable {
         : promise_detail::Context<Arena>(call_data->arena_),
           promise_detail::Context<grpc_polling_entity>(
               call_data->pollent_.load(std::memory_order_acquire)),
-          promise_detail::Context<CallFinalization>(&call_data->finalization_),
-          promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_) {}
+          promise_detail::Context<CallFinalization>(&call_data->finalization_) {
+    }
   };
 
-  class Flusher {
+  class Flusher : public latent_see::InnerScope {
    public:
     explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.
@@ -1305,7 +1294,6 @@ class BaseCallData : public Activity, private Wakeable {
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;
-  grpc_event_engine::experimental::EventEngine* event_engine_;
 };
 
 class ClientCallData : public BaseCallData {

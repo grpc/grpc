@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/lightstep.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_TRACE_V3_LIGHTSTEP_PROTO_UPB_H_
 #define ENVOY_CONFIG_TRACE_V3_LIGHTSTEP_PROTO_UPB_H_
@@ -138,6 +139,7 @@ UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_config_trace_v3_L
   const struct envoy_config_core_v3_DataSource* default_val = NULL;
   const struct envoy_config_core_v3_DataSource* ret;
   const upb_MiniTableField field = {4, UPB_SIZE(16, 56), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -149,11 +151,11 @@ UPB_INLINE bool envoy_config_trace_v3_LightstepConfig_has_access_token(const env
 
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_set_collector_cluster(envoy_config_trace_v3_LightstepConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_set_access_token_file(envoy_config_trace_v3_LightstepConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE int32_t* envoy_config_trace_v3_LightstepConfig_mutable_propagation_modes(envoy_config_trace_v3_LightstepConfig* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 48), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -185,7 +187,8 @@ UPB_INLINE bool envoy_config_trace_v3_LightstepConfig_add_propagation_modes(envo
 }
 UPB_INLINE void envoy_config_trace_v3_LightstepConfig_set_access_token(envoy_config_trace_v3_LightstepConfig *msg, struct envoy_config_core_v3_DataSource* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(16, 56), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_config_trace_v3_LightstepConfig_mutable_access_token(envoy_config_trace_v3_LightstepConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_DataSource* sub = (struct envoy_config_core_v3_DataSource*)envoy_config_trace_v3_LightstepConfig_access_token(msg);

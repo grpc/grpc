@@ -3,7 +3,8 @@
  *     envoy/config/listener/v3/quic_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -21,19 +22,22 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_listener_v3_QuicProtocolOptions_submsgs[9] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RuntimeFeatureFlag_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_listener_v3_QuicProtocolOptions_submsgs[11] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RuntimeFeatureFlag_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_listener_v3_QuicProtocolOptions__fields[9] = {
+static const upb_MiniTableField envoy_config_listener_v3_QuicProtocolOptions__fields[11] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -43,14 +47,20 @@ static const upb_MiniTableField envoy_config_listener_v3_QuicProtocolOptions__fi
   {7, UPB_SIZE(36, 64), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(40, 72), 71, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {9, UPB_SIZE(44, 80), 72, 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(48, 88), 73, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(52, 96), 74, 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__listener__v3__QuicProtocolOptions_msg_init = {
   &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(48, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(56, 104), 11, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.listener.v3.QuicProtocolOptions",
+#endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__QuicProtocolOptions_msg_init_ptr = &envoy__config__listener__v3__QuicProtocolOptions_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__config__listener__v3__QuicProtocolOptions_msg_init,
 };

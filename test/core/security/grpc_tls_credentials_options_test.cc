@@ -24,13 +24,12 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

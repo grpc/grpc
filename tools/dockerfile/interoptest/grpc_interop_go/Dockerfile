@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Since the image names depend on the digest of the Dockerfile, updating the
+# the following comment is a simple way to re-build the image with a new Go
+# version.
+# latest points to 1.23.1 at the time of building.
 FROM golang:latest
 
 # Using login shell removes Go from path, so we add it.

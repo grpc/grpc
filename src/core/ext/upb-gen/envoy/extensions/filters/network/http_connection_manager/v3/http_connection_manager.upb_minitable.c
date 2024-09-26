@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -34,55 +35,56 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[35] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__Rds_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteConfiguration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__Tracing_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__SetCurrentClientCertDetails_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__UpgradeConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__InternalAddressConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__RequestIDExtension_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__LocalReplyConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__PathNormalizationOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http3ProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SchemeHeaderTransformation_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__ProxyStatusConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__HcmAccessLogOptions_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[35] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__Rds_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteConfiguration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__Tracing_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__SetCurrentClientCertDetails_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__UpgradeConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__InternalAddressConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__RequestIDExtension_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__LocalReplyConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__PathNormalizationOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http3ProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SchemeHeaderTransformation_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__ProxyStatusConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__HcmAccessLogOptions_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[54] = {
+static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[55] = {
   {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(208, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(200, 368), UPB_SIZE(-101, -33), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(200, 368), UPB_SIZE(-101, -33), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(212, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(204, 368), UPB_SIZE(-101, -33), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(204, 368), UPB_SIZE(-101, -33), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(16, 80), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(20, 88), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(24, 96), 65, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(28, 104), 66, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {9, UPB_SIZE(32, 112), 67, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {10, UPB_SIZE(216, 120), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(220, 120), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {12, UPB_SIZE(36, 136), 68, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {13, UPB_SIZE(40, 144), 0, 8, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {14, UPB_SIZE(44, 152), 69, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -93,7 +95,7 @@ static const upb_MiniTableField envoy_extensions_filters_network_http_connection
   {19, UPB_SIZE(64, 24), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {20, UPB_SIZE(68, 28), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {21, UPB_SIZE(69, 29), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {22, UPB_SIZE(224, 176), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {22, UPB_SIZE(228, 176), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {23, UPB_SIZE(72, 192), 0, 12, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {24, UPB_SIZE(76, 200), 72, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {25, UPB_SIZE(80, 208), 73, 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -101,7 +103,7 @@ static const upb_MiniTableField envoy_extensions_filters_network_http_connection
   {28, UPB_SIZE(88, 224), 75, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {29, UPB_SIZE(92, 232), 76, 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {30, UPB_SIZE(96, 240), 77, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {31, UPB_SIZE(200, 368), UPB_SIZE(-101, -33), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {31, UPB_SIZE(204, 368), UPB_SIZE(-101, -33), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {32, UPB_SIZE(104, 36), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {33, UPB_SIZE(105, 37), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {34, UPB_SIZE(108, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -112,7 +114,7 @@ static const upb_MiniTableField envoy_extensions_filters_network_http_connection
   {39, UPB_SIZE(128, 45), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {40, UPB_SIZE(132, 272), 81, 23, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {41, UPB_SIZE(136, 280), 82, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {42, UPB_SIZE(204, 376), UPB_SIZE(-141, -49), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {42, UPB_SIZE(208, 376), UPB_SIZE(-141, -49), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {43, UPB_SIZE(144, 288), 83, 25, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {44, UPB_SIZE(148, 296), 84, 26, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {45, UPB_SIZE(152, 52), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -127,12 +129,16 @@ static const upb_MiniTableField envoy_extensions_filters_network_http_connection
   {54, UPB_SIZE(188, 352), 89, 33, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {55, UPB_SIZE(192, 58), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {56, UPB_SIZE(196, 360), 90, 34, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {57, UPB_SIZE(200, 59), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init = {
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager__fields[0],
-  UPB_SIZE(232, 384), 54, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(240, 384), 55, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -159,7 +165,7 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
     {0x00b000003f0001b2, &upb_pss_2bt},
     {0x00c000003f0c01ba, &upb_prm_2bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003b00003f0003c8, &upb_psb1_2bt},
     {0x017800302a0002d0, &upb_pob1_2bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -169,14 +175,15 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__Tracing__Http_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_submsgs[7] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__tracing__v3__CustomTag_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__Tracing__Http_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__fields[8] = {
@@ -194,6 +201,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing__fields[0],
   UPB_SIZE(48, 72), 8, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.Tracing",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -214,8 +224,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__CidrRange_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__Tracing_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__Tracing_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__CidrRange_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig__fields[2] = {
@@ -227,6 +238,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.InternalAddressConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -235,8 +249,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__InternalAddressConfig_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__InternalAddressConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails__fields[5] = {
@@ -251,6 +266,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails__fields[0],
   24, 5, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.SetCurrentClientCertDetails",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -263,9 +281,10 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__SetCurrentClientCertDetails_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__SetCurrentClientCertDetails_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig__fields[3] = {
@@ -278,6 +297,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.UpgradeConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -286,9 +308,10 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__UpgradeConfig_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__UpgradeConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__http__v3__PathTransformation_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions__fields[2] = {
@@ -300,8 +323,12 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.PathNormalizationOptions",
+#endif
 };
 
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__PathNormalizationOptions_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__PathNormalizationOptions_msg_init;
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig__fields[6] = {
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -315,6 +342,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   NULL,
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig__fields[0],
   UPB_SIZE(24, 32), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.ProxyStatusConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -327,8 +357,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__ProxyStatusConfig_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__ProxyStatusConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions__fields[3] = {
@@ -341,6 +372,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_HcmAccessLogOptions__fields[0],
   24, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.HcmAccessLogOptions",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -349,9 +383,10 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ResponseMapper_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SubstitutionFormatString_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__HcmAccessLogOptions_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__HcmAccessLogOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ResponseMapper_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SubstitutionFormatString_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__fields[2] = {
@@ -363,18 +398,22 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.LocalReplyConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_prm_1bt_max64b},
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLogFilter_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SubstitutionFormatString_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__LocalReplyConfig_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__LocalReplyConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLogFilter_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SubstitutionFormatString_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper__fields[5] = {
@@ -389,6 +428,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper__fields[0],
   UPB_SIZE(32, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ResponseMapper",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -401,8 +443,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_Rds_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ResponseMapper_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ResponseMapper_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_Rds_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_Rds__fields[2] = {
@@ -414,6 +457,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_Rds_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_Rds__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.Rds",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -422,8 +468,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__ScopedRouteConfiguration_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__Rds_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__Rds_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__ScopedRouteConfiguration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__fields[1] = {
@@ -434,17 +481,21 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRouteConfigurationsList",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRouteConfigurationsList_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRds_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRouteConfigurationsList_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRouteConfigurationsList_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRouteConfigurationsList_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRds_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes__fields[5] = {
@@ -459,6 +510,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes__fields[0],
   UPB_SIZE(40, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRoutes",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -471,8 +525,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__fields[1] = {
@@ -483,14 +538,18 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder__fields[1] = {
@@ -501,14 +560,18 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder.FragmentBuilder",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max64b},
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor__KvElement_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor__KvElement_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__fields[4] = {
@@ -522,6 +585,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder.FragmentBuilder.HeaderValueExtractor",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -534,6 +600,7 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor_msg_init;
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -543,6 +610,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   NULL,
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRoutes.ScopeKeyBuilder.FragmentBuilder.HeaderValueExtractor.KvElement",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -551,8 +621,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor__KvElement_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRoutes__ScopeKeyBuilder__FragmentBuilder__HeaderValueExtractor__KvElement_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__fields[2] = {
@@ -564,6 +635,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.ScopedRds",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -572,9 +646,10 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ExtensionConfigSource_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRds_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__ScopedRds_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ExtensionConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[5] = {
@@ -589,6 +664,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter__fields[0],
   UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.HttpFilter",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -601,8 +679,9 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__fields[1] = {
@@ -613,10 +692,14 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.RequestIDExtension",
+#endif
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init},
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__RequestIDExtension_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__RequestIDExtension_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager__fields[1] = {
@@ -627,8 +710,12 @@ const upb_MiniTable envoy__extensions__filters__network__http_0connection_0manag
   &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_submsgs[0],
   &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.filters.network.http_connection_manager.v3.EnvoyMobileHttpConnectionManager",
+#endif
 };
 
+const upb_MiniTable* envoy__extensions__filters__network__http_0connection_0manager__v3__EnvoyMobileHttpConnectionManager_msg_init_ptr = &envoy__extensions__filters__network__http_0connection_0manager__v3__EnvoyMobileHttpConnectionManager_msg_init;
 static const upb_MiniTable *messages_layout[21] = {
   &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager_msg_init,
   &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpConnectionManager__Tracing_msg_init,

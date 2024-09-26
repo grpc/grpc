@@ -3,7 +3,8 @@
  *     xds/data/orca/v3/orca_load_report.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H_
 #define XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_H_
@@ -111,22 +112,26 @@ UPB_INLINE size_t xds_data_orca_v3_OrcaLoadReport_request_cost_size(const xds_da
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_request_cost_get(const xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double* val) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
 UPB_INLINE const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry* xds_data_orca_v3_OrcaLoadReport_request_cost_next(const xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE const upb_Map* _xds_data_orca_v3_OrcaLoadReport_request_cost_upb_map(xds_data_orca_v3_OrcaLoadReport* msg) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_Map* _xds_data_orca_v3_OrcaLoadReport_request_cost_mutable_upb_map(xds_data_orca_v3_OrcaLoadReport* msg, upb_Arena* a) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, sizeof(double), a);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_utilization(xds_data_orca_v3_OrcaLoadReport* msg) {
@@ -140,22 +145,26 @@ UPB_INLINE size_t xds_data_orca_v3_OrcaLoadReport_utilization_size(const xds_dat
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_utilization_get(const xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double* val) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
 UPB_INLINE const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* xds_data_orca_v3_OrcaLoadReport_utilization_next(const xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE const upb_Map* _xds_data_orca_v3_OrcaLoadReport_utilization_upb_map(xds_data_orca_v3_OrcaLoadReport* msg) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_Map* _xds_data_orca_v3_OrcaLoadReport_utilization_mutable_upb_map(xds_data_orca_v3_OrcaLoadReport* msg, upb_Arena* a) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, sizeof(double), a);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_rps_fractional(xds_data_orca_v3_OrcaLoadReport* msg) {
@@ -193,22 +202,26 @@ UPB_INLINE size_t xds_data_orca_v3_OrcaLoadReport_named_metrics_size(const xds_d
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_get(const xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double* val) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
 UPB_INLINE const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* xds_data_orca_v3_OrcaLoadReport_named_metrics_next(const xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE const upb_Map* _xds_data_orca_v3_OrcaLoadReport_named_metrics_upb_map(xds_data_orca_v3_OrcaLoadReport* msg) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_Map* _xds_data_orca_v3_OrcaLoadReport_named_metrics_mutable_upb_map(xds_data_orca_v3_OrcaLoadReport* msg, upb_Arena* a) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, sizeof(double), a);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_clear_application_utilization(xds_data_orca_v3_OrcaLoadReport* msg) {
@@ -226,15 +239,15 @@ UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_application_utilization(const 
 
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 8), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   const upb_MiniTableField field = {2, UPB_SIZE(32, 16), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_rps(xds_data_orca_v3_OrcaLoadReport *msg, uint64_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(40, 24), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_request_cost_clear(xds_data_orca_v3_OrcaLoadReport* msg) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -244,6 +257,7 @@ UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_request_cost_clear(xds_data_orca
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_request_cost_set(xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double val, upb_Arena* a) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
                                                     &field, 0, sizeof(val), a);
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
@@ -257,6 +271,7 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_request_cost_delete(xds_data_orc
 }
 UPB_INLINE xds_data_orca_v3_OrcaLoadReport_RequestCostEntry* xds_data_orca_v3_OrcaLoadReport_request_cost_nextmutable(xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   const upb_MiniTableField field = {4, UPB_SIZE(8, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (xds_data_orca_v3_OrcaLoadReport_RequestCostEntry*)_upb_map_next(map, iter);
@@ -269,6 +284,7 @@ UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_utilization_clear(xds_data_orca_
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_utilization_set(xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double val, upb_Arena* a) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
                                                     &field, 0, sizeof(val), a);
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
@@ -282,17 +298,18 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_utilization_delete(xds_data_orca
 }
 UPB_INLINE xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* xds_data_orca_v3_OrcaLoadReport_utilization_nextmutable(xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (xds_data_orca_v3_OrcaLoadReport_UtilizationEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   const upb_MiniTableField field = {6, 48, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_eps(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   const upb_MiniTableField field = {7, 56, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_named_metrics_clear(xds_data_orca_v3_OrcaLoadReport* msg) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -302,6 +319,7 @@ UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_named_metrics_clear(xds_data_orc
 }
 UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_set(xds_data_orca_v3_OrcaLoadReport* msg, upb_StringView key, double val, upb_Arena* a) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
                                                     &field, 0, sizeof(val), a);
   return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
@@ -315,13 +333,14 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_delete(xds_data_or
 }
 UPB_INLINE xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* xds_data_orca_v3_OrcaLoadReport_named_metrics_nextmutable(xds_data_orca_v3_OrcaLoadReport* msg, size_t* iter) {
   const upb_MiniTableField field = {8, UPB_SIZE(16, 64), 0, 2, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return NULL;
   return (xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry*)_upb_map_next(map, iter);
 }
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_application_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   const upb_MiniTableField field = {9, UPB_SIZE(64, 72), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* xds.data.orca.v3.OrcaLoadReport.RequestCostEntry */

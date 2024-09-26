@@ -45,7 +45,7 @@ def grpc_cc_benchmark(name, external_deps = [], tags = [], uses_polling = False,
         name = name,
         args = grpc_benchmark_args(),
         external_deps = ["benchmark"] + external_deps,
-        tags = tags + ["no_mac", "no_windows"],
+        tags = tags + ["no_mac", "no_windows", "bazel_only"],
         uses_polling = uses_polling,
         uses_event_engine = uses_event_engine,
         # cc_binary defaults to 1, and we are interested in performance

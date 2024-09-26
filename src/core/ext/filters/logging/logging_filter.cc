@@ -46,7 +46,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
@@ -54,8 +53,6 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
@@ -67,9 +64,11 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
@@ -106,11 +105,9 @@ class MetadataEncoder {
     }
     uint64_t mdentry_len = key.length() + value.length();
     if (mdentry_len > log_len_) {
-      gpr_log(
-          GPR_DEBUG,
-          "Skipped metadata key because of max metadata logging bytes %" PRIu64
-          " (current) vs %" PRIu64 " (max less already accounted metadata)",
-          mdentry_len, log_len_);
+      VLOG(2) << "Skipped metadata key because of max metadata logging bytes "
+              << mdentry_len << " (current) vs " << log_len_
+              << " (max less already accounted metadata)";
       truncated_ = true;
       return;
     }

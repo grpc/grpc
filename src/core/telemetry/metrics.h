@@ -25,16 +25,15 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -461,14 +460,7 @@ class GlobalStatsPluginRegistry {
     template <typename... Args>
     GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
     RegisterCallback(absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
-                     Duration min_interval, Args... args) {
-      AssertIsCallbackGaugeHandle(args...);
-      return std::make_unique<RegisteredMetricCallback>(
-          *this, std::move(callback),
-          std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{
-              args...},
-          min_interval);
-    }
+                     Duration min_interval, Args... args);
 
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
@@ -556,6 +548,18 @@ class RegisteredMetricCallback {
   std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics_;
   Duration min_interval_;
 };
+
+template <typename... Args>
+inline std::unique_ptr<RegisteredMetricCallback>
+GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    Duration min_interval, Args... args) {
+  AssertIsCallbackGaugeHandle(args...);
+  return std::make_unique<RegisteredMetricCallback>(
+      *this, std::move(callback),
+      std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{args...},
+      min_interval);
+}
 
 }  // namespace grpc_core
 

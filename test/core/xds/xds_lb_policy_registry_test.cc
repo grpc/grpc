@@ -35,13 +35,13 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
@@ -75,9 +75,8 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {
-      nullptr, GrpcXdsBootstrap::GrpcXdsServer(), nullptr, def_pool.ptr(),
-      arena.ptr()};
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+                                            def_pool.ptr(), arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
   ValidationErrors errors;

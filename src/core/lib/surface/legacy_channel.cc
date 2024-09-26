@@ -20,6 +20,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -27,7 +28,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
@@ -37,11 +37,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -57,6 +53,11 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -85,8 +86,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder.Build();
   if (!r.ok()) {
     auto status = r.status();
-    gpr_log(GPR_ERROR, "channel stack builder failed: %s",
-            status.ToString().c_str());
+    LOG(ERROR) << "channel stack builder failed: " << status;
     return status;
   }
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
@@ -107,7 +107,10 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
                                 .value_or(CoreConfiguration::Get()
                                               .resolver_registry()
                                               .GetDefaultAuthority(target));
-    experimental::StatsPluginChannelScope scope(target, authority);
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
+        args);
+    experimental::StatsPluginChannelScope scope(target, authority,
+                                                endpoint_config);
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
     // Add per-channel stats plugins.
@@ -206,9 +209,8 @@ grpc_connectivity_state LegacyChannel::CheckConnectivityState(
   ClientChannelFilter* client_channel = GetClientChannelFilter();
   if (GPR_UNLIKELY(client_channel == nullptr)) {
     if (IsLame()) return GRPC_CHANNEL_TRANSIENT_FAILURE;
-    gpr_log(GPR_ERROR,
-            "grpc_channel_check_connectivity_state called on something that is "
-            "not a client channel");
+    LOG(ERROR) << "grpc_channel_check_connectivity_state called on something "
+                  "that is not a client channel";
     return GRPC_CHANNEL_SHUTDOWN;
   }
   return client_channel->CheckConnectivityState(try_to_connect);

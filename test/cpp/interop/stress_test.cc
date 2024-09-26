@@ -33,7 +33,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/interop/interop_client.h"
@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
                             server_addresses);
 
   // Parse test cases and weights
-  if (absl::GetFlag(FLAGS_test_cases).length() == 0) {
+  if (absl::GetFlag(FLAGS_test_cases).empty()) {
     LOG(ERROR) << "No test cases supplied";
     return 1;
   }

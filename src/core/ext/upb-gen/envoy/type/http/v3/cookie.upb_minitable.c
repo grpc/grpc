@@ -3,7 +3,8 @@
  *     envoy/type/http/v3/cookie.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,8 +16,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_http_v3_Cookie_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_http_v3_Cookie_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_http_v3_Cookie__fields[3] = {
@@ -29,6 +31,9 @@ const upb_MiniTable envoy__type__http__v3__Cookie_msg_init = {
   &envoy_type_http_v3_Cookie_submsgs[0],
   &envoy_type_http_v3_Cookie__fields[0],
   UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.http.v3.Cookie",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -37,6 +42,7 @@ const upb_MiniTable envoy__type__http__v3__Cookie_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__http__v3__Cookie_msg_init_ptr = &envoy__type__http__v3__Cookie_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__type__http__v3__Cookie_msg_init,
 };

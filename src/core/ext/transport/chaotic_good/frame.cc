@@ -25,17 +25,16 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -154,7 +153,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   CHECK_NE(arena, nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooledForOverwrite<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),

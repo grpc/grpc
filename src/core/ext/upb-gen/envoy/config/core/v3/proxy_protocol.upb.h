@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/proxy_protocol.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CORE_V3_PROXY_PROTOCOL_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_PROXY_PROTOCOL_PROTO_UPB_H_
@@ -120,7 +121,7 @@ UPB_INLINE upb_Array* _envoy_config_core_v3_ProxyProtocolPassThroughTLVs_tlv_typ
 
 UPB_INLINE void envoy_config_core_v3_ProxyProtocolPassThroughTLVs_set_match_type(envoy_config_core_v3_ProxyProtocolPassThroughTLVs *msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE uint32_t* envoy_config_core_v3_ProxyProtocolPassThroughTLVs_mutable_tlv_type(envoy_config_core_v3_ProxyProtocolPassThroughTLVs* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -207,6 +208,7 @@ UPB_INLINE const envoy_config_core_v3_ProxyProtocolPassThroughTLVs* envoy_config
   const envoy_config_core_v3_ProxyProtocolPassThroughTLVs* default_val = NULL;
   const envoy_config_core_v3_ProxyProtocolPassThroughTLVs* ret;
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -218,11 +220,12 @@ UPB_INLINE bool envoy_config_core_v3_ProxyProtocolConfig_has_pass_through_tlvs(c
 
 UPB_INLINE void envoy_config_core_v3_ProxyProtocolConfig_set_version(envoy_config_core_v3_ProxyProtocolConfig *msg, int32_t value) {
   const upb_MiniTableField field = {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_core_v3_ProxyProtocolConfig_set_pass_through_tlvs(envoy_config_core_v3_ProxyProtocolConfig *msg, envoy_config_core_v3_ProxyProtocolPassThroughTLVs* value) {
   const upb_MiniTableField field = {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ProxyProtocolPassThroughTLVs* envoy_config_core_v3_ProxyProtocolConfig_mutable_pass_through_tlvs(envoy_config_core_v3_ProxyProtocolConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_ProxyProtocolPassThroughTLVs* sub = (struct envoy_config_core_v3_ProxyProtocolPassThroughTLVs*)envoy_config_core_v3_ProxyProtocolConfig_pass_through_tlvs(msg);

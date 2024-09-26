@@ -32,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -41,11 +40,6 @@
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -54,7 +48,12 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/work_serializer.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"

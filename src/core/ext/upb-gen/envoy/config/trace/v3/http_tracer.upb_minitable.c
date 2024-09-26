@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/http_tracer.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -16,8 +17,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_trace_v3_Tracing_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__Tracing__Http_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_trace_v3_Tracing_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__Tracing__Http_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_Tracing__fields[1] = {
@@ -28,10 +30,14 @@ const upb_MiniTable envoy__config__trace__v3__Tracing_msg_init = {
   &envoy_config_trace_v3_Tracing_submsgs[0],
   &envoy_config_trace_v3_Tracing__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.Tracing",
+#endif
 };
 
-static const upb_MiniTableSub envoy_config_trace_v3_Tracing_Http_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__config__trace__v3__Tracing_msg_init_ptr = &envoy__config__trace__v3__Tracing_msg_init;
+static const upb_MiniTableSubInternal envoy_config_trace_v3_Tracing_Http_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_Tracing_Http__fields[2] = {
@@ -43,6 +49,9 @@ const upb_MiniTable envoy__config__trace__v3__Tracing__Http_msg_init = {
   &envoy_config_trace_v3_Tracing_Http_submsgs[0],
   &envoy_config_trace_v3_Tracing_Http__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.trace.v3.Tracing.Http",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -51,6 +60,7 @@ const upb_MiniTable envoy__config__trace__v3__Tracing__Http_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__trace__v3__Tracing__Http_msg_init_ptr = &envoy__config__trace__v3__Tracing__Http_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__config__trace__v3__Tracing_msg_init,
   &envoy__config__trace__v3__Tracing__Http_msg_init,

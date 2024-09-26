@@ -37,11 +37,9 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -53,6 +51,7 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 

@@ -35,7 +35,7 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -256,7 +256,7 @@ class TestMultipleServiceImpl : public RpcService {
       }
     }
     if (request->has_param() &&
-        (request->param().expected_client_identity().length() > 0 ||
+        (!request->param().expected_client_identity().empty() ||
          request->param().check_auth_context())) {
       internal::CheckServerAuthContext(
           context, request->param().expected_transport_security_type(),

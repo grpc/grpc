@@ -65,7 +65,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc_base",
+        "//:grpc",
         "//src/core:interception_chain",
         "//src/core:resource_quota",
         "//test/core/promise:poll_matcher",
@@ -244,6 +244,16 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_call_spine",
     srcs = ["bm_call_spine.cc"],
+    deps = [
+        ":call_spine_benchmarks",
+        "//:grpc",
+        "//src/core:default_event_engine",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_metadata",
+    srcs = ["bm_metadata.cc"],
     deps = [
         ":call_spine_benchmarks",
         "//:grpc",

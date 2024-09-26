@@ -23,7 +23,7 @@
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 
 namespace grpc {
 namespace testing {

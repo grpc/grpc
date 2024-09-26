@@ -836,6 +836,12 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif /* __GPR_WINDOWS */
 #endif /* GRPC_ALLOW_EXCEPTIONS */
 
+#ifdef __has_builtin
+#define GRPC_HAS_BUILTIN(a) __has_builtin(a)
+#else
+#define GRPC_HAS_BUILTIN(a) 0
+#endif
+
 /* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
  * most likely. Ideally, also collect performance numbers to justify the claim.
  */

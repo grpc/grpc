@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/common/v3/common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -18,9 +19,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig__fields[2] = {
@@ -32,6 +34,9 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max64b},
@@ -40,9 +45,10 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[3] = {
@@ -55,6 +61,9 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -63,16 +72,21 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
   })
 };
 
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init;
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.LocalityWeightedLbConfig",
+#endif
 };
 
-static const upb_MiniTableSub envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RuntimeDouble_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RuntimeDouble_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig__fields[3] = {
@@ -85,10 +99,14 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Sl
   &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.SlowStartConfig",
+#endif
 };
 
-static const upb_MiniTableSub envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__fields[2] = {
@@ -100,12 +118,16 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Co
   &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.ConsistentHashingLbConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000900003f000008, &upb_psb1_1bt},
   })
 };
 
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init;
 static const upb_MiniTable *messages_layout[5] = {
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init,

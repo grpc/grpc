@@ -20,6 +20,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/poll_matcher.h"
@@ -159,7 +162,7 @@ class TestConsumingInterceptor final : public Interceptor {
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     Consume(std::move(unstarted_call_handler))
         .PushServerTrailingMetadata(
-            ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "👊 consumed"));
   }
   void Orphaned() override {}
   static absl::StatusOr<RefCountedPtr<TestConsumingInterceptor<I>>> Create(
@@ -247,8 +250,11 @@ class InterceptionChainTest : public ::testing::Test {
 
   // Run a call through a UnstartedCallDestination until it's complete.
   FinishedCall RunCall(UnstartedCallDestination* destination) {
-    auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                             call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                             std::move(arena));
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
@@ -273,11 +279,11 @@ class InterceptionChainTest : public ::testing::Test {
                 << unstarted_call_handler.UnprocessedClientInitialMetadata()
                        .DebugString();
       EXPECT_EQ(metadata_.get(), nullptr);
-      metadata_ = Arena::MakePooled<ClientMetadata>();
+      metadata_ = Arena::MakePooledForOverwrite<ClientMetadata>();
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
       unstarted_call_handler.PushServerTrailingMetadata(
-          ServerMetadataFromStatus(absl::InternalError("👊 cancelled")));
+          ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "👊 cancelled"));
     }
 
     void Orphaned() override {}
@@ -287,6 +293,8 @@ class InterceptionChainTest : public ::testing::Test {
    private:
     ClientMetadataHandle metadata_;
   };
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
   RefCountedPtr<Destination> destination_ = MakeRefCounted<Destination>();
   RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
       MakeRefCounted<CallArenaAllocator>(
@@ -437,5 +445,8 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_tracer_init();
   gpr_log_verbosity_init();
-  return RUN_ALL_TESTS();
+  grpc_init();
+  auto r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }

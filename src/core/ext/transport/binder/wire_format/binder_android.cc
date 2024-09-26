@@ -25,11 +25,9 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_binder {
 namespace {
@@ -65,7 +63,7 @@ ndk_util::binder_status_t f_onTransact(ndk_util::AIBinder* binder,
                                        transaction_code_t code,
                                        const ndk_util::AParcel* in,
                                        ndk_util::AParcel* /*out*/) {
-  gpr_log(GPR_INFO, __func__);
+  LOG(INFO) << __func__;
   LOG(INFO) << "tx code = " << code;
 
   auto* user_data =
@@ -155,9 +153,8 @@ TransactionReceiverAndroid::TransactionReceiverAndroid(
   args.callback = &transact_cb_;
   binder_ = ndk_util::AIBinder_new(aibinder_class, &args);
   CHECK(binder_);
-  gpr_log(GPR_INFO, "ndk_util::AIBinder_associateClass = %d",
-          static_cast<int>(
-              ndk_util::AIBinder_associateClass(binder_, aibinder_class)));
+  LOG(INFO) << "ndk_util::AIBinder_associateClass = "
+            << ndk_util::AIBinder_associateClass(binder_, aibinder_class);
 }
 
 TransactionReceiverAndroid::~TransactionReceiverAndroid() {
@@ -181,9 +178,8 @@ void AssociateWithNoopClass(ndk_util::AIBinder* binder) {
 
   ndk_util::AIBinder_Class_disableInterfaceTokenHeader(aibinder_class);
 
-  gpr_log(GPR_INFO, "ndk_util::AIBinder_associateClass = %d",
-          static_cast<int>(
-              ndk_util::AIBinder_associateClass(binder, aibinder_class)));
+  LOG(INFO) << "ndk_util::AIBinder_associateClass = "
+            << ndk_util::AIBinder_associateClass(binder, aibinder_class);
 }
 
 }  // namespace

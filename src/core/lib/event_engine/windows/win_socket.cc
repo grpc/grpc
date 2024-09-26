@@ -23,9 +23,9 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/sync.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 // Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -71,7 +71,8 @@ void WinSocket::Shutdown() {
                         &ioctl_num_bytes, NULL, NULL);
   if (status != 0) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    LOG(INFO) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
   } else if (DisconnectEx(socket_, NULL, 0, 0) == FALSE) {
     auto last_error = WSAGetLastError();
@@ -79,7 +80,8 @@ void WinSocket::Shutdown() {
     // error, and log all others.
     if (last_error != WSAENOTCONN) {
       char* utf8_message = gpr_format_message(last_error);
-      LOG(INFO) << "DisconnectEx failed: " << utf8_message;
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "DisconnectEx failed: " << utf8_message;
       gpr_free(utf8_message);
     }
   }

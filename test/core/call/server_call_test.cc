@@ -44,9 +44,11 @@ class ServerCallTest : public YodelTest {
 
   grpc_call* InitCall(ClientMetadataHandle client_initial_metadata) {
     CHECK_EQ(call_, nullptr);
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
     auto call =
-        MakeCallPair(std::move(client_initial_metadata), event_engine().get(),
-                     SimpleArenaAllocator()->MakeArena());
+        MakeCallPair(std::move(client_initial_metadata), std::move(arena));
     call.initiator.SpawnGuarded(
         "initial_metadata",
         [this, handler = call.handler.StartCall()]() mutable {
@@ -71,7 +73,8 @@ class ServerCallTest : public YodelTest {
   ClientMetadataHandle MakeClientInitialMetadata(
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           md) {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kDefaultPath));
     for (const auto& pair : md) {

@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -34,7 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,6 +41,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -77,7 +76,7 @@ class FullstackFixture : public BaseFixture {
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const std::string& address) {
     ServerBuilder b;
-    if (address.length() > 0) {
+    if (!address.empty()) {
       b.AddListeningPort(address, InsecureServerCredentials());
     }
     cq_ = b.AddCompletionQueue(true);
@@ -86,7 +85,7 @@ class FullstackFixture : public BaseFixture {
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    if (address.length() > 0) {
+    if (!address.empty()) {
       channel_ = grpc::CreateCustomChannel(address,
                                            InsecureChannelCredentials(), args);
     } else {

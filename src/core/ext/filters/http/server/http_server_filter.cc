@@ -25,12 +25,12 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -139,10 +139,8 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-            GetContext<Activity>()->DebugTag().c_str());
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << GetContext<Activity>()->DebugTag() << "[http-server] Write metadata";
   FilterOutgoingMetadata(&md);
   md.Set(HttpStatusMetadata(), 200);
   md.Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);

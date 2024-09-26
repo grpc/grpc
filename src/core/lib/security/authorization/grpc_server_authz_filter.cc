@@ -19,10 +19,10 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
@@ -64,26 +64,21 @@ GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
   EvaluateArgs args(&initial_metadata, &per_channel_evaluate_args_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    gpr_log(GPR_DEBUG,
-            "checking request: url_path=%s, transport_security_type=%s, "
-            "uri_sans=[%s], dns_sans=[%s], subject=%s",
-            std::string(args.GetPath()).c_str(),
-            std::string(args.GetTransportSecurityType()).c_str(),
-            absl::StrJoin(args.GetUriSans(), ",").c_str(),
-            absl::StrJoin(args.GetDnsSans(), ",").c_str(),
-            std::string(args.GetSubject()).c_str());
-  }
+  GRPC_TRACE_VLOG(grpc_authz_api, 2)
+      << "checking request: url_path=" << args.GetPath()
+      << ", transport_security_type=" << args.GetTransportSecurityType()
+      << ", uri_sans=[" << absl::StrJoin(args.GetUriSans(), ",")
+      << "], dns_sans=[" << absl::StrJoin(args.GetDnsSans(), ",")
+      << "], subject=" << args.GetSubject();
   grpc_authorization_policy_provider::AuthorizationEngines engines =
       provider_->engines();
   if (engines.deny_engine != nullptr) {
     AuthorizationEngine::Decision decision =
         engines.deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-        gpr_log(GPR_INFO, "chand=%p: request denied by policy %s.", this,
-                decision.matching_policy_name.c_str());
-      }
+      GRPC_TRACE_LOG(grpc_authz_api, INFO)
+          << "chand=" << this << ": request denied by policy "
+          << decision.matching_policy_name;
       return false;
     }
   }
@@ -91,17 +86,14 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
     AuthorizationEngine::Decision decision =
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-        gpr_log(GPR_DEBUG, "chand=%p: request allowed by policy %s.", this,
-                decision.matching_policy_name.c_str());
-      }
+      GRPC_TRACE_VLOG(grpc_authz_api, 2)
+          << "chand=" << this << ": request allowed by policy "
+          << decision.matching_policy_name;
       return true;
     }
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    gpr_log(GPR_INFO, "chand=%p: request denied, no matching policy found.",
-            this);
-  }
+  GRPC_TRACE_LOG(grpc_authz_api, INFO)
+      << "chand=" << this << ": request denied, no matching policy found.";
   return false;
 }
 

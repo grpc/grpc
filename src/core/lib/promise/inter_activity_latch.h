@@ -20,16 +20,16 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -45,10 +45,8 @@ class InterActivityLatch {
   auto Wait() {
     return [this]() -> Poll<T> {
       MutexLock lock(&mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
-                StateString().c_str());
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
         return std::move(value_);
       } else {
@@ -61,9 +59,8 @@ class InterActivityLatch {
   // Set the latch.
   void Set(T value) {
     MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     is_set_ = true;
     value_ = std::move(value);
     waiters_.WakeupAsync();
@@ -103,10 +100,8 @@ class InterActivityLatch<void> {
   auto Wait() {
     return [this]() -> Poll<Empty> {
       MutexLock lock(&mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
-                StateString().c_str());
-      }
+      GRPC_TRACE_LOG(promise_primitives, INFO)
+          << DebugTag() << "PollWait " << StateString();
       if (is_set_) {
         return Empty{};
       } else {
@@ -119,9 +114,8 @@ class InterActivityLatch<void> {
   // Set the latch.
   void Set() {
     MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
-    }
+    GRPC_TRACE_LOG(promise_primitives, INFO)
+        << DebugTag() << "Set " << StateString();
     is_set_ = true;
     waiters_.WakeupAsync();
   }

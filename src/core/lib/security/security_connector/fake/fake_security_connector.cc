@@ -35,17 +35,12 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -59,6 +54,10 @@
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 

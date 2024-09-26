@@ -166,6 +166,9 @@ TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
 
 class XdsServerTlsTest : public XdsEnd2endTest {
  protected:
+  XdsServerTlsTest()
+      : XdsEnd2endTest(/*balancer_credentials=*/CreateTlsServerCredentials()) {}
+
   void SetUp() override {
     InitClient(MakeBootstrapBuilder().SetXdsChannelCredentials(
                    "tls", absl::StrCat("{\"ca_certificate_file\": \"",
@@ -176,10 +179,8 @@ class XdsServerTlsTest : public XdsEnd2endTest {
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsServerTlsTest,
-    ::testing::Values(XdsTestType().set_xds_server_uses_tls_creds(true)),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerTlsTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsServerTlsTest, Basic) {
   CreateAndStartBackends(1);
@@ -539,7 +540,7 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
-  // New cluster that points to a non-existant EDS resource.
+  // New cluster that points to a non-existent EDS resource.
   const char* kNewClusterName = "new_cluster_name";
   Cluster cluster = default_cluster_;
   cluster.set_name(kNewClusterName);
@@ -1059,7 +1060,7 @@ TEST_P(XdsFederationTest, FederationServer) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  CreateBackends(2, /*xds_enabled=*/true);
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -1098,6 +1099,13 @@ TEST_P(XdsFederationTest, FederationServer) {
                                      new_server_route_config,
                                      ServerHcmAccessor());
   }
+  // Start backends and wait for them to start serving.
+  StartAllBackends();
+  for (const auto& backend : backends_) {
+    ASSERT_TRUE(backend->notifier()->WaitOnServingStatusChange(
+        grpc_core::LocalIpAndPort(backend->port()), grpc::StatusCode::OK));
+  }
+  // Make sure everything works.
   WaitForAllBackends(DEBUG_LOCATION);
 }
 
@@ -1243,7 +1251,10 @@ TEST_P(XdsMetricsTest, MetricValues) {
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION);
+  // Use wait_for_ready and increase timeout, in case the client takes a
+  // little while to get connected.
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_wait_for_ready(true).set_timeout_ms(15000));
   stats_plugin_->TriggerCallbacks();
   // Check client metrics.
   EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(

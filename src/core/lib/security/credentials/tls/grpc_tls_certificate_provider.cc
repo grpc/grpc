@@ -26,6 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/credentials.h>
 #include <grpc/slice.h>
@@ -33,16 +34,55 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/stat.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
+namespace {
+
+absl::Status ValidateRootCertificates(absl::string_view root_certificates) {
+  if (root_certificates.empty()) return absl::OkStatus();
+  absl::StatusOr<std::vector<X509*>> parsed_roots =
+      ParsePemCertificateChain(root_certificates);
+  if (!parsed_roots.ok()) {
+    return parsed_roots.status();
+  }
+  for (X509* x509 : *parsed_roots) {
+    X509_free(x509);
+  }
+  return absl::OkStatus();
+}
+
+absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
+                                    absl::string_view private_key) {
+  if (cert_chain.empty() && private_key.empty()) return absl::OkStatus();
+  // Check that the cert chain consists of valid PEM blocks.
+  absl::StatusOr<std::vector<X509*>> parsed_certs =
+      ParsePemCertificateChain(cert_chain);
+  if (!parsed_certs.ok()) {
+    return parsed_certs.status();
+  }
+  for (X509* x509 : *parsed_certs) {
+    X509_free(x509);
+  }
+  // Check that the private key consists of valid PEM blocks.
+  absl::StatusOr<EVP_PKEY*> parsed_private_key =
+      ParsePemPrivateKey(private_key);
+  if (!parsed_private_key.ok()) {
+    return parsed_private_key.status();
+  }
+  EVP_PKEY_free(*parsed_private_key);
+  return absl::OkStatus();
+}
+
+}  // namespace
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
@@ -103,6 +143,21 @@ UniqueTypeName StaticDataCertificateProvider::type() const {
   return kFactory.Create();
 }
 
+absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
 namespace {
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
@@ -123,9 +178,9 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       refresh_interval_sec_(refresh_interval_sec),
       distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
-    LOG(INFO) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
-                 "value less than minimum. Overriding configured value to "
-                 "minimum.";
+    VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
+               "value less than minimum. Overriding configured value to "
+               "minimum.";
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.
@@ -205,6 +260,22 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
 UniqueTypeName FileWatcherCertificateProvider::type() const {
   static UniqueTypeName::Factory kFactory("FileWatcher");
   return kFactory.Create();
+}
+
+absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
+  MutexLock lock(&mu_);
+  absl::Status status = ValidateRootCertificates(root_certificate_);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
@@ -406,8 +477,8 @@ grpc_tls_certificate_provider_file_watcher_create(
 
 void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider) {
-  GRPC_API_TRACE("grpc_tls_certificate_provider_release(provider=%p)", 1,
-                 (provider));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_tls_certificate_provider_release(provider=" << provider << ")";
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
 }

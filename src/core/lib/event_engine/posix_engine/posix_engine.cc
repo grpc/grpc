@@ -35,7 +35,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -50,9 +49,9 @@
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -451,11 +450,9 @@ PosixEventEngine::~PosixEventEngine() {
     grpc_core::MutexLock lock(&mu_);
     if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
-        gpr_log(GPR_ERROR,
-                "(event_engine) PosixEventEngine:%p uncleared "
-                "TaskHandle at "
-                "shutdown:%s",
-                this, HandleToString(handle).c_str());
+        LOG(ERROR) << "(event_engine) PosixEventEngine:" << this
+                   << " uncleared TaskHandle at shutdown:"
+                   << HandleToString(handle);
       }
     }
     CHECK(GPR_LIKELY(known_handles_.empty()));

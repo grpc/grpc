@@ -28,11 +28,11 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -156,6 +156,9 @@ struct ServerFragmentFrame final : public FrameInterface {
 };
 
 struct CancelFrame final : public FrameInterface {
+  CancelFrame() = default;
+  explicit CancelFrame(uint32_t stream_id) : stream_id(stream_id) {}
+
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;

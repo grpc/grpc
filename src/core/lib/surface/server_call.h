@@ -42,13 +42,9 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
@@ -58,6 +54,9 @@
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -69,7 +68,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
       : Call(false,
              client_initial_metadata->get(GrpcTimeoutMetadata())
                  .value_or(Timestamp::InfFuture()),
-             call_handler.arena()->Ref(), call_handler.event_engine()),
+             call_handler.arena()->Ref()),
         call_handler_(std::move(call_handler)),
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),

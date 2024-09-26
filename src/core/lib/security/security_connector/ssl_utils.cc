@@ -43,13 +43,13 @@
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 // -- Constants. --
@@ -232,16 +232,18 @@ static bool IsSpiffeId(absl::string_view uri) {
     return false;
   };
   if (uri.size() > 2048) {
-    LOG(INFO) << "Invalid SPIFFE ID: ID longer than 2048 bytes.";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "Invalid SPIFFE ID: ID longer than 2048 bytes.";
     return false;
   }
   std::vector<absl::string_view> splits = absl::StrSplit(uri, '/');
   if (splits.size() < 4 || splits[3].empty()) {
-    LOG(INFO) << "Invalid SPIFFE ID: workload id is empty.";
+    GRPC_TRACE_LOG(tsi, INFO) << "Invalid SPIFFE ID: workload id is empty.";
     return false;
   }
   if (splits[2].size() > 255) {
-    LOG(INFO) << "Invalid SPIFFE ID: domain longer than 255 characters.";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "Invalid SPIFFE ID: domain longer than 255 characters.";
     return false;
   }
   return true;
@@ -332,7 +334,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                      spiffe_data, spiffe_length);
     } else {
-      LOG(INFO) << "Invalid SPIFFE ID: multiple URI SANs.";
+      GRPC_TRACE_LOG(tsi, INFO) << "Invalid SPIFFE ID: multiple URI SANs.";
     }
   }
   return ctx;
@@ -419,8 +421,9 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
   if (pem_root_certs == nullptr && !skip_server_certificate_verification) {
-    LOG(INFO) << "No root certificates specified; use ones stored in system "
-                 "default locations instead";
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "No root certificates specified; use ones stored in system "
+           "default locations instead";
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (root_certs == nullptr) {
