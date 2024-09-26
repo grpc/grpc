@@ -19,6 +19,7 @@ import os
 import setuptools
 
 import grpc_version
+import python_version
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,6 +45,7 @@ INSTALL_REQUIRES = [
 
 SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools>=1.49.0"]
 
+
 setuptools.setup(
     name="xds-protos",
     version=grpc_version.VERSION,
@@ -55,7 +57,7 @@ setuptools.setup(
     author_email="grpc-io@googlegroups.com",
     url="https://grpc.io",
     license="Apache License 2.0",
-    python_requires=">=3.8",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     classifiers=CLASSIFIERS,
