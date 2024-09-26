@@ -149,3 +149,20 @@ $Python312x64Config = @{
     PythonInstallerHash = "ea1993b5227fa4c8f45a06f5fbdd23b3"
 }
 Install-Python @Python312x64Config
+
+# Python 3.13
+$Python313x86Config = @{
+    PythonVersion = "3.13.0"
+    PythonInstaller = "python-3.13.0rc2"
+    PythonInstallPath = "C:\Python313_32bit"
+    PythonInstallerHash = "647f429b5584d9ee2dd02fdc9c61a38e"
+}
+Install-Python @Python313x86Config
+
+$Python313x64Config = @{
+    PythonVersion = "3.13.0"
+    PythonInstaller = "python-3.13.0rc2-amd64"
+    PythonInstallPath = "C:\Python313"
+    PythonInstallerHash = "0af5ad8734962267323ef45f384de3aa"
+}
+Install-Python @Python313x64Config
