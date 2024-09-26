@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
@@ -1099,9 +1098,8 @@ namespace {
 void MaybeAddUnnamedMetric(
     const LrsApiContext& context,
     const LrsClient::ClusterLocalityStats::BackendMetric& backend_metric,
-    absl::FunctionRef<envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats*(
-        envoy_config_endpoint_v3_UpstreamLocalityStats*, upb_Arena*)>
-        add_field,
+    envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats* (*add_field)(
+        envoy_config_endpoint_v3_UpstreamLocalityStats*, upb_Arena*),
     envoy_config_endpoint_v3_UpstreamLocalityStats* output) {
   if (backend_metric.IsZero()) return;
   auto* metric_proto = add_field(output, context.arena);
