@@ -4099,6 +4099,7 @@ grpc_cc_library(
         "channel_args",
         "closure",
         "error",
+        "experiments",
         "grpc_sockaddr",
         "iomgr_fwd",
         "resolved_address",
@@ -5696,6 +5697,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
+        "absl/container:flat_hash_map",
         "absl/functional:bind_front",
         "absl/log:check",
         "absl/log:log",

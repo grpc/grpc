@@ -3,7 +3,8 @@
  *     xds/annotations/v3/status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_MINITABLE_H_
 #define XDS_ANNOTATIONS_V3_STATUS_PROTO_UPB_MINITABLE_H_
@@ -18,9 +19,13 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__annotations__v3__FileStatusAnnotation_msg_init;
+extern const upb_MiniTable* xds__annotations__v3__FileStatusAnnotation_msg_init_ptr;
 extern const upb_MiniTable xds__annotations__v3__MessageStatusAnnotation_msg_init;
+extern const upb_MiniTable* xds__annotations__v3__MessageStatusAnnotation_msg_init_ptr;
 extern const upb_MiniTable xds__annotations__v3__FieldStatusAnnotation_msg_init;
+extern const upb_MiniTable* xds__annotations__v3__FieldStatusAnnotation_msg_init_ptr;
 extern const upb_MiniTable xds__annotations__v3__StatusAnnotation_msg_init;
+extern const upb_MiniTable* xds__annotations__v3__StatusAnnotation_msg_init_ptr;
 extern const upb_MiniTableExtension xds_annotations_v3_file_status_ext;
 extern const upb_MiniTableExtension xds_annotations_v3_message_status_ext;
 extern const upb_MiniTableExtension xds_annotations_v3_field_status_ext;

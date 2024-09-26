@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/http_inputs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_
 #define XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H_

@@ -2017,6 +2017,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_server_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/lrs_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_bootstrap.cc" role="src" />
@@ -2024,8 +2026,7 @@
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_locality.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type_impl.h" role="src" />
@@ -3104,6 +3105,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/map.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map_gencode_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map_sorter.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/merge.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/merge.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/tagged_ptr.h" role="src" />
@@ -3196,6 +3199,9 @@
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/service_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/text/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text/internal/encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text/internal/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text/options.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/encode.c" role="src" />
