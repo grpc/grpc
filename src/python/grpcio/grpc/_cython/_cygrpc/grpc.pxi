@@ -543,6 +543,10 @@ cdef extern from "grpc/grpc_security_constants.h":
     void *user_data,
     grpc_ssl_server_certificate_config **config)
 
+  ctypedef grpc_ssl_channel_certificate_config_reload_status (*grpc_ssl_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_certificate_config **config)
+
   ctypedef struct grpc_auth_property_iterator:
     pass
 
@@ -580,6 +584,33 @@ cdef extern from "grpc/credentials.h":
 
   grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
       grpc_ssl_server_credentials_options *options)
+
+  ctypedef struct grpc_ssl_certificate_config:
+    # We don't care about the internals
+    pass
+
+  ctypedef struct grpc_ssl_credentials_options:
+    # We don't care about the internals
+    pass
+
+  grpc_ssl_certificate_config * grpc_ssl_certificate_config_create(
+    const char *pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs)
+
+  void grpc_ssl_certificate_config_destroy(grpc_ssl_certificate_config *config)
+
+  grpc_ssl_credentials_options *grpc_ssl_credentials_create_options_using_config(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_certificate_config *certificate_config)
+
+  grpc_ssl_credentials_options* grpc_ssl_credentials_create_options_using_config_fetcher(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_certificate_config_callback cb,
+    void *user_data)
+
+  grpc_credentials *grpc_ssl_credentials_create_with_options(
+      grpc_ssl_credentials_options *options)
 
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key

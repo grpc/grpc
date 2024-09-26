@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import logging
 from grpc import _observability
+import grpc
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -487,6 +488,42 @@ cdef _close(Channel channel, grpc_status_code code, object details,
 cdef _calls_drained(_ChannelState state):
   return not (state.integrated_call_states or state.segregated_call_states or
               state.connectivity_due)
+
+
+cdef grpc_ssl_channel_certificate_config_reload_status _cert_config_fetcher_wrapper(
+        void* user_data, grpc_ssl_certificate_config **config) with gil:
+  # This is a credentials.ChannelCertificateConfiguration
+  cdef ChannelCertificateConfiguration cert_config = None
+  if not user_data:
+    raise ValueError('internal error: user_data must be specified')
+  credentials = <ChannelCredentials>user_data
+  if not credentials.initial_cert_config_fetched:
+    # C-core is asking for the initial cert config
+    credentials.initial_cert_config_fetched = True
+    cert_config = credentials.initial_cert_config._cert_config
+  else:
+    user_cb = credentials.cert_config_fetcher
+    try:
+      cert_config_wrapper = user_cb()
+    except Exception:
+      logging.exception('Error fetching certificate config')
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    if cert_config_wrapper is None:
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    elif not isinstance(cert_config_wrapper, grpc.ChannelCertificateConfiguration):
+      logging.error('Error fetching certificate config: certificate '
+                    'config must be of type grpc.ChannelCertificateConfiguration, '
+                    'not %s' % type(cert_config_wrapper).__name__)
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    else:
+      cert_config = cert_config_wrapper._cert_config
+  config[0] = <grpc_ssl_certificate_config*>cert_config.c_cert_config
+  # our caller will assume ownership of memory, so we have to recreate
+  # a copy of c_cert_config here
+  cert_config.c_cert_config = grpc_ssl_certificate_config_create(
+      cert_config.c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
+      cert_config.c_ssl_pem_key_cert_pairs_count)
+  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 cdef class Channel:
 

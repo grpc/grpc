@@ -670,6 +670,21 @@ class ServerCertificateConfiguration(object):
         self._certificate_configuration = certificate_configuration
 
 
+class ChannelCertificateConfiguration(object):
+  """A certificate configuration for use with an SSL-enabled channel.
+
+  Instances of this class can be returned in the certificate configuration
+  fetching callback.
+
+  This class has no supported interface -- it exists to define the
+  type of its instances and its instances exist to be passed to
+  other functions.
+  """
+
+  def __init__(self, certificate_configuration):
+    self._certificate_configuration = certificate_configuration
+
+
 ########################  Multi-Callable Interfaces  ###########################
 
 
@@ -2079,6 +2094,53 @@ def compute_engine_channel_credentials(call_credentials):
     )
 
 
+def ssl_channel_certificate_config(private_key_certificate_chain_pairs,
+                                   root_certificates=None):
+  """Creates a ChannelCertificateConfiguration for use with an SSL-enabled Channel.
+  Args:
+    private_key_certificate_chain_pairs: A collection of pairs of
+      the form [PEM-encoded private key, PEM-encoded certificate
+      chain].
+    root_certificates: An optional byte string of PEM-encoded client root
+      certificates that the server will use to verify client authentication.
+  Returns:
+    A ChannelCertificateConfiguration that can be returned in the certificate config
+    fetching callback.
+  """
+  if len(private_key_certificate_chain_pairs) == 0:
+    raise ValueError(
+      'At least one private key-certificate chain pair is required!')
+  else:
+    return ChannelCertificateConfiguration(
+      _cygrpc.certificate_config_ssl(root_certificates, [
+        _cygrpc.SslPemKeyCertPair(key, pem)
+        for key, pem in private_key_certificate_chain_pairs
+      ]))
+
+
+def ssl_channel_credentials_dynamic_cert_config(initial_cert_config,
+                                                cert_config_fetcher):
+  """Creates a ChannelCredentials for use with an SSL-enabled Channel.
+  Args:
+    initial_cert_config (ChannelCertificateConfiguration): the certificate
+      config with which the server will be initialized.
+    cert_config_fetcher (callable): a callable that takes no
+      arguments and should return a ChannelCertificateConfiguration to
+      replace the server's current cert, or None for no change
+      (i.e., the server will continue its current certificate
+      config). The library will call this callback on *every* new
+      client connection before starting the TLS handshake with the
+      client, thus allowing the user application to optionally
+      return a new ChannelCertificateConfiguration that the server will then
+      use for the handshake.
+  Returns:
+    A ChannelCredentials.
+  """
+  return ChannelCredentials(
+    _cygrpc.credentials_ssl_dynamic_cert_config(
+      initial_cert_config, cert_config_fetcher))
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -2262,6 +2324,7 @@ __all__ = (
     "RpcError",
     "RpcContext",
     "Call",
+    "ChannelCertificateConfiguration",
     "ChannelCredentials",
     "CallCredentials",
     "AuthMetadataContext",
@@ -2306,6 +2369,8 @@ __all__ = (
     "ssl_server_credentials",
     "ssl_server_certificate_configuration",
     "dynamic_ssl_server_credentials",
+    "ssl_channel_certificate_config",
+    "ssl_channel_credentials_dynamic_cert_config",
     "channel_ready_future",
     "insecure_channel",
     "secure_channel",

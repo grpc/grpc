@@ -85,7 +85,20 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   const tsi_ssl_root_certs_store* root_store_ = nullptr;
   grpc_security_status client_handshaker_initialization_status_;
+  grpc_ssl_certificate_config_fetcher certificate_config_fetcher_;
+
 };
+
+struct grpc_ssl_certificate_config {
+  grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs;
+  size_t num_key_cert_pairs;
+  char *pem_root_certs;
+};
+
+typedef struct {
+  grpc_ssl_certificate_config_callback cb;
+  void *user_data;
+} grpc_ssl_certificate_config_fetcher;
 
 struct grpc_ssl_server_certificate_config {
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
