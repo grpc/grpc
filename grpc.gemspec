@@ -262,6 +262,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/write_size_policy.cc )
