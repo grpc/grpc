@@ -1797,6 +1797,9 @@ TEST_P(ClientLoadReportingTest, OrcaPropagation) {
                              ::testing::Pair("locality1", ::testing::_)));
   size_t num_successful_rpcs = 0;
   size_t num_failed_rpcs = 0;
+  ClientStats::LocalityStats::LoadMetric cpu_utilization;
+  ClientStats::LocalityStats::LoadMetric mem_utilization;
+  ClientStats::LocalityStats::LoadMetric application_utilization;
   std::map<std::string, ClientStats::LocalityStats::LoadMetric>
       named_metrics_total;
   for (const auto& p : client_stats.locality_stats()) {
@@ -1806,6 +1809,9 @@ TEST_P(ClientLoadReportingTest, OrcaPropagation) {
         p.second.total_successful_requests + p.second.total_error_requests);
     num_successful_rpcs += p.second.total_successful_requests;
     num_failed_rpcs += p.second.total_error_requests;
+    cpu_utilization += p.second.cpu_utilization;
+    mem_utilization += p.second.mem_utilization;
+    application_utilization += p.second.application_utilization;
     for (const auto& s : p.second.load_metrics) {
       named_metrics_total[s.first] += s.second;
     }
@@ -1814,36 +1820,31 @@ TEST_P(ClientLoadReportingTest, OrcaPropagation) {
   EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
   EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
   EXPECT_THAT(
+      cpu_utilization,
+      LoadMetricEq(
+          (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+          (kNumRpcsPerAddress * backends_.size()) * 0.8 +
+              (kNumFailuresPerAddress * backends_.size()) * 0.4));
+  EXPECT_THAT(
+      mem_utilization,
+      LoadMetricEq(
+          (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+          (kNumRpcsPerAddress * backends_.size()) * 0.6 +
+              (kNumFailuresPerAddress * backends_.size()) * 0.3));
+  EXPECT_THAT(
+      application_utilization,
+      LoadMetricEq(
+          (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+          (kNumRpcsPerAddress * backends_.size()) * 0.4 +
+              (kNumFailuresPerAddress * backends_.size()) * 0.2));
+  EXPECT_THAT(
       named_metrics_total,
-      ::testing::UnorderedElementsAre(
-          ::testing::Pair(
-              "named_metrics.foo",
-              LoadMetricEq(
-                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                      backends_.size(),
-                  (kNumRpcsPerAddress * backends_.size()) * 1.0 +
-                      (kNumFailuresPerAddress * backends_.size()) * 0.3)),
-          ::testing::Pair(
-              "cpu_utilization",
-              LoadMetricEq(
-                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                      backends_.size(),
-                  (kNumRpcsPerAddress * backends_.size()) * 0.8 +
-                      (kNumFailuresPerAddress * backends_.size()) * 0.4)),
-          ::testing::Pair(
-              "mem_utilization",
-              LoadMetricEq(
-                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                      backends_.size(),
-                  (kNumRpcsPerAddress * backends_.size()) * 0.6 +
-                      (kNumFailuresPerAddress * backends_.size()) * 0.3)),
-          ::testing::Pair(
-              "application_utilization",
-              LoadMetricEq(
-                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
-                      backends_.size(),
-                  (kNumRpcsPerAddress * backends_.size()) * 0.4 +
-                      (kNumFailuresPerAddress * backends_.size()) * 0.2))));
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          "named_metrics.foo",
+          LoadMetricEq(
+              (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+              (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                  (kNumFailuresPerAddress * backends_.size()) * 0.3))));
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());

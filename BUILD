@@ -4415,6 +4415,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
+        "absl/functional:function_ref",
         "absl/log:check",
         "absl/log:log",
         "absl/memory",
