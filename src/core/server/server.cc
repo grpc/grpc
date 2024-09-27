@@ -869,8 +869,10 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args) {
   InterceptionChainBuilder builder(args);
-  builder.AddOnClientInitialMetadata(
-      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
+  // TODO(ctiller): find a way to avoid adding a server ref per call
+  builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
+    self->SetRegisteredMethodOnMetadata(md);
+  });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
   return builder.Build(
