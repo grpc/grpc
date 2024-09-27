@@ -432,6 +432,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
+    src/core/filter/blackboard.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
@@ -1528,6 +1529,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/matcher/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)

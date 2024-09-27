@@ -960,6 +960,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx binder_server_test)
   add_dependencies(buildtests_cxx binder_transport_test)
   add_dependencies(buildtests_cxx bitset_test)
+  add_dependencies(buildtests_cxx blackboard_test)
   add_dependencies(buildtests_cxx buffer_list_test)
   add_dependencies(buildtests_cxx byte_buffer_test)
   add_dependencies(buildtests_cxx c_slice_buffer_test)
@@ -2246,6 +2247,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
+  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -3053,6 +3055,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -5280,6 +5283,7 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -8409,6 +8413,63 @@ target_link_libraries(bitset_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(blackboard_test
+  src/core/filter/blackboard.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/resolver/endpoint_addresses.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/time.cc
+  src/core/util/uri.cc
+  test/core/filters/blackboard_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(blackboard_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(blackboard_test PUBLIC cxx_std_14)
+target_include_directories(blackboard_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(blackboard_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::config
+  absl::flat_hash_map
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(buffer_list_test
   test/core/iomgr/buffer_list_test.cc
   test/core/test_util/cmdline.cc
@@ -9012,6 +9073,7 @@ add_executable(call_utils_test
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc

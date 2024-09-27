@@ -3310,6 +3310,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "blackboard",
+    srcs = [
+        "filter/blackboard.cc",
+    ],
+    hdrs = [
+        "filter/blackboard.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "ref_counted",
+        "unique_type_name",
+        "useful",
+        "//:debug_location",
+        "//:endpoint_addresses",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -5034,6 +5057,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "context",

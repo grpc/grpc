@@ -1058,6 +1058,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker.cc" role="src" />

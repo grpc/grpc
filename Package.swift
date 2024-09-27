@@ -1070,6 +1070,8 @@ let package = Package(
         "src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h",
         "src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c",
         "src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h",
+        "src/core/filter/blackboard.cc",
+        "src/core/filter/blackboard.h",
         "src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc",
         "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h",
         "src/core/handshaker/handshaker.cc",

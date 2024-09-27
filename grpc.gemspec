@@ -1076,6 +1076,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h )
+  s.files += %w( src/core/filter/blackboard.cc )
+  s.files += %w( src/core/filter/blackboard.h )
   s.files += %w( src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc )
   s.files += %w( src/core/handshaker/endpoint_info/endpoint_info_handshaker.h )
   s.files += %w( src/core/handshaker/handshaker.cc )
