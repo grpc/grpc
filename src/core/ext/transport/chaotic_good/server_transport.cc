@@ -483,6 +483,10 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled_party = std::move(party_);
+    outgoing_frames_.MarkClosed();
+    state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
+                            absl::UnavailableError("transport closed"),
+                            "transport closed");
     did_stuff = true;
   }
   if (!did_stuff) {
