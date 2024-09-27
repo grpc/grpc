@@ -866,6 +866,7 @@ CORE_SOURCE_FILES = [
     'src/core/xds/grpc/xds_transport_grpc.cc',
     'src/core/xds/xds_client/lrs_client.cc',
     'src/core/xds/xds_client/xds_api.cc',
+    'src/core/xds/xds_client/xds_backend_metric_propagation.cc',
     'src/core/xds/xds_client/xds_bootstrap.cc',
     'src/core/xds/xds_client/xds_client.cc',
     'third_party/abseil-cpp/absl/base/internal/cycleclock.cc',

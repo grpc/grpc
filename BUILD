@@ -4462,6 +4462,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:env",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
@@ -4469,6 +4470,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/core:xds_backend_metric_propagation",
     ],
 )
 
