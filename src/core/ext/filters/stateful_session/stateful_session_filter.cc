@@ -41,8 +41,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
@@ -52,6 +50,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

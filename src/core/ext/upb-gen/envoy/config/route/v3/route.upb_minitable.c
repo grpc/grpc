@@ -3,7 +3,8 @@
  *     envoy/config/route/v3/route.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -20,17 +21,18 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_route_v3_RouteConfiguration_submsgs[10] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__VirtualHost_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__Vhds_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__ClusterSpecifierPlugin_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteAction__RequestMirrorPolicy_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_route_v3_RouteConfiguration_submsgs[10] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__VirtualHost_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__Vhds_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__ClusterSpecifierPlugin_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteAction__RequestMirrorPolicy_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_route_v3_RouteConfiguration__fields[17] = {
@@ -80,8 +82,9 @@ const upb_MiniTable envoy__config__route__v3__RouteConfiguration_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__config__route__v3__RouteConfiguration_msg_init_ptr = &envoy__config__route__v3__RouteConfiguration_msg_init;
+static const upb_MiniTableSubInternal envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__fields[2] = {
@@ -102,8 +105,9 @@ const upb_MiniTable envoy__config__route__v3__RouteConfiguration__TypedPerFilter
   })
 };
 
-static const upb_MiniTableSub envoy_config_route_v3_Vhds_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
+const upb_MiniTable* envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init_ptr = &envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init;
+static const upb_MiniTableSubInternal envoy_config_route_v3_Vhds_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_route_v3_Vhds__fields[1] = {
@@ -119,6 +123,7 @@ const upb_MiniTable envoy__config__route__v3__Vhds_msg_init = {
 #endif
 };
 
+const upb_MiniTable* envoy__config__route__v3__Vhds_msg_init_ptr = &envoy__config__route__v3__Vhds_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &envoy__config__route__v3__RouteConfiguration_msg_init,
   &envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init,

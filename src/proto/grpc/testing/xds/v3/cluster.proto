@@ -252,6 +252,21 @@ message Cluster {
   // from the LRS stream here.]
   core.v3.ConfigSource lrs_server = 42;
 
+  // A list of metric names from ORCA load reports to propagate to LRS.
+  //
+  // For map fields in the ORCA proto, the string will be of the form ``<map_field_name>.<map_key>``.
+  // For example, the string ``named_metrics.foo`` will mean to look for the key ``foo`` in the ORCA
+  // ``named_metrics`` field.
+  //
+  // The special map key ``*`` means to report all entries in the map (e.g., ``named_metrics.*`` means to
+  // report all entries in the ORCA named_metrics field). Note that this should be used only with trusted
+  // backends.
+  //
+  // The metric names in LRS will follow the same semantics as this field. In other words, if this field
+  // contains ``named_metrics.foo``, then the LRS load report will include the data with that same string
+  // as the key.
+  repeated string lrs_report_endpoint_metrics = 57;
+
   // The Metadata field can be used to provide additional information about the
   // cluster. It can be used for stats, logging, and varying filter behavior.
   // Fields should use reverse DNS notation to denote which entity within Envoy

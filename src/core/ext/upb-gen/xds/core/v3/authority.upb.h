@@ -3,7 +3,8 @@
  *     xds/core/v3/authority.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_CORE_V3_AUTHORITY_PROTO_UPB_H_
 #define XDS_CORE_V3_AUTHORITY_PROTO_UPB_H_

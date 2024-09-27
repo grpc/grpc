@@ -35,7 +35,6 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
@@ -48,6 +47,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -237,10 +237,11 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {
-      call_destination_->StartCall(std::move(call.handler));
       call_initiator->SpawnGuarded(
           "server-write", [this, stream_id = frame_header.stream_id,
-                           call_initiator = *call_initiator]() {
+                           call_initiator = *call_initiator,
+                           call_handler = std::move(call.handler)]() mutable {
+            call_destination_->StartCall(std::move(call_handler));
             return CallOutboundLoop(stream_id, call_initiator);
           });
     } else {
@@ -438,8 +439,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   if (stream_id <= last_seen_new_stream_id_) {
     return absl::InternalError("Stream id is not increasing");
   }
-  stream_map_.emplace(stream_id, call_initiator);
-  call_initiator.OnDone(
+  const bool on_done_added = call_initiator.OnDone(
       [self = RefAsSubclass<ChaoticGoodServerTransport>(), stream_id](bool) {
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD " << self.get() << " OnDone " << stream_id;
@@ -453,6 +453,10 @@ absl::Status ChaoticGoodServerTransport::NewStream(
           });
         }
       });
+  if (!on_done_added) {
+    return absl::CancelledError();
+  }
+  stream_map_.emplace(stream_id, call_initiator);
   return absl::OkStatus();
 }
 

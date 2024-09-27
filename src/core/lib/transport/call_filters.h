@@ -25,9 +25,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/dump_args.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
@@ -39,6 +36,9 @@
 #include "src/core/lib/transport/call_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // CallFilters tracks a list of filters that are attached to a call.
 // At a high level, a filter (for the purposes of this module) is a class
@@ -1297,8 +1297,8 @@ class CallFilters {
 
  private:
   template <typename Output, typename Input,
-            Input(CallFilters::*input_location),
-            filters_detail::Layout<Input>(filters_detail::StackData::*layout),
+            Input(CallFilters::* input_location),
+            filters_detail::Layout<Input>(filters_detail::StackData::* layout),
             void (CallState::*on_done)(), typename StackIterator>
   class Executor {
    public:
@@ -1485,7 +1485,6 @@ class CallFilters {
                   std::move(value));
             }
           }
-          call_state_.FinishPullServerTrailingMetadata();
           return value;
         });
   }
@@ -1502,6 +1501,12 @@ class CallFilters {
   GRPC_MUST_USE_RESULT bool WasCancelledPushed() const {
     return call_state_.WasCancelledPushed();
   }
+
+  // Returns true if server trailing metadata has been pulled
+  bool WasServerTrailingMetadataPulled() const {
+    return call_state_.WasServerTrailingMetadataPulled();
+  }
+
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 

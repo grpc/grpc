@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2020 The gRPC Authors
+# Copyright 2024 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,45 +13,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO: Integrate this into CI to avoid bitrot.
+set -ex
 
-echo "It's recommended that you run this script from a virtual environment."
+BASEDIR=$(dirname "$0")/../..
+PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
 
+# Change to grpc repo root
+cd "$BASEDIR";
+
+# unit-tests setup starts from here
 function maybe_run_command () {
-  if python setup.py --help-commands | grep "$1" &>/dev/null; then
-    python setup.py "$1";
+  if python3 setup.py --help-commands | grep "$1" &>/dev/null; then
+    python3 setup.py "$1";
   fi
 }
 
-set -e
+python3 -m pip install --upgrade "cython<4.0.0rc1";
+python3 setup.py install;
 
-BASEDIR=$(dirname "$0")
-BASEDIR=$(realpath "$BASEDIR")/../..
+# Build and install grpcio_tools
+pushd tools/distrib/python/grpcio_tools;
+  ../make_grpcio_tools.py
+  GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+popd;
 
-PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
+# Build and install grpcio_observability
+pushd src/python/grpcio_observability;
+  ./make_grpcio_observability.py
+  GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+popd;
 
-(cd "$BASEDIR";
-  pip install --upgrade "cython<3.0.0rc1";
-  python setup.py install;
-  pushd tools/distrib/python/grpcio_tools;
-    ../make_grpcio_tools.py
-    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
-  popd;
-  pushd src/python/grpcio_observability;
-    ./make_grpcio_observability.py
-    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
-  popd;
-  pushd tools/distrib/python/xds_protos;
-    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
-  popd;
-  pushd src/python;
-    for PACKAGE in ${PACKAGES}; do
-      pushd "${PACKAGE}";
-        python setup.py clean;
-        maybe_run_command preprocess
-        maybe_run_command build_package_protos
-        python -m pip install .;
-      popd;
-    done
-  popd;
-)
+# Install xds_protos
+pushd tools/distrib/python/xds_protos;
+  GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+popd;
+
+# Build and install individual gRPC packages
+pushd src/python;
+  for PACKAGE in ${PACKAGES}; do
+    pushd "${PACKAGE}";
+      python3 setup.py clean;
+      maybe_run_command preprocess
+      maybe_run_command build_package_protos
+      python3 -m pip install .;
+    popd;
+  done
+popd;

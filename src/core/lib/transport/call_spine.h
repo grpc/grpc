@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/dual_ref_counted.h"
 
 namespace grpc_core {
 
@@ -54,17 +54,23 @@ class CallSpine final : public Party {
 
   CallFilters& call_filters() { return call_filters_; }
 
-  // Add a callback to be called when server trailing metadata is received.
-  void OnDone(absl::AnyInvocable<void(bool)> fn) {
+  // Add a callback to be called when server trailing metadata is received and
+  // return true.
+  // If CallOnDone has already been invoked, does nothing and returns false.
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    if (call_filters().WasServerTrailingMetadataPulled()) {
+      return false;
+    }
     if (on_done_ == nullptr) {
       on_done_ = std::move(fn);
-      return;
+      return true;
     }
     on_done_ = [first = std::move(fn),
                 next = std::move(on_done_)](bool cancelled) mutable {
       first(cancelled);
       next(cancelled);
     };
+    return true;
   }
   void CallOnDone(bool cancelled) {
     if (on_done_ != nullptr) std::exchange(on_done_, nullptr)(cancelled);
@@ -232,8 +238,8 @@ class CallInitiator {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void(bool)> fn) {
-    spine_->OnDone(std::move(fn));
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    return spine_->OnDone(std::move(fn));
   }
 
   template <typename PromiseFactory>
@@ -285,8 +291,8 @@ class CallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void(bool)> fn) {
-    spine_->OnDone(std::move(fn));
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    return spine_->OnDone(std::move(fn));
   }
 
   template <typename Promise>
@@ -344,8 +350,8 @@ class UnstartedCallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  void OnDone(absl::AnyInvocable<void(bool)> fn) {
-    spine_->OnDone(std::move(fn));
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+    return spine_->OnDone(std::move(fn));
   }
 
   template <typename Promise>

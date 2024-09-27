@@ -30,10 +30,10 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/tchar.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "src/core/util/subprocess.h"
+#include "src/core/util/tchar.h"
 
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;

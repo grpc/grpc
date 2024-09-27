@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/health_check.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -27,6 +28,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_config_core_v3_HealthStatusSet__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
@@ -44,28 +46,29 @@ const upb_MiniTable envoy__config__core__v3__HealthStatusSet_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_submsgs[21] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__TlsOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__EventServiceConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HealthStatusSet_msg_init_ptr = &envoy__config__core__v3__HealthStatusSet_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HealthCheck_submsgs[21] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__TlsOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__EventServiceConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck__fields[25] = {
@@ -139,6 +142,7 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__HealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_Payload__fields[2] = {
   {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -159,14 +163,15 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__Payload_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_HttpHealthCheck_submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Int64Range_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Int64Range_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr = &envoy__config__core__v3__HealthCheck__Payload_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HealthCheck_HttpHealthCheck_submsgs[7] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Int64Range_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Int64Range_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_HttpHealthCheck__fields[12] = {
@@ -211,10 +216,11 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_in
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_TcpHealthCheck_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ProxyProtocolConfig_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HealthCheck_TcpHealthCheck_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ProxyProtocolConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_TcpHealthCheck__fields[3] = {
@@ -238,6 +244,7 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_ini
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_RedisHealthCheck__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -255,8 +262,9 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_i
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_GrpcHealthCheck_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HealthCheck_GrpcHealthCheck_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_GrpcHealthCheck__fields[3] = {
@@ -280,8 +288,9 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_in
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_CustomHealthCheck_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HealthCheck_CustomHealthCheck_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_CustomHealthCheck__fields[2] = {
@@ -304,6 +313,7 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_HealthCheck_TlsOptions__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
@@ -321,6 +331,7 @@ const upb_MiniTable envoy__config__core__v3__HealthCheck__TlsOptions_msg_init = 
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__HealthCheck__TlsOptions_msg_init_ptr = &envoy__config__core__v3__HealthCheck__TlsOptions_msg_init;
 static const upb_MiniTable *messages_layout[9] = {
   &envoy__config__core__v3__HealthStatusSet_msg_init,
   &envoy__config__core__v3__HealthCheck_msg_init,

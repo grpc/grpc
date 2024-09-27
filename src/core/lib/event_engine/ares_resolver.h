@@ -40,8 +40,8 @@
 
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {

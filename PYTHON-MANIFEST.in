@@ -17,6 +17,7 @@ include src/python/grpcio/_parallel_compile_patch.py
 include src/python/grpcio/_spawn_patch.py
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_version.py
+include src/python/grpcio/python_version.py
 include src/python/grpcio/grpc_core_dependencies.py
 include src/python/grpcio/precompiled.py
 include src/python/grpcio/support.py

@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/router/v3/router.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -20,11 +21,12 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_http_router_v3_Router_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_router_v3_Router_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__network__http_0connection_0manager__v3__HttpFilter_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_router_v3_Router__fields[9] = {
@@ -66,8 +68,9 @@ const upb_MiniTable envoy__extensions__filters__http__router__v3__Router_msg_ini
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__extensions__filters__http__router__v3__Router_msg_init_ptr = &envoy__extensions__filters__http__router__v3__Router_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions__fields[2] = {
@@ -88,6 +91,7 @@ const upb_MiniTable envoy__extensions__filters__http__router__v3__Router__Upstre
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init_ptr = &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__extensions__filters__http__router__v3__Router_msg_init,
   &envoy__extensions__filters__http__router__v3__Router__UpstreamAccessLogOptions_msg_init,
