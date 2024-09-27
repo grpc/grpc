@@ -86,12 +86,46 @@ class EventHandle {
   virtual ~EventHandle() = default;
 };
 
+// "Owning" event handle. Like a unique_ptr, except it will return the handle
+// into the free object pool instead of deleting it.
+class EventHandleRef {
+ public:
+  EventHandleRef() : EventHandleRef(nullptr) {}
+  explicit EventHandleRef(EventHandle* handle) : handle_(handle) {}
+  EventHandleRef(const EventHandleRef& /* other */) = delete;
+  EventHandleRef(EventHandleRef&& other) noexcept : handle_(other.handle_) {
+    other.handle_ = nullptr;
+  }
+  ~EventHandleRef() {}
+  EventHandle* get() const { return handle_; }
+  EventHandle* operator->() const { return handle_; }
+  EventHandleRef& operator=(EventHandleRef&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+  EventHandleRef& operator=(const std::nullptr_t /* nullptr */) {
+    reset();
+    return *this;
+  }
+  bool operator==(const std::nullptr_t /* nullptr */) const {
+    return handle_ == nullptr;
+  }
+  bool operator!=(const std::nullptr_t /* nullptr */) const {
+    return handle_ != nullptr;
+  }
+  void reset() { handle_ = nullptr; }
+
+ private:
+  EventHandle* handle_;
+};
+
 class PosixEventPoller : public grpc_event_engine::experimental::Poller,
                          public Forkable {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
-  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
-                                    bool track_err) = 0;
+  virtual EventHandleRef CreateHandle(int fd, absl::string_view name,
+                                      bool track_err) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function

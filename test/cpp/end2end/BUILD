@@ -208,6 +208,7 @@ grpc_cc_test(
     name = "client_fork_test",
     srcs = ["client_fork_test.cc"],
     external_deps = [
+        "absl/log:initialize",
         "absl/strings",
         "gtest",
     ],

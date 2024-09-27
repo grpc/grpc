@@ -23,6 +23,8 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 
 #include <gtest/gtest.h>
 
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
@@ -161,6 +163,8 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  absl::InitializeLog();
+  absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::TestEnvironment env(&argc, argv);

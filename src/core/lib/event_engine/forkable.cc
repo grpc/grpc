@@ -14,6 +14,8 @@
 
 #include "src/core/lib/event_engine/forkable.h"
 
+#include <iterator>
+
 #include "absl/log/check.h"
 
 #include <grpc/support/port_platform.h>
@@ -44,7 +46,7 @@ void ObjectGroupForkHandler::RegisterForkable(
     GRPC_UNUSED void (*parent)(void), GRPC_UNUSED void (*child)(void)) {
   if (IsForkEnabled()) {
     CHECK(!is_forking_);
-    forkables_.emplace_back(forkable);
+    forkables_.emplace(forkable);
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     if (!std::exchange(registered_, true)) {
       pthread_atfork(prepare, parent, child);
@@ -57,13 +59,13 @@ void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
     CHECK(!std::exchange(is_forking_, true));
     GRPC_TRACE_LOG(fork, INFO) << "PrepareFork";
-    for (auto it = forkables_.begin(); it != forkables_.end();) {
+    // Iterate in decreasing priority
+    for (auto it = forkables_.rbegin(); it != forkables_.rend(); ++it) {
       auto shared = it->lock();
       if (shared) {
         shared->PrepareFork();
-        ++it;
       } else {
-        it = forkables_.erase(it);
+        forkables_.erase(*it);
       }
     }
   }
@@ -73,6 +75,7 @@ void ObjectGroupForkHandler::PostforkParent() {
   if (IsForkEnabled()) {
     CHECK(is_forking_);
     GRPC_TRACE_LOG(fork, INFO) << "PostforkParent";
+    // Iterates in increaing priority
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {
@@ -90,6 +93,7 @@ void ObjectGroupForkHandler::PostforkChild() {
   if (IsForkEnabled()) {
     CHECK(is_forking_);
     GRPC_TRACE_LOG(fork, INFO) << "PostforkChild";
+    // Iterates in increaing priority
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {
@@ -101,6 +105,29 @@ void ObjectGroupForkHandler::PostforkChild() {
     }
     is_forking_ = false;
   }
+}
+
+bool ObjectGroupForkHandler::CompareForkablesByPriority::operator()(
+    const std::weak_ptr<Forkable>& f1,
+    const std::weak_ptr<Forkable>& f2) const {
+  auto p1 = f1.lock();
+  auto p2 = f2.lock();
+  if (p1 == nullptr) {
+    return true;
+  }
+  if (p2 == nullptr) {
+    return false;
+  }
+  if (p1->fork_priority() < p2->fork_priority()) {
+    return true;
+  }
+  if (p1->fork_priority() == p2->fork_priority()) {
+    // Fallback - compare addresses
+    if (p1.get() < p2.get()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace experimental

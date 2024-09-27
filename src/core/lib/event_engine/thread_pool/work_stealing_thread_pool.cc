@@ -238,7 +238,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
-  CHECK(!IsQuiesced());
   if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
