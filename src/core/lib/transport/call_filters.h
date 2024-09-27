@@ -1497,6 +1497,11 @@ class CallFilters {
   GRPC_MUST_USE_RESULT auto WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
   }
+  // Client & server: returns true if server trailing metadata has been pushed
+  // *and* contained a cancellation, false otherwise.
+  GRPC_MUST_USE_RESULT bool WasCancelledPushed() const {
+    return call_state_.WasCancelledPushed();
+  }
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 

@@ -129,7 +129,9 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
 
   bool Completed() final { Crash("unimplemented"); }
-  bool failed_before_recv_message() const final { Crash("unimplemented"); }
+  bool failed_before_recv_message() const final {
+    return call_handler_.WasCancelledPushed();
+  }
 
   uint32_t test_only_message_flags() override {
     return message_receiver_.last_message_flags();

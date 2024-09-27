@@ -78,20 +78,25 @@ class DumpArgs {
     return 0;
   }
 
-  int AddDumper(void** p) {
+  int AddDumper(void const* const* p) {
     arg_dumpers_.push_back(
         [p](CustomSink& os) { os.Append(absl::StrFormat("%p", *p)); });
     return 0;
   }
 
   template <typename T>
-  int AddDumper(T** p) {
-    return AddDumper(reinterpret_cast<void**>(p));
+  int AddDumper(T const* const* p) {
+    return AddDumper(reinterpret_cast<void const* const*>(p));
   }
 
   template <typename T>
   int AddDumper(T* const* p) {
-    return AddDumper(const_cast<T**>(p));
+    return AddDumper(const_cast<T const* const*>(p));
+  }
+
+  template <typename T>
+  int AddDumper(T const** p) {
+    return AddDumper(const_cast<T const* const*>(p));
   }
 
   void Stringify(CustomSink& sink) const;
