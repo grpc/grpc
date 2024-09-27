@@ -231,7 +231,7 @@ g_stands_for = "gladiator"  # @unused
 
 core_version = "43.0.0"  # @unused
 
-version = "1.66.1"  # @unused
+version = "1.66.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
