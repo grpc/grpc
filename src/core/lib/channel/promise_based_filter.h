@@ -976,7 +976,8 @@ class BaseCallData : public Activity, private Wakeable {
 
   class Flusher : public latent_see::InnerScope {
    public:
-    explicit Flusher(BaseCallData* call);
+    explicit Flusher(BaseCallData* call,
+                     const char* desc = "PromiseBasedFilter::Flusher");
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 

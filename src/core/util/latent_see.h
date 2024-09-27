@@ -260,6 +260,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
                                                        #name};             \
     return &metadata;                                                      \
   }()
+#define GRPC_LATENT_SEE_METADATA_RAW(name)                                 \
+  [ptr = name]() {                                                         \
+    static grpc_core::latent_see::Metadata metadata = {__FILE__, __LINE__, \
+                                                       ptr};               \
+    return &metadata;                                                      \
+  }()
 // Parent scope: logs a begin and end event, and flushes the thread log on scope
 // exit. Because the flush takes some time it's better to place one parent scope
 // at the top of the stack, and use lighter weight scopes within it.
@@ -295,6 +301,7 @@ struct InnerScope {
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name) nullptr
+#define GRPC_LATENT_SEE_METADATA_RAW(name) nullptr
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)

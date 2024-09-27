@@ -4362,6 +4362,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
+        "//src/core:latent_see",
         "//src/core:map",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",

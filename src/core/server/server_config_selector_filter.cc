@@ -38,6 +38,7 @@
 #include "src/core/server/server_config_selector.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
@@ -144,6 +145,8 @@ void ServerConfigSelectorFilter::Orphan() {
 
 absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerConfigSelectorFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
   auto sel = filter->config_selector();
   if (!sel.ok()) return sel.status();
   auto call_config = sel.value()->GetCallConfig(&md);
