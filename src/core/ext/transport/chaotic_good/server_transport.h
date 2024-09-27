@@ -146,8 +146,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   uint32_t last_seen_new_stream_id_ = 0;
-  ActivityPtr writer_ ABSL_GUARDED_BY(mu_);
-  ActivityPtr reader_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
 };
