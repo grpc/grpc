@@ -44,6 +44,13 @@ CallInitiator HijackedCall::MakeCallWithMetadata(
   return std::move(call.initiator);
 }
 
+CallInitiator Interceptor::MakeChildCall(ClientMetadataHandle metadata,
+                                         RefCountedPtr<Arena> arena) {
+  auto call = MakeCallPair(std::move(metadata), arena);
+  wrapped_destination_->StartCall(std::move(call.handler));
+  return std::move(call.initiator);
+}
+
 namespace {
 class CallStarter final : public UnstartedCallDestination {
  public:

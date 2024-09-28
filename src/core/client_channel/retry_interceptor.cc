@@ -14,6 +14,7 @@
 
 #include "src/core/client_channel/retry_interceptor.h"
 
+#include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
 
 namespace grpc_core {
@@ -23,29 +24,65 @@ namespace grpc_core {
 
 void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
-  unstarted_call_handler.SpawnGuarded(
-      "start", [unstarted_call_handler,
-                self = WeakRefAsSubclass<RetryInterceptor>()]() mutable {
-        return TrySeq(self->Hijack(unstarted_call_handler),
-                      [arena = unstarted_call_handler.arena()](
-                          HijackedCall hijacked_call) {
-                        arena->MakeRefCounted<Call>(std::move(hijacked_call))
-                            ->StartAttempt();
-                        return absl::OkStatus();
-                      });
-      });
+  auto call_handler = unstarted_call_handler.StartCall();
+  auto* arena = call_handler.arena();
+  auto call = arena->MakeRefCounted<Call>(std::move(call_handler));
+  call->StartAttempt();
+  call->Start();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // RetryInterceptor::Call
 
-RetryInterceptor::Call::Call(HijackedCall hijacked_call)
-    : hijacked_call_(std::move(hijacked_call)) {}
+RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
+                             CallHandler call_handler)
+    : call_handler_(std::move(call_handler)),
+      interceptor_(std::move(interceptor)) {}
+
+void RetryInterceptor::Call::Start() {
+  call_handler_.SpawnGuarded("client_to_buffer", [self = Ref()]() {
+    return Map(TrySeq(
+                   self->call_handler_.PullClientInitialMetadata(),
+                   [self](ClientMetadataHandle metadata) mutable {
+                     return self->request_buffer_.PushClientInitialMetadata(
+                         std::move(metadata));
+                   },
+                   [self](size_t buffered) {
+                     self->MaybeCommit(buffered);
+                     return ForEach(OutgoingMessages(self->call_handler_),
+                                    [self](MessageHandle message) {
+                                      return TrySeq(
+                                          self->request_buffer_.PushMessage(
+                                              std::move(message)),
+                                          [self](size_t buffered) {
+                                            self->MaybeCommit(buffered);
+                                            return absl::OkStatus();
+                                          });
+                                    });
+                   }),
+               [self](absl::Status status) {
+                 if (status.ok()) {
+                   self->request_buffer_.FinishSends();
+                 } else {
+                   self->request_buffer_.Cancel(status);
+                 }
+                 return status;
+               });
+  });
+}
 
 void RetryInterceptor::Call::StartAttempt() {
-  auto call_initiator = hijacked_call_.MakeCall();
-  auto* arena = call_initiator.arena();
-  arena->MakeRefCounted<Attempt>(Ref())->Start(std::move(call_initiator));
+  if (current_attempt_ != nullptr) {
+    current_attempt_->Cancel();
+  }
+  current_attempt_ = call_handler_.arena()->MakeRefCounted<Attempt>(Ref());
+  current_attempt_->Start();
+}
+
+void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
+  if (buffered >= interceptor_->MaxBuffered()) {
+    current_attempt_->Commit();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,13 +91,69 @@ void RetryInterceptor::Call::StartAttempt() {
 RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
     : reader_(call->request_buffer()), call_(std::move(call)) {}
 
-void RetryInterceptor::Attempt::Start(CallInitiator call_initiator) {
-  call_initiator.SpawnGuarded("client_to_server", [self = Ref()]() {
-    return TrySeq(self->reader_.PullClientInitialMetadata(),
-                  [](ClientMetadataHandle client_initial_metadata) {
-
+auto RetryInterceptor::Attempt::ServerToClient() {
+  return TrySeq(
+      initiator_.PullServerInitialMetadata(),
+      [self = Ref()](absl::optional<ServerMetadataHandle> metadata) {
+        const bool has_md = metadata.has_value();
+        return If(
+            has_md,
+            [self, md = std::move(metadata)]() mutable {
+              self->Commit();
+              return Seq(
+                  ForEach(OutgoingMessages(self->initiator_),
+                          [self](MessageHandle message) {
+                            // should be spawn
+                            return self->call_->call_handler()->PushMessage(
+                                std::move(message));
+                          }),
+                  self->initiator_.PullServerTrailingMetadata(),
+                  [self](ServerMetadataHandle md) {
+                    // should be spawn
+                    self->call_->call_handler()->PushServerTrailingMetadata(
+                        std::move(md));
+                    return absl::OkStatus();
                   });
+            },
+            [self]() {
+              return Seq(
+                  self->initiator_.PullServerTrailingMetadata(),
+                  [self](ServerMetadataHandle md) {
+                    if (self->call_->interceptor()->ShouldRetry(*md)) {
+                      self->call_->StartAttempt();
+                    } else {
+                      self->Commit();
+                      // should be spawn
+                      self->call_->call_handler()->PushServerTrailingMetadata(
+                          std::move(md));
+                    }
+                    return absl::OkStatus();
+                  });
+            });
+      });
+}
+
+void RetryInterceptor::Attempt::Commit() {
+  call_->request_buffer()->Commit(reader());
+}
+
+void RetryInterceptor::Attempt::Start() {
+  call_->call_handler()->SpawnGuarded("buffer_to_server", [self = Ref()]() {
+    return TrySeq(
+        self->reader_.PullClientInitialMetadata(),
+        [self](ClientMetadataHandle metadata) {
+          self->initiator_ = self->call_->interceptor()->MakeChildCall(
+              std::move(metadata), self->call_->call_handler()->arena()->Ref());
+          self->initiator_.SpawnGuarded(
+              "server_to_client", [self]() { return self->ServerToClient(); });
+          return Loop(OutgoingMessages(self->reader_),
+                      [self](MessageHandle message) {
+                        return self->initiator_.PushMessage(std::move(message));
+                      });
+        });
   });
+  call_->call_handler()->SpawnGuarded("server_to_client",
+                                      [self = Ref()]() { return TrySeq(); });
 }
 
 }  // namespace grpc_core

@@ -26,17 +26,26 @@ class RetryInterceptor : public Interceptor {
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
  private:
+  class Attempt;
+
   class Call : public RefCounted<Call, NonPolymorphicRefCount, UnrefCallDtor> {
    public:
-    explicit Call(HijackedCall hijacked_call);
+    Call(RefCountedPtr<RetryInterceptor> interceptor, CallHandler call_handler);
 
     void StartAttempt();
+    void Start();
 
     RequestBuffer* request_buffer() { return &request_buffer_; }
+    CallHandler* call_handler() { return &call_handler_; }
+    RetryInterceptor* interceptor() { return interceptor_.get(); }
 
    private:
+    void MaybeCommit(size_t buffered);
+
     RequestBuffer request_buffer_;
-    HijackedCall hijacked_call_;
+    CallHandler call_handler_;
+    RefCountedPtr<RetryInterceptor> interceptor_;
+    RefCountedPtr<Attempt> current_attempt_;
   };
 
   class Attempt
@@ -44,12 +53,21 @@ class RetryInterceptor : public Interceptor {
    public:
     explicit Attempt(RefCountedPtr<Call> call);
 
-    void Start(CallInitiator call_initiator);
+    void Start();
+    void Cancel();
+    void Commit();
+    RequestBuffer::Reader* reader() { return &reader_; }
 
    private:
+    auto ServerToClient();
+
     RequestBuffer::Reader reader_;
     RefCountedPtr<Call> call_;
+    CallInitiator initiator_;
   };
+
+  size_t MaxBuffered() const;
+  bool ShouldRetry(const ServerMetadata& md);
 };
 
 }  // namespace grpc_core
