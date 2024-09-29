@@ -24,6 +24,7 @@
   <%include file="../../compile_python_310.include"/>
   <%include file="../../compile_python_311.include"/>
   <%include file="../../compile_python_312.include"/>
+  <%include file="../../compile_python_313.include"/>
 
   # Python test coverage requires libsqlite3, and it have
   # to be installed before Python.

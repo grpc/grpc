@@ -3,7 +3,8 @@
  *     envoy/type/v3/range.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_V3_RANGE_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_RANGE_PROTO_UPB_H_

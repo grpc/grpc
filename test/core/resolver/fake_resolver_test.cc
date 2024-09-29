@@ -115,7 +115,6 @@ class FakeResolverTest : public ::testing::Test {
       EXPECT_TRUE(uri.ok());
       grpc_resolved_address address;
       EXPECT_TRUE(grpc_parse_uri(*uri, &address));
-      absl::InlinedVector<grpc_arg, 2> args_to_add;
       addresses.emplace_back(address, ChannelArgs());
     }
     ++test_counter;

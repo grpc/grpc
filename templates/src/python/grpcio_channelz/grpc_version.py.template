@@ -14,6 +14,6 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/grpc_version.py.template`!!!
+  # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/python_version.py.template`!!!
 
   VERSION = '${settings.python_version.pep440()}'
