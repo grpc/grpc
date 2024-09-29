@@ -146,14 +146,12 @@ void RetryInterceptor::Attempt::Start() {
               std::move(metadata), self->call_->call_handler()->arena()->Ref());
           self->initiator_.SpawnGuarded(
               "server_to_client", [self]() { return self->ServerToClient(); });
-          return Loop(OutgoingMessages(self->reader_),
-                      [self](MessageHandle message) {
-                        return self->initiator_.PushMessage(std::move(message));
-                      });
+          return ForEach(
+              OutgoingMessages(&self->reader_), [self](MessageHandle message) {
+                return self->initiator_.PushMessage(std::move(message));
+              });
         });
   });
-  call_->call_handler()->SpawnGuarded("server_to_client",
-                                      [self = Ref()]() { return TrySeq(); });
 }
 
 }  // namespace grpc_core

@@ -409,6 +409,15 @@ auto OutgoingMessages(CallHalf h) {
   return Wrapper{std::move(h)};
 }
 
+template <typename CallHalf>
+auto OutgoingMessages(CallHalf* h) {
+  struct Wrapper {
+    CallHalf* h;
+    auto Next() { return h->PullMessage(); }
+  };
+  return Wrapper{h};
+}
+
 // Forward a call from `call_handler` to `call_initiator` (with initial metadata
 // `client_initial_metadata`)
 // `on_server_trailing_metadata_from_initiator` is a callback that will be
