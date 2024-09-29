@@ -14,8 +14,10 @@
 
 #include "src/core/client_channel/retry_interceptor.h"
 
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/sleep.h"
 
 namespace grpc_core {
 
@@ -39,35 +41,39 @@ RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
     : call_handler_(std::move(call_handler)),
       interceptor_(std::move(interceptor)) {}
 
+auto RetryInterceptor::Call::ClientToBuffer() {
+  return TrySeq(
+      call_handler_.PullClientInitialMetadata(),
+      [self = Ref()](ClientMetadataHandle metadata) mutable {
+        return self->request_buffer_.PushClientInitialMetadata(
+            std::move(metadata));
+      },
+      [self = Ref()](size_t buffered) {
+        self->MaybeCommit(buffered);
+        return ForEach(OutgoingMessages(self->call_handler_),
+                       [self](MessageHandle message) {
+                         return TrySeq(self->request_buffer_.PushMessage(
+                                           std::move(message)),
+                                       [self](size_t buffered) {
+                                         self->MaybeCommit(buffered);
+                                         return absl::OkStatus();
+                                       });
+                       });
+      });
+}
+
 void RetryInterceptor::Call::Start() {
   call_handler_.SpawnGuarded("client_to_buffer", [self = Ref()]() {
-    return Map(TrySeq(
-                   self->call_handler_.PullClientInitialMetadata(),
-                   [self](ClientMetadataHandle metadata) mutable {
-                     return self->request_buffer_.PushClientInitialMetadata(
-                         std::move(metadata));
-                   },
-                   [self](size_t buffered) {
-                     self->MaybeCommit(buffered);
-                     return ForEach(OutgoingMessages(self->call_handler_),
-                                    [self](MessageHandle message) {
-                                      return TrySeq(
-                                          self->request_buffer_.PushMessage(
-                                              std::move(message)),
-                                          [self](size_t buffered) {
-                                            self->MaybeCommit(buffered);
-                                            return absl::OkStatus();
-                                          });
-                                    });
-                   }),
-               [self](absl::Status status) {
-                 if (status.ok()) {
-                   self->request_buffer_.FinishSends();
-                 } else {
-                   self->request_buffer_.Cancel(status);
-                 }
-                 return status;
-               });
+    return OnCancel(Map(self->ClientToBuffer(),
+                        [self](absl::Status status) {
+                          if (status.ok()) {
+                            self->request_buffer_.FinishSends();
+                          } else {
+                            self->request_buffer_.Cancel(status);
+                          }
+                          return status;
+                        }),
+                    [self]() { self->request_buffer_.Cancel(); });
   });
 }
 
@@ -91,6 +97,48 @@ void RetryInterceptor::Call::MaybeCommit(size_t buffered) {
 RetryInterceptor::Attempt::Attempt(RefCountedPtr<Call> call)
     : reader_(call->request_buffer()), call_(std::move(call)) {}
 
+auto RetryInterceptor::Attempt::ServerToClientGotInitialMetadata(
+    ServerMetadataHandle md) {
+  Commit();
+  // should be spawn
+  call_->call_handler()->PushServerInitialMetadata(std::move(md));
+  return Seq(
+      ForEach(OutgoingMessages(&initiator_),
+              [call = call_](MessageHandle message) {
+                // should be spawn
+                return call->call_handler()->PushMessage(std::move(message));
+              }),
+      initiator_.PullServerTrailingMetadata(),
+      [call = call_](ServerMetadataHandle md) {
+        // should be spawn
+        call->call_handler()->PushServerTrailingMetadata(std::move(md));
+        return absl::OkStatus();
+      });
+}
+
+auto RetryInterceptor::Attempt::ServerToClientGotTrailersOnlyResponse() {
+  return Seq(initiator_.PullServerTrailingMetadata(),
+             [self = Ref()](ServerMetadataHandle md) {
+               auto pushback = self->call_->ShouldRetry(*md);
+               return If(
+                   pushback.has_value(),
+                   [self, pushback]() {
+                     return Map(Sleep(*pushback),
+                                [call = self->call_](absl::Status) {
+                                  call->StartAttempt();
+                                  return absl::OkStatus();
+                                });
+                   },
+                   [self, md = std::move(md)]() mutable {
+                     self->Commit();
+                     // should be spawn
+                     self->call_->call_handler()->PushServerTrailingMetadata(
+                         std::move(md));
+                     return absl::OkStatus();
+                   });
+             });
+}
+
 auto RetryInterceptor::Attempt::ServerToClient() {
   return TrySeq(
       initiator_.PullServerInitialMetadata(),
@@ -98,37 +146,11 @@ auto RetryInterceptor::Attempt::ServerToClient() {
         const bool has_md = metadata.has_value();
         return If(
             has_md,
-            [self, md = std::move(metadata)]() mutable {
-              self->Commit();
-              return Seq(
-                  ForEach(OutgoingMessages(self->initiator_),
-                          [self](MessageHandle message) {
-                            // should be spawn
-                            return self->call_->call_handler()->PushMessage(
-                                std::move(message));
-                          }),
-                  self->initiator_.PullServerTrailingMetadata(),
-                  [self](ServerMetadataHandle md) {
-                    // should be spawn
-                    self->call_->call_handler()->PushServerTrailingMetadata(
-                        std::move(md));
-                    return absl::OkStatus();
-                  });
+            [self = self.get(), md = std::move(metadata)]() mutable {
+              return self->ServerToClientGotInitialMetadata(std::move(*md));
             },
-            [self]() {
-              return Seq(
-                  self->initiator_.PullServerTrailingMetadata(),
-                  [self](ServerMetadataHandle md) {
-                    if (self->call_->interceptor()->ShouldRetry(*md)) {
-                      self->call_->StartAttempt();
-                    } else {
-                      self->Commit();
-                      // should be spawn
-                      self->call_->call_handler()->PushServerTrailingMetadata(
-                          std::move(md));
-                    }
-                    return absl::OkStatus();
-                  });
+            [self = self.get()]() {
+              return self->ServerToClientGotTrailersOnlyResponse();
             });
       });
 }

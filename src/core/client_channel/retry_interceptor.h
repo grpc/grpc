@@ -21,7 +21,6 @@
 namespace grpc_core {
 
 class RetryInterceptor : public Interceptor {
- public:
  protected:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
@@ -38,9 +37,13 @@ class RetryInterceptor : public Interceptor {
     RequestBuffer* request_buffer() { return &request_buffer_; }
     CallHandler* call_handler() { return &call_handler_; }
     RetryInterceptor* interceptor() { return interceptor_.get(); }
+    // if nullopt --> commit & don't retry
+    // if duration --> retry after duration
+    absl::optional<Duration> ShouldRetry(const ServerMetadata& md);
 
    private:
     void MaybeCommit(size_t buffered);
+    auto ClientToBuffer();
 
     RequestBuffer request_buffer_;
     CallHandler call_handler_;
@@ -60,6 +63,8 @@ class RetryInterceptor : public Interceptor {
 
    private:
     auto ServerToClient();
+    auto ServerToClientGotInitialMetadata(ServerMetadataHandle md);
+    auto ServerToClientGotTrailersOnlyResponse();
 
     RequestBuffer::Reader reader_;
     RefCountedPtr<Call> call_;
@@ -67,7 +72,6 @@ class RetryInterceptor : public Interceptor {
   };
 
   size_t MaxBuffered() const;
-  bool ShouldRetry(const ServerMetadata& md);
 };
 
 }  // namespace grpc_core

@@ -33,6 +33,7 @@ namespace grpc_core {
 class Sleep final {
  public:
   explicit Sleep(Timestamp deadline);
+  explicit Sleep(Duration timeout) : Sleep(Timestamp::Now() + timeout) {}
   ~Sleep();
 
   Sleep(const Sleep&) = delete;
