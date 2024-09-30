@@ -35,6 +35,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -55,6 +56,8 @@ ClientLoadReportingFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 
 void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& client_initial_metadata) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientLoadReportingFilter::Call::OnClientInitialMetadata");
   // Handle client initial metadata.
   // Grab client stats object from metadata.
   auto client_stats_md =
@@ -65,11 +68,15 @@ void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
 }
 
 void ClientLoadReportingFilter::Call::OnServerInitialMetadata(ServerMetadata&) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientLoadReportingFilter::Call::OnServerInitialMetadata");
   saw_initial_metadata_ = true;
 }
 
 void ClientLoadReportingFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& server_trailing_metadata) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientLoadReportingFilter::Call::OnServerTrailingMetadata");
   if (client_stats_ != nullptr) {
     client_stats_->AddCallFinished(
         server_trailing_metadata.get(GrpcStreamNetworkState()) ==

@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '~> 1.20240116.2'
+  abseil_version = '~> 1.20240722.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -378,6 +378,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/stream_lists.cc',
+                      'src/core/ext/transport/chttp2/transport/stream_lists.h',
                       'src/core/ext/transport/chttp2/transport/varint.cc',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/chttp2/transport/write_size_policy.cc',
@@ -1191,6 +1192,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                       'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c',
                       'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
+                      'src/core/filter/blackboard.cc',
+                      'src/core/filter/blackboard.h',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                       'src/core/handshaker/handshaker.cc',
@@ -2153,6 +2156,8 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/lrs_client.h',
                       'src/core/xds/xds_client/xds_api.cc',
                       'src/core/xds/xds_client/xds_api.h',
+                      'src/core/xds/xds_client/xds_backend_metric_propagation.cc',
+                      'src/core/xds/xds_client/xds_backend_metric_propagation.h',
                       'src/core/xds/xds_client/xds_bootstrap.cc',
                       'src/core/xds/xds_client/xds_bootstrap.h',
                       'src/core/xds/xds_client/xds_channel_args.h',
@@ -2470,6 +2475,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                              'src/core/ext/transport/chttp2/transport/stream_lists.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
@@ -2959,6 +2965,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.h',
                               'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
+                              'src/core/filter/blackboard.h',
                               'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                               'src/core/handshaker/handshaker.h',
                               'src/core/handshaker/handshaker_factory.h',
@@ -3461,6 +3468,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_transport_grpc.h',
                               'src/core/xds/xds_client/lrs_client.h',
                               'src/core/xds/xds_client/xds_api.h',
+                              'src/core/xds/xds_client/xds_backend_metric_propagation.h',
                               'src/core/xds/xds_client/xds_bootstrap.h',
                               'src/core/xds/xds_client/xds_channel_args.h',
                               'src/core/xds/xds_client/xds_client.h',

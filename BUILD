@@ -2043,6 +2043,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
@@ -3780,6 +3781,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_spine",
@@ -4360,6 +4362,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
+        "//src/core:latent_see",
         "//src/core:map",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",
@@ -4462,6 +4465,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:env",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
@@ -4469,6 +4473,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/core:xds_backend_metric_propagation",
     ],
 )
 
@@ -4781,6 +4786,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_settings.h",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.h",
         "//src/core:ext/transport/chttp2/transport/internal.h",
+        "//src/core:ext/transport/chttp2/transport/stream_lists.h",
     ],
     external_deps = [
         "absl/base:core_headers",

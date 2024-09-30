@@ -16,6 +16,8 @@
 //
 //
 
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 

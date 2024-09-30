@@ -30,6 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta,
