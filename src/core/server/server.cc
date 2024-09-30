@@ -53,11 +53,6 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
@@ -84,6 +79,11 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/interception_chain.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

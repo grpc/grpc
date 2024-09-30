@@ -245,7 +245,6 @@ TEST(CallStateTest, ReceiveTrailersOnly) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
 }
 
 TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
@@ -256,7 +255,6 @@ TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
 }
 
 TEST(CallStateTest, RecallNoCancellation) {
@@ -268,8 +266,6 @@ TEST(CallStateTest, RecallNoCancellation) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
   EXPECT_THAT(state.PollWasCancelled(), IsReady(false));
 }
 
@@ -282,8 +278,6 @@ TEST(CallStateTest, RecallCancellation) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
   EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
 }
 

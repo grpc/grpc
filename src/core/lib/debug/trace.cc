@@ -33,7 +33,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/glob.h"
+#include "src/core/util/glob.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 

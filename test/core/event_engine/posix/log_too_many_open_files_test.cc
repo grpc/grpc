@@ -24,7 +24,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
 
 using ::grpc_event_engine::experimental::PosixSocketWrapper;

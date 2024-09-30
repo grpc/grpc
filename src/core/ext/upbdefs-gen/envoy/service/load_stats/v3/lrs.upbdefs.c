@@ -3,7 +3,8 @@
  *     envoy/service/load_stats/v3/lrs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"

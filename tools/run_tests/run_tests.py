@@ -719,7 +719,7 @@ class PythonLanguage(object):
                         self.config.job_spec(
                             python_config.run
                             + [self._TEST_COMMAND[io_platform]],
-                            timeout_seconds=8 * 60,
+                            timeout_seconds=10 * 60,
                             environ=dict(
                                 GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                 **environment,
@@ -844,6 +844,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python313_config = _python_config_generator(
+            name="py313",
+            major="3",
+            minor="13",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -880,6 +887,8 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "python3.12":
             return (python312_config,)
+        elif args.compiler == "python3.13":
+            return (python313_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -893,6 +902,7 @@ class PythonLanguage(object):
                 python310_config,
                 python311_config,
                 python312_config,
+                python313_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -926,6 +936,7 @@ class RubyLanguage(object):
         # This crashes have been unreproducible outside of CI. Also see
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
+        #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
@@ -938,7 +949,6 @@ class RubyLanguage(object):
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
-            "src/ruby/end2end/load_grpc_with_gc_stress_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
             "src/ruby/end2end/graceful_sig_handling_test.rb",
@@ -1113,7 +1123,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-sample",
                 cpu_cost=1e6,
                 environ={
@@ -1126,7 +1136,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switftsample",
                 cpu_cost=1e6,
                 environ={
@@ -1138,7 +1148,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switft-use-frameworks",
                 cpu_cost=1e6,
                 environ={

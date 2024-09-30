@@ -25,6 +25,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
+    "local_connector_secure": "local_connector_secure",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -34,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
+    "time_caching_in_party": "time_caching_in_party",
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
@@ -51,6 +53,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "local_connector_secure",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -97,6 +102,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "local_connector_secure",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -129,6 +137,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_client",
+                "local_connector_secure",
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [

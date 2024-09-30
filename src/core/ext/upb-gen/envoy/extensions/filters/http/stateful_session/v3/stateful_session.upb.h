@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/stateful_session/v3/stateful_session.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_FILTERS_HTTP_STATEFUL_SESSION_V3_STATEFUL_SESSION_PROTO_UPB_H_
@@ -73,6 +74,7 @@ UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensi
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -96,6 +98,7 @@ UPB_INLINE bool envoy_extensions_filters_http_stateful_session_v3_StatefulSessio
 
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_session_state(envoy_extensions_filters_http_stateful_session_v3_StatefulSession *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_filters_http_stateful_session_v3_StatefulSession_mutable_session_state(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg, upb_Arena* arena) {
@@ -181,6 +184,7 @@ UPB_INLINE const envoy_extensions_filters_http_stateful_session_v3_StatefulSessi
   const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* default_val = NULL;
   const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -196,6 +200,7 @@ UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSessio
 }
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_set_stateful_session(envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute *msg, envoy_extensions_filters_http_stateful_session_v3_StatefulSession* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_filters_http_stateful_session_v3_StatefulSession* envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_mutable_stateful_session(envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute* msg, upb_Arena* arena) {

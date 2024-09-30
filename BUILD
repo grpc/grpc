@@ -32,7 +32,7 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-parse_headers",
+        "parse_headers",
         "layering_check",
     ],
 )
@@ -227,11 +227,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gesundheit"  # @unused
+g_stands_for = "groovy"  # @unused
 
-core_version = "43.0.0"  # @unused
+core_version = "44.0.0"  # @unused
 
-version = "1.67.0-dev"  # @unused
+version = "1.68.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -574,6 +574,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -649,6 +650,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -689,7 +691,7 @@ grpc_cc_library(
         "server",
         "sockaddr_utils",
         "tsi_base",
-        "uri_parser",
+        "uri",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -727,50 +729,50 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr",
     srcs = [
-        "//src/core:lib/gprpp/crash.cc",
-        "//src/core:lib/gprpp/fork.cc",
-        "//src/core:lib/gprpp/host_port.cc",
-        "//src/core:lib/gprpp/mpscq.cc",
-        "//src/core:lib/gprpp/posix/stat.cc",
-        "//src/core:lib/gprpp/posix/thd.cc",
-        "//src/core:lib/gprpp/time_util.cc",
-        "//src/core:lib/gprpp/windows/stat.cc",
-        "//src/core:lib/gprpp/windows/thd.cc",
         "//src/core:util/alloc.cc",
+        "//src/core:util/crash.cc",
+        "//src/core:util/fork.cc",
+        "//src/core:util/gpr_time.cc",
+        "//src/core:util/host_port.cc",
         "//src/core:util/iphone/cpu.cc",
         "//src/core:util/linux/cpu.cc",
         "//src/core:util/log.cc",
+        "//src/core:util/mpscq.cc",
         "//src/core:util/msys/tmpfile.cc",
         "//src/core:util/posix/cpu.cc",
+        "//src/core:util/posix/stat.cc",
         "//src/core:util/posix/string.cc",
         "//src/core:util/posix/sync.cc",
+        "//src/core:util/posix/thd.cc",
         "//src/core:util/posix/time.cc",
         "//src/core:util/posix/tmpfile.cc",
         "//src/core:util/string.cc",
         "//src/core:util/sync.cc",
         "//src/core:util/sync_abseil.cc",
-        "//src/core:util/time.cc",
         "//src/core:util/time_precise.cc",
+        "//src/core:util/time_util.cc",
         "//src/core:util/windows/cpu.cc",
+        "//src/core:util/windows/stat.cc",
         "//src/core:util/windows/string.cc",
         "//src/core:util/windows/string_util.cc",
         "//src/core:util/windows/sync.cc",
+        "//src/core:util/windows/thd.cc",
         "//src/core:util/windows/time.cc",
         "//src/core:util/windows/tmpfile.cc",
     ],
     hdrs = [
-        "//src/core:lib/gprpp/crash.h",
-        "//src/core:lib/gprpp/fork.h",
-        "//src/core:lib/gprpp/host_port.h",
-        "//src/core:lib/gprpp/memory.h",
-        "//src/core:lib/gprpp/mpscq.h",
-        "//src/core:lib/gprpp/stat.h",
-        "//src/core:lib/gprpp/sync.h",
-        "//src/core:lib/gprpp/thd.h",
-        "//src/core:lib/gprpp/time_util.h",
         "//src/core:util/alloc.h",
+        "//src/core:util/crash.h",
+        "//src/core:util/fork.h",
+        "//src/core:util/host_port.h",
+        "//src/core:util/memory.h",
+        "//src/core:util/mpscq.h",
+        "//src/core:util/stat.h",
         "//src/core:util/string.h",
+        "//src/core:util/sync.h",
+        "//src/core:util/thd.h",
         "//src/core:util/time_precise.h",
+        "//src/core:util/time_util.h",
         "//src/core:util/tmpfile.h",
     ],
     external_deps = [
@@ -829,7 +831,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cpp_impl_of",
-    hdrs = ["//src/core:lib/gprpp/cpp_impl_of.h"],
+    hdrs = ["//src/core:util/cpp_impl_of.h"],
     language = "c++",
 )
 
@@ -901,6 +903,7 @@ grpc_cc_library(
         "absl/log:log",
         "absl/log:absl_check",
         "absl/log:absl_log",
+        "absl/status:statusor",
         "absl/strings:cord",
         "absl/synchronization",
         "protobuf_headers",
@@ -1406,7 +1409,7 @@ grpc_cc_library(
         "parse_address",
         "ref_counted_ptr",
         "sockaddr_utils",
-        "uri_parser",
+        "uri",
         "//src/core:channel_args",
         "//src/core:connectivity_state",
         "//src/core:json",
@@ -1521,9 +1524,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_posix.cc",
         "//src/core:lib/iomgr/fork_posix.cc",
         "//src/core:lib/iomgr/fork_windows.cc",
-        "//src/core:lib/iomgr/gethostname_fallback.cc",
-        "//src/core:lib/iomgr/gethostname_host_name_max.cc",
-        "//src/core:lib/iomgr/gethostname_sysconf.cc",
         "//src/core:lib/iomgr/iocp_windows.cc",
         "//src/core:lib/iomgr/iomgr.cc",
         "//src/core:lib/iomgr/iomgr_posix.cc",
@@ -1562,6 +1562,9 @@ grpc_cc_library(
         "//src/core:lib/iomgr/wakeup_fd_nospecial.cc",
         "//src/core:lib/iomgr/wakeup_fd_pipe.cc",
         "//src/core:lib/iomgr/wakeup_fd_posix.cc",
+        "//src/core:util/gethostname_fallback.cc",
+        "//src/core:util/gethostname_host_name_max.cc",
+        "//src/core:util/gethostname_sysconf.cc",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -1582,7 +1585,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_epoll1_linux.h",
         "//src/core:lib/iomgr/ev_poll_posix.h",
         "//src/core:lib/iomgr/ev_posix.h",
-        "//src/core:lib/iomgr/gethostname.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
         "//src/core:lib/iomgr/lockfree_event.h",
@@ -1613,6 +1615,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/vsock.h",
         "//src/core:lib/iomgr/wakeup_fd_pipe.h",
         "//src/core:lib/iomgr/wakeup_fd_posix.h",
+        "//src/core:util/gethostname.h",
     ] +
     # TODO(vigneshbabu): remove these
     # These headers used to be vended by this target, but they have to be
@@ -2508,6 +2511,7 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
+        "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
@@ -3002,10 +3006,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "work_serializer",
     srcs = [
-        "//src/core:lib/gprpp/work_serializer.cc",
+        "//src/core:util/work_serializer.cc",
     ],
     hdrs = [
-        "//src/core:lib/gprpp/work_serializer.h",
+        "//src/core:util/work_serializer.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3134,7 +3138,7 @@ grpc_cc_library(
     name = "debug_location",
     external_deps = ["absl/strings"],
     language = "c++",
-    public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
+    public_hdrs = ["//src/core:util/debug_location.h"],
     visibility = ["@grpc:debug_location"],
     deps = ["gpr_platform"],
 )
@@ -3142,7 +3146,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "orphanable",
     language = "c++",
-    public_hdrs = ["//src/core:lib/gprpp/orphanable.h"],
+    public_hdrs = ["//src/core:util/orphanable.h"],
     visibility = [
         "@grpc:client_channel",
         "@grpc:xds_client_core",
@@ -3179,7 +3183,7 @@ grpc_cc_library(
     name = "ref_counted_ptr",
     external_deps = ["absl/hash"],
     language = "c++",
-    public_hdrs = ["//src/core:lib/gprpp/ref_counted_ptr.h"],
+    public_hdrs = ["//src/core:util/ref_counted_ptr.h"],
     visibility = ["@grpc:ref_counted_ptr"],
     deps = [
         "debug_location",
@@ -3326,7 +3330,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr",
-        "uri_parser",
+        "uri",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
         "//src/core:resolved_address",
@@ -3418,12 +3422,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "uri_parser",
+    name = "uri",
     srcs = [
-        "//src/core:lib/uri/uri_parser.cc",
+        "//src/core:util/uri.cc",
     ],
     hdrs = [
-        "//src/core:lib/uri/uri_parser.h",
+        "//src/core:util/uri.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3440,12 +3444,12 @@ grpc_cc_library(
     name = "parse_address",
     srcs = [
         "//src/core:lib/address_utils/parse_address.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_posix.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_unsupported.cc",
+        "//src/core:util/grpc_if_nametoindex_posix.cc",
+        "//src/core:util/grpc_if_nametoindex_unsupported.cc",
     ],
     hdrs = [
         "//src/core:lib/address_utils/parse_address.h",
-        "//src/core:lib/iomgr/grpc_if_nametoindex.h",
+        "//src/core:util/grpc_if_nametoindex.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3457,7 +3461,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr",
-        "uri_parser",
+        "uri",
         "//src/core:error",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
@@ -3469,10 +3473,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "backoff",
     srcs = [
-        "//src/core:lib/backoff/backoff.cc",
+        "//src/core:util/backoff.cc",
     ],
     hdrs = [
-        "//src/core:lib/backoff/backoff.h",
+        "//src/core:util/backoff.h",
     ],
     external_deps = ["absl/random"],
     language = "c++",
@@ -3632,7 +3636,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
-        "uri_parser",
+        "uri",
         "//src/core:channel_args",
         "//src/core:grpc_service_config",
         "//src/core:iomgr_fwd",
@@ -3790,7 +3794,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
-        "uri_parser",
+        "uri",
         "work_serializer",
         "//src/core:arena",
         "//src/core:arena_promise",
@@ -3913,7 +3917,7 @@ grpc_cc_library(
         "parse_address",
         "ref_counted_ptr",
         "sockaddr_utils",
-        "uri_parser",
+        "uri",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
@@ -3972,7 +3976,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_api",
         "sockaddr_utils",
-        "uri_parser",
+        "uri",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
@@ -4102,7 +4106,7 @@ grpc_cc_library(
         "orphanable",
         "promise",
         "ref_counted_ptr",
-        "uri_parser",
+        "uri",
         "//src/core:arena_promise",
         "//src/core:closure",
         "//src/core:error",
@@ -4410,17 +4414,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_client",
     srcs = [
+        "//src/core:xds/xds_client/lrs_client.cc",
         "//src/core:xds/xds_client/xds_api.cc",
         "//src/core:xds/xds_client/xds_bootstrap.cc",
         "//src/core:xds/xds_client/xds_client.cc",
-        "//src/core:xds/xds_client/xds_client_stats.cc",
     ],
     hdrs = [
+        "//src/core:xds/xds_client/lrs_client.h",
         "//src/core:xds/xds_client/xds_api.h",
         "//src/core:xds/xds_client/xds_bootstrap.h",
         "//src/core:xds/xds_client/xds_channel_args.h",
         "//src/core:xds/xds_client/xds_client.h",
-        "//src/core:xds/xds_client/xds_client_stats.h",
+        "//src/core:xds/xds_client/xds_locality.h",
         "//src/core:xds/xds_client/xds_metrics.h",
         "//src/core:xds/xds_client/xds_resource_type.h",
         "//src/core:xds/xds_client/xds_resource_type_impl.h",
@@ -4471,7 +4476,7 @@ grpc_cc_library(
         "protobuf_struct_upb",
         "protobuf_timestamp_upb",
         "ref_counted_ptr",
-        "uri_parser",
+        "uri",
         "work_serializer",
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
@@ -4479,6 +4484,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
+        "//src/core:ref_counted_string",
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
@@ -4532,7 +4538,7 @@ grpc_cc_library(
         "grpc_resolver",
         "orphanable",
         "ref_counted_ptr",
-        "uri_parser",
+        "uri",
         "work_serializer",
         "//src/core:channel_args",
         "//src/core:notification",
@@ -4792,6 +4798,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_settings.h",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.h",
         "//src/core:ext/transport/chttp2/transport/internal.h",
+        "//src/core:ext/transport/chttp2/transport/stream_lists.h",
     ],
     external_deps = [
         "absl/base:core_headers",

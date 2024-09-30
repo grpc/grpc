@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
