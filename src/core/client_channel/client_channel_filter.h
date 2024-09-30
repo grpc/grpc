@@ -43,6 +43,7 @@
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -315,6 +316,8 @@ class ClientChannelFilter final {
   RefCountedPtr<ServiceConfig> saved_service_config_
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
+      ABSL_GUARDED_BY(*work_serializer_);
+  RefCountedPtr<const Blackboard> blackboard_
       ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(*work_serializer_);

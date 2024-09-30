@@ -43,6 +43,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -125,6 +126,8 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "BackendMetricFilter::Call::OnServerTrailingMetadata");
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {

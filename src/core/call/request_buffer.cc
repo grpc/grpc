@@ -117,7 +117,7 @@ RequestBuffer::Reader::PollPullClientInitialMetadata() {
     pulled_client_initial_metadata_ = true;
     auto result = ClaimObject(buffering->initial_metadata);
     buffer_->MaybeSwitchToStreaming();
-    return result;
+    return std::move(result);
   }
   if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
     pulled_client_initial_metadata_ = true;
@@ -142,7 +142,7 @@ RequestBuffer::Reader::PollPullMessage() {
     auto result = ClaimObject(buffering->messages[idx]);
     ++message_index_;
     buffer_->MaybeSwitchToStreaming();
-    return result;
+    return std::move(result);
   }
   if (auto* buffered = absl::get_if<Buffered>(&buffer_->state_)) {
     if (message_index_ == buffered->messages.size()) return absl::nullopt;
@@ -159,7 +159,7 @@ RequestBuffer::Reader::PollPullMessage() {
     auto waker = std::move(buffer_->push_waker_);
     lock.Release();
     waker.Wakeup();
-    return msg;
+    return std::move(msg);
   }
   error_ = absl::get<Cancelled>(buffer_->state_).error;
   return Failure{};

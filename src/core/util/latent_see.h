@@ -295,6 +295,7 @@ struct InnerScope {
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name) nullptr
+#define GRPC_LATENT_SEE_METADATA_RAW(name) nullptr
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)
