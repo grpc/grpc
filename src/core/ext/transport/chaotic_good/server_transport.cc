@@ -356,12 +356,14 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));
-  writer_ = MakeActivity(TransportWriteLoop(transport),
-                         EventEngineWakeupScheduler(event_engine),
-                         OnTransportActivityDone("writer"));
-  reader_ = MakeActivity(TransportReadLoop(std::move(transport)),
-                         EventEngineWakeupScheduler(event_engine),
-                         OnTransportActivityDone("reader"));
+  auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+  party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  party_ = Party::Make(std::move(party_arena));
+  party_->Spawn("server-chaotic-writer", TransportWriteLoop(transport),
+                OnTransportActivityDone("writer"));
+  party_->Spawn("server-chaotic-reader", TransportReadLoop(transport),
+                OnTransportActivityDone("reader"));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(
@@ -373,15 +375,13 @@ void ChaoticGoodServerTransport::SetCallDestination(
 }
 
 void ChaoticGoodServerTransport::Orphan() {
-  ActivityPtr writer;
-  ActivityPtr reader;
+  AbortWithError();
+  RefCountedPtr<Party> party;
   {
     MutexLock lock(&mu_);
-    writer = std::move(writer_);
-    reader = std::move(reader_);
+    party = std::move(party_);
   }
-  writer.reset();
-  reader.reset();
+  party.reset();
   Unref();
 }
 
@@ -461,7 +461,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 }
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
-  std::vector<ActivityPtr> cancelled;
+  RefCountedPtr<Party> cancelled_party;
   MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
@@ -482,8 +482,11 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
     did_stuff = true;
   }
   if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
-    cancelled.push_back(std::move(writer_));
-    cancelled.push_back(std::move(reader_));
+    cancelled_party = std::move(party_);
+    outgoing_frames_.MarkClosed();
+    state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
+                            absl::UnavailableError("transport closed"),
+                            "transport closed");
     did_stuff = true;
   }
   if (!did_stuff) {

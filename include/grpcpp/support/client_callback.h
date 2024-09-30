@@ -325,21 +325,20 @@ class ClientBidiReactor : public internal::ClientReactor {
   /// call of OnReadDone or OnDone.
   ///
   /// \param[in] ok Was the initial metadata read successfully? If false, no
-  ///               new read/write operation will succeed, and any further
-  ///               Start* operations should not be called.
+  ///               new read/write operation will succeed.
   virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
   /// \param[in] ok Was it successful? If false, no new read/write operation
-  ///               will succeed, and any further Start* should not be called.
+  ///               will succeed.
   virtual void OnReadDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWrite or StartWriteLast operation
   /// completed.
   ///
   /// \param[in] ok Was it successful? If false, no new read/write operation
-  ///               will succeed, and any further Start* should not be called.
+  ///               will succeed.
   virtual void OnWriteDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWritesDone operation completed. Note
