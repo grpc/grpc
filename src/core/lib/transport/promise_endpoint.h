@@ -106,7 +106,7 @@ class PromiseEndpoint {
             return absl::OkStatus();
           };
         },
-        [this]() {
+        GRPC_LATENT_SEE_PROMISE("DelayedWrite", [this]() {
           return [write_state = write_state_]() -> Poll<absl::Status> {
             // If current write isn't finished return `Pending()`, else
             // return write result.
@@ -123,7 +123,7 @@ class PromiseEndpoint {
             CHECK(expected == WriteState::kWriting);
             return Pending();
           };
-        });
+        }));
   }
 
   // Returns a promise that resolves to `SliceBuffer` with
@@ -174,7 +174,7 @@ class PromiseEndpoint {
             return std::move(ret);
           };
         },
-        [this, num_bytes]() {
+        GRPC_LATENT_SEE_PROMISE("DelayedRead", [this, num_bytes]() {
           return [read_state = read_state_,
                   num_bytes]() -> Poll<absl::StatusOr<SliceBuffer>> {
             if (!read_state->complete.load(std::memory_order_acquire)) {
@@ -192,7 +192,7 @@ class PromiseEndpoint {
             read_state->complete.store(false, std::memory_order_relaxed);
             return std::move(read_state->result);
           };
-        });
+        }));
   }
 
   // Returns a promise that resolves to `Slice` with at least
