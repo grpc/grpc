@@ -242,9 +242,10 @@ class Server : public ServerInterface,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
-    // Removes the logical connection from being tracked. This could happen for reasons such as the
-    // connection being closed, or the connection has been established
-    // (including handshake) and doesn't have a server config fetcher.
+    // Removes the logical connection from being tracked. This could happen for
+    // reasons such as the connection being closed, or the connection has been
+    // established (including handshake) and doesn't have a server config
+    // fetcher.
     void RemoveLogicalConnection(LogicalConnection* connection);
 
     void set_resolved_address(grpc_resolved_address resolved_address) {

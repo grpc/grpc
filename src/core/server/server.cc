@@ -100,11 +100,11 @@ void Server::ListenerInterface::ConfigFetcherWatcher::UpdateConnectionManager(
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-        connections_to_shutdown;
+      connections_to_shutdown;
   auto cleanup = absl::MakeCleanup([&connections_to_shutdown]() {
-          // Send GOAWAYs on the transports so that they get disconnected when
-      // existing RPCs finish, and so that no new RPC is started on them.
-    for (auto& connection: connections_to_shutdown) {
+    // Send GOAWAYs on the transports so that they get disconnected when
+    // existing RPCs finish, and so that no new RPC is started on them.
+    for (auto& connection : connections_to_shutdown) {
       connection->SendGoAway();
     }
   });
@@ -143,40 +143,38 @@ void Server::ListenerInterface::ConfigFetcherWatcher::StopServing() {
 //
 
 void Server::ListenerInterface::LogicalConnection::SendGoAway() {
-  {
-    if (!SendGoAwayImpl()) {
-      return;
-    }
-    MutexLock lock(&mu_);
-    if (drain_grace_timer_handle_cancelled_) {
-      return;
-    }
-    CHECK(drain_grace_timer_handle_ == EventEngine::TaskHandle::kInvalid);
-    drain_grace_timer_handle_ = event_engine_->RunAfter(
-        std::max(Duration::Zero(),
-                 listener_->server_->channel_args()
-                     .GetDurationFromIntMillis(
-                         GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
-                     .value_or(Duration::Minutes(10))),
-        [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
-          ExecCtx exec_ctx;
-          // If the drain_grace_timer_ was not cancelled, disconnect
-          // immediately.
-          bool disconnect_immediately = false;
-          {
-            MutexLock lock(&self->mu_);
-            self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
-            if (!self->drain_grace_timer_handle_cancelled_) {
-              disconnect_immediately = true;
-            }
-          }
-          if (disconnect_immediately) {
-            self->DisconnectImmediatelyImpl();
-          }
-          self.reset(DEBUG_LOCATION, "drain_grace_timer");
-        });
+  if (!SendGoAwayImpl()) {
+    return;
   }
+  MutexLock lock(&mu_);
+  if (drain_grace_timer_handle_cancelled_) {
+    return;
+  }
+  CHECK(drain_grace_timer_handle_ == EventEngine::TaskHandle::kInvalid);
+  drain_grace_timer_handle_ = event_engine_->RunAfter(
+      std::max(Duration::Zero(),
+               listener_->server_->channel_args()
+                   .GetDurationFromIntMillis(
+                       GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                   .value_or(Duration::Minutes(10))),
+      [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        // If the drain_grace_timer_ was not cancelled, disconnect
+        // immediately.
+        bool disconnect_immediately = false;
+        {
+          MutexLock lock(&self->mu_);
+          self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
+          if (!self->drain_grace_timer_handle_cancelled_) {
+            disconnect_immediately = true;
+          }
+        }
+        if (disconnect_immediately) {
+          self->DisconnectImmediatelyImpl();
+        }
+        self.reset(DEBUG_LOCATION, "drain_grace_timer");
+      });
 }
 
 void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {

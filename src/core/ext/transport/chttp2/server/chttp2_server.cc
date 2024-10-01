@@ -455,8 +455,8 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
     const ChannelArgs& args, MemoryOwner memory_owner)
     : LogicalConnection(std::move(listener)),
       handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
-          RefAsSubclass<ActiveConnection>(),
-          accepting_pollset, std::move(acceptor), args)) {
+          RefAsSubclass<ActiveConnection>(), accepting_pollset,
+          std::move(acceptor), args)) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
 }
@@ -651,7 +651,7 @@ void Chttp2ServerListener::StartImpl() {
   grpc_tcp_server* tcp_server = nullptr;
   {
     MutexLock lock(&mu_);
-    if(!shutdown_) {
+    if (!shutdown_) {
       should_add_port = std::exchange(add_port_on_start_, false);
       // Hold a ref while we start the server
       if (tcp_server_ != nullptr) {
@@ -834,7 +834,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   return error;
 }
 
-} // namespace
+}  // namespace
 
 namespace experimental {
 
