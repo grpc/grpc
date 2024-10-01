@@ -367,11 +367,11 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
   party_->Spawn("server-chaotic-writer",
                 GRPC_LATENT_SEE_PROMISE("ServerTransportWriteLoop",
                                         TransportWriteLoop(transport)),
-                                        OnTransportActivityDone("writer"));
+                OnTransportActivityDone("writer"));
   party_->Spawn("server-chaotic-reader",
                 GRPC_LATENT_SEE_PROMISE("ServerTransportReadLoop",
                                         TransportReadLoop(transport)),
-                                        OnTransportActivityDone("reader"));
+                OnTransportActivityDone("reader"));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(
