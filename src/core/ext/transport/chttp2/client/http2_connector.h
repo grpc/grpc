@@ -49,6 +49,8 @@ class Http2Connector : public SubchannelConnector {
   void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
   void OnTimeout() ABSL_LOCKS_EXCLUDED(mu_);
+
+  Mutex mu_;
 };
 
 }  // namespace http

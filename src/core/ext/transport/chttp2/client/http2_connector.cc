@@ -94,13 +94,13 @@ void Http2Connector::Connect(const Args& args, Result* result,
 
 void Http2Connector::Shutdown(grpc_error_handle error) {}
 
-void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {}
+void Http2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {}
 
-void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {}
+void Http2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {}
 
-void Chttp2Connector::OnTimeout() {}
+void Http2Connector::OnTimeout() {}
 
-void Chttp2Connector::MaybeNotify(grpc_error_handle error) {}
+void Http2Connector::MaybeNotify(grpc_error_handle error) {}
 
 }  // namespace http
 }  // namespace grpc_core
