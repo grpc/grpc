@@ -1304,12 +1304,11 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
   });
 }
 
-static void trace_annotations(grpc_chttp2_stream* s) {
+static void trace_annotations(grpc_chttp2_stream* s, grpc_core::HttpAnnotation::Type type) {
   if (!grpc_core::IsCallTracerInTransportEnabled()) {
     if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
+          grpc_core::HttpAnnotation(type, gpr_now(GPR_CLOCK_REALTIME))
               .Add(s->t->flow_control.stats())
               .Add(s->flow_control.stats()));
     }
@@ -1317,8 +1316,7 @@ static void trace_annotations(grpc_chttp2_stream* s) {
     auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
     if (call_tracer != nullptr && call_tracer->IsSampled()) {
       call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
+          grpc_core::HttpAnnotation(type, gpr_now(GPR_CLOCK_REALTIME))
               .Add(s->t->flow_control.stats())
               .Add(s->flow_control.stats()));
     }
@@ -1329,7 +1327,7 @@ static void send_initial_metadata_locked(
     grpc_transport_stream_op_batch* op, grpc_chttp2_stream* s,
     grpc_transport_stream_op_batch_payload* op_payload,
     grpc_chttp2_transport* t, grpc_closure* on_complete) {
-  trace_annotations(s);
+  trace_annotations(s, grpc_core::HttpAnnotation::Type::kStart);
   if (t->is_client && t->channelz_socket != nullptr) {
     t->channelz_socket->RecordStreamStartedFromLocal();
   }
