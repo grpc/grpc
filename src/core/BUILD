@@ -7629,7 +7629,9 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/client/http2_connector.h",
     ],
-    external_deps = [],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     language = "c++",
     deps = [],
 )
