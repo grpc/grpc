@@ -184,9 +184,9 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   // cache but it has the wrong size.
   cache->SetMaxSize(filter_config->cache_size);
   // Instantiate filter.
-  return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
-      std::move(service_config), filter_config, std::move(xds_config),
-      std::move(cache)));
+  return std::unique_ptr<GcpAuthenticationFilter>(
+      new GcpAuthenticationFilter(std::move(service_config), filter_config,
+                                  std::move(xds_config), std::move(cache)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
