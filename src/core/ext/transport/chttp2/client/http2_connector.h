@@ -34,8 +34,6 @@
 #include "src/core/util/sync.h"
 
 // TODO(tjagtap) : [PH2_TODO][P1] Remove unused includes after class is ready.
-// Compiler whining about missing includes when we are iterating over the code
-// is a huge time sink.
 
 namespace grpc_core {
 namespace http {
