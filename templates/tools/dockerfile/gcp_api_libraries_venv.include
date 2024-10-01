@@ -1,7 +1,0 @@
-# Install Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-# This template is similar to gcp_api_libraries.include but installs the
-# dependencies in a python virtual environment. This is required from pip 23.0
-# onwards as installation of system-wide packages is blocked by default.
-RUN /bin/bash -c "source $PYTHON_ENV/bin/activate && \
-  python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0"
