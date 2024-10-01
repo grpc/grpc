@@ -14,9 +14,9 @@
 
 #include "src/core/lib/event_engine/forkable.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "absl/log/check.h"
 
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 #include <pthread.h>

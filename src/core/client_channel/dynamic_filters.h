@@ -17,12 +17,11 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
 #include <utility>
 #include <vector>
-
-#include <grpc/slice.h>
 
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"

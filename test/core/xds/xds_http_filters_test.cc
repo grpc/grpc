@@ -14,13 +14,17 @@
 // limitations under the License.
 //
 
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -28,14 +32,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -73,6 +69,8 @@
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 

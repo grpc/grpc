@@ -14,19 +14,17 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
+#include <gtest/gtest.h>
 
+#include <memory>
+
+#include "absl/log/check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"

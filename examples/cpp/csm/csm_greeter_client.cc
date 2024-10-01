@@ -16,6 +16,9 @@
  *
  */
 
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/string_ref.h>
 #include <sys/types.h>
 
 #include <chrono>
@@ -33,10 +36,6 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/csm_observability.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/string_ref.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

@@ -15,19 +15,6 @@
 // limitations under the License.
 //
 //
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -42,7 +29,18 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"

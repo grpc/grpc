@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/channel.h>
@@ -30,6 +28,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "absl/log/check.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

@@ -13,21 +13,19 @@
 // limitations under the License.
 //
 
+#include <gmock/gmock.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"

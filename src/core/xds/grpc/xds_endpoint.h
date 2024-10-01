@@ -24,7 +24,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
-
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"

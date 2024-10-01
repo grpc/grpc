@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -51,13 +53,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
-#include "upb/base/string_view.h"
-#include "upb/message/map.h"
-#include "upb/text/encode.h"
-
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -78,6 +73,9 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/base/string_view.h"
+#include "upb/message/map.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core {
 

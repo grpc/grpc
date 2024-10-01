@@ -14,15 +14,14 @@
 
 #include "src/core/client_channel/client_channel.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"

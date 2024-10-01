@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -27,9 +29,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"

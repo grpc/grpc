@@ -14,13 +14,13 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <utility>
 #include <vector>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

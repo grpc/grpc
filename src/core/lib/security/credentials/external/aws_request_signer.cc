@@ -15,13 +15,14 @@
 //
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
-#include <utility>
-#include <vector>
-
+#include <grpc/support/port_platform.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
+
+#include <utility>
+#include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -33,8 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

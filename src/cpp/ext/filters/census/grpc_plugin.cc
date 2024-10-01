@@ -18,17 +18,16 @@
 
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/server_context.h>
+
 #include <atomic>
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/server_context.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"

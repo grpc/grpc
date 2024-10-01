@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <string>
 
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"

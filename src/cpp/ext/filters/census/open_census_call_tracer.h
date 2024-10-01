@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+#include <grpcpp/opencensus.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -33,11 +36,6 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"

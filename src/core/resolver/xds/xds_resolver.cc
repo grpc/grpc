@@ -14,6 +14,10 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -42,12 +46,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "re2/re2.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/lib/channel/channel_args.h"

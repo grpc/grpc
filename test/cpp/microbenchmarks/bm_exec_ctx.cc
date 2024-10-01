@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <benchmark/benchmark.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <atomic>
 #include <memory>
-
-#include <benchmark/benchmark.h>
-
-#include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/notification.h"

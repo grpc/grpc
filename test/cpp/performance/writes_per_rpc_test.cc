@@ -16,14 +16,6 @@
 //
 //
 
-#include <chrono>
-#include <utility>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -31,7 +23,13 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <gtest/gtest.h>
 
+#include <chrono>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

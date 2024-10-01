@@ -18,9 +18,9 @@
 
 #include "src/core/util/ring_buffer.h"
 
-#include "gtest/gtest.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

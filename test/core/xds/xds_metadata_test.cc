@@ -16,18 +16,17 @@
 
 #include "src/core/xds/grpc/xds_metadata.h"
 
-#include <string>
-#include <utility>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
+
+#include <string>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"

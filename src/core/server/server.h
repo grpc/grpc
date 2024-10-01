@@ -17,6 +17,12 @@
 #ifndef GRPC_SRC_CORE_SERVER_SERVER_H
 #define GRPC_SRC_CORE_SERVER_SERVER_H
 
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/passive_listener.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,14 +43,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/passive_listener.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

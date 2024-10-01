@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
+#include "absl/log/check.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"

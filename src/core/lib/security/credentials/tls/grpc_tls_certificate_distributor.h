@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -27,9 +29,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/util/ref_counted.h"

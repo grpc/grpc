@@ -14,6 +14,9 @@
 
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -23,10 +26,6 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"

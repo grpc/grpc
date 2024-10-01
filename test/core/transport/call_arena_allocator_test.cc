@@ -18,6 +18,8 @@
 
 #include "src/core/lib/transport/call_arena_allocator.h"
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -31,10 +33,6 @@
 #include "absl/strings/str_join.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted_ptr.h"

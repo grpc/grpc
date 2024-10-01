@@ -14,14 +14,13 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"

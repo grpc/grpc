@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+
 #include <memory>
 #include <thread>
 
@@ -23,10 +26,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_split.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"

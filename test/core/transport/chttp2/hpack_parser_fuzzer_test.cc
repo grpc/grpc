@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -25,10 +27,6 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/error.h"

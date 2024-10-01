@@ -15,10 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_STATE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_STATE_H
 
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/optional.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"

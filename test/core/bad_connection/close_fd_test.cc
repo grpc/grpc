@@ -21,19 +21,17 @@
 // an RPC call is in progress.
 //
 //
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -49,12 +47,11 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <string.h>
-#include <unistd.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"

@@ -16,14 +16,6 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -33,7 +25,13 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/server_interceptor.h>
+#include <gtest/gtest.h>
 
+#include <memory>
+#include <vector>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

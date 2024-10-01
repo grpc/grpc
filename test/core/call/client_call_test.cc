@@ -14,11 +14,10 @@
 
 #include "src/core/lib/surface/client_call.h"
 
-#include "absl/status/status.h"
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
+#include "absl/status/status.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/util/debug_location.h"

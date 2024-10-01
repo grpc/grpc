@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_BUFFER_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_BUFFER_H
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <memory>
 #include <string>
-
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
 

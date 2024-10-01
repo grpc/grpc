@@ -16,10 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
@@ -42,11 +44,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"

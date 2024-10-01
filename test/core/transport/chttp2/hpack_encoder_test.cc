@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice_buffer.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,10 +29,6 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice_buffer.h>
-
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"

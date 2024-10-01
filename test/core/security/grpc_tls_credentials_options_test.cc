@@ -19,12 +19,11 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"

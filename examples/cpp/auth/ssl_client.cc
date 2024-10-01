@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
@@ -25,8 +27,6 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "helper.h"
-
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_STATUS_H
 #define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_STATUS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
 
 // Helpers for dealing with absl::Status/StatusOr generically
 

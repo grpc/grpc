@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <algorithm>
@@ -30,9 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/lib/debug/trace.h"

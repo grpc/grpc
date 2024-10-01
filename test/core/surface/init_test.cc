@@ -18,16 +18,15 @@
 
 #include "src/core/lib/surface/init.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+
 #include <chrono>
 #include <memory>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/thd.h"

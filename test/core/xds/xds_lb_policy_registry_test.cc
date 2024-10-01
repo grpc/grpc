@@ -18,22 +18,18 @@
 
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 
-#include <string>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+
+#include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -52,6 +48,8 @@
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 namespace testing {

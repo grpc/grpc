@@ -16,14 +16,13 @@
 //
 //
 
+#include <grpc/grpc.h>
+
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"

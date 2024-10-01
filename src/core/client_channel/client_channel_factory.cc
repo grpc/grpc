@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_factory.h"
+
+#include <grpc/support/port_platform.h>
 
 // Channel arg key for client channel factory.
 #define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"
