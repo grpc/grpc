@@ -629,13 +629,13 @@ void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener,
     OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args) {
   RefCountedPtr<HandshakingState> handshaking_state_ref;
+  listener_ = std::move(listener);
   {
     MutexLock lock(&mu_);
     // If the Connection is already shutdown at this point, it implies the
     // owning Chttp2ServerListener and all associated ActiveConnections have
     // been orphaned.
     if (shutdown_) return;
-    listener_ = std::move(listener);
     // Hold a ref to HandshakingState to allow starting the handshake outside
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
