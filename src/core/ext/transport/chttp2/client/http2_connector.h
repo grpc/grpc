@@ -33,10 +33,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
+// TODO(tjagtap) : [PH2_TODO][P1] Remove unused includes after class is ready.
+// Compiler whining about missing includes when we are iterating over the code
+// is a huge time sink.
+
 namespace grpc_core {
 namespace http {
 
-// TODO(tjagtap) : [PH2_TODO] Remove unused includes after class is ready
 class Http2Connector : public SubchannelConnector {
  public:
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;

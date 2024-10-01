@@ -80,7 +80,9 @@
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-// TODO(tjagtap) : [PH2_TODO] Remove unused includes after class is ready
+// TODO(tjagtap) : [PH2_TODO][P1] Remove unused includes after class is ready.
+// Compiler whining about missing includes when we are iterating over the code
+// is a huge time sink.
 
 namespace grpc_core {
 namespace http {
