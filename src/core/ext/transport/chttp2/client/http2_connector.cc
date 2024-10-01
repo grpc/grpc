@@ -89,6 +89,10 @@ namespace http {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
+// Experimental : All code in this file will undergo large scale changes in the
+// coming year. Do not use unless you know transports well enough.
+// TODO(tjagtap) : [PH2_TODO][P2] : Remove comment when code is ready
+
 void Http2Connector::Connect(const Args& args, Result* result,
                              grpc_closure* notify) {}
 

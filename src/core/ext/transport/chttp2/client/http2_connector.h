@@ -40,6 +40,9 @@
 namespace grpc_core {
 namespace http {
 
+// Experimental : All code in this file will undergo large scale changes in the
+// coming year. Do not use unless you know transports well enough.
+// TODO(tjagtap) : [PH2_TODO][P2] : Remove comment when code is ready
 class Http2Connector : public SubchannelConnector {
  public:
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
