@@ -43,11 +43,9 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/map.h"
@@ -58,6 +56,7 @@
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 

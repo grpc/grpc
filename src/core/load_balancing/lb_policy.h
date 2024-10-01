@@ -40,19 +40,19 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 
@@ -220,13 +220,21 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       /// Metadata mutations to be applied to the call.
       MetadataMutations metadata_mutations;
 
+      /// Authority override for the RPC.
+      /// Will be used only if the application has not explicitly set
+      /// the authority for the RPC.
+      grpc_event_engine::experimental::Slice authority_override;
+
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
           std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr,
-          MetadataMutations md = MetadataMutations())
+          MetadataMutations md = MetadataMutations(),
+          grpc_event_engine::experimental::Slice authority =
+              grpc_event_engine::experimental::Slice())
           : subchannel(std::move(sc)),
             subchannel_call_tracker(std::move(tracker)),
-            metadata_mutations(std::move(md)) {}
+            metadata_mutations(std::move(md)),
+            authority_override(std::move(authority)) {}
     };
 
     /// Pick cannot be completed until something changes on the control

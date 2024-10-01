@@ -34,14 +34,13 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 
@@ -311,12 +310,11 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // Right now it forces too many tests to know about channel initialization,
   // either by supplying a valid configuration or by including an opt-out flag.
   if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
-    gpr_log(
-        GPR_ERROR,
-        "No terminal filters registered for channel stack type %s; this is "
-        "common for unit tests messing with CoreConfiguration, but will result "
-        "in a ChannelInit::CreateStack that never completes successfully.",
-        grpc_channel_stack_type_string(type));
+    LOG(ERROR) << "No terminal filters registered for channel stack type "
+               << grpc_channel_stack_type_string(type)
+               << "; this is common for unit tests messing with "
+                  "CoreConfiguration, but will result in a "
+                  "ChannelInit::CreateStack that never completes successfully.";
   }
   return StackConfig{std::move(filters), std::move(terminal_filters),
                      std::move(post_processor_functions)};

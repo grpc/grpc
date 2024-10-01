@@ -34,8 +34,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -43,6 +41,8 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/sync.h"
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
@@ -390,8 +390,8 @@ static void on_handshaker_service_resp_recv(void* arg,
   }
   bool success = true;
   if (!error.ok()) {
-    LOG(INFO) << "ALTS handshaker on_handshaker_service_resp_recv error: "
-              << grpc_core::StatusToString(error);
+    VLOG(2) << "ALTS handshaker on_handshaker_service_resp_recv error: "
+            << grpc_core::StatusToString(error);
     success = false;
   }
   alts_handshaker_client_handle_response(client, success);
@@ -445,7 +445,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       CHECK_EQ(handshaker->client, nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
-        LOG(INFO) << "TSI handshake shutdown";
+        VLOG(2) << "TSI handshake shutdown";
         if (error != nullptr) *error = "TSI handshaker shutdown";
         return TSI_HANDSHAKE_SHUTDOWN;
       }

@@ -27,15 +27,14 @@
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/spinlock.h"
+#include "src/core/util/status_helper.h"
 
 /// Opaque representation of an error.
 

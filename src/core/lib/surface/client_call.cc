@@ -41,15 +41,10 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -59,7 +54,11 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -312,7 +311,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                 ServerMetadataHandle metadata;
                 if (!md.ok() || !md->has_value()) {
                   is_trailers_only_ = true;
-                  metadata = Arena::MakePooled<ServerMetadata>();
+                  metadata = Arena::MakePooledForOverwrite<ServerMetadata>();
                 } else {
                   metadata = std::move(md->value());
                   is_trailers_only_ =

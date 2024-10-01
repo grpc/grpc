@@ -338,8 +338,8 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   auto arena = allocator->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
-  auto call =
-      MakeCallPair(Arena::MakePooled<ClientMetadata>(), std::move(arena));
+  auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena));
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);

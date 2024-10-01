@@ -3,7 +3,8 @@
  *     xds/core/v3/resource_locator.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "xds/core/v3/resource_locator.upbdefs.h"

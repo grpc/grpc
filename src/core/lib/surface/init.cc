@@ -20,6 +20,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
@@ -35,9 +37,6 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -45,9 +44,11 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/fork.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
@@ -128,7 +129,7 @@ void grpc_init(void) {
     grpc_iomgr_start();
   }
 
-  GRPC_API_TRACE("grpc_init(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_init(void)";
 }
 
 void grpc_shutdown_internal_locked(void)
@@ -149,7 +150,7 @@ void grpc_shutdown_internal_locked(void)
 }
 
 void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
-  GRPC_API_TRACE("grpc_shutdown_from_cleanup_thread", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_from_cleanup_thread";
   grpc_core::MutexLock lock(g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
@@ -161,7 +162,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
 }
 
 void grpc_shutdown(void) {
-  GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown(void)";
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
@@ -194,7 +195,7 @@ void grpc_shutdown(void) {
 }
 
 void grpc_shutdown_blocking(void) {
-  GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
+  GRPC_TRACE_LOG(api, INFO) << "grpc_shutdown_blocking(void)";
   grpc_core::MutexLock lock(g_init_mu);
   if (--g_initializations == 0) {
     g_shutting_down = true;
@@ -216,4 +217,21 @@ void grpc_maybe_wait_for_async_shutdown(void) {
   while (g_shutting_down) {
     g_shutting_down_cv->Wait(g_init_mu);
   }
+}
+
+bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
+  GRPC_TRACE_LOG(api, INFO) << "grpc_wait_for_shutdown_with_timeout()";
+  const auto started = absl::Now();
+  const auto deadline = started + timeout;
+  gpr_once_init(&g_basic_init, do_basic_init);
+  grpc_core::MutexLock lock(g_init_mu);
+  while (g_initializations != 0) {
+    if (g_shutting_down_cv->WaitWithDeadline(g_init_mu, deadline)) {
+      LOG(ERROR) << "grpc_wait_for_shutdown_with_timeout() timed out.";
+      return false;
+    }
+  }
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_wait_for_shutdown_with_timeout() took " << absl::Now() - started;
+  return true;
 }

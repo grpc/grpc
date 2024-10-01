@@ -28,9 +28,9 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -42,7 +42,8 @@ constexpr int kMaxWSABUFCount = 16;
 void DumpSliceBuffer(SliceBuffer* buffer, absl::string_view context_string) {
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto str = buffer->MutableSliceAt(i).as_string_view();
-    LOG(INFO) << context_string << ": " << str;
+    GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+        << context_string << ": " << str;
   }
 }
 
@@ -160,8 +161,9 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data)) {
     for (size_t i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
-      LOG(INFO) << "WindowsEndpoint::" << this
-                << " WRITE (peer=" << peer_address_string_ << "): " << str;
+      GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+          << "WindowsEndpoint::" << this
+          << " WRITE (peer=" << peer_address_string_ << "): " << str;
     }
   }
   CHECK(data->Count() <= UINT_MAX);

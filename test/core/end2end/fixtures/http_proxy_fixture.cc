@@ -46,11 +46,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -64,7 +59,12 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -682,7 +682,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
-  LOG(INFO) << "Proxy address: " << proxy->proxy_name;
+  VLOG(2) << "Proxy address: " << proxy->proxy_name;
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()

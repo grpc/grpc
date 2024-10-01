@@ -3,7 +3,8 @@
  *     envoy/config/bootstrap/v3/bootstrap.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_
@@ -126,6 +127,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_LayeredRuntime_getmsg
 UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_CustomInlineHeader_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.CustomInlineHeader");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_bootstrap_v3_MemoryAllocatorManager_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.bootstrap.v3.MemoryAllocatorManager");
 }
 
 #ifdef __cplusplus

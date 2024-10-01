@@ -36,38 +36,28 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/all_ok.h"
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
   AbortWithError();
-  ActivityPtr writer;
-  ActivityPtr reader;
+  RefCountedPtr<Party> party;
   {
     MutexLock lock(&mu_);
-    writer = std::move(writer_);
-    reader = std::move(reader_);
+    party = std::move(party_);
   }
-  writer.reset();
-  reader.reset();
+  party.reset();
   Unref();
 }
 
@@ -211,25 +201,18 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));
-  writer_ = MakeActivity(
-      // Continuously write next outgoing frames to promise endpoints.
-      TransportWriteLoop(transport), EventEngineWakeupScheduler(event_engine),
-      OnTransportActivityDone("write_loop"));
-  reader_ = MakeActivity(
-      // Continuously read next incoming frames from promise endpoints.
-      TransportReadLoop(std::move(transport)),
-      EventEngineWakeupScheduler(event_engine),
-      OnTransportActivityDone("read_loop"));
+  auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+  party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  party_ = Party::Make(std::move(party_arena));
+  party_->Spawn("client-chaotic-writer", TransportWriteLoop(transport),
+                OnTransportActivityDone("write_loop"));
+  party_->Spawn("client-chaotic-reader",
+                TransportReadLoop(std::move(transport)),
+                OnTransportActivityDone("read_loop"));
 }
 
-ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  if (writer_ != nullptr) {
-    writer_.reset();
-  }
-  if (reader_ != nullptr) {
-    reader_.reset();
-  }
-}
+ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 
 void ChaoticGoodClientTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
@@ -250,14 +233,20 @@ void ChaoticGoodClientTransport::AbortWithError() {
 }
 
 uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
-  ReleasableMutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   const uint32_t stream_id = next_stream_id_++;
+  const bool on_done_added =
+      call_handler.OnDone([self = RefAsSubclass<ChaoticGoodClientTransport>(),
+                           stream_id](bool cancelled) {
+        if (cancelled) {
+          self->outgoing_frames_.MakeSender().UnbufferedImmediateSend(
+              CancelFrame{stream_id});
+        }
+        MutexLock lock(&self->mu_);
+        self->stream_map_.erase(stream_id);
+      });
+  if (!on_done_added) return 0;
   stream_map_.emplace(stream_id, call_handler);
-  lock.Release();
-  call_handler.OnDone([this, stream_id]() {
-    MutexLock lock(&mu_);
-    stream_map_.erase(stream_id);
-  });
   return stream_id;
 }
 
@@ -280,10 +269,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
       // Wait for initial metadata then send it out.
       call_handler.PullClientInitialMetadata(),
       [send_fragment](ClientMetadataHandle md) mutable {
-        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-          LOG(INFO) << "CHAOTIC_GOOD: Sending initial metadata: "
-                    << md->DebugString();
-        }
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Sending initial metadata: " << md->DebugString();
         ClientFragmentFrame frame;
         frame.headers = std::move(md);
         return send_fragment(std::move(frame));
@@ -319,24 +306,30 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
       "outbound_loop", [self = RefAsSubclass<ChaoticGoodClientTransport>(),
                         call_handler]() mutable {
         const uint32_t stream_id = self->MakeStream(call_handler);
-        return Map(self->CallOutboundLoop(stream_id, call_handler),
-                   [stream_id, sender = self->outgoing_frames_.MakeSender()](
-                       absl::Status result) mutable {
-                     GRPC_TRACE_LOG(chaotic_good, INFO)
-                         << "CHAOTIC_GOOD: Call " << stream_id
-                         << " finished with " << result.ToString();
-                     if (!result.ok()) {
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "CHAOTIC_GOOD: Send cancel";
-                       CancelFrame frame;
-                       frame.stream_id = stream_id;
-                       if (!sender.UnbufferedImmediateSend(std::move(frame))) {
-                         GRPC_TRACE_LOG(chaotic_good, INFO)
-                             << "CHAOTIC_GOOD: Send cancel failed";
-                       }
-                     }
-                     return result;
-                   });
+        return If(
+            stream_id != 0,
+            [stream_id, call_handler = std::move(call_handler),
+             self = std::move(self)]() {
+              return Map(
+                  self->CallOutboundLoop(stream_id, call_handler),
+                  [stream_id, sender = self->outgoing_frames_.MakeSender()](
+                      absl::Status result) mutable {
+                    GRPC_TRACE_LOG(chaotic_good, INFO)
+                        << "CHAOTIC_GOOD: Call " << stream_id
+                        << " finished with " << result.ToString();
+                    if (!result.ok()) {
+                      GRPC_TRACE_LOG(chaotic_good, INFO)
+                          << "CHAOTIC_GOOD: Send cancel";
+                      if (!sender.UnbufferedImmediateSend(
+                              CancelFrame{stream_id})) {
+                        GRPC_TRACE_LOG(chaotic_good, INFO)
+                            << "CHAOTIC_GOOD: Send cancel failed";
+                      }
+                    }
+                    return result;
+                  });
+            },
+            []() { return absl::OkStatus(); });
       });
 }
 

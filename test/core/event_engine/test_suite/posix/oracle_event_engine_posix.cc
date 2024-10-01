@@ -35,9 +35,9 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -185,7 +185,7 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
       return ret;
     }
     write_bytes = write_bytes.substr(ret, std::string::npos);
-  } while (write_bytes.length() > 0);
+  } while (!write_bytes.empty());
   return original_write_length;
 }
 }  // namespace

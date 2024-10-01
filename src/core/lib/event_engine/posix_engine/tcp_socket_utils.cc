@@ -27,9 +27,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -53,8 +53,8 @@
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
@@ -106,14 +106,15 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
                                       : socket(family, type, protocol);
   if (res < 0 && errno == EMFILE) {
     int saved_errno = errno;
-    GRPC_LOG_EVERY_N_SEC(
-        10, GPR_ERROR,
-        "socket(%d, %d, %d) returned %d with error: |%s|. This process "
-        "might not have a sufficient file descriptor limit for the number "
-        "of connections grpc wants to open (which is generally a function of "
-        "the number of grpc channels, the lb policy of each channel, and the "
-        "number of backends each channel is load balancing across).",
-        family, type, protocol, res, grpc_core::StrError(errno).c_str());
+    LOG_EVERY_N_SEC(ERROR, 10)
+        << "socket(" << family << ", " << type << ", " << protocol
+        << ") returned " << res << " with error: |"
+        << grpc_core::StrError(errno)
+        << "|. This process might not have a sufficient file descriptor limit "
+           "for the number of connections grpc wants to open (which is "
+           "generally a function of the number of grpc channels, the lb policy "
+           "of each channel, and the number of backends each channel is load "
+           "balancing across).";
     errno = saved_errno;
   }
   return res;
@@ -635,8 +636,9 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
         // This log is intentionally not protected behind a flag, so that users
         // know that TCP_USER_TIMEOUT is not being used.
-        LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
-                     "won't be used thereafter";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+               "won't be used thereafter";
         g_socket_supports_tcp_user_timeout.store(-1);
       } else {
         GRPC_TRACE_LOG(tcp, INFO)
@@ -690,7 +692,8 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;
     if (fd < 0) {
-      LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
+      GRPC_TRACE_LOG(tcp, INFO)
+          << "Disabling AF_INET6 sockets because socket() failed.";
     } else {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));
@@ -699,7 +702,8 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {
-        LOG(INFO) << "Disabling AF_INET6 sockets because ::1 is not available.";
+        GRPC_TRACE_LOG(tcp, INFO)
+            << "Disabling AF_INET6 sockets because ::1 is not available.";
       }
       close(fd);
     }

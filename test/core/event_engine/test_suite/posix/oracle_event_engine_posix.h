@@ -30,10 +30,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 
 namespace grpc_event_engine {
@@ -92,7 +92,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
                    absl::AnyInvocable<void(absl::Status)>&& on_complete)
         : bytes_to_write_(ExtractSliceBufferIntoString(buffer)),
           on_complete_(std::move(on_complete)) {}
-    bool IsValid() { return bytes_to_write_.length() > 0; }
+    bool IsValid() { return !bytes_to_write_.empty(); }
     std::string GetBytesToWrite() const { return bytes_to_write_; }
     void operator()(absl::Status status) {
       if (on_complete_ != nullptr) {

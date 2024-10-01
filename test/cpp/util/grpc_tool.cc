@@ -653,7 +653,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           fprintf(stderr, "Request sent.\n");
         }
       } else {
-        if (line.length() == 0) {
+        if (line.empty()) {
           request_text = request_ss.str();
           request_ss.str(std::string());
           request_ss.clear();
@@ -786,7 +786,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             }
           }
         } else {
-          if (line.length() == 0) {
+          if (line.empty()) {
             request_text = request_ss.str();
             request_ss.str(std::string());
             request_ss.clear();

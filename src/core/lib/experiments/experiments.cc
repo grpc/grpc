@@ -22,11 +22,6 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_call_status_override_on_cancellation =
-    "Avoid overriding call status of successfully finished calls if it races "
-    "with cancellation.";
-const char* const additional_constraints_call_status_override_on_cancellation =
-    "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -35,6 +30,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_event_engine_application_callbacks =
+    "Run application callbacks in EventEngine threads, instead of on the "
+    "thread-local ApplicationCallbackExecCtx";
+const char* const additional_constraints_event_engine_application_callbacks =
+    "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -47,6 +47,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -58,21 +62,12 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_peer_state_based_framing =
-    "If set, the max sizes of frames sent to lower layers is controlled based "
-    "on the peer's memory pressure which is reflected in its max http2 frame "
-    "size.";
-const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const char* const description_rstpit =
-    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
-    "duration";
-const char* const additional_constraints_rstpit = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -88,6 +83,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_time_caching_in_party =
+    "Disable time caching in exec_ctx, and enable it only in a single party "
+    "execution.";
+const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -109,16 +108,16 @@ const char* const additional_constraints_work_serializer_dispatch = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"call_status_override_on_cancellation",
-     description_call_status_override_on_cancellation,
-     additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"event_engine_application_callbacks",
+     description_event_engine_application_callbacks,
+     additional_constraints_event_engine_application_callbacks, nullptr, 0,
+     true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -127,6 +126,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -134,16 +135,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"peer_state_based_framing", description_peer_state_based_framing,
-     additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
-    {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
-     false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -154,6 +151,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"time_caching_in_party", description_time_caching_in_party,
+     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -172,11 +171,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_call_status_override_on_cancellation =
-    "Avoid overriding call status of successfully finished calls if it races "
-    "with cancellation.";
-const char* const additional_constraints_call_status_override_on_cancellation =
-    "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -185,6 +179,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_event_engine_application_callbacks =
+    "Run application callbacks in EventEngine threads, instead of on the "
+    "thread-local ApplicationCallbackExecCtx";
+const char* const additional_constraints_event_engine_application_callbacks =
+    "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -197,6 +196,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -208,21 +211,12 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_peer_state_based_framing =
-    "If set, the max sizes of frames sent to lower layers is controlled based "
-    "on the peer's memory pressure which is reflected in its max http2 frame "
-    "size.";
-const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const char* const description_rstpit =
-    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
-    "duration";
-const char* const additional_constraints_rstpit = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -238,6 +232,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_time_caching_in_party =
+    "Disable time caching in exec_ctx, and enable it only in a single party "
+    "execution.";
+const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -259,16 +257,16 @@ const char* const additional_constraints_work_serializer_dispatch = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"call_status_override_on_cancellation",
-     description_call_status_override_on_cancellation,
-     additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"event_engine_application_callbacks",
+     description_event_engine_application_callbacks,
+     additional_constraints_event_engine_application_callbacks, nullptr, 0,
+     true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -277,6 +275,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -284,16 +284,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"peer_state_based_framing", description_peer_state_based_framing,
-     additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
-    {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
-     false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -304,6 +300,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"time_caching_in_party", description_time_caching_in_party,
+     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -322,11 +320,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
-const char* const description_call_status_override_on_cancellation =
-    "Avoid overriding call status of successfully finished calls if it races "
-    "with cancellation.";
-const char* const additional_constraints_call_status_override_on_cancellation =
-    "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -335,6 +328,11 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
+const char* const description_event_engine_application_callbacks =
+    "Run application callbacks in EventEngine threads, instead of on the "
+    "thread-local ApplicationCallbackExecCtx";
+const char* const additional_constraints_event_engine_application_callbacks =
+    "{}";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -347,6 +345,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -358,21 +360,12 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_peer_state_based_framing =
-    "If set, the max sizes of frames sent to lower layers is controlled based "
-    "on the peer's memory pressure which is reflected in its max http2 frame "
-    "size.";
-const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const char* const description_rstpit =
-    "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
-    "duration";
-const char* const additional_constraints_rstpit = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -388,6 +381,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_time_caching_in_party =
+    "Disable time caching in exec_ctx, and enable it only in a single party "
+    "execution.";
+const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
@@ -409,16 +406,16 @@ const char* const additional_constraints_work_serializer_dispatch = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"call_status_override_on_cancellation",
-     description_call_status_override_on_cancellation,
-     additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
-     additional_constraints_call_tracer_in_transport, nullptr, 0, false, true},
+     additional_constraints_call_tracer_in_transport, nullptr, 0, true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
+    {"event_engine_application_callbacks",
+     description_event_engine_application_callbacks,
+     additional_constraints_event_engine_application_callbacks, nullptr, 0,
+     true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
@@ -427,6 +424,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -434,16 +433,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"peer_state_based_framing", description_peer_state_based_framing,
-     additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
-    {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
-     false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -454,6 +449,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"time_caching_in_party", description_time_caching_in_party,
+     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
@@ -465,7 +462,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
 };
 
 }  // namespace grpc_core

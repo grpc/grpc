@@ -39,6 +39,7 @@ sys.path.insert(0, os.path.abspath("."))
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
+import python_version
 
 import grpc_version
 
@@ -133,7 +134,7 @@ class BuildExt(build_ext.build_ext):
         #   behavior in gcc and clang. The clang doesn't take --stdc++11
         #   flags but gcc does. Since the setuptools of Python only support
         #   all C or all C++ compilation, the mix of C and C++ will crash.
-        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #   *By default*, macOS and FreeBSD use clang and Linux use gcc
         #
         #   If we are not using a permissive compiler that's OK with being
         #   passed wrong std flags, swap out compile function by adding a filter
@@ -329,7 +330,7 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "protobuf>=5.26.1,<6.0dev",
         "grpcio>={version}".format(version=grpc_version.VERSION),

@@ -19,9 +19,9 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
 
@@ -196,7 +196,7 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterCancellation) {
         EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
                   kDefaultPath);
         handler().PushServerTrailingMetadata(
-            ServerMetadataFromStatus(absl::InternalError("test error")));
+            ServerMetadataFromStatus(GRPC_STATUS_INTERNAL, "test error"));
         return Immediate(Empty{});
       });
   Expect(1, true);

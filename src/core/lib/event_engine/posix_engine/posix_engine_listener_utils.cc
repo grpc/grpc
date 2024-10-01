@@ -33,10 +33,10 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/status_helper.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
@@ -345,14 +345,14 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   if (assigned_port > 0) {
     if (!v6_sock.ok()) {
-      LOG(INFO) << "Failed to add :: listener, the environment may not support "
-                   "IPv6: "
-                << v6_sock.status();
+      VLOG(2) << "Failed to add :: listener, the environment may not support "
+                 "IPv6: "
+              << v6_sock.status();
     }
     if (!v4_sock.ok()) {
-      LOG(INFO) << "Failed to add 0.0.0.0 listener, "
-                   "the environment may not support IPv4: "
-                << v4_sock.status();
+      VLOG(2) << "Failed to add 0.0.0.0 listener, "
+                 "the environment may not support IPv4: "
+              << v4_sock.status();
     }
     return assigned_port;
   } else {

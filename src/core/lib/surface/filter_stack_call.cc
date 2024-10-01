@@ -48,18 +48,12 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -72,6 +66,11 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/time_precise.h"
 
 namespace grpc_core {
@@ -269,7 +268,7 @@ void FilterStackCall::ExternalUnref() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
-  GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
+  GRPC_TRACE_LOG(api, INFO) << "grpc_call_unref(c=" << this << ")";
 
   MaybeUnpublishFromParent();
 
@@ -534,15 +533,13 @@ void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
   grpc_error_handle error = batch_error_.get();
 
-  if (IsCallStatusOverrideOnCancellationEnabled()) {
-    // On the client side, if final call status is already known (i.e if this op
-    // includes recv_trailing_metadata) and if the call status is known to be
-    // OK, then disregard the batch error to ensure call->receiving_buffer_ is
-    // not cleared.
-    if (op_.recv_trailing_metadata && call->is_client() &&
-        call->status_error_.ok()) {
-      error = absl::OkStatus();
-    }
+  // On the client side, if final call status is already known (i.e if this op
+  // includes recv_trailing_metadata) and if the call status is known to be
+  // OK, then disregard the batch error to ensure call->receiving_buffer_ is
+  // not cleared.
+  if (op_.recv_trailing_metadata && call->is_client() &&
+      call->status_error_.ok()) {
+    error = absl::OkStatus();
   }
 
   GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
@@ -731,6 +728,8 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
                                             bool is_notify_tag_closure) {
+  GRPC_LATENT_SEE_INNER_SCOPE("FilterStackCall::StartBatch");
+
   size_t i;
   const grpc_op* op;
   BatchControl* bctl;

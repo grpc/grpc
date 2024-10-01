@@ -3,7 +3,8 @@
  *     src/proto/grpc/gcp/transport_security_common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_MINITABLE_H_
 #define SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_MINITABLE_H_
@@ -18,7 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable grpc__gcp__RpcProtocolVersions_msg_init;
+extern const upb_MiniTable* grpc__gcp__RpcProtocolVersions_msg_init_ptr;
 extern const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init;
+extern const upb_MiniTable* grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_gcp_transport_security_common_proto_upb_file_layout;
 

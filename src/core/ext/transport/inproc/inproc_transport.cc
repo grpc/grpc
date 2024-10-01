@@ -28,8 +28,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -37,6 +35,8 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 
 namespace grpc_core {
 
@@ -77,7 +77,8 @@ class InprocServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
-    LOG(INFO) << "inproc server op: " << grpc_transport_op_string(op);
+    GRPC_TRACE_LOG(inproc, INFO)
+        << "inproc server op: " << grpc_transport_op_string(op);
     if (op->start_connectivity_watch != nullptr) {
       connected_state()->AddWatcher(op->start_connectivity_watch_state,
                                     std::move(op->start_connectivity_watch));

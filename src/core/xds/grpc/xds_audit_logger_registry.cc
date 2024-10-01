@@ -28,10 +28,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/match.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 
 namespace grpc_core {
 

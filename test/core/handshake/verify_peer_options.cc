@@ -41,8 +41,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

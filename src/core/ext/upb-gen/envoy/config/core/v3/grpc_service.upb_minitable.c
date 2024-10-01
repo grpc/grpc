@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/grpc_service.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -22,31 +23,34 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValue_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_core_v3_GrpcService__fields[4] = {
-  {1, UPB_SIZE(24, 32), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(24, 32), -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_core_v3_GrpcService__fields[5] = {
+  {1, UPB_SIZE(28, 40), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(28, 40), -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, 16, 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(20, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 32), 65, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__GrpcService_msg_init = {
   &envoy_config_core_v3_GrpcService_submsgs[0],
   &envoy_config_core_v3_GrpcService__fields[0],
-  UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.GrpcService",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0020000c0100000a, &upb_pom_1bt_max64b},
-    {0x0020000c02010012, &upb_pom_1bt_max128b},
+    {0x0028000c0100000a, &upb_pom_1bt_max128b},
+    {0x0028000c02010012, &upb_pom_1bt_max128b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f03002a, &upb_prm_1bt_maxmaxb},
@@ -55,20 +59,24 @@ const upb_MiniTable envoy__config__core__v3__GrpcService_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_EnvoyGrpc_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService_msg_init_ptr = &envoy__config__core__v3__GrpcService_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_EnvoyGrpc_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[3] = {
-  {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[5] = {
+  {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 48), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 56), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init = {
   &envoy_config_core_v3_GrpcService_EnvoyGrpc_submsgs[0],
   &envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[0],
-  UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.GrpcService.EnvoyGrpc",
 #endif
@@ -77,15 +85,20 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init = {
     {0x001000003f00000a, &upb_pss_1bt},
     {0x002000003f000012, &upb_pss_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000900003f000028, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCredentials_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init_ptr = &envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCredentials_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc__fields[8] = {
@@ -118,10 +131,11 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init = 
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials__fields[3] = {
@@ -139,6 +153,7 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__SslCredent
 #endif
 };
 
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__SslCredentials_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__SslCredentials_msg_init;
 const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLocalCredentials_msg_init = {
   NULL,
   NULL,
@@ -148,10 +163,11 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLoca
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__SslCredentials_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLocalCredentials_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLocalCredentials_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLocalCredentials_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__SslCredentials_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLocalCredentials_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__fields[3] = {
@@ -175,12 +191,13 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCre
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__ServiceAccountJWTAccessCredentials_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__GoogleIAMCredentials_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__MetadataCredentialsFromPlugin_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__StsService_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCredentials_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCredentials_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__ServiceAccountJWTAccessCredentials_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__GoogleIAMCredentials_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__MetadataCredentialsFromPlugin_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__StsService_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials__fields[7] = {
@@ -212,6 +229,7 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -232,6 +250,7 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__ServiceAccountJWTAccessCredentials_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__ServiceAccountJWTAccessCredentials_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -252,8 +271,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__GoogleIAMCredentials_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__GoogleIAMCredentials_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__fields[2] = {
@@ -276,6 +296,7 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__MetadataCredentialsFromPlugin_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__MetadataCredentialsFromPlugin_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__fields[9] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -315,8 +336,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__ArgsEntry_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__StsService_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__StsService_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__ArgsEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__fields[1] = {
@@ -332,6 +354,7 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
 #endif
 };
 
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[2] = {
   {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -352,8 +375,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__Value_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__Value_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__Value_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry__fields[2] = {
@@ -374,6 +398,7 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__ArgsEntry_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__ArgsEntry_msg_init;
 static const upb_MiniTable *messages_layout[14] = {
   &envoy__config__core__v3__GrpcService_msg_init,
   &envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init,

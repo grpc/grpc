@@ -50,11 +50,11 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

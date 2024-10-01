@@ -53,7 +53,7 @@ class LbCallState : public ClientChannelLbCallState {
   }
 };
 
-// TODO(roth): Remove this in favor of the gprpp Match() function once
+// TODO(roth): Remove this in favor of src/core/util/match.h function once
 // we can do that without breaking lock annotations.
 template <typename T>
 T HandlePickResult(
@@ -144,6 +144,8 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         // Apply metadata mutations, if any.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
                                        &client_initial_metadata);
+        MaybeOverrideAuthority(std::move(complete_pick->authority_override),
+                               &client_initial_metadata);
         // Return the connected subchannel.
         return call_destination;
       },

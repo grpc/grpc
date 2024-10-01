@@ -30,13 +30,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
@@ -98,6 +98,8 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
       : grpc_call_credentials(GRPC_SECURITY_NONE),
         key_(grpc_core::Slice::FromCopiedString(md_key)),
         value_(grpc_core::Slice::FromCopiedString(md_value)) {}
+
+  void Orphaned() override {}
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,

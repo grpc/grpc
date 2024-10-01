@@ -17,7 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building route_guide.
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
 project(RouteGuide C CXX)
 
@@ -72,7 +72,8 @@ target_link_libraries(route_guide_helper
 
 # Targets route_guide_(client|server)
 foreach(_target
-  route_guide_client route_guide_server)
+  route_guide_client route_guide_server
+  route_guide_callback_client route_guide_callback_server)
   add_executable(${_target}
     "${_target}.cc")
   target_link_libraries(${_target}

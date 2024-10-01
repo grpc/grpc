@@ -18,11 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -32,7 +32,7 @@ std::atomic<size_t> InterceptionChainBuilder::next_filter_id_{0};
 // HijackedCall
 
 CallInitiator HijackedCall::MakeCall() {
-  auto metadata = Arena::MakePooled<ClientMetadata>();
+  auto metadata = Arena::MakePooledForOverwrite<ClientMetadata>();
   *metadata = metadata_->Copy();
   return MakeCallWithMetadata(std::move(metadata));
 }

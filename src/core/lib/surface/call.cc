@@ -54,7 +54,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -65,15 +64,6 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/cpp_impl_of.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -93,7 +83,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -107,6 +96,15 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/cpp_impl_of.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
@@ -319,11 +317,9 @@ void Call::HandleCompressionAlgorithmNotAccepted(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-  gpr_log(GPR_ERROR,
-          "Compression algorithm ('%s') not present in the "
-          "accepted encodings (%s)",
-          algo_name,
-          std::string(encodings_accepted_by_peer_.ToString()).c_str());
+  LOG(ERROR) << "Compression algorithm ('" << algo_name
+             << "') not present in the accepted encodings ("
+             << encodings_accepted_by_peer_.ToString() << ")";
 }
 
 void Call::HandleCompressionAlgorithmDisabled(
@@ -340,10 +336,9 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(call)) {
-    gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
-            deadline_.ToString().c_str(), deadline.ToString().c_str());
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
+      << " to=" << deadline.ToString();
   if (deadline >= deadline_) return;
   if (deadline < Timestamp::Now()) {
     lock.Release();
@@ -415,7 +410,8 @@ char* grpc_call_get_peer(grpc_call* call) {
 }
 
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
-  GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_cancel(call=" << call << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   if (call == nullptr) {
     return GRPC_CALL_ERROR;
@@ -430,10 +426,9 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
                                              grpc_status_code status,
                                              const char* description,
                                              void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_call_cancel_with_status("
-      "c=%p, status=%d, description=%s, reserved=%p)",
-      4, (c, (int)status, description, reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_cancel_with_status(c=" << c << ", status=" << (int)status
+      << ", description=" << description << ", reserved=" << reserved << ")";
   CHECK_EQ(reserved, nullptr);
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
@@ -473,10 +468,10 @@ grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
 
 grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
                                       size_t nops, void* tag, void* reserved) {
-  GRPC_API_TRACE(
-      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, "
-      "reserved=%p)",
-      5, (call, ops, (unsigned long)nops, tag, reserved));
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_call_start_batch(call=" << call << ", ops=" << ops
+      << ", nops=" << (unsigned long)nops << ", tag=" << tag
+      << ", reserved=" << reserved << ")";
 
   if (reserved != nullptr || call == nullptr) {
     return GRPC_CALL_ERROR;
@@ -497,6 +492,13 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 void grpc_call_tracer_set(grpc_call* call,
                           grpc_core::ClientCallTracer* tracer) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
+  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+}
+
+void grpc_call_tracer_set_and_manage(grpc_call* call,
+                                     grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  arena->ManagedNew<ClientCallTracerWrapper>(tracer);
   return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
 }
 

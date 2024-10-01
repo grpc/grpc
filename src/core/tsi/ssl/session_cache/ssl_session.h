@@ -26,7 +26,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/ref_counted.h"
 
 // The main purpose of code here is to provide means to cache SSL sessions
 // in a way that they can be shared between connections.

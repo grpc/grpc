@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/base.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -26,6 +27,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_config_core_v3_Locality__fields[3] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -47,9 +49,10 @@ const upb_MiniTable envoy__config__core__v3__Locality_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_BuildVersion_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__SemanticVersion_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Locality_msg_init_ptr = &envoy__config__core__v3__Locality_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_BuildVersion_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__SemanticVersion_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_BuildVersion__fields[2] = {
@@ -66,8 +69,9 @@ const upb_MiniTable envoy__config__core__v3__BuildVersion_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Extension_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BuildVersion_msg_init},
+const upb_MiniTable* envoy__config__core__v3__BuildVersion_msg_init_ptr = &envoy__config__core__v3__BuildVersion_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Extension_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BuildVersion_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Extension__fields[6] = {
@@ -98,13 +102,14 @@ const upb_MiniTable envoy__config__core__v3__Extension_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Node_submsgs[6] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BuildVersion_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Extension_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node__DynamicParametersEntry_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Extension_msg_init_ptr = &envoy__config__core__v3__Extension_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Node_submsgs[6] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BuildVersion_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Extension_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node__DynamicParametersEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Node__fields[11] = {
@@ -148,8 +153,9 @@ const upb_MiniTable envoy__config__core__v3__Node_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Node_DynamicParametersEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Node_msg_init_ptr = &envoy__config__core__v3__Node_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Node_DynamicParametersEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Node_DynamicParametersEntry__fields[2] = {
@@ -170,9 +176,10 @@ const upb_MiniTable envoy__config__core__v3__Node__DynamicParametersEntry_msg_in
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Metadata_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata__FilterMetadataEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata__TypedFilterMetadataEntry_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Node__DynamicParametersEntry_msg_init_ptr = &envoy__config__core__v3__Node__DynamicParametersEntry_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Metadata_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata__FilterMetadataEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata__TypedFilterMetadataEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Metadata__fields[2] = {
@@ -189,8 +196,9 @@ const upb_MiniTable envoy__config__core__v3__Metadata_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Metadata_FilterMetadataEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Metadata_msg_init_ptr = &envoy__config__core__v3__Metadata_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Metadata_FilterMetadataEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Metadata_FilterMetadataEntry__fields[2] = {
@@ -211,8 +219,9 @@ const upb_MiniTable envoy__config__core__v3__Metadata__FilterMetadataEntry_msg_i
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Metadata__FilterMetadataEntry_msg_init_ptr = &envoy__config__core__v3__Metadata__FilterMetadataEntry_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Metadata_TypedFilterMetadataEntry__fields[2] = {
@@ -233,6 +242,7 @@ const upb_MiniTable envoy__config__core__v3__Metadata__TypedFilterMetadataEntry_
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__Metadata__TypedFilterMetadataEntry_msg_init_ptr = &envoy__config__core__v3__Metadata__TypedFilterMetadataEntry_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_RuntimeUInt32__fields[2] = {
   {2, 8, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -253,8 +263,9 @@ const upb_MiniTable envoy__config__core__v3__RuntimeUInt32_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_RuntimePercent_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
+const upb_MiniTable* envoy__config__core__v3__RuntimeUInt32_msg_init_ptr = &envoy__config__core__v3__RuntimeUInt32_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RuntimePercent_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_RuntimePercent__fields[2] = {
@@ -277,6 +288,7 @@ const upb_MiniTable envoy__config__core__v3__RuntimePercent_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__RuntimePercent_msg_init_ptr = &envoy__config__core__v3__RuntimePercent_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_RuntimeDouble__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -297,8 +309,9 @@ const upb_MiniTable envoy__config__core__v3__RuntimeDouble_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_RuntimeFeatureFlag_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__config__core__v3__RuntimeDouble_msg_init_ptr = &envoy__config__core__v3__RuntimeDouble_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RuntimeFeatureFlag_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_RuntimeFeatureFlag__fields[2] = {
@@ -321,6 +334,78 @@ const upb_MiniTable envoy__config__core__v3__RuntimeFeatureFlag_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__RuntimeFeatureFlag_msg_init_ptr = &envoy__config__core__v3__RuntimeFeatureFlag_msg_init;
+static const upb_MiniTableField envoy_config_core_v3_KeyValue__fields[2] = {
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__core__v3__KeyValue_msg_init = {
+  NULL,
+  &envoy_config_core_v3_KeyValue__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.KeyValue",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_pss_1bt},
+    {0x001800003f000012, &upb_psb_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__config__core__v3__KeyValue_msg_init_ptr = &envoy__config__core__v3__KeyValue_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_KeyValueAppend_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__KeyValue_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_core_v3_KeyValueAppend__fields[2] = {
+  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 12), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__core__v3__KeyValueAppend_msg_init = {
+  &envoy_config_core_v3_KeyValueAppend_submsgs[0],
+  &envoy_config_core_v3_KeyValueAppend__fields[0],
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.KeyValueAppend",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c00003f000010, &upb_psv4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__config__core__v3__KeyValueAppend_msg_init_ptr = &envoy__config__core__v3__KeyValueAppend_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_KeyValueMutation_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__KeyValueAppend_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_core_v3_KeyValueMutation__fields[2] = {
+  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__core__v3__KeyValueMutation_msg_init = {
+  &envoy_config_core_v3_KeyValueMutation_submsgs[0],
+  &envoy_config_core_v3_KeyValueMutation__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.KeyValueMutation",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__config__core__v3__KeyValueMutation_msg_init_ptr = &envoy__config__core__v3__KeyValueMutation_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_QueryParameter__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -341,6 +426,7 @@ const upb_MiniTable envoy__config__core__v3__QueryParameter_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__QueryParameter_msg_init_ptr = &envoy__config__core__v3__QueryParameter_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_HeaderValue__fields[3] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -362,9 +448,10 @@ const upb_MiniTable envoy__config__core__v3__HeaderValue_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HeaderValueOption_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HeaderValue_msg_init_ptr = &envoy__config__core__v3__HeaderValue_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HeaderValueOption_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HeaderValueOption__fields[4] = {
@@ -393,8 +480,9 @@ const upb_MiniTable envoy__config__core__v3__HeaderValueOption_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HeaderMap_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValue_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HeaderValueOption_msg_init_ptr = &envoy__config__core__v3__HeaderValueOption_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HeaderMap_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HeaderMap__fields[1] = {
@@ -414,6 +502,7 @@ const upb_MiniTable envoy__config__core__v3__HeaderMap_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__HeaderMap_msg_init_ptr = &envoy__config__core__v3__HeaderMap_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_WatchedDirectory__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -431,54 +520,128 @@ const upb_MiniTable envoy__config__core__v3__WatchedDirectory_msg_init = {
   })
 };
 
-static const upb_MiniTableField envoy_config_core_v3_DataSource__fields[4] = {
-  {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+const upb_MiniTable* envoy__config__core__v3__WatchedDirectory_msg_init_ptr = &envoy__config__core__v3__WatchedDirectory_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_DataSource_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__WatchedDirectory_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_core_v3_DataSource__fields[5] = {
+  {1, UPB_SIZE(20, 16), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 16), -13, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 16), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 16), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__DataSource_msg_init = {
-  NULL,
+  &envoy_config_core_v3_DataSource_submsgs[0],
   &envoy_config_core_v3_DataSource__fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.DataSource",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pos_1bt},
-    {0x0010000802000012, &upb_pob_1bt},
-    {0x001000080300001a, &upb_pos_1bt},
-    {0x0010000804000022, &upb_pos_1bt},
+    {0x0010000c0100000a, &upb_pos_1bt},
+    {0x0010000c02000012, &upb_pob_1bt},
+    {0x0010000c0300001a, &upb_pos_1bt},
+    {0x0010000c04000022, &upb_pos_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_RetryPolicy_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BackoffStrategy_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+const upb_MiniTable* envoy__config__core__v3__DataSource_msg_init_ptr = &envoy__config__core__v3__DataSource_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RetryPolicy_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BackoffStrategy_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy__RetryPriority_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy__RetryHostPredicate_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_core_v3_RetryPolicy__fields[2] = {
+static const upb_MiniTableField envoy_config_core_v3_RetryPolicy__fields[6] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 48), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 56), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(40, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__RetryPolicy_msg_init = {
   &envoy_config_core_v3_RetryPolicy_submsgs[0],
   &envoy_config_core_v3_RetryPolicy__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.RetryPolicy",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f00001a, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x003800003f03002a, &upb_prm_1bt_max64b},
+    {0x004000003f000030, &upb_psv8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_RemoteDataSource_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpUri_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init},
+const upb_MiniTable* envoy__config__core__v3__RetryPolicy_msg_init_ptr = &envoy__config__core__v3__RetryPolicy_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RetryPolicy_RetryPriority_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_core_v3_RetryPolicy_RetryPriority__fields[2] = {
+  {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__core__v3__RetryPolicy__RetryPriority_msg_init = {
+  &envoy_config_core_v3_RetryPolicy_RetryPriority_submsgs[0],
+  &envoy_config_core_v3_RetryPolicy_RetryPriority__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.RetryPolicy.RetryPriority",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00000a, &upb_pss_1bt},
+    {0x0020000802000012, &upb_pom_1bt_maxmaxb},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__config__core__v3__RetryPolicy__RetryPriority_msg_init_ptr = &envoy__config__core__v3__RetryPolicy__RetryPriority_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RetryPolicy_RetryHostPredicate_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_core_v3_RetryPolicy_RetryHostPredicate__fields[2] = {
+  {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__core__v3__RetryPolicy__RetryHostPredicate_msg_init = {
+  &envoy_config_core_v3_RetryPolicy_RetryHostPredicate_submsgs[0],
+  &envoy_config_core_v3_RetryPolicy_RetryHostPredicate__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.RetryPolicy.RetryHostPredicate",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00000a, &upb_pss_1bt},
+    {0x0020000802000012, &upb_pom_1bt_maxmaxb},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__config__core__v3__RetryPolicy__RetryHostPredicate_msg_init_ptr = &envoy__config__core__v3__RetryPolicy__RetryHostPredicate_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RemoteDataSource_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HttpUri_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RetryPolicy_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_RemoteDataSource__fields[3] = {
@@ -502,9 +665,10 @@ const upb_MiniTable envoy__config__core__v3__RemoteDataSource_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_AsyncDataSource_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RemoteDataSource_msg_init},
+const upb_MiniTable* envoy__config__core__v3__RemoteDataSource_msg_init_ptr = &envoy__config__core__v3__RemoteDataSource_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_AsyncDataSource_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__RemoteDataSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_AsyncDataSource__fields[2] = {
@@ -527,8 +691,9 @@ const upb_MiniTable envoy__config__core__v3__AsyncDataSource_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_TransportSocket_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+const upb_MiniTable* envoy__config__core__v3__AsyncDataSource_msg_init_ptr = &envoy__config__core__v3__AsyncDataSource_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_TransportSocket_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_TransportSocket__fields[2] = {
@@ -551,8 +716,9 @@ const upb_MiniTable envoy__config__core__v3__TransportSocket_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_RuntimeFractionalPercent_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
+const upb_MiniTable* envoy__config__core__v3__TransportSocket_msg_init_ptr = &envoy__config__core__v3__TransportSocket_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_RuntimeFractionalPercent_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_RuntimeFractionalPercent__fields[2] = {
@@ -575,6 +741,7 @@ const upb_MiniTable envoy__config__core__v3__RuntimeFractionalPercent_msg_init =
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__RuntimeFractionalPercent_msg_init_ptr = &envoy__config__core__v3__RuntimeFractionalPercent_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_ControlPlane__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -592,7 +759,8 @@ const upb_MiniTable envoy__config__core__v3__ControlPlane_msg_init = {
   })
 };
 
-static const upb_MiniTable *messages_layout[24] = {
+const upb_MiniTable* envoy__config__core__v3__ControlPlane_msg_init_ptr = &envoy__config__core__v3__ControlPlane_msg_init;
+static const upb_MiniTable *messages_layout[29] = {
   &envoy__config__core__v3__Locality_msg_init,
   &envoy__config__core__v3__BuildVersion_msg_init,
   &envoy__config__core__v3__Extension_msg_init,
@@ -605,6 +773,9 @@ static const upb_MiniTable *messages_layout[24] = {
   &envoy__config__core__v3__RuntimePercent_msg_init,
   &envoy__config__core__v3__RuntimeDouble_msg_init,
   &envoy__config__core__v3__RuntimeFeatureFlag_msg_init,
+  &envoy__config__core__v3__KeyValue_msg_init,
+  &envoy__config__core__v3__KeyValueAppend_msg_init,
+  &envoy__config__core__v3__KeyValueMutation_msg_init,
   &envoy__config__core__v3__QueryParameter_msg_init,
   &envoy__config__core__v3__HeaderValue_msg_init,
   &envoy__config__core__v3__HeaderValueOption_msg_init,
@@ -612,6 +783,8 @@ static const upb_MiniTable *messages_layout[24] = {
   &envoy__config__core__v3__WatchedDirectory_msg_init,
   &envoy__config__core__v3__DataSource_msg_init,
   &envoy__config__core__v3__RetryPolicy_msg_init,
+  &envoy__config__core__v3__RetryPolicy__RetryPriority_msg_init,
+  &envoy__config__core__v3__RetryPolicy__RetryHostPredicate_msg_init,
   &envoy__config__core__v3__RemoteDataSource_msg_init,
   &envoy__config__core__v3__AsyncDataSource_msg_init,
   &envoy__config__core__v3__TransportSocket_msg_init,
@@ -623,7 +796,7 @@ const upb_MiniTableFile envoy_config_core_v3_base_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  24,
+  29,
   0,
   0,
 };

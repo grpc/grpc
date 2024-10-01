@@ -36,8 +36,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -66,9 +66,8 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
   std::string serialized_config = config.SerializeAsString();
   upb::Arena arena;
   upb::DefPool def_pool;
-  XdsResourceType::DecodeContext context = {
-      nullptr, GrpcXdsBootstrap::GrpcXdsServer(), nullptr, def_pool.ptr(),
-      arena.ptr()};
+  XdsResourceType::DecodeContext context = {nullptr, GrpcXdsServer(), nullptr,
+                                            def_pool.ptr(), arena.ptr()};
   auto* upb_config =
       envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_parse(
           serialized_config.data(), serialized_config.size(), arena.ptr());

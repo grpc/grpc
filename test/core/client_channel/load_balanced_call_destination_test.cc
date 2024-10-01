@@ -41,7 +41,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   using YodelTest::YodelTest;
 
   ClientMetadataHandle MakeClientInitialMetadata() {
-    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kTestPath));
     return client_initial_metadata;
@@ -116,6 +117,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return call_destination_;
     }
+
+    std::string address() const override { return "test"; }
 
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;

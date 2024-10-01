@@ -43,11 +43,11 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dump_args.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -228,8 +228,8 @@ WindowsEventEngine::~WindowsEventEngine() {
           timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
       while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
         if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
-          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
-                               known_handles_.size());
+          VLOG_EVERY_N_SEC(2, 1) << "Waiting for timers. "
+                                 << known_handles_.size() << " remaining";
         }
         task_mu_.Unlock();
         absl::SleepFor(absl::Milliseconds(200));

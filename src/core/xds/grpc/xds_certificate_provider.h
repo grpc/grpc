@@ -31,12 +31,12 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -46,7 +46,7 @@ class XdsCertificateProvider final : public grpc_tls_certificate_provider {
   // ctor for client side
   XdsCertificateProvider(
       RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider,
-      absl::string_view root_cert_name,
+      absl::string_view root_cert_name, bool use_system_root_certs,
       RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
       absl::string_view identity_cert_name,
       std::vector<StringMatcher> san_matchers);
@@ -67,6 +67,7 @@ class XdsCertificateProvider final : public grpc_tls_certificate_provider {
   UniqueTypeName type() const override;
 
   bool ProvidesRootCerts() const { return root_cert_provider_ != nullptr; }
+  bool UseSystemRootCerts() const { return use_system_root_certs_; }
   bool ProvidesIdentityCerts() const {
     return identity_cert_provider_ != nullptr;
   }
@@ -99,6 +100,7 @@ class XdsCertificateProvider final : public grpc_tls_certificate_provider {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider_;
   std::string root_cert_name_;
+  bool use_system_root_certs_ = false;
   RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider_;
   std::string identity_cert_name_;
   std::vector<StringMatcher> san_matchers_;

@@ -16,7 +16,6 @@
 
 #include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -28,7 +27,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_core {
 
