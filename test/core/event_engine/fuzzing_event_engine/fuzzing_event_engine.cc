@@ -194,14 +194,21 @@ void FuzzingEventEngine::TickUntilIdle() {
           << "TickUntilIdle: "
           << GRPC_DUMP_ARGS(tasks_by_id_.size(), outstanding_reads_.load(),
                             outstanding_writes_.load());
-      if (tasks_by_id_.empty() &&
-          outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
-          outstanding_reads_.load(std::memory_order_relaxed) == 0) {
-        return;
-      }
+      if (IsIdleLocked()) return;
     }
     Tick();
   }
+}
+
+bool FuzzingEventEngine::IsIdle() {
+  grpc_core::MutexLock lock(&*mu_);
+  return IsIdleLocked();
+}
+
+bool FuzzingEventEngine::IsIdleLocked() {
+  return tasks_by_id_.empty() &&
+         outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
+         outstanding_reads_.load(std::memory_order_relaxed) == 0;
 }
 
 void FuzzingEventEngine::TickUntil(Time t) {
