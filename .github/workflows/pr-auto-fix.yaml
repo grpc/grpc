@@ -66,7 +66,7 @@ jobs:
         run: test "${{ steps.check.outputs.result }}" = "stay"
       # Setup to run sanity suite
       - name: Install Python Interpreter
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: 3.8
       - name: Install Python Packages
@@ -90,7 +90,7 @@ jobs:
         run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
       # Report back with a PR if things are broken
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6.1.0
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f # v7.0.5
         with:
           delete-branch: true
           branch-suffix: short-commit-hash
