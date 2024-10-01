@@ -7621,6 +7621,64 @@ grpc_cc_library(
     ],
 )
 
+# TODO(tjagtap) : [PH2_TODO] Remove unused includes after class is ready
+grpc_cc_library(
+    name = "grpc_transport_http2_client_connector",
+    srcs = [
+        "ext/transport/chttp2/client/http2_connector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/client/http2_connector.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "channel_args_endpoint_config",
+        "channel_args_preconditioning",
+        "channel_stack_type",
+        "closure",
+        "error",
+        "error_utils",
+        "grpc_insecure_credentials",
+        "handshaker_registry",
+        "resolved_address",
+        "status_helper",
+        "subchannel_connector",
+        "tcp_connect_handshaker",
+        "time",
+        "unique_type_name",
+        "//:channel",
+        "//:channel_arg_names",
+        "//:channel_create",
+        "//:channelz",
+        "//:config",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:grpc_public_hdrs",
+        "//:grpc_resolver",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:grpc_transport_chttp2",
+        "//:handshaker",
+        "//:iomgr",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:sockaddr_utils",
+    ],
+)
+
 grpc_cc_library(
     name = "grpc_transport_chttp2_server",
     srcs = [
