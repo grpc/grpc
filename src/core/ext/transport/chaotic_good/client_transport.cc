@@ -119,7 +119,7 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
   // its lifetime extends until the push completes.
   return GRPC_LATENT_SEE_PROMISE(
       "PushFrameIntoCall",
-      [call_handler, push = std::move(push)]() mutable { return push(); });
+      ([call_handler, push = std::move(push)]() mutable { return push(); }));
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(

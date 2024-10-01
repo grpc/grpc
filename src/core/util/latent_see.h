@@ -271,7 +271,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
 #define GRPC_LATENT_SEE_METADATA(name)                                     \
   []() {                                                                   \
     static grpc_core::latent_see::Metadata metadata = {__FILE__, __LINE__, \
-                                                       #name};             \
+                                                       name};              \
     return &metadata;                                                      \
   }()
 // Parent scope: logs a begin and end event, and flushes the thread log on scope
