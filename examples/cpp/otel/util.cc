@@ -169,10 +169,10 @@ void RunClient(const std::string& target_str) {
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
   grpc::ChannelArguments args;
+  GreeterClient greeter(grpc::CreateCustomChannel(
+      target_str, grpc::InsecureChannelCredentials(), args));
   // Continuously send RPCs every second.
   while (true) {
-    GreeterClient greeter(grpc::CreateCustomChannel(
-        target_str, grpc::InsecureChannelCredentials(), args));
     std::string user("world");
     std::string reply = greeter.SayHello(user);
     std::cout << "Greeter received: " << reply << std::endl;
