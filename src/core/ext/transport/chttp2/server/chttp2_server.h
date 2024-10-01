@@ -30,19 +30,6 @@
 
 namespace grpc_core {
 
-// A function to modify channel args for a listening addr:port. Note that this
-// is used to create a security connector for listeners when the servers are
-// configured with a config fetcher. Not invoked if there is no config fetcher
-// added to the server. On failure, the error parameter will be set.
-using Chttp2ServerArgsModifier =
-    std::function<ChannelArgs(const ChannelArgs&, grpc_error_handle*)>;
-
-/// Adds a port to \a server.  Sets \a port_num to the port number.
-/// Takes ownership of \a args.
-grpc_error_handle Chttp2ServerAddPort(
-    Server* server, const char* addr, const ChannelArgs& args,
-    Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
-
 class Chttp2ServerListener;
 namespace experimental {
 

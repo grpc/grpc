@@ -151,7 +151,7 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
   arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
       listener_->event_engine_.get());
   handshaking_state_ = MakeRefCounted<HandshakingState>(
-      RefAsSubclass<ChaoticGoodServerListener::ActiveConnection>());
+      RefAsSubclass<ActiveConnection>());
   handshaking_state_->Start(std::move(endpoint));
 }
 

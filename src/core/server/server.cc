@@ -99,32 +99,20 @@ void Server::ListenerInterface::ConfigFetcherWatcher::UpdateConnectionManager(
         connection_manager) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
-  class GracefulShutdownExistingConnections {
-   public:
-    ~GracefulShutdownExistingConnections() {
-      // Send GOAWAYs on the transports so that they get disconnected when
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+        connections_to_shutdown;
+  auto cleanup = absl::MakeCleanup([&connections_to_shutdown]() {
+          // Send GOAWAYs on the transports so that they get disconnected when
       // existing RPCs finish, and so that no new RPC is started on them.
-      for (auto& connection : connections_) {
-        connection->SendGoAway();
-      }
+    for (auto& connection: connections_to_shutdown) {
+      connection->SendGoAway();
     }
-
-    void set_connections(
-        absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-            connections) {
-      CHECK(connections_.empty());
-      connections_ = std::move(connections);
-    }
-
-   private:
-    absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-        connections_;
-  } connections_to_shutdown;
+  });
   {
     MutexLock lock(&listener_->mu_);
     connection_manager_to_destroy = listener_->connection_manager_;
     listener_->connection_manager_ = std::move(connection_manager);
-    connections_to_shutdown.set_connections(std::move(listener_->connections_));
+    connections_to_shutdown = std::move(listener_->connections_);
     if (listener_->server_->ShutdownCalled()) {
       return;
     }

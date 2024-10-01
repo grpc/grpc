@@ -188,9 +188,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     void Orphan() override;
 
-    // Needed to be able to grab an external ref in
+    // Needed to be able to grab an external weak ref in
     // Chttp2ServerListener::OnAccept()
-    using InternallyRefCounted<LogicalConnection>::Ref;
+    using InternallyRefCounted<LogicalConnection>::RefAsSubclass;
 
    private:
     bool SendGoAwayImpl() override;
@@ -455,8 +455,7 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
     const ChannelArgs& args, MemoryOwner memory_owner)
     : LogicalConnection(std::move(listener)),
       handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
-          RefCountedPtr<ActiveConnection>(
-              static_cast<ActiveConnection*>(Ref().release())),
+          RefAsSubclass<ActiveConnection>(),
           accepting_pollset, std::move(acceptor), args)) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
@@ -649,15 +648,16 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 
 void Chttp2ServerListener::StartImpl() {
   bool should_add_port = false;
+  grpc_tcp_server* tcp_server = nullptr;
   {
     MutexLock lock(&mu_);
-    if (add_port_on_start_) {
-      should_add_port = true;
-      add_port_on_start_ = false;
-    }
-    // Hold a ref while we start the server
-    if (tcp_server_ != nullptr) {
-      grpc_tcp_server_ref(tcp_server_);
+    if(!shutdown_) {
+      should_add_port = std::exchange(add_port_on_start_, false);
+      // Hold a ref while we start the server
+      if (tcp_server_ != nullptr) {
+        grpc_tcp_server_ref(tcp_server_);
+        tcp_server = tcp_server_;
+      }
     }
   }
   if (should_add_port) {
@@ -671,9 +671,10 @@ void Chttp2ServerListener::StartImpl() {
       CHECK(0);
     }
   }
-  if (tcp_server_ != nullptr) {
-    grpc_tcp_server_start(tcp_server_, &server()->pollsets());
-    grpc_tcp_server_unref(tcp_server_);
+  if (tcp_server != nullptr) {
+    grpc_tcp_server_start(tcp_server, &server()->pollsets());
+    // Give up the ref we took earlier
+    grpc_tcp_server_unref(tcp_server);
   }
 }
 
@@ -759,9 +760,7 @@ void Chttp2ServerListener::OrphanImpl() {
   }
 }
 
-//
-// Chttp2ServerAddPort()
-//
+namespace {
 
 grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                       const ChannelArgs& args, int* port_num) {
@@ -834,6 +833,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   if (!error.ok()) *port_num = 0;
   return error;
 }
+
+} // namespace
 
 namespace experimental {
 

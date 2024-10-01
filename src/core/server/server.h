@@ -81,7 +81,6 @@ struct grpc_server_config_fetcher {
   class ConnectionManager
       : public grpc_core::DualRefCounted<ConnectionManager> {
    public:
-    // Ownership of \a args is transfered.
     virtual absl::StatusOr<grpc_core::ChannelArgs>
     UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
                                    grpc_endpoint* tcp) = 0;
@@ -181,11 +180,6 @@ class Server : public ServerInterface,
       LogicalConnection& operator=(LogicalConnection&&) = delete;
       ~LogicalConnection() override = default;
 
-      template <typename T>
-      RefCountedPtr<T> RefAsSubclass() {
-        return InternallyRefCounted<LogicalConnection>::RefAsSubclass<T>();
-      }
-
       void SendGoAway();
 
       // Cancel drain grace timer. It won't be started in the future either.
@@ -248,8 +242,7 @@ class Server : public ServerInterface,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
-    // Removes the logical connection from being tracked either because it does
-    // not need to be tracked. This could happen for reasons such as the
+    // Removes the logical connection from being tracked. This could happen for reasons such as the
     // connection being closed, or the connection has been established
     // (including handshake) and doesn't have a server config fetcher.
     void RemoveLogicalConnection(LogicalConnection* connection);
