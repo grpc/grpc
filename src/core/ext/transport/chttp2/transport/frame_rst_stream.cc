@@ -30,14 +30,15 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/status_helper.h"
 
 grpc_slice grpc_chttp2_rst_stream_create(
     uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {

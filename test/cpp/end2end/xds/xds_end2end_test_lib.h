@@ -304,6 +304,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         if (request->has_param() && request->param().has_backend_metrics()) {
           const auto& request_metrics = request->param().backend_metrics();
           auto* recorder = context->ExperimentalGetCallMetricRecorder();
+          if (request_metrics.cpu_utilization() != 0) {
+            recorder->RecordCpuUtilizationMetric(
+                request_metrics.cpu_utilization());
+          }
+          if (request_metrics.mem_utilization() != 0) {
+            recorder->RecordMemoryUtilizationMetric(
+                request_metrics.mem_utilization());
+          }
+          if (request_metrics.application_utilization() != 0) {
+            recorder->RecordApplicationUtilizationMetric(
+                request_metrics.application_utilization());
+          }
           for (const auto& p : request_metrics.named_metrics()) {
             char* key = static_cast<char*>(
                 grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
@@ -476,11 +488,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1, std::vector<size_t> additional_backend_indxes = {},
+      int lb_weight = 1, std::vector<size_t> additional_backend_indexes = {},
       absl::string_view hostname = "") {
     std::vector<int> additional_ports;
-    additional_ports.reserve(additional_backend_indxes.size());
-    for (size_t idx : additional_backend_indxes) {
+    additional_ports.reserve(additional_backend_indexes.size());
+    for (size_t idx : additional_backend_indexes) {
       additional_ports.push_back(backends_[idx]->port());
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
@@ -498,7 +510,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns an endpoint for an unused port, for use in constructing an
   // EDS resource.
-  EdsResourceArgs::Endpoint MakeNonExistantEndpoint() {
+  EdsResourceArgs::Endpoint MakeNonExistentEndpoint() {
     return EdsResourceArgs::Endpoint(grpc_pick_unused_port_or_die());
   }
 
@@ -748,7 +760,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                            const RpcOptions& rpc_options = RpcOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
-  // matching the specfied expected_message_prefix.
+  // matching the specified expected_message_prefix.
   // Any failure with a non-matching status or message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
       const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
@@ -944,7 +956,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // sigma (standard deviation) to cover the probability area of 99.99994%. In
   // another word, for a sample with size "n" probability "p" error-tolerance
   // "k", we want the error always land within 5.00 sigma. The sigma of
-  // binominal distribution and be computed as sqrt(np(1-p)). Hence, we have
+  // binomial distribution and be computed as sqrt(np(1-p)). Hence, we have
   // the equation:
   //
   //   kn <= 5.00 * sqrt(np(1-p))
@@ -965,6 +977,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Returns a regex that can be matched against an RPC failure status
   // message for a connection failure.
   static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a Tls handshake failure.
+  static std::string MakeTlsHandshakeFailureRegex(absl::string_view prefix);
 
   // Returns a private key pair, read from local files.
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(

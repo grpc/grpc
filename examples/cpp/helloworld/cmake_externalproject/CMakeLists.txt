@@ -20,7 +20,7 @@
 # including the "helloworld" project itself.
 # See https://blog.kitware.com/cmake-superbuilds-git-submodules/
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
 # Project
 project(HelloWorld-SuperBuild C CXX)
@@ -40,7 +40,7 @@ ExternalProject_Add(absl
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/absl
 )
 
-# Builds absl project from the git submodule.
+# Builds utf8_range project from the git submodule.
 ExternalProject_Add(utf8_range
   PREFIX utf8_range
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/utf8_range"
@@ -95,13 +95,6 @@ ExternalProject_Add(zlib
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/zlib
 )
 
-# the location where protobuf-config.cmake will be installed varies by platform
-if (WIN32)
-  set(_FINDPACKAGE_PROTOBUF_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/protobuf/cmake")
-else()
-  set(_FINDPACKAGE_PROTOBUF_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/protobuf/lib/cmake/protobuf")
-endif()
-
 # if OPENSSL_ROOT_DIR is set, propagate that hint path to the external projects with OpenSSL dependency.
 set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "")
 if (OPENSSL_ROOT_DIR)
@@ -119,7 +112,7 @@ ExternalProject_Add(grpc
         -DgRPC_BUILD_MSVC_MP_COUNT:STRING=-1
         -Dutf8_range_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/utf8_range/lib/cmake/utf8_range
         -DgRPC_PROTOBUF_PROVIDER:STRING=package
-        -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
+        -DProtobuf_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/protobuf/lib/cmake/protobuf
         -DgRPC_RE2_PROVIDER:STRING=package
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
         -DgRPC_ZLIB_PROVIDER:STRING=package
@@ -147,7 +140,7 @@ ExternalProject_Add(helloworld
   BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/helloworld"
   INSTALL_COMMAND ""
   CMAKE_CACHE_ARGS
-        -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
+        -DProtobuf_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/protobuf/lib/cmake/protobuf
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
         -Dutf8_range_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/utf8_range/lib/cmake/utf8_range

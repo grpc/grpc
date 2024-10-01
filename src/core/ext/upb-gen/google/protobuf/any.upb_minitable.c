@@ -3,7 +3,8 @@
  *     google/protobuf/any.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,6 +13,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField google_protobuf_Any__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -32,6 +34,7 @@ const upb_MiniTable google__protobuf__Any_msg_init = {
   })
 };
 
+const upb_MiniTable* google__protobuf__Any_msg_init_ptr = &google__protobuf__Any_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &google__protobuf__Any_msg_init,
 };

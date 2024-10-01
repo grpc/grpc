@@ -45,6 +45,7 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -77,6 +78,8 @@ ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
 
 ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, HttpServerFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpServerFilter::Call::OnClientInitialMetadata");
   auto method = md.get(HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
@@ -139,6 +142,8 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpServerFilter::Call::OnServerInitialMetadata");
   GRPC_TRACE_LOG(call, INFO)
       << GetContext<Activity>()->DebugTag() << "[http-server] Write metadata";
   FilterOutgoingMetadata(&md);
@@ -147,6 +152,8 @@ void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
 }
 
 void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "HttpServerFilter::Call::OnServerTrailingMetadata");
   FilterOutgoingMetadata(&md);
 }
 

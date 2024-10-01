@@ -35,9 +35,9 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/per_cpu.h"
 #include "src/core/util/ring_buffer.h"
+#include "src/core/util/sync.h"
 
 #define TAGGED_POINTER_SIZE_BITS 48
 
@@ -295,6 +295,7 @@ struct InnerScope {
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name) nullptr
+#define GRPC_LATENT_SEE_METADATA_RAW(name) nullptr
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)

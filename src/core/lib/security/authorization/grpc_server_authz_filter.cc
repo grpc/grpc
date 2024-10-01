@@ -33,6 +33,7 @@
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -99,6 +100,8 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
 
 absl::Status GrpcServerAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, GrpcServerAuthzFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "GrpcServerAuthzFilter::Call::OnClientInitialMetadata");
   if (!filter->IsAuthorized(md)) {
     return absl::PermissionDeniedError("Unauthorized RPC request rejected.");
   }

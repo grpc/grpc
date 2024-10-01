@@ -61,13 +61,6 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -86,8 +79,15 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/server/server.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/uri.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -183,24 +183,27 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       void Start(OrphanablePtr<grpc_endpoint> endpoint,
                  const ChannelArgs& args);
 
+      void ShutdownLocked(absl::Status status)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ActiveConnection::mu_);
+
       // Needed to be able to grab an external ref in
       // ActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
 
      private:
-      void OnTimeout() ABSL_LOCKS_EXCLUDED(&connection_->mu_);
+      void OnTimeout() ABSL_LOCKS_EXCLUDED(&ActiveConnection::mu_);
       static void OnReceiveSettings(void* arg, grpc_error_handle /* error */);
       void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
       RefCountedPtr<ActiveConnection> const connection_;
       grpc_pollset* const accepting_pollset_;
       AcceptorPtr acceptor_;
       RefCountedPtr<HandshakeManager> handshake_mgr_
-          ABSL_GUARDED_BY(&connection_->mu_);
+          ABSL_GUARDED_BY(&ActiveConnection::mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
       Timestamp const deadline_;
       absl::optional<EventEngine::TaskHandle> timer_handle_
-          ABSL_GUARDED_BY(&connection_->mu_);
-      grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&connection_->mu_);
+          ABSL_GUARDED_BY(&ActiveConnection::mu_);
+      grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&ActiveConnection::mu_);
       grpc_pollset_set* const interested_parties_;
     };
 
@@ -400,9 +403,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
   {
     MutexLock lock(&connection_->mu_);
-    if (handshake_mgr_ != nullptr) {
-      handshake_mgr_->Shutdown(GRPC_ERROR_CREATE("Listener stopped serving."));
-    }
+    ShutdownLocked(absl::UnavailableError("Listener stopped serving."));
   }
   Unref();
 }
@@ -420,6 +421,13 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
       [self = Ref()](absl::StatusOr<HandshakerArgs*> result) {
         self->OnHandshakeDone(std::move(result));
       });
+}
+
+void Chttp2ServerListener::ActiveConnection::HandshakingState::ShutdownLocked(
+    absl::Status status) {
+  if (handshake_mgr_ != nullptr) {
+    handshake_mgr_->Shutdown(std::move(status));
+  }
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout() {
@@ -586,20 +594,28 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
   grpc_chttp2_transport* transport = nullptr;
   {
     MutexLock lock(&mu_);
-    if (transport_ != nullptr && !shutdown_) {
-      transport = transport_.get();
-      drain_grace_timer_handle_ = event_engine_->RunAfter(
-          std::max(Duration::Zero(),
-                   listener_->args_
-                       .GetDurationFromIntMillis(
-                           GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
-                       .value_or(Duration::Minutes(10))),
-          [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
-            ExecCtx exec_ctx;
-            self->OnDrainGraceTimeExpiry();
-            self.reset(DEBUG_LOCATION, "drain_grace_timer");
-          });
+    if (!shutdown_) {
+      // Send a GOAWAY if the transport exists
+      if (transport_ != nullptr) {
+        transport = transport_.get();
+        drain_grace_timer_handle_ = event_engine_->RunAfter(
+            std::max(Duration::Zero(),
+                     listener_->args_
+                         .GetDurationFromIntMillis(
+                             GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                         .value_or(Duration::Minutes(10))),
+            [self = Ref(DEBUG_LOCATION, "drain_grace_timer")]() mutable {
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
+              self->OnDrainGraceTimeExpiry();
+              self.reset(DEBUG_LOCATION, "drain_grace_timer");
+            });
+      }
+      // Shutdown the handshaker if it's still in progress.
+      if (handshaking_state_ != nullptr) {
+        handshaking_state_->ShutdownLocked(
+            absl::UnavailableError("Connection going away"));
+      }
       shutdown_ = true;
     }
   }

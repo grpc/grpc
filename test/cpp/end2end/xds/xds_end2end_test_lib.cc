@@ -38,8 +38,8 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/server/server.h"
+#include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
@@ -843,9 +843,24 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "(Connection refused"
       "|Connection reset by peer"
       "|Socket closed"
+      "|Broken pipe"
       "|FD shutdown)"
       // errno value
       "( \\([0-9]+\\))?");
+}
+
+std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
+    absl::string_view prefix) {
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): "
+      // IP address
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      // Prefixes added for context
+      "(Failed to connect to remote host: )?"
+      // Tls handshake failure
+      "Tls handshake failed \\(TSI_PROTOCOL_FAILURE\\): SSL_ERROR_SSL: "
+      "error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED");
 }
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(

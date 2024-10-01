@@ -38,9 +38,12 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc',
     'third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc',
     'third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc',
+    'third_party/abseil-cpp/absl/debugging/internal/decode_rust_punycode.cc',
     'third_party/abseil-cpp/absl/debugging/internal/demangle.cc',
+    'third_party/abseil-cpp/absl/debugging/internal/demangle_rust.cc',
     'third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc',
     'third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc',
+    'third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.cc',
     'third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc',
     'third_party/abseil-cpp/absl/debugging/stacktrace.cc',
     'third_party/abseil-cpp/absl/debugging/symbolize.cc',
@@ -246,7 +249,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/ruby/ruby_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessor_case.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessors.cc',
-    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/helpers.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/default_value.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/map.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/repeated_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_message.cc',
@@ -340,4 +343,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="63def39e881afa496502d9c410f4ea948e59490d"
+PROTOBUF_SUBMODULE_VERSION="10ef3f77683f77fb3c059bf47725c27b3ff41e63"
