@@ -529,6 +529,7 @@ static tsi_result handshaker_next(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
+  if (received_bytes_size == 0) return TSI_INCOMPLETE_DATA;
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   {
