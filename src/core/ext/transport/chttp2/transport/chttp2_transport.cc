@@ -1304,7 +1304,8 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
   });
 }
 
-static void trace_annotations(grpc_chttp2_stream* s, grpc_core::HttpAnnotation::Type type) {
+static void trace_annotations(grpc_chttp2_stream* s,
+                              const grpc_core::HttpAnnotation::Type type) {
   if (!grpc_core::IsCallTracerInTransportEnabled()) {
     if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
