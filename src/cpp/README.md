@@ -31,7 +31,7 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 | Operating System | Architectures | Versions | Support Level |
 |------------------|---------------|----------|---------------|
 | Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 7+, GCC 7.3+     | Officially Supported |
-| Windows 10+                    | x86, x64      | Visual Studio 2019+    | Officially Supported |
+| Windows 10+                    | x86, x64      | Visual Studio 2022+    | Officially Supported |
 | MacOS                          | x64, ARM64    | XCode 12+              | Officially Supported |
 | Linux - Others                 | x86, x64      | clang 7+, GCC 7.3+     | Best Effort          |
 | Linux                          | ARM64         |                        | Best Effort          |
@@ -107,7 +107,7 @@ also sets up an `add_subdirectory()` rule for you. This causes gRPC to be
 built as part of your project.
 
 ```cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 project(my_project)
 
 include(FetchContent)
