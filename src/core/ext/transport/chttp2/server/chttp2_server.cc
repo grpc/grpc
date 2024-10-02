@@ -228,6 +228,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     RefCountedPtr<Chttp2ServerListener> listener_;
     Mutex mu_ ABSL_ACQUIRED_AFTER(&listener_->mu_);
+    // Was ActiveConnection::Start() invoked? Used to determine whether
+    // tcp_server needs to be unreffed.
+    bool connection_started_ ABSL_GUARDED_BY(&mu_) = false;
     // Set by HandshakingState before the handshaking begins and reset when
     // handshaking is done.
     OrphanablePtr<HandshakingState> handshaking_state_ ABSL_GUARDED_BY(&mu_);
@@ -390,12 +393,16 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
+  bool connection_started = false;
+  {
+    MutexLock lock(&connection_->mu_);
+    connection_started = connection_->connection_started_;
+  }
   if (accepting_pollset_ != nullptr) {
     grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
   }
   grpc_pollset_set_destroy(interested_parties_);
-  if (connection_->listener_ != nullptr &&
-      connection_->listener_->tcp_server_ != nullptr) {
+  if (connection_started) {
     grpc_tcp_server_unref(connection_->listener_->tcp_server_);
   }
 }
@@ -632,6 +639,7 @@ void Chttp2ServerListener::ActiveConnection::Start(
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   {
     MutexLock lock(&mu_);
+    connection_started_ = true;
     // If the Connection is already shutdown at this point, it implies the
     // owning Chttp2ServerListener and all associated ActiveConnections have
     // been orphaned.
@@ -878,13 +886,13 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     // connection manager has changed.
     if (!self->shutdown_ && self->is_serving_ &&
         connection_manager == self->connection_manager_) {
-      // The ref for both the listener and tcp_server need to be taken in the
-      // critical region after having made sure that the listener has not been
-      // Orphaned, so as to avoid heap-use-after-free issues where `Ref()` is
-      // invoked when the listener is already shutdown. Note that the listener
-      // holds a ref to the tcp_server but this ref is given away when the
-      // listener is orphaned (shutdown). A connection needs the tcp_server to
-      // outlast the handshake since the acceptor needs it.
+      // The ref for the tcp_server needs to be taken in the critical region
+      // after having made sure that the listener has not been Orphaned, so as
+      // to avoid heap-use-after-free issues where `Ref()` is invoked when the
+      // listener is already shutdown. Note that the listener holds a ref to the
+      // tcp_server but this ref is given away when the listener is orphaned
+      // (shutdown). A connection needs the tcp_server to outlast the handshake
+      // since the acceptor needs it.
       if (self->tcp_server_ != nullptr) {
         grpc_tcp_server_ref(self->tcp_server_);
       }
