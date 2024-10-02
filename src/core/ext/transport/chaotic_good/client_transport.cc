@@ -47,6 +47,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/event_log.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -70,12 +71,18 @@ auto ChaoticGoodClientTransport::TransportWriteLoop(
         outgoing_frames_.Next(),
         // Serialize and write it out.
         [transport = transport.get()](ClientFrame client_frame) {
-          return transport->WriteFrame(GetFrameInterface(client_frame));
+          return transport->WriteFrame(GetFrameInterface(client_frame), true);
         },
-        []() -> LoopCtl<absl::Status> {
+        [](absl::StatusOr<std::tuple<int, int>> res) -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit loop.
           // Therefore, only need to return Continue() in the last lambda
           // function.
+          grpc_core::EventLog::Append(
+              "chaotic-good-client-control-write-outstanding",
+              -1 * std::get<0>(*res));
+          grpc_core::EventLog::Append(
+              "chaotic-good-client-data-write-outstanding",
+              -1 * std::get<1>(*res));
           return Continue();
         });
   });

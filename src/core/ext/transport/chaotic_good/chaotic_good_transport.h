@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <tuple>
 #include <utility>
 
 #include "absl/log/log.h"
@@ -32,6 +33,7 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/event_log.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -51,18 +53,37 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     data_endpoint_.EnforceRxMemoryAlignmentAndCoalescing();
   }
 
-  auto WriteFrame(const FrameInterface& frame) {
+  auto WriteFrame(const FrameInterface& frame, bool is_client) {
     bool saw_encoding_errors = false;
     auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
+    int control_size = buffers.control.Length();
+    int data_size = buffers.data.Length();
+    if (is_client) {
+      grpc_core::EventLog::Append(
+          "chaotic-good-client-control-write-outstanding",
+          buffers.control.Length());
+      grpc_core::EventLog::Append("chaotic-good-client-data-write-outstanding",
+                                  data_size);
+    } else {
+      grpc_core::EventLog::Append(
+          "chaotic-good-server-control-write-outstanding",
+          buffers.control.Length());
+      grpc_core::EventLog::Append("chaotic-good-server-data-write-outstanding",
+                                  data_size);
+    }
     // ignore encoding errors: they will be logged separately already
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: WriteFrame to:"
         << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
-    return TryJoin<absl::StatusOr>(
-        control_endpoint_.Write(std::move(buffers.control)),
-        data_endpoint_.Write(std::move(buffers.data)));
+    return TrySeq(
+        TryJoin<absl::StatusOr>(
+            control_endpoint_.Write(std::move(buffers.control)),
+            data_endpoint_.Write(std::move(buffers.data))),
+        [control_size, data_size]() -> absl::StatusOr<std::tuple<int, int>> {
+          return std::tuple<int, int>(control_size, data_size);
+        });
   }
 
   // Read frame header and payloads for control and data portions of one frame.

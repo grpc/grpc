@@ -18,13 +18,16 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
+
+#ifdef GRPC_ENABLE_EVENT_LOG
+
 #include <atomic>
 #include <string>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
@@ -76,4 +79,23 @@ class EventLog {
 
 }  // namespace grpc_core
 
+#else  // GRPC_ENABLE_EVENT_LOG
+namespace grpc_core {
+class EventLog {
+ public:
+  EventLog() = default;
+  EventLog(const EventLog&) = delete;
+  EventLog& operator=(const EventLog&) = delete;
+
+  static void Append(absl::string_view event, int64_t delta) {}
+
+  void BeginCollection() {}
+  std::string EndCollectionAndReportCsv(
+      absl::Span<const absl::string_view> columns) {
+    return "";
+  }
+};
+}  // namespace grpc_core
+
+#endif
 #endif  // GRPC_SRC_CORE_UTIL_EVENT_LOG_H
