@@ -402,7 +402,8 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
     grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
   }
   grpc_pollset_set_destroy(interested_parties_);
-  if (connection_started) {
+  if (connection_started && connection_->listener_ != nullptr &&
+      connection_->listener_->tcp_server_ != nullptr) {
     grpc_tcp_server_unref(connection_->listener_->tcp_server_);
   }
 }
