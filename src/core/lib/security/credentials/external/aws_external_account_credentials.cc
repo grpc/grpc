@@ -512,7 +512,7 @@ std::string AwsExternalAccountCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName AwsExternalAccountCredentials::type() const {
+UniqueTypeName AwsExternalAccountCredentials::Type() {
   static UniqueTypeName::Factory kFactory("AwsExternalAccountCredentials");
   return kFactory.Create();
 }

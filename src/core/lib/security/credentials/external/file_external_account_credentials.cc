@@ -157,7 +157,7 @@ std::string FileExternalAccountCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName FileExternalAccountCredentials::type() const {
+UniqueTypeName FileExternalAccountCredentials::Type() {
   static UniqueTypeName::Factory kFactory("FileExternalAccountCredentials");
   return kFactory.Create();
 }
