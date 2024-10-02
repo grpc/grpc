@@ -102,7 +102,7 @@ namespace {
 // of bytes sent.
 ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
                 int additional_flags = 0) {
-  GRPC_LATENT_SEE_INNER_SCOPE("TcpSend");
+  GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
   ssize_t sent_length;
   do {
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);

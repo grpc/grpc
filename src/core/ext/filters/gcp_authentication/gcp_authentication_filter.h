@@ -80,10 +80,14 @@ class GcpAuthenticationFilter
   };
 
   GcpAuthenticationFilter(
+      RefCountedPtr<ServiceConfig> service_config,
       const GcpAuthenticationParsedConfig::Config* filter_config,
       RefCountedPtr<const XdsConfig> xds_config,
       RefCountedPtr<CallCredentialsCache> cache);
 
+  // TODO(roth): Consider having the channel stack hold this ref so that
+  // individual filters don't need to.
+  const RefCountedPtr<ServiceConfig> service_config_;
   const GcpAuthenticationParsedConfig::Config* filter_config_;
   const RefCountedPtr<const XdsConfig> xds_config_;
   const RefCountedPtr<CallCredentialsCache> cache_;

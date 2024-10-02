@@ -791,15 +791,11 @@ Chttp2ServerListener::Chttp2ServerListener(
 }
 
 Chttp2ServerListener::~Chttp2ServerListener() {
-  // Flush queued work before destroying handshaker factory, since that
-  // may do a synchronous unref.
-  ExecCtx::Get()->Flush();
   if (passive_listener_ != nullptr) {
     passive_listener_->ListenerDestroyed();
   }
   if (on_destroy_done_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
-    ExecCtx::Get()->Flush();
   }
 }
 
