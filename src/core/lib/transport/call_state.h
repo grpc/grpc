@@ -52,8 +52,14 @@ class CallState {
   Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
   void FinishPullServerToClientMessage();
   Poll<Empty> PollServerTrailingMetadataAvailable();
+  void FinishPullServerTrailingMetadata();
   bool WasServerTrailingMetadataPulled() const;
+  // Resolves after server trailing metadata has been pulled, to true if the
+  // call was cancelled, and false otherwise.
   Poll<bool> PollWasCancelled();
+  // Return true if server trailing metadata has been pushed *and* that push was
+  // a cancellation.
+  bool WasCancelledPushed() const;
   // Debug
   std::string DebugString() const;
 
@@ -933,6 +939,23 @@ CallState::PollWasCancelled() {
     }
     case ServerTrailingMetadataState::kPulled:
       return false;
+    case ServerTrailingMetadataState::kPulledCancel:
+      return true;
+  }
+  Crash("Unreachable");
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool CallState::WasCancelledPushed()
+    const {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollWasCancelledPushed: "
+      << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
+  switch (server_trailing_metadata_state_) {
+    case ServerTrailingMetadataState::kNotPushed:
+    case ServerTrailingMetadataState::kPulled:
+    case ServerTrailingMetadataState::kPushed:
+      return false;
+    case ServerTrailingMetadataState::kPushedCancel:
     case ServerTrailingMetadataState::kPulledCancel:
       return true;
   }

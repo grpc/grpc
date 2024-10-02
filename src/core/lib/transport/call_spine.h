@@ -263,6 +263,10 @@ class CallInitiator {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
+  bool WasCancelledPushed() const {
+    return spine_->call_filters().WasCancelledPushed();
+  }
+
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
 
@@ -303,6 +307,10 @@ class CallHandler {
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
   auto WasCancelled() { return spine_->WasCancelled(); }
+
+  bool WasCancelledPushed() const {
+    return spine_->call_filters().WasCancelledPushed();
+  }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
