@@ -81,7 +81,7 @@
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2025/03/01
   owner: vigneshbabu@google.com
-  test_tags: ["core_end2end_test", "event_engine_listener_test"]
+  test_tags: ["event_engine_listener_test"]
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator

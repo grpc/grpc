@@ -76,7 +76,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
@@ -169,9 +168,6 @@ EXPERIMENTS = {
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
-            ],
-            "core_end2end_test": [
-                "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
