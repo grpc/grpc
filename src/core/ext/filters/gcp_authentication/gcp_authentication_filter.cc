@@ -153,7 +153,7 @@ absl::StatusOr<std::unique_ptr<GcpAuthenticationFilter>>
 GcpAuthenticationFilter::Create(const ChannelArgs& args,
                                 ChannelFilter::Args filter_args) {
   // Get filter config.
-  auto* service_config = args.GetObject<ServiceConfig>();
+  auto service_config = args.GetObjectRef<ServiceConfig>();
   if (service_config == nullptr) {
     return absl::InvalidArgumentError(
         "gcp_auth: no service config in channel args");
@@ -184,15 +184,18 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   // cache but it has the wrong size.
   cache->SetMaxSize(filter_config->cache_size);
   // Instantiate filter.
-  return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
-      filter_config, std::move(xds_config), std::move(cache)));
+  return std::unique_ptr<GcpAuthenticationFilter>(
+      new GcpAuthenticationFilter(std::move(service_config), filter_config,
+                                  std::move(xds_config), std::move(cache)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
+    RefCountedPtr<ServiceConfig> service_config,
     const GcpAuthenticationParsedConfig::Config* filter_config,
     RefCountedPtr<const XdsConfig> xds_config,
     RefCountedPtr<CallCredentialsCache> cache)
-    : filter_config_(filter_config),
+    : service_config_(std::move(service_config)),
+      filter_config_(filter_config),
       xds_config_(std::move(xds_config)),
       cache_(std::move(cache)) {}
 
