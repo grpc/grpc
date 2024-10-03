@@ -230,10 +230,6 @@
  * level. Disabling channelz naturally disables channel tracing. The default
  * is for channelz to be enabled. */
 #define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
-/** If non-zero, Cronet transport will coalesce packets to fewer frames
- * when possible. */
-#define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
-  "grpc.use_cronet_packet_coalescing"
 /** Channel arg (integer) setting how large a slice to try and read from the
    wire each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
@@ -290,9 +286,6 @@
    over to the next priority. Default value is 10 seconds. */
 #define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
   "grpc.priority_failover_timeout_ms"
-/** If non-zero, grpc server's cronet compression workaround will be enabled */
-#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
-  "grpc.workaround.cronet_compression"
 /** String defining the optimization target for a channel.
     Can be: "latency"    - attempt to minimize latency at the cost of throughput
             "blend"      - try to balance latency and throughput

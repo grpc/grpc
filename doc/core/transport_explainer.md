@@ -12,7 +12,6 @@ the transports are nominally written in C++ though they are idiomatically C. The
 existing transports are:
 
 * [HTTP/2](https://github.com/grpc/grpc/tree/master/src/core/ext/transport/chttp2)
-* [Cronet](https://github.com/grpc/grpc/tree/master/src/core/ext/transport/cronet)
 * [In-process](https://github.com/grpc/grpc/tree/master/src/core/ext/transport/inproc)
 
 Among these, the in-process is likely the easiest to understand, though arguably
@@ -138,7 +137,7 @@ in the HTTP/2 transport).
   metadata (e.g., Method and Authority for initial metadata)
 * [Specific transport
   layer](https://github.com/grpc/grpc/tree/master/src/core/ext/transport):
-  - Either send it to the other side using transport-specific API (e.g., Cronet)
+  - Either send it to the other side using transport-specific API
   - Or have it sent through the [iomgr/endpoint
     layer](https://github.com/grpc/grpc/tree/master/src/core/lib/iomgr) (e.g.,
     HTTP/2)

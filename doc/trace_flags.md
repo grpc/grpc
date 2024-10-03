@@ -29,7 +29,6 @@ processing requests via debug logs. Available tracers include:
   - client_idle_filter - Client idleness filter.
   - compression - Compression operations.
   - connectivity_state - Connectivity state changes to channels.
-  - cronet - Cronet transport engine.
   - dns_resolver - The active DNS resolver.
   - environment_autodetect - GCP environment auto-detection.
   - event_engine - High-level EventEngine operations.

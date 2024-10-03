@@ -71,8 +71,6 @@ def _get_external_deps(external_deps):
                 "//:grpc_no_ares": [],
                 "//conditions:default": ["//third_party:cares"],
             })
-        elif dep == "cronet_c_for_grpc":
-            ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):

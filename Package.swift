@@ -2273,7 +2273,6 @@ let package = Package(
       path: basePath,
       exclude: [
         "examples/",
-        "src/cpp/client/cronet_credentials.cc",
         "src/cpp/client/channel_test_peer.cc",
         "src/cpp/common/alts_util.cc",
         "src/cpp/common/alts_context.cc",
