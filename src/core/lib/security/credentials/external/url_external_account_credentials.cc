@@ -137,7 +137,7 @@ std::string UrlExternalAccountCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName UrlExternalAccountCredentials::type() const {
+UniqueTypeName UrlExternalAccountCredentials::Type() {
   static UniqueTypeName::Factory kFactory("UrlExternalAccountCredentials");
   return kFactory.Create();
 }

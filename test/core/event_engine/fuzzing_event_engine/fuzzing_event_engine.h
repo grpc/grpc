@@ -72,6 +72,8 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Returns true if idle.
+  bool IsIdle() ABSL_LOCKS_EXCLUDED(mu_);
   // Tick until some time
   void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
   // Tick for some duration
@@ -296,6 +298,9 @@ class FuzzingEventEngine : public EventEngine {
   int AllocatePort() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Is the given port in use by any listener?
   bool IsPortUsed(int port) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  bool IsIdleLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.
   std::queue<size_t> WriteSizesForConnection()
