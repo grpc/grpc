@@ -23,6 +23,7 @@
 
 namespace grpc_core {
 namespace http2 {
+
 class Http2ServerTransport final : public ServerTransport {
  public:
   Http2ServerTransport(
@@ -49,6 +50,7 @@ class Http2ServerTransport final : public ServerTransport {
 
  private:
 };
+
 }  // namespace http2
 }  // namespace grpc_core
 
