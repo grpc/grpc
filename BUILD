@@ -4769,12 +4769,13 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/http2_client_transport.h",
         "//src/core:ext/transport/chttp2/transport/http2_server_transport.h",
     ],
+    external_deps = [],
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_promise_endpoint",
         "hpack_encoder",
         "hpack_parser",
+        "//src/core:grpc_promise_endpoint",
     ],
 )
 
