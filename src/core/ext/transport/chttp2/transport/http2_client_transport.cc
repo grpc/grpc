@@ -27,6 +27,8 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
+// TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
+// rollout begins
 void Http2ClientTransport::StartCall(CallHandler call_handler) {}
 
 void Http2ClientTransport::PerformOp(grpc_transport_op* op) {}
