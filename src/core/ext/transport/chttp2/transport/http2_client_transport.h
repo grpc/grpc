@@ -37,7 +37,6 @@ class Http2ClientTransport final : public ClientTransport {
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return this; }
   ServerTransport* server_transport() override { return nullptr; }
-
   absl::string_view GetTransportName() const override { return "http2"; }
 
   void SetPollset(grpc_stream*, grpc_pollset*) override {}

@@ -23,13 +23,13 @@
 namespace grpc_core {
 namespace http2 {
 
-void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {}
+void Http2ClientTransport::StartCall(CallHandler call_handler) {}
 
 void Http2ClientTransport::PerformOp(grpc_transport_op* op) {}
 
-void ChaoticGoodClientTransport::Orphan() {}
+void Http2ClientTransport::Orphan() {}
 
-void ChaoticGoodClientTransport::AbortWithError() {}
+void Http2ClientTransport::AbortWithError() {}
 
 }  // namespace http2
 }  // namespace grpc_core

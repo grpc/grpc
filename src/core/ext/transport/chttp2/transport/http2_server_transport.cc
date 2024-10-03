@@ -23,13 +23,13 @@ namespace grpc_core {
 namespace http2 {
 
 void Http2ServerTransport::SetCallDestination(
-    RefCountedPtr<UnstartedCallDestination> call_destination) {};
+    RefCountedPtr<UnstartedCallDestination> call_destination) {}
 
-void Http2ServerTransport::PerformOp(grpc_transport_op*) {};
+void Http2ServerTransport::PerformOp(grpc_transport_op*) {}
 
-void Http2ServerTransport::AbortWithError() {};
+void Http2ServerTransport::AbortWithError() {}
 
-void Http2ServerTransport::Orphan() {};
+void Http2ServerTransport::Orphan() {}
 
 }  // namespace http2
 }  // namespace grpc_core
