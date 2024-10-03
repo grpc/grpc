@@ -63,11 +63,11 @@ Ready to dive in?  We'll walk you through the entire process of making your firs
        bazel test --cache_test_results=no "//src/python/..." 
        ```
    * **Using Provided Scripts (Alternative):**
-     * **Install Python Modules:**
+     * Install Python Modules:
        ```bash
        ./tools/distrib/install_all_python_modules.sh
        ```
-     * **Run Tooling Tests:**
+     * Run Tooling Tests:
        ```bash
        ./tools/distrib/run_python_tooling_tests.sh
        ```
