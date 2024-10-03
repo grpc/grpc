@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {

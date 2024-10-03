@@ -4773,6 +4773,8 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_promise_endpoint",
+        "hpack_encoder",
+        "hpack_parser",
     ],
 )
 
