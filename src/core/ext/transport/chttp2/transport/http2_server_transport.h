@@ -24,6 +24,10 @@
 namespace grpc_core {
 namespace http2 {
 
+// Experimental : This is just the initial skeleton of class
+// and it is functions. The code will be written iteratively.
+// Do not use or edit any of these functions unless you are
+// familiar with the PH2 project (Moving chttp2 to promises.)
 class Http2ServerTransport final : public ServerTransport {
  public:
   Http2ServerTransport(
@@ -45,8 +49,8 @@ class Http2ServerTransport final : public ServerTransport {
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
   void PerformOp(grpc_transport_op*) override;
 
-  void AbortWithError();
   void Orphan() override;
+  void AbortWithError();
 
  private:
 };

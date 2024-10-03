@@ -16,13 +16,17 @@
 //
 //
 
-#include "src/core/ext/transport/http2_client_transport.h"
+#include "src/core/ext/transport/chttp2/http2_client_transport.h"
 
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace http2 {
 
+// Experimental : This is just the initial skeleton of class
+// and it is functions. The code will be written iteratively.
+// Do not use or edit any of these functions unless you are
+// familiar with the PH2 project (Moving chttp2 to promises.)
 void Http2ClientTransport::StartCall(CallHandler call_handler) {}
 
 void Http2ClientTransport::PerformOp(grpc_transport_op* op) {}
