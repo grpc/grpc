@@ -16,15 +16,20 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CLIENT_TRANSPORT_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CLIENT_TRANSPORT_H
+#include "src/core/ext/transport/http2_client_transport.h"
 
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace http2 {
-class ClientTransport {};
+
+void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {}
+
+void Http2ClientTransport::PerformOp(grpc_transport_op* op) {}
+
+void ChaoticGoodClientTransport::Orphan() {}
+
+void ChaoticGoodClientTransport::AbortWithError() {}
+
 }  // namespace http2
 }  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CLIENT_TRANSPORT_H
