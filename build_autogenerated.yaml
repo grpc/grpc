@@ -5904,6 +5904,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6131,6 +6132,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6464,6 +6466,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6694,6 +6697,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6777,6 +6781,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
+  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: call_utils_test
@@ -7411,6 +7416,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7475,6 +7481,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7539,6 +7546,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7603,6 +7611,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7684,6 +7693,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7852,6 +7862,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7916,6 +7927,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8881,6 +8893,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9056,6 +9069,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9219,6 +9233,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9389,6 +9404,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9490,6 +9506,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9642,6 +9659,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10415,6 +10433,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10479,6 +10498,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10561,6 +10581,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11103,6 +11124,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11299,6 +11321,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11859,6 +11882,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12054,6 +12078,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12142,6 +12167,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12622,6 +12648,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12828,6 +12855,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12904,6 +12932,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13345,6 +13374,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13409,6 +13439,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13473,6 +13504,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13537,6 +13569,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13662,6 +13695,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
+  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: minimal_stack_is_minimal_test
@@ -13836,6 +13870,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13912,6 +13947,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13976,6 +14012,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14361,6 +14398,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14463,7 +14501,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
-  - protobuf
+  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: ping_abuse_policy_test
@@ -14599,6 +14637,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14693,6 +14732,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15124,6 +15164,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15382,6 +15423,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15628,6 +15670,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15692,6 +15735,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15904,6 +15948,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15979,6 +16024,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16043,6 +16089,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16107,6 +16154,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16171,6 +16219,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16235,6 +16284,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16299,6 +16349,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16363,6 +16414,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16427,6 +16479,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16491,6 +16544,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16555,6 +16609,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16619,6 +16674,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16683,6 +16739,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16747,6 +16804,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16811,6 +16869,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16875,6 +16934,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16939,6 +16999,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17003,6 +17064,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17067,6 +17129,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17131,6 +17194,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17195,6 +17259,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17259,6 +17324,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17323,6 +17389,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17387,6 +17454,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17462,6 +17530,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17526,6 +17595,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17590,6 +17660,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17654,6 +17725,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17729,6 +17801,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17793,6 +17866,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17857,6 +17931,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17921,6 +17996,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17985,6 +18061,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18049,6 +18126,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18113,6 +18191,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18560,6 +18639,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18710,6 +18790,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18840,6 +18921,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18904,6 +18986,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18983,6 +19066,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19047,6 +19131,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19125,6 +19210,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19486,6 +19572,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19851,6 +19938,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -20397,6 +20485,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -20626,6 +20715,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -20998,6 +21088,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
+  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: weighted_round_robin_test
@@ -21017,7 +21108,7 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
-  - protobuf
+  - grpc++
   - grpc_test_util
   uses_polling: false
 - name: win_socket_test
@@ -21370,6 +21461,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -21434,6 +21526,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   deps:
   - gtest
+  - grpc++
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util

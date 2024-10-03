@@ -33,6 +33,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
+#include "gmock/gmock.h"
 
 #include <grpc/credentials.h>
 #include <grpcpp/channel.h>
@@ -200,6 +201,9 @@ class RlsEnd2endTest : public ::testing::Test {
                     resolver_response_generator_->Get());
     args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, kServerName);
     args.SetString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID, kRlsInstanceUuid);
+    if (per_channel_stats_plugin_ != nullptr) {
+      per_channel_stats_plugin_->AddToChannelArguments(&args);
+    }
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
@@ -301,6 +305,11 @@ class RlsEnd2endTest : public ::testing::Test {
         << location.file() << ":" << location.line();
     EXPECT_EQ(expected_message, status.error_message())
         << location.file() << ":" << location.line();
+  }
+
+  void SetPerChannelStatsPlugin(
+      std::shared_ptr<grpc_core::FakeStatsPlugin> per_channel_stats_plugin) {
+    per_channel_stats_plugin_ = std::move(per_channel_stats_plugin);
   }
 
   class ServiceConfigBuilder {
@@ -473,6 +482,7 @@ class RlsEnd2endTest : public ::testing::Test {
   std::string target_uri_;
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::shared_ptr<grpc_core::FakeStatsPlugin> per_channel_stats_plugin_;
 };
 
 TEST_F(RlsEnd2endTest, Basic) {
@@ -1386,14 +1396,20 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
 class RlsMetricsEnd2endTest : public RlsEnd2endTest {
  protected:
   void SetUp() override {
-    // Register stats plugin before initializing client.
-    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
-                        .UseDisabledByDefaultMetrics(true)
-                        .BuildAndRegister();
+    // Register global stats plugin before initializing client.
+    stats_plugin_group_.Add(grpc_core::FakeStatsPluginBuilder()
+                                .UseDisabledByDefaultMetrics(true)
+                                .BuildAndRegister());
+    // Register per-channel stats plugin.
+    auto per_channel_stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                                        .UseDisabledByDefaultMetrics(true)
+                                        .Build();
+    SetPerChannelStatsPlugin(per_channel_stats_plugin);
+    stats_plugin_group_.Add(std::move(per_channel_stats_plugin));
     RlsEnd2endTest::SetUp();
   }
 
-  std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
+  grpc_core::FakeStatsPluginsGroup stats_plugin_group_;
 };
 
 TEST_F(RlsMetricsEnd2endTest, MetricDefinitionDefaultTargetPicks) {
@@ -1537,27 +1553,28 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // Check exported metrics.
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
-      ::testing::Optional(1));
+      ::testing::Each(::testing::Optional(1)));
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
-      absl::nullopt);
-  EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
-                kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-            absl::nullopt);
-  stats_plugin_->TriggerCallbacks();
-  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
+      ::testing::Each(::testing::Eq(absl::nullopt)));
+  EXPECT_THAT(stats_plugin_group_.GetUInt64CounterValue(
+                  kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
+              ::testing::Each(::testing::Eq(absl::nullopt)));
+  stats_plugin_group_.TriggerCallbacks();
+  EXPECT_THAT(stats_plugin_group_.GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
                   {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
-              ::testing::Optional(1));
-  auto cache_size = stats_plugin_->GetInt64CallbackGaugeValue(
+              ::testing::Each(::testing::Optional(1)));
+  auto cache_size = stats_plugin_group_.GetInt64CallbackGaugeValue(
       kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
       {});
-  EXPECT_THAT(cache_size, ::testing::Optional(::testing::Ge(1)));
+  EXPECT_THAT(cache_size,
+              ::testing::Each(::testing::Optional(::testing::Ge(1))));
   // Send an RPC to the target for backend 1.
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target1}}),
                                     BuildRlsResponse({rls_target1}));
@@ -1569,29 +1586,32 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Check exported metrics.
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
-      ::testing::Optional(1));
+      ::testing::Each(::testing::Optional(1)));
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
-      ::testing::Optional(1));
-  EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
-                kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-            absl::nullopt);
-  stats_plugin_->TriggerCallbacks();
-  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
+      ::testing::Each(::testing::Optional(1)));
+  EXPECT_THAT(stats_plugin_group_.GetUInt64CounterValue(
+                  kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
+              ::testing::Each(::testing::Eq(absl::nullopt)));
+  stats_plugin_group_.TriggerCallbacks();
+  EXPECT_THAT(stats_plugin_group_.GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
                   {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
-              ::testing::Optional(2));
-  auto cache_size2 = stats_plugin_->GetInt64CallbackGaugeValue(
+              ::testing::Each(::testing::Optional(2)));
+  auto cache_size2 = stats_plugin_group_.GetInt64CallbackGaugeValue(
       kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
       {});
-  EXPECT_THAT(cache_size2, ::testing::Optional(::testing::Ge(2)));
-  if (cache_size.has_value() && cache_size2.has_value()) {
-    EXPECT_GT(*cache_size2, *cache_size);
+  EXPECT_THAT(cache_size2,
+              ::testing::Each(::testing::Optional(::testing::Ge(2))));
+  for (int i = 0; i < cache_size.size(); ++i) {
+    if (cache_size[i].has_value() && cache_size2[i].has_value()) {
+      EXPECT_GT(*cache_size2[i], *cache_size[i]);
+    }
   }
   // Send an RPC for which the RLS server has no response, which means
   // that the RLS request will fail.  There is no default target, so the
@@ -1613,29 +1633,32 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Check exported metrics.
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
-      ::testing::Optional(1));
+      ::testing::Each(::testing::Optional(1)));
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
-      ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
+      ::testing::Each(::testing::Optional(1)));
+  EXPECT_THAT(stats_plugin_group_.GetUInt64CounterValue(
                   kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
-              ::testing::Optional(1));
-  stats_plugin_->TriggerCallbacks();
-  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
+              ::testing::Each(::testing::Optional(1)));
+  stats_plugin_group_.TriggerCallbacks();
+  EXPECT_THAT(stats_plugin_group_.GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
                   {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
-              ::testing::Optional(3));
-  auto cache_size3 = stats_plugin_->GetInt64CallbackGaugeValue(
+              ::testing::Each(::testing::Optional(3)));
+  auto cache_size3 = stats_plugin_group_.GetInt64CallbackGaugeValue(
       kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
       {});
-  EXPECT_THAT(cache_size3, ::testing::Optional(::testing::Ge(3)));
-  if (cache_size.has_value() && cache_size3.has_value()) {
-    EXPECT_GT(*cache_size3, *cache_size);
+  EXPECT_THAT(cache_size3,
+              ::testing::Each(::testing::Optional(::testing::Ge(3))));
+  for (int i = 0; i < cache_size.size(); ++i) {
+    if (cache_size[i].has_value() && cache_size3[i].has_value()) {
+      EXPECT_GT(*cache_size3[i], *cache_size[i]);
+    }
   }
 }
 
@@ -1680,10 +1703,10 @@ TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // Check expected metrics.
   EXPECT_THAT(
-      stats_plugin_->GetUInt64CounterValue(
+      stats_plugin_group_.GetUInt64CounterValue(
           kMetricDefaultTargetPicks,
           {target_uri_, rls_server_target_, default_target, "complete"}, {}),
-      ::testing::Optional(1));
+      ::testing::Each(::testing::Optional(1)));
 }
 
 }  // namespace
