@@ -4760,6 +4760,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_transport_http2",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/http2_client_transport.cc",
+        "//src/core:ext/transport/chttp2/transport/http2_server_transport.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/http2_client_transport.h",
+        "//src/core:ext/transport/chttp2/transport/http2_server_transport.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
