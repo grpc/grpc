@@ -45,12 +45,12 @@
 
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
@@ -81,10 +81,9 @@ class XdsRouteConfigTest : public ::testing::Test {
  protected:
   explicit XdsRouteConfigTest(bool trusted_xds_server = false)
       : xds_client_(MakeXdsClient(trusted_xds_server)),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        &xds_route_config_resource_type_test_trace,
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{
+            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(bool trusted_xds_server) {
     auto bootstrap = GrpcXdsBootstrap::Create(
@@ -126,7 +125,7 @@ TEST_F(XdsRouteConfigTest, Definition) {
   EXPECT_FALSE(resource_type->AllResourcesRequiredInSotW());
 }
 
-TEST_F(XdsRouteConfigTest, UnparseableProto) {
+TEST_F(XdsRouteConfigTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
@@ -562,7 +561,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
       << decode_result.resource.status();
 }
 
-TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparseable) {
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparsable) {
   auto* typed_per_filter_config_proto =
       GetTypedPerFilterConfigProto(&route_config_);
   auto& any = (*typed_per_filter_config_proto)["fault"];
@@ -2201,7 +2200,7 @@ TEST_F(RlsTest, InvalidGrpcLbPolicyConfig) {
             "errors validating RouteConfiguration resource: ["
             "field:cluster_specifier_plugins[0].extension.typed_config "
             "error:ClusterSpecifierPlugin returned invalid LB policy config: "
-            "errors validing RLS LB policy config: ["
+            "errors validating RLS LB policy config: ["
             "field:routeLookupConfig.lookupService error:field not present]]")
       << decode_result.resource.status();
 }
@@ -2238,7 +2237,7 @@ TEST_F(RlsTest, RlsInTypedStruct) {
       << decode_result.resource.status();
 }
 
-TEST_F(RlsTest, RlsConfigUnparseable) {
+TEST_F(RlsTest, RlsConfigUnparsable) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   RouteConfiguration route_config;
   route_config.set_name("foo");

@@ -61,8 +61,8 @@ def generate_run_tests_portability_tests(name):
             ["gcc10.2_openssl111", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl111_x64.current_version"],
             ["gcc_12_openssl309", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version"],
             ["gcc_musl", "", "tools/dockerfile/test/cxx_alpine_x64.current_version"],
-            ["clang_6", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_6_x64.current_version"],
-            ["clang_17_cxx23", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++ --cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=23", "tools/dockerfile/test/cxx_clang_17_x64.current_version"],
+            ["clang_7", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_7_x64.current_version"],
+            ["clang_18_cxx23", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++ --cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=23", "tools/dockerfile/test/cxx_clang_18_x64.current_version"],
         ]
 
         for compiler_name, args, docker_image_version in compiler_configs:

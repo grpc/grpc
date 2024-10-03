@@ -383,6 +383,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "local_security_connector_test",
+    srcs = ["local_security_connector_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "grpc_tls_credentials_options_test",
     srcs = ["grpc_tls_credentials_options_test.cc"],
     data = [
@@ -439,6 +456,8 @@ grpc_cc_test(
     srcs = ["grpc_tls_certificate_provider_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:malformed-cert.pem",
+        "//src/core/tsi/test_creds:malformed-key.pem",
         "//src/core/tsi/test_creds:multi-domain.key",
         "//src/core/tsi/test_creds:multi-domain.pem",
         "//src/core/tsi/test_creds:server0.key",

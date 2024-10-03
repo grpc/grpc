@@ -26,12 +26,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,9 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
 
   std::string debug_string() override;
 
-  UniqueTypeName type() const override;
+  static UniqueTypeName Type();
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   OrphanablePtr<FetchBody> RetrieveSubjectToken(

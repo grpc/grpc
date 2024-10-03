@@ -38,8 +38,6 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/activity.h"
@@ -49,6 +47,8 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -77,7 +77,7 @@ ChannelStackBuilderImpl::Build() {
         gpr_free(stk);
       },
       channel_stack, stack.data(), stack.size(), channel_args(), name(),
-      channel_stack);
+      channel_stack, old_blackboard_, new_blackboard_);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);

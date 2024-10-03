@@ -38,8 +38,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -48,6 +46,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 #include "src/core/util/string.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
@@ -72,7 +72,7 @@ namespace {
 // instantiated at the top of the virtual socket function callstack.
 class WSAErrorContext final {
  public:
-  explicit WSAErrorContext(){};
+  explicit WSAErrorContext() {};
 
   ~WSAErrorContext() {
     if (error_ != 0) {

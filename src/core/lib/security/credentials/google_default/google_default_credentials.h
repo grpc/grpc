@@ -26,10 +26,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 #define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
@@ -65,7 +65,9 @@ class grpc_google_default_channel_credentials
 
   grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) override;
 
-  grpc_core::UniqueTypeName type() const override;
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();

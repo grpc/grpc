@@ -39,6 +39,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -51,6 +52,7 @@ const NoInterceptor RbacFilter::Call::OnFinalize;
 
 absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                        RbacFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE("RbacFilter::Call::OnClientInitialMetadata");
   // Fetch and apply the rbac policy from the service config.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   auto* method_params = static_cast<RbacMethodParsedConfig*>(

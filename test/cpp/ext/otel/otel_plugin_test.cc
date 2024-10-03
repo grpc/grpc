@@ -2085,6 +2085,53 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest, VerifyCallbacksAreCleanedUp) {
   EXPECT_EQ(report_count_2, 2 * kIterations);
 }
 
+TEST_F(OpenTelemetryPluginCallbackMetricsTest,
+       ReportDifferentGaugeThanRegisteredWontCrash) {
+  constexpr absl::string_view kInt64CallbackGaugeMetric =
+      "yet_another_int64_callback_gauge";
+  constexpr absl::string_view kDoubleCallbackGaugeMetric =
+      "yet_another_double_callback_gauge";
+  auto integer_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+          kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
+          /*enable_by_default=*/true)
+          .Build();
+  auto double_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+          kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
+          /*enable_by_default=*/true)
+          .Build();
+  Init(std::move(Options().set_metric_names(
+      {kInt64CallbackGaugeMetric, kDoubleCallbackGaugeMetric})));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  // Registers integer_gauge_handle but reports double_gauge_handle.
+  int report_count_1 = 0;
+  double double_value_1 = 0.5;
+  auto registered_metric_callback_1 = stats_plugins.RegisterCallback(
+      [&](grpc_core::CallbackMetricReporter& reporter) {
+        ++report_count_1;
+        reporter.Report(double_gauge_handle, double_value_1++, {}, {});
+      },
+      grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor(),
+      integer_gauge_handle);
+  constexpr int kIterations = 50;
+  {
+    MetricsCollectorThread collector{
+        this,
+        grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+        kIterations,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) { return false; }};
+  }
+  // Verify that callbacks are invoked
+  EXPECT_EQ(report_count_1, kIterations);
+}
+
 TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
   grpc::internal::OpenTelemetryPluginBuilderImpl builder;
   // First disable all metrics

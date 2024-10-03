@@ -44,6 +44,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -188,12 +189,12 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
     if (config_from_call_context->max_send_size().has_value() &&
         (!max_send_size.has_value() ||
          *config_from_call_context->max_send_size() < *max_send_size)) {
-      max_send_size = *config_from_call_context->max_send_size();
+      max_send_size = config_from_call_context->max_send_size();
     }
     if (config_from_call_context->max_recv_size().has_value() &&
         (!max_recv_size.has_value() ||
          *config_from_call_context->max_recv_size() < *max_recv_size)) {
-      max_recv_size = *config_from_call_context->max_recv_size();
+      max_recv_size = config_from_call_context->max_recv_size();
     }
     limits_ = MessageSizeParsedConfig(max_send_size, max_recv_size);
   }
@@ -201,24 +202,32 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ServerMessageSizeFilter::Call::OnClientToServerMessage");
   return CheckPayload(message, filter->parsed_config_.max_recv_size(),
                       /*is_client=*/false, false);
 }
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ServerMessageSizeFilter::Call::OnServerToClientMessage");
   return CheckPayload(message, filter->parsed_config_.max_send_size(),
                       /*is_client=*/false, true);
 }
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientMessageSizeFilter::Call::OnClientToServerMessage");
   return CheckPayload(message, limits_.max_send_size(), /*is_client=*/true,
                       true);
 }
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientMessageSizeFilter::Call::OnServerToClientMessage");
   return CheckPayload(message, limits_.max_recv_size(), /*is_client=*/true,
                       false);
 }

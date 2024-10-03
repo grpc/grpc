@@ -245,7 +245,6 @@ TEST(CallStateTest, ReceiveTrailersOnly) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
 }
 
 TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
@@ -256,7 +255,6 @@ TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  state.FinishPullServerTrailingMetadata();
 }
 
 TEST(CallStateTest, RecallNoCancellation) {
@@ -264,13 +262,14 @@ TEST(CallStateTest, RecallNoCancellation) {
   activity.Activate();
   CallState state;
   state.Start();
+  EXPECT_EQ(state.WasCancelledPushed(), false);
   state.PushServerTrailingMetadata(false);
+  EXPECT_EQ(state.WasCancelledPushed(), false);
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
   EXPECT_THAT(state.PollWasCancelled(), IsReady(false));
+  EXPECT_EQ(state.WasCancelledPushed(), false);
 }
 
 TEST(CallStateTest, RecallCancellation) {
@@ -278,13 +277,14 @@ TEST(CallStateTest, RecallCancellation) {
   activity.Activate();
   CallState state;
   state.Start();
+  EXPECT_EQ(state.WasCancelledPushed(), false);
   state.PushServerTrailingMetadata(true);
+  EXPECT_EQ(state.WasCancelledPushed(), true);
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
-  EXPECT_THAT(state.PollWasCancelled(), IsPending());
-  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
   EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
+  EXPECT_EQ(state.WasCancelledPushed(), true);
 }
 
 TEST(CallStateTest, ReceiveTrailingMetadataAfterMessageRead) {

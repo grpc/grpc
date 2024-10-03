@@ -35,11 +35,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "7a35bebd0e1eecbc5bf5bbf5eec03e86686c356802b5540872119bd26f84ecc7",
-            strip_prefix = "boringssl-16c8d3db1af20fcc04b5190b25242aadcb1fbb30",
+            sha256 = "c70d519e4ee709b7a74410a5e3a937428b8198d793a3d771be3dd2086ae167c8",
+            strip_prefix = "boringssl-b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/16c8d3db1af20fcc04b5190b25242aadcb1fbb30.tar.gz",
-                "https://github.com/google/boringssl/archive/16c8d3db1af20fcc04b5190b25242aadcb1fbb30.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6.tar.gz",
+                "https://github.com/google/boringssl/archive/b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6.tar.gz",
             ],
         )
 
@@ -58,16 +58,15 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "3ed7131962a357b35b1d55238fcc6c6a177eae766ef3e25aa916157bc6e45819",
-            strip_prefix = "protobuf-63def39e881afa496502d9c410f4ea948e59490d",
+            sha256 = "8766fce06ef41d79cb6037d04be37df3d5c493d9da92517a7243640d6389f03c",
+            strip_prefix = "protobuf-10ef3f77683f77fb3c059bf47725c27b3ff41e63",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v27.2
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/63def39e881afa496502d9c410f4ea948e59490d.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/63def39e881afa496502d9c410f4ea948e59490d.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v28.1
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/10ef3f77683f77fb3c059bf47725c27b3ff41e63.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/10ef3f77683f77fb3c059bf47725c27b3ff41e63.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
-                "@com_github_grpc_grpc//third_party:protobuf.10007.patch",
             ],
             patch_args = ["-p1"],
         )
@@ -144,11 +143,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "338420448b140f0dfd1a1ea3c3ce71b3bc172071f24f4d9a57d59b45037da440",
-            strip_prefix = "abseil-cpp-20240116.0",
+            sha256 = "f50e5ac311a81382da7fa75b97310e4b9006474f9560ac46f54a9967f07d4ae3",
+            strip_prefix = "abseil-cpp-20240722.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240116.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20240116.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
             ],
         )
 
@@ -240,12 +239,12 @@ def grpc_deps():
     if "com_google_googleapis" not in native.existing_rules():
         http_archive(
             name = "com_google_googleapis",
-            sha256 = "5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0",
-            strip_prefix = "googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92",
+            sha256 = "0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4",
+            strip_prefix = "googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0",
             build_file = Label("//bazel:googleapis.BUILD"),
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
-                "https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz",
+                "https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz",
             ],
         )
 
@@ -304,6 +303,7 @@ def grpc_deps():
     if "com_github_jupp0r_prometheus_cpp" not in native.existing_rules():
         http_archive(
             name = "com_github_jupp0r_prometheus_cpp",
+            sha256 = "cdf03ee63fcb1d9e113f7bd525e043c254729dddf19d80396489f5b92c83c18d",
             strip_prefix = "prometheus-cpp-b1234816facfdda29845c46696a02998a4af115a",
             urls = [
                 "https://github.com/jupp0r/prometheus-cpp/archive/b123481.zip",

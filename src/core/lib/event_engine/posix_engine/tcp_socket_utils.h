@@ -29,10 +29,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <sys/socket.h>
@@ -163,7 +163,7 @@ class PosixSocketWrapper {
  public:
   explicit PosixSocketWrapper(int fd) : fd_(fd) { CHECK_GT(fd_, 0); }
 
-  PosixSocketWrapper() : fd_(-1){};
+  PosixSocketWrapper() : fd_(-1) {};
 
   ~PosixSocketWrapper() = default;
 

@@ -38,7 +38,6 @@ grpc_cc_test(
         "//src/core:grpc_xds_client",
         "//src/core:xds_server_grpc",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -146,6 +145,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -167,7 +167,6 @@ grpc_cc_test(
     srcs = ["xds_client_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    shard_count = 10,
     uses_event_engine = True,
     uses_polling = False,
     deps = [
@@ -175,6 +174,8 @@ grpc_cc_test(
         ":xds_transport_fake",
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
     ],
@@ -189,9 +190,10 @@ grpc_proto_fuzzer(
     proto = "xds_client_fuzzer.proto",
     proto_deps = [
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     ],
     tags = ["no_windows"],
-    uses_event_engine = False,
+    uses_event_engine = True,
     uses_polling = False,
     deps = [
         ":xds_client_test_peer",
@@ -207,6 +209,8 @@ grpc_proto_fuzzer(
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
     ],
 )
 
@@ -231,6 +235,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_metadata_test",
+    srcs = ["xds_metadata_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_xds_client",
+        "//src/proto/grpc/testing/xds/v3:base_proto",
+        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_http_filters_test",
     srcs = ["xds_http_filters_test.cc"],
     external_deps = [
@@ -244,6 +266,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/proto/grpc/testing/xds/v3:fault_proto",
+        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
         "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
@@ -315,6 +338,7 @@ grpc_cc_test(
         "//src/core:xds_health_status",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
         "//src/proto/grpc/testing/xds/v3:http_protocol_options_proto",
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",

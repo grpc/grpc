@@ -44,19 +44,12 @@
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/cancel_callback.h"
@@ -72,6 +65,13 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 // Backoff parameters.
@@ -764,8 +764,9 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
-  next_attempt_time_ = backoff_.NextAttemptTime();
+  const Timestamp now = Timestamp::Now();
+  const Timestamp min_deadline = now + min_connect_timeout_;
+  next_attempt_time_ = now + backoff_.NextAttemptDelay();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
   // Start connection attempt.

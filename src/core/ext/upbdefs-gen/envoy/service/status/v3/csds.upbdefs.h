@@ -3,7 +3,8 @@
  *     envoy/service/status/v3/csds.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPBDEFS_H_
 #define ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPBDEFS_H_

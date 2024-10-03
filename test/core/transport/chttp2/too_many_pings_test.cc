@@ -46,17 +46,17 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
@@ -123,7 +123,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   // Start a call
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,

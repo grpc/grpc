@@ -43,7 +43,6 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
@@ -61,6 +60,7 @@
 #include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -88,9 +88,6 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void AbortWithError();
 
  private:
-  // Queue size of each stream pipe is set to 2, so that for each stream read it
-  // will queue at most 2 frames.
-  static const size_t kServerFrameQueueSize = 2;
   using StreamMap = absl::flat_hash_map<uint32_t, CallHandler>;
 
   uint32_t MakeStream(CallHandler call_handler);
@@ -112,8 +109,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
-  ActivityPtr writer_;
-  ActivityPtr reader_;
+  RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_client", GRPC_CHANNEL_READY};
 };

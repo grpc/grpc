@@ -42,15 +42,15 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
 
 namespace grpc_core {
 
@@ -98,7 +98,9 @@ class ClientCall final
   char* GetPeer() override;
 
   bool Completed() final { Crash("unimplemented"); }
-  bool failed_before_recv_message() const final { Crash("unimplemented"); }
+  bool failed_before_recv_message() const final {
+    return started_call_initiator_.WasCancelledPushed();
+  }
 
   grpc_compression_algorithm incoming_compression_algorithm() override {
     return message_receiver_.incoming_compression_algorithm();

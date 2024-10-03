@@ -14,7 +14,7 @@
 
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 
 namespace grpc {
 
