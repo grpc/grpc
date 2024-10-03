@@ -31,9 +31,10 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
-void Http2ClientTransport::StartCall(CallHandler call_handler) {}
+void Http2ClientTransport::StartCall(
+    [[maybe_unused]] CallHandler call_handler) {}
 
-void Http2ClientTransport::PerformOp(grpc_transport_op* op) {}
+void Http2ClientTransport::PerformOp([[maybe_unused]] grpc_transport_op* op) {}
 
 void Http2ClientTransport::Orphan() {}
 

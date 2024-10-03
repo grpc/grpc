@@ -32,9 +32,10 @@ namespace http2 {
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 void Http2ServerTransport::SetCallDestination(
-    RefCountedPtr<UnstartedCallDestination> call_destination) {}
+    [[maybe_unused]] RefCountedPtr<UnstartedCallDestination> call_destination) {
+}
 
-void Http2ServerTransport::PerformOp(grpc_transport_op*) {}
+void Http2ServerTransport::PerformOp([[maybe_unused]] grpc_transport_op*) {}
 
 void Http2ServerTransport::Orphan() {}
 

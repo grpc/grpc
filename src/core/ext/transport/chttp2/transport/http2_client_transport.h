@@ -35,12 +35,14 @@ namespace http2 {
 // rollout begins
 class Http2ClientTransport final : public ClientTransport {
  public:
-  Http2ClientTransport(
-      PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
-      const ChannelArgs& channel_args,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      HPackParser hpack_parser, HPackCompressor hpack_encoder) {}
+  Http2ClientTransport([[maybe_unused]] PromiseEndpoint control_endpoint,
+                       [[maybe_unused]] PromiseEndpoint data_endpoint,
+                       [[maybe_unused]] const ChannelArgs& channel_args,
+                       [[maybe_unused]] std::shared_ptr<
+                           grpc_event_engine::experimental::EventEngine>
+                           event_engine,
+                       [[maybe_unused]] HPackParser hpack_parser,
+                       H [[maybe_unused]] PackCompressor hpack_encoder) {}
   ~Http2ClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
