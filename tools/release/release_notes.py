@@ -104,15 +104,16 @@ def get_commit_detail(commit):
     detail += "- " + title
     if not title.endswith("."):
         detail += "."
-    matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
-    cl_num = matches.group(1)
-    detail += (
-        " ([commit](https://github.com/grpc/grpc/commit/"
-        + commit
-        + ")) ([CL](https://critique.corp.google.com/cl/"
-        + cl_num
-        + "))"
+    detail += " ([commit](https://github.com/grpc/grpc/commit/{}))".format(
+        commit
     )
+    matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
+    # backport commits might not have PiperOrigin-RevId
+    if matches is not None:
+        cl_num = matches.group(1)
+        detail += " ([CL](https://critique.corp.google.com/cl/{}))".format(
+            cl_num
+        )
     return detail
 
 
