@@ -16,7 +16,8 @@
 //
 //
 
-#include "src/core/ext/transport/server_transport.h"
+#include "src/core/ext/transport/http2_server_transport.h"
+
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
