@@ -4772,6 +4772,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
+        "grpc_promise_endpoint",
     ],
 )
 

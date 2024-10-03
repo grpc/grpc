@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/transport/chttp2/http2_client_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 
 #include "src/core/lib/transport/transport.h"
 
