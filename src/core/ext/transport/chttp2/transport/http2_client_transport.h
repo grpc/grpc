@@ -42,7 +42,7 @@ class Http2ClientTransport final : public ClientTransport {
                            grpc_event_engine::experimental::EventEngine>
                            event_engine,
                        [[maybe_unused]] HPackParser hpack_parser,
-                       H [[maybe_unused]] PackCompressor hpack_encoder) {}
+                       [[maybe_unused]] HPackCompressor hpack_encoder) {}
   ~Http2ClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
