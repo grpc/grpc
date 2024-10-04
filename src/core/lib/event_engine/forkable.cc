@@ -26,7 +26,7 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 
 namespace grpc_event_engine {

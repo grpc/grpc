@@ -30,7 +30,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/subprocess.h"
 #include "test/core/test_util/port.h"
 

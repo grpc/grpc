@@ -780,7 +780,7 @@ cdef extern from "grpc/grpc_security_constants.h":
     UDS
     LOCAL_TCP
 
-cdef extern from "src/core/lib/config/config_vars.h" namespace "grpc_core":
+cdef extern from "src/core/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()

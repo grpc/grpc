@@ -20,7 +20,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/resolver/endpoint_addresses.h"

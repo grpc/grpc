@@ -52,8 +52,8 @@ libs:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
-  - src/core/lib/config/config_vars.h
-  - src/core/lib/config/load_config.h
+  - src/core/config/config_vars.h
+  - src/core/config/load_config.h
   - src/core/lib/event_engine/thread_local.h
   - src/core/util/alloc.h
   - src/core/util/construct_destruct.h
@@ -77,9 +77,9 @@ libs:
   - src/core/util/tmpfile.h
   - src/core/util/useful.h
   src:
-  - src/core/lib/config/config_vars.cc
-  - src/core/lib/config/config_vars_non_generated.cc
-  - src/core/lib/config/load_config.cc
+  - src/core/config/config_vars.cc
+  - src/core/config/config_vars_non_generated.cc
+  - src/core/config/load_config.cc
   - src/core/lib/event_engine/thread_local.cc
   - src/core/util/alloc.cc
   - src/core/util/atm.cc
@@ -245,6 +245,7 @@ libs:
   - src/core/client_channel/subchannel_interface_internal.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
+  - src/core/config/core_configuration.h
   - src/core/ext/filters/backend_metrics/backend_metric_filter.h
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
@@ -808,7 +809,6 @@ libs:
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -1295,6 +1295,7 @@ libs:
   - src/core/client_channel/subchannel.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
+  - src/core/config/core_configuration.cc
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -1688,7 +1689,6 @@ libs:
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
-  - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
@@ -2281,6 +2281,7 @@ libs:
   - src/core/client_channel/subchannel_interface_internal.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
+  - src/core/config/core_configuration.h
   - src/core/ext/filters/backend_metrics/backend_metric_filter.h
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
@@ -2390,7 +2391,6 @@ libs:
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -2763,6 +2763,7 @@ libs:
   - src/core/client_channel/subchannel.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
+  - src/core/config/core_configuration.cc
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2849,7 +2850,6 @@ libs:
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
-  - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
@@ -4465,6 +4465,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/config/core_configuration.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -4498,7 +4499,6 @@ libs:
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -4807,6 +4807,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/config/core_configuration.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -4832,7 +4833,6 @@ libs:
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
-  - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
@@ -6787,6 +6787,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/config/core_configuration.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -6816,7 +6817,6 @@ targets:
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
-  - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -7098,6 +7098,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/config/core_configuration.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -7119,7 +7120,6 @@ targets:
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
-  - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc

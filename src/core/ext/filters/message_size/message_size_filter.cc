@@ -26,9 +26,9 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"

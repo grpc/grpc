@@ -25,7 +25,7 @@
 #include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "src/core/util/crash.h"

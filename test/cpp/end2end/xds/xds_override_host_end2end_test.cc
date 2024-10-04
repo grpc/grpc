@@ -22,7 +22,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/time.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session.pb.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"

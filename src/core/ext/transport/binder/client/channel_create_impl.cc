@@ -22,11 +22,11 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/binder/client/binder_connector.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 

@@ -28,11 +28,11 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/pipe.h"

@@ -27,7 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"

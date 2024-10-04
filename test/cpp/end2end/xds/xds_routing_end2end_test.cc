@@ -22,7 +22,7 @@
 
 #include "absl/log/log.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"

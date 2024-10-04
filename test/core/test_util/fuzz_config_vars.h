@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "test/core/test_util/fuzz_config_vars.pb.h"
 
 namespace grpc_core {

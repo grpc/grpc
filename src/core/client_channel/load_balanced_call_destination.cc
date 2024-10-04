@@ -19,8 +19,8 @@
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/lb_metadata.h"
 #include "src/core/client_channel/subchannel.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 
