@@ -1251,7 +1251,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
   delete on_error_;
 }
 
-PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
+PosixEndpointImpl::PosixEndpointImpl(EventHandleRef handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
@@ -1259,10 +1259,10 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
       traced_buffers_(),
-      handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
   PosixSocketWrapper sock(handle->WrappedFd());
+  handle_ = std::move(handle);
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
@@ -1341,11 +1341,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 }
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
-    EventHandle* handle, PosixEngineClosure* on_shutdown,
+    EventHandleRef handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
     const PosixTcpOptions& options) {
-  DCHECK_NE(handle, nullptr);
-  return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
+  DCHECK_NE(handle.get(), nullptr);
+  return std::make_unique<PosixEndpoint>(std::move(handle), on_shutdown,
+                                         std::move(engine),
                                          std::move(allocator), options);
 }
 

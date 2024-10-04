@@ -132,7 +132,7 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
 
 // An upload server.
 typedef struct {
-  EventHandle* em_fd;        // listening fd
+  EventHandleRef em_fd;      // listening fd
   ssize_t read_bytes_total;  // total number of received bytes
   int done;                  // set to 1 when a server finishes serving
   PosixEngineClosure* listen_closure;
@@ -147,7 +147,7 @@ void ServerInit(server* sv) {
 // Created when a new upload request arrives in the server.
 typedef struct {
   server* sv;               // not owned by a single session
-  EventHandle* em_fd;       // fd to read upload bytes
+  EventHandleRef em_fd;     // fd to read upload bytes
   char read_buf[BUF_SIZE];  // buffer to store upload bytes
   PosixEngineClosure* session_read_closure;
 } session;
@@ -218,7 +218,7 @@ void ListenCb(server* sv, absl::Status status) {
   session* se;
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
-  EventHandle* listen_em_fd = sv->em_fd;
+  EventHandle* listen_em_fd = sv->em_fd.get();
 
   if (!status.ok()) {
     ListenShutdownCb(sv);
@@ -281,7 +281,7 @@ int ServerStart(server* sv) {
 
 // An upload client.
 typedef struct {
-  EventHandle* em_fd;
+  EventHandleRef em_fd;
   char write_buf[CLIENT_WRITE_BUF_SIZE];
   ssize_t write_bytes_total;
   // Number of times that the client fills up the write buffer and calls
@@ -453,7 +453,6 @@ void SecondReadCallback(FdChangeData* fdc, absl::Status /*status*/) {
 // point is to have two different function pointers and two different data
 // pointers and make sure that changing both really works.
 TEST_F(EventPollerTest, TestEventPollerHandleChange) {
-  EventHandle* em_fd;
   FdChangeData a, b;
   int flags;
   int sv[2];
@@ -475,7 +474,7 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   flags = fcntl(sv[1], F_GETFL, 0);
   EXPECT_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
 
-  em_fd =
+  EventHandleRef em_fd =
       g_event_poller->CreateHandle(sv[0], "TestEventPollerHandleChange", false);
   EXPECT_NE(em_fd, nullptr);
   // Register the first callback, then make its FD readable
@@ -631,7 +630,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
   PosixEventPoller* poller_;
   PosixEngineClosure* on_read_;
   std::unique_ptr<WakeupFd> wakeup_fd_;
-  EventHandle* handle_;
+  EventHandleRef handle_;
 };
 
 // A helper class to create Fds and drive the polling for these Fds. It
