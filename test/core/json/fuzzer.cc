@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/support/json.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/json.h>
-
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 

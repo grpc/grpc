@@ -32,15 +32,14 @@
 #include <linux/vm_sockets.h>
 #endif
 
+#include <grpc/grpc.h>
+
 #include <string>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"

@@ -19,14 +19,14 @@
 #ifndef GRPCPP_SUPPORT_BYTE_BUFFER_H
 #define GRPCPP_SUPPORT_BYTE_BUFFER_H
 
-#include <vector>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+
+#include <vector>
 
 namespace grpc {
 

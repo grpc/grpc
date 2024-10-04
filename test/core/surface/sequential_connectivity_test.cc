@@ -16,6 +16,12 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -24,14 +30,6 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/host_port.h"

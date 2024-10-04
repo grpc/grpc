@@ -23,6 +23,8 @@
 #define HAVE_ABSEIL
 #endif
 
+#include <grpcpp/ext/otel_plugin.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -33,8 +35,6 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/otel_plugin.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"

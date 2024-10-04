@@ -16,8 +16,13 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <string>
@@ -27,14 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"

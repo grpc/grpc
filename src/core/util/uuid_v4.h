@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_UTIL_UUID_V4_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>

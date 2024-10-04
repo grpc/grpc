@@ -23,6 +23,7 @@
 
 // IWYU pragma: no_include <ares_build.h>
 
+#include <ares.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
@@ -33,12 +34,9 @@
 #include <unordered_set>
 #include <utility>
 
-#include <ares.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"

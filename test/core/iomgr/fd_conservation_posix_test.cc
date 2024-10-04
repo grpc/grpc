@@ -16,12 +16,10 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <sys/resource.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/crash.h"

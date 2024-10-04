@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
 #include <stdint.h>
 #include <sys/types.h>
 
@@ -24,11 +27,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/closure.h"

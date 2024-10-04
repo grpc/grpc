@@ -13,6 +13,13 @@
 // limitations under the License.
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/codegen/slice.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -23,14 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"

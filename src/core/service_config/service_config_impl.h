@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
@@ -27,10 +29,6 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config.h"

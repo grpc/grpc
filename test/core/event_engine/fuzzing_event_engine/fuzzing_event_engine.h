@@ -15,6 +15,11 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 
 #include <atomic>
@@ -34,13 +39,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"

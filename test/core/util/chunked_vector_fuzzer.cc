@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -21,9 +22,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

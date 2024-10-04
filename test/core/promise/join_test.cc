@@ -19,7 +19,6 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/poll.h"
 #include "test/core/promise/poll_matcher.h"
 

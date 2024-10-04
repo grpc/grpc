@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 
+#include "absl/log/check.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"

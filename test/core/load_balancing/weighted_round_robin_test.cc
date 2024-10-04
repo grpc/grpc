@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -36,10 +38,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"

@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <benchmark/benchmark.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <atomic>
 #include <cmath>
 #include <memory>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/debugging/leak_check.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/util/crash.h"

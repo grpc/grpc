@@ -15,6 +15,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -25,10 +28,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
