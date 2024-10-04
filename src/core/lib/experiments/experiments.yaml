@@ -165,12 +165,6 @@
   expiry: 2024/09/09
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: work_serializer_clears_time_cache
-  description:
-    Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/10/01
-  owner: ctiller@google.com
-  test_tags: []
 - name: work_serializer_dispatch
   description:
     Have the work serializer dispatch work to event engine for every callback,
