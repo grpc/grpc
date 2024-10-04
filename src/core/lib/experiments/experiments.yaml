@@ -120,7 +120,7 @@
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
-  expiry: 2024/03/03
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
