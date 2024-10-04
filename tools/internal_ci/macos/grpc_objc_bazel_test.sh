@@ -57,9 +57,9 @@ TEST_TARGETS=(
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
   # TODO: Enable this again once @CronetFramework is working
-  #//src/objective-c/tests:CppCronetTests
-  #//src/objective-c/tests:CronetTests
-  #//src/objective-c/tests:PerfTests
+  //src/objective-c/tests:CppCronetTests
+  //src/objective-c/tests:CronetTests
+  //src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
   # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
   //src/objective-c/tests:EventEngineClientTests
