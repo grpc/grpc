@@ -18,6 +18,9 @@
 
 #include "src/core/util/work_serializer.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 
 #include <memory>
@@ -30,11 +33,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

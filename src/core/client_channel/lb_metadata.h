@@ -15,14 +15,13 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_LB_METADATA_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_LB_METADATA_H
 
+#include <grpc/event_engine/slice.h>
+
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/slice.h>
-
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/lb_policy.h"
 

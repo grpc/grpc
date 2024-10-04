@@ -21,19 +21,7 @@
 //   fires; request is processed at that point
 // - find some deterministic way to exercise adaptive throttler code
 
-#include <deque>
-#include <map>
-#include <thread>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
-
 #include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -41,7 +29,17 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <gtest/gtest.h>
 
+#include <deque>
+#include <map>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"

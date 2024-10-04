@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H
 #define GRPC_SRC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H
 
-#include <stdbool.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdbool.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"

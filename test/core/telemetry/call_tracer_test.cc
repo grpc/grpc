@@ -18,13 +18,12 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
-#include <vector>
-
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
+#include <vector>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

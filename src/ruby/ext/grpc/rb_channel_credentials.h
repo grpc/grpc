@@ -21,9 +21,8 @@
 
 #include <ruby/ruby.h>
 
-#include <stdbool.h>
-
 #include <grpc/grpc_security.h>
+#include <stdbool.h>
 
 /* Initializes the ruby ChannelCredentials class. */
 void Init_grpc_channel_credentials();

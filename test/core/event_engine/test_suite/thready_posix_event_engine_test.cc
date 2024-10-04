@@ -11,11 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <memory>
-
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
+#include <memory>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"

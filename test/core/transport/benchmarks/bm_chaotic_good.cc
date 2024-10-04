@@ -13,12 +13,10 @@
 // limitations under the License.
 
 #include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"

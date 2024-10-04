@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+
 #include <array>
 #include <memory>
 
@@ -21,9 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"

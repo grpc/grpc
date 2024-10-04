@@ -14,10 +14,10 @@
 
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #if defined(GPR_WINDOWS)
 #include "src/core/lib/event_engine/windows/windows_engine.h"

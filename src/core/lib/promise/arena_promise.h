@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <cstddef>
@@ -23,9 +24,6 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"

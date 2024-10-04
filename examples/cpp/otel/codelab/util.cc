@@ -23,11 +23,11 @@
 #define HAVE_ABSEIL
 #endif
 
+#include <grpcpp/grpcpp.h>
+
 #include "opentelemetry/sdk/metrics/view/instrument_selector_factory.h"
 #include "opentelemetry/sdk/metrics/view/meter_selector_factory.h"
 #include "opentelemetry/sdk/metrics/view/view_factory.h"
-
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/codelab/util.h"

@@ -16,13 +16,11 @@
 
 #ifdef GPR_WINDOWS
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"

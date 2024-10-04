@@ -15,10 +15,6 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,7 +22,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/credentials.h"

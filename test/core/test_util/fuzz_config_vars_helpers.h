@@ -15,11 +15,10 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_HELPERS_H
 #define GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_HELPERS_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

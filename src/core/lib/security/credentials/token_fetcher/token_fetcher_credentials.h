@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TOKEN_FETCHER_TOKEN_FETCHER_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TOKEN_FETCHER_TOKEN_FETCHER_CREDENTIALS_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -25,9 +27,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"

@@ -23,7 +23,6 @@
 #if GRPC_IF_NAMETOINDEX == 0 || !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
 
 #include "absl/log/log.h"
-
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_if_nametoindex.h"
 

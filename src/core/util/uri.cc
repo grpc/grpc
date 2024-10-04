@@ -14,11 +14,10 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/uri.h"
 
 #include <ctype.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>

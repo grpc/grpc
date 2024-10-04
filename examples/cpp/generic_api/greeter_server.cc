@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -21,9 +24,6 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/mutex.h"
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

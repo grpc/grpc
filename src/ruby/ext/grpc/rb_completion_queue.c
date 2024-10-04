@@ -20,14 +20,13 @@
 
 #include "rb_completion_queue.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <ruby/thread.h>
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {

@@ -16,15 +16,16 @@
 //
 //
 
+#include <grpc/support/alloc.h>
 #include <inttypes.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <string.h>
-
-#include <grpc/support/alloc.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
+
+#include <grpc/grpc.h>
 
 #include <string>
 
@@ -33,9 +34,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"

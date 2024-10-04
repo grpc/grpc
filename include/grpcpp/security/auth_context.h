@@ -19,11 +19,11 @@
 #ifndef GRPCPP_SECURITY_AUTH_CONTEXT_H
 #define GRPCPP_SECURITY_AUTH_CONTEXT_H
 
-#include <iterator>
-#include <vector>
-
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <iterator>
+#include <vector>
 
 struct grpc_auth_context;
 struct grpc_auth_property;

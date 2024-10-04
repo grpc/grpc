@@ -18,19 +18,17 @@
 
 #include "src/core/lib/security/context/security_context.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <algorithm>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

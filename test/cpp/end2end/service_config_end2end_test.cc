@@ -16,22 +16,7 @@
 //
 //
 
-#include <algorithm>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <set>
-#include <string>
-#include <thread>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -44,7 +29,20 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/validate_service_config.h>
+#include <gtest/gtest.h>
 
+#include <algorithm>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <set>
+#include <string>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/lib/address_utils/parse_address.h"

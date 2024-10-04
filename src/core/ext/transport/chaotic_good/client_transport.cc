@@ -14,6 +14,10 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -27,11 +31,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"

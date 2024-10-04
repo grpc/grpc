@@ -20,7 +20,6 @@
 #include <string>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

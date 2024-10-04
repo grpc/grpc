@@ -18,15 +18,6 @@
 
 #include "test/core/end2end/fixtures/proxy.h"
 
-#include <string.h>
-
-#include <cstddef>
-#include <string>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
@@ -35,7 +26,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <string.h>
 
+#include <cstddef>
+#include <string>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/util/crash.h"

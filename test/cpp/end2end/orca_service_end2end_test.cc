@@ -15,12 +15,6 @@
 //
 
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -31,7 +25,11 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 #include "src/core/util/time.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.pb.h"

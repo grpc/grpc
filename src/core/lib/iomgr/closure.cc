@@ -14,9 +14,9 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/str_format.h"
 
 std::string grpc_closure::DebugString() const {
 #ifdef NDEBUG

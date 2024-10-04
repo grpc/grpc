@@ -24,7 +24,6 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-
 #include "src/core/ext/transport/binder/utils/binder_auto_utils.h"
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"

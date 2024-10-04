@@ -18,15 +18,13 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <memory>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_string_helpers.h"

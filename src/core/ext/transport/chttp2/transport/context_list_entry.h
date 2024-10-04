@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_ENTRY_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
 #include <utility>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/telemetry/tcp_tracer.h"
 

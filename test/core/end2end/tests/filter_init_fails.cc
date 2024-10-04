@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 #include <utility>
 
@@ -23,9 +25,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

@@ -16,6 +16,13 @@
 
 #include "src/core/xds/grpc/xds_client_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <memory>
@@ -30,15 +37,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "upb/base/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -64,6 +62,7 @@
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/base/string_view.h"
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.

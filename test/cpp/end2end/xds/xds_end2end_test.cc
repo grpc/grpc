@@ -18,31 +18,7 @@
 // - mTLS functionality on both client and server
 // - RBAC
 
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <numeric>
-#include <set>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -55,7 +31,29 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
+#include <gtest/gtest.h>
 
+#include <deque>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <set>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"

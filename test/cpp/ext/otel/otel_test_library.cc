@@ -18,6 +18,8 @@
 
 #include "test/cpp/ext/otel/otel_test_library.h"
 
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <memory>
 
@@ -28,9 +30,6 @@
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/telemetry/call_tracer.h"

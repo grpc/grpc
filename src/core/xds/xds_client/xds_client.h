@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -28,11 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
@@ -48,6 +46,7 @@
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 
