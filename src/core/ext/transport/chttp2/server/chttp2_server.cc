@@ -62,6 +62,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -744,7 +745,8 @@ grpc_error_handle Chttp2ServerListener::Create(
   // Create channelz node.
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    auto string_address = EventEngine::ResolvedAddressToString(addr);
+    auto string_address =
+        grpc_event_engine::experimental::ResolvedAddressToString(addr);
     if (!string_address.ok()) {
       return GRPC_ERROR_CREATE(string_address.status().ToString());
     }
@@ -984,7 +986,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixAbstractUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
       absl::StatusOr<EventEngine::ResolvedAddress> result_or =
-          EventEngine::URIToResolvedAddress(parsed_addr);
+          grpc_event_engine::experimental::URIToResolvedAddress(parsed_addr);
       RETURN_IF_NOT_OK(result_or);
       results_or->push_back(*result_or);
     } else {
@@ -1011,7 +1013,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         RETURN_IF_NOT_OK(iomgr_results_or);
         for (const auto& addr : *iomgr_results_or) {
           results_or->push_back(
-              EventEngine::ResolvedAddress(addr.addr, addr.len));
+              grpc_event_engine::experimental::CreateResolvedAddress(addr));
         }
       }
     }
@@ -1020,8 +1022,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     for (auto& addr : *results_or) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
-      if (*port_num != -1 && EventEngine::ResolvedAddressGetPort(addr) == 0) {
-        EventEngine::ResolvedAddressGetPort(addr, *port_num);
+      if (*port_num != -1 &&
+          grpc_event_engine::experimental::ResolvedAddressGetPort(addr) == 0) {
+        grpc_event_engine::experimental::ResolvedAddressSetPort(addr,
+                                                                *port_num);
       }
       int port_temp = -1;
       error = Chttp2ServerListener::Create(server, addr, args, args_modifier,
