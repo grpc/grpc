@@ -98,11 +98,11 @@
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-#define RETURN_IF_NOT_OK(status_or)                         \
-  do {                                                      \
-    if (!status_or.ok()) {                                  \
-      return absl_status_to_grpc_error(status_or.status()); \
-    }                                                       \
+#define RETURN_IF_NOT_OK(status_or)                           \
+  do {                                                        \
+    if (!(status_or).ok()) {                                  \
+      return absl_status_to_grpc_error((status_or).status()); \
+    }                                                         \
   } while (0)
 
 namespace grpc_core {
@@ -992,6 +992,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       results_or->push_back(*result_or);
     } else {
       if (IsEventEngineDnsNonClientChannelEnabled()) {
+        std::cout << "new path" << std::endl;
         absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
             args.GetObjectRef<EventEngine>()->GetDNSResolver(
                 EventEngine::DNSResolver::ResolverOptions());
@@ -1007,6 +1008,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                 parsed_addr, "https");
         done.WaitForNotification();
       } else {
+        std::cout << "old path" << std::endl;
         // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
         // is fully enabled.
         absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results_or =
