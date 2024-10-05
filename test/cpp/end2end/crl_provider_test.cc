@@ -74,8 +74,20 @@ constexpr char kMessage[] = "Hello";
 // global state
 TEST(DirectoryReloaderCrlProviderTestNoFixture, Construction) {
   auto provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
-      kCrlDirectoryPath, std::chrono::seconds(60), nullptr);
+      /*directory=*/kCrlDirectoryPath,
+      /*refresh_duration=*/std::chrono::seconds(60),
+      /*reload_error_callback=*/nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_FALSE((*provider)->DenyUndetermined());
+}
+
+TEST(DirectoryReloaderCrlProviderTestNoFixture, DenyUndeterminedTrue) {
+  auto provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
+      /*directory=*/kCrlDirectoryPath,
+      /*refresh_duration=*/std::chrono::seconds(60),
+      /*reload_error_callback=*/nullptr, /*deny_undetermined=*/true);
+  ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_TRUE((*provider)->DenyUndetermined());
 }
 
 class CrlProviderTest : public ::testing::Test {
