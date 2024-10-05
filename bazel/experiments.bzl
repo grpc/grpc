@@ -142,10 +142,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
-                "work_serializer_dispatch",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
                 "local_connector_secure",
             ],
             "endpoint_test": [
