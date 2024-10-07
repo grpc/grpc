@@ -17890,6 +17890,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_client_transport_test
+  src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -17941,6 +17943,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_server_transport_test
+  src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc

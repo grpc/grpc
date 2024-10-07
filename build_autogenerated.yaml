@@ -12076,6 +12076,8 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
@@ -12087,6 +12089,8 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -12106,6 +12110,8 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
@@ -12117,6 +12123,8 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
