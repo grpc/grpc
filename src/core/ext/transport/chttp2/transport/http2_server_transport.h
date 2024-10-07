@@ -43,6 +43,7 @@ class Http2ServerTransport final : public ServerTransport {
           event_engine,
       GRPC_UNUSED HPackParser hpack_parser,
       GRPC_UNUSED HPackCompressor hpack_encoder) {}
+  ~Http2ServerTransport() override {};
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }

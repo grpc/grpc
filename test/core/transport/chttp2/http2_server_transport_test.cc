@@ -35,8 +35,6 @@ namespace grpc_core {
 namespace http2 {
 
 TEST(Http2ClientTransportTest, TestHttp2ServerransportObjectCreation) {
-  LOG(INFO) << " Begin TestHttp2ServerransportObjectCreation";
-
   MockPromiseEndpoint control_endpoint(1);
   MockPromiseEndpoint data_endpoint(2);
   std::shared_ptr<EventEngine> event_engine =
@@ -49,7 +47,6 @@ TEST(Http2ClientTransportTest, TestHttp2ServerransportObjectCreation) {
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr),
       event_engine, HPackParser(), HPackCompressor());
-  LOG(INFO) << " End TestHttp2ServerransportObjectCreation";
 }
 
 }  // namespace http2

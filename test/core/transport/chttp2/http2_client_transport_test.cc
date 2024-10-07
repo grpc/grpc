@@ -34,8 +34,6 @@ namespace http2 {
 // Add namespace
 
 TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
-  LOG(INFO) << " Begin TestHttp2ClientTransportObjectCreation";
-
   MockPromiseEndpoint control_endpoint(1);
   MockPromiseEndpoint data_endpoint(2);
   std::shared_ptr<EventEngine> event_engine =
@@ -48,7 +46,6 @@ TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr),
       event_engine, HPackParser(), HPackCompressor());
-  LOG(INFO) << " End TestHttp2ClientTransportObjectCreation";
 }
 
 }  // namespace http2
