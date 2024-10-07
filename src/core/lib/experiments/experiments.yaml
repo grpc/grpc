@@ -109,7 +109,7 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/09/15
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: pick_first_new
@@ -120,7 +120,7 @@
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
-  expiry: 2024/09/15
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
@@ -162,7 +162,7 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/09/09
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: work_serializer_dispatch
