@@ -993,7 +993,6 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       results_or->push_back(*result_or);
     } else {
       if (IsEventEngineDnsNonClientChannelEnabled()) {
-        std::cout << "new path" << std::endl;
         absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
             args.GetObjectRef<EventEngine>()->GetDNSResolver(
                 EventEngine::DNSResolver::ResolverOptions());
@@ -1009,7 +1008,6 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                 parsed_addr, "https");
         done.WaitForNotification();
       } else {
-        std::cout << "old path" << std::endl;
         // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
         // is fully enabled.
         absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results_or =
@@ -1033,10 +1031,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                                 *port_num);
       }
       int port_temp = -1;
-      std::cout << "before Create" << std::endl;
       error = Chttp2ServerListener::Create(server, addr, args, args_modifier,
                                            &port_temp);
-      std::cout << "after Create" << std::endl;
       if (!error.ok()) {
         error_list.push_back(error);
       } else {
