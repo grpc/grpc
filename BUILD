@@ -4979,6 +4979,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/admin/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_config_cluster_cc_proto",
+    deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_cluster_upb",
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
@@ -5114,9 +5119,24 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_load_balancing_policies_round_robin_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/round_robin/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_load_balancing_policies_pick_first_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5124,9 +5144,19 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_load_balancing_policies_ring_hash_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_ring_hash_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_load_balancing_policies_wrr_locality_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5207,6 +5237,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "envoy_type_upb",
     deps = ["@envoy_api//envoy/type/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "xds_type_cc_proto",
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(
