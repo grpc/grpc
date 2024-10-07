@@ -196,9 +196,7 @@ class CallSpine final : public Party {
   CallSpine(ClientMetadataHandle client_initial_metadata,
             RefCountedPtr<Arena> arena)
       : Party(std::move(arena)),
-        call_filters_(std::move(client_initial_metadata)) {
-    LOG(INFO) << "CallSpine::CallSpine: " << this;
-  }
+        call_filters_(std::move(client_initial_metadata)) {}
 
   // Call filters/pipes part of the spine
   CallFilters call_filters_;

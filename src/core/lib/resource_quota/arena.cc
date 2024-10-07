@@ -73,13 +73,11 @@ RefCountedPtr<Arena> Arena::Create(size_t initial_size,
 }
 
 Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
-    : RefCounted("arena"),
-      initial_zone_size_(initial_size),
+    : initial_zone_size_(initial_size),
       total_used_(ArenaOverhead() +
                   GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
                       arena_detail::BaseArenaContextTraits::ContextSize())),
       arena_factory_(std::move(arena_factory)) {
-  LOG(INFO) << "Arena::Arena: " << this << " initial_size: " << initial_size;
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
        ++i) {
     contexts()[i] = nullptr;

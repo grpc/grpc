@@ -392,7 +392,6 @@ void ChaoticGoodServerTransport::AbortWithError() {
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
   ReleasableMutexLock lock(&mu_);
-  LOG(INFO) << "CHAOTIC_GOOD " << this << " AbortWithError";
   if (aborted_with_error_) return;
   aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
