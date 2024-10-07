@@ -27,7 +27,7 @@ namespace grpc_core {
 namespace http2 {
 
 TEST(Http2ClientTransportTest, TestIfTestFails) {
-  CHECK(true);  // WIP - Do Not Review yet.
+  CHECK(false);  // WIP - Do Not Review yet.
 }
 
 }  // namespace http2
