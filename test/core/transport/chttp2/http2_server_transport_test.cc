@@ -33,6 +33,7 @@ using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
 namespace http2 {
+namespace testing {
 
 TEST(Http2ClientTransportTest, TestHttp2ServerransportObjectCreation) {
   MockPromiseEndpoint control_endpoint(1);
@@ -49,6 +50,7 @@ TEST(Http2ClientTransportTest, TestHttp2ServerransportObjectCreation) {
       event_engine, HPackParser(), HPackCompressor());
 }
 
+}  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
 
