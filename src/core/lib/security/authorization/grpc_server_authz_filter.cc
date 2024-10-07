@@ -14,6 +14,8 @@
 
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -22,9 +24,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"

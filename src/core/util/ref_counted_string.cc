@@ -14,15 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/ref_counted_string.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <new>
-
-#include <grpc/support/alloc.h>
 
 namespace grpc_core {
 

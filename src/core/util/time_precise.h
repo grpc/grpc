@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_UTIL_TIME_PRECISE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/time.h>
 
 // Depending on the platform gpr_get_cycle_counter() can have a resolution as

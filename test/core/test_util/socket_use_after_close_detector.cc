@@ -20,12 +20,13 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
-
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <unistd.h>
+
+#include <grpc/support/sync.h>
 
 #include <algorithm>
 #include <memory>
@@ -35,9 +36,6 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/test_util/port.h"
 

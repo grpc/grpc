@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
@@ -31,12 +35,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"

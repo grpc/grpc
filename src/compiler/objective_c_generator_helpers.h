@@ -19,9 +19,9 @@
 #ifndef GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 
-#include <map>
-
 #include <google/protobuf/compiler/objectivec/names.h>
+
+#include <map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"

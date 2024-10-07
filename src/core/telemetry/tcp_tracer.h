@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 #define GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -26,8 +27,6 @@
 
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

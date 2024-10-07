@@ -19,7 +19,6 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"

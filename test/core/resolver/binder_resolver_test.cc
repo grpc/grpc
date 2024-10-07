@@ -20,7 +20,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -43,10 +42,9 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/resolver/resolver_registry.h"
 

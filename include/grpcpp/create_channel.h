@@ -19,13 +19,13 @@
 #ifndef GRPCPP_CREATE_CHANNEL_H
 #define GRPCPP_CREATE_CHANNEL_H
 
-#include <memory>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
 
 namespace grpc {
 /// Create a new \a Channel pointing to \a target.

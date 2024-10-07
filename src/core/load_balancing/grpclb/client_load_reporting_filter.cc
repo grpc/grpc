@@ -18,15 +18,14 @@
 
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <type_traits>
 #include <utility>
 
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"

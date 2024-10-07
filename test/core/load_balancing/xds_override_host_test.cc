@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -33,10 +35,6 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/lb_policy.h"

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpcpp/support/global_callback_hook.h>
+
 #include <memory>
 
 #include "absl/base/no_destructor.h"
 #include "absl/log/check.h"
-
-#include <grpcpp/support/global_callback_hook.h>
 
 namespace grpc {
 

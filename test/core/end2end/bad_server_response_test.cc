@@ -16,17 +16,6 @@
 //
 //
 
-#include <inttypes.h>
-#include <limits.h>
-#include <string.h>
-
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -38,7 +27,16 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <string.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"

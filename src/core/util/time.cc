@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/time.h"
+
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include <atomic>
 #include <chrono>
@@ -25,9 +26,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/util/no_destruct.h"
 
 // IWYU pragma: no_include <ratio>

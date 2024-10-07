@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <utility>
 #include <vector>
@@ -24,9 +26,6 @@
 #include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"

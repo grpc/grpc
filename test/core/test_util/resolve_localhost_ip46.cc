@@ -18,15 +18,14 @@
 
 #include "test/core/test_util/resolve_localhost_ip46.h"
 
+#include <grpc/support/sync.h>
+
 #include <memory>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"

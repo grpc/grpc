@@ -18,14 +18,13 @@
 
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"

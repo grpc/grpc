@@ -18,7 +18,6 @@
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -26,7 +25,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy.h"

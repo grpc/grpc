@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpcpp/grpcpp.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
 
 #include "examples/protos/helloworld.grpc.pb.h"
-
-#include <grpcpp/grpcpp.h>
 
 using grpc::Channel;
 using grpc::ClientContext;

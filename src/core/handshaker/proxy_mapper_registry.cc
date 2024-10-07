@@ -18,14 +18,14 @@
 
 #include "src/core/handshaker/proxy_mapper_registry.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

@@ -20,7 +20,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/ref_counted.h"

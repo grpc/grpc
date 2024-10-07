@@ -27,6 +27,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
@@ -43,10 +45,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"

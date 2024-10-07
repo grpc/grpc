@@ -18,7 +18,6 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_core {

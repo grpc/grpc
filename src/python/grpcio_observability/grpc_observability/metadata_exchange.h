@@ -30,7 +30,6 @@
 #include "absl/strings/string_view.h"
 #include "constants.h"
 #include "python_observability_context.h"
-
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_observability {

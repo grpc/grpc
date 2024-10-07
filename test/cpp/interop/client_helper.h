@@ -19,13 +19,13 @@
 #ifndef GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
 #define GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
 
-#include <functional>
-#include <memory>
-#include <unordered_map>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
+
+#include <functional>
+#include <memory>
+#include <unordered_map>
 
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/transport.h"

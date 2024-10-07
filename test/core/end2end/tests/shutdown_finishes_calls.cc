@@ -16,13 +16,12 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_config.h"

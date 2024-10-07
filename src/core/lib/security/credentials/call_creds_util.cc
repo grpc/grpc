@@ -16,16 +16,14 @@
 
 #include "src/core/lib/security/credentials/call_creds_util.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"

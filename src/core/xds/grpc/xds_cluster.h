@@ -23,7 +23,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"

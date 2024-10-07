@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_SECURITY_POLICY_SETTING_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_SECURITY_POLICY_SETTING_H
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/binder_security_policy.h>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/strings/string_view.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_binder {

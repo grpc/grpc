@@ -13,11 +13,11 @@
 // limitations under the License.
 //
 
-#include <string>
-#include <vector>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <string>
+#include <vector>
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"

@@ -14,12 +14,11 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"

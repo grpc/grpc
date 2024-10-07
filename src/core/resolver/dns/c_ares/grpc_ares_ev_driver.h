@@ -19,14 +19,12 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 #define GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
 
-#include <memory>
-
 #include <ares.h>
-
-#include "absl/base/thread_annotations.h"
-
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"

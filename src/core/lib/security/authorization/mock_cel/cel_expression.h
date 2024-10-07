@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPRESSION_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPRESSION_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 

@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CPP_SERVER_EXTERNAL_CONNECTION_ACCEPTOR_IMPL_H
 #define GRPC_SRC_CPP_SERVER_EXTERNAL_CONNECTION_ACCEPTOR_IMPL_H
 
-#include <memory>
-#include <string>
-
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
+
+#include <memory>
+#include <string>
 
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/util/sync.h"

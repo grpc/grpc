@@ -19,11 +19,11 @@
 #ifndef GRPCPP_SECURITY_AUTH_METADATA_PROCESSOR_H
 #define GRPCPP_SECURITY_AUTH_METADATA_PROCESSOR_H
 
-#include <map>
-
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <map>
 
 namespace grpc {
 

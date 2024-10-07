@@ -21,16 +21,14 @@
 
 #ifdef GPR_WINDOWS
 
-#include <string.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
+#include <string.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/thd.h"

@@ -18,6 +18,9 @@
 
 #include "src/core/lib/debug/trace.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -28,10 +31,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/util/glob.h"
 

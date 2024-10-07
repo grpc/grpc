@@ -16,18 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/backup_poller.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"

@@ -14,6 +14,7 @@
 
 #include "client_call_tracer.h"
 
+#include <grpc/slice.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -25,9 +26,6 @@
 #include "metadata_exchange.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 

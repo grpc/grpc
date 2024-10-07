@@ -17,7 +17,6 @@
 #include <string.h>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
 bool squelch = false;

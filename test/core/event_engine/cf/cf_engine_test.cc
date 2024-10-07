@@ -16,6 +16,9 @@
 
 #ifdef GPR_APPLE
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+
 #include <thread>
 
 #include "absl/log/check.h"
@@ -23,10 +26,6 @@
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"

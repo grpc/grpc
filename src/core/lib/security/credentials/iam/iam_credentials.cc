@@ -18,6 +18,7 @@
 
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <memory>
@@ -26,9 +27,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"

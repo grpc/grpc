@@ -20,12 +20,6 @@
 
 #include "rb_compression_options.h"
 
-#include <string.h>
-
-#include "rb_byte_buffer.h"
-#include "rb_grpc.h"
-#include "rb_grpc_imports.generated.h"
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -33,6 +27,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
+
+#include "rb_byte_buffer.h"
+#include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 static VALUE grpc_rb_cCompressionOptions = Qnil;
 

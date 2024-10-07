@@ -16,14 +16,12 @@
 //
 //
 
-#include <memory>
-
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"

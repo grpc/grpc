@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 
 namespace grpc_core {

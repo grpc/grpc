@@ -14,12 +14,12 @@
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace chaotic_good {

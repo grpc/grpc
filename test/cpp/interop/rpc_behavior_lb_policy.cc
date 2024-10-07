@@ -18,11 +18,10 @@
 
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/util/json/json_args.h"

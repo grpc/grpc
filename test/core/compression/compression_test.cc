@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/compression.h>
+#include <grpc/slice.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -23,10 +25,6 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/slice.h>
-
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 

@@ -14,15 +14,14 @@
 
 #include "src/core/lib/promise/mpsc.h"
 
+#include <grpc/support/log.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"

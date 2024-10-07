@@ -21,12 +21,11 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
 
-#include "absl/log/check.h"
+#include <sstream>
 
+#include "absl/log/check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"

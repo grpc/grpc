@@ -22,7 +22,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "test/core/test_util/test_config.h"
 
 static constexpr absl::string_view kCrlDirectory =

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
@@ -25,11 +27,8 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 
-#include <grpcpp/grpcpp.h>
-
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
-
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #else
 #include "health.grpc.pb.h"

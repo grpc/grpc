@@ -18,6 +18,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <memory>
@@ -25,9 +26,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"

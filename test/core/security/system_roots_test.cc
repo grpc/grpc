@@ -16,9 +16,8 @@
 //
 //
 
-#include <stdio.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
 
 #if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
     defined(GPR_WINDOWS)
@@ -27,12 +26,11 @@
 #include <sys/param.h>
 #endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
 
-#include "gtest/gtest.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "gtest/gtest.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
