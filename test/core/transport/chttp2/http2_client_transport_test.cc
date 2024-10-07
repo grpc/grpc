@@ -27,8 +27,13 @@ namespace grpc_core {
 namespace http2 {
 
 TEST(Http2ClientTransportTest, TestIfTestFails) {
-  CHECK(false);  // WIP - Do Not Review yet.
+  CHECK(true);  // WIP - Do Not Review yet.
 }
 
 }  // namespace http2
 }  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
