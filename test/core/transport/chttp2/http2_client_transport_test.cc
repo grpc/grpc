@@ -18,8 +18,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
