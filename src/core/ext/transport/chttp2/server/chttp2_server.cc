@@ -983,6 +983,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
+    grpc_error_handle error;
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixAbstractUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
@@ -1021,8 +1022,9 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       }
     }
     RETURN_IF_NOT_OK(results_or);
+    std::cout << results_or->size() << std::endl;
     // Create a listener for each resolved address.
-    for (auto& addr : *results_or) {
+    for (EventEngine::ResolvedAddress& addr : *results_or) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
       if (*port_num != -1 &&
@@ -1031,8 +1033,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                                 *port_num);
       }
       int port_temp = -1;
+      std::cout << "before Create" << std::endl;
       error = Chttp2ServerListener::Create(server, addr, args, args_modifier,
                                            &port_temp);
+      std::cout << "after Create" << std::endl;
       if (!error.ok()) {
         error_list.push_back(error);
       } else {
