@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '~> 1.20240116.2'
+  abseil_version = '~> 1.20240722.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -330,6 +330,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.cc',
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                      'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc',
+                      'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.cc',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                       'src/core/ext/transport/chttp2/transport/context_list_entry.h',
@@ -1190,6 +1192,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                       'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c',
                       'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
+                      'src/core/filter/blackboard.cc',
+                      'src/core/filter/blackboard.h',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                       'src/core/handshaker/handshaker.cc',
@@ -2152,6 +2156,8 @@ Pod::Spec.new do |s|
                       'src/core/xds/xds_client/lrs_client.h',
                       'src/core/xds/xds_client/xds_api.cc',
                       'src/core/xds/xds_client/xds_api.h',
+                      'src/core/xds/xds_client/xds_backend_metric_propagation.cc',
+                      'src/core/xds/xds_client/xds_backend_metric_propagation.h',
                       'src/core/xds/xds_client/xds_bootstrap.cc',
                       'src/core/xds/xds_client/xds_bootstrap.h',
                       'src/core/xds/xds_client/xds_channel_args.h',
@@ -2444,6 +2450,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                               'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                               'src/core/ext/transport/chttp2/transport/decode_huff.h',
@@ -2958,6 +2965,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.h',
                               'src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h',
                               'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
+                              'src/core/filter/blackboard.h',
                               'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                               'src/core/handshaker/handshaker.h',
                               'src/core/handshaker/handshaker_factory.h',
@@ -3460,6 +3468,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_transport_grpc.h',
                               'src/core/xds/xds_client/lrs_client.h',
                               'src/core/xds/xds_client/xds_api.h',
+                              'src/core/xds/xds_client/xds_backend_metric_propagation.h',
                               'src/core/xds/xds_client/xds_bootstrap.h',
                               'src/core/xds/xds_client/xds_channel_args.h',
                               'src/core/xds/xds_client/xds_client.h',

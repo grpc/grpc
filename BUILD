@@ -2059,6 +2059,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
@@ -2980,6 +2981,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "generic_stub",
+    hdrs = [
+        "include/grpcpp/generic/generic_stub.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "generic_stub_internal",
+    ],
+)
+
+grpc_cc_library(
     name = "generic_stub_callback",
     hdrs = [
         "include/grpcpp/generic/generic_stub_callback.h",
@@ -2988,6 +3001,18 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "generic_stub_internal",
+    ],
+)
+
+grpc_cc_library(
+    name = "async_generic_service",
+    hdrs = [
+        "include/grpcpp/generic/async_generic_service.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++_public_hdrs",
     ],
 )
 
@@ -3799,6 +3824,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_spine",
@@ -4379,6 +4405,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
+        "//src/core:latent_see",
         "//src/core:map",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",
@@ -4481,6 +4508,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:env",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
@@ -4488,6 +4516,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/core:xds_backend_metric_propagation",
     ],
 )
 
@@ -4777,6 +4806,7 @@ grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
+        "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.cc",
@@ -4790,6 +4820,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
+        "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.h",

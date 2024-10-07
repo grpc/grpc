@@ -14,6 +14,8 @@
 
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -22,9 +24,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -99,6 +99,8 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
 
 absl::Status GrpcServerAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, GrpcServerAuthzFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "GrpcServerAuthzFilter::Call::OnClientInitialMetadata");
   if (!filter->IsAuthorized(md)) {
     return absl::PermissionDeniedError("Unauthorized RPC request rejected.");
   }

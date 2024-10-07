@@ -14,13 +14,11 @@
 
 #include "src/core/lib/iomgr/resolved_address.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 
 // IWYU pragma: no_include <sys/socket.h>

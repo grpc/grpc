@@ -267,6 +267,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
@@ -781,6 +782,7 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.h
   - src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h
+  - src/core/filter/blackboard.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -1259,6 +1261,7 @@ libs:
   - src/core/xds/grpc/xds_transport_grpc.h
   - src/core/xds/xds_client/lrs_client.h
   - src/core/xds/xds_client/xds_api.h
+  - src/core/xds/xds_client/xds_backend_metric_propagation.h
   - src/core/xds/xds_client/xds_bootstrap.h
   - src/core/xds/xds_client/xds_channel_args.h
   - src/core/xds/xds_client/xds_client.h
@@ -1315,6 +1318,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
+  - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -1661,6 +1665,7 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
   - src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
+  - src/core/filter/blackboard.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
@@ -2080,6 +2085,7 @@ libs:
   - src/core/xds/grpc/xds_transport_grpc.cc
   - src/core/xds/xds_client/lrs_client.cc
   - src/core/xds/xds_client/xds_api.cc
+  - src/core/xds/xds_client/xds_backend_metric_propagation.cc
   - src/core/xds/xds_client/xds_bootstrap.cc
   - src/core/xds/xds_client/xds_client.cc
   deps:
@@ -2290,6 +2296,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
@@ -2357,6 +2364,7 @@ libs:
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.h
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.h
+  - src/core/filter/blackboard.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -2771,6 +2779,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
+  - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2817,6 +2826,7 @@ libs:
   - src/core/ext/upb-gen/validate/validate.upb_minitable.c
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  - src/core/filter/blackboard.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
@@ -4465,6 +4475,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/filter/blackboard.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -4801,6 +4812,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/filter/blackboard.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
@@ -6276,6 +6288,55 @@ targets:
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
+- name: blackboard_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/filter/blackboard.h
+  - src/core/lib/address_utils/sockaddr_utils.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/surface/channel_stack_type.h
+  - src/core/resolver/endpoint_addresses.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/avl.h
+  - src/core/util/down_cast.h
+  - src/core/util/dual_ref_counted.h
+  - src/core/util/orphanable.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ref_counted_string.h
+  - src/core/util/time.h
+  - src/core/util/unique_type_name.h
+  - src/core/util/uri.h
+  src:
+  - src/core/filter/blackboard.cc
+  - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/surface/channel_stack_type.cc
+  - src/core/resolver/endpoint_addresses.cc
+  - src/core/util/ref_counted_string.cc
+  - src/core/util/time.cc
+  - src/core/util/uri.cc
+  - test/core/filters/blackboard_test.cc
+  deps:
+  - gtest
+  - absl/base:config
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: buffer_list_test
   gtest: true
   build: test
@@ -6736,6 +6797,7 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/filter/blackboard.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
   - src/core/handshaker/proxy_mapper.h
@@ -7041,6 +7103,7 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -21499,6 +21562,8 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/scoped_env_var.h
   - test/core/xds/xds_client_test_peer.h
   - test/core/xds/xds_transport_fake.h
@@ -21506,8 +21571,11 @@ targets:
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/cpp/client/global_callback_hook.cc
   - src/cpp/util/status.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/xds/xds_client_test.cc
   - test/core/xds/xds_transport_fake.cc
   deps:

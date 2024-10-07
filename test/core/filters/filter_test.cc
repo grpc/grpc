@@ -14,6 +14,8 @@
 
 #include "test/core/filters/filter_test.h"
 
+#include <grpc/grpc.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -24,9 +26,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/timer_manager.h"

@@ -383,7 +383,7 @@ def _create_portability_test_jobs(
         configs=["dbg"],
         platforms=["windows"],
         arch="default",
-        compiler="cmake_ninja_vs2019",
+        compiler="cmake_ninja_vs2022",
         labels=["portability", "corelang"],
         extra_args=extra_args,
         inner_jobs=inner_jobs,

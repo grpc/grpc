@@ -15,11 +15,11 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
@@ -54,6 +54,20 @@ class MockEndpoint
 };
 
 struct MockPromiseEndpoint {
+  explicit MockPromiseEndpoint(int port) {
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
+      EXPECT_CALL(*endpoint, GetPeerAddress)
+          .WillRepeatedly(
+              [peer_address =
+                   std::make_shared<grpc_event_engine::experimental::
+                                        EventEngine::ResolvedAddress>(
+                       grpc_event_engine::experimental::URIToResolvedAddress(
+                           absl::StrCat("ipv4:127.0.0.1:", port))
+                           .value())]()
+                  -> const grpc_event_engine::experimental::EventEngine::
+                      ResolvedAddress& { return *peer_address; });
+    }
+  }
   ::testing::StrictMock<MockEndpoint>* endpoint =
       new ::testing::StrictMock<MockEndpoint>();
   PromiseEndpoint promise_endpoint = PromiseEndpoint(

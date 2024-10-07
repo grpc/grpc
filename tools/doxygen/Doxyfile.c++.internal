@@ -1221,6 +1221,8 @@ src/core/ext/transport/chttp2/transport/bin_decoder.cc \
 src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
+src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
+src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list_entry.h \
@@ -2081,6 +2083,8 @@ src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
 src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h \
 src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h \
+src/core/filter/blackboard.cc \
+src/core/filter/blackboard.h \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.h \
 src/core/handshaker/handshaker.cc \
@@ -3044,6 +3048,8 @@ src/core/xds/xds_client/lrs_client.cc \
 src/core/xds/xds_client/lrs_client.h \
 src/core/xds/xds_client/xds_api.cc \
 src/core/xds/xds_client/xds_api.h \
+src/core/xds/xds_client/xds_backend_metric_propagation.cc \
+src/core/xds/xds_client/xds_backend_metric_propagation.h \
 src/core/xds/xds_client/xds_bootstrap.cc \
 src/core/xds/xds_client/xds_bootstrap.h \
 src/core/xds/xds_client/xds_channel_args.h \

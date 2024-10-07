@@ -23,13 +23,13 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
@@ -42,6 +42,15 @@ inline bool LrsServersEqual(
   if (lrs_server2 == nullptr) return false;
   // Neither one is null, so compare them.
   return *lrs_server1 == *lrs_server2;
+}
+
+inline bool LrsBackendMetricPropagationEqual(
+    const RefCountedPtr<const BackendMetricPropagation>& p1,
+    const RefCountedPtr<const BackendMetricPropagation>& p2) {
+  if (p1 == nullptr) return p2 == nullptr;
+  if (p2 == nullptr) return false;
+  // Neither one is null, so compare them.
+  return *p1 == *p2;
 }
 
 struct XdsClusterResource : public XdsResourceType::ResourceData {
@@ -82,6 +91,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   // The LRS server to use for load reporting.
   // If null, load reporting will be disabled.
   std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
+  // The set of metrics to propagate from ORCA to LRS.
+  RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
 
   // Tls Context used by clients
   CommonTlsContext common_tls_context;
@@ -103,6 +114,9 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
            LrsServersEqual(lrs_load_reporting_server,
                            other.lrs_load_reporting_server) &&
+           LrsBackendMetricPropagationEqual(
+               lrs_backend_metric_propagation,
+               other.lrs_backend_metric_propagation) &&
            common_tls_context == other.common_tls_context &&
            connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&

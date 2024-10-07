@@ -14,14 +14,15 @@
 // limitations under the License.
 //
 
-#include <memory>
-#include <string>
-#include <utility>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -30,11 +31,6 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
@@ -68,6 +64,8 @@
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
@@ -1113,7 +1111,7 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
 }
 
 //
-// LRS server tests
+// LRS tests
 //
 
 using LrsTest = XdsClusterTest;
@@ -1158,6 +1156,92 @@ TEST_F(LrsTest, NotSelfConfigSource) {
             "errors validating Cluster resource: ["
             "field:lrs_server error:ConfigSource is not self]")
       << decode_result.resource.status();
+}
+
+TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.foo");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            *xds_client_->bootstrap().servers().front());
+  ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
+  EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(), "{}");
+}
+
+TEST_F(LrsTest, Propagation) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.foo");
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.bar");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  cluster.add_lrs_report_endpoint_metrics("mem_utilization");
+  cluster.add_lrs_report_endpoint_metrics("application_utilization");
+  cluster.add_lrs_report_endpoint_metrics("unknown_field");
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            *xds_client_->bootstrap().servers().front());
+  ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
+  EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
+            "{cpu_utilization,mem_utilization,application_utilization,"
+            "named_metrics.bar,named_metrics.foo}");
+}
+
+TEST_F(LrsTest, PropagationNamedMetricsAll) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.*");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            *xds_client_->bootstrap().servers().front());
+  ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
+  EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
+            "{cpu_utilization,named_metrics.*}");
 }
 
 //

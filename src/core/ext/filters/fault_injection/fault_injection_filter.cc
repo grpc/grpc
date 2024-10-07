@@ -14,10 +14,10 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -35,9 +35,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/status.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"

@@ -18,14 +18,12 @@
 
 #include "test/core/test_util/histogram.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <math.h>
 #include <stddef.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/useful.h"
 
 // Histograms are stored with exponentially increasing bucket sizes.

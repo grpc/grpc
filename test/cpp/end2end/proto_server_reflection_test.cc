@@ -16,12 +16,7 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
 #include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -32,6 +27,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
+
+#include <memory>
+#include <vector>
 
 #include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
 #include "src/proto/grpc/reflection/v1/reflection.pb.h"

@@ -18,16 +18,15 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <cstdint>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"

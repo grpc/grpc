@@ -16,6 +16,14 @@
 
 #include "src/core/server/server.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,16 +44,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -1075,8 +1073,10 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args) {
   InterceptionChainBuilder builder(args);
-  builder.AddOnClientInitialMetadata(
-      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
+  // TODO(ctiller): find a way to avoid adding a server ref per call
+  builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
+    self->SetRegisteredMethodOnMetadata(md);
+  });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
   return builder.Build(

@@ -28,7 +28,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
-
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"

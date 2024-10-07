@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
@@ -29,10 +32,6 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

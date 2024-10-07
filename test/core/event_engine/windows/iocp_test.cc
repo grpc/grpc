@@ -14,19 +14,17 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <thread>
-
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log_windows.h>
 #include <gtest/gtest.h>
+
+#include <thread>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log_windows.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"

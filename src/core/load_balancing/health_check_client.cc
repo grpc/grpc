@@ -14,6 +14,11 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -31,15 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
@@ -62,6 +58,8 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/work_serializer.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 

@@ -24,7 +24,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
 #include "src/core/util/crash.h"
 
 namespace grpc_binder {

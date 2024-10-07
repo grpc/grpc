@@ -14,15 +14,14 @@
 // limitations under the License.
 //
 
-#include <string>
-#include <vector>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 
+#include <string>
+#include <vector>
+
+#include "absl/log/check.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc {

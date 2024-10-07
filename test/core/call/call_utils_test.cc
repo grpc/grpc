@@ -14,11 +14,11 @@
 
 #include "src/core/lib/surface/call_utils.h"
 
+#include <grpc/grpc.h>
+
 #include <initializer_list>
 
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
 
 namespace grpc_core {
 

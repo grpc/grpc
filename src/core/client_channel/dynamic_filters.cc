@@ -14,10 +14,9 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/dynamic_filters.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <new>
@@ -26,7 +25,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -139,8 +137,10 @@ void DynamicFilters::Call::IncrementRefCount(const DebugLocation& /*location*/,
 namespace {
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
-    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters) {
+    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters,
+    const Blackboard* old_blackboard, Blackboard* new_blackboard) {
   ChannelStackBuilderImpl builder("DynamicFilters", GRPC_CLIENT_DYNAMIC, args);
+  builder.SetBlackboards(old_blackboard, new_blackboard);
   for (auto filter : filters) {
     builder.AppendFilter(filter);
   }
@@ -150,15 +150,17 @@ absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
 }  // namespace
 
 RefCountedPtr<DynamicFilters> DynamicFilters::Create(
-    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters) {
+    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters,
+    const Blackboard* old_blackboard, Blackboard* new_blackboard) {
   // Attempt to create channel stack from requested filters.
-  auto p = CreateChannelStack(args, std::move(filters));
+  auto p = CreateChannelStack(args, std::move(filters), old_blackboard,
+                              new_blackboard);
   if (!p.ok()) {
     // Channel stack creation failed with requested filters.
     // Create with lame filter instead.
     auto error = p.status();
     p = CreateChannelStack(args.Set(MakeLameClientErrorArg(&error)),
-                           {&LameClientFilter::kFilter});
+                           {&LameClientFilter::kFilter}, nullptr, nullptr);
   }
   return MakeRefCounted<DynamicFilters>(std::move(p.value()));
 }

@@ -18,6 +18,14 @@
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/passive_listener.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -38,16 +46,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/passive_listener.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -634,15 +632,11 @@ Chttp2ServerListener::Chttp2ServerListener(
 }
 
 Chttp2ServerListener::~Chttp2ServerListener() {
-  // Flush queued work before destroying handshaker factory, since that
-  // may do a synchronous unref.
-  ExecCtx::Get()->Flush();
   if (passive_listener_ != nullptr) {
     passive_listener_->ListenerDestroyed();
   }
   if (on_destroy_done_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
-    ExecCtx::Get()->Flush();
   }
 }
 

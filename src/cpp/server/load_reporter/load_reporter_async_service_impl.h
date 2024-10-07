@@ -19,6 +19,11 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_ASYNC_SERVICE_IMPL_H
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/async_stream.h>
+#include <grpcpp/support/interceptor.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -28,13 +33,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/async_stream.h>
-#include <grpcpp/support/interceptor.h>
-
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"

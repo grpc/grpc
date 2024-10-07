@@ -16,13 +16,12 @@
 
 #include "test/cpp/interop/xds_stats_watcher.h"
 
-#include <map>
-#include <memory>
-
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
+#include <map>
+#include <memory>
 
 #include "test/core/test_util/test_config.h"
 

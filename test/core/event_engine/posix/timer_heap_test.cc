@@ -27,7 +27,6 @@
 #include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/util/bitset.h"
 

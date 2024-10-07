@@ -15,12 +15,11 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_POSIX_POSIX_ENGINE_TEST_UTILS_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_POSIX_POSIX_ENGINE_TEST_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 
 namespace grpc_event_engine {
