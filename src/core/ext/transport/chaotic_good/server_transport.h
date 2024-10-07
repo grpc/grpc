@@ -109,8 +109,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
   static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames,
-                           CallInitiator call_initiator);
+                           MpscSender<ServerFrame> outgoing_frames);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);

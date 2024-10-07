@@ -125,14 +125,13 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
 }
 
 auto ChaoticGoodServerTransport::SendFragment(
-    ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames,
-    CallInitiator call_initiator) {
+    ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: SendFragment: frame=" << frame.ToString();
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
   return Map(outgoing_frames.Send(std::move(frame)),
-             [call_initiator](bool success) -> absl::Status {
+             [](bool success) -> absl::Status {
                if (!success) {
                  // Failed to send outgoing frame.
                  return absl::UnavailableError("Transport closed.");
@@ -150,7 +149,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
       OutgoingMessages(call_initiator),
       // Capture the call_initator to ensure the underlying call
       // spine is alive until the SendFragment promise completes.
-      [stream_id, outgoing_frames, call_initiator,
+      [stream_id, outgoing_frames,
        aligned_bytes = aligned_bytes_](MessageHandle message) mutable {
         ServerFragmentFrame frame;
         // Construct frame header (flags, header_length
@@ -160,12 +159,12 @@ auto ChaoticGoodServerTransport::SendCallBody(
         const uint32_t padding =
             message_length % aligned_bytes == 0
                 ? 0
-                : aligned_bytes - message_length % aligned_bytes;
+                : aligned_bytes - (message_length % aligned_bytes);
         CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
         frame.message =
             FragmentMessage(std::move(message), padding, message_length);
         frame.stream_id = stream_id;
-        return SendFragment(std::move(frame), outgoing_frames, call_initiator);
+        return SendFragment(std::move(frame), outgoing_frames);
       });
 }
 
@@ -187,8 +186,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
               frame.headers = std::move(*md);
               frame.stream_id = stream_id;
               return TrySeq(
-                  SendFragment(std::move(frame), outgoing_frames,
-                               call_initiator),
+                  SendFragment(std::move(frame), outgoing_frames),
                   SendCallBody(stream_id, outgoing_frames, call_initiator));
             },
             []() { return absl::OkStatus(); });
@@ -209,15 +207,11 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
                 return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
-          // Capture the call_initator to ensure the underlying call_spine
-          // is alive until the SendFragment promise completes.
-          [stream_id, outgoing_frames,
-           call_initiator](ServerMetadataHandle md) mutable {
+          [stream_id, outgoing_frames](ServerMetadataHandle md) mutable {
             ServerFragmentFrame frame;
             frame.trailers = std::move(md);
             frame.stream_id = stream_id;
-            return SendFragment(std::move(frame), outgoing_frames,
-                                call_initiator);
+            return SendFragment(std::move(frame), outgoing_frames);
           }));
 }
 
@@ -309,10 +303,11 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                            call_initiator.has_value(),
                            [&call_initiator]() {
                              auto c = std::move(*call_initiator);
-                             return c.SpawnWaitable("cancel", [c]() mutable {
-                               c.Cancel();
-                               return absl::OkStatus();
-                             });
+                             return c.SpawnWaitable("cancel_from_read",
+                                                    [c]() mutable {
+                                                      c.Cancel();
+                                                      return absl::OkStatus();
+                                                    });
                            },
                            []() -> absl::Status { return absl::OkStatus(); });
                      }),
@@ -408,10 +403,11 @@ void ChaoticGoodServerTransport::AbortWithError() {
   lock.Release();
   for (const auto& pair : stream_map) {
     auto call_initiator = pair.second;
-    call_initiator.SpawnInfallible("cancel", [call_initiator]() mutable {
-      call_initiator.Cancel();
-      return Empty{};
-    });
+    call_initiator.SpawnInfallible("cancel_from_transport_closed",
+                                   [call_initiator]() mutable {
+                                     call_initiator.Cancel();
+                                     return Empty{};
+                                   });
   }
 }
 
@@ -460,7 +456,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
             self->ExtractStream(stream_id);
         if (call_initiator.has_value()) {
           auto c = std::move(*call_initiator);
-          c.SpawnInfallible("cancel", [c]() mutable {
+          c.SpawnInfallible("cancel_from_on_done", [c]() mutable {
             c.Cancel();
             return Empty{};
           });
