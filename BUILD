@@ -19,10 +19,10 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
-    "grpc_cc_proto_library",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
