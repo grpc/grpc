@@ -20,7 +20,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
@@ -39,13 +38,13 @@ TEST(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   std::shared_ptr<EventEngine> event_engine =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 
-  auto transport = MakeOrphanable<Http2ClientTransport>(
-      std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint),
-      CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(nullptr),
-      event_engine, HPackParser(), HPackCompressor());
+  Http2ClientTransport transport(std::move(control_endpoint.promise_endpoint),
+                                 std::move(data_endpoint.promise_endpoint),
+                                 CoreConfiguration::Get()
+                                     .channel_args_preconditioning()
+                                     .PreconditionChannelArgs(nullptr),
+                                 event_engine, HPackParser(),
+                                 HPackCompressor());
 }
 
 }  // namespace testing
