@@ -976,13 +976,13 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results_or =
+      std::vector<EventEngine::ResolvedAddress>();
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
   absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results_or =
-        std::vector<EventEngine::ResolvedAddress>();
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixAbstractUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
