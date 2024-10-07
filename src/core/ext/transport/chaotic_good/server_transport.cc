@@ -397,6 +397,9 @@ void ChaoticGoodServerTransport::AbortWithError() {
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
   ReleasableMutexLock lock(&mu_);
+  LOG(INFO) << "CHAOTIC_GOOD " << this << " AbortWithError";
+  if (aborted_with_error_) return;
+  aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
@@ -414,9 +417,9 @@ void ChaoticGoodServerTransport::AbortWithError() {
 
 absl::optional<CallInitiator> ChaoticGoodServerTransport::LookupStream(
     uint32_t stream_id) {
+  MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " LookupStream " << stream_id;
-  MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return absl::nullopt;
   return it->second;
@@ -424,9 +427,9 @@ absl::optional<CallInitiator> ChaoticGoodServerTransport::LookupStream(
 
 absl::optional<CallInitiator> ChaoticGoodServerTransport::ExtractStream(
     uint32_t stream_id) {
+  MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " ExtractStream " << stream_id;
-  MutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it == stream_map_.end()) return absl::nullopt;
   auto r = std::move(it->second);
@@ -436,9 +439,12 @@ absl::optional<CallInitiator> ChaoticGoodServerTransport::ExtractStream(
 
 absl::Status ChaoticGoodServerTransport::NewStream(
     uint32_t stream_id, CallInitiator call_initiator) {
+  MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
-  MutexLock lock(&mu_);
+  if (aborted_with_error_) {
+    return absl::UnavailableError("Transport closed");
+  }
   auto it = stream_map_.find(stream_id);
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");
