@@ -15,6 +15,7 @@
 
 import os
 import shutil
+from typing import List
 
 import setuptools
 
@@ -29,8 +30,8 @@ class Preprocess(setuptools.Command):
     """Command to copy proto modules from grpc/src/proto and LICENSE from
     the root directory"""
 
-    description = ""
-    user_options = []
+    description: str = ""
+    user_options: List[str] = []
 
     def initialize_options(self):
         pass
@@ -51,8 +52,8 @@ class Preprocess(setuptools.Command):
 class BuildPackageProtos(setuptools.Command):
     """Command to generate project *_pb2.py modules from proto files."""
 
-    description = "build grpc protobuf modules"
-    user_options = []
+    description: str = "build grpc protobuf modules"
+    user_options: List[str] = []
 
     def initialize_options(self):
         pass
