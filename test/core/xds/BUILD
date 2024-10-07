@@ -172,8 +172,10 @@ grpc_cc_test(
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
+        "//:envoy_config_core_cc_proto",
+        "//:envoy_service_discovery_cc_proto",
+        "//:grpc++_config_proto",
         "//:xds_client",
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",

@@ -4988,6 +4988,11 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
 )
 
+cc_proto_library(
+    name = "envoy_config_core_cc_proto",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_core_upb",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
@@ -5156,6 +5161,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_upstreams_http_upbdefs",
     deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+)
+
+cc_proto_library(
+    name = "envoy_service_discovery_cc_proto",
+    deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
 )
 
 grpc_upb_proto_library(
