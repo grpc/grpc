@@ -16,11 +16,12 @@
 //
 //
 
+#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
+
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 
 namespace grpc_core {
 namespace http2 {
