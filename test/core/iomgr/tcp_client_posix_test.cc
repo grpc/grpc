@@ -30,6 +30,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <string.h>
@@ -37,11 +40,6 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_set.h"

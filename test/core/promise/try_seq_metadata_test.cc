@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/metadata_batch.h"

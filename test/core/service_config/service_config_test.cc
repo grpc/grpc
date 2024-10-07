@@ -16,6 +16,7 @@
 
 #include "src/core/service_config/service_config.h"
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 
 #include <memory>
@@ -27,9 +28,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/service_config/service_config_impl.h"

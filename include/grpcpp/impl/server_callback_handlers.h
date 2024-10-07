@@ -18,8 +18,6 @@
 #ifndef GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 
-#include "absl/log/absl_check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -27,6 +25,8 @@
 #include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 namespace internal {

@@ -19,10 +19,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 
-#include <functional>
-
 #include <grpc/passive_listener.h>
 #include <grpc/support/port_platform.h>
+
+#include <functional>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"

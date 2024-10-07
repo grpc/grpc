@@ -14,9 +14,9 @@
 
 #include "src/core/lib/resource_quota/periodic_update.h"
 
-#include <atomic>
-
 #include <grpc/support/port_platform.h>
+
+#include <atomic>
 
 #include "src/core/util/useful.h"
 

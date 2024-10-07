@@ -18,9 +18,8 @@
 
 #include "src/core/util/time_averaged_stats.h"
 
-#include <math.h>
-
 #include <gtest/gtest.h>
+#include <math.h>
 
 namespace grpc_core {
 namespace {

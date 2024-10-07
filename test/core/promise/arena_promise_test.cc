@@ -14,13 +14,12 @@
 
 #include "src/core/lib/promise/arena_promise.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+
 #include <array>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

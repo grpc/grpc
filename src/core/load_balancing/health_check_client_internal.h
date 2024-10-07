@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_HEALTH_CHECK_CLIENT_INTERNAL_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_HEALTH_CHECK_CLIENT_INTERNAL_H
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -27,10 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"

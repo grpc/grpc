@@ -16,6 +16,10 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <grpc/credentials.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -27,12 +31,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/credentials.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-
 #include <benchmark/benchmark.h>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc.h>
 
+#include <memory>
+
+#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/config/core_configuration.h"

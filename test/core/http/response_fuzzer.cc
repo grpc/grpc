@@ -16,11 +16,10 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "src/core/util/http_client/parser.h"
 

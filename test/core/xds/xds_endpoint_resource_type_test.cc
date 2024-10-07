@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
 #include <stdint.h>
 
 #include <limits>
@@ -23,18 +25,11 @@
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/wrappers.pb.h>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -58,6 +53,8 @@
 #include "src/proto/grpc/testing/xds/v3/percent.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 using envoy::config::endpoint::v3::ClusterLoadAssignment;
 

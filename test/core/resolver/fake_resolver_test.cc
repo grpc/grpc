@@ -18,6 +18,7 @@
 
 #include "src/core/resolver/fake/fake_resolver.h"
 
+#include <grpc/grpc.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -34,9 +35,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

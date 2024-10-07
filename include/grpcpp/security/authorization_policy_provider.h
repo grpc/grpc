@@ -15,11 +15,11 @@
 #ifndef GRPCPP_SECURITY_AUTHORIZATION_POLICY_PROVIDER_H
 #define GRPCPP_SECURITY_AUTHORIZATION_POLICY_PROVIDER_H
 
-#include <memory>
-
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpcpp/impl/codegen/status.h>
+
+#include <memory>
 
 namespace grpc {
 namespace experimental {

@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_UTIL_CREATE_TEST_CHANNEL_H
 #define GRPC_TEST_CPP_UTIL_CREATE_TEST_CHANNEL_H
 
-#include <memory>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
+
+#include <memory>
 
 namespace grpc {
 class Channel;

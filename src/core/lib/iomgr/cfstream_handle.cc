@@ -23,13 +23,11 @@
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #import "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"

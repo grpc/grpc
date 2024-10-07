@@ -18,13 +18,11 @@
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"

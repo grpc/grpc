@@ -14,14 +14,13 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"

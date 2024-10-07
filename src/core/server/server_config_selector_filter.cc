@@ -14,6 +14,8 @@
 
 #include "src/core/server/server_config_selector_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <utility>
@@ -23,9 +25,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/event_engine_context.h"

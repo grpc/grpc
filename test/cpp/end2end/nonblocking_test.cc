@@ -16,11 +16,6 @@
 //
 //
 
-#include <memory>
-
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -28,6 +23,10 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <memory>
+
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

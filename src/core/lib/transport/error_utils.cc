@@ -18,12 +18,11 @@
 
 #include "src/core/lib/transport/error_utils.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <stdint.h>
 
 #include <vector>
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/status_helper.h"

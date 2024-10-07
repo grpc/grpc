@@ -16,15 +16,14 @@
 
 #include "src/core/server/server_call_tracer_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

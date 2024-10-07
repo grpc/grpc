@@ -22,7 +22,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-
 #include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/validation_errors.h"

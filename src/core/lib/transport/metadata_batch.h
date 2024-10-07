@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
+#include <grpc/impl/compression_types.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <cstdint>
@@ -33,11 +36,6 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/compression_types.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/poll.h"

@@ -19,19 +19,17 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep

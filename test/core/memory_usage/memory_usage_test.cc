@@ -16,6 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,13 +43,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/wrappers.pb.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/util/env.h"
 #include "src/core/util/subprocess.h"

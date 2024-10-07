@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 
 #include "absl/status/status.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 #include "src/core/util/status_helper.h"
 
@@ -42,7 +41,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"

@@ -14,12 +14,11 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc++/grpc++.h>
 #include <grpcpp/ext/gcp_observability.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"

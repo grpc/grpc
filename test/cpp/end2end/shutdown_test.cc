@@ -16,13 +16,6 @@
 //
 //
 
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/channel.h>
@@ -31,7 +24,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

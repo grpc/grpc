@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "gtest/gtest.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/telemetry/call_tracer.h"

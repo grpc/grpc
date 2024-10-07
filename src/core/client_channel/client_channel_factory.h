@@ -20,7 +20,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"

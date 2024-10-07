@@ -14,6 +14,9 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -25,11 +28,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

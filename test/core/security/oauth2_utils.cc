@@ -18,10 +18,6 @@
 
 #include "test/core/security/oauth2_utils.h"
 
-#include <string.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -29,7 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <string.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/map.h"

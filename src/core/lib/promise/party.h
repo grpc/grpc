@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -27,10 +29,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"

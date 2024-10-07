@@ -18,18 +18,15 @@
 
 #include "src/core/lib/security/security_connector/security_connector.h"
 
-#include <stdio.h>
-#include <string.h>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+#include <stdio.h>
+#include <string.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"

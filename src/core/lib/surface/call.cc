@@ -18,6 +18,19 @@
 
 #include "src/core/lib/surface/call.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -42,21 +55,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"

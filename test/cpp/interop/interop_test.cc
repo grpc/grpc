@@ -17,6 +17,7 @@
 //
 
 #include <assert.h>
+#include <grpc/support/alloc.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,9 +32,6 @@
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"

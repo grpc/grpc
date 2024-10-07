@@ -26,7 +26,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "re2/re2.h"
-
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
 

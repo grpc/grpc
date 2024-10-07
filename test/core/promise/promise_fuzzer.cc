@@ -23,7 +23,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"

@@ -16,6 +16,9 @@
 
 #include "src/cpp/ext/gcp/observability_config.h"
 
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -27,11 +30,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"

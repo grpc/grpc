@@ -14,16 +14,15 @@
 
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <cassert>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/memory/memory.h"
-
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/mock_objects.h"
 

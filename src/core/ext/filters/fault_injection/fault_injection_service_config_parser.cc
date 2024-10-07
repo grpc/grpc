@@ -14,14 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <vector>
 
 #include "absl/types/optional.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 

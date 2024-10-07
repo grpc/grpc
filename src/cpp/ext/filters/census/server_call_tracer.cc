@@ -18,6 +18,9 @@
 
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/opencensus.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -40,11 +43,6 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"

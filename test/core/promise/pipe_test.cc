@@ -14,6 +14,9 @@
 
 #include "src/core/lib/promise/pipe.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -22,10 +25,6 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"

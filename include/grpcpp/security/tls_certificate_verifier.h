@@ -17,12 +17,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CERTIFICATE_VERIFIER_H
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_VERIFIER_H
 
-#include <functional>
-#include <map>
-#include <memory>
-#include <utility>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -30,6 +24,12 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <functional>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 
 // TODO(yihuazhang): remove the forward declaration here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.

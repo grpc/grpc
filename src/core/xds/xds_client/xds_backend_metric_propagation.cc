@@ -20,7 +20,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

@@ -14,11 +14,10 @@
 
 #include "src/core/lib/transport/call_filters.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/util/crash.h"
 

@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PARSED_METADATA_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PARSED_METADATA_H
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <cstdint>
@@ -28,10 +30,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
 

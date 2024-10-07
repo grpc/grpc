@@ -18,6 +18,10 @@
 
 #include "src/core/channelz/channel_trace.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <stdlib.h>
 
 #include <list>
@@ -27,12 +31,6 @@
 #include "absl/synchronization/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

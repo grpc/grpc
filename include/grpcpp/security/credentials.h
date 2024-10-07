@@ -19,10 +19,6 @@
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
 
-#include <map>
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -32,6 +28,10 @@
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <map>
+#include <memory>
+#include <vector>
 
 struct grpc_call;
 

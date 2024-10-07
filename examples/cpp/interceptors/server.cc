@@ -16,13 +16,13 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/server_interceptor.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/server_interceptor.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"

@@ -19,10 +19,10 @@
 #ifndef GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_HTTP2_CLIENT_H
 
-#include <memory>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
+
+#include <memory>
 
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

@@ -14,10 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -41,15 +47,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_internal.h"

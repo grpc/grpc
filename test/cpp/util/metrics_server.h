@@ -18,10 +18,10 @@
 #ifndef GRPC_TEST_CPP_UTIL_METRICS_SERVER_H
 #define GRPC_TEST_CPP_UTIL_METRICS_SERVER_H
 
+#include <grpcpp/server.h>
+
 #include <map>
 #include <mutex>
-
-#include <grpcpp/server.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"

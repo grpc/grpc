@@ -16,7 +16,6 @@
 #define GRPC_TEST_CORE_END2END_FUZZERS_CONNECTOR_FUZZER_H
 
 #include "absl/functional/function_ref.h"
-
 #include "src/core/client_channel/connector.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"

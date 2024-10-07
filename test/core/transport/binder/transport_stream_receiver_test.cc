@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <cassert>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/memory/memory.h"
-
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"
 #include "test/core/test_util/test_config.h"
 
