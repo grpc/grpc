@@ -21,9 +21,9 @@ def grpc_python_deps():
     if "rules_python" not in native.existing_rules():
         http_archive(
             name = "rules_python",
-            sha256 = "3b8b4cdc991bc9def8833d118e4c850f1b7498b3d65d5698eea92c3528b8cf2c",
-            strip_prefix = "rules_python-0.30.0",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.30.0/rules_python-0.30.0.tar.gz",
+            sha256 = "ca77768989a7f311186a29747e3e95c936a41dffac779aff6b443db22290d913",
+            strip_prefix = "rules_python-0.36.0",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.36.0/rules_python-0.36.0.tar.gz",
         )
 
     if "cython" not in native.existing_rules():
