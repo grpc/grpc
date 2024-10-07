@@ -22,6 +22,7 @@ load(
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
+    "grpc_cc_proto_library",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
@@ -4988,7 +4989,7 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "envoy_config_core_cc_proto",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
@@ -5163,7 +5164,7 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "envoy_service_discovery_cc_proto",
     deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
 )
