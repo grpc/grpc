@@ -16,6 +16,18 @@
 //
 //
 
-// TODO(tjagtap) : [PH2][P1] : Write these tests once the fist draft of
-// http2_client_transport and http2_server_transport is submitted.
-// And the build changes will be added after the basic NOOP test is running.
+#include <gtest/gtest.h>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
+
+namespace grpc_core {
+namespace http2 {
+
+TEST(Http2ServerTransportTest, TestIfTestFails) {
+  CHECK(false);  // WIP - Do Not Review yet.
+}
+
+}  // namespace http2
+}  // namespace grpc_core
