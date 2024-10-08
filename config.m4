@@ -730,7 +730,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
-    src/core/resolver/binder/binder_resolver.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
@@ -1601,7 +1600,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/binder)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/event_engine)

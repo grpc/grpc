@@ -1818,7 +1818,6 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/xds/xds_wrr_locality.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc',
                       'src/core/plugin_registry/grpc_plugin_registry_extra.cc',
-                      'src/core/resolver/binder/binder_resolver.cc',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',

@@ -172,7 +172,6 @@
 #if __ANDROID_API__ < 21
 #error "Requires Android API v21 and above"
 #endif
-#define GPR_SUPPORT_BINDER_TRANSPORT 1
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.

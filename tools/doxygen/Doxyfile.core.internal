@@ -975,7 +975,6 @@ src/core/ext/filters/stateful_session/stateful_session_filter.h \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
-src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
@@ -2482,8 +2481,6 @@ src/core/load_balancing/xds/xds_wrr_locality.cc \
 src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/plugin_registry/grpc_plugin_registry_extra.cc \
 src/core/resolver/README.md \
-src/core/resolver/binder/README.md \
-src/core/resolver/binder/binder_resolver.cc \
 src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/resolver/dns/c_ares/dns_resolver_ares.h \
 src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h \

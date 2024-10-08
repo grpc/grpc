@@ -1704,7 +1704,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/load_balancing/xds/xds_wrr_locality.cc )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry.cc )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry_extra.cc )
-  s.files += %w( src/core/resolver/binder/binder_resolver.cc )
   s.files += %w( src/core/resolver/dns/c_ares/dns_resolver_ares.cc )
   s.files += %w( src/core/resolver/dns/c_ares/dns_resolver_ares.h )
   s.files += %w( src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h )
