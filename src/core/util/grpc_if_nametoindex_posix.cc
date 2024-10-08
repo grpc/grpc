@@ -26,7 +26,6 @@
 #include <net/if.h>
 
 #include "absl/log/log.h"
-
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_if_nametoindex.h"
 

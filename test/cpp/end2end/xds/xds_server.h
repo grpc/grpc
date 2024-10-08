@@ -17,6 +17,8 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_SERVER_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_SERVER_H
 
+#include <grpcpp/support/status.h>
+
 #include <deque>
 #include <set>
 #include <string>
@@ -26,9 +28,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
-
-#include <grpcpp/support/status.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"

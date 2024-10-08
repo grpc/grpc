@@ -25,7 +25,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"

@@ -14,15 +14,14 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
 #include "test/core/filters/filter_test.h"
 
 using ::testing::StrictMock;

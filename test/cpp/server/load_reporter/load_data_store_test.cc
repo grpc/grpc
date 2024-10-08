@@ -18,13 +18,12 @@
 
 #include "src/cpp/server/load_reporter/load_data_store.h"
 
-#include <set>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <gtest/gtest.h>
+
+#include <set>
+#include <vector>
 
 #include "src/cpp/server/load_reporter/constants.h"
 #include "test/core/test_util/port.h"

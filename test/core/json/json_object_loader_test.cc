@@ -14,14 +14,13 @@
 
 #include "src/core/util/json/json_object_loader.h"
 
+#include <grpc/support/json.h>
+
 #include <cstdint>
 
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/json.h>
-
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted.h"

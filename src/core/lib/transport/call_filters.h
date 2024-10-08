@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -22,9 +24,6 @@
 #include <type_traits>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
@@ -1590,10 +1589,17 @@ class CallFilters {
   GRPC_MUST_USE_RESULT auto WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
   }
+  // Client & server: returns true if server trailing metadata has been pushed
+  // *and* contained a cancellation, false otherwise.
+  GRPC_MUST_USE_RESULT bool WasCancelledPushed() const {
+    return call_state_.WasCancelledPushed();
+  }
+
   // Returns true if server trailing metadata has been pulled
   bool WasServerTrailingMetadataPulled() const {
     return call_state_.WasServerTrailingMetadataPulled();
   }
+
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 

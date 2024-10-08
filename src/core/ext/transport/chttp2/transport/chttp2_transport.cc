@@ -16,6 +16,15 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -45,17 +54,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -359,34 +358,6 @@ std::string HttpAnnotation::ToString() const {
     absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
   }
   return s;
-}
-
-void Chttp2CallTracerWrapper::RecordIncomingBytes(
-    const CallTracerInterface::TransportByteSize& transport_byte_size) {
-  // Update legacy API.
-  stream_->stats.incoming.framing_bytes += transport_byte_size.framing_bytes;
-  stream_->stats.incoming.data_bytes += transport_byte_size.data_bytes;
-  stream_->stats.incoming.header_bytes += transport_byte_size.header_bytes;
-  // Update new API.
-  if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->arena->GetContext<CallTracerInterface>();
-  if (call_tracer != nullptr) {
-    call_tracer->RecordIncomingBytes(transport_byte_size);
-  }
-}
-
-void Chttp2CallTracerWrapper::RecordOutgoingBytes(
-    const CallTracerInterface::TransportByteSize& transport_byte_size) {
-  // Update legacy API.
-  stream_->stats.outgoing.framing_bytes += transport_byte_size.framing_bytes;
-  stream_->stats.outgoing.data_bytes += transport_byte_size.data_bytes;
-  stream_->stats.outgoing.header_bytes +=
-      transport_byte_size.header_bytes;  // Update new API.
-  if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->arena->GetContext<CallTracerInterface>();
-  if (call_tracer != nullptr) {
-    call_tracer->RecordOutgoingBytes(transport_byte_size);
-  }
 }
 
 }  // namespace grpc_core
@@ -3137,6 +3108,7 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
+    grpc_core::global_stats().IncrementRqConnectionsDropped();
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - send goaway to free memory";
@@ -3166,6 +3138,7 @@ static void destructive_reclaimer_locked(
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - abandon stream id " << s->id;
+    grpc_core::global_stats().IncrementRqCallsDropped();
     grpc_chttp2_cancel_stream(
         t.get(), s,
         grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),

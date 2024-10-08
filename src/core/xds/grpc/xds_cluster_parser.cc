@@ -45,9 +45,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/text/encode.h"
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
@@ -63,6 +60,8 @@
 #include "src/core/xds/grpc/xds_metadata_parser.h"
 #include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
+#include "upb/base/string_view.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core {
 

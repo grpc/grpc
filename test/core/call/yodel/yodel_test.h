@@ -15,14 +15,13 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"

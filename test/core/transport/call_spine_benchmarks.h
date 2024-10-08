@@ -18,7 +18,6 @@
 #include <memory>
 
 #include "benchmark/benchmark.h"
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

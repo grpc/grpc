@@ -18,7 +18,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"

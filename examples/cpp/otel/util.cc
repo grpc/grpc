@@ -23,16 +23,16 @@
 #define HAVE_ABSEIL
 #endif
 
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+
 #include <condition_variable>
 #include <mutex>
 
 #include "opentelemetry/sdk/metrics/view/instrument_selector_factory.h"
 #include "opentelemetry/sdk/metrics/view/meter_selector_factory.h"
 #include "opentelemetry/sdk/metrics/view/view_factory.h"
-
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
@@ -169,10 +169,10 @@ void RunClient(const std::string& target_str) {
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
   grpc::ChannelArguments args;
+  GreeterClient greeter(grpc::CreateCustomChannel(
+      target_str, grpc::InsecureChannelCredentials(), args));
   // Continuously send RPCs every second.
   while (true) {
-    GreeterClient greeter(grpc::CreateCustomChannel(
-        target_str, grpc::InsecureChannelCredentials(), args));
     std::string user("world");
     std::string reply = greeter.SayHello(user);
     std::cout << "Greeter received: " << reply << std::endl;

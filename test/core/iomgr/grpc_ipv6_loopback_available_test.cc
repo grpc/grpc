@@ -16,9 +16,8 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"

@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <memory>
@@ -23,9 +24,6 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"

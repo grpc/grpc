@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
 #include <atomic>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/debug_location.h"

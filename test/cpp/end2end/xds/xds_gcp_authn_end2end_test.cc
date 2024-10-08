@@ -14,14 +14,13 @@
 // limitations under the License.
 //
 
+#include <grpc/support/string_util.h>
+
 #include <string>
 #include <vector>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/string_util.h>
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/util/http_client/httpcli.h"

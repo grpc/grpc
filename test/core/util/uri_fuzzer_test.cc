@@ -16,11 +16,10 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/uri.h"

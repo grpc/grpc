@@ -19,17 +19,15 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdbool.h>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"

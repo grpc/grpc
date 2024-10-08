@@ -18,6 +18,14 @@
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/passive_listener.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -38,16 +46,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/passive_listener.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -207,7 +205,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       grpc_pollset_set* const interested_parties_;
     };
 
-    ActiveConnection(grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
+    ActiveConnection(RefCountedPtr<Chttp2ServerListener> listener,
+                     grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
                      EventEngine* event_engine, const ChannelArgs& args,
                      MemoryOwner memory_owner);
 
@@ -215,8 +214,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     void SendGoAway();
 
-    void Start(RefCountedPtr<Chttp2ServerListener> listener,
-               OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
+    void Start(OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args);
 
     // Needed to be able to grab an external ref in
     // Chttp2ServerListener::OnAccept()
@@ -228,6 +226,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     RefCountedPtr<Chttp2ServerListener> listener_;
     Mutex mu_ ABSL_ACQUIRED_AFTER(&listener_->mu_);
+    // Was ActiveConnection::Start() invoked? Used to determine whether
+    // tcp_server needs to be unreffed.
+    bool connection_started_ ABSL_GUARDED_BY(&mu_) = false;
     // Set by HandshakingState before the handshaking begins and reset when
     // handshaking is done.
     OrphanablePtr<HandshakingState> handshaking_state_ ABSL_GUARDED_BY(&mu_);
@@ -390,11 +391,16 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
+  bool connection_started = false;
+  {
+    MutexLock lock(&connection_->mu_);
+    connection_started = connection_->connection_started_;
+  }
   if (accepting_pollset_ != nullptr) {
     grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
   }
   grpc_pollset_set_destroy(interested_parties_);
-  if (connection_->listener_ != nullptr &&
+  if (connection_started && connection_->listener_ != nullptr &&
       connection_->listener_->tcp_server_ != nullptr) {
     grpc_tcp_server_unref(connection_->listener_->tcp_server_);
   }
@@ -566,10 +572,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
 //
 
 Chttp2ServerListener::ActiveConnection::ActiveConnection(
+    RefCountedPtr<Chttp2ServerListener> listener,
     grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
     EventEngine* event_engine, const ChannelArgs& args,
     MemoryOwner memory_owner)
-    : handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
+    : listener_(std::move(listener)),
+      handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
           Ref(), accepting_pollset, std::move(acceptor), args)),
       event_engine_(event_engine) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
@@ -626,12 +634,11 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
 }
 
 void Chttp2ServerListener::ActiveConnection::Start(
-    RefCountedPtr<Chttp2ServerListener> listener,
     OrphanablePtr<grpc_endpoint> endpoint, const ChannelArgs& args) {
-  listener_ = std::move(listener);
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   {
     MutexLock lock(&mu_);
+    connection_started_ = true;
     // If the Connection is already shutdown at this point, it implies the
     // owning Chttp2ServerListener and all associated ActiveConnections have
     // been orphaned.
@@ -783,15 +790,11 @@ Chttp2ServerListener::Chttp2ServerListener(
 }
 
 Chttp2ServerListener::~Chttp2ServerListener() {
-  // Flush queued work before destroying handshaker factory, since that
-  // may do a synchronous unref.
-  ExecCtx::Get()->Flush();
   if (passive_listener_ != nullptr) {
     passive_listener_->ListenerDestroyed();
   }
   if (on_destroy_done_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
-    ExecCtx::Get()->Flush();
   }
 }
 
@@ -867,34 +870,32 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   auto memory_owner = self->memory_quota_->CreateMemoryOwner();
   EventEngine* const event_engine = self->args_.GetObject<EventEngine>();
   auto connection = memory_owner.MakeOrphanable<ActiveConnection>(
-      accepting_pollset, std::move(acceptor), event_engine, args,
-      std::move(memory_owner));
+      self->RefAsSubclass<Chttp2ServerListener>(), accepting_pollset,
+      std::move(acceptor), event_engine, args, std::move(memory_owner));
   // Hold a ref to connection to allow starting handshake outside the
   // critical region
   RefCountedPtr<ActiveConnection> connection_ref = connection->Ref();
-  RefCountedPtr<Chttp2ServerListener> listener_ref;
   {
     MutexLock lock(&self->mu_);
     // Shutdown the the connection if listener's stopped serving or if the
     // connection manager has changed.
     if (!self->shutdown_ && self->is_serving_ &&
         connection_manager == self->connection_manager_) {
-      // The ref for both the listener and tcp_server need to be taken in the
-      // critical region after having made sure that the listener has not been
-      // Orphaned, so as to avoid heap-use-after-free issues where `Ref()` is
-      // invoked when the listener is already shutdown. Note that the listener
-      // holds a ref to the tcp_server but this ref is given away when the
-      // listener is orphaned (shutdown). A connection needs the tcp_server to
-      // outlast the handshake since the acceptor needs it.
+      // The ref for the tcp_server needs to be taken in the critical region
+      // after having made sure that the listener has not been Orphaned, so as
+      // to avoid heap-use-after-free issues where `Ref()` is invoked when the
+      // listener is already shutdown. Note that the listener holds a ref to the
+      // tcp_server but this ref is given away when the listener is orphaned
+      // (shutdown). A connection needs the tcp_server to outlast the handshake
+      // since the acceptor needs it.
       if (self->tcp_server_ != nullptr) {
         grpc_tcp_server_ref(self->tcp_server_);
       }
-      listener_ref = self->RefAsSubclass<Chttp2ServerListener>();
       self->connections_.emplace(connection.get(), std::move(connection));
     }
   }
-  if (connection == nullptr && listener_ref != nullptr) {
-    connection_ref->Start(std::move(listener_ref), std::move(endpoint), args);
+  if (connection == nullptr) {
+    connection_ref->Start(std::move(endpoint), args);
   }
 }
 
