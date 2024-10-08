@@ -32,6 +32,7 @@ class CallState {
   // Start the call: allows pulls to proceed
   void Start();
   // PUSH: client -> server
+  Poll<StatusFlag> PollPullClientToServerMessageStarted();
   void BeginPushClientToServerMessage();
   Poll<StatusFlag> PollPushClientToServerMessage();
   void ClientToServerHalfClose();
@@ -42,6 +43,7 @@ class CallState {
   void FinishPullClientToServerMessage();
   // PUSH: server -> client
   StatusFlag PushServerInitialMetadata();
+  Poll<StatusFlag> PollPullServerToClientMessageStarted();
   void BeginPushServerToClientMessage();
   Poll<StatusFlag> PollPushServerToClientMessage();
   bool PushServerTrailingMetadata(bool cancel);
@@ -419,6 +421,7 @@ CallState::PollPullClientToServerMessageAvailable() {
       return client_to_server_pull_waiter_.pending();
     case ClientToServerPullState::kIdle:
       client_to_server_pull_state_ = ClientToServerPullState::kReading;
+      client_to_server_pull_waiter_.Wake();
       ABSL_FALLTHROUGH_INTENDED;
     case ClientToServerPullState::kReading:
       break;
@@ -442,6 +445,25 @@ CallState::PollPullClientToServerMessageAvailable() {
       return false;
     case ClientToServerPushState::kFinished:
       client_to_server_pull_state_ = ClientToServerPullState::kTerminated;
+      return Failure{};
+  }
+  Crash("Unreachable");
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
+CallState::PollPullClientToServerMessageStarted() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPullClientToServerMessageStarted: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+    case ClientToServerPullState::kIdle:
+      return client_to_server_pull_waiter_.pending();
+    case ClientToServerPullState::kReading:
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      return Success{};
+    case ClientToServerPullState::kTerminated:
       return Failure{};
   }
   Crash("Unreachable");
@@ -758,6 +780,7 @@ CallState::PollPullServerToClientMessageAvailable() {
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kIdle:
       server_to_client_pull_state_ = ServerToClientPullState::kReading;
+      server_to_client_pull_waiter_.Wake();
       ABSL_FALLTHROUGH_INTENDED;
     case ServerToClientPullState::kReading:
       break;
@@ -792,6 +815,29 @@ CallState::PollPullServerToClientMessageAvailable() {
     case ServerToClientPushState::kFinished:
       server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
       server_to_client_pull_waiter_.Wake();
+      return Failure{};
+  }
+  Crash("Unreachable");
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
+CallState::PollPullServerToClientMessageStarted() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPullClientToServerMessageStarted: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kUnstartedReading:
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
+    case ServerToClientPullState::kIdle:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStartedReading:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      return Success{};
+    case ServerToClientPullState::kTerminated:
       return Failure{};
   }
   Crash("Unreachable");
