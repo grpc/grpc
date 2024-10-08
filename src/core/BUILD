@@ -33,10 +33,7 @@ package(
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(
-        ["**"],
-        exclude = ["ext/transport/binder/java/**"],
-    ),
+    glob(["**"]),
     visibility = ["//:__subpackages__"],
 )
 
@@ -7154,33 +7151,6 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:orphanable",
         "//:parse_address",
-        "//:uri",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_resolver_binder",
-    srcs = [
-        "resolver/binder/binder_resolver.cc",
-    ],
-    external_deps = [
-        "absl/log:log",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "error",
-        "iomgr_port",
-        "resolved_address",
-        "status_helper",
-        "//:config",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_resolver",
-        "//:orphanable",
         "//:uri",
     ],
 )
