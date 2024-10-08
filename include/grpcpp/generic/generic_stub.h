@@ -29,6 +29,7 @@
 
 namespace grpc {
 
+// Test
 class CompletionQueue;
 
 typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>

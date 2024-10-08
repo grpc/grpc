@@ -28,6 +28,7 @@ struct grpc_server;
 
 namespace grpc {
 
+// Test
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
 typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
