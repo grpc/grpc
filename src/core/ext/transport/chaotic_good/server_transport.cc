@@ -145,27 +145,26 @@ auto ChaoticGoodServerTransport::SendCallBody(
     CallInitiator call_initiator) {
   // Continuously send client frame with client to server
   // messages.
-  return ForEach(
-      OutgoingMessages(call_initiator),
-      // Capture the call_initator to ensure the underlying call
-      // spine is alive until the SendFragment promise completes.
-      [stream_id, outgoing_frames,
-       aligned_bytes = aligned_bytes_](MessageHandle message) mutable {
-        ServerFragmentFrame frame;
-        // Construct frame header (flags, header_length
-        // and trailer_length will be added in
-        // serialization).
-        const uint32_t message_length = message->payload()->Length();
-        const uint32_t padding =
-            message_length % aligned_bytes == 0
-                ? 0
-                : aligned_bytes - (message_length % aligned_bytes);
-        CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
-        frame.message =
-            FragmentMessage(std::move(message), padding, message_length);
-        frame.stream_id = stream_id;
-        return SendFragment(std::move(frame), outgoing_frames);
-      });
+  return ForEach(OutgoingMessages(call_initiator),
+                 // Capture the call_initator to ensure the underlying call
+                 // spine is alive until the SendFragment promise completes.
+                 [stream_id, outgoing_frames, aligned_bytes = aligned_bytes_](
+                     MessageHandle message) mutable {
+                   ServerFragmentFrame frame;
+                   // Construct frame header (flags, header_length
+                   // and trailer_length will be added in
+                   // serialization).
+                   const uint32_t message_length = message->payload()->Length();
+                   const uint32_t padding =
+                       message_length % aligned_bytes == 0
+                           ? 0
+                           : aligned_bytes - (message_length % aligned_bytes);
+                   CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
+                   frame.message = FragmentMessage(std::move(message), padding,
+                                                   message_length);
+                   frame.stream_id = stream_id;
+                   return SendFragment(std::move(frame), outgoing_frames);
+                 });
 }
 
 auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
