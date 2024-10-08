@@ -16,6 +16,8 @@
 
 #include "src/core/resolver/endpoint_addresses.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <set>
 
 #include "absl/log/check.h"
@@ -23,9 +25,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"

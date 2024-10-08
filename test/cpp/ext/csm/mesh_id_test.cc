@@ -16,10 +16,9 @@
 //
 //
 
-#include "gtest/gtest.h"
-
 #include <grpcpp/grpcpp.h>
 
+#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"

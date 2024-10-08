@@ -18,6 +18,14 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <stdint.h>
 
 #include <string>
@@ -29,16 +37,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"

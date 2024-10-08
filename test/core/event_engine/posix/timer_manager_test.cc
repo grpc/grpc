@@ -14,6 +14,8 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 #include <random>
@@ -23,9 +25,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"

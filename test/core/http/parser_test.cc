@@ -18,6 +18,7 @@
 
 #include "src/core/util/http_client/parser.h"
 
+#include <grpc/support/alloc.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -26,9 +27,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"

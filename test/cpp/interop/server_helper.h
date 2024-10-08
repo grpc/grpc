@@ -19,15 +19,15 @@
 #ifndef GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
 #define GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
 
-#include <condition_variable>
-#include <memory>
-
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+
+#include <condition_variable>
+#include <memory>
 
 namespace grpc {
 namespace testing {

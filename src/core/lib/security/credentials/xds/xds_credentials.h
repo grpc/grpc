@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CREDENTIALS_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <functional>
@@ -27,12 +31,6 @@
 #include <vector>
 
 #include "absl/status/status.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"

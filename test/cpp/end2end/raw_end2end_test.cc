@@ -16,14 +16,6 @@
 //
 //
 
-#include <cinttypes>
-#include <memory>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -33,7 +25,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
+#include <cinttypes>
+#include <memory>
+#include <thread>
+
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"

@@ -20,6 +20,11 @@
 
 #include "src/core/xds/xds_client/xds_client.h"
 
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/struct.pb.h>
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -31,21 +36,12 @@
 #include <string>
 #include <vector>
 
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/struct.pb.h>
-
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
@@ -65,6 +61,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "upb/reflection/def.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>

@@ -18,12 +18,11 @@
 
 #include "test/cpp/util/cli_credentials.h"
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-
 #include <grpc/slice.h>
 #include <grpcpp/support/slice.h>
 
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/load_file.h"
 

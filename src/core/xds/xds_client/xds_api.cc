@@ -16,6 +16,9 @@
 
 #include "src/core/xds/xds_client/xds_api.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -38,18 +41,13 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/upb_utils.h"
+#include "src/core/xds/xds_client/xds_client.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
-
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-#include "src/core/util/json/json.h"
-#include "src/core/util/upb_utils.h"
-#include "src/core/xds/xds_client/xds_client.h"
 
 // IWYU pragma: no_include "upb/msg_internal.h"
 

@@ -17,7 +17,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/cq_verifier.h"
 
