@@ -21,7 +21,6 @@
 
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
-
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
