@@ -37,7 +37,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -64,6 +63,7 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -97,13 +97,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
-
-#define RETURN_IF_NOT_OK(status_or)                           \
-  do {                                                        \
-    if (!(status_or).ok()) {                                  \
-      return absl_status_to_grpc_error((status_or).status()); \
-    }                                                         \
-  } while (0)
 
 namespace grpc_core {
 
@@ -729,10 +722,9 @@ grpc_error_handle Chttp2ServerListener::Create(
       OnAccept, listener.get(), &listener->tcp_server_);
   if (!error.ok()) return error;
   // TODO(yijiem): remove this conversion when we remove all
-  // grpc_resolved_address.
-  grpc_resolved_address iomgr_addr;
-  iomgr_addr.len = addr.size();
-  memcpy(iomgr_addr.addr, addr.address(), addr.size());
+  // grpc_resolved_address usages.
+  grpc_resolved_address iomgr_addr =
+      grpc_event_engine::experimental::CreateGRPCResolvedAddress(addr);
   if (listener->config_fetcher_ != nullptr) {
     listener->resolved_address_ = iomgr_addr;
     // TODO(yashykt): Consider binding so as to be able to return the port
@@ -976,7 +968,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results_or =
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
       std::vector<EventEngine::ResolvedAddress>();
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
@@ -987,42 +979,33 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixAbstractUriPrefix) ||
         absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
-      absl::StatusOr<EventEngine::ResolvedAddress> result_or =
+      absl::StatusOr<EventEngine::ResolvedAddress> result =
           grpc_event_engine::experimental::URIToResolvedAddress(parsed_addr);
-      RETURN_IF_NOT_OK(result_or);
-      results_or->push_back(*result_or);
+      GRPC_RETURN_IF_ERROR(result.status());
+      results->push_back(*result);
     } else {
       if (IsEventEngineDnsNonClientChannelEnabled()) {
         absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
             args.GetObjectRef<EventEngine>()->GetDNSResolver(
                 EventEngine::DNSResolver::ResolverOptions());
-        RETURN_IF_NOT_OK(ee_resolver);
-        absl::Notification done;
-        (*ee_resolver)
-            ->LookupHostname(
-                [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
-                        addresses) {
-                  results_or = std::move(addresses);
-                  done.Notify();
-                },
-                parsed_addr, "https");
-        done.WaitForNotification();
+        GRPC_RETURN_IF_ERROR(ee_resolver.status());
+        results = grpc_event_engine::experimental::LookupHostnameBlocking(
+            ee_resolver->get(), parsed_addr, "https");
       } else {
         // TODO(yijiem): Remove this after event_engine_dns_non_client_channel
         // is fully enabled.
-        absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results_or =
+        absl::StatusOr<std::vector<grpc_resolved_address>> iomgr_results =
             GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
-        RETURN_IF_NOT_OK(iomgr_results_or);
-        for (const auto& addr : *iomgr_results_or) {
-          results_or->push_back(
+        GRPC_RETURN_IF_ERROR(iomgr_results.status());
+        for (const auto& addr : *iomgr_results) {
+          results->push_back(
               grpc_event_engine::experimental::CreateResolvedAddress(addr));
         }
       }
     }
-    RETURN_IF_NOT_OK(results_or);
-    std::cout << results_or->size() << std::endl;
+    GRPC_RETURN_IF_ERROR(results.status());
     // Create a listener for each resolved address.
-    for (EventEngine::ResolvedAddress& addr : *results_or) {
+    for (EventEngine::ResolvedAddress& addr : *results) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
       if (*port_num != -1 &&
@@ -1043,17 +1026,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (error_list.size() == results_or->size()) {
+    if (error_list.size() == results->size()) {
       std::string msg = absl::StrFormat(
           "No address added out of total %" PRIuPTR " resolved for '%s'",
-          results_or->size(), addr);
+          results->size(), addr);
       return GRPC_ERROR_CREATE_REFERENCING(msg.c_str(), error_list.data(),
                                            error_list.size());
     } else if (!error_list.empty()) {
-      std::string msg = absl::StrFormat(
-          "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
-          " resolved",
-          results_or->size() - error_list.size(), results_or->size());
+      std::string msg =
+          absl::StrFormat("Only %" PRIuPTR
+                          " addresses added out of total %" PRIuPTR " resolved",
+                          results->size() - error_list.size(), results->size());
       error = GRPC_ERROR_CREATE_REFERENCING(msg.c_str(), error_list.data(),
                                             error_list.size());
       LOG(INFO) << "WARNING: " << StatusToString(error);

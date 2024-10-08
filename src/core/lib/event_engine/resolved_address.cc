@@ -50,6 +50,9 @@ EventEngine::ResolvedAddress CreateResolvedAddress(
 
 grpc_resolved_address CreateGRPCResolvedAddress(
     const EventEngine::ResolvedAddress& ra) {
+  static_assert(
+      sizeof(grpc_resolved_address) == sizeof(EventEngine::ResolvedAddress),
+      "size should match");
   grpc_resolved_address grpc_addr;
   memset(&grpc_addr, 0, sizeof(grpc_resolved_address));
   memcpy(grpc_addr.addr, ra.address(), ra.size());

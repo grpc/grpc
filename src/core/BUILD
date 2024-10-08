@@ -2371,9 +2371,11 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
         "absl/log:check",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
+        "notification",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7637,7 +7639,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/synchronization",
         "absl/types:optional",
     ],
     language = "c++",
@@ -7652,6 +7653,7 @@ grpc_cc_library(
         "event_engine_extensions",
         "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
+        "event_engine_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
