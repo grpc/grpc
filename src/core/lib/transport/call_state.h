@@ -29,31 +29,80 @@ namespace grpc_core {
 class CallState {
  public:
   CallState();
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Misc events
+
   // Start the call: allows pulls to proceed
   void Start();
+
+  /////////////////////////////////////////////////////////////////////////////
   // PUSH: client -> server
+
+  // Poll for the next message pull to be started.
+  // This can be used for flow control by waiting for the reader to request
+  // data, then providing flow control tokens to read, and finally pushing the
+  // message.
   Poll<StatusFlag> PollPullClientToServerMessageStarted();
+
+  // Begin a message push.
   void BeginPushClientToServerMessage();
+
+  // Poll for the push to be completed (up to FinishPullClientToServerMessage).
   Poll<StatusFlag> PollPushClientToServerMessage();
+
+  // Note that the client has half-closed the stream.
   void ClientToServerHalfClose();
+
+  /////////////////////////////////////////////////////////////////////////////
   // PULL: client -> server
+
+  // Begin pulling client initial metadata.
   void BeginPullClientInitialMetadata();
+  // Finish pulling client initial metadata.
   void FinishPullClientInitialMetadata();
+  // Poll for the next message pull to be available.
+  // Resolves to true if a message is available, false if the call is
+  // half-closed, and Failure if the call is cancelled.
   Poll<ValueOrFailure<bool>> PollPullClientToServerMessageAvailable();
+  // Finish pulling a message.
   void FinishPullClientToServerMessage();
+
+  /////////////////////////////////////////////////////////////////////////////
   // PUSH: server -> client
+
+  // Push server initial metadata (instantaneous).
   StatusFlag PushServerInitialMetadata();
+  // Poll for the next message pull to be started.
+  // This can be used for flow control by waiting for the reader to request
+  // data, then providing flow control tokens to read, and finally pushing the
+  // message.
   Poll<StatusFlag> PollPullServerToClientMessageStarted();
+  // Begin a message push.
   void BeginPushServerToClientMessage();
+  // Poll for the push to be completed (up to FinishPullServerToClientMessage).
   Poll<StatusFlag> PollPushServerToClientMessage();
+  // Push server trailing metadata.
+  // This is idempotent: only the first call will have any effect.
+  // Returns true if this is the first call.
   bool PushServerTrailingMetadata(bool cancel);
+
+  /////////////////////////////////////////////////////////////////////////////
   // PULL: server -> client
+
+  // Poll for initial metadata to be available.
   Poll<bool> PollPullServerInitialMetadataAvailable();
+  // Finish pulling server initial metadata.
   void FinishPullServerInitialMetadata();
+  // Poll for the next message pull to be available.
+  // Resolves to true if a message is available, false if trailing metadata is
+  // ready, and Failure if the call is cancelled.
   Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
+  // Finish pulling a message.
   void FinishPullServerToClientMessage();
+  // Poll for trailing metadata to be available.
   Poll<Empty> PollServerTrailingMetadataAvailable();
-  void FinishPullServerTrailingMetadata();
+  // Instantaneously return true if server trailing metadata has been pulled.
   bool WasServerTrailingMetadataPulled() const;
   // Resolves after server trailing metadata has been pulled, to true if the
   // call was cancelled, and false otherwise.
@@ -61,6 +110,8 @@ class CallState {
   // Return true if server trailing metadata has been pushed *and* that push was
   // a cancellation.
   bool WasCancelledPushed() const;
+
+  /////////////////////////////////////////////////////////////////////////////
   // Debug
   std::string DebugString() const;
 
@@ -938,9 +989,6 @@ CallState::PollServerTrailingMetadataAvailable() {
   server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
   server_to_client_pull_waiter_.Wake();
   switch (server_trailing_metadata_state_) {
-    case ServerTrailingMetadataState::kNotPushed:
-      LOG(FATAL) << "FinishPullServerTrailingMetadata called before "
-                    "PollServerTrailingMetadataAvailable";
     case ServerTrailingMetadataState::kPushed:
       server_trailing_metadata_state_ = ServerTrailingMetadataState::kPulled;
       server_trailing_metadata_waiter_.Wake();
@@ -950,9 +998,10 @@ CallState::PollServerTrailingMetadataAvailable() {
           ServerTrailingMetadataState::kPulledCancel;
       server_trailing_metadata_waiter_.Wake();
       break;
+    case ServerTrailingMetadataState::kNotPushed:
     case ServerTrailingMetadataState::kPulled:
     case ServerTrailingMetadataState::kPulledCancel:
-      LOG(FATAL) << "FinishPullServerTrailingMetadata called twice";
+      LOG(FATAL) << "PollServerTrailingMetadataAvailable completed twice";
   }
   return Empty{};
 }
