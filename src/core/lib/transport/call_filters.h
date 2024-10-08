@@ -1467,8 +1467,8 @@ class CallFilters {
 
  private:
   template <typename Output, typename Input,
-            Input(CallFilters::* input_location),
-            filters_detail::Layout<Input>(filters_detail::StackData::* layout),
+            Input(CallFilters::*input_location),
+            filters_detail::Layout<Input>(filters_detail::StackData::*layout),
             void (CallState::*on_done)(), typename StackIterator>
   class MetadataExecutor {
    public:
@@ -1521,9 +1521,9 @@ class CallFilters {
     filters_detail::OperationExecutor<Input> executor_;
   };
 
-  template <MessageHandle(CallFilters::* input_location),
+  template <MessageHandle(CallFilters::*input_location),
             filters_detail::Layout<MessageHandle>(
-                filters_detail::StackData::* layout),
+                filters_detail::StackData::*layout),
             void (CallState::*on_done)(), typename StackIterator>
   class MessageExecutor {
    public:
