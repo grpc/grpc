@@ -30,8 +30,22 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 
+/*
+  Made as per RFC frame WINDOW_UPDATE Frame
+  https://datatracker.ietf.org/doc/html/rfc9113#name-window_update
+
+  WINDOW_UPDATE Frame {
+    Length (24) = 0x04,
+    Type (8) = 0x08,
+    Unused Flags (8),
+    Reserved (1),
+    Stream Identifier (31),
+    Reserved (1),
+    Window Size Increment (31),
+  }
+*/
 grpc_slice grpc_chttp2_window_update_create(
-    uint32_t id, uint32_t window_delta,
+    const uint32_t id, const uint32_t window_delta,
     grpc_core::CallTracerInterface* call_tracer) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
@@ -42,15 +56,24 @@ grpc_slice grpc_chttp2_window_update_create(
 
   CHECK(window_delta);
 
+  // Length (24) = 0x04,
   *p++ = 0;
   *p++ = 0;
   *p++ = 4;
+
+  // Type (8) = 0x08,
   *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
+
+  // Unused Flags (8),
   *p++ = 0;
+
+  // Reserved(1),Stream Identifier (31)
   *p++ = static_cast<uint8_t>(id >> 24);
   *p++ = static_cast<uint8_t>(id >> 16);
   *p++ = static_cast<uint8_t>(id >> 8);
   *p++ = static_cast<uint8_t>(id);
+
+  // Reserved (1), Window Size Increment (31),
   *p++ = static_cast<uint8_t>(window_delta >> 24);
   *p++ = static_cast<uint8_t>(window_delta >> 16);
   *p++ = static_cast<uint8_t>(window_delta >> 8);
@@ -60,7 +83,8 @@ grpc_slice grpc_chttp2_window_update_create(
 }
 
 grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
+    grpc_chttp2_window_update_parser* parser, const uint32_t length,
+    const uint8_t flags) {
   if (flags || length != 4) {
     return GRPC_ERROR_CREATE(absl::StrFormat(
         "invalid window update: length=%d, flags=%02x", length, flags));
@@ -72,7 +96,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
 
 grpc_error_handle grpc_chttp2_window_update_parser_parse(
     void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-    const grpc_slice& slice, int is_last) {
+    const grpc_slice& slice, const int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
