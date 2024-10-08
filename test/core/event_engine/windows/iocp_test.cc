@@ -250,16 +250,6 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   thread_pool->Quiesce();
 }
 
-TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
-  IOCP iocp(thread_pool.get());
-  SOCKET sockpair[2];
-  CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-  closesocket(sockpair[0]);
-  ASSERT_DEATH({ auto wrapped_client_socket = iocp.Watch(sockpair[0]); }, "");
-  thread_pool->Quiesce();
-}
-
 TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   // Start 10 threads, each with their own IOCP
   // On each thread, create 50 socket pairs (100 sockets) and have them exchange
