@@ -408,17 +408,20 @@ bool PrivateGenerator::PrintBetaStubFactory(
 
 bool PrivateGenerator::PrintStub(
     const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const grpc_generator::Service* service, grpc_generator::Printer* out,
+    const bool render_async) {
   StringMap dict;
   dict["Service"] = service->name();
+  dict["AsyncPostfix"] = render_async ? "Async" : "";
+  dict["ChannelClass"] = render_async ? "grpc.aio.Channel" : "grpc.Channel";
   out->Print("\n\n");
-  out->Print(dict, "class $Service$Stub(object):\n");
+  out->Print(dict, "class $Service$Stub$AsyncPostfix$(object):\n");
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
     PrintAllComments(service_comments, out);
     out->Print("\n");
-    out->Print("def __init__(self, channel):\n");
+    out->Print(dict, "def __init__(self, channel: $ChannelClass$):\n");
     {
       IndentScope raii_init_indent(out);
       out->Print("\"\"\"Constructor.\n");
@@ -448,27 +451,47 @@ bool PrivateGenerator::PrintStub(
                 config.prefixes_to_filter)) {
           return false;
         }
+
+        std::string client_request_type =
+            std::string(method->ClientStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + request_module_and_class +
+            std::string(method->ClientStreaming() ? "]" : "");
+        std::string client_response_type =
+            std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + response_module_and_class +
+            std::string(method->ServerStreaming() ? "]" : "");
+
         StringMap method_dict;
         method_dict["Method"] = method->name();
         method_dict["MultiCallableConstructor"] = multi_callable_constructor;
-        out->Print(method_dict,
-                   "self.$Method$ = channel.$MultiCallableConstructor$(\n");
         {
           method_dict["PackageQualifiedService"] =
               package_qualified_service_name;
           method_dict["RequestModuleAndClass"] = request_module_and_class;
           method_dict["ResponseModuleAndClass"] = response_module_and_class;
+          method_dict["ClientRequestType"] = client_request_type;
+          method_dict["ClientResponseType"] = client_response_type;
+          out->Print(method_dict, "self.$Method$ = cast(\n");
           IndentScope raii_first_attribute_indent(out);
-          IndentScope raii_second_attribute_indent(out);
-          out->Print(method_dict, "'/$PackageQualifiedService$/$Method$',\n");
-          out->Print(method_dict,
-                     "request_serializer=$RequestModuleAndClass$."
-                     "SerializeToString,\n");
-          out->Print(
-              method_dict,
-              "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
-          out->Print("_registered_method=True)\n");
+          out->Print(method_dict, "Callable[\n");
+          out->Print(method_dict, "    [$ClientRequestType$],\n");
+          out->Print(method_dict, "    $ClientResponseType$,\n");
+          out->Print(method_dict, "],\n");
+          out->Print(method_dict, "channel.$MultiCallableConstructor$(\n");
+
+          {
+            IndentScope raii_second_attribute_indent(out);
+
+            out->Print(method_dict, "'/$PackageQualifiedService$/$Method$',\n");
+            out->Print(method_dict,
+                      "request_serializer=$RequestModuleAndClass$."
+                      "SerializeToString,\n");
+            out->Print(
+                method_dict,
+                "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
+            out->Print("_registered_method=True,\n");
+          }
+          out->Print(")\n");
         }
+        out->Print(")\n");
       }
     }
   }
@@ -476,11 +499,14 @@ bool PrivateGenerator::PrintStub(
 }
 
 bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
-                                     grpc_generator::Printer* out) {
+                                     grpc_generator::Printer* out,
+                                     const bool render_async) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
+  service_dict["AsyncPostfix"] = render_async ? "Async" : "";
+  service_dict["ChannelClass"] = render_async ? "grpc.aio.Channel" : "grpc.Channel";
   out->Print("\n\n");
-  out->Print(service_dict, "class $Service$Servicer(object):\n");
+  out->Print(service_dict, "class $Service$Servicer$AsyncPostfix$(object):\n");
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
@@ -492,8 +518,33 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
       StringMap method_dict;
       method_dict["Method"] = method->name();
       method_dict["ArgName"] = arg_name;
+
+      // get request and response types
+      std::string request_module_and_class;
+      method->get_module_and_message_path_input(
+            &request_module_and_class, generator_file_name,
+            generate_in_pb2_grpc, config.import_prefix,
+            config.prefixes_to_filter);
+      
+      std::string response_module_and_class;
+      method->get_module_and_message_path_output(
+              &response_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter);
+
+      std::string server_request_type =
+          std::string(method->ClientStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + request_module_and_class +
+          std::string(method->ClientStreaming() ? "]" : "");
+      std::string server_response_type =
+          std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + response_module_and_class +
+          std::string(method->ServerStreaming() ? "]" : "");
+
+      method_dict["InputTypeName"] = server_request_type;
+      method_dict["OutputTypeName"] = server_response_type;
+      method_dict["AsyncFuncPrefix"] = render_async ? "async " : "";
+
       out->Print("\n");
-      out->Print(method_dict, "def $Method$(self, $ArgName$, context):\n");
+      out->Print(method_dict, "$AsyncFuncPrefix$def $Method$(self, $ArgName$: $InputTypeName$, context: grpc.ServicerContext) -> $OutputTypeName$:\n");
       {
         IndentScope raii_method_indent(out);
         StringVector method_comments = method->GetAllComments();
@@ -509,12 +560,15 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
 
 bool PrivateGenerator::PrintAddServicerToServer(
     const std::string& package_qualified_service_name,
-    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+    const grpc_generator::Service* service, grpc_generator::Printer* out,
+    const bool render_async) {
   StringMap service_dict;
   service_dict["Service"] = service->name();
+  service_dict["AsyncPostfix"] = render_async ? "Async" : "";
+  service_dict["ServerClass"] = render_async ? "grpc.aio.Server" : "grpc.Server";
   out->Print("\n\n");
   out->Print(service_dict,
-             "def add_$Service$Servicer_to_server(servicer, server):\n");
+             "def add_$Service$Servicer$AsyncPostfix$_to_server(servicer: $Service$Servicer$AsyncPostfix$, server: $ServerClass$) -> None:\n");
   {
     IndentScope raii_class_indent(out);
     out->Print("rpc_method_handlers = {\n");
@@ -691,6 +745,8 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   StringMap var;
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
+  out->Print(var, "from typing import AsyncIterator, Iterator, cast\n");
+  out->Print(var, "from collections.abc import Callable\n");
   if (config.grpc_tools_version.size() > 0) {
     out->Print(var, "import warnings\n");
   }
@@ -794,10 +850,14 @@ bool PrivateGenerator::PrintGAServices(grpc_generator::Printer* out) {
   for (int i = 0; i < file->service_count(); ++i) {
     auto service = file->service(i);
     std::string package_qualified_service_name = package + service->name();
-    if (!(PrintStub(package_qualified_service_name, service.get(), out) &&
-          PrintServicer(service.get(), out) &&
+    if (!(PrintStub(package_qualified_service_name, service.get(), out, false) && 
+          PrintStub(package_qualified_service_name, service.get(), out, true) &&
+          PrintServicer(service.get(), out, false) &&
+          PrintServicer(service.get(), out, true) &&
           PrintAddServicerToServer(package_qualified_service_name,
-                                   service.get(), out) &&
+                                   service.get(), out, false) &&
+          PrintAddServicerToServer(package_qualified_service_name,
+                                   service.get(), out, true) &&
           PrintServiceClass(package_qualified_service_name, service.get(),
                             out))) {
       return false;
