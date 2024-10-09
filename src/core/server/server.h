@@ -142,36 +142,17 @@ class Server : public ServerInterface,
     grpc_completion_queue* cq;
   };
 
+  class ListenerWrapper;
+
   /// Interface for listeners.
   /// Implementations must override the OrphanImpl() method, which should stop
   /// listening and initiate destruction of the listener.
   class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
    public:
-    class ConfigFetcherWatcher
-        : public grpc_server_config_fetcher::WatcherInterface {
-     public:
-      explicit ConfigFetcherWatcher(RefCountedPtr<ListenerInterface> listener)
-          : listener_(std::move(listener)) {}
-
-      void UpdateConnectionManager(
-          RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-              connection_manager) override;
-
-      void StopServing() override;
-
-     private:
-      const RefCountedPtr<ListenerInterface> listener_;
-    };
-
     // State for a connection that is being managed by this listener.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
-      explicit LogicalConnection(RefCountedPtr<ListenerInterface> listener)
-          : listener_(std::move(listener)),
-            event_engine_(
-                listener_->server_->channel_args()
-                    .GetObject<
-                        grpc_event_engine::experimental::EventEngine>()) {}
+      explicit LogicalConnection(Server* server) : server_(server) {}
       LogicalConnection(const LogicalConnection&) = delete;
       LogicalConnection& operator=(const LogicalConnection&) = delete;
       LogicalConnection(LogicalConnection&&) = delete;
@@ -185,11 +166,8 @@ class Server : public ServerInterface,
 
      protected:
       grpc_event_engine::experimental::EventEngine* event_engine() const {
-        return event_engine_;
-      }
-
-      const RefCountedPtr<ListenerInterface>& listener() const {
-        return listener_;
+        return server_->channel_args()
+            .GetObject<grpc_event_engine::experimental::EventEngine>();
       }
 
      private:
@@ -201,8 +179,7 @@ class Server : public ServerInterface,
       virtual bool SendGoAwayImpl() = 0;
       virtual void DisconnectImmediatelyImpl() = 0;
 
-      const RefCountedPtr<ListenerInterface> listener_;
-      grpc_event_engine::experimental::EventEngine* const event_engine_;
+      Server* server_;
       mutable Mutex mu_;
       grpc_event_engine::experimental::EventEngine::TaskHandle
           drain_grace_timer_handle_ ABSL_GUARDED_BY(&mu_) = grpc_event_engine::
@@ -212,31 +189,68 @@ class Server : public ServerInterface,
       bool drain_grace_timer_handle_cancelled_ ABSL_GUARDED_BY(&mu_) = false;
     };
 
-    explicit ListenerInterface(grpc_core::Server* server) : server_(server) {}
-
     ~ListenerInterface() override = default;
 
-    void Orphan() override;
+    // Needed to allow Listener::ConfigFetcherWatcher to take a weak ref.
+    using InternallyRefCounted<ListenerInterface>::Ref;
 
     /// Starts listening.
-    void Start();
+    virtual void Start() = 0;
 
     /// Returns the channelz node for the listen socket, or null if not
     /// supported.
     virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
 
+    virtual void SetServerListenerWrapper(ListenerWrapper* listener) = 0;
+
+    virtual const grpc_resolved_address* resolved_address() const = 0;
+
     /// Sets a closure to be invoked by the listener when its destruction
     /// is complete.
     virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
+  };
+
+  // Implements the connection management and config fetching mechanism for
+  // listeners.
+  // Note that an alternative implementation would have been to combine the
+  // ListenerInterface and ListenerWrapper into a single parent class, but
+  // they are being separated to make code simpler to understand.
+  class ListenerWrapper {
+   public:
+    class ConfigFetcherWatcher
+        : public grpc_server_config_fetcher::WatcherInterface {
+     public:
+      explicit ConfigFetcherWatcher(ListenerWrapper* listener)
+          : listener_(listener) {}
+
+      void UpdateConnectionManager(
+          RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+              connection_manager) override;
+
+      void StopServing() override;
+
+     private:
+      // This doesn't need to be ref-counted since we start and stop config
+      // fetching as part of starting and stopping the listener.
+      ListenerWrapper* const listener_;
+    };
+
+    explicit ListenerWrapper(Server* server, OrphanablePtr<ListenerInterface> l)
+        : server_(server), listener_(std::move(l)) {}
+
+    void Start();
+
+    void Stop();
+
+    ListenerInterface* listener() { return listener_.get(); }
 
     Server* server() const { return server_; }
 
-   protected:
     // Adds a LogicalConnection to the listener and updates the channel args if
     // needed.
     void AddLogicalConnection(
-        absl::AnyInvocable<
-            OrphanablePtr<LogicalConnection>(const ChannelArgs& args)>,
+        absl::AnyInvocable<OrphanablePtr<ListenerInterface::LogicalConnection>(
+            const ChannelArgs& args)>,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -244,23 +258,14 @@ class Server : public ServerInterface,
     // reasons such as the connection being closed, or the connection has been
     // established (including handshake) and doesn't have a server config
     // fetcher.
-    void RemoveLogicalConnection(LogicalConnection* connection);
-
-    void set_resolved_address(grpc_resolved_address resolved_address) {
-      resolved_address_ = resolved_address;
-    }
-
-    const grpc_resolved_address* resolved_address() const {
-      return &resolved_address_;
-    }
+    void RemoveLogicalConnection(
+        ListenerInterface::LogicalConnection* connection);
 
    private:
-    virtual void StartImpl() = 0;
-    virtual void OrphanImpl() = 0;
-
     Server* const server_;
-    ListenerInterface::ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
-    grpc_resolved_address resolved_address_;
+    OrphanablePtr<ListenerInterface> listener_;
+    grpc_closure destroy_done_;
+    ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
     Mutex mu_;  // We could share this mutex with Listener implementations. It's
                 // a tradeoff between increased memory requirement and more
                 // granular critical regions.
@@ -504,13 +509,6 @@ class Server : public ServerInterface,
     CallCombiner* call_combiner_;
   };
 
-  struct Listener {
-    explicit Listener(OrphanablePtr<ListenerInterface> l)
-        : listener(std::move(l)) {}
-    OrphanablePtr<ListenerInterface> listener;
-    grpc_closure destroy_done;
-  };
-
   struct ShutdownTag {
     ShutdownTag(void* tag_arg, grpc_completion_queue* cq_arg)
         : tag(tag_arg), cq(cq_arg) {}
@@ -664,7 +662,7 @@ class Server : public ServerInterface,
       connection_manager_ ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
-  std::list<Listener> listeners_;
+  std::list<ListenerWrapper> listeners_;
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.

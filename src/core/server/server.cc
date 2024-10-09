@@ -89,10 +89,10 @@ namespace grpc_core {
 using grpc_event_engine::experimental::EventEngine;
 
 //
-// Server::ListenerInterface::ConfigFetcherWatcher
+// Server::ListenerWrapper::ConfigFetcherWatcher
 //
 
-void Server::ListenerInterface::ConfigFetcherWatcher::UpdateConnectionManager(
+void Server::ListenerWrapper::ConfigFetcherWatcher::UpdateConnectionManager(
     RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
         connection_manager) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
@@ -118,10 +118,10 @@ void Server::ListenerInterface::ConfigFetcherWatcher::UpdateConnectionManager(
     if (listener_->started_) return;
     listener_->started_ = true;
   }
-  listener_->StartImpl();
+  listener_->Start();
 }
 
-void Server::ListenerInterface::ConfigFetcherWatcher::StopServing() {
+void Server::ListenerWrapper::ConfigFetcherWatcher::StopServing() {
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
   {
@@ -149,9 +149,9 @@ void Server::ListenerInterface::LogicalConnection::SendGoAway() {
     return;
   }
   CHECK(drain_grace_timer_handle_ == EventEngine::TaskHandle::kInvalid);
-  drain_grace_timer_handle_ = event_engine_->RunAfter(
+  drain_grace_timer_handle_ = event_engine()->RunAfter(
       std::max(Duration::Zero(),
-               listener_->server_->channel_args()
+               server_->channel_args()
                    .GetDurationFromIntMillis(
                        GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
                    .value_or(Duration::Minutes(10))),
@@ -179,7 +179,7 @@ void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {
   MutexLock lock(&mu_);
   drain_grace_timer_handle_cancelled_ = true;
   if (drain_grace_timer_handle_ != EventEngine::TaskHandle::kInvalid) {
-    event_engine_->Cancel(drain_grace_timer_handle_);
+    event_engine()->Cancel(drain_grace_timer_handle_);
     drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
   }
 }
@@ -188,31 +188,13 @@ void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {
 // Server::ListenerInterface
 //
 
-void Server::ListenerInterface::Orphan() {
-  // Cancel the watch before shutting down so as to avoid holding a ref to the
-  // listener in the watcher.
-  if (config_fetcher_watcher_ != nullptr) {
-    CHECK_NE(server_->config_fetcher(), nullptr);
-    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
-  }
-  absl::flat_hash_set<OrphanablePtr<LogicalConnection>> connections;
-  {
-    MutexLock lock(&mu_);
-    // Orphan the connections so that they can start cleaning up.
-    connections = std::move(connections_);
-    is_serving_ = false;
-  }
-  // OrphanImpl will unref the listener and hence should be done last.
-  OrphanImpl();
-}
-
-void Server::ListenerInterface::Start() {
+void Server::ListenerWrapper::Start() {
   if (server_->config_fetcher() != nullptr) {
     auto watcher =
-        std::make_unique<ListenerInterface::ConfigFetcherWatcher>(Ref());
+        std::make_unique<ListenerWrapper::ConfigFetcherWatcher>(this);
     config_fetcher_watcher_ = watcher.get();
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(&resolved_address_, false).value(),
+        grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
         std::move(watcher));
   } else {
     {
@@ -220,11 +202,32 @@ void Server::ListenerInterface::Start() {
       started_ = true;
       is_serving_ = true;
     }
-    StartImpl();
+    listener_->Start();
   }
 }
 
-void Server::ListenerInterface::AddLogicalConnection(
+void Server::ListenerWrapper::Stop() {
+  // Cancel the watch before shutting down so as to avoid holding a ref to the
+  // listener in the watcher.
+  if (config_fetcher_watcher_ != nullptr) {
+    CHECK_NE(server_->config_fetcher(), nullptr);
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+  }
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&mu_);
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(connections_);
+    is_serving_ = false;
+  }
+  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, this,
+                    grpc_schedule_on_exec_ctx);
+  listener_->SetOnDestroyDone(&destroy_done_);
+  listener_.reset();
+}
+
+void Server::ListenerWrapper::AddLogicalConnection(
     absl::AnyInvocable<OrphanablePtr<ListenerInterface::LogicalConnection>(
         const ChannelArgs& args)>
         connection_creator,
@@ -276,9 +279,9 @@ void Server::ListenerInterface::AddLogicalConnection(
   connections_.emplace(std::move(connection));
 }
 
-void Server::ListenerInterface::RemoveLogicalConnection(
-    LogicalConnection* connection) {
-  OrphanablePtr<LogicalConnection> connection_to_remove;
+void Server::ListenerWrapper::RemoveLogicalConnection(
+    ListenerInterface::LogicalConnection* connection) {
+  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   {
     // Remove the connection if it wasn't already removed.
     MutexLock lock(&mu_);
@@ -1116,7 +1119,9 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
     channelz_node_->AddChildListenSocket(
         listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
-  listeners_.emplace_back(std::move(listener));
+  ListenerInterface* ptr = listener.get();
+  listeners_.emplace_back(this, std::move(listener));
+  ptr->SetServerListenerWrapper(&listeners_.back());
 }
 
 void Server::Start() {
@@ -1149,7 +1154,7 @@ void Server::Start() {
     }
   }
   for (auto& listener : listeners_) {
-    listener.listener->Start();
+    listener.Start();
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
@@ -1404,17 +1409,14 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 
 void Server::StopListening() {
   for (auto& listener : listeners_) {
-    if (listener.listener == nullptr) continue;
+    if (listener.listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
-        listener.listener->channelz_listen_socket_node();
+        listener.listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_node_->RemoveChildListenSocket(
           channelz_listen_socket_node->uuid());
     }
-    GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
-                      grpc_schedule_on_exec_ctx);
-    listener.listener->SetOnDestroyDone(&listener.destroy_done);
-    listener.listener.reset();
+    listener.Stop();
   }
 }
 
