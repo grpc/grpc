@@ -22,7 +22,6 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
-#include "test/core/transport/chaotic_good/transport_test.h"
 
 using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
 using grpc_event_engine::experimental::EventEngine;
@@ -32,18 +31,15 @@ namespace http2 {
 namespace testing {
 
 TEST(Http2ClientTransportTest, TestHttp2ServerTransportObjectCreation) {
-  MockPromiseEndpoint control_endpoint(1);
-  MockPromiseEndpoint data_endpoint(2);
+  MockPromiseEndpoint endpoint(1);
   std::shared_ptr<EventEngine> event_engine =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 
-  Http2ServerTransport transport(std::move(control_endpoint.promise_endpoint),
-                                 std::move(data_endpoint.promise_endpoint),
+  Http2ServerTransport transport(std::move(endpoint.promise_endpoint),
                                  CoreConfiguration::Get()
                                      .channel_args_preconditioning()
                                      .PreconditionChannelArgs(nullptr),
-                                 event_engine, HPackParser(),
-                                 HPackCompressor());
+                                 event_engine);
 }
 
 }  // namespace testing

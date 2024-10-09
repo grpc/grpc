@@ -36,13 +36,9 @@ namespace http2 {
 class Http2ServerTransport final : public ServerTransport {
  public:
   Http2ServerTransport(
-      GRPC_UNUSED PromiseEndpoint control_endpoint,
-      GRPC_UNUSED PromiseEndpoint data_endpoint,
-      GRPC_UNUSED const ChannelArgs& args,
+      GRPC_UNUSED PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& args,
       GRPC_UNUSED std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      GRPC_UNUSED HPackParser hpack_parser,
-      GRPC_UNUSED HPackCompressor hpack_encoder) {}
+          event_engine) {}
   ~Http2ServerTransport() override {};
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
