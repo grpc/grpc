@@ -26,4 +26,4 @@ pushd src/python/grpcio_tests;
   python3 -m unittest "$TEST_MODULE" 
 popd;
 
-# chmod -R 755 src/
+chmod -R 755 src/
