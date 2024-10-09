@@ -19,11 +19,11 @@ BASEDIR=$(dirname "$0")/../..
 cd "$BASEDIR";
 
 # the test module 
-TEST_MODULE="tests.unit._rpc_part_1_test" 
+TEST_MODULE="tests.unit.test_all_modules_installed" 
 
 # Run the specific test module
 pushd src/python/grpcio_tests;
   python3 -m unittest "$TEST_MODULE" 
 popd;
 
-chmod -R 755 src/
+# chmod -R 755 src/
