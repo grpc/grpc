@@ -1433,6 +1433,11 @@ struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
 };
 }  // namespace promise_detail
 
+using ServerToClientNextMessage =
+    filters_detail::NextMessage<&CallState::FinishPullServerToClientMessage>;
+using ClientToServerNextMessage =
+    filters_detail::NextMessage<&CallState::FinishPullClientToServerMessage>;
+
 // Execution environment for a stack of filters.
 // This is a per-call object.
 class CallFilters {
@@ -1713,10 +1718,8 @@ class CallFilters {
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
   // Server: Fetch client to server message
-  // Returns a promise that resolves to NextMessage
+  // Returns a promise that resolves to ClientToServerNextMessage
   GRPC_MUST_USE_RESULT auto PullClientToServerMessage() {
-    using NM = filters_detail::NextMessage<
-        &CallState::FinishPullClientToServerMessage>;
     return TrySeq(
         [this]() {
           return call_state_.PollPullClientToServerMessageAvailable();
@@ -1732,7 +1735,9 @@ class CallFilters {
                     StacksVector::const_iterator>(this, stacks_.cbegin(),
                                                   stacks_.cend());
               },
-              []() -> NM { return NM(); });
+              []() -> ClientToServerNextMessage {
+                return ClientToServerNextMessage();
+              });
         });
   }
   // Server: Push server to client message
@@ -1743,10 +1748,8 @@ class CallFilters {
     return [this]() { return call_state_.PollPushServerToClientMessage(); };
   }
   // Server: Fetch server to client message
-  // Returns a promise that resolves to NextMessage
+  // Returns a promise that resolves to ServerToClientNextMessage
   GRPC_MUST_USE_RESULT auto PullServerToClientMessage() {
-    using NM = filters_detail::NextMessage<
-        &CallState::FinishPullServerToClientMessage>;
     return TrySeq(
         [this]() {
           return call_state_.PollPullServerToClientMessageAvailable();
@@ -1762,7 +1765,9 @@ class CallFilters {
                     StacksVector::const_reverse_iterator>(
                     this, stacks_.crbegin(), stacks_.crend());
               },
-              []() -> NM { return NM(); });
+              []() -> ServerToClientNextMessage {
+                return ServerToClientNextMessage();
+              });
         });
   }
   // Server: Indicate end of response
