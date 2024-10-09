@@ -18,8 +18,8 @@ set -ex
 BASEDIR=$(dirname "$0")/../..
 cd "$BASEDIR";
 
-install python all modules
+# install python all modules
 ./tools/distrib/install_all_python_modules.sh
 
-run python tooling tests
+# run python tooling tests
 ./tools/distrib/python_tooling_tests.sh
