@@ -18,7 +18,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 namespace grpc_core {
@@ -49,37 +48,6 @@ void Chttp2CallTracerWrapper::RecordOutgoingBytes(
   if (call_tracer != nullptr) {
     call_tracer->RecordOutgoingBytes(transport_byte_size);
   }
-}
-
-HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)
-    : CallTracerAnnotationInterface::Annotation(
-          CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
-      type_(type),
-      time_(time) {}
-
-std::string HttpAnnotation::ToString() const {
-  std::string s = "HttpAnnotation type: ";
-  switch (type_) {
-    case Type::kStart:
-      absl::StrAppend(&s, "Start");
-      break;
-    case Type::kHeadWritten:
-      absl::StrAppend(&s, "HeadWritten");
-      break;
-    case Type::kEnd:
-      absl::StrAppend(&s, "End");
-      break;
-    default:
-      absl::StrAppend(&s, "Unknown");
-  }
-  absl::StrAppend(&s, " time: ", gpr_format_timespec(time_));
-  if (transport_stats_.has_value()) {
-    absl::StrAppend(&s, " transport:[", transport_stats_->ToString(), "]");
-  }
-  if (stream_stats_.has_value()) {
-    absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
-  }
-  return s;
 }
 
 }  // namespace grpc_core
