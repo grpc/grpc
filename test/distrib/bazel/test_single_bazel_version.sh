@@ -66,9 +66,6 @@ EXCLUDED_TARGETS=(
   "-//third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
-  # TODO(jtattermusch): add back once fixed
-  "-//examples/android/binder/..."
-
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
 )
