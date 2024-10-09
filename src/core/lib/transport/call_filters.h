@@ -24,6 +24,7 @@
 #include <type_traits>
 
 #include "absl/log/check.h"
+#include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
@@ -170,6 +171,7 @@ class NextMessage {
     DCHECK(ok());
     return message_ != end_of_stream();
   }
+  StatusFlag status() const { return StatusFlag(ok()); }
   Message& value() {
     DCHECK_NE(message_, taken());
     DCHECK(ok());
@@ -196,6 +198,13 @@ class NextMessage {
   static Message* taken() { return reinterpret_cast<Message*>(2); }
   Message* message_ = end_of_stream();
   CallState* call_state_ = nullptr;
+};
+
+template <typename T>
+struct ArgumentMustBeNextMessage;
+template <void (CallState::*on_progress)()>
+struct ArgumentMustBeNextMessage<NextMessage<on_progress>> {
+  static constexpr bool value() { return true; }
 };
 
 inline void* Offset(void* base, size_t amt) {
@@ -1356,6 +1365,74 @@ const NoInterceptor ClientInitialMetadataInterceptor<Fn>::Call::OnFinalize;
 
 }  // namespace filters_detail
 
+namespace for_each_detail {
+template <void (CallState::*on_progress)()>
+struct NextValueTraits<filters_detail::NextMessage<on_progress>> {
+  using NextMsg = filters_detail::NextMessage<on_progress>;
+  using Value = MessageHandle;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
+      const NextMsg& t) {
+    if (!t.ok()) return NextValueType::kError;
+    if (t.has_value()) return NextValueType::kValue;
+    return NextValueType::kEndOfStream;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static MessageHandle TakeValue(
+      NextMsg& t) {
+    return t.TakeValue();
+  }
+};
+}  // namespace for_each_detail
+
+template <void (CallState::*on_progress)()>
+struct FailureStatusCastImpl<filters_detail::NextMessage<on_progress>,
+                             StatusFlag> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static filters_detail::NextMessage<
+      on_progress>
+  Cast(StatusFlag flag) {
+    DCHECK_EQ(flag, Failure{});
+    return filters_detail::NextMessage<on_progress>(Failure{});
+  }
+};
+
+namespace promise_detail {
+template <void (CallState::*on_progress)()>
+struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
+  using UnwrappedType = MessageHandle;
+  using WrappedType = filters_detail::NextMessage<on_progress>;
+  template <typename Next>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallFactory(
+      Next* next, WrappedType&& value) {
+    return next->Make(value.TakeValue());
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(
+      const WrappedType& value) {
+    return value.ok();
+  }
+  static const char* ErrorString(const WrappedType& status) {
+    DCHECK(!status.ok());
+    return "failed";
+  }
+  template <typename R>
+  static R ReturnValue(WrappedType&& status) {
+    return WrappedType(Failure{});
+  }
+  template <typename F, typename Elem>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static auto CallSeqFactory(
+      F& f, Elem&& elem, WrappedType value)
+      -> decltype(f(std::forward<Elem>(elem), std::declval<MessageHandle>())) {
+    return f(std::forward<Elem>(elem), value.TakeValue());
+  }
+  template <typename Result, typename RunNext>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>
+  CheckResultAndRunNext(WrappedType prior, RunNext run_next) {
+    if (!prior.ok()) return WrappedType(prior.status());
+    return run_next(std::move(prior));
+  }
+};
+}  // namespace promise_detail
+
 // Execution environment for a stack of filters.
 // This is a per-call object.
 class CallFilters {
@@ -1636,7 +1713,7 @@ class CallFilters {
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
   // Server: Fetch client to server message
-  // Returns a promise that resolves to ValueOrFailure<MessageHandle>
+  // Returns a promise that resolves to NextMessage
   GRPC_MUST_USE_RESULT auto PullClientToServerMessage() {
     using NM = filters_detail::NextMessage<
         &CallState::FinishPullClientToServerMessage>;
@@ -1666,7 +1743,7 @@ class CallFilters {
     return [this]() { return call_state_.PollPushServerToClientMessage(); };
   }
   // Server: Fetch server to client message
-  // Returns a promise that resolves to ValueOrFailure<MessageHandle>
+  // Returns a promise that resolves to NextMessage
   GRPC_MUST_USE_RESULT auto PullServerToClientMessage() {
     using NM = filters_detail::NextMessage<
         &CallState::FinishPullServerToClientMessage>;
@@ -1761,6 +1838,20 @@ class CallFilters {
 
   static char g_empty_call_data_;
 };
+
+static_assert(
+    filters_detail::ArgumentMustBeNextMessage<
+        absl::remove_cvref_t<decltype(std::declval<CallFilters*>()
+                                          ->PullServerToClientMessage()()
+                                          .value())>>::value(),
+    "PullServerToClientMessage must return a NextMessage");
+
+static_assert(
+    filters_detail::ArgumentMustBeNextMessage<
+        absl::remove_cvref_t<decltype(std::declval<CallFilters*>()
+                                          ->PullClientToServerMessage()()
+                                          .value())>>::value(),
+    "PullServerToClientMessage must return a NextMessage");
 
 }  // namespace grpc_core
 
