@@ -83,12 +83,18 @@ class TestLoggingSink : public grpc_core::LoggingSink {
   }
 
   // Waits for \a duration till we have \a num_entries in the log.
-  void WaitForNumEntries(size_t num_entries, absl::Duration duration) {
+  bool WaitForNumEntries(size_t num_entries, absl::Duration duration) {
     absl::Time deadline = absl::Now() + duration * grpc_test_slowdown_factor();
     grpc_core::MutexLock lock(&mu_);
     while (entries_.size() != num_entries) {
-      cv_.WaitWithDeadline(&mu_, deadline);
+      if (cv_.WaitWithDeadline(&mu_, deadline)) {
+        LOG(ERROR) << "\nDeadline expired while waiting on logging "
+                      "entries\nExpected number: "
+                   << num_entries << "\nActual number: " << entries_.size();
+        return false;
+      }
     }
+    return true;
   }
 
  private:
