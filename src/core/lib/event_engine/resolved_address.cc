@@ -49,7 +49,7 @@ EventEngine::ResolvedAddress CreateResolvedAddress(
 grpc_resolved_address CreateGRPCResolvedAddress(
     const EventEngine::ResolvedAddress& ra) {
   static_assert(
-      sizeof(grpc_resolved_address) == sizeof(EventEngine::ResolvedAddress),
+      GRPC_MAX_SOCKADDR_SIZE == EventEngine::ResolvedAddress::MAX_SIZE_BYTES,
       "size should match");
   grpc_resolved_address grpc_addr;
   memset(&grpc_addr, 0, sizeof(grpc_resolved_address));
