@@ -3508,7 +3508,8 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   overrides.trace =
-      "call,channel,client_channel,client_channel_call,client_channel_lb_call";
+      "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
+      "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
