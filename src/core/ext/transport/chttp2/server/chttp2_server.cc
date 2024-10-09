@@ -1545,41 +1545,33 @@ void NewChttp2ServerListener::OnAccept(
           self->memory_quota_, grpc_endpoint_get_peer(endpoint.get()))) {
     return;
   }
-  RefCountedPtr<NewActiveConnection> connection_ref;
-  RefCountedPtr<NewChttp2ServerListener> listener_ref =
-      self->RefAsSubclass<NewChttp2ServerListener>();
-  ;
-  ChannelArgs new_args;
-  self->listener_wrapper_->AddLogicalConnection(
-      [&](const ChannelArgs& args) -> OrphanablePtr<LogicalConnection> {
-        {
-          // The ref for both the listener and tcp_server need to be taken in
-          // the critical region after having made sure that the listener has
-          // not been Orphaned, so as to avoid heap-use-after-free issues where
-          // `Ref()` is invoked when the listener is already shutdown. Note that
-          // the listener holds a ref to the tcp_server but this ref is given
-          // away when the listener is orphaned (shutdown). A connection needs
-          // the tcp_server to outlast the handshake since the acceptor needs
-          // it.
-          MutexLock lock(&self->mu_);
-          if (self->shutdown_) {
-            return nullptr;
-          }
-          if (self->tcp_server_ != nullptr) {
-            grpc_tcp_server_ref(self->tcp_server_);
-          }
-        }
-        auto memory_owner = self->memory_quota_->CreateMemoryOwner();
-        auto connection = memory_owner.MakeOrphanable<NewActiveConnection>(
-            std::move(listener_ref), accepting_pollset, std::move(acceptor),
-            args, std::move(memory_owner));
-        connection_ref = connection->RefAsSubclass<NewActiveConnection>();
-        new_args = args;
-        return connection;
-      },
-      self->args_, tcp);
-  if (connection_ref != nullptr) {
-    connection_ref->Start(std::move(endpoint), new_args);
+  {
+    // The ref for the tcp_server need to be taken in the critical region after
+    // having made sure that the listener has not been Orphaned, so as to avoid
+    // heap-use-after-free issues where `Ref()` is invoked when the listener is
+    // already shutdown. Note that the listener holds a ref to the tcp_server
+    // but this ref is given away when the listener is orphaned (shutdown). A
+    // connection needs the tcp_server to outlast the handshake since the
+    // acceptor needs it.
+    MutexLock lock(&self->mu_);
+    if (self->shutdown_) {
+      return;
+    }
+    if (self->tcp_server_ != nullptr) {
+      grpc_tcp_server_ref(self->tcp_server_);
+    }
+  }
+  auto memory_owner = self->memory_quota_->CreateMemoryOwner();
+  auto connection = memory_owner.MakeOrphanable<NewActiveConnection>(
+      self->RefAsSubclass<NewChttp2ServerListener>(), accepting_pollset,
+      std::move(acceptor), self->args_, std::move(memory_owner));
+  RefCountedPtr<NewActiveConnection> connection_ref =
+      connection->RefAsSubclass<NewActiveConnection>();
+  absl::optional<ChannelArgs> new_args =
+      self->listener_wrapper_->AddLogicalConnection(std::move(connection),
+                                                    self->args_, tcp);
+  if (new_args.has_value()) {
+    connection_ref->Start(std::move(endpoint), *new_args);
   }
 }
 

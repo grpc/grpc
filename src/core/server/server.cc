@@ -231,10 +231,8 @@ void Server::ListenerWrapper::Stop() {
   listener_.reset();
 }
 
-void Server::ListenerWrapper::AddLogicalConnection(
-    absl::AnyInvocable<OrphanablePtr<ListenerInterface::LogicalConnection>(
-        const ChannelArgs& args)>
-        connection_creator,
+absl::optional<ChannelArgs> Server::ListenerWrapper::AddLogicalConnection(
+    OrphanablePtr<ListenerInterface::LogicalConnection> connection,
     const ChannelArgs& args, grpc_endpoint* endpoint) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager;
@@ -242,7 +240,7 @@ void Server::ListenerWrapper::AddLogicalConnection(
     MutexLock lock(&mu_);
     if (!is_serving_) {
       // Not serving
-      return;
+      return absl::nullopt;
     }
     connection_manager = connection_manager_;
   }
@@ -250,37 +248,34 @@ void Server::ListenerWrapper::AddLogicalConnection(
   if (server_->config_fetcher() != nullptr) {
     if (connection_manager == nullptr) {
       // Connection manager not available
-      return;
+      return absl::nullopt;
     }
     absl::StatusOr<ChannelArgs> args_result =
         connection_manager->UpdateChannelArgsForConnection(new_args, endpoint);
     if (!args_result.ok()) {
-      return;
+      return absl::nullopt;
     }
     auto* server_credentials =
         (*args_result).GetObject<grpc_server_credentials>();
     if (server_credentials == nullptr) {
       // Could not find server credentials
-      return;
+      return absl::nullopt;
     }
     auto security_connector =
         server_credentials->create_security_connector(*args_result);
     if (security_connector == nullptr) {
       // Unable to create secure server with credentials
-      return;
+      return absl::nullopt;
     }
     new_args = (*args_result).SetObject(security_connector);
-  }
-  auto connection = connection_creator(new_args);
-  if (connection == nullptr) {
-    return;
   }
   MutexLock lock(&mu_);
   if (!is_serving_ && connection_manager == connection_manager_) {
     // Not serving
-    return;
+    return absl::nullopt;
   }
   connections_.emplace(std::move(connection));
+  return new_args;
 }
 
 void Server::ListenerWrapper::RemoveLogicalConnection(

@@ -247,10 +247,9 @@ class Server : public ServerInterface,
     Server* server() const { return server_; }
 
     // Adds a LogicalConnection to the listener and updates the channel args if
-    // needed.
-    void AddLogicalConnection(
-        absl::AnyInvocable<OrphanablePtr<ListenerInterface::LogicalConnection>(
-            const ChannelArgs& args)>,
+    // needed, and returns ChannelArgs if successful.
+    absl::optional<ChannelArgs> AddLogicalConnection(
+        OrphanablePtr<ListenerInterface::LogicalConnection> connection,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
