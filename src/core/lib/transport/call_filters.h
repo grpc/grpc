@@ -122,6 +122,19 @@ struct NoInterceptor {};
 
 namespace filters_detail {
 
+// Flow control across pipe stages.
+// This ends up being exceedingly subtle - essentially we need to ensure that
+// across a series of pipes we have no more than one outstanding message at a
+// time - but those pipes are for the most part independent.
+// How we achieve this is that this NextMessage object holds both the message
+// and a completion token - the last owning NextMessage instance will call
+// the on_progress method on the referenced CallState - and at that point that
+// CallState will allow the next message to be sent through it.
+// Next, the ForEach promise combiner explicitly holds onto the wrapper object
+// owning the result (this object) and extracts the message from it, but doesn't
+// dispose that instance until the action promise for the ForEach iteration
+// completes, ensuring most callers need do nothing special to have the
+// flow control work correctly.
 template <void (CallState::*on_progress)()>
 class NextMessage {
  public:
