@@ -260,15 +260,3 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
     ],
 )
-
-grpc_cc_library(
-    name = "mock_promise_endpoint",
-    testonly = 1,
-    srcs = ["util/mock_promise_endpoint.cc"],
-    hdrs = ["util/mock_promise_endpoint.h"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:grpc",
-        "//src/core:grpc_promise_endpoint",
-    ],
-)

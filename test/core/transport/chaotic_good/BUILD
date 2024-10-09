@@ -133,7 +133,7 @@ grpc_cc_test(
         "//src/core:loop",
         "//src/core:seq",
         "//src/core:slice_buffer",
-        "//test/core/transport:mock_promise_endpoint",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -190,7 +190,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "mock_promise_endpoint",
         "transport_test",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -205,6 +204,7 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
