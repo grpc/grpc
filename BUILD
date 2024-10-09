@@ -4835,7 +4835,6 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "call_tracer",
-        "call_tracer_wrapper",
         "channel_arg_names",
         "channelz",
         "chttp2_context_list_entry",
