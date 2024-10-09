@@ -76,6 +76,7 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerListenerEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -111,6 +112,7 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerListenerEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -145,6 +147,7 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsServerListenerEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -176,6 +179,7 @@ enum ExperimentIds {
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdServerListener,
   kExperimentIdServerPrivacy,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -245,6 +249,10 @@ inline bool IsPromiseBasedInprocTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
+inline bool IsServerListenerEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerListener>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() {

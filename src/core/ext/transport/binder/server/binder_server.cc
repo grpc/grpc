@@ -138,18 +138,36 @@ class BinderServerListener : public Server::ListenerInterface {
       Server* server, std::string addr, BinderTxReceiverFactory factory,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy)
-      : ListenerInterface(server),
+      : server_(server),
         addr_(std::move(addr)),
         factory_(std::move(factory)),
         security_policy_(security_policy) {}
 
+  void Start() override {
+    tx_receiver_ = factory_(
+        [this](transaction_code_t code, grpc_binder::ReadableParcel* parcel,
+               int uid) { return OnSetupTransport(code, parcel, uid); });
+    endpoint_binder_ = tx_receiver_->GetRawBinder();
+    grpc_add_endpoint_binder(addr_, endpoint_binder_);
+  }
+
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
+    return nullptr;
+  }
+
+  void SetServerListenerWrapper(Server::ListenerWrapper*) override {}
+
+  const grpc_resolved_address* resolved_address() const override {
+    // binder doesn't use the new ListenerWrapper interface yet.
+    grpc_core::Crash("Unimplemented");
     return nullptr;
   }
 
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override {
     on_destroy_done_ = on_destroy_done;
   }
+
+  void Orphan() override { Unref(); }
 
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
@@ -161,16 +179,6 @@ class BinderServerListener : public Server::ListenerInterface {
   }
 
  private:
-  void StartImpl() override {
-    tx_receiver_ = factory_(
-        [this](transaction_code_t code, grpc_binder::ReadableParcel* parcel,
-               int uid) { return OnSetupTransport(code, parcel, uid); });
-    endpoint_binder_ = tx_receiver_->GetRawBinder();
-    grpc_add_endpoint_binder(addr_, endpoint_binder_);
-  }
-
-  void OrphanImpl() override { Unref(); }
-
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
     ExecCtx exec_ctx;
@@ -213,11 +221,12 @@ class BinderServerListener : public Server::ListenerInterface {
     Transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
     CHECK(server_transport);
-    grpc_error_handle error = server()->SetupTransport(
-        server_transport, nullptr, server()->channel_args(), nullptr);
+    grpc_error_handle error = server_->SetupTransport(
+        server_transport, nullptr, server_->channel_args(), nullptr);
     return grpc_error_to_absl_status(error);
   }
 
+  Server* server_;
   grpc_closure* on_destroy_done_ = nullptr;
   std::string addr_;
   BinderTxReceiverFactory factory_;

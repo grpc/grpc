@@ -31,6 +31,7 @@
 namespace grpc_core {
 
 class Chttp2ServerListener;
+class NewChttp2ServerListener;
 namespace experimental {
 
 // An implementation of the public C++ passive listener interface.
@@ -58,7 +59,8 @@ class PassiveListenerImpl final : public PassiveListener {
   Mutex mu_;
   // Data members will be populated when initialized.
   RefCountedPtr<Server> server_;
-  Chttp2ServerListener* listener_;
+  Chttp2ServerListener* listener_ = nullptr;
+  NewChttp2ServerListener* new_listener_ = nullptr;
 };
 
 }  // namespace experimental

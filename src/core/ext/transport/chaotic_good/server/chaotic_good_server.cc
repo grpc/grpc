@@ -79,7 +79,7 @@ using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : ListenerInterface(server),
+    : server_(server),
       args_(args),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
@@ -149,8 +149,7 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     : listener_(std::move(listener)) {
   arena_->SetContext<grpc_event_engine::experimental::EventEngine>(
       listener_->event_engine_.get());
-  handshaking_state_ =
-      MakeRefCounted<HandshakingState>(RefAsSubclass<ActiveConnection>());
+  handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
 
@@ -190,14 +189,13 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
 void ChaoticGoodServerListener::ActiveConnection::Done() {
   // Can easily be holding various locks here: bounce through EE to ensure no
   // deadlocks.
-  listener_->event_engine_->Run(
-      [self = RefAsSubclass<ChaoticGoodServerListener::ActiveConnection>()]() {
-        ExecCtx exec_ctx;
-        OrphanablePtr<ActiveConnection> con;
-        MutexLock lock(&self->listener_->mu_);
-        auto v = self->listener_->connection_list_.extract(self.get());
-        if (!v.empty()) con = std::move(v.value());
-      });
+  listener_->event_engine_->Run([self = Ref()]() {
+    ExecCtx exec_ctx;
+    OrphanablePtr<ActiveConnection> con;
+    MutexLock lock(&self->listener_->mu_);
+    auto v = self->listener_->connection_list_.extract(self.get());
+    if (!v.empty()) con = std::move(v.value());
+  });
 }
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
@@ -304,7 +302,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             if (self->connection_->listener_->shutdown_) {
               return absl::UnavailableError("Server shutdown");
             }
-            return self->connection_->listener_->server()->SetupTransport(
+            return self->connection_->listener_->server_->SetupTransport(
                 new ChaoticGoodServerTransport(
                     self->connection_->args(),
                     std::move(self->connection_->endpoint_), std::move(ret),
@@ -447,7 +445,7 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
              .value_or(kConnectionDeadline);
 }
 
-void ChaoticGoodServerListener::OrphanImpl() {
+void ChaoticGoodServerListener::Orphan() {
   GRPC_TRACE_LOG(chaotic_good, INFO) << "ChaoticGoodServerListener::Orphan()";
   {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;

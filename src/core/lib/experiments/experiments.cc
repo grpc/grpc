@@ -72,6 +72,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
@@ -145,6 +148,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, false, true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
@@ -221,6 +226,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
@@ -294,6 +302,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, false, true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
@@ -370,6 +380,9 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
 const char* const description_tcp_frame_size_tuning =
@@ -443,6 +456,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener, nullptr, 0, false, true},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, nullptr, 0, false, false},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,

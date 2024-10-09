@@ -189,37 +189,41 @@ void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {
 //
 
 void Server::ListenerWrapper::Start() {
-  if (server_->config_fetcher() != nullptr) {
-    auto watcher =
-        std::make_unique<ListenerWrapper::ConfigFetcherWatcher>(this);
-    config_fetcher_watcher_ = watcher.get();
-    server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
-        std::move(watcher));
-  } else {
-    {
-      MutexLock lock(&mu_);
-      started_ = true;
-      is_serving_ = true;
+  if (IsServerListenerEnabled()) {
+    if (server_->config_fetcher() != nullptr) {
+      auto watcher =
+          std::make_unique<ListenerWrapper::ConfigFetcherWatcher>(this);
+      config_fetcher_watcher_ = watcher.get();
+      server_->config_fetcher()->StartWatch(
+          grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
+          std::move(watcher));
+    } else {
+      {
+        MutexLock lock(&mu_);
+        started_ = true;
+        is_serving_ = true;
+      }
+      listener_->Start();
     }
+  } else {
     listener_->Start();
   }
 }
 
 void Server::ListenerWrapper::Stop() {
-  // Cancel the watch before shutting down so as to avoid holding a ref to the
-  // listener in the watcher.
-  if (config_fetcher_watcher_ != nullptr) {
-    CHECK_NE(server_->config_fetcher(), nullptr);
-    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
-  }
-  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-      connections;
-  {
-    MutexLock lock(&mu_);
-    // Orphan the connections so that they can start cleaning up.
-    connections = std::move(connections_);
-    is_serving_ = false;
+  if (IsServerListenerEnabled()) {
+    absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+        connections;
+    {
+      MutexLock lock(&mu_);
+      // Orphan the connections so that they can start cleaning up.
+      connections = std::move(connections_);
+      is_serving_ = false;
+    }
+    if (config_fetcher_watcher_ != nullptr) {
+      CHECK_NE(server_->config_fetcher(), nullptr);
+      server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+    }
   }
   GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, this,
                     grpc_schedule_on_exec_ctx);

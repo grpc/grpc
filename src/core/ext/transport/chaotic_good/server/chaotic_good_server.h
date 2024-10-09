@@ -66,10 +66,19 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       grpc_event_engine::experimental::EventEngine::ResolvedAddress addr);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
-  void OrphanImpl() override;
+  void Orphan() override;
 
   class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
+    ActiveConnection(
+        RefCountedPtr<ChaoticGoodServerListener> listener,
+        std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+            endpoint);
+    ~ActiveConnection() override;
+    const ChannelArgs& args() const { return listener_->args(); }
+
+    void Orphan() override;
+
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
       explicit HandshakingState(RefCountedPtr<ActiveConnection> connection);
@@ -100,15 +109,6 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       const RefCountedPtr<HandshakeManager> handshake_mgr_;
     };
 
-    ActiveConnection(
-        RefCountedPtr<ChaoticGoodServerListener> listener,
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-            endpoint);
-    ~ActiveConnection() override;
-    const ChannelArgs& args() const { return listener_->args(); }
-
-    void Orphan() override;
-
    private:
     void Done();
     void NewConnectionID();
@@ -126,9 +126,17 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     int32_t data_alignment_;
   };
 
-  void StartImpl() override { StartListening().IgnoreError(); };
+  void Start() override { StartListening().IgnoreError(); };
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
+    return nullptr;
+  }
+
+  void SetServerListenerWrapper(Server::ListenerWrapper*) override {}
+
+  const grpc_resolved_address* resolved_address() const override {
+    // chaotic good doesn't use the new ListenerWrapper interface yet.
+    grpc_core::Crash("Unimplemented");
     return nullptr;
   }
 
@@ -138,6 +146,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   };
 
  private:
+  Server* const server_;
   ChannelArgs args_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
