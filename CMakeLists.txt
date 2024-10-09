@@ -17890,15 +17890,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_client_transport_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  src/core/ext/transport/chaotic_good/frame.cc
-  src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/lib/transport/promise_endpoint.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -17908,9 +17901,8 @@ add_executable(http2_client_transport_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
-  test/core/transport/chaotic_good/mock_promise_endpoint.cc
-  test/core/transport/chaotic_good/transport_test.cc
   test/core/transport/chttp2/http2_client_transport_test.cc
+  test/core/transport/util/mock_promise_endpoint.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17944,7 +17936,6 @@ target_include_directories(http2_client_transport_test
 target_link_libraries(http2_client_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -17953,15 +17944,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_server_transport_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  src/core/ext/transport/chaotic_good/frame.cc
-  src/core/ext/transport/chaotic_good/frame_header.cc
   src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/lib/transport/promise_endpoint.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -17971,9 +17955,8 @@ add_executable(http2_server_transport_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
-  test/core/transport/chaotic_good/mock_promise_endpoint.cc
-  test/core/transport/chaotic_good/transport_test.cc
   test/core/transport/chttp2/http2_server_transport_test.cc
+  test/core/transport/util/mock_promise_endpoint.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18007,7 +17990,6 @@ target_include_directories(http2_server_transport_test
 target_link_libraries(http2_server_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 

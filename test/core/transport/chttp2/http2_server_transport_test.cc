@@ -21,7 +21,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 
 using grpc_core::chaotic_good::testing::MockPromiseEndpoint;
 using grpc_event_engine::experimental::EventEngine;

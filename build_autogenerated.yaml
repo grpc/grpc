@@ -12076,11 +12076,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/lib/transport/promise_endpoint.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
@@ -12091,15 +12088,10 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
-  - test/core/transport/chaotic_good/mock_promise_endpoint.h
-  - test/core/transport/chaotic_good/transport_test.h
+  - test/core/transport/util/mock_promise_endpoint.h
   src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -12109,12 +12101,10 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
-  - test/core/transport/chaotic_good/mock_promise_endpoint.cc
-  - test/core/transport/chaotic_good/transport_test.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: http2_server_transport_test
@@ -12122,11 +12112,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - src/core/lib/transport/promise_endpoint.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
@@ -12137,15 +12124,10 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
-  - test/core/transport/chaotic_good/mock_promise_endpoint.h
-  - test/core/transport/chaotic_good/transport_test.h
+  - test/core/transport/util/mock_promise_endpoint.h
   src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -12155,12 +12137,10 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
-  - test/core/transport/chaotic_good/mock_promise_endpoint.cc
-  - test/core/transport/chaotic_good/transport_test.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: http2_settings_test

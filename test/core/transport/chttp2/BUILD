@@ -500,8 +500,7 @@ grpc_cc_test(
         "//:grpc_http2_client_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//test/core/transport/chaotic_good:mock_promise_endpoint",
-        "//test/core/transport/chaotic_good:transport_test",
+        "//test/core/transport:mock_promise_endpoint",
     ],
 )
 
@@ -517,7 +516,6 @@ grpc_cc_test(
         "//:grpc_http2_server_transport",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//test/core/transport/chaotic_good:mock_promise_endpoint",
-        "//test/core/transport/chaotic_good:transport_test",
+        "//test/core/transport:mock_promise_endpoint",
     ],
 )
