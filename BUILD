@@ -4970,6 +4970,14 @@ grpc_cc_library(
     language = "c++",
 )
 
+grpc_cc_library(
+    name = "absl_init",
+    external_deps = [
+        "absl/log:initialize",
+    ],
+    language = "c++",
+)
+
 # TODO(yashykt): Remove the UPB definitions from here once they are no longer needed
 ### UPB Targets
 
