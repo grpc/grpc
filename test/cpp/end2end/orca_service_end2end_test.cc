@@ -76,6 +76,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
             grpc_core::Duration::Milliseconds(750) *
             grpc_test_slowdown_factor();
         auto elapsed = now - *last_response_time_;
+        LOG(INFO) << "received ORCA response after " << elapsed;
         EXPECT_GE(elapsed, requested_interval_ - fudge_factor)
             << elapsed.ToString();
         EXPECT_LE(elapsed, requested_interval_ + fudge_factor)
