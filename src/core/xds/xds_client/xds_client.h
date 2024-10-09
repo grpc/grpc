@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -28,26 +31,22 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 
@@ -84,21 +83,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   XdsClient(
-      std::unique_ptr<XdsBootstrap> bootstrap,
-      OrphanablePtr<XdsTransportFactory> transport_factory,
+      std::shared_ptr<XdsBootstrap> bootstrap,
+      RefCountedPtr<XdsTransportFactory> transport_factory,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       std::unique_ptr<XdsMetricsReporter> metrics_reporter,
       std::string user_agent_name, std::string user_agent_version,
       Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
-
-  const XdsBootstrap& bootstrap() const {
-    return *bootstrap_;  // ctor asserts that it is non-null
-  }
-
-  XdsTransportFactory* transport_factory() const {
-    return transport_factory_.get();
-  }
 
   // Start and cancel watch for a resource.
   //
@@ -126,29 +117,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            ResourceWatcherInterface* watcher,
                            bool delay_unsubscription = false);
 
-  // Adds and removes drop stats for cluster_name and eds_service_name.
-  RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name);
-  void RemoveClusterDropStats(absl::string_view xds_server,
-                              absl::string_view cluster_name,
-                              absl::string_view eds_service_name,
-                              XdsClusterDropStats* cluster_drop_stats);
-
-  // Adds and removes locality stats for cluster_name and eds_service_name
-  // for the specified locality.
-  RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
-      RefCountedPtr<XdsLocalityName> locality);
-  void RemoveClusterLocalityStats(
-      absl::string_view xds_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
-      const RefCountedPtr<XdsLocalityName>& locality,
-      XdsClusterLocalityStats* cluster_locality_stats);
-
   // Resets connection backoff state.
-  void ResetBackoff();
+  virtual void ResetBackoff();
+
+  const XdsBootstrap& bootstrap() const {
+    return *bootstrap_;  // ctor asserts that it is non-null
+  }
+
+  XdsTransportFactory* transport_factory() const {
+    return transport_factory_.get();
+  }
 
   grpc_event_engine::experimental::EventEngine* engine() {
     return engine_.get();
@@ -212,7 +190,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     class RetryableCall;
 
     class AdsCall;
-    class LrsCall;
 
     XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
                const XdsBootstrap::XdsServer& server);
@@ -220,12 +197,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     XdsClient* xds_client() const { return xds_client_.get(); }
     AdsCall* ads_call() const;
-    LrsCall* lrs_call() const;
 
     void ResetBackoff();
-
-    void MaybeStartLrsCall();
-    void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     // Returns non-OK if there has been an error since the last time the
     // ADS stream saw a response.
@@ -242,6 +215,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
+    class ConnectivityFailureWatcher;
+
     // Attempts to find a suitable Xds fallback server. Returns true if
     // a connection to a suitable server had been established.
     bool MaybeFallbackLocked(const std::string& authority,
@@ -262,13 +237,14 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
-    OrphanablePtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher>
+        failure_watcher_;
 
     bool shutting_down_ = false;
 
     // The retryable ADS and LRS calls.
     OrphanablePtr<RetryableCall<AdsCall>> ads_call_;
-    OrphanablePtr<RetryableCall<LrsCall>> lrs_call_;
 
     // Stores the most recent accepted resource version for each resource type.
     std::map<const XdsResourceType*, std::string /*version*/>
@@ -292,30 +268,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
         resource_map;
   };
 
-  struct LoadReportState {
-    struct LocalityState {
-      XdsClusterLocalityStats* locality_stats = nullptr;
-      XdsClusterLocalityStats::Snapshot deleted_locality_stats;
-    };
-
-    XdsClusterDropStats* drop_stats = nullptr;
-    XdsClusterDropStats::Snapshot deleted_drop_stats;
-    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
-             XdsLocalityName::Less>
-        locality_stats;
-    Timestamp last_report_time = Timestamp::Now();
-  };
-
-  // Load report data.
-  using LoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      LoadReportState>;
-
-  struct LoadReportServer {
-    RefCountedPtr<XdsChannel> xds_channel;
-    LoadReportMap load_report_map;
-  };
-
   // Sends an error notification to a specific set of watchers.
   void NotifyWatchersOnErrorLocked(
       const std::map<ResourceWatcherInterface*,
@@ -334,22 +286,20 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  bool HasUncachedResources(const AuthorityState& authority_state);
+
   absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
       absl::string_view authority, absl::string_view resource_type,
       const XdsResourceKey& key);
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
-      const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   RefCountedPtr<XdsChannel> GetOrCreateXdsChannelLocked(
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  bool HasUncachedResources(const AuthorityState& authority_state);
 
-  std::unique_ptr<XdsBootstrap> bootstrap_;
-  OrphanablePtr<XdsTransportFactory> transport_factory_;
+  std::shared_ptr<XdsBootstrap> bootstrap_;
+  RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
   XdsApi api_;
@@ -370,9 +320,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
-
-  std::map<std::string /*XdsServer key*/, LoadReportServer, std::less<>>
-      xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().

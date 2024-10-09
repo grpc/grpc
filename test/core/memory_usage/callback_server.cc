@@ -16,6 +16,11 @@
 //
 //
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/xds_server_builder.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -26,13 +31,6 @@
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/status.h>
-#include <grpcpp/xds_server_builder.h>
-
 #include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"

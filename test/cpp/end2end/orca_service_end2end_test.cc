@@ -15,12 +15,6 @@
 //
 
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -31,8 +25,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "src/core/util/time.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.pb.h"
 #include "test/core/test_util/port.h"
@@ -78,6 +76,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
             grpc_core::Duration::Milliseconds(750) *
             grpc_test_slowdown_factor();
         auto elapsed = now - *last_response_time_;
+        LOG(INFO) << "received ORCA response after " << elapsed;
         EXPECT_GE(elapsed, requested_interval_ - fudge_factor)
             << elapsed.ToString();
         EXPECT_LE(elapsed, requested_interval_ + fudge_factor)

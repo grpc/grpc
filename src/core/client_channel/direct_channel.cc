@@ -16,10 +16,10 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/client_call.h"
 #include "src/core/lib/transport/interception_chain.h"
+#include "src/core/util/orphanable.h"
 
 namespace grpc_core {
 

@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_API_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_API_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <map>
@@ -29,25 +30,20 @@
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
 #include "envoy/service/status/v3/csds.upb.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.hpp"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
 
 namespace grpc_core {
 
 class XdsClient;
 
-// TODO(roth): When we have time, split this into multiple pieces:
-// - ADS request/response handling
-// - LRS request/response handling
-// - CSDS response generation
+// TODO(roth): When we have time, remove this class and move its
+// functionality directly inside of XdsClient.
 class XdsApi final {
  public:
   // Interface defined by caller and passed to ParseAdsResponse().
@@ -80,17 +76,6 @@ class XdsApi final {
     virtual void ResourceWrapperParsingFailed(size_t idx,
                                               absl::string_view message) = 0;
   };
-
-  struct ClusterLoadReport {
-    XdsClusterDropStats::Snapshot dropped_requests;
-    std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
-             XdsLocalityName::Less>
-        locality_stats;
-    Duration load_report_interval;
-  };
-  using ClusterLoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      ClusterLoadReport>;
 
   // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
@@ -160,19 +145,6 @@ class XdsApi final {
   absl::Status ParseAdsResponse(absl::string_view encoded_response,
                                 AdsResponseParserInterface* parser);
 
-  // Creates an initial LRS request.
-  std::string CreateLrsInitialRequest();
-
-  // Creates an LRS request sending a client-side load report.
-  std::string CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
-
-  // Parses the LRS response and populates send_all_clusters,
-  // cluster_names, and load_reporting_interval.
-  absl::Status ParseLrsResponse(absl::string_view encoded_response,
-                                bool* send_all_clusters,
-                                std::set<std::string>* cluster_names,
-                                Duration* load_reporting_interval);
-
   void PopulateNode(envoy_config_core_v3_Node* node_msg, upb_Arena* arena);
 
  private:
@@ -183,6 +155,11 @@ class XdsApi final {
   const std::string user_agent_name_;
   const std::string user_agent_version_;
 };
+
+void PopulateXdsNode(const XdsBootstrap::Node* node,
+                     absl::string_view user_agent_name,
+                     absl::string_view user_agent_version,
+                     envoy_config_core_v3_Node* node_msg, upb_Arena* arena);
 
 }  // namespace grpc_core
 

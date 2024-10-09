@@ -19,20 +19,18 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/dynamic_annotations.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.

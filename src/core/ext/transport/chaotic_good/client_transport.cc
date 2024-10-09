@@ -14,6 +14,10 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -27,47 +31,32 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/all_ok.h"
-#include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
 void ChaoticGoodClientTransport::Orphan() {
   AbortWithError();
-  ActivityPtr writer;
-  ActivityPtr reader;
+  RefCountedPtr<Party> party;
   {
     MutexLock lock(&mu_);
-    writer = std::move(writer_);
-    reader = std::move(reader_);
+    party = std::move(party_);
   }
-  writer.reset();
-  reader.reset();
+  party.reset();
   Unref();
 }
 
@@ -127,7 +116,9 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
       });
   // Wrap the actual sequence with something that owns the call handler so that
   // its lifetime extends until the push completes.
-  return [call_handler, push = std::move(push)]() mutable { return push(); };
+  return GRPC_LATENT_SEE_PROMISE(
+      "PushFrameIntoCall",
+      ([call_handler, push = std::move(push)]() mutable { return push(); }));
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(
@@ -211,25 +202,22 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));
-  writer_ = MakeActivity(
-      // Continuously write next outgoing frames to promise endpoints.
-      TransportWriteLoop(transport), EventEngineWakeupScheduler(event_engine),
-      OnTransportActivityDone("write_loop"));
-  reader_ = MakeActivity(
-      // Continuously read next incoming frames from promise endpoints.
-      TransportReadLoop(std::move(transport)),
-      EventEngineWakeupScheduler(event_engine),
+  auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+  party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine.get());
+  party_ = Party::Make(std::move(party_arena));
+  party_->Spawn("client-chaotic-writer",
+                GRPC_LATENT_SEE_PROMISE("ClientTransportWriteLoop",
+                                        TransportWriteLoop(transport)),
+                OnTransportActivityDone("write_loop"));
+  party_->Spawn(
+      "client-chaotic-reader",
+      GRPC_LATENT_SEE_PROMISE("ClientTransportReadLoop",
+                              TransportReadLoop(std::move(transport))),
       OnTransportActivityDone("read_loop"));
 }
 
-ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  if (writer_ != nullptr) {
-    writer_.reset();
-  }
-  if (reader_ != nullptr) {
-    reader_.reset();
-  }
-}
+ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
 
 void ChaoticGoodClientTransport::AbortWithError() {
   // Mark transport as unavailable when the endpoint write/read failed.
@@ -282,38 +270,42 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                  return absl::OkStatus();
                });
   };
-  return TrySeq(
-      // Wait for initial metadata then send it out.
-      call_handler.PullClientInitialMetadata(),
-      [send_fragment](ClientMetadataHandle md) mutable {
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: Sending initial metadata: " << md->DebugString();
-        ClientFragmentFrame frame;
-        frame.headers = std::move(md);
-        return send_fragment(std::move(frame));
-      },
-      // Continuously send client frame with client to server messages.
-      ForEach(OutgoingMessages(call_handler),
-              [send_fragment,
-               aligned_bytes = aligned_bytes_](MessageHandle message) mutable {
-                ClientFragmentFrame frame;
-                // Construct frame header (flags, header_length and
-                // trailer_length will be added in serialization).
-                const uint32_t message_length = message->payload()->Length();
-                const uint32_t padding =
-                    message_length % aligned_bytes == 0
-                        ? 0
-                        : aligned_bytes - message_length % aligned_bytes;
-                CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
-                frame.message = FragmentMessage(std::move(message), padding,
-                                                message_length);
-                return send_fragment(std::move(frame));
-              }),
-      [send_fragment]() mutable {
-        ClientFragmentFrame frame;
-        frame.end_of_stream = true;
-        return send_fragment(std::move(frame));
-      });
+  return GRPC_LATENT_SEE_PROMISE(
+      "CallOutboundLoop",
+      TrySeq(
+          // Wait for initial metadata then send it out.
+          call_handler.PullClientInitialMetadata(),
+          [send_fragment](ClientMetadataHandle md) mutable {
+            GRPC_TRACE_LOG(chaotic_good, INFO)
+                << "CHAOTIC_GOOD: Sending initial metadata: "
+                << md->DebugString();
+            ClientFragmentFrame frame;
+            frame.headers = std::move(md);
+            return send_fragment(std::move(frame));
+          },
+          // Continuously send client frame with client to server messages.
+          ForEach(OutgoingMessages(call_handler),
+                  [send_fragment, aligned_bytes = aligned_bytes_](
+                      MessageHandle message) mutable {
+                    ClientFragmentFrame frame;
+                    // Construct frame header (flags, header_length and
+                    // trailer_length will be added in serialization).
+                    const uint32_t message_length =
+                        message->payload()->Length();
+                    const uint32_t padding =
+                        message_length % aligned_bytes == 0
+                            ? 0
+                            : aligned_bytes - message_length % aligned_bytes;
+                    CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
+                    frame.message = FragmentMessage(std::move(message), padding,
+                                                    message_length);
+                    return send_fragment(std::move(frame));
+                  }),
+          [send_fragment]() mutable {
+            ClientFragmentFrame frame;
+            frame.end_of_stream = true;
+            return send_fragment(std::move(frame));
+          }));
 }
 
 void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {

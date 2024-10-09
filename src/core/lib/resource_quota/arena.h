@@ -25,6 +25,8 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
@@ -32,13 +34,10 @@
 #include <memory>
 #include <utility>
 
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 

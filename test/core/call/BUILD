@@ -87,3 +87,16 @@ grpc_cc_benchmark(
         "//src/core:default_event_engine",
     ],
 )
+
+grpc_cc_test(
+    name = "request_buffer_test",
+    srcs = [
+        "request_buffer_test.cc",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//src/core:request_buffer",
+        "//test/core/promise:poll_matcher",
+    ],
+)

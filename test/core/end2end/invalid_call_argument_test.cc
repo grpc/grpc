@@ -16,16 +16,6 @@
 //
 //
 
-#include <limits.h>
-#include <string.h>
-
-#include <initializer_list>
-#include <memory>
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -35,8 +25,16 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <limits.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include <initializer_list>
+#include <memory>
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

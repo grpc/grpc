@@ -127,6 +127,7 @@ declare -A useLanguage=(
   [go]=1
   [java]=1
   [node]=1
+  [python]=1
   [ruby]=1
 )
 

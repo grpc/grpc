@@ -18,6 +18,8 @@
 
 #include "test/cpp/interop/stress_interop_client.h"
 
+#include <grpcpp/create_channel.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,10 +27,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpcpp/create_channel.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 

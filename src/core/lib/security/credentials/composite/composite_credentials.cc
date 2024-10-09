@@ -18,6 +18,8 @@
 
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -25,13 +27,10 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 //
 // grpc_composite_channel_credentials

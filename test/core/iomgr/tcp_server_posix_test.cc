@@ -19,8 +19,8 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 
 // This test won't work except with posix sockets enabled
@@ -39,26 +39,25 @@
 #include <sys/un.h>
 #endif
 
-#include <memory>
-#include <string>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/log/log.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/strerror.h"
 #include "test/core/test_util/port.h"
 
 #define LOG_TEST(x) LOG(INFO) << #x

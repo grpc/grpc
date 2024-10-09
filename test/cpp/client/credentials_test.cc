@@ -16,13 +16,7 @@
 //
 //
 
-#include <memory>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
@@ -30,8 +24,12 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server_builder.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include <memory>
+
+#include "absl/log/check.h"
+#include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"

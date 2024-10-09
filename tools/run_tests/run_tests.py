@@ -283,9 +283,7 @@ class CLanguage(object):
                 [
                     "default",
                     "cmake",
-                    "cmake_ninja_vs2019",
                     "cmake_ninja_vs2022",
-                    "cmake_vs2019",
                     "cmake_vs2022",
                 ],
             )
@@ -293,19 +291,13 @@ class CLanguage(object):
 
             activate_vs_tools = ""
             if (
-                self.args.compiler == "cmake_ninja_vs2019"
+                self.args.compiler == "cmake_ninja_vs2022"
                 or self.args.compiler == "cmake"
                 or self.args.compiler == "default"
             ):
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2017
-                cmake_generator = "Ninja"
-                activate_vs_tools = "2019"
-            elif self.args.compiler == "cmake_ninja_vs2022":
                 cmake_generator = "Ninja"
                 activate_vs_tools = "2022"
-            elif self.args.compiler == "cmake_vs2019":
-                cmake_generator = "Visual Studio 16 2019"
             elif self.args.compiler == "cmake_vs2022":
                 cmake_generator = "Visual Studio 17 2022"
             else:
@@ -844,6 +836,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python313_config = _python_config_generator(
+            name="py313",
+            major="3",
+            minor="13",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -880,6 +879,8 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "python3.12":
             return (python312_config,)
+        elif args.compiler == "python3.13":
+            return (python313_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -893,6 +894,7 @@ class PythonLanguage(object):
                 python310_config,
                 python311_config,
                 python312_config,
+                python313_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1688,9 +1690,7 @@ argp.add_argument(
         "all_the_cpythons",
         "coreclr",
         "cmake",
-        "cmake_ninja_vs2019",
         "cmake_ninja_vs2022",
-        "cmake_vs2019",
         "cmake_vs2022",
         "mono",
     ],

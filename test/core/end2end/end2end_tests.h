@@ -15,6 +15,16 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -36,27 +46,15 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/credentials.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -84,6 +82,7 @@
 // Exclude this fixture from experiment runs
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 14)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 15)
+#define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 16)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -681,6 +680,11 @@ class CoreEnd2endTestRegistry {
 #define SKIP_IF_V3()                                        \
   if (GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) { \
     GTEST_SKIP() << "Disabled for initial v3 testing";      \
+  }
+
+#define SKIP_IF_LOCAL_TCP_CREDS()                                   \
+  if (GetParam()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
+    GTEST_SKIP() << "Disabled for Local TCP Connection";            \
   }
 
 #define CORE_END2END_TEST(suite, name)                                       \

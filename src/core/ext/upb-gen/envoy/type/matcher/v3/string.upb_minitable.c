@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/string.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,9 +18,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_matcher_v3_StringMatcher_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__TypedExtensionConfig_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_matcher_v3_StringMatcher_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_StringMatcher__fields[7] = {
@@ -59,8 +61,9 @@ const upb_MiniTable envoy__type__matcher__v3__StringMatcher_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_type_matcher_v3_ListStringMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
+const upb_MiniTable* envoy__type__matcher__v3__StringMatcher_msg_init_ptr = &envoy__type__matcher__v3__StringMatcher_msg_init;
+static const upb_MiniTableSubInternal envoy_type_matcher_v3_ListStringMatcher_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_ListStringMatcher__fields[1] = {
@@ -80,6 +83,7 @@ const upb_MiniTable envoy__type__matcher__v3__ListStringMatcher_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__matcher__v3__ListStringMatcher_msg_init_ptr = &envoy__type__matcher__v3__ListStringMatcher_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__type__matcher__v3__StringMatcher_msg_init,
   &envoy__type__matcher__v3__ListStringMatcher_msg_init,

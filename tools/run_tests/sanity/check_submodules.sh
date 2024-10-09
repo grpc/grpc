@@ -25,7 +25,7 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 
 git submodule | sed 's/+//g' | awk '{ print $2 " " $1 }' | sort >"$submodules"
 cat <<EOF | sort >"$want_submodules"
-third_party/abseil-cpp 4a2c63365eff8823a5221db86ef490e828306f9d
+third_party/abseil-cpp 4447c7562e3bc702ade25105912dce503f0c4010
 third_party/benchmark 344117638c8ff7e239044fd0fa7085839fc03021
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
 third_party/boringssl-with-bazel b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6
@@ -36,13 +36,23 @@ third_party/googletest 2dd1c131950043a8ad5ab0d2dda0e0970596586a
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
 third_party/opentelemetry-cpp 4bd64c9a336fd438d6c4c9dad2e6b61b0585311f
-third_party/protobuf 63def39e881afa496502d9c410f4ea948e59490d
+third_party/protobuf 10ef3f77683f77fb3c059bf47725c27b3ff41e63
 third_party/protoc-gen-validate fab737efbb4b4d03e7c771393708f75594b121e4
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
 third_party/xds 3a472e524827f72d1ad621c4983dd5af54c46776
 third_party/zlib 09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851
 EOF
 
-diff -u "$submodules" "$want_submodules"
+if ! diff -u "$submodules" "$want_submodules"; then
+  if [ "$1" = "--fix" ]; then
+    while read -r path commit; do
+      git submodule update --init "$path"
+      (cd "$path" && git checkout "$commit")
+    done <"$want_submodules"
+    exit 0
+  fi
+  echo "Submodules are out of sync. Please update this script or run with --fix."
+  exit 1
+fi
 
 rm "$submodules" "$want_submodules"

@@ -49,6 +49,11 @@ class Message {
 
   std::string DebugString() const;
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Message& message) {
+    sink.Append(message.DebugString());
+  }
+
  private:
   SliceBuffer payload_;
   uint32_t flags_ = 0;

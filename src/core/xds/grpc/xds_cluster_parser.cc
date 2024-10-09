@@ -44,21 +44,22 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/text/encode.h"
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
+#include "src/core/xds/xds_client/lrs_client.h"
+#include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
+#include "upb/base/string_view.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core {
 
@@ -454,9 +455,34 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update->lrs_load_reporting_server.emplace(
+    cds_update->lrs_load_reporting_server = std::make_shared<GrpcXdsServer>(
         static_cast<const GrpcXdsServer&>(context.server));
   }
+  // Record LRS metric propagation.
+  auto propagation = MakeRefCounted<BackendMetricPropagation>();
+  if (XdsOrcaLrsPropagationChangesEnabled()) {
+    size_t size;
+    upb_StringView const* metrics =
+        envoy_config_cluster_v3_Cluster_lrs_report_endpoint_metrics(cluster,
+                                                                    &size);
+    for (size_t i = 0; i < size; ++i) {
+      absl::string_view metric_name = UpbStringToAbsl(metrics[i]);
+      if (metric_name == "cpu_utilization") {
+        propagation->propagation_bits |= propagation->kCpuUtilization;
+      } else if (metric_name == "mem_utilization") {
+        propagation->propagation_bits |= propagation->kMemUtilization;
+      } else if (metric_name == "application_utilization") {
+        propagation->propagation_bits |= propagation->kApplicationUtilization;
+      } else if (absl::ConsumePrefix(&metric_name, "named_metrics.")) {
+        if (metric_name == "*") {
+          propagation->propagation_bits |= propagation->kNamedMetricsAll;
+        } else {
+          propagation->named_metric_keys.emplace(metric_name);
+        }
+      }
+    }
+  }
+  cds_update->lrs_backend_metric_propagation = std::move(propagation);
   // Protocol options.
   auto* upstream_config =
       envoy_config_cluster_v3_Cluster_upstream_config(cluster);

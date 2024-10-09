@@ -15,10 +15,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
 
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/optional.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
 

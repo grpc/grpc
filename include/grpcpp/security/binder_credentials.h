@@ -15,10 +15,10 @@
 #ifndef GRPCPP_SECURITY_BINDER_CREDENTIALS_H
 #define GRPCPP_SECURITY_BINDER_CREDENTIALS_H
 
-#include <memory>
-
 #include <grpcpp/security/binder_security_policy.h>
 #include <grpcpp/security/server_credentials.h>
+
+#include <memory>
 
 namespace grpc {
 

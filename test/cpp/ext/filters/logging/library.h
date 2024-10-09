@@ -19,6 +19,10 @@
 #ifndef GRPC_TEST_CPP_EXT_FILTERS_LOGGING_LIBRARY_H
 #define GRPC_TEST_CPP_EXT_FILTERS_LOGGING_LIBRARY_H
 
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/support/status.h>
+
 #include <chrono>
 #include <thread>  // NOLINT
 
@@ -29,13 +33,8 @@
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"

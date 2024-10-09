@@ -15,7 +15,6 @@
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
 #include "absl/log/log.h"
-
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/lb_metadata.h"
@@ -53,7 +52,7 @@ class LbCallState : public ClientChannelLbCallState {
   }
 };
 
-// TODO(roth): Remove this in favor of the gprpp Match() function once
+// TODO(roth): Remove this in favor of src/core/util/match.h function once
 // we can do that without breaking lock annotations.
 template <typename T>
 T HandlePickResult(

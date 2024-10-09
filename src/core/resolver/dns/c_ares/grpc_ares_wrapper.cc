@@ -16,16 +16,15 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/status_helper.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -37,14 +36,16 @@
 
 #if GRPC_ARES == 1
 
+#include <address_sorting/address_sorting.h>
+#include <ares.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 #include <string.h>
 #include <sys/types.h>  // IWYU pragma: keep
 
 #include <string>
 #include <utility>
-
-#include <address_sorting/address_sorting.h>
-#include <ares.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -52,17 +53,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/nameser.h"  // IWYU pragma: keep
@@ -70,7 +63,10 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;

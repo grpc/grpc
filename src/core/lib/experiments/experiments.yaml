@@ -88,6 +88,11 @@
   expiry: 2024/12/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: local_connector_secure
+  description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
+  expiry: 2024/10/30
+  owner: aermolov@google.com
+  test_tags: ["core_end2end_test"]
 - name: max_pings_wo_data_throttle
   description:
     Experiment to throttle pings to a period of 1 min when
@@ -104,7 +109,7 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/09/15
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: pick_first_new
@@ -115,7 +120,7 @@
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
-  expiry: 2024/09/15
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
@@ -157,15 +162,9 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/09/09
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: work_serializer_clears_time_cache
-  description:
-    Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/10/01
-  owner: ctiller@google.com
-  test_tags: []
 - name: work_serializer_dispatch
   description:
     Have the work serializer dispatch work to event engine for every callback,

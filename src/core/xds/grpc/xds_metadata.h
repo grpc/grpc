@@ -24,11 +24,10 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/gprpp/down_cast.h"
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 

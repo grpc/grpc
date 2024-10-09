@@ -18,8 +18,7 @@
 #include <utility>
 
 #include "absl/log/log.h"
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_binder {
 namespace end2end_testing {

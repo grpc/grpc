@@ -16,15 +16,14 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 

@@ -3,7 +3,8 @@
  *     envoy/config/bootstrap/v3/bootstrap.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -36,38 +37,39 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_submsgs[31] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__DynamicResources_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__ClusterManager_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__StatsSink_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__Tracing_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Admin_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__StatsConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ApiConfigSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__overload__v3__OverloadManager_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__LayeredRuntime_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdogs_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__FatalAction_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DnsResolutionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__CustomInlineHeader_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientManagerConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_submsgs[31] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__DynamicResources_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__ClusterManager_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__StatsSink_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__Tracing_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Admin_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__StatsConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ApiConfigSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__overload__v3__OverloadManager_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__LayeredRuntime_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdogs_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__FatalAction_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DnsResolutionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__CustomInlineHeader_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientManagerConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap__fields[39] = {
@@ -155,10 +157,11 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_StaticResources_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__cluster__v3__Cluster_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_StaticResources_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__cluster__v3__Cluster_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_StaticResources__fields[3] = {
@@ -182,10 +185,11 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_DynamicResources_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ApiConfigSource_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_DynamicResources_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ApiConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_DynamicResources__fields[5] = {
@@ -215,8 +219,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__DynamicResources_ms
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig__LogFormat_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__DynamicResources_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__DynamicResources_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig__LogFormat_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig__fields[1] = {
@@ -232,8 +237,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfi
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat__fields[2] = {
@@ -256,6 +262,7 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfi
   })
 };
 
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig__LogFormat_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig__LogFormat_msg_init;
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_DeferredStatOptions__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
@@ -273,8 +280,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig__fields[1] = {
@@ -290,8 +298,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientMana
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientManagerConfig_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientManagerConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry__fields[2] = {
@@ -312,10 +321,11 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__CertificateProvider
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Admin_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Admin_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Admin__fields[6] = {
@@ -346,10 +356,11 @@ const upb_MiniTable envoy__config__bootstrap__v3__Admin_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_ClusterManager_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__ClusterManager__OutlierDetection_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BindConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ApiConfigSource_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Admin_msg_init_ptr = &envoy__config__bootstrap__v3__Admin_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_ClusterManager_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__ClusterManager__OutlierDetection_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__BindConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ApiConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_ClusterManager__fields[5] = {
@@ -379,8 +390,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__ClusterManager_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_ClusterManager_OutlierDetection_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__EventServiceConfig_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__ClusterManager_msg_init_ptr = &envoy__config__bootstrap__v3__ClusterManager_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_ClusterManager_OutlierDetection_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__EventServiceConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_ClusterManager_OutlierDetection__fields[2] = {
@@ -401,9 +413,10 @@ const upb_MiniTable envoy__config__bootstrap__v3__ClusterManager__OutlierDetecti
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Watchdogs_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__ClusterManager__OutlierDetection_msg_init_ptr = &envoy__config__bootstrap__v3__ClusterManager__OutlierDetection_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Watchdogs_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Watchdogs__fields[2] = {
@@ -420,14 +433,15 @@ const upb_MiniTable envoy__config__bootstrap__v3__Watchdogs_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Watchdog_submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog__WatchdogAction_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Watchdogs_msg_init_ptr = &envoy__config__bootstrap__v3__Watchdogs_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Watchdog_submsgs[7] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Watchdog__WatchdogAction_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Watchdog__fields[7] = {
@@ -459,8 +473,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Watchdog_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Watchdog_WatchdogAction_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Watchdog_msg_init_ptr = &envoy__config__bootstrap__v3__Watchdog_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Watchdog_WatchdogAction_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Watchdog_WatchdogAction__fields[2] = {
@@ -483,8 +498,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__Watchdog__WatchdogAction_msg_i
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_FatalAction_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Watchdog__WatchdogAction_msg_init_ptr = &envoy__config__bootstrap__v3__Watchdog__WatchdogAction_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_FatalAction_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_FatalAction__fields[1] = {
@@ -500,8 +516,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__FatalAction_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_Runtime_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__FatalAction_msg_init_ptr = &envoy__config__bootstrap__v3__FatalAction_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Runtime_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_Runtime__fields[4] = {
@@ -526,11 +543,12 @@ const upb_MiniTable envoy__config__bootstrap__v3__Runtime_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_RuntimeLayer_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer__DiskLayer_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__Runtime_msg_init_ptr = &envoy__config__bootstrap__v3__Runtime_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_RuntimeLayer_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer__DiskLayer_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_RuntimeLayer__fields[5] = {
@@ -560,6 +578,7 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__bootstrap__v3__RuntimeLayer_msg_init_ptr = &envoy__config__bootstrap__v3__RuntimeLayer_msg_init;
 static const upb_MiniTableField envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer__fields[3] = {
   {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -581,6 +600,7 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__DiskLayer_msg_in
   })
 };
 
+const upb_MiniTable* envoy__config__bootstrap__v3__RuntimeLayer__DiskLayer_msg_init_ptr = &envoy__config__bootstrap__v3__RuntimeLayer__DiskLayer_msg_init;
 const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_init = {
   NULL,
   NULL,
@@ -590,8 +610,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_i
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_init_ptr = &envoy__config__bootstrap__v3__RuntimeLayer__AdminLayer_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer__fields[2] = {
@@ -612,8 +633,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_in
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_LayeredRuntime_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_init_ptr = &envoy__config__bootstrap__v3__RuntimeLayer__RtdsLayer_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_LayeredRuntime_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__RuntimeLayer_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_LayeredRuntime__fields[1] = {
@@ -633,6 +655,7 @@ const upb_MiniTable envoy__config__bootstrap__v3__LayeredRuntime_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__bootstrap__v3__LayeredRuntime_msg_init_ptr = &envoy__config__bootstrap__v3__LayeredRuntime_msg_init;
 static const upb_MiniTableField envoy_config_bootstrap_v3_CustomInlineHeader__fields[2] = {
   {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -653,8 +676,9 @@ const upb_MiniTable envoy__config__bootstrap__v3__CustomInlineHeader_msg_init = 
   })
 };
 
-static const upb_MiniTableSub envoy_config_bootstrap_v3_MemoryAllocatorManager_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__bootstrap__v3__CustomInlineHeader_msg_init_ptr = &envoy__config__bootstrap__v3__CustomInlineHeader_msg_init;
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_MemoryAllocatorManager_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_bootstrap_v3_MemoryAllocatorManager__fields[2] = {
@@ -675,6 +699,7 @@ const upb_MiniTable envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_ini
   })
 };
 
+const upb_MiniTable* envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_init_ptr = &envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_init;
 static const upb_MiniTable *messages_layout[23] = {
   &envoy__config__bootstrap__v3__Bootstrap_msg_init,
   &envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg_init,

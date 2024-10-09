@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/address.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CORE_V3_ADDRESS_PROTO_UPB_MINITABLE_H_
 #define ENVOY_CONFIG_CORE_V3_ADDRESS_PROTO_UPB_MINITABLE_H_
@@ -18,13 +19,21 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__core__v3__Pipe_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__Pipe_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__EnvoyInternalAddress_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__EnvoyInternalAddress_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__SocketAddress_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__SocketAddress_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__TcpKeepalive_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__TcpKeepalive_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__ExtraSourceAddress_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__ExtraSourceAddress_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__BindConfig_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__BindConfig_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__Address_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__Address_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__CidrRange_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__CidrRange_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_core_v3_address_proto_upb_file_layout;
 

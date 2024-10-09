@@ -14,13 +14,13 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

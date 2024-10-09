@@ -17,19 +17,18 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

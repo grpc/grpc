@@ -14,6 +14,7 @@
 
 #include "src/core/lib/config/load_config.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 
 #include "absl/flags/marshalling.h"
@@ -21,10 +22,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 
 namespace grpc_core {
 

@@ -18,6 +18,12 @@
 
 #include "test/core/end2end/cq_verifier.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,19 +42,10 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/match.h"
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/test_config.h"
 

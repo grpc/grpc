@@ -15,18 +15,18 @@
 // limitations under the License.
 //
 //
-#include <vector>
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include <vector>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/surface/init.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
 
 #if defined(GRPC_WINSOCK_SOCKET)

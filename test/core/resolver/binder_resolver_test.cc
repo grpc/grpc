@@ -20,15 +20,14 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -43,10 +42,9 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/resolver/resolver_registry.h"
 

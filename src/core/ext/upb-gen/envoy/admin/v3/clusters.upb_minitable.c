@@ -3,7 +3,8 @@
  *     envoy/admin/v3/clusters.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -20,8 +21,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_admin_v3_Clusters_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ClusterStatus_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_admin_v3_Clusters_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__ClusterStatus_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_Clusters__fields[1] = {
@@ -41,11 +43,12 @@ const upb_MiniTable envoy__admin__v3__Clusters_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_admin_v3_ClusterStatus_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__HostStatus_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__cluster__v3__CircuitBreakers_msg_init},
+const upb_MiniTable* envoy__admin__v3__Clusters_msg_init_ptr = &envoy__admin__v3__Clusters_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_ClusterStatus_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__HostStatus_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__cluster__v3__CircuitBreakers_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_ClusterStatus__fields[8] = {
@@ -86,13 +89,14 @@ const upb_MiniTable envoy__admin__v3__ClusterStatus_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_admin_v3_HostStatus_submsgs[6] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SimpleMetric_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__HostHealthStatus_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init},
+const upb_MiniTable* envoy__admin__v3__ClusterStatus_msg_init_ptr = &envoy__admin__v3__ClusterStatus_msg_init;
+static const upb_MiniTableSubInternal envoy_admin_v3_HostStatus_submsgs[6] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__SimpleMetric_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__admin__v3__HostHealthStatus_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_admin_v3_HostStatus__fields[9] = {
@@ -126,6 +130,7 @@ const upb_MiniTable envoy__admin__v3__HostStatus_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__admin__v3__HostStatus_msg_init_ptr = &envoy__admin__v3__HostStatus_msg_init;
 static const upb_MiniTableField envoy_admin_v3_HostHealthStatus__fields[8] = {
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -164,6 +169,7 @@ const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__admin__v3__HostHealthStatus_msg_init_ptr = &envoy__admin__v3__HostHealthStatus_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__admin__v3__Clusters_msg_init,
   &envoy__admin__v3__ClusterStatus_msg_init,

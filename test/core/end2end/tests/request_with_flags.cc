@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -24,14 +28,8 @@
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 

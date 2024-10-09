@@ -13,17 +13,16 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/query_extensions.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -18,22 +18,19 @@
 
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/crash.h"
 
 using grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
 

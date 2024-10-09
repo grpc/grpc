@@ -34,10 +34,9 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/per_cpu.h"
 #include "src/core/util/ring_buffer.h"
+#include "src/core/util/sync.h"
 
 #define TAGGED_POINTER_SIZE_BITS 48
 
@@ -252,12 +251,26 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
   Log::CurrentThreadBin()->Append(md, EventType::kMark, 0);
 }
 
+template <typename P>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
+                                                  const Metadata* md_flow,
+                                                  P promise) {
+  return [md_poll, md_flow, promise = std::move(promise),
+          flow = Flow(md_flow)]() mutable {
+    InnerScope scope(md_poll);
+    flow.End();
+    auto r = promise();
+    flow.Begin(md_flow);
+    return r;
+  };
+}
+
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name)                                     \
   []() {                                                                   \
     static grpc_core::latent_see::Metadata metadata = {__FILE__, __LINE__, \
-                                                       #name};             \
+                                                       name};              \
     return &metadata;                                                      \
   }()
 // Parent scope: logs a begin and end event, and flushes the thread log on scope
@@ -277,6 +290,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
 // scope.
 #define GRPC_LATENT_SEE_MARK(name) \
   grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
+#define GRPC_LATENT_SEE_PROMISE(name, promise)                           \
+  grpc_core::latent_see::Promise(GRPC_LATENT_SEE_METADATA("Poll:" name), \
+                                 GRPC_LATENT_SEE_METADATA(name), promise)
 #else  // !def(GRPC_ENABLE_LATENT_SEE)
 namespace grpc_core {
 namespace latent_see {
@@ -295,6 +311,7 @@ struct InnerScope {
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name) nullptr
+#define GRPC_LATENT_SEE_METADATA_RAW(name) nullptr
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)
@@ -304,6 +321,7 @@ struct InnerScope {
 #define GRPC_LATENT_SEE_MARK(name) \
   do {                             \
   } while (0)
+#define GRPC_LATENT_SEE_PROMISE(name, promise) promise
 #endif  // GRPC_ENABLE_LATENT_SEE
 
 #endif  // GRPC_SRC_CORE_UTIL_LATENT_SEE_H

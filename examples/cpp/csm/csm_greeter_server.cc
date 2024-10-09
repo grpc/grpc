@@ -16,6 +16,13 @@
  *
  */
 
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/xds_server_builder.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -27,15 +34,7 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/admin_services.h>
-#include <grpcpp/ext/csm_observability.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/xds_server_builder.h>
-
-#include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/util/gethostname.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

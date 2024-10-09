@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/socket_option.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CORE_V3_SOCKET_OPTION_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_SOCKET_OPTION_PROTO_UPB_H_
@@ -228,6 +229,7 @@ UPB_INLINE void envoy_config_core_v3_SocketOptionsOverride_clear_socket_options(
 }
 UPB_INLINE const envoy_config_core_v3_SocketOption* const* envoy_config_core_v3_SocketOptionsOverride_socket_options(const envoy_config_core_v3_SocketOptionsOverride* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__SocketOption_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -239,6 +241,7 @@ UPB_INLINE const envoy_config_core_v3_SocketOption* const* envoy_config_core_v3_
 }
 UPB_INLINE const upb_Array* _envoy_config_core_v3_SocketOptionsOverride_socket_options_upb_array(const envoy_config_core_v3_SocketOptionsOverride* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__SocketOption_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -247,6 +250,7 @@ UPB_INLINE const upb_Array* _envoy_config_core_v3_SocketOptionsOverride_socket_o
 }
 UPB_INLINE upb_Array* _envoy_config_core_v3_SocketOptionsOverride_socket_options_mutable_upb_array(envoy_config_core_v3_SocketOptionsOverride* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__SocketOption_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -257,6 +261,7 @@ UPB_INLINE upb_Array* _envoy_config_core_v3_SocketOptionsOverride_socket_options
 
 UPB_INLINE envoy_config_core_v3_SocketOption** envoy_config_core_v3_SocketOptionsOverride_mutable_socket_options(envoy_config_core_v3_SocketOptionsOverride* msg, size_t* size) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__SocketOption_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -273,6 +278,7 @@ UPB_INLINE envoy_config_core_v3_SocketOption** envoy_config_core_v3_SocketOption
 }
 UPB_INLINE struct envoy_config_core_v3_SocketOption* envoy_config_core_v3_SocketOptionsOverride_add_socket_options(envoy_config_core_v3_SocketOptionsOverride* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__SocketOption_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(

@@ -18,6 +18,9 @@
 
 #include "src/cpp/ext/csm/metadata_exchange.h"
 
+#include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/grpcpp.h>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "google/cloud/opentelemetry/resource_detector.h"
@@ -25,13 +28,9 @@
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/ext/csm/csm_observability.h"
 #include "src/cpp/ext/otel/otel_plugin.h"

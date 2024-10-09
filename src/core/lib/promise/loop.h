@@ -15,17 +15,16 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
 #define GRPC_SRC_CORE_LIB_PROMISE_LOOP_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 

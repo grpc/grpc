@@ -3,7 +3,8 @@
  *     envoy/config/common/matcher/v3/matcher.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/config/common/matcher/v3/matcher.upbdefs.h"

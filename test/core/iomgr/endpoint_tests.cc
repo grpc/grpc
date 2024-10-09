@@ -18,21 +18,19 @@
 
 #include "test/core/iomgr/endpoint_tests.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <sys/types.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 

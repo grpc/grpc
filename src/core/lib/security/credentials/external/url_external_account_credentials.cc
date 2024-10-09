@@ -15,6 +15,13 @@
 //
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <memory>
@@ -27,15 +34,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -137,7 +135,7 @@ std::string UrlExternalAccountCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName UrlExternalAccountCredentials::type() const {
+UniqueTypeName UrlExternalAccountCredentials::Type() {
   static UniqueTypeName::Factory kFactory("UrlExternalAccountCredentials");
   return kFactory.Create();
 }

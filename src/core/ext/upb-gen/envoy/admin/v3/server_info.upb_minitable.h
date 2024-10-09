@@ -3,7 +3,8 @@
  *     envoy/admin/v3/server_info.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_MINITABLE_H_
 #define ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_MINITABLE_H_
@@ -18,7 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init;
+extern const upb_MiniTable* envoy__admin__v3__ServerInfo_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init;
+extern const upb_MiniTable* envoy__admin__v3__CommandLineOptions_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_admin_v3_server_info_proto_upb_file_layout;
 

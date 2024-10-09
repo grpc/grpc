@@ -18,6 +18,8 @@
 
 #ifndef GRPC_NO_BINDER
 
+#include <grpc/grpc.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -25,9 +27,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"

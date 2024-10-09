@@ -3,7 +3,8 @@
  *     google/api/expr/v1alpha1/checked.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPBDEFS_H_
 #define GOOGLE_API_EXPR_V1ALPHA1_CHECKED_PROTO_UPBDEFS_H_

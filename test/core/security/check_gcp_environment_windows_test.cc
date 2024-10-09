@@ -16,16 +16,14 @@
 //
 //
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 
 #ifdef GPR_WINDOWS

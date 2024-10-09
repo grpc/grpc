@@ -18,14 +18,6 @@
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -33,9 +25,12 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -43,6 +38,9 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/sync.h"
+#include "upb/mem/arena.hpp"
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {

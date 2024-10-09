@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -24,10 +26,7 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"

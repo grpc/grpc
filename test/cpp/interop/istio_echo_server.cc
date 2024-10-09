@@ -14,6 +14,15 @@
 // limitations under the License.
 //
 
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/string_ref.h>
+#include <grpcpp/xds_server_builder.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -34,20 +43,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-
-#include <grpcpp/ext/admin_services.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/support/string_ref.h>
-#include <grpcpp/xds_server_builder.h>
-
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/util/env.h"
+#include "src/core/util/gethostname.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/istio_echo_server_lib.h"

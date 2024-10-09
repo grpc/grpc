@@ -18,6 +18,7 @@
 
 #include "src/core/resolver/fake/fake_resolver.h"
 
+#include <grpc/grpc.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -34,23 +35,20 @@
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -115,7 +113,6 @@ class FakeResolverTest : public ::testing::Test {
       EXPECT_TRUE(uri.ok());
       grpc_resolved_address address;
       EXPECT_TRUE(grpc_parse_uri(*uri, &address));
-      absl::InlinedVector<grpc_arg, 2> args_to_add;
       addresses.emplace_back(address, ChannelArgs());
     }
     ++test_counter;

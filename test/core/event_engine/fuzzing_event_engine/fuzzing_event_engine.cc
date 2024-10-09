@@ -14,6 +14,8 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <grpc/event_engine/slice.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -26,16 +28,12 @@
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/slice.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/dump_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
@@ -43,7 +41,7 @@
 #if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #else
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #endif
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -194,14 +192,21 @@ void FuzzingEventEngine::TickUntilIdle() {
           << "TickUntilIdle: "
           << GRPC_DUMP_ARGS(tasks_by_id_.size(), outstanding_reads_.load(),
                             outstanding_writes_.load());
-      if (tasks_by_id_.empty() &&
-          outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
-          outstanding_reads_.load(std::memory_order_relaxed) == 0) {
-        return;
-      }
+      if (IsIdleLocked()) return;
     }
     Tick();
   }
+}
+
+bool FuzzingEventEngine::IsIdle() {
+  grpc_core::MutexLock lock(&*mu_);
+  return IsIdleLocked();
+}
+
+bool FuzzingEventEngine::IsIdleLocked() {
+  return tasks_by_id_.empty() &&
+         outstanding_writes_.load(std::memory_order_relaxed) == 0 &&
+         outstanding_reads_.load(std::memory_order_relaxed) == 0;
 }
 
 void FuzzingEventEngine::TickUntil(Time t) {

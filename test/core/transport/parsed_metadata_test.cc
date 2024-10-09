@@ -22,7 +22,6 @@
 #include "absl/strings/numbers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/test_util/test_config.h"
 
