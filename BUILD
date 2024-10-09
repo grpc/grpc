@@ -4784,6 +4784,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_tracer_wrapper",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.h",
+    ],
+    language = "c++",
+    deps = [
+        "call_tracer",
+        "grpc_transport_chttp2",
+    ],
+)
+
+grpc_cc_library(
+    name = "http_annotation",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/http_annotation.cc",
+    ],
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/http_annotation.h",
+    ],
+    language = "c++",
+    deps = [
+        "call_tracer",
+        "grpc_transport_chttp2",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
@@ -4833,6 +4863,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "call_tracer",
+        "call_tracer_wrapper",
         "channel_arg_names",
         "channelz",
         "chttp2_context_list_entry",
