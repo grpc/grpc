@@ -8,7 +8,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /artifacts
 
 COPY . .
-RUN tools/bazel build -c dbg //examples/python/xds:xds_greeter_client
+RUN tools/bazel build //examples/python/xds:xds_greeter_client
 RUN cp -rL /workdir/bazel-bin/examples/python/xds/xds_greeter_client* /artifacts/
 
 FROM python:3.9-slim-bookworm
