@@ -5,7 +5,7 @@ However, it's ok to call `::testing::InitGoogleTest` in `main`, as `GTMGoogleTes
 `grpc::testing::TestEnvironment` can also be called from `main`, as it does some test initialization (install crash handler, seed RNG) that's not strictly required to run testcases on iOS.
 
 
-## Porting exising C++ tests to run on iOS
+## Porting existing C++ tests to run on iOS
 
 Please follow these guidelines when porting tests to run on iOS:
 

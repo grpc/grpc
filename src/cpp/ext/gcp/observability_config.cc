@@ -75,7 +75,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
 // Tries to get the GCP Project ID from environment variables, or returns an
 // empty string if not found.
 std::string GetProjectIdFromGcpEnvVar() {
-  // First check GCP_PROEJCT
+  // First check GCP_PROJECT
   absl::optional<std::string> project_id = grpc_core::GetEnv("GCP_PROJECT");
   if (project_id.has_value() && !project_id->empty()) {
     return project_id.value();
