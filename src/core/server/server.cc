@@ -285,7 +285,7 @@ absl::optional<ChannelArgs> Server::ListenerWrapper::AddLogicalConnection(
     new_args = (*args_result).SetObject(security_connector);
   }
   MutexLock lock(&mu_);
-  if (!is_serving_ && connection_manager == connection_manager_) {
+  if (!is_serving_ || connection_manager != connection_manager_) {
     // Not serving
     return absl::nullopt;
   }

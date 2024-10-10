@@ -1013,7 +1013,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
       void Orphan() override;
 
-      void Start(const ChannelArgs& args);
+      void StartLocked(const ChannelArgs& args);
 
       void ShutdownLocked(absl::Status status);
 
@@ -1122,8 +1122,6 @@ NewChttp2ServerListener::NewActiveConnection::HandshakingState::
   if (accepting_pollset != nullptr) {
     grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
   }
-  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
 }
 
 NewChttp2ServerListener::NewActiveConnection::HandshakingState::
@@ -1147,24 +1145,21 @@ void NewChttp2ServerListener::NewActiveConnection::HandshakingState::Orphan() {
       DEBUG_LOCATION);
 }
 
-void NewChttp2ServerListener::NewActiveConnection::HandshakingState::Start(
-    const ChannelArgs& channel_args) {
-  connection_->work_serializer()->Run(
-      [self = Ref(), channel_args]() mutable {
-        if (self->handshake_mgr_ == nullptr) return;
-        self->handshake_mgr_->DoHandshake(
-            std::move(self->endpoint_), channel_args, self->deadline_,
-            self->acceptor_.get(),
-            [self = std::move(self)](
-                absl::StatusOr<HandshakerArgs*> result) mutable {
-              self->connection_->work_serializer()->Run(
-                  [self = std::move(self), result]() mutable {
-                    self->OnHandshakeDoneLocked(std::move(result));
-                  },
-                  DEBUG_LOCATION);
-            });
-      },
-      DEBUG_LOCATION);
+void NewChttp2ServerListener::NewActiveConnection::HandshakingState::
+    StartLocked(const ChannelArgs& channel_args) {
+  if (handshake_mgr_ == nullptr) return;
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_SERVER, channel_args, interested_parties_,
+      handshake_mgr_.get());
+  handshake_mgr_->DoHandshake(
+      std::move(endpoint_), channel_args, deadline_, acceptor_.get(),
+      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) mutable {
+        self->connection_->work_serializer()->Run(
+            [self = std::move(self), result]() mutable {
+              self->OnHandshakeDoneLocked(std::move(result));
+            },
+            DEBUG_LOCATION);
+      });
 }
 
 void NewChttp2ServerListener::NewActiveConnection::HandshakingState::
@@ -1327,7 +1322,6 @@ void NewChttp2ServerListener::NewActiveConnection::Orphan() {
 }
 
 bool NewChttp2ServerListener::NewActiveConnection::SendGoAwayImplLocked() {
-  grpc_chttp2_transport* transport = nullptr;
   if (!shutdown_) {
     // Shutdown the handshaker if it's still in progress.
     if (handshaking_state_ != nullptr) {
@@ -1340,7 +1334,7 @@ bool NewChttp2ServerListener::NewActiveConnection::SendGoAwayImplLocked() {
       grpc_transport_op* op = grpc_make_transport_op(nullptr);
       op->goaway_error =
           GRPC_ERROR_CREATE("Server is stopping to serve requests.");
-      transport->PerformOp(op);
+      transport_->PerformOp(op);
       return true;
     }
   }
@@ -1355,7 +1349,7 @@ void NewChttp2ServerListener::NewActiveConnection::Start(
         // owning NewChttp2ServerListener and all associated
         // NewActiveConnections have been orphaned.
         if (self->shutdown_) return;
-        self->handshaking_state_->Start(args);
+        self->handshaking_state_->StartLocked(args);
       },
       DEBUG_LOCATION);
 }
