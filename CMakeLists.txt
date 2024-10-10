@@ -572,7 +572,7 @@ function(protobuf_generate_grpc_cpp_with_import_path_correction FILE_LOCATION IM
   endif()
 
   # Sets the include path for ProtoBuf files
-  set(_protobuf_include_path -I . -I ${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR})
+  set(_protobuf_include_path -I . -I ${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR} -I ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds -I ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate)
   # The absolute path of the expected place for the input proto file
   # For example, health proto has package name grpc.health.v1, it's expected to be:
   #   ${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1/health.proto
