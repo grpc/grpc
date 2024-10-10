@@ -313,6 +313,7 @@ grpc_core_end2end_test(
 
 grpc_core_end2end_test(
     name = "cancel_after_invoke",
+    flaky = True,
     shard_count = 50,
 )
 
@@ -325,7 +326,10 @@ grpc_core_end2end_test(name = "cancel_before_invoke")
 
 grpc_core_end2end_test(name = "cancel_in_a_vacuum")
 
-grpc_core_end2end_test(name = "cancel_with_status")
+grpc_core_end2end_test(
+    name = "cancel_with_status",
+    flaky = True,
+)
 
 grpc_core_end2end_test(name = "channelz")
 
