@@ -145,14 +145,17 @@ class Server : public ServerInterface,
   class ListenerWrapper;
 
   /// Interface for listeners.
-  /// Implementations must override the OrphanImpl() method, which should stop
-  /// listening and initiate destruction of the listener.
   class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
    public:
     // State for a connection that is being managed by this listener.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
-      explicit LogicalConnection(Server* server) : server_(server) {}
+      explicit LogicalConnection(Server* server)
+          : server_(server),
+            work_serializer_(
+                server_->channel_args()
+                    .GetObjectRef<
+                        grpc_event_engine::experimental::EventEngine>()) {}
       LogicalConnection(const LogicalConnection&) = delete;
       LogicalConnection& operator=(const LogicalConnection&) = delete;
       LogicalConnection(LogicalConnection&&) = delete;
@@ -163,6 +166,8 @@ class Server : public ServerInterface,
 
       // Cancel drain grace timer. It won't be started in the future either.
       void CancelDrainGraceTimer();
+
+      WorkSerializer* work_serializer() { return &work_serializer_; }
 
      protected:
       grpc_event_engine::experimental::EventEngine* event_engine() const {
@@ -179,20 +184,21 @@ class Server : public ServerInterface,
       virtual bool SendGoAwayImpl() = 0;
       virtual void DisconnectImmediatelyImpl() = 0;
 
+      void OnDrainGraceTimer();
+
       Server* server_;
-      mutable Mutex mu_;
+      // A mutex can be used here but using a WorkSerializer to make code easier
+      // to understand.
+      WorkSerializer work_serializer_;
       grpc_event_engine::experimental::EventEngine::TaskHandle
-          drain_grace_timer_handle_ ABSL_GUARDED_BY(&mu_) = grpc_event_engine::
-              experimental::EventEngine::TaskHandle::kInvalid;
+          drain_grace_timer_handle_ = grpc_event_engine::experimental::
+              EventEngine::TaskHandle::kInvalid;
       // The drain grace timer should only be started if it wasn't previously
       // cancelled.
-      bool drain_grace_timer_handle_cancelled_ ABSL_GUARDED_BY(&mu_) = false;
+      bool drain_grace_timer_handle_cancelled_ = false;
     };
 
     ~ListenerInterface() override = default;
-
-    // Needed to allow Listener::ConfigFetcherWatcher to take a weak ref.
-    using InternallyRefCounted<ListenerInterface>::Ref;
 
     /// Starts listening.
     virtual void Start() = 0;

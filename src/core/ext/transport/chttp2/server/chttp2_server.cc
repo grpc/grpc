@@ -1018,7 +1018,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       void ShutdownLocked(absl::Status status)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewActiveConnection::mu_);
 
-      // Needed to be able to grab an external ref in
+      // Needed to be able to grab an external weak ref in
       // NewActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
 
@@ -1028,7 +1028,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
       RefCountedPtr<NewActiveConnection> const connection_;
       grpc_pollset* const accepting_pollset_;
-      AcceptorPtr acceptor_;
+      const AcceptorPtr acceptor_;
       RefCountedPtr<HandshakeManager> handshake_mgr_
           ABSL_GUARDED_BY(&NewActiveConnection::mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
