@@ -118,7 +118,7 @@ void Server::ListenerWrapper::ConfigFetcherWatcher::UpdateConnectionManager(
     if (listener_->started_) return;
     listener_->started_ = true;
   }
-  listener_->Start();
+  listener_->listener_->Start();
 }
 
 void Server::ListenerWrapper::ConfigFetcherWatcher::StopServing() {
@@ -240,7 +240,7 @@ void Server::ListenerWrapper::Stop() {
       server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
     }
   }
-  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, this,
+  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_,
                     grpc_schedule_on_exec_ctx);
   listener_->SetOnDestroyDone(&destroy_done_);
   listener_.reset();
