@@ -90,7 +90,8 @@ EXTERNAL_PROTO_LIBRARIES = {
     ),
     "com_envoyproxy_protoc_gen_validate": ExternalProtoLibrary(
         destination="third_party/protoc-gen-validate",
-        proto_prefix="third_party/protoc-gen-validate/"),
+        proto_prefix="third_party/protoc-gen-validate/",
+    ),
     "opencensus_proto": ExternalProtoLibrary(
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
