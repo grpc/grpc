@@ -21614,6 +21614,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
   - third_party/xds/udpa/annotations/sensitive.proto
@@ -22960,6 +22961,12 @@ external_proto_libraries:
   urls:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+- destination: third_party/protoc-gen-validate
+  hash: 1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
+  proto_prefix: third_party/protoc-gen-validate/
+  strip_prefix: protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
+  urls:
+  - https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
 - destination: third_party/xds
   hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
   proto_prefix: third_party/xds/
