@@ -621,7 +621,7 @@
     endif()
 
     # Sets the include path for ProtoBuf files
-    set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text> -I <%text>${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds</%text> -I <%text>${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate</%text>)
+    set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text>)
     # The absolute path of the expected place for the input proto file
     # For example, health proto has package name grpc.health.v1, it's expected to be:
     #   <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1/health.proto</%text>
