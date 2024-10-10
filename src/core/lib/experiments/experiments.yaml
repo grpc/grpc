@@ -85,7 +85,7 @@
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2024/12/01
+  expiry: 2025/03/31
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: local_connector_secure
@@ -170,6 +170,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/09/30
+  expiry: 2024/12/31
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
