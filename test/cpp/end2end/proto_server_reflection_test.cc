@@ -82,15 +82,17 @@ class ProtoServerReflectionTest : public ::testing::Test {
     EXPECT_EQ(service_desc->DebugString(), ref_service_desc->DebugString());
 
     const protobuf::FileDescriptor* file_desc = service_desc->file();
-    if (known_files_.find(file_desc->package() + "/" + file_desc->name()) !=
+    if (known_files_.find(std::string(file_desc->package()) + "/" +
+                          std::string(file_desc->name())) !=
         known_files_.end()) {
       EXPECT_EQ(file_desc->DebugString(),
                 ref_service_desc->file()->DebugString());
-      known_files_.insert(file_desc->package() + "/" + file_desc->name());
+      known_files_.insert(std::string(file_desc->package()) + "/" +
+                          std::string(file_desc->name()));
     }
 
     for (int i = 0; i < service_desc->method_count(); ++i) {
-      CompareMethod(service_desc->method(i)->full_name());
+      CompareMethod(std::string(service_desc->method(i)->full_name()));
     }
   }
 
@@ -103,8 +105,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
     EXPECT_TRUE(ref_method_desc != nullptr);
     EXPECT_EQ(method_desc->DebugString(), ref_method_desc->DebugString());
 
-    CompareType(method_desc->input_type()->full_name());
-    CompareType(method_desc->output_type()->full_name());
+    CompareType(std::string(method_desc->input_type()->full_name()));
+    CompareType(std::string(method_desc->output_type()->full_name()));
   }
 
   void CompareType(const std::string& type) {

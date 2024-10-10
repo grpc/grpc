@@ -101,8 +101,8 @@ map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
       const MethodDescriptor* method = service->method(method_num);
       const Descriptor* input_type = method->input_type();
       const Descriptor* output_type = method->output_type();
-      message_types[input_type->full_name()] = input_type;
-      message_types[output_type->full_name()] = output_type;
+      message_types[std::string(input_type->full_name())] = input_type;
+      message_types[std::string(output_type->full_name())] = output_type;
     }
   }
   return message_types;
@@ -113,9 +113,11 @@ std::string MessageIdentifierName(const std::string& name) {
 }
 
 std::string NodeObjectPath(const Descriptor* descriptor) {
-  std::string module_alias = ModuleAlias(descriptor->file()->name());
-  std::string name = descriptor->full_name();
-  grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
+  std::string module_alias =
+      ModuleAlias(std::string(descriptor->file()->name()));
+  std::string name(descriptor->full_name());
+  grpc_generator::StripPrefix(&name,
+                              std::string(descriptor->file()->package()) + ".");
   return module_alias + "." + name;
 }
 
@@ -123,7 +125,7 @@ std::string NodeObjectPath(const Descriptor* descriptor) {
 void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
                              const Parameters& params) {
   map<std::string, std::string> template_vars;
-  std::string full_name = descriptor->full_name();
+  std::string full_name(descriptor->full_name());
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
   template_vars["name"] = full_name;
   template_vars["node_name"] = NodeObjectPath(descriptor);
@@ -163,9 +165,11 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
   vars["input_type"] = NodeObjectPath(input_type);
-  vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
+  vars["input_type_id"] =
+      MessageIdentifierName(std::string(input_type->full_name()));
   vars["output_type"] = NodeObjectPath(output_type);
-  vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
+  vars["output_type_id"] =
+      MessageIdentifierName(std::string(output_type->full_name()));
   vars["client_stream"] = method->client_streaming() ? "true" : "false";
   vars["server_stream"] = method->server_streaming() ? "true" : "false";
   out->Print("{\n");
@@ -191,8 +195,8 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    std::string method_name =
-        grpc_generator::LowercaseFirstLetter(service->method(i)->name());
+    std::string method_name = grpc_generator::LowercaseFirstLetter(
+        std::string(service->method(i)->name()));
     out->Print(GetNodeComments(service->method(i), true).c_str());
     out->Print("$method_name$: ", "method_name", method_name);
     PrintMethod(service->method(i), out);
@@ -211,17 +215,19 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
     std::string file_path =
-        GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
+        GetRelativePath(std::string(file->name()),
+                        GetJSMessageFilename(std::string(file->name())));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
-               ModuleAlias(file->name()), "file_path", file_path);
+               ModuleAlias(std::string(file->name())), "file_path", file_path);
   }
 
   for (int i = 0; i < file->dependency_count(); i++) {
     std::string file_path = GetRelativePath(
-        file->name(), GetJSMessageFilename(file->dependency(i)->name()));
+        std::string(file->name()),
+        GetJSMessageFilename(std::string(file->dependency(i)->name())));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
-               ModuleAlias(file->dependency(i)->name()), "file_path",
-               file_path);
+               ModuleAlias(std::string(file->dependency(i)->name())),
+               "file_path", file_path);
   }
   out->Print("\n");
 }
