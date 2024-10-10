@@ -32,6 +32,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
         name: name of the test, must correspond to a "test/name.cc" file
         shard_count: per bazel
         tags: per bazel
+        flaky: per bazel
     """
 
     if len(name) > 60:
