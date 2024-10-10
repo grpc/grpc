@@ -143,7 +143,7 @@ void Server::ListenerWrapper::ConfigFetcherWatcher::StopServing() {
 void Server::ListenerInterface::LogicalConnection::SendGoAway() {
   work_serializer_.Run(
       [self = Ref(DEBUG_LOCATION, "SendGoAway")]() {
-        if (!self->SendGoAwayImpl()) {
+        if (!self->SendGoAwayImplLocked()) {
           return;
         }
         if (self->drain_grace_timer_handle_cancelled_) {
@@ -193,7 +193,7 @@ void Server::ListenerInterface::LogicalConnection::OnDrainGraceTimer() {
           }
         }
         if (disconnect_immediately) {
-          self->DisconnectImmediatelyImpl();
+          self->DisconnectImmediatelyImplLocked();
         }
       },
       DEBUG_LOCATION);

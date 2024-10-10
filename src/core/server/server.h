@@ -181,8 +181,8 @@ class Server : public ServerInterface,
 
       // Returns true if the operation was successful, false, if it was
       // not performed for example if the connection was already shutdown.
-      virtual bool SendGoAwayImpl() = 0;
-      virtual void DisconnectImmediatelyImpl() = 0;
+      virtual bool SendGoAwayImplLocked() = 0;
+      virtual void DisconnectImmediatelyImplLocked() = 0;
 
       void OnDrainGraceTimer();
 
