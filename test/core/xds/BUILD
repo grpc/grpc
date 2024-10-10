@@ -174,6 +174,7 @@ grpc_cc_test(
         ":xds_transport_fake",
         "//:envoy_config_core_cc_proto",
         "//:envoy_service_discovery_cc_proto",
+        "//:grpc++_codegen_proto",
         "//:grpc++_config_proto",
         "//:xds_client",
         "//test/core/event_engine:event_engine_test_utils",
