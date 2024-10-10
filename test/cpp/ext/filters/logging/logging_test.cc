@@ -62,7 +62,7 @@ TEST_F(LoggingTest, SimpleRpc) {
   context.AddMetadata("key", "value");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -246,7 +246,7 @@ TEST_F(LoggingTest, SimpleRpcNoMetadata) {
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -447,7 +447,7 @@ TEST_F(LoggingTest, MetadataTruncated) {
   context.AddMetadata("key-2", "value-2");
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -630,7 +630,7 @@ TEST_F(LoggingTest, PayloadTruncated) {
   grpc::ClientContext context;
   grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
-  g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(12, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(
@@ -861,7 +861,7 @@ TEST_F(LoggingTest, ServerCancelsRpc) {
   EXPECT_EQ(status.error_code(), 25);
   EXPECT_EQ(status.error_message(), "error message");
   EXPECT_EQ(status.error_details(), "binary error details");
-  g_test_logging_sink->WaitForNumEntries(9, absl::Seconds(5));
+  ASSERT_TRUE(g_test_logging_sink->WaitForNumEntries(9, absl::Seconds(5)));
   EXPECT_THAT(
       g_test_logging_sink->entries(),
       ::testing::UnorderedElementsAre(

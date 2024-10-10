@@ -216,7 +216,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     backends_.clear();
     proxy_service_.reset();
     // Ensure all pending callbacks are handled before finishing the test
-    // to ensure hygene between test cases.
+    // to ensure hygiene between test cases.
     // (requires any grpc-object-holding values be cleared out first).
     grpc_event_engine::experimental::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());

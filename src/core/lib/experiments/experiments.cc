@@ -397,7 +397,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, true},
+     additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
