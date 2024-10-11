@@ -1163,10 +1163,13 @@ void NewChttp2ServerListener::NewActiveConnection::HandshakingState::
       handshake_mgr_.get());
   handshake_mgr_->DoHandshake(
       std::move(endpoint_), channel_args, deadline_, acceptor_.get(),
-      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) mutable {
+      // Using Ref().release() to since there is no guarantee between the order
+      // of the move and the use of self
+      [self = Ref().release()](absl::StatusOr<HandshakerArgs*> result) {
         self->connection_->work_serializer()->Run(
-            [self = std::move(self), result]() mutable {
+            [self, result]() mutable {
               self->OnHandshakeDoneLocked(std::move(result));
+              self->Unref();
             },
             DEBUG_LOCATION);
       });
