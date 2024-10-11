@@ -251,9 +251,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:envoy_config_core_cc_proto",
+        "//:envoy_extensions_filters_http_gcp_authn_cc_proto",
         "//src/core:grpc_xds_client",
-        "//src/proto/grpc/testing/xds/v3:base_proto",
-        "//src/proto/grpc/testing/xds/v3:gcp_authn_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
     ],
