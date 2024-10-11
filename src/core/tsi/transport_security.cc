@@ -215,13 +215,13 @@ tsi_result tsi_handshaker_next(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->handshaker_result_created) {
-    if (error != nullptr) *error = "handshaker already returned a result";
-    return TSI_FAILED_PRECONDITION;
-  }
   if (self->handshake_shutdown) {
     if (error != nullptr) *error = "handshaker shutdown";
     return TSI_HANDSHAKE_SHUTDOWN;
+  }
+  if (self->handshake_shutdown) {
+    if (error != nullptr) *error = "handshaker already returned a result";
+    return TSI_FAILED_PRECONDITION;
   }
   if (self->vtable->next == nullptr) {
     if (error != nullptr) *error = "TSI handshaker does not implement next()";
