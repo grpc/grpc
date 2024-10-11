@@ -15,14 +15,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_H
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/security/binder_security_policy.h>
+
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/security/binder_security_policy.h>
-
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

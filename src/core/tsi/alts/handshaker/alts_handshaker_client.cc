@@ -18,17 +18,15 @@
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <list>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/numbers.h"
-#include "upb/mem/arena.hpp"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -38,6 +36,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/sync.h"
+#include "upb/mem/arena.hpp"
 
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
 

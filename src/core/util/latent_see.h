@@ -34,7 +34,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ring_buffer.h"
 #include "src/core/util/sync.h"

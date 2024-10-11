@@ -16,6 +16,8 @@
 
 #include "src/core/xds/xds_client/lrs_client.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <memory>
 #include <set>
 #include <string>
@@ -31,13 +33,6 @@
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "google/protobuf/duration.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.h"
-#include "upb/reflection/def.h"
-#include "upb/text/encode.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
@@ -52,6 +47,10 @@
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_locality.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.h"
+#include "upb/text/encode.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6

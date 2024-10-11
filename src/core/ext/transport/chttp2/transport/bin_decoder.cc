@@ -18,13 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/attributes.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 
 static uint8_t decode_table[] = {

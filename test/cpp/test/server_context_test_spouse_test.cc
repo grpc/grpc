@@ -16,13 +16,12 @@
 //
 //
 
-#include <cstring>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/test/server_context_test_spouse.h>
+#include <gtest/gtest.h>
+
+#include <cstring>
+#include <vector>
 
 namespace grpc {
 namespace testing {

@@ -21,7 +21,6 @@
 #include "absl/random/bit_gen_ref.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/transport/transport.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"

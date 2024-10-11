@@ -30,14 +30,13 @@
 #endif  // GPR_WINDOWS
 #endif
 
+#include <grpcpp/security/binder_security_policy.h>
+
 #include <functional>
 #include <map>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpcpp/security/binder_security_policy.h>
-
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"

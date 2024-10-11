@@ -18,13 +18,11 @@
 
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

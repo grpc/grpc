@@ -18,6 +18,11 @@
 
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpcpp/impl/grpc_library.h>
+
 #include <memory>
 #include <utility>
 
@@ -27,12 +32,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"

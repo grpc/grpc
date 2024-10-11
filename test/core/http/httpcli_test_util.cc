@@ -16,6 +16,10 @@
 
 #include "test/core/http/httpcli_test_util.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <string.h>
 
 #include <algorithm>
@@ -26,12 +30,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/util/subprocess.h"
 #include "test/core/test_util/port.h"

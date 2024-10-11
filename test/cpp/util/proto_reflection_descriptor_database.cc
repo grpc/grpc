@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "absl/log/log.h"
-
 #include "src/core/util/crash.h"
 
 using grpc::reflection::v1alpha::ErrorResponse;

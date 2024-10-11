@@ -18,15 +18,15 @@
 
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include <memory>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpcpp/server_builder.h>
-#include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 namespace internal {
