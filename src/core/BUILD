@@ -29,6 +29,11 @@ package(
     ],
 )
 
+config_setting(
+    name = "enable_latent_see",
+    values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
+)
+
 # This is needed as a transitionary mechanism to build the src/core targets in
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
@@ -153,6 +158,10 @@ grpc_cc_library(
         "ring_buffer",
         "//:gpr",
     ],
+    defines=select({
+        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
+        "//conditions:default": [],
+    }),
 )
 
 grpc_cc_library(
