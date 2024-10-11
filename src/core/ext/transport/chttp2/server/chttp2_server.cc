@@ -1667,19 +1667,35 @@ namespace experimental {
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
   CHECK_NE(server_.get(), nullptr);
-  RefCountedPtr<NewChttp2ServerListener> listener;
-  {
-    MutexLock lock(&mu_);
-    if (new_listener_ != nullptr) {
-      listener = new_listener_->RefIfNonZero()
-                     .TakeAsSubclass<NewChttp2ServerListener>();
+  if (IsServerListenerEnabled()) {
+    RefCountedPtr<NewChttp2ServerListener> new_listener;
+    {
+      MutexLock lock(&mu_);
+      if (new_listener_ != nullptr) {
+        new_listener = new_listener_->RefIfNonZero()
+                           .TakeAsSubclass<NewChttp2ServerListener>();
+      }
     }
+    if (new_listener == nullptr) {
+      return absl::UnavailableError("passive listener already shut down");
+    }
+    ExecCtx exec_ctx;
+    new_listener->AcceptConnectedEndpoint(std::move(endpoint));
+  } else {
+    RefCountedPtr<Chttp2ServerListener> listener;
+    {
+      MutexLock lock(&mu_);
+      if (listener_ != nullptr) {
+        listener =
+            listener_->RefIfNonZero().TakeAsSubclass<Chttp2ServerListener>();
+      }
+    }
+    if (listener == nullptr) {
+      return absl::UnavailableError("passive listener already shut down");
+    }
+    ExecCtx exec_ctx;
+    listener->AcceptConnectedEndpoint(std::move(endpoint));
   }
-  if (listener == nullptr) {
-    return absl::UnavailableError("passive listener already shut down");
-  }
-  ExecCtx exec_ctx;
-  listener->AcceptConnectedEndpoint(std::move(endpoint));
   return absl::OkStatus();
 }
 
