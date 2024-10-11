@@ -312,7 +312,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest,
                          ::testing::ValuesIn(CreateTestScenarios()));
 
-// gRPC should automatically detech network flaps (without enabling keepalives)
+// gRPC should automatically detect network flaps (without enabling keepalives)
 //  when CFStream is enabled
 TEST_P(CFStreamTest, NetworkTransition) {
   auto channel = BuildChannel();

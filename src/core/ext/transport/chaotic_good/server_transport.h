@@ -109,7 +109,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
   static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames);
+                           MpscSender<ServerFrame> outgoing_frames,
+                           CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
@@ -142,8 +143,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
-  uint32_t last_seen_new_stream_id_ = 0;
   bool aborted_with_error_ ABSL_GUARDED_BY(mu_) = false;
+  uint32_t last_seen_new_stream_id_ = 0;
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
