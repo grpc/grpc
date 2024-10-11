@@ -90,7 +90,7 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-RUN apt-get update && apt-get install -y php8.2 php-pear && apt-get clean
+RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
 #=================
 # PHP Test dependencies
 

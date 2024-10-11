@@ -18,7 +18,7 @@
   
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../run_tests_python_deps_pep668.include"/>
-  RUN apt-get update && apt-get install -y php8.2 php-pear && apt-get clean
+  RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
   <%include file="../../php_valgrind.include"/>
   <%include file="../../cmake.include"/>
   RUN apt-get update && apt-get install -y ccache && apt-get clean
