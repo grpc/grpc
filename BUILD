@@ -32,7 +32,7 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "parse_headers",
+        "-parse_headers",
         "layering_check",
     ],
 )

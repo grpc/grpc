@@ -190,6 +190,8 @@ class Server : public ServerInterface,
       // A mutex can be used here but using a WorkSerializer to make code easier
       // to understand.
       WorkSerializer work_serializer_;
+      // TODO(yashykt): Optimize this by having a single timer for all the
+      // connections that need to be drained.
       grpc_event_engine::experimental::EventEngine::TaskHandle
           drain_grace_timer_handle_ = grpc_event_engine::experimental::
               EventEngine::TaskHandle::kInvalid;
