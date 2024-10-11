@@ -7481,6 +7481,7 @@ targets:
 - name: cancel_after_invoke_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
@@ -7858,6 +7859,7 @@ targets:
 - name: cancel_with_status_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
@@ -21614,6 +21616,7 @@ targets:
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/udpa/annotations/migrate.proto
   - third_party/xds/udpa/annotations/security.proto
   - third_party/xds/udpa/annotations/sensitive.proto
@@ -21632,12 +21635,16 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/xds/xds_client_test.cc
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -22960,6 +22967,12 @@ external_proto_libraries:
   urls:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+- destination: third_party/protoc-gen-validate
+  hash: 1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
+  proto_prefix: third_party/protoc-gen-validate/
+  strip_prefix: protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
+  urls:
+  - https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
 - destination: third_party/xds
   hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
   proto_prefix: third_party/xds/
