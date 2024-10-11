@@ -1451,6 +1451,7 @@ struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
   }
   template <typename R>
   static R ReturnValue(WrappedType&& status) {
+    DCHECK(!status.ok());
     return WrappedType(Failure{});
   }
   template <typename F, typename Elem>
