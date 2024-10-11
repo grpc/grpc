@@ -1530,30 +1530,6 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "cancel_after_invoke_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
     "name": "cancel_after_round_trip_test",
     "platforms": [
       "linux",
@@ -1651,30 +1627,6 @@
     "gtest": true,
     "language": "c++",
     "name": "cancel_in_a_vacuum_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "cancel_with_status_test",
     "platforms": [
       "linux",
       "mac",

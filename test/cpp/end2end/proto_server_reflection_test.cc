@@ -147,7 +147,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
 
   std::vector<std::string> services;
   desc_db_->GetServices(&services);
-  // The service list has at least one service (reflection servcie).
+  // The service list has at least one service (reflection service).
   EXPECT_TRUE(!services.empty());
 
   for (auto it = services.begin(); it != services.end(); ++it) {
