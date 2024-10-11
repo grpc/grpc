@@ -414,7 +414,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
         sync_servicer_context = _SyncServicerContext(servicer_context)
         response_message = await loop.run_in_executor(
             rpc_state.server.thread_pool(),
-            unary_handler,
+            _run_with_context(unary_handler),
             request,
             sync_servicer_context,
         )
