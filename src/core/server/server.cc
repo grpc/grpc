@@ -1799,8 +1799,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
   CHECK(!reserved);
   auto cq_type = grpc_get_cq_completion_type(cq);
   if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
-    LOG(INFO) << "Completion queue of type " << static_cast<int>(cq_type)
-              << " is being registered as a server-completion-queue";
+    VLOG(2) << "Completion queue of type " << static_cast<int>(cq_type)
+            << " is being registered as a server-completion-queue";
     // Ideally we should log an error and abort but ruby-wrapped-language API
     // calls grpc_completion_queue_pluck() on server completion queues
   }
