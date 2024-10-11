@@ -118,7 +118,8 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
   }
 }
 
-bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
+bool gpr_subprocess_communicate(gpr_subprocess* p,
+                                const std::string& input_data,
                                 std::string* output_data, std::string* error) {
   typedef void SignalHandler(int);
 

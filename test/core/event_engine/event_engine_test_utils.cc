@@ -103,6 +103,7 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
         << absl::FormatDuration(absl::Nanoseconds(remaining.count()));
     absl::SleepFor(absl::Milliseconds(100));
   }
+  LOG(INFO) << "Event engine released";
 }
 
 void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data) {

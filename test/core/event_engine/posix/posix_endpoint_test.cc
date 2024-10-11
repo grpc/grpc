@@ -15,12 +15,10 @@
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 
 #include <algorithm>
-#include <chrono>
 #include <list>
 #include <memory>
 #include <string>
 #include <thread>
-#include <type_traits>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -196,9 +194,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
     scheduler_ =
-        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
-            posix_ee_.get());
-    EXPECT_NE(scheduler_, nullptr);
+        std::make_unique<grpc_event_engine::experimental::TestScheduler>();
     poller_ = MakeDefaultPoller(scheduler_.get());
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);

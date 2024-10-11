@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
@@ -195,6 +195,58 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//src/core:channel_args",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_poller",
+        "//src/core:posix_event_engine",
+        "//src/core:posix_event_engine_closure",
+        "//src/core:posix_event_engine_endpoint",
+        "//src/core:posix_event_engine_event_poller",
+        "//src/core:posix_event_engine_poller_posix_default",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "fork_executable",
+    testonly = 1,
+    srcs = ["fork_executable.cc"],
+    external_deps = [
+        "absl/strings",
+        "absl/log:flags",
+        "absl/flags:parse",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "posix_endpoint_fork_test",
+    srcs = ["posix_endpoint_fork_test.cc"],
+    data = [":fork_executable"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:subprocess",
         "//src/core:channel_args",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_poller",
