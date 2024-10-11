@@ -193,6 +193,8 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "xds_client_fuzzer.proto",
     proto_deps = [
+# FIXME: need to convert this to "@envoy-api//...", but that will
+# require more grpc_build_system.bzl changes
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     ],
@@ -228,10 +230,11 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:envoy_extensions_transport_sockets_tls_cc_proto",
+        "//:envoy_type_matcher_cc_proto",
+        "//:udpa_type_cc_proto",
+        "//:xds_type_cc_proto",
         "//src/core:grpc_xds_client",
-        "//src/proto/grpc/testing/xds/v3:tls_proto",
-        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
-        "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",

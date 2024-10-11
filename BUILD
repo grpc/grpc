@@ -5189,6 +5189,11 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_transport_sockets_tls_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_transport_sockets_tls_upb",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
@@ -5244,6 +5249,11 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/service/status/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_type_matcher_cc_proto",
+    deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_type_matcher_upb",
     deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
@@ -5252,6 +5262,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "envoy_type_upb",
     deps = ["@envoy_api//envoy/type/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "udpa_type_cc_proto",
+    deps = ["@com_github_cncf_xds//udpa/type/v1:pkg"],
 )
 
 grpc_cc_proto_library(
