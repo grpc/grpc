@@ -53,7 +53,7 @@ RUN python3 -m pip install twisted
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get -y install clang libc++-dev && apt-get clean
 
 #=================
 # Install cmake using the install script.
