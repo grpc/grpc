@@ -14,14 +14,20 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM arm64v8/debian:12
+  FROM php:8-zts-bookworm
   
-  <%include file="../../apt_get_basic.include"/>
+  RUN apt-get update && apt-get install -y ${'\\'}
+    autoconf automake build-essential git libtool curl ${'\\'}
+    zlib1g-dev ${'\\'}
+    && apt-get clean
+  
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
   <%include file="../../run_tests_python_deps_pep668.include"/>
-  RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
-  <%include file="../../php_valgrind.include"/>
+  <%include file="../../php_common_deps.include"/>
   <%include file="../../cmake.include"/>
   RUN apt-get update && apt-get install -y ccache && apt-get clean
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../xds_interop_deps.include"/>
+
   # Define the default command.
   CMD ["bash"]
