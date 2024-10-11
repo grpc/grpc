@@ -148,6 +148,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
+    visibility = ["@grpc:latent_see"],
     deps = [
         "per_cpu",
         "ring_buffer",
@@ -2371,11 +2372,9 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
         "absl/log:check",
-        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
-        "notification",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7649,11 +7648,8 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
-        "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
-        "event_engine_tcp_socket_utils",
-        "event_engine_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",

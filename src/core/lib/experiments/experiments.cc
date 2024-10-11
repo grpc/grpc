@@ -41,11 +41,6 @@ const char* const additional_constraints_event_engine_client = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -123,10 +118,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, false, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
@@ -191,11 +182,6 @@ const char* const additional_constraints_event_engine_client = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -273,10 +259,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
@@ -341,11 +323,6 @@ const char* const additional_constraints_event_engine_client = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
-const char* const description_event_engine_dns_non_client_channel =
-    "If set, use EventEngine DNSResolver in other places besides client "
-    "channel.";
-const char* const additional_constraints_event_engine_dns_non_client_channel =
-    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -423,10 +400,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
-    {"event_engine_dns_non_client_channel",
-     description_event_engine_dns_non_client_channel,
-     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
