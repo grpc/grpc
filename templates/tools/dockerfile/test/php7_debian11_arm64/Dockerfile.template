@@ -14,14 +14,14 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM arm64v8/debian:11
+  FROM arm64v8/debian:12
   
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../run_tests_python_deps.include"/>
-  <%include file="../../php7_deps.include"/>
+  <%include file="../../run_tests_python_deps_pep668.include"/>
+  RUN apt-get update && apt-get install -y php8.2 php-pear && apt-get clean
   <%include file="../../php_valgrind.include"/>
   <%include file="../../cmake.include"/>
-  <%include file="../../ccache.include"/>
+  RUN apt-get update && apt-get install -y ccache && apt-get clean
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.
   CMD ["bash"]

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM arm64v8/debian:12
 
 #=================
 # Basic C core dependencies
@@ -76,7 +76,10 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --upgrade pip==19.3.1
+# Some newer distros that have already implemented PEP 668. Use of
+# --break-system-packages is to workaround that. We should look into using
+# virtualenv in Dockerfile though.
+RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
@@ -87,33 +90,7 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-#=================
-# PHP7 dependencies
-
-# PHP specific dependencies
-RUN apt-get update && apt-get install -y \
-  libbison-dev \
-  libcurl4-openssl-dev \
-  libgmp-dev \
-  libgmp3-dev \
-  libssl-dev \
-  libxml2-dev \
-  re2c \
-  zlib1g-dev \
-  && apt-get clean
-
-# Compile PHP7 from source
-RUN git clone https://github.com/php/php-src /var/local/git/php-src
-RUN cd /var/local/git/php-src \
-  && git checkout PHP-7.2.34 \
-  && ./buildconf --force \
-  && ./configure \
-  --with-gmp \
-  --with-openssl \
-  --with-zlib \
-  && make -j$(nproc) \
-  && make install
-
+RUN apt-get update && apt-get install -y php8.2 php-pear && apt-get clean
 #=================
 # PHP Test dependencies
 
@@ -125,20 +102,7 @@ RUN cd /var/local/git/php-src \
 
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
-#=================
-# Install ccache
-
-# Install ccache from source since ccache 3.x packaged with most linux distributions
-# does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
-    && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
-    && make -j4 && make install \
-    && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
-
+RUN apt-get update && apt-get install -y ccache && apt-get clean
 
 RUN mkdir /var/local/jenkins
 
