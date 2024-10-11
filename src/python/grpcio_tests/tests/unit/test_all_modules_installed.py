@@ -17,14 +17,14 @@ import logging
 
 class TestAllModulesInstalled(unittest.TestCase):
     def test_import_all_modules(self):
-        import grpcio_channelz
-        import grpcio_csds
-        import grpcio_admin
-        import grpcio_health_checking
-        import grpcio_reflection
-        import grpcio_status
+        import grpc_channelz
+        import grpc_csds
+        import grpc_admin
+        import grpc_health
+        import grpc_reflection
+        import grpc_status
         import grpc_observability
-        import grpcio_csm_observability
+        import grpc_csm_observability
         # This test simply imports all the modules.
         # If any module fails to import, the test will fail.
         pass
