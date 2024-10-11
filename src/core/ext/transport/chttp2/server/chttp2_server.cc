@@ -1395,7 +1395,7 @@ grpc_error_handle NewChttp2ServerListener::Create(
     int* port_num) {
   // Create NewChttp2ServerListener.
   OrphanablePtr<NewChttp2ServerListener> listener =
-      MakeOrphanable<NewChttp2ServerListener>(server, args);
+      MakeOrphanable<NewChttp2ServerListener>(args);
   // The tcp_server will be unreffed when the listener is orphaned, which
   // could be at the end of this function if the listener was not added to the
   // server's set of listeners.
@@ -1439,7 +1439,7 @@ grpc_error_handle NewChttp2ServerListener::Create(
 
 grpc_error_handle NewChttp2ServerListener::CreateWithAcceptor(
     Server* server, const char* name, const ChannelArgs& args) {
-  auto listener = MakeOrphanable<NewChttp2ServerListener>(server, args);
+  auto listener = MakeOrphanable<NewChttp2ServerListener>(args);
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_, ChannelArgsEndpointConfig(args),
       OnAccept, listener.get(), &listener->tcp_server_);
@@ -1456,7 +1456,7 @@ NewChttp2ServerListener* NewChttp2ServerListener::CreateForPassiveListener(
     std::shared_ptr<experimental::PassiveListenerImpl> passive_listener) {
   // TODO(hork): figure out how to handle channelz in this case
   auto listener = MakeOrphanable<NewChttp2ServerListener>(
-      server, args, std::move(passive_listener));
+      args, std::move(passive_listener));
   auto listener_ptr = listener.get();
   server->AddListener(std::move(listener));
   return listener_ptr;
