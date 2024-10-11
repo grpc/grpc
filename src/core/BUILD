@@ -146,6 +146,10 @@ grpc_cc_library(
     hdrs = [
         "util/latent_see.h",
     ],
+    defines = select({
+        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
@@ -158,10 +162,6 @@ grpc_cc_library(
         "ring_buffer",
         "//:gpr",
     ],
-    defines=select({
-        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
-        "//conditions:default": [],
-    }),
 )
 
 grpc_cc_library(
