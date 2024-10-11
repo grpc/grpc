@@ -5004,6 +5004,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_config_endpoint_cc_proto",
+    deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
@@ -5012,6 +5017,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_config_endpoint_upbdefs",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_config_listener_cc_proto",
+    deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5034,6 +5044,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/rbac/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_config_route_cc_proto",
+    deps = ["@envoy_api//envoy/config/route/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_route_upb",
     deps = ["@envoy_api//envoy/config/route/v3:pkg"],
@@ -5047,6 +5062,11 @@ grpc_upb_proto_reflection_library(
 grpc_cc_proto_library(
     name = "envoy_extensions_rbac_audit_loggers_stream_cc_proto",
     deps = ["@envoy_api//envoy/extensions/rbac/audit_loggers/stream/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_clusters_aggregate_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5214,6 +5234,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_filters_network_http_connection_manager_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upb",
     deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
@@ -5237,6 +5262,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_upstreams_http_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(

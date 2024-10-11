@@ -47,21 +47,21 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/proto/grpc/testing/xds/v3/address.pb.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
-#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
-#include "src/proto/grpc/testing/xds/v3/gcp_authn.pb.h"
-#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_protocol_options.pb.h"
-#include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
-#include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
+#include "envoy/config/core/v3/address.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/core/v3/config_source.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
+#include "envoy/config/core/v3/health_check.pb.h"
+#include "envoy/extensions/upstreams/http/v3/http_protocol_options.pb.h"
+#include "envoy/config/cluster/v3/outlier_detection.pb.h"
+#include "envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.pb.h"
+#include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "xds/type/v3/typed_struct.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
@@ -1458,13 +1458,13 @@ TEST_F(CircuitBreakingTest, Valid) {
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(envoy::config::cluster::v3::HIGH);  // Ignored.
+  threshold->set_priority(envoy::config::core::v3::HIGH);  // Ignored.
   threshold->mutable_max_requests()->set_value(251);
   threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(envoy::config::cluster::v3::DEFAULT);
+  threshold->set_priority(envoy::config::core::v3::DEFAULT);
   threshold->mutable_max_requests()->set_value(1701);
   threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(envoy::config::cluster::v3::HIGH);  // Ignored.
+  threshold->set_priority(envoy::config::core::v3::HIGH);  // Ignored.
   threshold->mutable_max_requests()->set_value(5049);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
@@ -1485,7 +1485,7 @@ TEST_F(CircuitBreakingTest, NoDefaultThreshold) {
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(envoy::config::cluster::v3::HIGH);  // Ignored.
+  threshold->set_priority(envoy::config::core::v3::HIGH);  // Ignored.
   threshold->mutable_max_requests()->set_value(251);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
@@ -1506,7 +1506,7 @@ TEST_F(CircuitBreakingTest, DefaultThresholdWithMaxRequestsUnset) {
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(envoy::config::cluster::v3::DEFAULT);
+  threshold->set_priority(envoy::config::core::v3::DEFAULT);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
