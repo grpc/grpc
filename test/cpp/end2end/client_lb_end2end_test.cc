@@ -1021,7 +1021,7 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   const grpc_core::Duration waited =
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   VLOG(2) << "Waited " << waited.millis() << " milliseconds";
-  // We should have waited at least kMinReconnectBackOffMs. We substract one to
+  // We should have waited at least kMinReconnectBackOffMs. We subtract one to
   // account for test and precision accuracy drift.
   EXPECT_GE(waited.millis(),
             (kMinReconnectBackOffMs * grpc_test_slowdown_factor()) - 1);
