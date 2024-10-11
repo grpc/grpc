@@ -139,20 +139,16 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
 }
 
 void FuzzingEventEngine::Tick(Duration max_time) {
-  bool incremented_time = false;
   std::vector<absl::AnyInvocable<void()>> to_run;
   {
     grpc_core::MutexLock lock(&*mu_);
     grpc_core::MutexLock now_lock(&*now_mu_);
-    if (!incremented_time) {
-      Duration incr = max_time;
-      if (!tasks_by_time_.empty()) {
-        incr = std::min(incr, tasks_by_time_.begin()->first - now_);
-      }
-      now_ += incr;
-      CHECK_GE(now_.time_since_epoch().count(), 0);
-      incremented_time = true;
+    Duration incr = max_time;
+    if (!tasks_by_time_.empty()) {
+      incr = std::min(incr, tasks_by_time_.begin()->first - now_);
     }
+    now_ += incr;
+    CHECK_GE(now_.time_since_epoch().count(), 0);
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
       auto& task = *tasks_by_time_.begin()->second;
