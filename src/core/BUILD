@@ -625,6 +625,10 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/party.h",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
@@ -650,10 +654,6 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
-    defines = select({
-        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
-        "//conditions:default": [],
-    }),
 )
 
 grpc_cc_library(
@@ -2851,6 +2851,10 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/default_event_engine.h",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
+        "//conditions:default": [],
+    }),
     external_deps = ["absl/functional:any_invocable"],
     visibility = [
         "@grpc:alt_grpc_base_legacy",
@@ -2866,10 +2870,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_trace",
     ],
-    defines = select({
-        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
-        "//conditions:default": [],
-    }),
 )
 
 grpc_cc_library(
