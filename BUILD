@@ -5024,6 +5024,11 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_config_rbac_cc_proto",
+    deps = ["@envoy_api//envoy/config/rbac/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_rbac_upb",
     deps = ["@envoy_api//envoy/config/rbac/v3:pkg"],
@@ -5037,6 +5042,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_config_route_upbdefs",
     deps = ["@envoy_api//envoy/config/route/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_rbac_audit_loggers_stream_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/rbac/audit_loggers/stream/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5072,6 +5082,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_gcp_authn_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_filters_http_rbac_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
 )
 
 grpc_upb_proto_library(
