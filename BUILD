@@ -5059,9 +5059,19 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_filters_common_fault_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_common_fault_upb",
     deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_filters_http_fault_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5104,6 +5114,11 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_filters_http_router_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_router_upb",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
@@ -5112,6 +5127,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_extensions_filters_http_stateful_session_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5124,6 +5144,11 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
 )
 
+grpc_cc_proto_library(
+    name = "envoy_extensions_http_stateful_session_cookie_cc_proto",
+    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_extensions_http_stateful_session_cookie_upb",
     deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
@@ -5132,6 +5157,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
     deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_type_http_cc_proto",
+    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5262,6 +5292,11 @@ grpc_cc_proto_library(
 grpc_upb_proto_library(
     name = "envoy_type_matcher_upb",
     deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
+)
+
+grpc_cc_proto_library(
+    name = "envoy_type_cc_proto",
+    deps = ["@envoy_api//envoy/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(
