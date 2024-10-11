@@ -400,6 +400,28 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
+// void $INTERCEPTOR_NAME(const $VALUE_TYPE&)
+template <typename FilterType, typename T,
+          void (FilterType::Call::*impl)(const typename T::element_type&)>
+struct AddOpImpl<FilterType, T,
+                 void (FilterType::Call::*)(const typename T::element_type&),
+                 impl> {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+    to.Add(0, 0,
+           Operator<T>{
+               channel_data,
+               call_offset,
+               [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
+                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
+                     *value);
+                 return ResultOr<T>{std::move(value), nullptr};
+               },
+               nullptr,
+               nullptr,
+           });
+  }
+};
+
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
           void (FilterType::Call::*impl)(typename T::element_type&,
