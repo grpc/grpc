@@ -136,7 +136,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
 
   const grpc_resolved_address* resolved_address() const override {
     // chaotic good doesn't use the new ListenerWrapper interface yet.
-    grpc_core::Crash("Unimplemented");
+    Crash("Unimplemented");
     return nullptr;
   }
 

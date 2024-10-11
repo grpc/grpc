@@ -156,7 +156,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   const grpc_resolved_address* resolved_address() const override {
     // Should only be invoked with experiment server_listener
-    grpc_core::Crash("Illegal");
+    Crash("Illegal");
     return nullptr;
   }
 
@@ -983,9 +983,10 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       std::shared_ptr<experimental::PassiveListenerImpl> passive_listener);
 
   // Do not instantiate directly.  Use one of the factory methods above.
-  NewChttp2ServerListener(Server* server, const ChannelArgs& args,
-                          std::shared_ptr<experimental::PassiveListenerImpl>
-                              passive_listener = nullptr);
+  explicit NewChttp2ServerListener(
+      const ChannelArgs& args,
+      std::shared_ptr<experimental::PassiveListenerImpl> passive_listener =
+          nullptr);
   ~NewChttp2ServerListener() override;
 
   void AcceptConnectedEndpoint(std::unique_ptr<EventEngine::Endpoint> endpoint);
@@ -1462,7 +1463,7 @@ NewChttp2ServerListener* NewChttp2ServerListener::CreateForPassiveListener(
 }
 
 NewChttp2ServerListener::NewChttp2ServerListener(
-    Server* server, const ChannelArgs& args,
+    const ChannelArgs& args,
     std::shared_ptr<experimental::PassiveListenerImpl> passive_listener)
     : args_(args),
       memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
