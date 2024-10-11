@@ -81,7 +81,6 @@ FuzzingEventEngine::FuzzingEventEngine(
   tasks_by_id_.clear();
   tasks_by_time_.clear();
   next_task_id_ = 1;
-  current_tick_ = 0;
   // Start at 5 seconds after the epoch.
   // This needs to be more than 1, and otherwise is kind of arbitrary.
   // The grpc_core::Timer code special cases the zero second time period after
@@ -164,7 +163,6 @@ void FuzzingEventEngine::Tick(Duration max_time) {
                                   std::chrono::milliseconds(1)));
         now_ += incr;
         CHECK_GE(now_.time_since_epoch().count(), 0);
-        ++current_tick_;
         incremented_time = true;
       }
       // Find newly expired timers.
