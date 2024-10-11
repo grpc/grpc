@@ -16,7 +16,7 @@
 set -ex
 
 BASEDIR=$(dirname "$0")/../..
-PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
+PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests grpc_observability"
 
 # Change to grpc repo root
 cd "$BASEDIR";
