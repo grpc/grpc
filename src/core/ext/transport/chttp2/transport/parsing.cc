@@ -859,7 +859,7 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
     }
     // This is more streams than can be started in http2, so setting this
-    // effictively removes the limit for the rest of the connection.
+    // effectively removes the limit for the rest of the connection.
     t->num_incoming_streams_before_settings_ack =
         std::numeric_limits<uint32_t>::max();
   }

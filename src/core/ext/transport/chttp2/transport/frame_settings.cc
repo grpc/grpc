@@ -20,8 +20,8 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
-#include <string.h>
 
+#include <cstdint>
 #include <string>
 
 #include "absl/base/attributes.h"
@@ -39,7 +39,22 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
 
-static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
+static uint8_t* fill_header(uint8_t* out, const uint32_t length,
+                            const uint8_t flags) {
+  // Bytes filled out as per the RFC
+  // https://datatracker.ietf.org/doc/html/rfc9113#name-settings-format
+  // SETTINGS Frame{
+  //     Length(24),
+  //     Type(8) = 0x04,
+  //     Unused Flags(7),
+  //     ACK Flag(1),
+  //     Reserved(1),
+  //.    Stream Identifier(31) = 0,
+  //     Setting(48) {
+  //        Identifier(16),
+  //        Value(32),
+  //     }
+
   *out++ = static_cast<uint8_t>(length >> 16);
   *out++ = static_cast<uint8_t>(length >> 8);
   *out++ = static_cast<uint8_t>(length);
@@ -59,8 +74,8 @@ grpc_slice grpc_chttp2_settings_ack_create(void) {
 }
 
 grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
-    grpc_core::Http2Settings& settings) {
+    grpc_chttp2_settings_parser* parser, const uint32_t length,
+    const uint8_t flags, grpc_core::Http2Settings& settings) {
   parser->target_settings = &settings;
   parser->incoming_settings.Init(settings);
   parser->is_ack = 0;
@@ -84,7 +99,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                                                     grpc_chttp2_transport* t,
                                                     grpc_chttp2_stream* /*s*/,
                                                     const grpc_slice& slice,
-                                                    int is_last) {
+                                                    const int is_last) {
   grpc_chttp2_settings_parser* parser =
       static_cast<grpc_chttp2_settings_parser*>(p);
   const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
