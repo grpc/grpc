@@ -313,8 +313,6 @@ class FuzzingEventEngine : public EventEngine {
   static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
       ABSL_ACQUIRED_AFTER(mu_);
 
-  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
-      std::chrono::milliseconds(1);
   const Duration max_delay_[2];
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
   Time now_ ABSL_GUARDED_BY(now_mu_);
