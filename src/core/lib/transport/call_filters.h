@@ -1417,15 +1417,17 @@ class CallFilters {
             void (CallState::*on_done)(), typename StackIterator>
   class Executor {
    public:
-    Executor(CallFilters* filters, StackIterator stack_begin,
-             StackIterator stack_end)
+    GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Executor(CallFilters* filters,
+                                                  StackIterator stack_begin,
+                                                  StackIterator stack_end)
         : stack_current_(stack_begin),
           stack_end_(stack_end),
           filters_(filters) {
       DCHECK_NE((filters_->*input_location).get(), nullptr);
     }
 
-    Poll<ValueOrFailure<Output>> operator()() {
+    GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<ValueOrFailure<Output>>
+    operator()() {
       if ((filters_->*input_location) != nullptr) {
         if (stack_current_ == stack_end_) {
           DCHECK_NE((filters_->*input_location).get(), nullptr);
@@ -1441,8 +1443,8 @@ class CallFilters {
     }
 
    private:
-    Poll<ValueOrFailure<Output>> FinishStep(
-        Poll<filters_detail::ResultOr<Input>> p) {
+    GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<ValueOrFailure<Output>>
+    FinishStep(Poll<filters_detail::ResultOr<Input>> p) {
       auto* r = p.value_if_ready();
       if (r == nullptr) return Pending{};
       if (r->ok != nullptr) {
