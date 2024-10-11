@@ -23,6 +23,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
+    "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
     "local_connector_secure": "local_connector_secure",
@@ -39,13 +40,13 @@ EXPERIMENT_ENABLES = {
     "time_caching_in_party": "time_caching_in_party",
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
-    "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
     "event_engine_client",
     "event_engine_dns",
+    "event_engine_dns_non_client_channel",
     "event_engine_listener",
 ]
 
@@ -55,6 +56,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "server_listener",
             ],
@@ -108,6 +110,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "server_listener",
             ],
@@ -145,16 +148,13 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -174,6 +174,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "event_engine_client",
                 "event_engine_listener",
                 "work_serializer_dispatch",
             ],
@@ -182,6 +183,9 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

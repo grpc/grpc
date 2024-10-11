@@ -530,7 +530,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
 
   // ServerContextWrapper allows ManualConstructor while using a private
-  // contructor of ServerContext via this friend class.
+  // constructor of ServerContext via this friend class.
   struct ServerContextWrapper {
     ServerContext ctx;
 
