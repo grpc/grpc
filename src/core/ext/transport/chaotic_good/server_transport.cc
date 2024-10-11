@@ -125,9 +125,11 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
 }
 
 namespace {
-absl::Status BooleanSuccessToTransportError(bool success) {
-  return success ? absl::OkStatus()
-                 : absl::UnavailableError("Transport closed.");
+auto BooleanSuccessToTransportErrorCapturingInitiator(CallInitiator initiator) {
+  return [initiator = std::move(initiator)](bool success) {
+    return success ? absl::OkStatus()
+                   : absl::UnavailableError("Transport closed.");
+  };
 }
 }  // namespace
 
@@ -139,7 +141,8 @@ auto ChaoticGoodServerTransport::SendFragment(
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
   return Map(outgoing_frames.Send(std::move(frame)),
-             BooleanSuccessToTransportError);
+             BooleanSuccessToTransportErrorCapturingInitiator(
+                 std::move(call_initiator)));
 }
 
 auto ChaoticGoodServerTransport::SendFragmentAcked(
@@ -150,7 +153,8 @@ auto ChaoticGoodServerTransport::SendFragmentAcked(
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
   return Map(outgoing_frames.SendAcked(std::move(frame)),
-             BooleanSuccessToTransportError);
+             BooleanSuccessToTransportErrorCapturingInitiator(
+                 std::move(call_initiator)));
 }
 
 auto ChaoticGoodServerTransport::SendCallBody(
