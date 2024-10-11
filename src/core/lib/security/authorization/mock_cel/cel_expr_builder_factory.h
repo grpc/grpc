@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPR_BUILDER_FACTORY_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_EXPR_BUILDER_FACTORY_H
 
-#include <memory>
-
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "src/core/lib/security/authorization/mock_cel/cel_expression.h"
 #include "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h"

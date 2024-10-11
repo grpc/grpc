@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -31,11 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -60,7 +58,6 @@
 #include <address_sorting/address_sorting.h>
 
 #include "absl/strings/str_cat.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"

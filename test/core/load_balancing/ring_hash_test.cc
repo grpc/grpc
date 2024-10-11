@@ -16,6 +16,8 @@
 
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -30,10 +32,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/json/json.h"

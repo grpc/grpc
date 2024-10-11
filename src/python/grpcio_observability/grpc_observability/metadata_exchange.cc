@@ -18,6 +18,7 @@
 
 #include "metadata_exchange.h"
 
+#include <grpc/slice.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -27,9 +28,6 @@
 
 #include "absl/strings/string_view.h"
 #include "constants.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {

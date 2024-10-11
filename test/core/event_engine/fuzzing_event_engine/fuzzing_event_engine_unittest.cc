@@ -16,11 +16,10 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include "absl/synchronization/notification.h"
-#include "gtest/gtest.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
 #include "src/core/util/time.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;

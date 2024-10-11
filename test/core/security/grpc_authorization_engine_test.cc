@@ -14,14 +14,13 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
-#include <memory>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
+#include <gtest/gtest.h>
+
+#include <memory>
 
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"

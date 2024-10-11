@@ -19,9 +19,8 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CORE_TEST_UTIL_TEST_CONFIG_H
 
-#include <stdint.h>
-
 #include <grpc/support/time.h>
+#include <stdint.h>
 
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;

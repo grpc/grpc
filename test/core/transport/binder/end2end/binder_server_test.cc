@@ -14,18 +14,16 @@
 
 #include "src/core/ext/transport/binder/server/binder_server.h"
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/binder_credentials.h>
+#include <grpcpp/security/binder_security_policy.h>
+#include <gtest/gtest.h>
+
 #include <memory>
 #include <thread>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/memory/memory.h"
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/binder_credentials.h>
-#include <grpcpp/security/binder_security_policy.h>
-
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"

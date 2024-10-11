@@ -15,6 +15,8 @@
 
 #include "test/cpp/end2end/xds/xds_utils.h"
 
+#include <grpcpp/security/tls_certificate_provider.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -30,9 +32,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpcpp/security/tls_certificate_provider.h>
-
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"

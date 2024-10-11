@@ -15,11 +15,10 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_PROMISE_ENDPOINT_H
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 

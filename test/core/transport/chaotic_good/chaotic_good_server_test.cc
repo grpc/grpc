@@ -14,6 +14,11 @@
 
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpcpp/server.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,12 +29,6 @@
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpcpp/server.h>
-
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"

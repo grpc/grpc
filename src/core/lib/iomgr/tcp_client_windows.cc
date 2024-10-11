@@ -16,21 +16,19 @@
 //
 //
 
-#include <inttypes.h>
-
 #include <grpc/support/port_platform.h>
+#include <inttypes.h>
 
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
-
-#include "absl/log/check.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"

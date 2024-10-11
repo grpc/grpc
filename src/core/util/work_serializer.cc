@@ -14,10 +14,10 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/work_serializer.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -31,9 +31,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -246,9 +243,6 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
     }
     // There is at least one callback on the queue. Pop the callback from the
     // queue and execute it.
-    if (IsWorkSerializerClearsTimeCacheEnabled() && ExecCtx::Get() != nullptr) {
-      ExecCtx::Get()->InvalidateNow();
-    }
     CallbackWrapper* cb_wrapper = nullptr;
     bool empty_unused;
     while ((cb_wrapper = reinterpret_cast<CallbackWrapper*>(

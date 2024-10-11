@@ -19,10 +19,10 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
 #define GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
+
+#include <memory>
 
 #include "src/core/lib/iomgr/endpoint.h"
 

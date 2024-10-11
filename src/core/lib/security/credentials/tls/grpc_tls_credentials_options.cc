@@ -18,14 +18,13 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc_crl_provider.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/ssl_transport_security.h"

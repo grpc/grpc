@@ -19,17 +19,14 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
+#include <ares.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 
-#include <ares.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"

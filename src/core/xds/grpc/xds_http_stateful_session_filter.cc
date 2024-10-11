@@ -16,6 +16,9 @@
 
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <utility>
 
@@ -28,10 +31,6 @@
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h"
 #include "envoy/type/http/v3/cookie.upb.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"

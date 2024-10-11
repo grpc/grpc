@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -27,12 +31,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/compression_types.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
