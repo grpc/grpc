@@ -44,7 +44,6 @@ from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
-from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
@@ -89,19 +88,18 @@ class _BaseMultiCallable:
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
     _interceptors: Optional[Sequence[ClientInterceptor]]
     _references: List[Any]
-    _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
     def __init__(
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         interceptors: Optional[Sequence[ClientInterceptor]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
@@ -118,23 +116,25 @@ class _BaseMultiCallable:
     def _init_metadata(
         metadata: Optional[MetadataType] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Metadata:
+    ) -> MetadataType:
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
         if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata)
+            metadata = Metadata.from_tuple(metadata)  # type: ignore
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+                *_compression.augment_metadata(metadata, compression)  # type: ignore
             )
-        return metadata
+        return metadata  # type: ignore
 
 
 class UnaryUnaryMultiCallable(
     _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable
 ):
+    _interceptors: Sequence[UnaryUnaryClientInterceptor]
+
     def __call__(
         self,
         request: RequestType,
@@ -144,7 +144,9 @@ class UnaryUnaryMultiCallable(
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.UnaryUnaryCall[RequestType, ResponseType]:
+    ) -> _base_call.UnaryUnaryCall:
+        call: _base_call.UnaryUnaryCall
+
         metadata = self._init_metadata(metadata, compression)
         if not self._interceptors:
             call = UnaryUnaryCall(
@@ -180,6 +182,8 @@ class UnaryUnaryMultiCallable(
 class UnaryStreamMultiCallable(
     _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable
 ):
+    _interceptors: Sequence[UnaryStreamClientInterceptor]
+
     def __call__(
         self,
         request: RequestType,
@@ -189,7 +193,9 @@ class UnaryStreamMultiCallable(
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.UnaryStreamCall[RequestType, ResponseType]:
+    ) -> _base_call.UnaryStreamCall:
+        call: _base_call.UnaryStreamCall
+
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -226,6 +232,8 @@ class UnaryStreamMultiCallable(
 class StreamUnaryMultiCallable(
     _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable
 ):
+    _interceptors: Sequence[StreamUnaryClientInterceptor]
+
     def __call__(
         self,
         request_iterator: Optional[RequestIterableType] = None,
@@ -235,6 +243,8 @@ class StreamUnaryMultiCallable(
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.StreamUnaryCall:
+        call: _base_call.StreamUnaryCall
+
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -271,6 +281,8 @@ class StreamUnaryMultiCallable(
 class StreamStreamMultiCallable(
     _BaseMultiCallable, _base_channel.StreamStreamMultiCallable
 ):
+    _interceptors: Sequence[StreamStreamClientInterceptor]
+
     def __call__(
         self,
         request_iterator: Optional[RequestIterableType] = None,
@@ -280,6 +292,8 @@ class StreamStreamMultiCallable(
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> _base_call.StreamStreamCall:
+        call: _base_call.StreamStreamCall
+
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -483,8 +497,9 @@ class Channel(_base_channel.Channel):
 
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
-    def _get_registered_call_handle(self, method: str) -> int:
-        pass
+    # pylint: disable=no-self-use
+    def _get_registered_call_handle(self, _: str) -> int:
+        return 0
 
     # TODO(xuanwn): Implement _registered_method after we have
     # observability for Asyncio.

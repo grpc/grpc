@@ -31,6 +31,11 @@ filegroup(
 )
 
 filegroup(
+    name = "_run_time_type_check_main",
+    srcs = ["_run_time_type_check_main.py"],
+)
+
+filegroup(
     name = "_logging_threshold_test_main",
     srcs = ["_logging_threshold_test_main.py"],
 )
