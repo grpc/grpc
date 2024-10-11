@@ -23,6 +23,7 @@ load(
     "get_proto_arguments",
     "get_staged_proto_file",
     "includes_from_deps",
+    "is_sibling_repository_layout",
     "is_well_known",
     "protos_from_context",
 )
@@ -72,7 +73,7 @@ def _gen_py_aspect_impl(target, context):
         "--python_out={}".format(out_dir.path),
         "--pyi_out={}".format(out_dir.path),
     ] + [
-        "--proto_path={}".format(get_include_directory(i))
+        "--proto_path={}".format(get_include_directory(i, is_sibling_repository_layout(context)))
         for i in includes.to_list()
     ] + [
         "--proto_path={}".format(context.genfiles_dir.path),
@@ -203,7 +204,7 @@ def _generate_pb2_grpc_src_impl(context):
     )
 
     arguments += [
-        "--proto_path={}".format(get_include_directory(i))
+        "--proto_path={}".format(get_include_directory(i, is_sibling_repository_layout(context)))
         for i in includes
     ]
     arguments.append("--proto_path={}".format(context.genfiles_dir.path))
