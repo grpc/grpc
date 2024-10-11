@@ -40,6 +40,11 @@ exports_files(
     visibility = ["//:__subpackages__"],
 )
 
+config_setting(
+    name = "maximize_threadyness",
+    values = {"define": "GRPC_MAXIMIZE_THREADYNESS=1"},
+)
+
 grpc_cc_library(
     name = "channel_fwd",
     hdrs = [
@@ -645,6 +650,10 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
+        "//conditions:default": [],
+    }),
 )
 
 grpc_cc_library(
@@ -2857,6 +2866,10 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_trace",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_MAXIMIZE_THREADYNESS"],
+        "//conditions:default": [],
+    }),
 )
 
 grpc_cc_library(
