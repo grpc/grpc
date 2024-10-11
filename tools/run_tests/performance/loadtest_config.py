@@ -462,6 +462,7 @@ def main() -> None:
             "all",
             "inproc",
             "scalable",
+            "scalable_unrestricted",
             "smoketest",
             "sweep",
             "psm",

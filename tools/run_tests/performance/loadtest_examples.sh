@@ -131,8 +131,8 @@ prebuilt_example() {
 }
 
 # PSM basic examples are intended to be runnable with only subsituding the
-# xds-server and sidecar images, so substitution keys for xds-server and 
-# sidecar images are kept. 
+# xds-server and sidecar images, so substitution keys for xds-server and
+# sidecar images are kept.
 psm_basic_example() {
     local -r scenario="${1}"
     local -r outputdir="${2}"
