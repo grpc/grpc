@@ -21576,6 +21576,7 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - test/core/xds/xds_client_test_peer.h
   - test/core/xds/xds_transport_fake.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -23036,11 +23037,11 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/protoc-gen-validate
-  hash: 1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
+  hash: 9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f
   proto_prefix: third_party/protoc-gen-validate/
-  strip_prefix: protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
+  strip_prefix: protoc-gen-validate-1.0.4
   urls:
-  - https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
+  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip
 - destination: third_party/xds
   hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
   proto_prefix: third_party/xds/

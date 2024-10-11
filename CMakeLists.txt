@@ -460,9 +460,9 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND g
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
-    1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
-    protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.0.4.zip
+    9372f9ecde8fbadf83c8c7de3dbb49b11067aa26fb608c501106d0b4bf06c28f
+    protoc-gen-validate-1.0.4
   )
 endif()
 # Setup external proto library at third_party/xds with 2 download URLs

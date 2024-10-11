@@ -172,8 +172,8 @@ grpc_cc_test(
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
-        "//:envoy_config_core_cc_proto",
-        "//:envoy_service_discovery_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
         "//:grpc++_codegen_proto",
         "//:grpc++_config_proto",
         "//:xds_client",
