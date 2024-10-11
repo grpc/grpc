@@ -21901,9 +21901,14 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_cluster_type_end2end_test
@@ -22369,9 +22374,14 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_fallback_end2end_test
