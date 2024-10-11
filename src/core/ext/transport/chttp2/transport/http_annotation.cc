@@ -16,9 +16,6 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_ANNOTATION_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_ANNOTATION_H
-
 #include "src/core/ext/transport/chttp2/transport/http_annotation.h"
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -27,7 +24,7 @@
 
 namespace grpc_core {
 
-HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)
+HttpAnnotation::HttpAnnotation(HttpAnnotation::Type type, gpr_timespec time)
     : CallTracerAnnotationInterface::Annotation(
           CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
       type_(type),
@@ -36,13 +33,13 @@ HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)
 std::string HttpAnnotation::ToString() const {
   std::string s = "HttpAnnotation type: ";
   switch (type_) {
-    case Type::kStart:
+    case HttpAnnotation::Type::kStart:
       absl::StrAppend(&s, "Start");
       break;
-    case Type::kHeadWritten:
+    case HttpAnnotation::Type::kHeadWritten:
       absl::StrAppend(&s, "HeadWritten");
       break;
-    case Type::kEnd:
+    case HttpAnnotation::Type::kEnd:
       absl::StrAppend(&s, "End");
       break;
     default:
@@ -59,5 +56,3 @@ std::string HttpAnnotation::ToString() const {
 }
 
 }  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_ANNOTATION_H
