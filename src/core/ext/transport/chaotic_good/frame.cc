@@ -20,6 +20,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -38,122 +39,61 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace {
-const uint8_t kZeros[64] = {};
-}
-
-namespace {
-const NoDestruct<Slice> kZeroSlice{[] {
-  // Frame header size is fixed to 24 bytes.
+const NoDestruct<Slice> kZeroHeader{[] {
   auto slice = GRPC_SLICE_MALLOC(FrameHeader::kFrameHeaderSize);
   memset(GRPC_SLICE_START_PTR(slice), 0, FrameHeader::kFrameHeaderSize);
   return slice;
 }()};
+const NoDestruct<Slice> kZeroSlice{[] {
+  auto slice = GRPC_SLICE_MALLOC(64);
+  memset(GRPC_SLICE_START_PTR(slice), 0, GRPC_SLICE_LENGTH(slice));
+  return slice;
+}()};
 
-class FrameSerializer {
- public:
-  explicit FrameSerializer(FrameType frame_type, uint32_t stream_id) {
-    output_.control.AppendIndexed(kZeroSlice->Copy());
-    header_.type = frame_type;
-    header_.stream_id = stream_id;
-    header_.flags.SetAll(false);
+void AddFrame(FrameType frame_type, uint32_t stream_id, const SliceBuffer& payload,
+              uint32_t alignment, BufferPair* out) {
+  FrameHeader header;
+  header.type = frame_type;
+  header.stream_id = stream_id;
+  header.payload_length = payload.Length();
+  header.payload_connection_id = header.payload_length > 1024 ? 1 : 0;
+  header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
+  if (header.payload_connection_id == 0) {
+    out->control.Append(payload);
+  } else {
+    out->data.Append(payload);
+    out->data.Append(kZeroSlice->RefSubSlice(0, header.Padding(alignment)));
   }
+}
 
-  // If called, must be called before AddTrailers, Finish.
-  SliceBuffer& AddHeaders() {
-    header_.flags.set(0);
-    return output_.control;
-  }
-
-  void AddMessage(const FragmentMessage& msg) {
-    header_.flags.set(1);
-    header_.message_length = msg.length;
-    header_.message_padding = msg.padding;
-    output_.data = msg.message->payload()->Copy();
-    if (msg.padding != 0) {
-      output_.data.Append(Slice::FromStaticBuffer(kZeros, msg.padding));
-    }
-  }
-
-  // If called, must be called before Finish.
-  SliceBuffer& AddTrailers() {
-    header_.flags.set(2);
-    header_.header_length =
-        output_.control.Length() - FrameHeader::kFrameHeaderSize;
-    return output_.control;
-  }
-
-  BufferPair Finish() {
-    // Calculate frame header_length or trailer_length if available.
-    if (header_.flags.is_set(2)) {
-      // Header length is already known in AddTrailers().
-      header_.trailer_length = output_.control.Length() -
-                               header_.header_length -
-                               FrameHeader::kFrameHeaderSize;
-    } else {
-      if (header_.flags.is_set(0)) {
-        // Calculate frame header length in Finish() since AddTrailers() isn't
-        // called.
-        header_.header_length =
-            output_.control.Length() - FrameHeader::kFrameHeaderSize;
-      }
-    }
-    header_.Serialize(
-        GRPC_SLICE_START_PTR(output_.control.c_slice_buffer()->slices[0]));
-    return std::move(output_);
-  }
-
- private:
-  FrameHeader header_;
-  BufferPair output_;
-};
-
-class FrameDeserializer {
- public:
-  FrameDeserializer(const FrameHeader& header, BufferPair& input)
-      : header_(header), input_(input) {}
-  const FrameHeader& header() const { return header_; }
-  // If called, must be called before ReceiveTrailers, Finish.
-  absl::StatusOr<SliceBuffer> ReceiveHeaders() {
-    return Take(header_.header_length);
-  }
-  // If called, must be called before Finish.
-  absl::StatusOr<SliceBuffer> ReceiveTrailers() {
-    return Take(header_.trailer_length);
-  }
-
-  // Return message length to get payload size in data plane.
-  uint32_t GetMessageLength() const { return header_.message_length; }
-  // Return message padding to get padding size in data plane.
-  uint32_t GetMessagePadding() const { return header_.message_padding; }
-
-  absl::Status Finish() { return absl::OkStatus(); }
-
- private:
-  absl::StatusOr<SliceBuffer> Take(uint32_t length) {
-    if (length == 0) return SliceBuffer{};
-    if (input_.control.Length() < length) {
-      return absl::InvalidArgumentError(
-          "Frame too short (insufficient payload)");
-    }
-    SliceBuffer out;
-    input_.control.MoveFirstNBytesIntoSliceBuffer(length, out);
-    return std::move(out);
-  }
-  FrameHeader header_;
-  BufferPair& input_;
-};
+template <typename F>
+void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
+                    BufferPair* out) {
+  const size_t header_slice = out->control.AppendIndexed(
+      kZeroHeader->Copy());
+  const size_t size_before = out->control.Length();
+  gen_frame(out->control);
+  const size_t size_after = out->control.Length();
+  FrameHeader header;
+  header.type = frame_type;
+  header.stream_id = stream_id;
+  header.payload_length = size_after - size_before;
+  header.payload_connection_id = 0;
+  header.Serialize(const_cast<uint8_t*>(
+      GRPC_SLICE_START_PTR(out->control.c_slice_at(header_slice))));
+}
 
 template <typename Metadata>
-absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
-    HPackParser* parser, absl::StatusOr<SliceBuffer> maybe_slices,
-    uint32_t stream_id, bool is_header, bool is_client, absl::BitGenRef bitsrc,
-    Arena* arena) {
+absl::Status ReadMetadata(HPackParser* parser,
+                          absl::StatusOr<SliceBuffer> maybe_slices,
+                          uint32_t stream_id, bool is_header, bool is_client,
+                          absl::BitGenRef bitsrc, Metadata* metadata) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  CHECK_NE(arena, nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooledForOverwrite<Metadata>();
+  *metadata = Arena::MakePooledForOverwrite<
+      typename std::remove_reference<decltype(**metadata)>::type>();
   parser->BeginFrame(
-      metadata.get(), std::numeric_limits<uint32_t>::max(),
+      metadata->get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
       is_header ? HPackParser::Boundary::EndOfHeaders
                 : HPackParser::Boundary::EndOfStream,
@@ -168,132 +108,85 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
                                        /*call_tracer=*/nullptr));
   }
   parser->FinishFrame();
-  return std::move(metadata);
+  return absl::OkStatus();
 }
 }  // namespace
 
-absl::Status FrameLimits::ValidateMessage(const FrameHeader& header) {
-  if (header.message_length > max_message_size) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Message length ", header.message_length,
-                     " exceeds maximum allowed ", max_message_size));
-  }
-  if (header.message_padding > max_padding) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Message padding ", header.message_padding,
-                     " exceeds maximum allowed ", max_padding));
-  }
-  return absl::OkStatus();
-}
-
-absl::Status SettingsFrame::Deserialize(HPackParser* parser,
+absl::Status SettingsFrame::Deserialize(const DeserializeContext& ctx,
                                         const FrameHeader& header,
-                                        absl::BitGenRef bitsrc, Arena* arena,
-                                        BufferPair buffers, FrameLimits) {
-  if (header.type != FrameType::kSettings) {
-    return absl::InvalidArgumentError("Expected settings frame");
+                                        SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kSettings);
+  if (header.stream_id != 0) {
+    return absl::InvalidArgumentError("Expected stream id 0");
   }
-  if (header.flags.is_set(1) || header.flags.is_set(2)) {
-    return absl::InvalidArgumentError("Unexpected flags");
-  }
-  if (buffers.data.Length() != 0) {
-    return absl::InvalidArgumentError("Unexpected data");
-  }
-  FrameDeserializer deserializer(header, buffers);
-  if (header.flags.is_set(0)) {
-    auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, true, bitsrc,
-                                          arena);
-    if (!r.ok()) return r.status();
-    if (r.value() != nullptr) {
-      headers = std::move(r.value());
-    }
-  } else if (header.header_length != 0) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Unexpected non-zero header length", header.header_length));
-  }
-  return deserializer.Finish();
+  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, true,
+                      ctx.bitsrc, &headers);
 }
 
-BufferPair SettingsFrame::Serialize(HPackCompressor* encoder,
-                                    bool& saw_encoding_errors) const {
-  FrameSerializer serializer(FrameType::kSettings, 0);
-  if (headers.get() != nullptr) {
-    saw_encoding_errors |=
-        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
-  }
-  return serializer.Finish();
+void SettingsFrame::Serialize(const SerializeContext& ctx,
+                              BufferPair* out) const {
+  AddInlineFrame(
+      FrameType::kSettings, 0,
+      [&ctx, this](SliceBuffer& out) {
+        if (headers == nullptr) return;
+        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
+      },
+      out);
 }
 
-std::string SettingsFrame::ToString() const { return "SettingsFrame{}"; }
+std::string SettingsFrame::ToString() const {
+  return absl::StrCat("SettingsFrame{",
+                      headers == nullptr ? "" : headers->DebugString(), "}");
+}
 
-absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
-                                              const FrameHeader& header,
-                                              absl::BitGenRef bitsrc,
-                                              Arena* arena, BufferPair buffers,
-                                              FrameLimits limits) {
+absl::Status ClientInitialMetadataFrame::Deserialize(const DeserializeContext& ctx,
+                                                     const FrameHeader& header,
+                                                     SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kClientInitialMetadata);
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
-  if (header.type != FrameType::kFragment) {
-    return absl::InvalidArgumentError("Expected fragment frame");
-  }
-  FrameDeserializer deserializer(header, buffers);
-  if (header.flags.is_set(0)) {
-    auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, true, bitsrc,
-                                          arena);
-    if (!r.ok()) return r.status();
-    if (r.value() != nullptr) {
-      headers = std::move(r.value());
-    }
-  } else if (header.header_length != 0) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Unexpected non-zero header length", header.header_length));
-  }
-  if (header.flags.is_set(1)) {
-    auto r = limits.ValidateMessage(header);
-    if (!r.ok()) return r;
-    message =
-        FragmentMessage{Arena::MakePooled<Message>(std::move(buffers.data), 0),
-                        header.message_padding, header.message_length};
-  } else if (buffers.data.Length() != 0) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Unexpected non-zero message length ", buffers.data.Length()));
-  }
-  if (header.flags.is_set(2)) {
-    if (header.trailer_length != 0) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Unexpected trailer length ", header.trailer_length));
-    }
-    end_of_stream = true;
-  } else {
-    end_of_stream = false;
-  }
-  return deserializer.Finish();
+  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, true,
+                      ctx.bitsrc, &headers);
 }
 
-BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder,
-                                          bool& saw_encoding_errors) const {
+void ClientInitialMetadataFrame::Serialize(const SerializeContext& ctx,
+                                           BufferPair* out) const {
   CHECK_NE(stream_id, 0u);
-  FrameSerializer serializer(FrameType::kFragment, stream_id);
-  if (headers.get() != nullptr) {
-    saw_encoding_errors |=
-        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
-  }
-  if (message.has_value()) {
-    serializer.AddMessage(message.value());
-  }
-  if (end_of_stream) {
-    serializer.AddTrailers();
-  }
-  return serializer.Finish();
+  AddInlineFrame(
+      FrameType::kSettings, 0,
+      [&ctx, this](SliceBuffer& out) {
+        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
+      },
+      out);
 }
 
-std::string FragmentMessage::ToString() const {
-  std::string out =
-      absl::StrCat("FragmentMessage{length=", length, ", padding=", padding);
+std::string ClientInitialMetadataFrame::ToString() const {
+  return absl::StrCat(
+      "ClientInitialMetadataFrame{stream_id=", stream_id,
+      ", headers=", headers == nullptr ? "" : headers->DebugString(), "}");
+}
+
+absl::Status MessageFrame::Deserialize(const DeserializeContext& ctx,
+                                       const FrameHeader& header,
+                                       SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kMessage);
+  if (header.stream_id == 0) {
+    return absl::InvalidArgumentError("Expected non-zero stream id");
+  }
+  stream_id = header.stream_id;
+  message = Arena::MakePooled<Message>(std::move(payload), 0);
+  return absl::OkStatus();
+}
+
+void MessageFrame::Serialize(const SerializeContext& ctx, BufferPair* out) const {
+  CHECK_NE(stream_id, 0u);
+  AddFrame(FrameType::kMessage, stream_id, *message->payload(), ctx.alignment, out);
+}
+
+std::string MessageFrame::ToString() const {
+  std::string out = "MessageFrame{";
   if (message.get() != nullptr) {
     absl::StrAppend(&out, ", message=", message->DebugString().c_str());
   }
@@ -301,116 +194,158 @@ std::string FragmentMessage::ToString() const {
   return out;
 }
 
-std::string ClientFragmentFrame::ToString() const {
-  return absl::StrCat(
-      "ClientFragmentFrame{stream_id=", stream_id, ", headers=",
-      headers.get() != nullptr ? headers->DebugString().c_str() : "nullptr",
-      ", message=", message.has_value() ? message->ToString().c_str() : "none",
-      ", end_of_stream=", end_of_stream, "}");
-}
-
-absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
-                                              const FrameHeader& header,
-                                              absl::BitGenRef bitsrc,
-                                              Arena* arena, BufferPair buffers,
-                                              FrameLimits limits) {
+absl::Status ServerInitialMetadataFrame::Deserialize(const DeserializeContext& ctx,
+                                                     const FrameHeader& header,
+                                                     SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kServerInitialMetadata);
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
-  FrameDeserializer deserializer(header, buffers);
-  if (header.flags.is_set(0)) {
-    auto r = ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, false, bitsrc,
-                                          arena);
-    if (!r.ok()) return r.status();
-    if (r.value() != nullptr) {
-      headers = std::move(r.value());
-    }
-  } else if (header.header_length != 0) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Unexpected non-zero header length", header.header_length));
-  }
-  if (header.flags.is_set(1)) {
-    auto r = limits.ValidateMessage(header);
-    if (!r.ok()) return r;
-    message.emplace(Arena::MakePooled<Message>(std::move(buffers.data), 0),
-                    header.message_padding, header.message_length);
-  } else if (buffers.data.Length() != 0) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Unexpected non-zero message length", buffers.data.Length()));
-  }
-  if (header.flags.is_set(2)) {
-    auto r = ReadMetadata<ServerMetadata>(
-        parser, deserializer.ReceiveTrailers(), header.stream_id, false, false,
-        bitsrc, arena);
-    if (!r.ok()) return r.status();
-    if (r.value() != nullptr) {
-      trailers = std::move(r.value());
-    }
-  } else if (header.trailer_length != 0) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Unexpected non-zero trailer length", header.trailer_length));
-  }
-  return deserializer.Finish();
+  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, false,
+                      ctx.bitsrc, &headers);
 }
 
-BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder,
-                                          bool& saw_encoding_errors) const {
+void ServerInitialMetadataFrame::Serialize(const SerializeContext& ctx,
+                                           BufferPair* out) const {
   CHECK_NE(stream_id, 0u);
-  FrameSerializer serializer(FrameType::kFragment, stream_id);
-  if (headers.get() != nullptr) {
-    saw_encoding_errors |=
-        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
-  }
-  if (message.has_value()) {
-    serializer.AddMessage(message.value());
-  }
-  if (trailers.get() != nullptr) {
-    saw_encoding_errors |=
-        !encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
-  }
-  return serializer.Finish();
+  AddInlineFrame(
+      FrameType::kServerInitialMetadata, stream_id,
+      [&ctx, this](SliceBuffer& out) {
+        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
+      },
+      out);
 }
 
-std::string ServerFragmentFrame::ToString() const {
+std::string ServerInitialMetadataFrame::ToString() const {
   return absl::StrCat(
-      "ServerFragmentFrame{stream_id=", stream_id, ", headers=",
-      headers.get() != nullptr ? headers->DebugString().c_str() : "nullptr",
-      ", message=", message.has_value() ? message->ToString().c_str() : "none",
-      ", trailers=",
-      trailers.get() != nullptr ? trailers->DebugString().c_str() : "nullptr",
-      "}");
+      "ServerInitialMetadataFrame{stream_id=", stream_id,
+      ", headers=", headers == nullptr ? "" : headers->DebugString(), "}");
 }
 
-absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
-                                      absl::BitGenRef, Arena*,
-                                      BufferPair buffers, FrameLimits) {
-  if (header.type != FrameType::kCancel) {
-    return absl::InvalidArgumentError("Expected cancel frame");
-  }
-  if (header.flags.any()) {
-    return absl::InvalidArgumentError("Unexpected flags");
-  }
+absl::Status ServerTrailingMetadataFrame::Deserialize(const DeserializeContext& ctx,
+                                                      const FrameHeader& header,
+                                                      SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kServerTrailingMetadata);
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
   }
-  if (buffers.data.Length() != 0) {
-    return absl::InvalidArgumentError("Unexpected data");
-  }
-  FrameDeserializer deserializer(header, buffers);
   stream_id = header.stream_id;
-  return deserializer.Finish();
+  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, false, false,
+                      ctx.bitsrc, &trailers);
 }
 
-BufferPair CancelFrame::Serialize(HPackCompressor*, bool&) const {
+void ServerTrailingMetadataFrame::Serialize(const SerializeContext& ctx,
+                                            BufferPair* out) const {
   CHECK_NE(stream_id, 0u);
-  FrameSerializer serializer(FrameType::kCancel, stream_id);
-  return serializer.Finish();
+  AddInlineFrame(
+      FrameType::kServerTrailingMetadata, stream_id,
+      [&ctx, this](SliceBuffer& out) {
+        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*trailers, out);
+      },
+      out);
+}
+
+std::string ServerTrailingMetadataFrame::ToString() const {
+  return absl::StrCat(
+      "ServerTrailingMetadataFrame{stream_id=", stream_id,
+      ", trailers=", trailers == nullptr ? "" : trailers->DebugString(), "}");
+}
+
+absl::Status CancelFrame::Deserialize(const DeserializeContext& ctx,
+                                      const FrameHeader& header,
+                                      SliceBuffer payload) {
+  // Ensure the frame type is Cancel
+  CHECK_EQ(header.type, FrameType::kCancel);
+  
+  // Ensure the stream_id is non-zero
+  if (header.stream_id == 0) {
+    return absl::InvalidArgumentError("Expected non-zero stream id");
+  }
+  
+  // Ensure there is no payload
+  if (payload.Length() != 0) {
+    return absl::InvalidArgumentError("Unexpected payload for Cancel frame");
+  }
+  
+  // Set the stream_id
+  stream_id = header.stream_id;
+  
+  return absl::OkStatus();
+}
+
+void CancelFrame::Serialize(const SerializeContext& ctx,
+                            BufferPair* out) const {
+  // Ensure the stream_id is non-zero
+  CHECK_NE(stream_id, 0u);
+  
+  // Create a FrameHeader for the Cancel frame
+  FrameHeader header;
+  header.type = FrameType::kCancel;
+  header.stream_id = stream_id;
+  
+  // Serialize the header into the output buffer
+  header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
 }
 
 std::string CancelFrame::ToString() const {
   return absl::StrCat("CancelFrame{stream_id=", stream_id, "}");
+}
+
+absl::Status PaddingFrame::Deserialize(const DeserializeContext& ctx,
+                                       const FrameHeader& header,
+                                       SliceBuffer payload) {
+  // Ensure the frame type is Padding
+  CHECK_EQ(header.type, FrameType::kPadding);
+  
+  // Set the connection_id and length
+  connection_id = header.payload_connection_id;
+  length = payload.Length();
+
+  // Ensure the payload consists of zero bytes
+  #ifndef NDEBUG
+  auto flattened = payload.JoinIntoSlice();
+  for (size_t i = 0; i < length; ++i) {
+    if (payload[i] != 0) {
+      return absl::InvalidArgumentError("Padding frame contains non-zero bytes");
+    }
+  }
+  #endif
+  
+  return absl::OkStatus();
+}
+
+void PaddingFrame::Serialize(const SerializeContext& ctx,
+                             BufferPair* out) const {
+  // Ensure the connection_id is non-zero
+  CHECK_NE(connection_id, 0u);
+  
+  // Create a FrameHeader for the Padding frame
+  FrameHeader header;
+  header.type = FrameType::kPadding;
+  header.payload_connection_id = connection_id;
+  header.payload_length = length;
+  
+  // Serialize the header into the output buffer
+  header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
+  
+  // Write zero bytes of the specified length
+  MutableSlice zero_slice= MutableSlice::CreateUninitialized(length);
+  memset(zero_slice.data(), 0, length);
+  if (header.payload_connection_id == 0) {
+    out->control.Append(Slice(std::move(zero_slice)));
+  } else {
+    out->data.Append(Slice(std::move(zero_slice)));
+    auto padding = header.Padding(ctx.alignment);
+    if (padding != 0) {
+    out->data.Append(kZeroSlice->RefSubSlice(0, padding));
+    }
+  }
+}
+
+std::string PaddingFrame::ToString() const {
+  return absl::StrCat("PaddingFrame{connection_id=", connection_id,
+                      ", length=", length, "}");
 }
 
 }  // namespace chaotic_good
