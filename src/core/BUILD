@@ -148,6 +148,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
+    visibility = ["@grpc:latent_see"],
     deps = [
         "per_cpu",
         "ring_buffer",
