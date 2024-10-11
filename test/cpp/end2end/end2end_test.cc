@@ -786,7 +786,7 @@ TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelDuring) {
   TestResponseStreamServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-// Server to cancel after writing all the respones to the stream but before
+// Server to cancel after writing all the responses to the stream but before
 // returning to the client
 TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelAfter) {
   TestResponseStreamServerCancel(CANCEL_AFTER_PROCESSING);

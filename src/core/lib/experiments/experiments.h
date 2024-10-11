@@ -65,6 +65,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
+inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -97,6 +98,7 @@ inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
+inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -126,9 +128,11 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
-inline bool IsEventEngineClientEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
+inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
+inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -161,6 +165,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
+  kExperimentIdEventEngineDnsNonClientChannel,
   kExperimentIdEventEngineListener,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdLocalConnectorSecure,
@@ -202,6 +207,10 @@ inline bool IsEventEngineClientEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineDns>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
+inline bool IsEventEngineDnsNonClientChannelEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineDnsNonClientChannel>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() {
