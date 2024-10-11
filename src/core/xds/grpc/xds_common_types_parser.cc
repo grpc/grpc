@@ -30,6 +30,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "envoy/config/core/v3/address.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -38,6 +39,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
@@ -67,6 +69,42 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
     errors->AddError("value must be in the range [0, 999999999]");
   }
   return Duration::FromSecondsAndNanoseconds(seconds, nanos);
+}
+
+//
+// ParseXdsAddress()
+//
+
+absl::optional<grpc_resolved_address> ParseXdsAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors) {
+  if (address == nullptr) {
+    errors->AddError("field not present");
+    return absl::nullopt;
+  }
+  ValidationErrors::ScopedField field(errors, ".socket_address");
+  const envoy_config_core_v3_SocketAddress* socket_address =
+      envoy_config_core_v3_Address_socket_address(address);
+  if (socket_address == nullptr) {
+    errors->AddError("field not present");
+    return absl::nullopt;
+  }
+  std::string address_str = UpbStringToStdString(
+      envoy_config_core_v3_SocketAddress_address(socket_address));
+  uint32_t port;
+  {
+    ValidationErrors::ScopedField field(errors, ".port_value");
+    port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
+    if (GPR_UNLIKELY(port >> 16) != 0) {
+      errors->AddError("invalid port");
+      return absl::nullopt;
+    }
+  }
+  auto addr = StringToSockaddr(address_str, port);
+  if (!addr.ok()) {
+    errors->AddError(addr.status().message());
+    return absl::nullopt;
+  }
+  return *addr;
 }
 
 //

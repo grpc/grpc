@@ -21,12 +21,16 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+#include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "upb/base/string_view.h"
@@ -80,6 +84,40 @@ std::unique_ptr<XdsMetadataValue> ParseGcpAuthnAudience(
   return std::make_unique<XdsGcpAuthnAudienceMetadataValue>(url);
 }
 
+std::unique_ptr<XdsMetadataValue> ParseAddress(
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) {
+  absl::string_view* serialized_proto =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_proto == nullptr) {
+    errors->AddError("could not parse address metadata");
+    return nullptr;
+  }
+  auto* proto = envoy_config_core_v3_Address_parse(
+      serialized_proto->data(), serialized_proto->size(), context.arena);
+  if (proto == nullptr) {
+    errors->AddError("could not parse address metadata");
+    return nullptr;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+    const upb_MessageDef* msg_type =
+        envoy_config_core_v3_Address_getmsgdef(context.symtab);
+    char buf[10240];
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(proto), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
+    VLOG(2) << "[xds_client " << context.client
+            << "] cluster metadata Address: " << buf;
+  }
+  auto addr = ParseXdsAddress(proto, errors);
+  if (!addr.has_value()) return nullptr;
+  auto addr_uri = grpc_sockaddr_to_string(&*addr, /*normalize=*/false);
+  if (!addr_uri.ok()) {
+    errors->AddError(addr_uri.status().message());
+    return nullptr;
+  }
+  return std::make_unique<XdsAddressMetadataValue>(std::move(*addr_uri));
+}
+
 }  // namespace
 
 XdsMetadataMap ParseXdsMetadataMap(
@@ -104,15 +142,19 @@ XdsMetadataMap ParseXdsMetadataMap(
             typed_entry),
         errors);
     if (!extension.has_value()) continue;
-    // TODO(roth): If we ever need to support another type here, refactor
+    // TODO(roth): If we start to need a lot of types here, refactor
     // this into a separate registry.
+    std::unique_ptr<XdsMetadataValue> metadata_value;
     if (XdsGcpAuthFilterEnabled() &&
         extension->type == XdsGcpAuthnAudienceMetadataValue::Type()) {
-      auto metadata_value =
+      metadata_value =
           ParseGcpAuthnAudience(context, std::move(*extension), errors);
-      if (metadata_value != nullptr) {
-        metadata_map.Insert(key, std::move(metadata_value));
-      }
+    } else if (XdsHttpConnectEnabled() &&
+               extension->type == XdsAddressMetadataValue::Type()) {
+      metadata_value = ParseAddress(context, std::move(*extension), errors);
+    }
+    if (metadata_value != nullptr) {
+      metadata_map.Insert(key, std::move(metadata_value));
     }
   }
   // Then, try filter_metadata.
