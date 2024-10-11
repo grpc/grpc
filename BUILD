@@ -625,6 +625,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
     "//src/core:grpc_stateful_session_filter",
+    "//src/core:xds_http_proxy_mapper",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -4999,6 +5000,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
@@ -5152,6 +5158,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(

@@ -3770,6 +3770,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_proxy_mapper",
+    srcs = [
+        "handshaker/http_connect/xds_http_proxy_mapper.cc",
+    ],
+    hdrs = [
+        "handshaker/http_connect/xds_http_proxy_mapper.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "proxy_mapper",
+        "resolved_address",
+        "xds_endpoint",
+        "//:config",
+        "//:grpc_base",
+        "//:http_connect_handshaker",
+        "//:parse_address",
+        "//:sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_server_config_selector",
     hdrs = [
         "server/server_config_selector.h",
@@ -5788,11 +5815,13 @@ grpc_cc_library(
         "closure",
         "connectivity_state",
         "default_event_engine",
+        "down_cast",
         "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
         "envoy_config_core_upb",
+        "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
         "envoy_config_endpoint_upbdefs",
         "envoy_config_listener_upb",
@@ -5821,6 +5850,8 @@ grpc_cc_library(
         "envoy_extensions_load_balancing_policies_pick_first_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
         "envoy_extensions_transport_sockets_tls_upb",
         "envoy_extensions_transport_sockets_tls_upbdefs",
         "envoy_extensions_upstreams_http_upb",
@@ -8592,6 +8623,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
@@ -8751,6 +8787,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(

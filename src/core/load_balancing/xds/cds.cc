@@ -225,10 +225,11 @@ std::string MakeChildPolicyName(absl::string_view cluster,
 class PriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
   PriorityEndpointIterator(
-      std::string cluster_name,
+      std::string cluster_name, bool use_http_connect,
       std::shared_ptr<const XdsEndpointResource> endpoints,
       std::vector<size_t /*child_number*/> priority_child_numbers)
       : cluster_name_(std::move(cluster_name)),
+        use_http_connect_(use_http_connect),
         endpoints_(std::move(endpoints)),
         priority_child_numbers_(std::move(priority_child_numbers)) {}
 
@@ -251,13 +252,14 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
           uint32_t endpoint_weight =
               locality.lb_weight *
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          callback(EndpointAddresses(
-              endpoint.addresses(),
+          ChannelArgs args =
               endpoint.args()
                   .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                   .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)));
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
+          if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
+          callback(EndpointAddresses(endpoint.addresses(), args));
         }
       }
     }
@@ -265,6 +267,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
 
  private:
   std::string cluster_name_;
+  bool use_http_connect_;
   std::shared_ptr<const XdsEndpointResource> endpoints_;
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 };
@@ -393,7 +396,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             old_cluster_config, *new_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
         update_args.addresses = std::make_shared<PriorityEndpointIterator>(
-            cluster_name_, endpoint_config.endpoints,
+            cluster_name_, new_cluster_config->cluster->use_http_connect,
+            endpoint_config.endpoints,
             child_name_state_.priority_child_numbers);
         update_args.resolution_note = endpoint_config.resolution_note;
         // Construct child policy config.
