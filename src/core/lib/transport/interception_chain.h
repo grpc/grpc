@@ -114,6 +114,10 @@ class Interceptor : public UnstartedCallDestination {
                });
   }
 
+  // Hijack a call with custom initial metadata.
+  CallInitiator MakeChildCall(ClientMetadataHandle metadata,
+                              RefCountedPtr<Arena> arena);
+
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
     return unstarted_call_handler.StartCall();
