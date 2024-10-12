@@ -35,6 +35,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_experiments",
     srcs = ["bm_experiments.cc"],
+    monitoring = True,
     deps = [
         "//src/core:experiments",
         "//test/core/test_util:grpc_test_util",

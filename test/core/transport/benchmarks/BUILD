@@ -24,6 +24,7 @@ grpc_package(
 grpc_cc_benchmark(
     name = "bm_chaotic_good",
     srcs = ["bm_chaotic_good.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:chaotic_good_client_transport",
@@ -37,6 +38,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_inproc",
     srcs = ["bm_inproc.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:chaotic_good_client_transport",

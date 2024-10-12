@@ -31,6 +31,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
+    monitoring = True,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -44,6 +45,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
+    monitoring = True,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -65,6 +67,7 @@ grpc_cc_benchmark(
         "absl/log:check",
         "absl/debugging:leak_check",
     ],
+    monitoring = True,
     deps = [
         ":helpers",
         "//src/core:common_event_engine_closures",
@@ -77,6 +80,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     uses_event_engine = False,
     deps = [
         ":helpers",
@@ -132,6 +136,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
+    monitoring = True,
     deps = [
         ":helpers",
         "//src/core:closure",
@@ -141,6 +146,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_huffman_decode",
     srcs = ["bm_huffman_decode.cc"],
+    monitoring = True,
     tags = [
         "nomsan",
         "notsan",
@@ -155,12 +161,14 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
+    monitoring = True,
     deps = [":helpers"],
 )
 
 grpc_cc_benchmark(
     name = "bm_arena",
     srcs = ["bm_arena.cc"],
+    monitoring = True,
     tags = [
         "notsan",
     ],
@@ -174,6 +182,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     tags = [
         "no_mac",
         "no_windows",
@@ -185,6 +194,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
+    monitoring = True,
     tags = [
         "no_mac",
         "no_windows",
@@ -199,6 +209,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     deps = [":helpers"],
 )
 
@@ -235,6 +246,7 @@ grpc_cc_benchmark(
         "bm_fullstack_streaming_ping_pong.cc",
     ],
     flaky = True,
+    monitoring = True,
     deps = [":fullstack_streaming_ping_pong_h"],
 )
 
@@ -276,6 +288,7 @@ grpc_cc_benchmark(
     srcs = [
         "bm_fullstack_unary_ping_pong.cc",
     ],
+    monitoring = True,
     deps = [":fullstack_unary_ping_pong_h"],
 )
 
@@ -284,6 +297,7 @@ grpc_cc_benchmark(
     srcs = [
         "bm_fullstack_unary_ping_pong_chaotic_good.cc",
     ],
+    monitoring = True,
     deps = [
         ":fullstack_unary_ping_pong_h",
         "//:grpcpp_chaotic_good",
@@ -296,6 +310,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     uses_event_engine = False,
     deps = [
         ":helpers",
@@ -350,6 +365,7 @@ grpc_cc_benchmark(
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
+    monitoring = True,
     deps = [":callback_unary_ping_pong_h"],
 )
 
@@ -373,6 +389,7 @@ grpc_cc_benchmark(
     srcs = [
         "bm_callback_streaming_ping_pong.cc",
     ],
+    monitoring = True,
     deps = [":callback_streaming_ping_pong_h"],
 )
 
@@ -383,6 +400,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     tags = [
         "manual",
         "notap",
@@ -402,6 +420,7 @@ grpc_cc_benchmark(
         "absl/strings",
         "otel/sdk/src/metrics",
     ],
+    monitoring = True,
     deps = [
         ":helpers",
         "//src/core:metrics",
