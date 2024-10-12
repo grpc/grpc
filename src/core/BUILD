@@ -19,6 +19,10 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
+load(
+    "//tools/codegen/artifacts:gen_artifact.bzl",
+    "gen_artifact",
+)
 
 licenses(["reciprocal"])
 
@@ -8949,3 +8953,5 @@ WELL_KNOWN_PROTO_TARGETS = [
 ]
 
 grpc_generate_one_off_internal_targets()
+
+gen_artifact("lib/surface/version.cc")

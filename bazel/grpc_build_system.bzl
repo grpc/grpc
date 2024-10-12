@@ -84,6 +84,14 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
         elif dep == "libprotobuf_mutator":
             ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
+        elif dep == "pantor_inja":
+            ret.append("@pantor_inja//:inja")
+        elif dep == "nlohmann_json":
+            ret.append("@nlohmann_json//:json")
+        elif dep == "jbeder_yaml_cpp":
+            ret.append("@jbeder_yaml_cpp//:yaml-cpp")
+        elif dep == "runfiles":
+            ret.append("@bazel_tools//tools/cpp/runfiles")
         else:
             ret.append("//third_party:" + dep)
     return ret

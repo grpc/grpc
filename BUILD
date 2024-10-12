@@ -27,6 +27,10 @@ load(
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
+load(
+    "//tools/codegen/artifacts:gen_artifact.bzl",
+    "gen_artifact",
+)
 
 licenses(["reciprocal"])
 
@@ -46,6 +50,11 @@ exports_files([
 exports_files(
     glob(["include/**"]),
     visibility = ["//:__subpackages__"],
+)
+
+exports_files(
+    ["build_handwritten.yaml"],
+    visibility = ["//tools/codegen/artifacts:__pkg__"],
 )
 
 config_setting(
@@ -5318,3 +5327,5 @@ filegroup(
     ],
     visibility = ["//visibility:public"],
 )
+
+gen_artifact("include/grpcpp/version_info.h")
