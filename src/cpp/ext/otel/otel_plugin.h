@@ -168,6 +168,14 @@ class OpenTelemetryPluginBuilderImpl {
   // Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilderImpl& AddOptionalLabel(
       absl::string_view optional_label_key);
+  // If `SetTracerProvider()` is not called, no traces are collected.
+  OpenTelemetryPluginBuilderImpl& SetTracerProvider(
+      std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider);
+  // Set one or multiple text map propagators for span context propagation,
+  // e.g. the community standard ones like W3C, etc.
+  OpenTelemetryPluginBuilderImpl& SetTextMapPropagator(
+      std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+          text_map_propagator);
   // Set scope filter to choose which channels are recorded by this plugin.
   // Server-side recording remains unaffected.
   OpenTelemetryPluginBuilderImpl& SetChannelScopeFilter(
@@ -195,6 +203,9 @@ class OpenTelemetryPluginBuilderImpl {
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
   std::set<absl::string_view> optional_label_keys_;
+  std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider_;
+  std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+      text_map_propagator_;
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
@@ -218,6 +229,9 @@ class OpenTelemetryPluginImpl
       std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
           plugin_options,
       const std::set<absl::string_view>& optional_label_keys,
+      std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider,
+      std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+          text_map_propagator,
       absl::AnyInvocable<
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
@@ -513,6 +527,9 @@ class OpenTelemetryPluginImpl
       generic_method_attribute_filter_;
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
+  std::shared_ptr<opentelemetry::trace::TracerProvider> const tracer_provider_;
+  std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator> const
+      text_map_propagator_;
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
