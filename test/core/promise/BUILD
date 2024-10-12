@@ -690,6 +690,7 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_party",
     srcs = ["bm_party.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:1999",

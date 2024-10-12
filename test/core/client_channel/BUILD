@@ -121,6 +121,7 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_client_channel",
     srcs = ["bm_client_channel.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
@@ -131,6 +132,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_load_balanced_call_destination",
     srcs = ["bm_load_balanced_call_destination.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",

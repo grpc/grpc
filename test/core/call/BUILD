@@ -82,6 +82,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_client_call",
     srcs = ["bm_client_call.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
