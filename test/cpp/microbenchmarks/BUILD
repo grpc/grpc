@@ -357,7 +357,6 @@ grpc_cc_benchmark(
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
-    monitoring = True,
     deps = [":callback_unary_ping_pong_h"],
 )
 
