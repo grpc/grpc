@@ -62,6 +62,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http_annotation.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
@@ -327,37 +328,6 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
     g_write_timestamps_callback(entry.TraceContext(), ts, error);
   }
   delete context_list;
-}
-
-HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)
-    : CallTracerAnnotationInterface::Annotation(
-          CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
-      type_(type),
-      time_(time) {}
-
-std::string HttpAnnotation::ToString() const {
-  std::string s = "HttpAnnotation type: ";
-  switch (type_) {
-    case Type::kStart:
-      absl::StrAppend(&s, "Start");
-      break;
-    case Type::kHeadWritten:
-      absl::StrAppend(&s, "HeadWritten");
-      break;
-    case Type::kEnd:
-      absl::StrAppend(&s, "End");
-      break;
-    default:
-      absl::StrAppend(&s, "Unknown");
-  }
-  absl::StrAppend(&s, " time: ", gpr_format_timespec(time_));
-  if (transport_stats_.has_value()) {
-    absl::StrAppend(&s, " transport:[", transport_stats_->ToString(), "]");
-  }
-  if (stream_stats_.has_value()) {
-    absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
-  }
-  return s;
 }
 
 }  // namespace grpc_core
