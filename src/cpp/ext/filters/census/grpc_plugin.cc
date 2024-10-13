@@ -70,6 +70,7 @@ void RegisterOpenCensusPlugin() {
   RpcServerStartedRpcs();
   RpcServerSentMessagesPerRpc();
   RpcServerReceivedMessagesPerRpc();
+  RpcServerCompletedRpcs();
 }
 
 ::opencensus::trace::Span GetSpanFromServerContext(
@@ -169,6 +170,9 @@ ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
 
 ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
     "grpc.io/server/started_rpcs";
+
+ABSL_CONST_INIT const absl::string_view kRpcServerComletedRpcMeasureName =
+    "grpc.io/server/completed_rpcs";
 
 }  // namespace experimental
 
