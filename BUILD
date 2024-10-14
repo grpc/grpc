@@ -19,7 +19,6 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_cc_proto_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
@@ -4990,11 +4989,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_config_core_cc_proto",
-    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_config_core_upb",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
@@ -5178,11 +5172,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_upstreams_http_upbdefs",
     deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_service_discovery_cc_proto",
-    deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
 )
 
 grpc_upb_proto_library(

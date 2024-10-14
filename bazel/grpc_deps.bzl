@@ -218,6 +218,7 @@ def grpc_deps():
             sha256 = "5ac743bf5f05d88e84962e978811f2524df09602b789c92cf7ae2111ecdeda94",
             strip_prefix = "bazel_features-1.14.0",
             urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazel-contrib/bazel_features/releases/download/v1.14.0/bazel_features-v1.14.0.tar.gz",
                 "https://github.com/bazel-contrib/bazel_features/releases/download/v1.14.0/bazel_features-v1.14.0.tar.gz",
             ],
         )
@@ -227,6 +228,7 @@ def grpc_deps():
             sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
             strip_prefix = "rules_proto-6.0.2",
             urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_proto/archive/refs/tags/6.0.2.tar.gz",
                 "https://github.com/bazelbuild/rules_proto/archive/refs/tags/6.0.2.tar.gz",
             ],
         )
