@@ -57,16 +57,6 @@ android_ndk_repository(name = "androidndk")
 # Use `--extra_toolchains=@androidndk//:all` to manually register it when building for Android.
 
 # Prevents bazel's '...' expansion from including the following folder.
-# This is required because the BUILD file in the following folder
-# will trigger bazel failure when Android SDK is not configured.
-# The targets in the following folder need to be included in APK and will
-# be invoked by binder transport implementation through JNI.
-local_repository(
-    name = "binder_transport_android_helper",
-    path = "src/core/ext/transport/binder/java",
-)
-
-# Prevents bazel's '...' expansion from including the following folder.
 # This is required to avoid triggering "Unable to find package for @rules_fuzzing//fuzzing:cc_defs.bzl"
 # error.
 local_repository(
