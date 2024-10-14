@@ -215,19 +215,19 @@ def grpc_deps():
     if "bazel_features" not in native.existing_rules():
         http_archive(
             name = "bazel_features",
-            sha256 = "d7787da289a7fb497352211ad200ec9f698822a9e0757a4976fd9f713ff372b3",
-            strip_prefix = "bazel_features-1.9.1",
+            sha256 = "5ac743bf5f05d88e84962e978811f2524df09602b789c92cf7ae2111ecdeda94",
+            strip_prefix = "bazel_features-1.14.0",
             urls = [
-                "https://github.com/bazel-contrib/bazel_features/releases/download/v1.9.1/bazel_features-v1.9.1.tar.gz",
+                "https://github.com/bazel-contrib/bazel_features/releases/download/v1.14.0/bazel_features-v1.14.0.tar.gz",
             ],
         )
     if "rules_proto" not in native.existing_rules():
         http_archive(
             name = "rules_proto",
-            sha256 = "303e86e722a520f6f326a50b41cfc16b98fe6d1955ce46642a5b7a67c11c0f5d",
-            strip_prefix = "rules_proto-6.0.0",
+            sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+            strip_prefix = "rules_proto-6.0.2",
             urls = [
-                "https://github.com/bazelbuild/rules_proto/releases/download/6.0.0/rules_proto-6.0.0.tar.gz",
+                "https://github.com/bazelbuild/rules_proto/archive/refs/tags/6.0.2.tar.gz"
             ],
         )
 
