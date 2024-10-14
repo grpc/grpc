@@ -206,13 +206,38 @@ def grpc_deps():
             ],
         )
 
+    # TODO(roth): Need to override version of rules_proto, because
+    # we're using a newer version of rules_go than the xDS protos are,
+    # and that requires a newer version of rules_proto.  In turn, the
+    # newer version of rules_proto requires a newer version of
+    # bazel_features.  So these two entries can go away once the xDS
+    # protos upgrade to the newer version of rules_go.
+    if "bazel_features" not in native.existing_rules():
+        http_archive(
+            name = "bazel_features",
+            sha256 = "d7787da289a7fb497352211ad200ec9f698822a9e0757a4976fd9f713ff372b3",
+            strip_prefix = "bazel_features-1.9.1",
+            urls = [
+                "https://github.com/bazel-contrib/bazel_features/releases/download/v1.9.1/bazel_features-v1.9.1.tar.gz",
+            ],
+        )
+    if "rules_proto" not in native.existing_rules():
+        http_archive(
+            name = "rules_proto",
+            sha256 = "303e86e722a520f6f326a50b41cfc16b98fe6d1955ce46642a5b7a67c11c0f5d",
+            strip_prefix = "rules_proto-6.0.0",
+            urls = [
+                "https://github.com/bazelbuild/rules_proto/releases/download/6.0.0/rules_proto-6.0.0.tar.gz",
+            ],
+        )
+
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
+            sha256 = "d93ef02f1e72c82d8bb3d5169519b36167b33cf68c252525e3b9d3d5dd143de7",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
-                "https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.49.0/rules_go-v0.49.0.zip",
+                "https://github.com/bazelbuild/rules_go/releases/download/v0.49.0/rules_go-v0.49.0.zip",
             ],
         )
 
