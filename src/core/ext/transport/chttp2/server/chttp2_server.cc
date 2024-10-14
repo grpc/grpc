@@ -966,7 +966,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
+  absl::StatusOr<std::vector<grpc_resolved_address>> resolved;
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
       std::vector<EventEngine::ResolvedAddress>();
   std::vector<grpc_error_handle> error_list;
@@ -977,19 +977,19 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     grpc_error_handle error;
     // TODO(ladynana, yijiem): this code does not handle address URIs correctly:
     // it's parsing `unix://foo/bar` as path `/foo/bar` when it should be
-    // parsing it as authority `foo` and path `/bar`. This needs to be fixed as
-    // part of the address URI work.
+    // parsing it as authority `foo` and path `/bar`. Also add API documentation
+    // on the valid URIs that grpc_server_add_http2_port accepts.
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
-      resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
-      GRPC_RETURN_IF_ERROR(resolved_or.status());
+      resolved = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
+      GRPC_RETURN_IF_ERROR(resolved.status());
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
                                    kUnixAbstractUriPrefix)) {
-      resolved_or =
+      resolved =
           grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
-      GRPC_RETURN_IF_ERROR(resolved_or.status());
+      GRPC_RETURN_IF_ERROR(resolved.status());
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
-      resolved_or = grpc_resolve_vsock_address(parsed_addr_unprefixed);
-      GRPC_RETURN_IF_ERROR(resolved_or.status());
+      resolved = grpc_resolve_vsock_address(parsed_addr_unprefixed);
+      GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
       if (IsEventEngineDnsNonClientChannelEnabled()) {
         absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
@@ -1010,8 +1010,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (resolved_or.ok()) {
-      for (const auto& addr : *resolved_or) {
+    if (resolved.ok()) {
+      for (const auto& addr : *resolved) {
         results->push_back(
             grpc_event_engine::experimental::CreateResolvedAddress(addr));
       }
