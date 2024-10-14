@@ -92,7 +92,7 @@ def check_linker_need_libatomic():
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-"],
+        [cxx, "-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -103,7 +103,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-", "-latomic"],
+        [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -176,14 +176,14 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++14 needs to be specified.
-        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
         # Reduce the optimization level from O3 (in many cases) to O1 to
         # workaround gcc misalignment bug with MOVAPS (internal b/329134877)
         EXTRA_ENV_COMPILE_ARGS += " -O1"
     elif "darwin" in sys.platform:
         # AppleClang by defaults uses C17 so only C++14 needs to be specified.
-        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
         EXTRA_ENV_COMPILE_ARGS += " -stdlib=libc++ -DHAVE_UNISTD_H"
 if EXTRA_ENV_LINK_ARGS is None:
