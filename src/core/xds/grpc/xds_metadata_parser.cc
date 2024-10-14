@@ -25,10 +25,8 @@
 #include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
-<<<<<<< HEAD
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-=======
->>>>>>> f96c42ce26 (keeping in sync with master (#37893))
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
