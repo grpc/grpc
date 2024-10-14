@@ -19,7 +19,6 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_cc_proto_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
@@ -75,17 +74,6 @@ config_setting(
     flag_values = {":disable_grpc_rls": "true"},
 )
 
-# When gRPC is build as shared library, binder transport code might still
-# get included even when user's code does not depend on it. In that case
-# --define=grpc_no_binder=true can be used to disable binder transport
-# related code to reduce binary size.
-# For users using build system other than bazel, they can define
-# GRPC_NO_BINDER to achieve the same effect.
-config_setting(
-    name = "grpc_no_binder_define",
-    values = {"define": "grpc_no_binder=true"},
-)
-
 config_setting(
     name = "android",
     values = {"crosstool_top": "//external:android/crosstool"},
@@ -132,15 +120,6 @@ selects.config_setting_group(
         # likely to be needed and where reducing the binary size is more
         # important.
         ":android",
-        ":ios",
-    ],
-)
-
-selects.config_setting_group(
-    name = "grpc_no_binder",
-    match_any = [
-        ":grpc_no_binder_define",
-        # We do not need binder on ios.
         ":ios",
     ],
 )
@@ -625,6 +604,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
     "//src/core:grpc_stateful_session_filter",
+    "//src/core:xds_http_proxy_mapper",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -856,7 +836,6 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
-        "//src/core:grpc_resolver_binder",
         "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "//src/core:grpc_resolver_dns_native",
@@ -940,12 +919,6 @@ grpc_cc_library(
             "//conditions:default": [
                 "grpc++_xds_client",
                 "grpc++_xds_server",
-            ],
-        },
-        {
-            "grpc_no_binder": [],
-            "//conditions:default": [
-                "grpc++_binder",
             ],
         },
     ],
@@ -1075,112 +1048,6 @@ grpc_cc_library(
         "gpr",
         "grpc_mock_cel",
         "//src/core:grpc_authorization_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_binder",
-    srcs = [
-        "//src/core:ext/transport/binder/client/binder_connector.cc",
-        "//src/core:ext/transport/binder/client/channel_create.cc",
-        "//src/core:ext/transport/binder/client/channel_create_impl.cc",
-        "//src/core:ext/transport/binder/client/connection_id_generator.cc",
-        "//src/core:ext/transport/binder/client/endpoint_binder_pool.cc",
-        "//src/core:ext/transport/binder/client/jni_utils.cc",
-        "//src/core:ext/transport/binder/client/security_policy_setting.cc",
-        "//src/core:ext/transport/binder/security_policy/binder_security_policy.cc",
-        "//src/core:ext/transport/binder/server/binder_server.cc",
-        "//src/core:ext/transport/binder/server/binder_server_credentials.cc",
-        "//src/core:ext/transport/binder/transport/binder_transport.cc",
-        "//src/core:ext/transport/binder/utils/ndk_binder.cc",
-        "//src/core:ext/transport/binder/utils/transport_stream_receiver_impl.cc",
-        "//src/core:ext/transport/binder/wire_format/binder_android.cc",
-        "//src/core:ext/transport/binder/wire_format/binder_constants.cc",
-        "//src/core:ext/transport/binder/wire_format/transaction.cc",
-        "//src/core:ext/transport/binder/wire_format/wire_reader_impl.cc",
-        "//src/core:ext/transport/binder/wire_format/wire_writer.cc",
-    ],
-    hdrs = [
-        "//src/core:ext/transport/binder/client/binder_connector.h",
-        "//src/core:ext/transport/binder/client/channel_create_impl.h",
-        "//src/core:ext/transport/binder/client/connection_id_generator.h",
-        "//src/core:ext/transport/binder/client/endpoint_binder_pool.h",
-        "//src/core:ext/transport/binder/client/jni_utils.h",
-        "//src/core:ext/transport/binder/client/security_policy_setting.h",
-        "//src/core:ext/transport/binder/server/binder_server.h",
-        "//src/core:ext/transport/binder/transport/binder_stream.h",
-        "//src/core:ext/transport/binder/transport/binder_transport.h",
-        "//src/core:ext/transport/binder/utils/binder_auto_utils.h",
-        "//src/core:ext/transport/binder/utils/ndk_binder.h",
-        "//src/core:ext/transport/binder/utils/transport_stream_receiver.h",
-        "//src/core:ext/transport/binder/utils/transport_stream_receiver_impl.h",
-        "//src/core:ext/transport/binder/wire_format/binder.h",
-        "//src/core:ext/transport/binder/wire_format/binder_android.h",
-        "//src/core:ext/transport/binder/wire_format/binder_constants.h",
-        "//src/core:ext/transport/binder/wire_format/transaction.h",
-        "//src/core:ext/transport/binder/wire_format/wire_reader.h",
-        "//src/core:ext/transport/binder/wire_format/wire_reader_impl.h",
-        "//src/core:ext/transport/binder/wire_format/wire_writer.h",
-    ],
-    defines = select({
-        "grpc_no_binder": ["GRPC_NO_BINDER"],
-        "//conditions:default": [],
-    }),
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/cleanup",
-        "absl/container:flat_hash_map",
-        "absl/functional:any_invocable",
-        "absl/hash",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/memory",
-        "absl/meta:type_traits",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/synchronization",
-        "absl/time",
-        "absl/types:variant",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpcpp/security/binder_security_policy.h",
-        "include/grpcpp/create_channel_binder.h",
-        "include/grpcpp/security/binder_credentials.h",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "channel",
-        "channel_create",
-        "config",
-        "debug_location",
-        "exec_ctx",
-        "gpr",
-        "gpr_platform",
-        "grpc",
-        "grpc++_base",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_public_hdrs",
-        "orphanable",
-        "ref_counted_ptr",
-        "server",
-        "//src/core:arena",
-        "//src/core:channel_args",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:channel_stack_type",
-        "//src/core:default_event_engine",
-        "//src/core:error_utils",
-        "//src/core:iomgr_fwd",
-        "//src/core:iomgr_port",
-        "//src/core:metadata_batch",
-        "//src/core:notification",
-        "//src/core:slice",
-        "//src/core:slice_refcount",
-        "//src/core:status_helper",
-        "//src/core:subchannel_connector",
-        "//src/core:transport_fwd",
     ],
 )
 
@@ -4979,11 +4846,6 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/admin/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_config_cluster_cc_proto",
-    deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_config_cluster_upb",
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
@@ -4994,19 +4856,14 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_config_core_cc_proto",
-    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_config_core_upb",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_config_endpoint_cc_proto",
-    deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5019,11 +4876,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_config_listener_cc_proto",
-    deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_config_listener_upb",
     deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
@@ -5034,19 +4886,9 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_config_rbac_cc_proto",
-    deps = ["@envoy_api//envoy/config/rbac/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_config_rbac_upb",
     deps = ["@envoy_api//envoy/config/rbac/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_config_route_cc_proto",
-    deps = ["@envoy_api//envoy/config/route/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5059,16 +4901,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/config/route/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_rbac_audit_loggers_stream_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/rbac/audit_loggers/stream/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_clusters_aggregate_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_clusters_aggregate_upb",
     deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
@@ -5079,19 +4911,9 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_common_fault_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_common_fault_upb",
     deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_http_fault_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5104,11 +4926,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_http_gcp_authn_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_gcp_authn_upb",
     deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
@@ -5117,11 +4934,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_gcp_authn_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_http_rbac_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5134,11 +4946,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_http_router_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_router_upb",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
@@ -5147,11 +4954,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_http_stateful_session_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5164,11 +4966,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_http_stateful_session_cookie_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_http_stateful_session_cookie_upb",
     deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
@@ -5179,24 +4976,9 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_type_http_cc_proto",
-    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_load_balancing_policies_round_robin_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/round_robin/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5204,19 +4986,9 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_load_balancing_policies_pick_first_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_pick_first_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_load_balancing_policies_ring_hash_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5224,19 +4996,9 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_load_balancing_policies_wrr_locality_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_wrr_locality_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_extensions_filters_network_http_connection_manager_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5249,11 +5011,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_transport_sockets_tls_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_extensions_transport_sockets_tls_upb",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
@@ -5264,9 +5021,14 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_extensions_upstreams_http_cc_proto",
-    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+grpc_upb_proto_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5277,11 +5039,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_upstreams_http_upbdefs",
     deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "envoy_service_discovery_cc_proto",
-    deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
 )
 
 grpc_upb_proto_library(
@@ -5314,34 +5071,14 @@ grpc_upb_proto_reflection_library(
     deps = ["@envoy_api//envoy/service/status/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_type_matcher_cc_proto",
-    deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_type_matcher_upb",
     deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
 )
 
-grpc_cc_proto_library(
-    name = "envoy_type_cc_proto",
-    deps = ["@envoy_api//envoy/type/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_type_upb",
     deps = ["@envoy_api//envoy/type/v3:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "udpa_type_cc_proto",
-    deps = ["@com_github_cncf_xds//udpa/type/v1:pkg"],
-)
-
-grpc_cc_proto_library(
-    name = "xds_type_cc_proto",
-    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(

@@ -29,14 +29,16 @@ package(
     ],
 )
 
+config_setting(
+    name = "enable_latent_see",
+    values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
+)
+
 # This is needed as a transitionary mechanism to build the src/core targets in
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(
-        ["**"],
-        exclude = ["ext/transport/binder/java/**"],
-    ),
+    glob(["**"]),
     visibility = ["//:__subpackages__"],
 )
 
@@ -141,6 +143,10 @@ grpc_cc_library(
     hdrs = [
         "util/latent_see.h",
     ],
+    defines = select({
+        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
@@ -148,6 +154,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
+    visibility = ["@grpc:latent_see"],
     deps = [
         "per_cpu",
         "ring_buffer",
@@ -2371,11 +2378,9 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
         "absl/log:check",
-        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
-        "notification",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -3767,6 +3772,33 @@ grpc_cc_library(
         "//:parse_address",
         "//:sockaddr_utils",
         "//:uri",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_http_proxy_mapper",
+    srcs = [
+        "handshaker/http_connect/xds_http_proxy_mapper.cc",
+    ],
+    hdrs = [
+        "handshaker/http_connect/xds_http_proxy_mapper.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "proxy_mapper",
+        "resolved_address",
+        "xds_endpoint",
+        "//:config",
+        "//:grpc_base",
+        "//:http_connect_handshaker",
+        "//:parse_address",
+        "//:sockaddr_utils",
     ],
 )
 
@@ -5789,11 +5821,13 @@ grpc_cc_library(
         "closure",
         "connectivity_state",
         "default_event_engine",
+        "down_cast",
         "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
         "envoy_config_core_upb",
+        "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
         "envoy_config_endpoint_upbdefs",
         "envoy_config_listener_upb",
@@ -5822,6 +5856,8 @@ grpc_cc_library(
         "envoy_extensions_load_balancing_policies_pick_first_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
         "envoy_extensions_transport_sockets_tls_upb",
         "envoy_extensions_transport_sockets_tls_upbdefs",
         "envoy_extensions_upstreams_http_upb",
@@ -7161,33 +7197,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_binder",
-    srcs = [
-        "resolver/binder/binder_resolver.cc",
-    ],
-    external_deps = [
-        "absl/log:log",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "error",
-        "iomgr_port",
-        "resolved_address",
-        "status_helper",
-        "//:config",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_resolver",
-        "//:orphanable",
-        "//:uri",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_resolver_xds_attributes",
     hdrs = [
         "resolver/xds/xds_resolver_attributes.h",
@@ -7649,11 +7658,8 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
-        "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
-        "event_engine_tcp_socket_utils",
-        "event_engine_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
@@ -8596,6 +8602,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
@@ -8755,6 +8766,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(
