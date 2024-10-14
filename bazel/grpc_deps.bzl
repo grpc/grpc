@@ -239,6 +239,10 @@ def grpc_deps():
                 "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.49.0/rules_go-v0.49.0.zip",
                 "https://github.com/bazelbuild/rules_go/releases/download/v0.49.0/rules_go-v0.49.0.zip",
             ],
+            patches = [
+                "@com_github_grpc_grpc//bazel:rules_go.patch",
+            ],
+            patch_args = ["-p1"],
         )
 
     if "build_bazel_rules_apple" not in native.existing_rules():
