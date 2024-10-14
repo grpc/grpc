@@ -4,5 +4,5 @@
 # Therefore, this option is disabled until gRPC works with bzlmod.
 common --enable_bzlmod=false
 
-build --cxxopt='-std=c++14'
-build --host_cxxopt='-std=c++14'
+build --cxxopt='-std=c++17'
+build --host_cxxopt='-std=c++17'
