@@ -144,6 +144,7 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_http_client_filter",
     srcs = ["bm_http_client_filter.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",

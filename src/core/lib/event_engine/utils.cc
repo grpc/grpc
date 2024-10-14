@@ -20,7 +20,6 @@
 #include <algorithm>
 
 #include "absl/strings/str_cat.h"
-#include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 
 namespace grpc_event_engine {
