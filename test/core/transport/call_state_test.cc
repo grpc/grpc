@@ -18,7 +18,6 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "test/core/promise/poll_matcher.h"
 
 using testing::Mock;
@@ -262,11 +261,14 @@ TEST(CallStateTest, RecallNoCancellation) {
   activity.Activate();
   CallState state;
   state.Start();
+  EXPECT_EQ(state.WasCancelledPushed(), false);
   state.PushServerTrailingMetadata(false);
+  EXPECT_EQ(state.WasCancelledPushed(), false);
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
   EXPECT_THAT(state.PollWasCancelled(), IsReady(false));
+  EXPECT_EQ(state.WasCancelledPushed(), false);
 }
 
 TEST(CallStateTest, RecallCancellation) {
@@ -274,11 +276,14 @@ TEST(CallStateTest, RecallCancellation) {
   activity.Activate();
   CallState state;
   state.Start();
+  EXPECT_EQ(state.WasCancelledPushed(), false);
   state.PushServerTrailingMetadata(true);
+  EXPECT_EQ(state.WasCancelledPushed(), true);
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
   EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
+  EXPECT_EQ(state.WasCancelledPushed(), true);
 }
 
 TEST(CallStateTest, ReceiveTrailingMetadataAfterMessageRead) {
@@ -293,6 +298,39 @@ TEST(CallStateTest, ReceiveTrailingMetadataAfterMessageRead) {
   EXPECT_WAKEUP(activity, state.PushServerTrailingMetadata(false));
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(false));
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+}
+
+TEST(CallStateTest, CanWaitForPullClientMessage) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  EXPECT_THAT(state.PollPullClientToServerMessageStarted(), IsPending());
+  state.BeginPullClientInitialMetadata();
+  EXPECT_THAT(state.PollPullClientToServerMessageStarted(), IsPending());
+  // TODO(ctiller): consider adding another wakeup set to CallState to eliminate
+  // this wakeup (trade memory for cpu)
+  EXPECT_WAKEUP(activity, state.FinishPullClientInitialMetadata());
+  EXPECT_THAT(state.PollPullClientToServerMessageStarted(), IsPending());
+  EXPECT_WAKEUP(activity, state.PollPullClientToServerMessageAvailable());
+  EXPECT_THAT(state.PollPullClientToServerMessageStarted(), IsReady(Success{}));
+}
+
+TEST(CallStateTest, CanWaitForPullServerMessage) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  EXPECT_THAT(state.PollPullServerToClientMessageStarted(), IsPending());
+  state.PushServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerToClientMessageStarted(), IsPending());
+  EXPECT_WAKEUP(
+      activity,
+      EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady()));
+  state.FinishPullServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerToClientMessageStarted(), IsPending());
+  EXPECT_WAKEUP(activity, state.PollPullServerToClientMessageAvailable());
+  EXPECT_THAT(state.PollPullServerToClientMessageStarted(), IsReady(Success{}));
 }
 
 }  // namespace grpc_core

@@ -16,6 +16,9 @@
 
 #include "src/core/load_balancing/endpoint_list.h"
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <memory>
@@ -27,11 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/pollset_set.h"

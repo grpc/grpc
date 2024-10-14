@@ -22,7 +22,7 @@
 /// Internal thread interface.
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/thd_id.h>
 #include <stddef.h>
 
 #include <memory>
@@ -30,8 +30,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/thd_id.h>
 
 namespace grpc_core {
 namespace internal {

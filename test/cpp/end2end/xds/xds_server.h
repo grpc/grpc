@@ -17,6 +17,8 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_SERVER_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_SERVER_H
 
+#include <grpcpp/support/status.h>
+
 #include <deque>
 #include <set>
 #include <string>
@@ -26,9 +28,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
-
-#include <grpcpp/support/status.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
@@ -132,9 +131,9 @@ class AdsServiceImpl
   // Sets a callback to be invoked on request messages with respoonse_nonce
   // set.  The callback is passed the resource type and version.
   void SetCheckVersionCallback(
-      std::function<void(absl::string_view, int)> check_version_callack) {
+      std::function<void(absl::string_view, int)> check_version_callback) {
     grpc_core::MutexLock lock(&ads_mu_);
-    check_version_callack_ = std::move(check_version_callack);
+    check_version_callback_ = std::move(check_version_callback);
   }
 
   // Get the list of response state for each resource type.
@@ -369,9 +368,9 @@ class AdsServiceImpl
         CHECK(absl::SimpleAtoi(request.version_info(),
                                &client_resource_type_version));
       }
-      if (check_version_callack_ != nullptr) {
-        check_version_callack_(request.type_url(),
-                               client_resource_type_version);
+      if (check_version_callback_ != nullptr) {
+        check_version_callback_(request.type_url(),
+                                client_resource_type_version);
       }
     } else {
       int client_nonce;
@@ -587,7 +586,7 @@ class AdsServiceImpl
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
-  std::function<void(absl::string_view, int)> check_version_callack_
+  std::function<void(absl::string_view, int)> check_version_callback_
       ABSL_GUARDED_BY(ads_mu_);
   // An instance data member containing the current state of all resources.
   // Note that an entry will exist whenever either of the following is true:
@@ -617,8 +616,19 @@ class LrsServiceImpl
     // Stats for a given locality.
     struct LocalityStats {
       struct LoadMetric {
-        uint64_t num_requests_finished_with_metric;
-        double total_metric_value;
+        uint64_t num_requests_finished_with_metric = 0;
+        double total_metric_value = 0;
+
+        LoadMetric() = default;
+
+        // Works for both EndpointLoadMetricStats and
+        // UnnamedEndpointLoadMetricStats.
+        template <typename T>
+        explicit LoadMetric(const T& stats)
+            : num_requests_finished_with_metric(
+                  stats.num_requests_finished_with_metric()),
+              total_metric_value(stats.total_metric_value()) {}
+
         LoadMetric& operator+=(const LoadMetric& other) {
           num_requests_finished_with_metric +=
               other.num_requests_finished_with_metric;
@@ -640,10 +650,13 @@ class LrsServiceImpl
             total_error_requests(
                 upstream_locality_stats.total_error_requests()),
             total_issued_requests(
-                upstream_locality_stats.total_issued_requests()) {
+                upstream_locality_stats.total_issued_requests()),
+            cpu_utilization(upstream_locality_stats.cpu_utilization()),
+            mem_utilization(upstream_locality_stats.mem_utilization()),
+            application_utilization(
+                upstream_locality_stats.application_utilization()) {
         for (const auto& s : upstream_locality_stats.load_metric_stats()) {
-          load_metrics[s.metric_name()] += LoadMetric{
-              s.num_requests_finished_with_metric(), s.total_metric_value()};
+          load_metrics[s.metric_name()] += LoadMetric(s);
         }
       }
 
@@ -652,6 +665,9 @@ class LrsServiceImpl
         total_requests_in_progress += other.total_requests_in_progress;
         total_error_requests += other.total_error_requests;
         total_issued_requests += other.total_issued_requests;
+        cpu_utilization += other.cpu_utilization;
+        mem_utilization += other.mem_utilization;
+        application_utilization += other.application_utilization;
         for (const auto& p : other.load_metrics) {
           load_metrics[p.first] += p.second;
         }
@@ -662,6 +678,9 @@ class LrsServiceImpl
       uint64_t total_requests_in_progress = 0;
       uint64_t total_error_requests = 0;
       uint64_t total_issued_requests = 0;
+      LoadMetric cpu_utilization;
+      LoadMetric mem_utilization;
+      LoadMetric application_utilization;
       std::map<std::string, LoadMetric> load_metrics;
     };
 

@@ -18,6 +18,14 @@
 
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <string.h>
 
 #include <memory>
@@ -30,16 +38,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -162,8 +160,7 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
-    const {
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
   return kFactory.Create();
 }

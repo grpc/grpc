@@ -14,14 +14,15 @@
 // limitations under the License.
 //
 
-#include <memory>
-#include <string>
-#include <utility>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -30,11 +31,6 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
@@ -65,15 +61,20 @@
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "src/proto/grpc/testing/xds/v3/upstream_http_11_connect.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using envoy::extensions::filters::http::gcp_authn::v3::Audience;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
+using envoy::extensions::transport_sockets::http_11_proxy::v3::
+    Http11ProxyUpstreamTransport;
 using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using envoy::extensions::upstreams::http::v3::HttpProtocolOptions;
 using xds::type::v3::TypedStruct;
@@ -1113,7 +1114,256 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
 }
 
 //
-// LRS server tests
+// HTTP CONNECT tests
+//
+
+using HttpConnectTest = XdsClusterTest;
+
+TEST_F(HttpConnectTest, FeatureNotEnabled) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.http_11_proxy");
+  Http11ProxyUpstreamTransport http_11_proxy;
+  transport_socket->mutable_typed_config()->PackFrom(http_11_proxy);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.http_11_proxy.v3"
+            ".Http11ProxyUpstreamTransport].type_url "
+            "error:unsupported transport socket type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectTest, NoTransportSocket) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_FALSE(resource.use_http_connect);
+  EXPECT_TRUE(resource.common_tls_context.Empty());
+}
+
+TEST_F(HttpConnectTest, NoInnerTransportSocket) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.http_11_proxy");
+  Http11ProxyUpstreamTransport http_11_proxy;
+  transport_socket->mutable_typed_config()->PackFrom(http_11_proxy);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_TRUE(resource.use_http_connect);
+  EXPECT_TRUE(resource.common_tls_context.Empty());
+}
+
+TEST_F(HttpConnectTest, UnknownWrappedTransportSocketType) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  Http11ProxyUpstreamTransport http_11_proxy;
+  http_11_proxy.mutable_transport_socket()->mutable_typed_config()->PackFrom(
+      Cluster());
+  transport_socket->mutable_typed_config()->PackFrom(http_11_proxy);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.http_11_proxy.v3"
+            ".Http11ProxyUpstreamTransport]"
+            ".transport_socket.typed_config.value["
+            "envoy.config.cluster.v3.Cluster].type_url "
+            "error:unsupported transport socket type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectTest, UnparsableHttp11ProxyUpstreamTransport) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  auto* typed_config = transport_socket->mutable_typed_config();
+  typed_config->PackFrom(Http11ProxyUpstreamTransport());
+  typed_config->set_value(std::string("\0", 1));
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.http_11_proxy.v3"
+            ".Http11ProxyUpstreamTransport] "
+            "error:can't decode Http11ProxyUpstreamTransport]")
+      << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectTest, UpstreamTlsContextInTypedStruct) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  xds::type::v3::TypedStruct typed_struct;
+  typed_struct.set_type_url(
+      "types.googleapis.com/envoy.extensions.transport_sockets.http_11_proxy"
+      ".v3.Http11ProxyUpstreamTransport");
+  transport_socket->mutable_typed_config()->PackFrom(typed_struct);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "xds.type.v3.TypedStruct].value["
+            "envoy.extensions.transport_sockets.http_11_proxy.v3"
+            ".Http11ProxyUpstreamTransport] "
+            "error:can't decode Http11ProxyUpstreamTransport]")
+      << decode_result.resource.status();
+}
+
+TEST_F(HttpConnectTest, WrappingUpstreamTlsContext) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.http_11_proxy");
+  UpstreamTlsContext upstream_tls_context;
+  auto* common_tls_context = upstream_tls_context.mutable_common_tls_context();
+  auto* validation_context = common_tls_context->mutable_validation_context();
+  auto* cert_provider =
+      validation_context->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  Http11ProxyUpstreamTransport http_11_proxy;
+  http_11_proxy.mutable_transport_socket()->mutable_typed_config()->PackFrom(
+      upstream_tls_context);
+  transport_socket->mutable_typed_config()->PackFrom(http_11_proxy);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_TRUE(resource.use_http_connect);
+  auto* ca_cert_provider =
+      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+          &resource.common_tls_context.certificate_validation_context.ca_certs);
+  ASSERT_NE(ca_cert_provider, nullptr);
+  EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
+  EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
+}
+
+// This is just one example of where CommonTlsContext::Parse() will
+// generate an error, to show that we're propagating any such errors
+// correctly.  An exhaustive set of tests for CommonTlsContext::Parse()
+// is in xds_common_types_test.cc.
+TEST_F(HttpConnectTest, WrappingInvalidUpstreamTlsContext) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  auto* cert_provider = upstream_tls_context.mutable_common_tls_context()
+                            ->mutable_validation_context()
+                            ->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("fake");
+  cert_provider->set_certificate_name("cert_name");
+  Http11ProxyUpstreamTransport http_11_proxy;
+  http_11_proxy.mutable_transport_socket()->mutable_typed_config()->PackFrom(
+      upstream_tls_context);
+  transport_socket->mutable_typed_config()->PackFrom(http_11_proxy);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.http_11_proxy.v3"
+            ".Http11ProxyUpstreamTransport]"
+            ".transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]"
+            ".common_tls_context.validation_context"
+            ".ca_certificate_provider_instance.instance_name "
+            "error:unrecognized certificate provider instance name: fake]")
+      << decode_result.resource.status();
+}
+
+//
+// LRS tests
 //
 
 using LrsTest = XdsClusterTest;
@@ -1158,6 +1408,92 @@ TEST_F(LrsTest, NotSelfConfigSource) {
             "errors validating Cluster resource: ["
             "field:lrs_server error:ConfigSource is not self]")
       << decode_result.resource.status();
+}
+
+TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.foo");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            *xds_client_->bootstrap().servers().front());
+  ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
+  EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(), "{}");
+}
+
+TEST_F(LrsTest, Propagation) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.foo");
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.bar");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  cluster.add_lrs_report_endpoint_metrics("mem_utilization");
+  cluster.add_lrs_report_endpoint_metrics("application_utilization");
+  cluster.add_lrs_report_endpoint_metrics("unknown_field");
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            *xds_client_->bootstrap().servers().front());
+  ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
+  EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
+            "{cpu_utilization,mem_utilization,application_utilization,"
+            "named_metrics.bar,named_metrics.foo}");
+}
+
+TEST_F(LrsTest, PropagationNamedMetricsAll) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.*");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            *xds_client_->bootstrap().servers().front());
+  ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
+  EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
+            "{cpu_utilization,named_metrics.*}");
 }
 
 //

@@ -86,6 +86,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -192,6 +193,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c \
@@ -353,6 +355,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
@@ -432,11 +435,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
+    src/core/filter/blackboard.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
     src/core/handshaker/http_connect/http_connect_handshaker.cc \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
+    src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
     src/core/handshaker/security/secure_endpoint.cc \
     src/core/handshaker/security/security_handshaker.cc \
@@ -728,7 +733,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
-    src/core/resolver/binder/binder_resolver.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
@@ -892,6 +896,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \
+    src/core/xds/xds_client/xds_backend_metric_propagation.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \
     src/core/xds/xds_client/xds_client.cc \
     src/php/ext/grpc/byte_buffer.c \
@@ -927,9 +932,12 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/decode_rust_punycode.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle_rust.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
     third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc \
+    third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
@@ -1453,6 +1461,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/service/discovery/v3)
@@ -1505,6 +1514,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/service/discovery/v3)
@@ -1527,6 +1537,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/matcher/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/filter)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
@@ -1594,7 +1605,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/binder)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns/event_engine)

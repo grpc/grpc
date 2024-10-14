@@ -144,9 +144,23 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_http_client_filter",
     srcs = ["bm_http_client_filter.cc"],
+    monitoring = True,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
         "//test/core/transport:call_spine_benchmarks",
+    ],
+)
+
+grpc_cc_test(
+    name = "blackboard_test",
+    srcs = ["blackboard_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:blackboard",
     ],
 )

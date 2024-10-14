@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
 
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
 #include <utility>
 #include <vector>
 
-#include <grpc/slice.h>
-
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -90,7 +90,8 @@ class DynamicFilters final : public RefCounted<DynamicFilters> {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
-      const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters);
+      const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters,
+      const Blackboard* old_blackboard, Blackboard* new_blackboard);
 
   explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
       : channel_stack_(std::move(channel_stack)) {}

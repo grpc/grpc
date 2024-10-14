@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/uuid_v4.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_format.h"
 

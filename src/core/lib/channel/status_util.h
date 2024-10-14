@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_STATUS_UTIL_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_STATUS_UTIL_H
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 
 /// If \a status_str is a valid status string, sets \a status to the
 /// corresponding status value and returns true.

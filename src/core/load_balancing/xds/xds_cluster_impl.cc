@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -33,10 +35,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -362,13 +360,9 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
     }
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
-      auto* backend_metric_data =
-          args.backend_metric_accessor->GetBackendMetricData();
-      const std::map<absl::string_view, double>* named_metrics = nullptr;
-      if (backend_metric_data != nullptr) {
-        named_metrics = &backend_metric_data->named_metrics;
-      }
-      locality_stats_->AddCallFinished(named_metrics, !args.status.ok());
+      locality_stats_->AddCallFinished(
+          args.backend_metric_accessor->GetBackendMetricData(),
+          !args.status.ok());
     }
     // Decrement number of calls in flight.
     call_counter_->Decrement();
@@ -826,7 +820,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
         parent()->xds_client_->lrs_client().AddClusterLocalityStats(
             parent()->cluster_resource_->lrs_load_reporting_server,
             parent()->config_->cluster_name(),
-            GetEdsResourceName(*parent()->cluster_resource_), locality_name);
+            GetEdsResourceName(*parent()->cluster_resource_), locality_name,
+            parent()->cluster_resource_->lrs_backend_metric_propagation);
     if (locality_stats == nullptr) {
       LOG(ERROR)
           << "[xds_cluster_impl_lb " << parent()

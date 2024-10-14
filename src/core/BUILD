@@ -29,14 +29,16 @@ package(
     ],
 )
 
+config_setting(
+    name = "enable_latent_see",
+    values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
+)
+
 # This is needed as a transitionary mechanism to build the src/core targets in
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(
-        ["**"],
-        exclude = ["ext/transport/binder/java/**"],
-    ),
+    glob(["**"]),
     visibility = ["//:__subpackages__"],
 )
 
@@ -141,6 +143,10 @@ grpc_cc_library(
     hdrs = [
         "util/latent_see.h",
     ],
+    defines = select({
+        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
@@ -148,6 +154,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
+    visibility = ["@grpc:latent_see"],
     deps = [
         "per_cpu",
         "ring_buffer",
@@ -199,6 +206,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "context",
+        "latent_see",
         "map",
         "pipe",
         "//:call_tracer",
@@ -3310,6 +3318,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "blackboard",
+    srcs = [
+        "filter/blackboard.cc",
+    ],
+    hdrs = [
+        "filter/blackboard.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "ref_counted",
+        "unique_type_name",
+        "useful",
+        "//:debug_location",
+        "//:endpoint_addresses",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3516,6 +3547,7 @@ grpc_cc_library(
         "context",
         "grpc_message_size_filter",
         "grpc_service_config",
+        "latent_see",
         "metadata_batch",
         "service_config_parser",
         "//:channel_arg_names",
@@ -3744,6 +3776,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_proxy_mapper",
+    srcs = [
+        "handshaker/http_connect/xds_http_proxy_mapper.cc",
+    ],
+    hdrs = [
+        "handshaker/http_connect/xds_http_proxy_mapper.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "proxy_mapper",
+        "resolved_address",
+        "xds_endpoint",
+        "//:config",
+        "//:grpc_base",
+        "//:http_connect_handshaker",
+        "//:parse_address",
+        "//:sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_server_config_selector",
     hdrs = [
         "server/server_config_selector.h",
@@ -3791,6 +3850,7 @@ grpc_cc_library(
         "event_engine_context",
         "grpc_server_config_selector",
         "grpc_service_config",
+        "latent_see",
         "metadata_batch",
         "status_helper",
         "//:gpr",
@@ -3918,6 +3978,7 @@ grpc_cc_library(
         "channel_fwd",
         "dual_ref_counted",
         "endpoint_info_handshaker",
+        "latent_see",
         "load_file",
         "metadata_batch",
         "ref_counted",
@@ -4830,6 +4891,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "channel_stack_type",
+        "latent_see",
         "metadata_batch",
         "slice",
         "//:channel_arg_names",
@@ -4869,6 +4931,7 @@ grpc_cc_library(
         "json_args",
         "json_object_loader",
         "latch",
+        "latent_see",
         "metadata_batch",
         "race",
         "service_config_parser",
@@ -4959,6 +5022,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "latent_see",
         "metadata_batch",
         "service_config_parser",
         "validation_errors",
@@ -4998,6 +5062,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "latent_see",
         "map",
         "metadata_batch",
         "pipe",
@@ -5034,6 +5099,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "context",
@@ -5104,6 +5170,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "latent_see",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -5619,6 +5686,7 @@ grpc_cc_library(
         "json_writer",
         "match",
         "time",
+        "xds_backend_metric_propagation",
         "xds_common_types",
         "xds_health_status",
         "xds_metadata",
@@ -5648,6 +5716,28 @@ grpc_cc_library(
         "//:gpr",
         "//:ref_counted_ptr",
         "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_backend_metric_propagation",
+    srcs = [
+        "xds/xds_client/xds_backend_metric_propagation.cc",
+    ],
+    hdrs = [
+        "xds/xds_client/xds_backend_metric_propagation.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/strings",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:xds_client_core"],
+    deps = [
+        "ref_counted",
+        "useful",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -5731,11 +5821,13 @@ grpc_cc_library(
         "closure",
         "connectivity_state",
         "default_event_engine",
+        "down_cast",
         "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
         "envoy_config_core_upb",
+        "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
         "envoy_config_endpoint_upbdefs",
         "envoy_config_listener_upb",
@@ -5764,6 +5856,8 @@ grpc_cc_library(
         "envoy_extensions_load_balancing_policies_pick_first_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upb",
+        "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
         "envoy_extensions_transport_sockets_tls_upb",
         "envoy_extensions_transport_sockets_tls_upbdefs",
         "envoy_extensions_upstreams_http_upb",
@@ -5827,6 +5921,7 @@ grpc_cc_library(
         "upb_utils",
         "useful",
         "validation_errors",
+        "xds_backend_metric_propagation",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_cluster",
@@ -6845,6 +6940,7 @@ grpc_cc_library(
         "channel_stack_type",
         "context",
         "grpc_sockaddr",
+        "latent_see",
         "metadata_batch",
         "resolved_address",
         "seq",
@@ -6889,6 +6985,7 @@ grpc_cc_library(
         "experiments",
         "grpc_backend_metric_data",
         "grpc_backend_metric_provider",
+        "latent_see",
         "map",
         "metadata_batch",
         "slice",
@@ -7095,33 +7192,6 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:orphanable",
         "//:parse_address",
-        "//:uri",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_resolver_binder",
-    srcs = [
-        "resolver/binder/binder_resolver.cc",
-    ],
-    external_deps = [
-        "absl/log:log",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "error",
-        "iomgr_port",
-        "resolved_address",
-        "status_helper",
-        "//:config",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_resolver",
-        "//:orphanable",
         "//:uri",
     ],
 )
@@ -7832,6 +7902,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "context",
+        "latent_see",
         "logging_sink",
         "map",
         "metadata_batch",
@@ -7922,7 +7993,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/log:check",
-        "absl/log:log",
+        "absl/log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -7933,20 +8004,18 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
-        "all_ok",
         "arena",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_transport",
         "context",
-        "event_engine_wakeup_scheduler",
+        "event_engine_context",
         "for_each",
         "grpc_promise_endpoint",
         "if",
         "inter_activity_pipe",
         "loop",
         "map",
-        "match",
         "memory_quota",
         "metadata_batch",
         "mpsc",
@@ -7963,7 +8032,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:hpack_encoder",
         "//:hpack_parser",
-        "//:promise",
         "//:ref_counted_ptr",
     ],
 )
@@ -8534,6 +8602,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
@@ -8693,6 +8766,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(

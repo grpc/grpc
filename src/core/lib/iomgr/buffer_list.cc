@@ -18,11 +18,10 @@
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -29,10 +31,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/sync.h"

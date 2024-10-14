@@ -15,6 +15,8 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 
 #include "absl/strings/string_view.h"
@@ -22,9 +24,6 @@
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"

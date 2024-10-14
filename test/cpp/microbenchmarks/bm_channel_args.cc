@@ -15,14 +15,12 @@
 // Benchmark ChannelArgs comparison performance between grpc_channel_args and
 // grpc_core::ChannelArgs
 
-#include <random>
-
 #include <benchmark/benchmark.h>
-
-#include "absl/container/btree_map.h"
-
 #include <grpcpp/support/channel_arguments.h>
 
+#include <random>
+
+#include "absl/container/btree_map.h"
 #include "src/core/lib/channel/channel_args.h"
 
 const char kKey[] = "a very long key";

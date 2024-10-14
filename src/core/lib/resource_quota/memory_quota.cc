@@ -14,6 +14,9 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
@@ -29,11 +32,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/internal/memory_allocator_impl.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"

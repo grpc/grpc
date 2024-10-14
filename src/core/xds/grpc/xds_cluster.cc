@@ -18,7 +18,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
@@ -53,6 +52,12 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
   }
+  if (lrs_backend_metric_propagation != nullptr) {
+    contents.push_back(
+        absl::StrCat("lrs_backend_metric_propagation=",
+                     lrs_backend_metric_propagation->AsString()));
+  }
+  if (use_http_connect) contents.push_back("use_http_connect=true");
   if (!common_tls_context.Empty()) {
     contents.push_back(
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));

@@ -15,6 +15,16 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/credentials.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -36,18 +46,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/credentials.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/slice/slice.h"

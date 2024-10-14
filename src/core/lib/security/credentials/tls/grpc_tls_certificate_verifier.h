@@ -17,18 +17,17 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <map>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"

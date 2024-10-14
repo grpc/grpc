@@ -16,12 +16,10 @@
 //
 //
 
+#include <gtest/gtest.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
