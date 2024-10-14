@@ -38,5 +38,20 @@ grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
          grpc_core::Duration::Milliseconds(1);
 }
 
+absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
+                       absl::string_view name, absl::string_view default_port) {
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results;
+  grpc_core::Notification done;
+  dns_resolver->LookupHostname(
+      [&](absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+        results = std::move(addresses);
+        done.Notify();
+      },
+      name, default_port);
+  done.WaitForNotification();
+  return results;
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
