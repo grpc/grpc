@@ -23,8 +23,8 @@
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/retry_service_config.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {

@@ -21,8 +21,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/util/debug_location.h"

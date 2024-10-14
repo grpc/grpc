@@ -42,7 +42,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/crash.h"

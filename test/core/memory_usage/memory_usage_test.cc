@@ -43,7 +43,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/wrappers.pb.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/env.h"
 #include "src/core/util/subprocess.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"

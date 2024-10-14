@@ -15,8 +15,8 @@
 #include <grpc/grpc.h>
 
 #include "absl/log/check.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/server/server.h"

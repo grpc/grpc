@@ -20,7 +20,7 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 typedef struct grpc_resource_quota grpc_resource_quota;

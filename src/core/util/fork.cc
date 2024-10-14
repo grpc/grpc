@@ -25,7 +25,7 @@
 
 #include <utility>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/util/no_destruct.h"
 

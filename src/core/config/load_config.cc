@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/config/load_config.h"
+#include "src/core/config/load_config.h"
 
 #include <grpc/support/port_platform.h>
 #include <stdio.h>

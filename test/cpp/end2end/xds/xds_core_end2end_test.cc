@@ -25,7 +25,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"

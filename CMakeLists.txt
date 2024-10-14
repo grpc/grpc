@@ -1904,9 +1904,9 @@ endif()
 
 
 add_library(gpr
-  src/core/lib/config/config_vars.cc
-  src/core/lib/config/config_vars_non_generated.cc
-  src/core/lib/config/load_config.cc
+  src/core/config/config_vars.cc
+  src/core/config/config_vars_non_generated.cc
+  src/core/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
   src/core/util/alloc.cc
   src/core/util/atm.cc
@@ -2092,6 +2092,7 @@ add_library(grpc
   src/core/client_channel/subchannel.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
+  src/core/config/core_configuration.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -2488,7 +2489,6 @@ add_library(grpc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
-  src/core/lib/config/core_configuration.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -3211,6 +3211,7 @@ add_library(grpc_unsecure
   src/core/client_channel/subchannel.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
+  src/core/config/core_configuration.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
@@ -3297,7 +3298,6 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
-  src/core/lib/config/core_configuration.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -5497,6 +5497,7 @@ add_library(grpc_authorization_provider
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/config/core_configuration.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -5522,7 +5523,6 @@ add_library(grpc_authorization_provider
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
-  src/core/lib/config/core_configuration.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -9287,6 +9287,7 @@ add_executable(call_utils_test
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/config/core_configuration.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -9308,7 +9309,6 @@ add_executable(call_utils_test
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
-  src/core/lib/config/core_configuration.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
