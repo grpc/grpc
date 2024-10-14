@@ -71,6 +71,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "C++",
+    visibility = ["//test/cpp/end2end/xds:__subpackages__"],
     deps = [
         "//:config",
         "//:exec_ctx",

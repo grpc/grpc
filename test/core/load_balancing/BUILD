@@ -203,6 +203,7 @@ grpc_cc_benchmark(
         "absl/algorithm:container",
         "absl/log:check",
     ],
+    monitoring = True,
     uses_event_engine = False,
     deps = [
         "//src/core:no_destruct",
@@ -273,6 +274,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/strings",
     ],
+    monitoring = True,
     deps = [
         "//:config",
         "//:grpc",

@@ -31,6 +31,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
+    monitoring = True,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -44,6 +45,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
+    monitoring = True,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -77,6 +79,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     uses_event_engine = False,
     deps = [
         ":helpers",
@@ -132,6 +135,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
+    monitoring = True,
     deps = [
         ":helpers",
         "//src/core:closure",
@@ -155,6 +159,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
+    monitoring = True,
     deps = [":helpers"],
 )
 
@@ -185,6 +190,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
+    monitoring = True,
     tags = [
         "no_mac",
         "no_windows",
@@ -199,6 +205,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = True,
     deps = [":helpers"],
 )
 
@@ -402,6 +409,7 @@ grpc_cc_benchmark(
         "absl/strings",
         "otel/sdk/src/metrics",
     ],
+    monitoring = True,
     deps = [
         ":helpers",
         "//src/core:metrics",

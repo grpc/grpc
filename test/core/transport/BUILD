@@ -244,6 +244,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_call_spine",
     srcs = ["bm_call_spine.cc"],
+    monitoring = True,
     deps = [
         ":call_spine_benchmarks",
         "//:grpc",
@@ -254,6 +255,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
+    monitoring = True,
     deps = [
         ":call_spine_benchmarks",
         "//:grpc",
