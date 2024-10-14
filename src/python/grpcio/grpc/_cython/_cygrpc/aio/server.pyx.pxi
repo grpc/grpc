@@ -911,6 +911,7 @@ cdef class AioServer:
         self._generic_handlers = []
         self.add_generic_rpc_handlers(generic_handlers)
         self._serving_task = None
+        self._rpc_tasks = set()
 
         self._shutdown_lock = asyncio.Lock()
         self._shutdown_completed = self._loop.create_future()
@@ -964,7 +965,6 @@ cdef class AioServer:
         self._server.start(backup_queue=False)
         cdef RPCState rpc_state
         server_started.set_result(True)
-        rpc_tasks = set()
 
         while True:
             # When shutdown begins, no more new connections.
@@ -1002,8 +1002,8 @@ cdef class AioServer:
 
             # loop.create_task only holds a weakref to the task.
             # Maintain reference to tasks to avoid garbage collection.
-            rpc_tasks.add(rpc_task)
-            rpc_task.add_done_callback(rpc_tasks.discard)
+            self._rpc_tasks.add(rpc_task)
+            rpc_task.add_done_callback(self._rpc_tasks.discard)
 
             if self._limiter is not None:
                 self._limiter.decrease_once_finished(rpc_task)
@@ -1068,20 +1068,26 @@ cdef class AioServer:
                 self._status = AIO_SERVER_STATUS_STOPPING
                 await self._start_shutting_down()
 
+        rpc_tasks = asyncio.gather(*self._rpc_tasks, return_exceptions=True)
+
         if grace is None:
             # Directly cancels all calls
             grpc_server_cancel_all_calls(self._server.c_server)
-            await self._shutdown_completed
+            for task in self._rpc_tasks:
+                task.cancel()
+            await asyncio.gather(self._shutdown_completed, rpc_tasks)
         else:
             try:
                 await asyncio.wait_for(
-                    asyncio.shield(self._shutdown_completed),
+                    asyncio.shield(asyncio.gather(self._shutdown_completed, rpc_tasks)),
                     grace,
                 )
             except asyncio.TimeoutError:
                 # Cancels all ongoing calls by the end of grace period.
                 grpc_server_cancel_all_calls(self._server.c_server)
-                await self._shutdown_completed
+                for task in self._rpc_tasks:
+                    task.cancel()
+                await asyncio.gather(self._shutdown_completed, rpc_tasks)
 
         async with self._shutdown_lock:
             if self._status == AIO_SERVER_STATUS_STOPPING:
