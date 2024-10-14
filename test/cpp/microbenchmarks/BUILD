@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -31,7 +31,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -45,7 +45,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -79,7 +79,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     uses_event_engine = False,
     deps = [
         ":helpers",
@@ -135,7 +135,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [
         ":helpers",
         "//src/core:closure",
@@ -159,7 +159,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [":helpers"],
 )
 
@@ -190,7 +190,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
-    monitoring = True,
+    monitoring = HISTORY,
     tags = [
         "no_mac",
         "no_windows",
@@ -205,7 +205,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [":helpers"],
 )
 
@@ -409,7 +409,7 @@ grpc_cc_benchmark(
         "absl/strings",
         "otel/sdk/src/metrics",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [
         ":helpers",
         "//src/core:metrics",
