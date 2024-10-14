@@ -1,3 +1,6 @@
+# This patch works around a problem with Windows RBE described in
+# https://github.com/bazelbuild/bazel/issues/11636.  It can be removed
+# once that issue is resolved.
 diff --git a/go/private/rules/binary.bzl b/go/private/rules/binary.bzl
 index 40a17f4d..2741ad71 100644
 --- a/go/private/rules/binary.bzl
