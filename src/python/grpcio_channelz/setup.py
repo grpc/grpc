@@ -25,8 +25,6 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our local modules.
-import python_version
-
 import grpc_version
 
 
@@ -46,19 +44,17 @@ class _NoOpCommand(setuptools.Command):
         pass
 
 
-CLASSIFIERS = (
-    [
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-    ]
-    + [
-        f"Programming Language :: Python :: {x}"
-        for x in python_version.SUPPORTED_PYTHON_VERSIONS
-    ]
-    + ["License :: OSI Approved :: Apache Software License"]
-)
-
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: Apache Software License",
+]
 
 PACKAGE_DIRECTORIES = {
     "": ".",
@@ -89,7 +85,6 @@ except ImportError:
         "build_package_protos": _NoOpCommand,
     }
 
-
 setuptools.setup(
     name="grpcio-channelz",
     version=grpc_version.VERSION,
@@ -102,7 +97,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,

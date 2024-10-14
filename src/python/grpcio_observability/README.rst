@@ -17,6 +17,9 @@ Note that while this approach enhances efficiency, it will introduce a slight de
 time the data is collected and the time it becomes available through Python exporters.
 
 
+Supported Python Versions
+-------------------------
+Python >= 3.8
 
 Installation
 ------------

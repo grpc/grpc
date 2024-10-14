@@ -25,8 +25,6 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our local modules.
-import python_version
-
 import grpc_version
 
 CLASSIFIERS = [
@@ -59,7 +57,7 @@ setuptools.setup(
     url="https://grpc.io",
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
 )
