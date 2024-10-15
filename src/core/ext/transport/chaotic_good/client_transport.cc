@@ -36,6 +36,8 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -199,6 +201,15 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4) {
+  // Set up TCP tracer if enabled.
+  if (args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false)) {
+    auto* epte = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::TcpTraceExtension>(
+        data_endpoint.GetEventEngineEndpoint().get());
+    if (epte != nullptr) {
+      epte->InitializeAndReturnTcpTracer();
+    }
+  }
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));

@@ -194,6 +194,12 @@
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#if defined(__has_include)
+#if __has_include(<android/ndk-version.h>)
+#include <android/ndk-version.h>
+#endif /* __has_include(<android/ndk-version.h>) */
+#endif /* defined(__has_include) */
+#include <linux/version.h>
 #elif defined(__linux__)
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
