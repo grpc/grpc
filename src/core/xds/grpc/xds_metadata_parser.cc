@@ -26,6 +26,7 @@
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/util/env.h"
 #include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
