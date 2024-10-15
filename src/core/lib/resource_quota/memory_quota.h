@@ -530,9 +530,7 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
-  static double memory_pressure_high_threshold() {
-    return 0.99;
-  }
+  static double memory_pressure_high_threshold() { return 0.99; }
 
   // Return true if the controlled memory pressure is high.
   bool IsMemoryPressureHigh() const {
