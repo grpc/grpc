@@ -2654,7 +2654,8 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_proto",
     ],
     alwayslink = 1,
 )
