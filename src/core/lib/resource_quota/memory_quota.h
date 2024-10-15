@@ -530,11 +530,14 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
+  static double memory_pressure_high_threshold() {
+    return 0.99;
+  }
+
   // Return true if the controlled memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 0.99;
     return GetPressureInfo().pressure_control_value >
-           kMemoryPressureHighThreshold;
+           memory_pressure_high_threshold();
   }
 
  private:
@@ -571,7 +574,8 @@ class MemoryQuota final
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
   bool IsMemoryPressureHigh() const {
-    return memory_quota_->IsMemoryPressureHigh();
+    return GetPressureInfo().pressure_control_value >
+           MemoryOwner::memory_pressure_high_threshold();
   }
 
  private:
