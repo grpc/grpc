@@ -8010,6 +8010,8 @@ grpc_cc_library(
         "chaotic_good_transport",
         "context",
         "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "for_each",
         "grpc_promise_endpoint",
         "if",
