@@ -71,6 +71,8 @@
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 using grpc_core::HPackParser;
 
@@ -645,7 +647,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     } else if (grpc_core::IsRqFastRejectEnabled() && GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
-      global_stats().IncrementRqCallsRejected();
+      grpc_core::global_stats().IncrementRqCallsRejected();
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
                                           t->incoming_stream_id,
