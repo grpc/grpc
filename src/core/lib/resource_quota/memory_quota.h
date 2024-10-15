@@ -572,7 +572,7 @@ class MemoryQuota final
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
   bool IsMemoryPressureHigh() const {
-    return GetPressureInfo().pressure_control_value >
+    return memory_quota_->GetPressureInfo().pressure_control_value >
            MemoryOwner::memory_pressure_high_threshold();
   }
 
