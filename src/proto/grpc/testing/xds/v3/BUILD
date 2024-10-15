@@ -59,7 +59,7 @@ grpc_proto_library(
     ],
     well_known_protos = True,
     deps = [
-        "base_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
     ],
 )
 
@@ -170,8 +170,8 @@ grpc_proto_library(
     has_services = True,
     well_known_protos = True,
     deps = [
-        "base_proto",
-        "load_report_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
     ],
 )
 

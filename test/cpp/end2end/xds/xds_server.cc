@@ -25,12 +25,12 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
-#include "envoy/service/discovery/v3/ads.grpc.pb.h"
-#include "envoy/service/discovery/v3/discovery.grpc.pb.h"
-#include "envoy/service/load_stats/v3/lrs.grpc.pb.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
+#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

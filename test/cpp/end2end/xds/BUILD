@@ -34,16 +34,15 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:ads_proto",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//src/proto/grpc/testing/xds/v3:lrs_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/discovery/v3:pkg_cc_grpc",
-        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/load_stats/v3:pkg_cc_grpc",
-        "@envoy_api//envoy/service/load_stats/v3:pkg_cc_proto",
     ],
 )
 
@@ -54,6 +53,7 @@ grpc_cc_library(
     visibility = ["@grpc:xds_end2end_test_utils"],
     deps = [
         ":xds_server",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/test_util:grpc_test_util_base",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
@@ -61,7 +61,6 @@ grpc_cc_library(
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 
@@ -84,6 +83,8 @@ grpc_cc_library(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//src/proto/grpc/testing/xds/v3:lrs_proto",
         "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
@@ -96,8 +97,6 @@ grpc_cc_library(
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
-        "@envoy_api//envoy/service/load_stats/v3:pkg_cc_proto",
     ],
 )
 

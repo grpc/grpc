@@ -55,7 +55,8 @@ grpc_proto_library(
     deps = [
         # TODO(roth): Change this to point to the real proto so that we
         # can remove this local copy.
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        #"//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
 )
 
