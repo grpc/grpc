@@ -642,7 +642,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (IsRqFastRejectEnabled() && GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+    } else if (grpc_core::IsRqFastRejectEnabled() && GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       global_stats().IncrementRqCallsRejected();

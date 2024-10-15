@@ -530,6 +530,13 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
+  // Return true if the controlled memory pressure is high.
+  bool IsMemoryPressureHigh() const {
+    static constexpr double kMemoryPressureHighThreshold = 0.99;
+    return GetPressureInfo().pressure_control_value >
+           kMemoryPressureHighThreshold;
+  }
+
  private:
   const GrpcMemoryAllocatorImpl* impl() const {
     return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
@@ -563,11 +570,8 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  // Return true if the controlled memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 0.99;
-    return memory_quota_->GetPressureInfo().pressure_control_value >
-           kMemoryPressureHighThreshold;
+    return memory_quota_->IsMemoryPressureHigh();
   }
 
  private:
