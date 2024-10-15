@@ -24,9 +24,9 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "envoy/config/listener/v3/listener.pb.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
