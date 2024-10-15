@@ -18,8 +18,8 @@ import collections
 from typing import MutableMapping
 
 import grpc
-from grpc_health.v1 import health_pb2 as _health_pb2
-from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+from grpc_health.v1 import health_pb2 as _health_pb2  # type :ignore
+from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc  # type :ignore
 
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
@@ -84,9 +84,10 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     ) -> None:
         if service in self._server_watchers:
             condition = self._server_watchers.get(service)
-            async with condition:
-                self._server_status[service] = status
-                condition.notify_all()
+            if condition is not None:
+                async with condition:
+                    self._server_status[service] = status
+                    condition.notify_all()
         else:
             self._server_status[service] = status
 
