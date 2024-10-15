@@ -467,4 +467,4 @@ class GlobalStatsCollector {
 };
 }
 
-#endif // GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
+#endif  // GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
