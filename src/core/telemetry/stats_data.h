@@ -1,11 +1,11 @@
 // Copyright 2017 gRPC authors.
-//
+// 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+// 
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,13 +18,11 @@
 #define GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
 
 #include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <atomic>
 #include <memory>
-
-#include "absl/strings/string_view.h"
+#include <stdint.h>
 #include "src/core/telemetry/histogram_view.h"
+#include "absl/strings/string_view.h"
 #include "src/core/util/per_cpu.h"
 
 namespace grpc_core {
@@ -34,9 +32,7 @@ class Histogram_100000_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
-  friend Histogram_100000_20 operator-(const Histogram_100000_20& left,
-                                       const Histogram_100000_20& right);
-
+  friend Histogram_100000_20 operator-(const Histogram_100000_20& left, const Histogram_100000_20& right);
  private:
   friend class HistogramCollector_100000_20;
   uint64_t buckets_[20]{};
@@ -44,11 +40,10 @@ class Histogram_100000_20 {
 class HistogramCollector_100000_20 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_100000_20::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_100000_20::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_100000_20* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
@@ -58,9 +53,7 @@ class Histogram_65536_26 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 26; }
-  friend Histogram_65536_26 operator-(const Histogram_65536_26& left,
-                                      const Histogram_65536_26& right);
-
+  friend Histogram_65536_26 operator-(const Histogram_65536_26& left, const Histogram_65536_26& right);
  private:
   friend class HistogramCollector_65536_26;
   uint64_t buckets_[26]{};
@@ -68,11 +61,10 @@ class Histogram_65536_26 {
 class HistogramCollector_65536_26 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_65536_26::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_65536_26::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_65536_26* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[26]{};
 };
@@ -82,9 +74,7 @@ class Histogram_100_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
-  friend Histogram_100_20 operator-(const Histogram_100_20& left,
-                                    const Histogram_100_20& right);
-
+  friend Histogram_100_20 operator-(const Histogram_100_20& left, const Histogram_100_20& right);
  private:
   friend class HistogramCollector_100_20;
   uint64_t buckets_[20]{};
@@ -92,11 +82,10 @@ class Histogram_100_20 {
 class HistogramCollector_100_20 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_100_20::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_100_20::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_100_20* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
@@ -106,9 +95,7 @@ class Histogram_16777216_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
-  friend Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
-                                         const Histogram_16777216_20& right);
-
+  friend Histogram_16777216_20 operator-(const Histogram_16777216_20& left, const Histogram_16777216_20& right);
  private:
   friend class HistogramCollector_16777216_20;
   uint64_t buckets_[20]{};
@@ -116,11 +103,10 @@ class Histogram_16777216_20 {
 class HistogramCollector_16777216_20 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_16777216_20::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_16777216_20::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_16777216_20* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
@@ -130,9 +116,7 @@ class Histogram_80_10 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 10; }
-  friend Histogram_80_10 operator-(const Histogram_80_10& left,
-                                   const Histogram_80_10& right);
-
+  friend Histogram_80_10 operator-(const Histogram_80_10& left, const Histogram_80_10& right);
  private:
   friend class HistogramCollector_80_10;
   uint64_t buckets_[10]{};
@@ -140,11 +124,10 @@ class Histogram_80_10 {
 class HistogramCollector_80_10 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_80_10::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_80_10::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_80_10* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[10]{};
 };
@@ -154,9 +137,7 @@ class Histogram_10000_20 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
-  friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
-                                      const Histogram_10000_20& right);
-
+  friend Histogram_10000_20 operator-(const Histogram_10000_20& left, const Histogram_10000_20& right);
  private:
   friend class HistogramCollector_10000_20;
   uint64_t buckets_[20]{};
@@ -164,11 +145,10 @@ class Histogram_10000_20 {
 class HistogramCollector_10000_20 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_10000_20::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_10000_20::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_10000_20* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
@@ -178,9 +158,7 @@ class Histogram_1800000_40 {
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 40; }
-  friend Histogram_1800000_40 operator-(const Histogram_1800000_40& left,
-                                        const Histogram_1800000_40& right);
-
+  friend Histogram_1800000_40 operator-(const Histogram_1800000_40& left, const Histogram_1800000_40& right);
  private:
   friend class HistogramCollector_1800000_40;
   uint64_t buckets_[40]{};
@@ -188,11 +166,10 @@ class Histogram_1800000_40 {
 class HistogramCollector_1800000_40 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_1800000_40::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
+    buckets_[Histogram_1800000_40::BucketFor(value)]
+        .fetch_add(1, std::memory_order_relaxed);
   }
   void Collect(Histogram_1800000_40* result) const;
-
  private:
   std::atomic<uint64_t> buckets_[40]{};
 };
@@ -206,6 +183,7 @@ struct GlobalStats {
     kInsecureConnectionsCreated,
     kRqConnectionsDropped,
     kRqCallsDropped,
+    kRqCallsRejected,
     kSyscallWrite,
     kSyscallRead,
     kTcpReadAlloc8k,
@@ -270,49 +248,48 @@ struct GlobalStats {
   };
   GlobalStats();
   static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];
-  static const absl::string_view
-      histogram_name[static_cast<int>(Histogram::COUNT)];
+  static const absl::string_view histogram_name[static_cast<int>(Histogram::COUNT)];
   static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];
-  static const absl::string_view
-      histogram_doc[static_cast<int>(Histogram::COUNT)];
+  static const absl::string_view histogram_doc[static_cast<int>(Histogram::COUNT)];
   union {
     struct {
-      uint64_t client_calls_created;
-      uint64_t server_calls_created;
-      uint64_t client_channels_created;
-      uint64_t client_subchannels_created;
-      uint64_t server_channels_created;
-      uint64_t insecure_connections_created;
-      uint64_t rq_connections_dropped;
-      uint64_t rq_calls_dropped;
-      uint64_t syscall_write;
-      uint64_t syscall_read;
-      uint64_t tcp_read_alloc_8k;
-      uint64_t tcp_read_alloc_64k;
-      uint64_t http2_settings_writes;
-      uint64_t http2_pings_sent;
-      uint64_t http2_writes_begun;
-      uint64_t http2_transport_stalls;
-      uint64_t http2_stream_stalls;
-      uint64_t http2_hpack_hits;
-      uint64_t http2_hpack_misses;
-      uint64_t cq_pluck_creates;
-      uint64_t cq_next_creates;
-      uint64_t cq_callback_creates;
-      uint64_t wrr_updates;
-      uint64_t work_serializer_items_enqueued;
-      uint64_t work_serializer_items_dequeued;
-      uint64_t econnaborted_count;
-      uint64_t econnreset_count;
-      uint64_t epipe_count;
-      uint64_t etimedout_count;
-      uint64_t econnrefused_count;
-      uint64_t enetunreach_count;
-      uint64_t enomsg_count;
-      uint64_t enotconn_count;
-      uint64_t enobufs_count;
-      uint64_t uncommon_io_error_count;
-      uint64_t msg_errqueue_error_count;
+    uint64_t client_calls_created;
+    uint64_t server_calls_created;
+    uint64_t client_channels_created;
+    uint64_t client_subchannels_created;
+    uint64_t server_channels_created;
+    uint64_t insecure_connections_created;
+    uint64_t rq_connections_dropped;
+    uint64_t rq_calls_dropped;
+    uint64_t rq_calls_rejected;
+    uint64_t syscall_write;
+    uint64_t syscall_read;
+    uint64_t tcp_read_alloc_8k;
+    uint64_t tcp_read_alloc_64k;
+    uint64_t http2_settings_writes;
+    uint64_t http2_pings_sent;
+    uint64_t http2_writes_begun;
+    uint64_t http2_transport_stalls;
+    uint64_t http2_stream_stalls;
+    uint64_t http2_hpack_hits;
+    uint64_t http2_hpack_misses;
+    uint64_t cq_pluck_creates;
+    uint64_t cq_next_creates;
+    uint64_t cq_callback_creates;
+    uint64_t wrr_updates;
+    uint64_t work_serializer_items_enqueued;
+    uint64_t work_serializer_items_dequeued;
+    uint64_t econnaborted_count;
+    uint64_t econnreset_count;
+    uint64_t epipe_count;
+    uint64_t etimedout_count;
+    uint64_t econnrefused_count;
+    uint64_t enetunreach_count;
+    uint64_t enomsg_count;
+    uint64_t enotconn_count;
+    uint64_t enobufs_count;
+    uint64_t uncommon_io_error_count;
+    uint64_t msg_errqueue_error_count;
     };
     uint64_t counters[static_cast<int>(Counter::COUNT)];
   };
@@ -351,218 +328,72 @@ struct GlobalStats {
 class GlobalStatsCollector {
  public:
   std::unique_ptr<GlobalStats> Collect() const;
-  void IncrementClientCallsCreated() {
-    data_.this_cpu().client_calls_created.fetch_add(1,
-                                                    std::memory_order_relaxed);
-  }
-  void IncrementServerCallsCreated() {
-    data_.this_cpu().server_calls_created.fetch_add(1,
-                                                    std::memory_order_relaxed);
-  }
-  void IncrementClientChannelsCreated() {
-    data_.this_cpu().client_channels_created.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementClientSubchannelsCreated() {
-    data_.this_cpu().client_subchannels_created.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementServerChannelsCreated() {
-    data_.this_cpu().server_channels_created.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementInsecureConnectionsCreated() {
-    data_.this_cpu().insecure_connections_created.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementRqConnectionsDropped() {
-    data_.this_cpu().rq_connections_dropped.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementRqCallsDropped() {
-    data_.this_cpu().rq_calls_dropped.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementSyscallWrite() {
-    data_.this_cpu().syscall_write.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementSyscallRead() {
-    data_.this_cpu().syscall_read.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementTcpReadAlloc8k() {
-    data_.this_cpu().tcp_read_alloc_8k.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementTcpReadAlloc64k() {
-    data_.this_cpu().tcp_read_alloc_64k.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2SettingsWrites() {
-    data_.this_cpu().http2_settings_writes.fetch_add(1,
-                                                     std::memory_order_relaxed);
-  }
-  void IncrementHttp2PingsSent() {
-    data_.this_cpu().http2_pings_sent.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2WritesBegun() {
-    data_.this_cpu().http2_writes_begun.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2TransportStalls() {
-    data_.this_cpu().http2_transport_stalls.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2StreamStalls() {
-    data_.this_cpu().http2_stream_stalls.fetch_add(1,
-                                                   std::memory_order_relaxed);
-  }
-  void IncrementHttp2HpackHits() {
-    data_.this_cpu().http2_hpack_hits.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2HpackMisses() {
-    data_.this_cpu().http2_hpack_misses.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementCqPluckCreates() {
-    data_.this_cpu().cq_pluck_creates.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementCqNextCreates() {
-    data_.this_cpu().cq_next_creates.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementCqCallbackCreates() {
-    data_.this_cpu().cq_callback_creates.fetch_add(1,
-                                                   std::memory_order_relaxed);
-  }
-  void IncrementWrrUpdates() {
-    data_.this_cpu().wrr_updates.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementWorkSerializerItemsEnqueued() {
-    data_.this_cpu().work_serializer_items_enqueued.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementWorkSerializerItemsDequeued() {
-    data_.this_cpu().work_serializer_items_dequeued.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementEconnabortedCount() {
-    data_.this_cpu().econnaborted_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEconnresetCount() {
-    data_.this_cpu().econnreset_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEpipeCount() {
-    data_.this_cpu().epipe_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEtimedoutCount() {
-    data_.this_cpu().etimedout_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEconnrefusedCount() {
-    data_.this_cpu().econnrefused_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEnetunreachCount() {
-    data_.this_cpu().enetunreach_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEnomsgCount() {
-    data_.this_cpu().enomsg_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEnotconnCount() {
-    data_.this_cpu().enotconn_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementEnobufsCount() {
-    data_.this_cpu().enobufs_count.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementUncommonIoErrorCount() {
-    data_.this_cpu().uncommon_io_error_count.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementMsgErrqueueErrorCount() {
-    data_.this_cpu().msg_errqueue_error_count.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementCallInitialSize(int value) {
-    data_.this_cpu().call_initial_size.Increment(value);
-  }
-  void IncrementTcpWriteSize(int value) {
-    data_.this_cpu().tcp_write_size.Increment(value);
-  }
-  void IncrementTcpWriteIovSize(int value) {
-    data_.this_cpu().tcp_write_iov_size.Increment(value);
-  }
-  void IncrementTcpReadSize(int value) {
-    data_.this_cpu().tcp_read_size.Increment(value);
-  }
-  void IncrementTcpReadOffer(int value) {
-    data_.this_cpu().tcp_read_offer.Increment(value);
-  }
-  void IncrementTcpReadOfferIovSize(int value) {
-    data_.this_cpu().tcp_read_offer_iov_size.Increment(value);
-  }
-  void IncrementHttp2SendMessageSize(int value) {
-    data_.this_cpu().http2_send_message_size.Increment(value);
-  }
-  void IncrementHttp2MetadataSize(int value) {
-    data_.this_cpu().http2_metadata_size.Increment(value);
-  }
-  void IncrementHttp2HpackEntryLifetime(int value) {
-    data_.this_cpu().http2_hpack_entry_lifetime.Increment(value);
-  }
-  void IncrementWrrSubchannelListSize(int value) {
-    data_.this_cpu().wrr_subchannel_list_size.Increment(value);
-  }
-  void IncrementWrrSubchannelReadySize(int value) {
-    data_.this_cpu().wrr_subchannel_ready_size.Increment(value);
-  }
-  void IncrementWorkSerializerRunTimeMs(int value) {
-    data_.this_cpu().work_serializer_run_time_ms.Increment(value);
-  }
-  void IncrementWorkSerializerWorkTimeMs(int value) {
-    data_.this_cpu().work_serializer_work_time_ms.Increment(value);
-  }
-  void IncrementWorkSerializerWorkTimePerItemMs(int value) {
-    data_.this_cpu().work_serializer_work_time_per_item_ms.Increment(value);
-  }
-  void IncrementWorkSerializerItemsPerRun(int value) {
-    data_.this_cpu().work_serializer_items_per_run.Increment(value);
-  }
-  void IncrementChaoticGoodSendmsgsPerWriteControl(int value) {
-    data_.this_cpu().chaotic_good_sendmsgs_per_write_control.Increment(value);
-  }
-  void IncrementChaoticGoodRecvmsgsPerReadControl(int value) {
-    data_.this_cpu().chaotic_good_recvmsgs_per_read_control.Increment(value);
-  }
-  void IncrementChaoticGoodSendmsgsPerWriteData(int value) {
-    data_.this_cpu().chaotic_good_sendmsgs_per_write_data.Increment(value);
-  }
-  void IncrementChaoticGoodRecvmsgsPerReadData(int value) {
-    data_.this_cpu().chaotic_good_recvmsgs_per_read_data.Increment(value);
-  }
-  void IncrementChaoticGoodThreadHopsPerWriteControl(int value) {
-    data_.this_cpu().chaotic_good_thread_hops_per_write_control.Increment(
-        value);
-  }
-  void IncrementChaoticGoodThreadHopsPerReadControl(int value) {
-    data_.this_cpu().chaotic_good_thread_hops_per_read_control.Increment(value);
-  }
-  void IncrementChaoticGoodThreadHopsPerWriteData(int value) {
-    data_.this_cpu().chaotic_good_thread_hops_per_write_data.Increment(value);
-  }
-  void IncrementChaoticGoodThreadHopsPerReadData(int value) {
-    data_.this_cpu().chaotic_good_thread_hops_per_read_data.Increment(value);
-  }
-  void IncrementChaoticGoodTcpReadSizeData(int value) {
-    data_.this_cpu().chaotic_good_tcp_read_size_data.Increment(value);
-  }
-  void IncrementChaoticGoodTcpReadSizeControl(int value) {
-    data_.this_cpu().chaotic_good_tcp_read_size_control.Increment(value);
-  }
-  void IncrementChaoticGoodTcpReadOfferData(int value) {
-    data_.this_cpu().chaotic_good_tcp_read_offer_data.Increment(value);
-  }
-  void IncrementChaoticGoodTcpReadOfferControl(int value) {
-    data_.this_cpu().chaotic_good_tcp_read_offer_control.Increment(value);
-  }
-  void IncrementChaoticGoodTcpWriteSizeData(int value) {
-    data_.this_cpu().chaotic_good_tcp_write_size_data.Increment(value);
-  }
-  void IncrementChaoticGoodTcpWriteSizeControl(int value) {
-    data_.this_cpu().chaotic_good_tcp_write_size_control.Increment(value);
-  }
-
+  void IncrementClientCallsCreated() { data_.this_cpu().client_calls_created.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementServerCallsCreated() { data_.this_cpu().server_calls_created.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementClientChannelsCreated() { data_.this_cpu().client_channels_created.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementClientSubchannelsCreated() { data_.this_cpu().client_subchannels_created.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementServerChannelsCreated() { data_.this_cpu().server_channels_created.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementInsecureConnectionsCreated() { data_.this_cpu().insecure_connections_created.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementRqConnectionsDropped() { data_.this_cpu().rq_connections_dropped.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementRqCallsDropped() { data_.this_cpu().rq_calls_dropped.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementRqCallsRejected() { data_.this_cpu().rq_calls_rejected.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementSyscallWrite() { data_.this_cpu().syscall_write.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementSyscallRead() { data_.this_cpu().syscall_read.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementTcpReadAlloc8k() { data_.this_cpu().tcp_read_alloc_8k.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementTcpReadAlloc64k() { data_.this_cpu().tcp_read_alloc_64k.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2SettingsWrites() { data_.this_cpu().http2_settings_writes.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2PingsSent() { data_.this_cpu().http2_pings_sent.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2WritesBegun() { data_.this_cpu().http2_writes_begun.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2TransportStalls() { data_.this_cpu().http2_transport_stalls.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2StreamStalls() { data_.this_cpu().http2_stream_stalls.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2HpackHits() { data_.this_cpu().http2_hpack_hits.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementHttp2HpackMisses() { data_.this_cpu().http2_hpack_misses.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementCqPluckCreates() { data_.this_cpu().cq_pluck_creates.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementCqNextCreates() { data_.this_cpu().cq_next_creates.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementCqCallbackCreates() { data_.this_cpu().cq_callback_creates.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementWrrUpdates() { data_.this_cpu().wrr_updates.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementWorkSerializerItemsEnqueued() { data_.this_cpu().work_serializer_items_enqueued.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementWorkSerializerItemsDequeued() { data_.this_cpu().work_serializer_items_dequeued.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEconnabortedCount() { data_.this_cpu().econnaborted_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEconnresetCount() { data_.this_cpu().econnreset_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEpipeCount() { data_.this_cpu().epipe_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEtimedoutCount() { data_.this_cpu().etimedout_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEconnrefusedCount() { data_.this_cpu().econnrefused_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEnetunreachCount() { data_.this_cpu().enetunreach_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEnomsgCount() { data_.this_cpu().enomsg_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEnotconnCount() { data_.this_cpu().enotconn_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementEnobufsCount() { data_.this_cpu().enobufs_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementUncommonIoErrorCount() { data_.this_cpu().uncommon_io_error_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementMsgErrqueueErrorCount() { data_.this_cpu().msg_errqueue_error_count.fetch_add(1, std::memory_order_relaxed); }
+  void IncrementCallInitialSize(int value) { data_.this_cpu().call_initial_size.Increment(value); }
+  void IncrementTcpWriteSize(int value) { data_.this_cpu().tcp_write_size.Increment(value); }
+  void IncrementTcpWriteIovSize(int value) { data_.this_cpu().tcp_write_iov_size.Increment(value); }
+  void IncrementTcpReadSize(int value) { data_.this_cpu().tcp_read_size.Increment(value); }
+  void IncrementTcpReadOffer(int value) { data_.this_cpu().tcp_read_offer.Increment(value); }
+  void IncrementTcpReadOfferIovSize(int value) { data_.this_cpu().tcp_read_offer_iov_size.Increment(value); }
+  void IncrementHttp2SendMessageSize(int value) { data_.this_cpu().http2_send_message_size.Increment(value); }
+  void IncrementHttp2MetadataSize(int value) { data_.this_cpu().http2_metadata_size.Increment(value); }
+  void IncrementHttp2HpackEntryLifetime(int value) { data_.this_cpu().http2_hpack_entry_lifetime.Increment(value); }
+  void IncrementWrrSubchannelListSize(int value) { data_.this_cpu().wrr_subchannel_list_size.Increment(value); }
+  void IncrementWrrSubchannelReadySize(int value) { data_.this_cpu().wrr_subchannel_ready_size.Increment(value); }
+  void IncrementWorkSerializerRunTimeMs(int value) { data_.this_cpu().work_serializer_run_time_ms.Increment(value); }
+  void IncrementWorkSerializerWorkTimeMs(int value) { data_.this_cpu().work_serializer_work_time_ms.Increment(value); }
+  void IncrementWorkSerializerWorkTimePerItemMs(int value) { data_.this_cpu().work_serializer_work_time_per_item_ms.Increment(value); }
+  void IncrementWorkSerializerItemsPerRun(int value) { data_.this_cpu().work_serializer_items_per_run.Increment(value); }
+  void IncrementChaoticGoodSendmsgsPerWriteControl(int value) { data_.this_cpu().chaotic_good_sendmsgs_per_write_control.Increment(value); }
+  void IncrementChaoticGoodRecvmsgsPerReadControl(int value) { data_.this_cpu().chaotic_good_recvmsgs_per_read_control.Increment(value); }
+  void IncrementChaoticGoodSendmsgsPerWriteData(int value) { data_.this_cpu().chaotic_good_sendmsgs_per_write_data.Increment(value); }
+  void IncrementChaoticGoodRecvmsgsPerReadData(int value) { data_.this_cpu().chaotic_good_recvmsgs_per_read_data.Increment(value); }
+  void IncrementChaoticGoodThreadHopsPerWriteControl(int value) { data_.this_cpu().chaotic_good_thread_hops_per_write_control.Increment(value); }
+  void IncrementChaoticGoodThreadHopsPerReadControl(int value) { data_.this_cpu().chaotic_good_thread_hops_per_read_control.Increment(value); }
+  void IncrementChaoticGoodThreadHopsPerWriteData(int value) { data_.this_cpu().chaotic_good_thread_hops_per_write_data.Increment(value); }
+  void IncrementChaoticGoodThreadHopsPerReadData(int value) { data_.this_cpu().chaotic_good_thread_hops_per_read_data.Increment(value); }
+  void IncrementChaoticGoodTcpReadSizeData(int value) { data_.this_cpu().chaotic_good_tcp_read_size_data.Increment(value); }
+  void IncrementChaoticGoodTcpReadSizeControl(int value) { data_.this_cpu().chaotic_good_tcp_read_size_control.Increment(value); }
+  void IncrementChaoticGoodTcpReadOfferData(int value) { data_.this_cpu().chaotic_good_tcp_read_offer_data.Increment(value); }
+  void IncrementChaoticGoodTcpReadOfferControl(int value) { data_.this_cpu().chaotic_good_tcp_read_offer_control.Increment(value); }
+  void IncrementChaoticGoodTcpWriteSizeData(int value) { data_.this_cpu().chaotic_good_tcp_write_size_data.Increment(value); }
+  void IncrementChaoticGoodTcpWriteSizeControl(int value) { data_.this_cpu().chaotic_good_tcp_write_size_control.Increment(value); }
  private:
   struct Data {
     std::atomic<uint64_t> client_calls_created{0};
@@ -573,6 +404,7 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> insecure_connections_created{0};
     std::atomic<uint64_t> rq_connections_dropped{0};
     std::atomic<uint64_t> rq_calls_dropped{0};
+    std::atomic<uint64_t> rq_calls_rejected{0};
     std::atomic<uint64_t> syscall_write{0};
     std::atomic<uint64_t> syscall_read{0};
     std::atomic<uint64_t> tcp_read_alloc_8k{0};
@@ -633,6 +465,6 @@ class GlobalStatsCollector {
   };
   PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
 };
-}  // namespace grpc_core
+}
 
-#endif  // GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
+#endif // GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
