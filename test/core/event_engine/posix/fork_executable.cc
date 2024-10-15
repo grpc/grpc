@@ -194,9 +194,14 @@ class EventEngineHolder {
     CHECK_OK(status);
     status = listener_->Start();
     CHECK_OK(status);
+    worker_ = new Worker(event_engine_, poller_.get());
+    worker_->Start();
   }
 
   ~EventEngineHolder() {
+    if (worker_ != nullptr) {
+      worker_->Wait();
+    }
     listener_.reset();
     WaitForSingleOwnerWithTimeout(std::move(event_engine_),
                                   std::chrono::seconds(30));
@@ -262,6 +267,7 @@ class EventEngineHolder {
   grpc_core::CondVar cond_;
   absl::optional<absl::Status> listener_shutdown_status_ ABSL_GUARDED_BY(&mu_);
   std::unique_ptr<Endpoint> server_endpoint_ ABSL_GUARDED_BY(&mu_);
+  Worker* worker_ = nullptr;
 };
 
 }  // namespace
@@ -282,17 +288,13 @@ int main(int argc, char* argv[]) {
   CHECK_OK(resolved_addr);
   EventEngineHolder holder(*resolved_addr);
   CHECK(holder.ok());
-
-  Worker* worker = new Worker(holder.event_engine(), holder.poller().get());
-  worker->Start();
-  {
-    auto endpoint = holder.Connect();
-    CHECK_NE(endpoint.get(), nullptr);
-    auto server_end = holder.GetServerEndpoint();
-    CHECK_NE(server_end.get(), nullptr);
-    LOG(INFO) << endpoint.get() << " " << server_end.get();
-  }
-
-  // LOG(INFO) << "Getting server endpoint";
-  worker->Wait();
+  auto client = holder.Connect();
+  CHECK_NE(client.get(), nullptr);
+  auto server_end = holder.GetServerEndpoint();
+  CHECK_NE(server_end.get(), nullptr);
+  LOG(INFO) << client.get() << " " << server_end.get();
+  std::string s = "Hello, world!";
+  absl::Status status =
+      SendValidatePayload("Hello world", server_end.get(), client.get());
+  LOG(INFO) << status;
 }
