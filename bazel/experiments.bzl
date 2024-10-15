@@ -31,6 +31,7 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "pick_first_new": "pick_first_new",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
+    "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
