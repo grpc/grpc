@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
 #define GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -22,8 +23,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 // #define GRPC_EXPERIMENTS_ARE_FINAL
 

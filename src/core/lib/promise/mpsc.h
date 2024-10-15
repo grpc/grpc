@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -25,15 +26,12 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 // Multi producer single consumer inter-activity comms.
 

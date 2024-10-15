@@ -3,7 +3,8 @@
  *     envoy/config/endpoint/v3/load_report.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_ENDPOINT_V3_LOAD_REPORT_PROTO_UPBDEFS_H_

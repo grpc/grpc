@@ -16,27 +16,24 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/backup_poller.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/time.h"
 
 #define DEFAULT_POLL_INTERVAL_MS 5000
 

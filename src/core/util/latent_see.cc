@@ -24,9 +24,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/util/ring_buffer.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace latent_see {
@@ -91,12 +90,22 @@ std::string Log::GenerateJson() {
     }
     if (!first) absl::StrAppend(&json, ",\n");
     first = false;
-    absl::StrAppend(&json, "{\"name\": ", event.event.metadata->name,
-                    ", \"ph\": \"", phase, "\", \"ts\": ",
-                    std::chrono::duration<double, std::micro>(
-                        event.event.timestamp - *start_time)
-                        .count(),
-                    ", \"pid\": 0, \"tid\": ", event.thread_id);
+    if (event.event.metadata->name[0] != '"') {
+      absl::StrAppend(&json, "{\"name\": \"", event.event.metadata->name,
+                      "\", \"ph\": \"", phase, "\", \"ts\": ",
+                      std::chrono::duration<unsigned long long, std::nano>(
+                          event.event.timestamp - *start_time)
+                          .count(),
+                      ", \"pid\": 0, \"tid\": ", event.thread_id);
+    } else {
+      absl::StrAppend(&json, "{\"name\": ", event.event.metadata->name,
+                      ", \"ph\": \"", phase, "\", \"ts\": ",
+                      std::chrono::duration<unsigned long long, std::nano>(
+                          event.event.timestamp - *start_time)
+                          .count(),
+                      ", \"pid\": 0, \"tid\": ", event.thread_id);
+    }
+
     if (has_id) {
       absl::StrAppend(&json, ", \"id\": ", event.event.id);
     }

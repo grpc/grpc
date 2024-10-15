@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <sys/select.h>
 
@@ -28,15 +29,12 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>
@@ -46,6 +44,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdlib.h>
@@ -54,19 +54,15 @@
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 

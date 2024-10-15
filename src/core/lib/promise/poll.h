@@ -15,16 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_POLL_H
 #define GRPC_SRC_CORE_LIB_PROMISE_POLL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 

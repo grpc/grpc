@@ -3,7 +3,8 @@
  *     envoy/extensions/http/stateful_session/cookie/v3/cookie.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_HTTP_STATEFUL_SESSION_COOKIE_V3_COOKIE_PROTO_UPBDEFS_H_
 #define ENVOY_EXTENSIONS_HTTP_STATEFUL_SESSION_COOKIE_V3_COOKIE_PROTO_UPBDEFS_H_

@@ -17,24 +17,25 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_TRANSPORT_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_TRANSPORT_GRPC_H
 
-#include <functional>
-#include <memory>
-#include <string>
-
-#include "absl/status/status.h"
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 
@@ -47,18 +48,20 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   explicit GrpcXdsTransportFactory(const ChannelArgs& args);
   ~GrpcXdsTransportFactory() override;
 
-  void Orphan() override { Unref(); }
+  void Orphaned() override {}
 
-  OrphanablePtr<XdsTransport> Create(
-      const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
-      absl::Status* status) override;
+  RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServer& server, absl::Status* status) override;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
  private:
   ChannelArgs args_;
   grpc_pollset_set* interested_parties_;
+
+  Mutex mu_;
+  absl::flat_hash_map<std::string /*XdsServer key*/, GrpcXdsTransport*>
+      transports_ ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport final
@@ -66,12 +69,16 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
  public:
   class GrpcStreamingCall;
 
-  GrpcXdsTransport(GrpcXdsTransportFactory* factory,
-                   const XdsBootstrap::XdsServer& server,
-                   std::function<void(absl::Status)> on_connectivity_failure,
-                   absl::Status* status);
+  GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
+                   const XdsBootstrap::XdsServer& server, absl::Status* status);
+  ~GrpcXdsTransport() override;
 
-  void Orphan() override;
+  void Orphaned() override;
+
+  void StartConnectivityFailureWatch(
+      RefCountedPtr<ConnectivityFailureWatcher> watcher) override;
+  void StopConnectivityFailureWatch(
+      const RefCountedPtr<ConnectivityFailureWatcher>& watcher) override;
 
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
@@ -82,15 +89,19 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
  private:
   class StateWatcher;
 
-  GrpcXdsTransportFactory* factory_;  // Not owned.
+  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
+  std::string key_;
   RefCountedPtr<Channel> channel_;
-  StateWatcher* watcher_;
+
+  Mutex mu_;
+  absl::flat_hash_map<RefCountedPtr<ConnectivityFailureWatcher>, StateWatcher*>
+      watchers_ ABSL_GUARDED_BY(&mu_);
 };
 
 class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
     : public XdsTransportFactory::XdsTransport::StreamingCall {
  public:
-  GrpcStreamingCall(RefCountedPtr<GrpcXdsTransportFactory> factory,
+  GrpcStreamingCall(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                     Channel* channel, const char* method,
                     std::unique_ptr<StreamingCall::EventHandler> event_handler);
   ~GrpcStreamingCall() override;
@@ -107,7 +118,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
 
-  RefCountedPtr<GrpcXdsTransportFactory> factory_;
+  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
 
   std::unique_ptr<StreamingCall::EventHandler> event_handler_;
 

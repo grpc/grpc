@@ -19,14 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

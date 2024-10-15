@@ -14,6 +14,7 @@
 
 #include "server_call_tracer.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -32,9 +33,6 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"

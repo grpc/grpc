@@ -14,15 +14,14 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+
 #include <memory>
 
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {

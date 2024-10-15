@@ -3,7 +3,8 @@
  *     src/proto/grpc/lookup/v1/rls_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPBDEFS_H_
 #define SRC_PROTO_GRPC_LOOKUP_V1_RLS_CONFIG_PROTO_UPBDEFS_H_

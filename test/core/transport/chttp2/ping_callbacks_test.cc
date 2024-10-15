@@ -19,8 +19,7 @@
 #include "absl/random/random.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/event_engine/mock_event_engine.h"
 
 using grpc_event_engine::experimental::EventEngine;

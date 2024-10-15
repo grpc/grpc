@@ -14,14 +14,13 @@
 
 #include "src/core/lib/surface/client_call.h"
 
-#include "absl/status/status.h"
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
+#include "absl/status/status.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/util/debug_location.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
 

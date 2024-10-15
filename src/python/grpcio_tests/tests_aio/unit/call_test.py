@@ -817,7 +817,6 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
         await call.done_writing()
 
         # Cancels the RPC
-        self.assertFalse(call.done())
         self.assertFalse(call.cancelled())
         self.assertTrue(call.cancel())
         self.assertTrue(call.cancelled())

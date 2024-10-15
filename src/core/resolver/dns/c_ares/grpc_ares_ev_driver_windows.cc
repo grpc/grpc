@@ -20,26 +20,21 @@
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
+#include <ares.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <string.h>
 
 #include <map>
 #include <memory>
 #include <unordered_set>
 
-#include <ares.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log_windows.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
@@ -48,6 +43,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 #include "src/core/util/string.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.

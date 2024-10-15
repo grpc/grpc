@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

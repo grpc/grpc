@@ -14,6 +14,11 @@
 
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -27,38 +32,30 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
 #include <limits.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/event_engine/time_util.h"
-#include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/fork.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/strerror.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
@@ -852,7 +849,7 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
 
 #else  // GRPC_POSIX_SOCKET_EV_POLL
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {

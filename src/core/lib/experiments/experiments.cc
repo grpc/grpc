@@ -47,6 +47,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -79,16 +83,16 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_time_caching_in_party =
+    "Disable time caching in exec_ctx, and enable it only in a single party "
+    "execution.";
+const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
-    "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
@@ -118,6 +122,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -141,16 +147,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"time_caching_in_party", description_time_caching_in_party,
+     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
 };
@@ -184,6 +188,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -216,16 +224,16 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_time_caching_in_party =
+    "Disable time caching in exec_ctx, and enable it only in a single party "
+    "execution.";
+const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
-    "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
@@ -255,6 +263,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -278,16 +288,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"time_caching_in_party", description_time_caching_in_party,
+     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
 };
@@ -321,6 +329,10 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_local_connector_secure =
+    "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
+    "connections.";
+const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -353,16 +365,16 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_time_caching_in_party =
+    "Disable time caching in exec_ctx, and enable it only in a single party "
+    "execution.";
+const char* const additional_constraints_time_caching_in_party = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
-    "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
@@ -385,13 +397,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, true},
+     additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"local_connector_secure", description_local_connector_secure,
+     additional_constraints_local_connector_secure, nullptr, 0, false, true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
      true},
@@ -415,18 +429,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"time_caching_in_party", description_time_caching_in_party,
+     additional_constraints_time_caching_in_party, nullptr, 0, true, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core

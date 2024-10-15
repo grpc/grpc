@@ -34,7 +34,7 @@ _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 _CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
+_OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -302,7 +302,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     )
 
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux", "macos"],
         labels=["basictests", "multilang"],
@@ -312,7 +312,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
     # ARM64 Linux Ruby and PHP tests
     test_jobs += _generate_jobs(
-        languages=["ruby", "php7"],
+        languages=["ruby", "php8"],
         configs=["dbg", "opt"],
         platforms=["linux"],
         arch="arm64",
@@ -383,7 +383,7 @@ def _create_portability_test_jobs(
         configs=["dbg"],
         platforms=["windows"],
         arch="default",
-        compiler="cmake_ninja_vs2019",
+        compiler="cmake_ninja_vs2022",
         labels=["portability", "corelang"],
         extra_args=extra_args,
         inner_jobs=inner_jobs,

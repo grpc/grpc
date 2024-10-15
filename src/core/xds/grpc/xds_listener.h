@@ -29,9 +29,8 @@
 
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_route_config.h"

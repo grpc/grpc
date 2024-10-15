@@ -18,6 +18,11 @@
 
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <string>
@@ -30,21 +35,13 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -59,10 +56,12 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/local_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/uri.h"
 
 #define GRPC_UDS_URI_PATTERN "unix:"
 #define GRPC_ABSTRACT_UDS_URI_PATTERN "unix-abstract:"
@@ -143,9 +142,14 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   }
   if (peer.properties != nullptr) gpr_free(peer.properties);
   peer.properties = new_properties;
-  // TODO(yihuazhang): Set security level of local TCP to TSI_SECURITY_NONE.
-  const char* security_level =
-      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+  // Set security level to PRIVACY_AND_INTEGRITY for UDS, or NONE otherwise.
+  const char* security_level;
+  if (grpc_core::IsLocalConnectorSecureEnabled()) {
+    security_level = tsi_security_level_to_string(
+        type == UDS ? TSI_PRIVACY_AND_INTEGRITY : TSI_SECURITY_NONE);
+  } else {
+    security_level = tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
+  }
   tsi_result result = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
       &peer.properties[peer.property_count]);

@@ -18,16 +18,14 @@
 
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
+#include <grpc/grpc.h>
+#include <gtest/gtest.h>
+
 #include <string>
 #include <unordered_set>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

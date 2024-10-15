@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 
 #include <string>
@@ -24,22 +28,16 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/time_averaged_stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/manual_constructor.h"
 #include "src/core/util/spinlock.h"
+#include "src/core/util/time.h"
+#include "src/core/util/time_averaged_stats.h"
 #include "src/core/util/useful.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu

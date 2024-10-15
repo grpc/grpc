@@ -18,29 +18,26 @@
 
 // Microbenchmarks around CHTTP2 HPACK operations
 
+#include <benchmark/benchmark.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <memory>
 #include <sstream>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

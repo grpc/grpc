@@ -38,8 +38,8 @@
 #include "absl/types/variant.h"
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/env.h"
+#include "src/core/util/match.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SHA256 hash handling

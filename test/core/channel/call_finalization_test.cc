@@ -14,17 +14,16 @@
 
 #include "src/core/lib/channel/call_finalization.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 
 namespace grpc_core {

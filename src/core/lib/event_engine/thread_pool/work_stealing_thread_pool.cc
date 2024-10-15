@@ -17,6 +17,8 @@
 //
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/thd_id.h>
 #include <inttypes.h>
 
 #include <atomic>
@@ -31,21 +33,17 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/thd_id.h>
-
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/examine_stack.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/examine_stack.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
 
 #ifdef GPR_POSIX_SYNC
 #include <csignal>

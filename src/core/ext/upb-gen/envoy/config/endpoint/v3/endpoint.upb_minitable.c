@@ -3,7 +3,8 @@
  *     envoy/config/endpoint/v3/endpoint.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -19,10 +20,11 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment__fields[4] = {
@@ -47,10 +49,11 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init 
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[4] = {
@@ -79,8 +82,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_m
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[2] = {
@@ -101,8 +105,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__Endpoint_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__Endpoint_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[2] = {
@@ -123,6 +128,7 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEnd
   })
 };
 
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init,
   &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init,

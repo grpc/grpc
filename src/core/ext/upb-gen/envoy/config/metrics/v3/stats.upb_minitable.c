@@ -3,7 +3,8 @@
  *     envoy/config/metrics/v3/stats.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -19,8 +20,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_metrics_v3_StatsSink_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_StatsSink_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_metrics_v3_StatsSink__fields[2] = {
@@ -43,11 +45,12 @@ const upb_MiniTable envoy__config__metrics__v3__StatsSink_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_metrics_v3_StatsConfig_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__TagSpecifier_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__StatsMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__HistogramBucketSettings_msg_init},
+const upb_MiniTable* envoy__config__metrics__v3__StatsSink_msg_init_ptr = &envoy__config__metrics__v3__StatsSink_msg_init;
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_StatsConfig_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__TagSpecifier_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__StatsMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__metrics__v3__HistogramBucketSettings_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_metrics_v3_StatsConfig__fields[4] = {
@@ -76,9 +79,10 @@ const upb_MiniTable envoy__config__metrics__v3__StatsConfig_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_metrics_v3_StatsMatcher_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ListStringMatcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ListStringMatcher_msg_init},
+const upb_MiniTable* envoy__config__metrics__v3__StatsConfig_msg_init_ptr = &envoy__config__metrics__v3__StatsConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_StatsMatcher_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ListStringMatcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ListStringMatcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_metrics_v3_StatsMatcher__fields[3] = {
@@ -102,6 +106,7 @@ const upb_MiniTable envoy__config__metrics__v3__StatsMatcher_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__metrics__v3__StatsMatcher_msg_init_ptr = &envoy__config__metrics__v3__StatsMatcher_msg_init;
 static const upb_MiniTableField envoy_config_metrics_v3_TagSpecifier__fields[3] = {
   {1, UPB_SIZE(20, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -123,8 +128,9 @@ const upb_MiniTable envoy__config__metrics__v3__TagSpecifier_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_metrics_v3_HistogramBucketSettings_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
+const upb_MiniTable* envoy__config__metrics__v3__TagSpecifier_msg_init_ptr = &envoy__config__metrics__v3__TagSpecifier_msg_init;
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_HistogramBucketSettings_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_metrics_v3_HistogramBucketSettings__fields[2] = {
@@ -147,8 +153,9 @@ const upb_MiniTable envoy__config__metrics__v3__HistogramBucketSettings_msg_init
   })
 };
 
-static const upb_MiniTableSub envoy_config_metrics_v3_StatsdSink_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
+const upb_MiniTable* envoy__config__metrics__v3__HistogramBucketSettings_msg_init_ptr = &envoy__config__metrics__v3__HistogramBucketSettings_msg_init;
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_StatsdSink_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_metrics_v3_StatsdSink__fields[3] = {
@@ -172,9 +179,10 @@ const upb_MiniTable envoy__config__metrics__v3__StatsdSink_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_metrics_v3_DogStatsdSink_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init},
+const upb_MiniTable* envoy__config__metrics__v3__StatsdSink_msg_init_ptr = &envoy__config__metrics__v3__StatsdSink_msg_init;
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_DogStatsdSink_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_metrics_v3_DogStatsdSink__fields[3] = {
@@ -198,6 +206,7 @@ const upb_MiniTable envoy__config__metrics__v3__DogStatsdSink_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__metrics__v3__DogStatsdSink_msg_init_ptr = &envoy__config__metrics__v3__DogStatsdSink_msg_init;
 static const upb_MiniTableField envoy_config_metrics_v3_HystrixSink__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
@@ -215,6 +224,7 @@ const upb_MiniTable envoy__config__metrics__v3__HystrixSink_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__metrics__v3__HystrixSink_msg_init_ptr = &envoy__config__metrics__v3__HystrixSink_msg_init;
 static const upb_MiniTable *messages_layout[8] = {
   &envoy__config__metrics__v3__StatsSink_msg_init,
   &envoy__config__metrics__v3__StatsConfig_msg_init,

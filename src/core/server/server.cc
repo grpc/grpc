@@ -16,6 +16,14 @@
 
 #include "src/core/server/server.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,27 +44,12 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
@@ -82,6 +75,11 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/interception_chain.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -815,62 +813,69 @@ absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
 }  // namespace
 
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
-  call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
-    return TrySeq(
-        // Wait for initial metadata to pass through all filters
-        Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
-        // Match request with requested call
-        [this, call_handler](ClientMetadataHandle md) mutable {
-          auto* registered_method = static_cast<RegisteredMethod*>(
-              md->get(GrpcRegisteredMethod()).value_or(nullptr));
-          RequestMatcherInterface* rm;
-          grpc_server_register_method_payload_handling payload_handling =
-              GRPC_SRM_PAYLOAD_NONE;
-          if (registered_method == nullptr) {
-            rm = unregistered_request_matcher_.get();
-          } else {
-            payload_handling = registered_method->payload_handling;
-            rm = registered_method->matcher.get();
-          }
-          auto maybe_read_first_message = If(
-              payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call_handler]() mutable { return call_handler.PullMessage(); },
-              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                return ValueOrFailure<absl::optional<MessageHandle>>(
-                    absl::nullopt);
-              });
-          return TryJoin<absl::StatusOr>(
-              std::move(maybe_read_first_message), rm->MatchRequest(0),
-              [md = std::move(md)]() mutable {
-                return ValueOrFailure<ClientMetadataHandle>(std::move(md));
-              });
-        },
-        // Publish call to cq
-        [call_handler, this](std::tuple<absl::optional<MessageHandle>,
-                                        RequestMatcherInterface::MatchResult,
-                                        ClientMetadataHandle>
-                                 r) {
-          RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
-          auto md = std::move(std::get<2>(r));
-          auto* rc = mr.TakeCall();
-          rc->Complete(std::move(std::get<0>(r)), *md);
-          grpc_call* call =
-              MakeServerCall(call_handler, std::move(md), this,
-                             rc->cq_bound_to_call, rc->initial_metadata);
-          *rc->call = call;
-          return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
-                     [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
-                       return absl::OkStatus();
-                     });
-        });
-  });
+  call_handler.SpawnGuardedUntilCallCompletes(
+      "request_matcher", [this, call_handler]() mutable {
+        return TrySeq(
+            // Wait for initial metadata to pass through all filters
+            Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
+            // Match request with requested call
+            [this, call_handler](ClientMetadataHandle md) mutable {
+              auto* registered_method = static_cast<RegisteredMethod*>(
+                  md->get(GrpcRegisteredMethod()).value_or(nullptr));
+              RequestMatcherInterface* rm;
+              grpc_server_register_method_payload_handling payload_handling =
+                  GRPC_SRM_PAYLOAD_NONE;
+              if (registered_method == nullptr) {
+                rm = unregistered_request_matcher_.get();
+              } else {
+                payload_handling = registered_method->payload_handling;
+                rm = registered_method->matcher.get();
+              }
+              auto maybe_read_first_message = If(
+                  payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+                  [call_handler]() mutable {
+                    return call_handler.PullMessage();
+                  },
+                  []() -> ValueOrFailure<absl::optional<MessageHandle>> {
+                    return ValueOrFailure<absl::optional<MessageHandle>>(
+                        absl::nullopt);
+                  });
+              return TryJoin<absl::StatusOr>(
+                  std::move(maybe_read_first_message), rm->MatchRequest(0),
+                  [md = std::move(md)]() mutable {
+                    return ValueOrFailure<ClientMetadataHandle>(std::move(md));
+                  });
+            },
+            // Publish call to cq
+            [call_handler,
+             this](std::tuple<absl::optional<MessageHandle>,
+                              RequestMatcherInterface::MatchResult,
+                              ClientMetadataHandle>
+                       r) {
+              RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
+              auto md = std::move(std::get<2>(r));
+              auto* rc = mr.TakeCall();
+              rc->Complete(std::move(std::get<0>(r)), *md);
+              grpc_call* call =
+                  MakeServerCall(call_handler, std::move(md), this,
+                                 rc->cq_bound_to_call, rc->initial_metadata);
+              *rc->call = call;
+              return Map(
+                  WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
+                  [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
+                    return absl::OkStatus();
+                  });
+            });
+      });
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args) {
   InterceptionChainBuilder builder(args);
-  builder.AddOnClientInitialMetadata(
-      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
+  // TODO(ctiller): find a way to avoid adding a server ref per call
+  builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
+    self->SetRegisteredMethodOnMetadata(md);
+  });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
   return builder.Build(

@@ -13,25 +13,23 @@
 // limitations under the License.
 //
 
-#include <vector>
-
 #include <gmock/gmock.h>
+#include <grpc/event_engine/endpoint_config.h>
 #include <gtest/gtest.h>
+
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -757,9 +755,9 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   // - Priority 0: locality0
   // - Priority 1: locality1, locality2
   EdsResourceArgs args1({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
-      {"locality2", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality2", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -829,7 +827,7 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   const char* kNewClusterName2 = "new_cluster_2";
   const char* kNewEdsServiceName2 = "new_eds_service_name_2";
   // Populate EDS resource for cluster 1 with unreachable endpoint.
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName1));
   // Populate CDS resource for cluster 1.

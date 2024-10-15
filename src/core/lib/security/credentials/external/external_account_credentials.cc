@@ -15,6 +15,13 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -36,26 +43,17 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/uri.h"
 
 #define EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE \
   "urn:ietf:params:oauth:grant-type:token-exchange"

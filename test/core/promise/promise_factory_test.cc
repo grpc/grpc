@@ -16,7 +16,6 @@
 
 #include "absl/functional/bind_front.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

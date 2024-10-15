@@ -283,9 +283,7 @@ class CLanguage(object):
                 [
                     "default",
                     "cmake",
-                    "cmake_ninja_vs2019",
                     "cmake_ninja_vs2022",
-                    "cmake_vs2019",
                     "cmake_vs2022",
                 ],
             )
@@ -293,19 +291,13 @@ class CLanguage(object):
 
             activate_vs_tools = ""
             if (
-                self.args.compiler == "cmake_ninja_vs2019"
+                self.args.compiler == "cmake_ninja_vs2022"
                 or self.args.compiler == "cmake"
                 or self.args.compiler == "default"
             ):
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2017
-                cmake_generator = "Ninja"
-                activate_vs_tools = "2019"
-            elif self.args.compiler == "cmake_ninja_vs2022":
                 cmake_generator = "Ninja"
                 activate_vs_tools = "2022"
-            elif self.args.compiler == "cmake_vs2019":
-                cmake_generator = "Visual Studio 16 2019"
             elif self.args.compiler == "cmake_vs2022":
                 cmake_generator = "Visual Studio 17 2022"
             else:
@@ -621,7 +613,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php7Language(object):
+class Php8Language(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -649,12 +641,12 @@ class Php7Language(object):
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/php7_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class PythonConfig(
@@ -719,7 +711,7 @@ class PythonLanguage(object):
                         self.config.job_spec(
                             python_config.run
                             + [self._TEST_COMMAND[io_platform]],
-                            timeout_seconds=8 * 60,
+                            timeout_seconds=10 * 60,
                             environ=dict(
                                 GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                 **environment,
@@ -844,6 +836,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python313_config = _python_config_generator(
+            name="py313",
+            major="3",
+            minor="13",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -880,6 +879,8 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "python3.12":
             return (python312_config,)
+        elif args.compiler == "python3.13":
+            return (python313_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -893,6 +894,7 @@ class PythonLanguage(object):
                 python310_config,
                 python311_config,
                 python312_config,
+                python313_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -926,6 +928,7 @@ class RubyLanguage(object):
         # This crashes have been unreproducible outside of CI. Also see
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
+        #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
@@ -938,7 +941,6 @@ class RubyLanguage(object):
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
-            "src/ruby/end2end/load_grpc_with_gc_stress_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
             "src/ruby/end2end/graceful_sig_handling_test.rb",
@@ -1113,7 +1115,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-sample",
                 cpu_cost=1e6,
                 environ={
@@ -1126,7 +1128,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switftsample",
                 cpu_cost=1e6,
                 environ={
@@ -1138,7 +1140,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switft-use-frameworks",
                 cpu_cost=1e6,
                 environ={
@@ -1164,15 +1166,16 @@ class ObjCLanguage(object):
 
         # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
         # How does one add the cfstream dependency in bazel?
-        out.append(
-            self.config.job_spec(
-                ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
-                timeout_seconds=60 * 60,
-                shortname="ios-test-cfstream-tests",
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-            )
-        )
+        # Disabled due to flakiness and being replaced with event engine
+        # out.append(
+        #     self.config.job_spec(
+        #         ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
+        #         timeout_seconds=60 * 60,
+        #         shortname="ios-test-cfstream-tests",
+        #         cpu_cost=1e6,
+        #         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        #     )
+        # )
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1257,7 +1260,7 @@ with open("tools/run_tests/generated/configs.json") as f:
 _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
-    "php7": Php7Language(),
+    "php8": Php8Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
     "csharp": CSharpLanguage(),
@@ -1687,9 +1690,7 @@ argp.add_argument(
         "all_the_cpythons",
         "coreclr",
         "cmake",
-        "cmake_ninja_vs2019",
         "cmake_ninja_vs2022",
-        "cmake_vs2019",
         "cmake_vs2022",
         "mono",
     ],

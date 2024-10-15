@@ -26,21 +26,19 @@
 #include <pthread.h>
 #endif
 
+#include <grpc/fork.h>
+#include <grpc/grpc.h>
 #include <string.h>
 
 #include "absl/log/log.h"
-
-#include <grpc/fork.h>
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/fork.h"
+#include "src/core/util/thd.h"
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

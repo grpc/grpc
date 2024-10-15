@@ -16,6 +16,9 @@
 
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -39,25 +42,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -71,7 +61,15 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 
@@ -159,11 +157,14 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     class WatcherWrapper final
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
-      WatcherWrapper(std::shared_ptr<
+      WatcherWrapper(WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper,
+                     std::shared_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
                          health_watcher,
                      bool ejected)
-          : watcher_(std::move(health_watcher)), ejected_(ejected) {}
+          : subchannel_wrapper_(std::move(subchannel_wrapper)),
+            watcher_(std::move(health_watcher)),
+            ejected_(ejected) {}
 
       void Eject() {
         ejected_ = true;
@@ -171,7 +172,8 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           watcher_->OnConnectivityStateChange(
               GRPC_CHANNEL_TRANSIENT_FAILURE,
               absl::UnavailableError(
-                  "subchannel ejected by outlier detection"));
+                  absl::StrCat(subchannel_wrapper_->address(),
+                               ": subchannel ejected by outlier detection")));
         }
       }
 
@@ -192,7 +194,8 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           if (ejected_) {
             new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
             status = absl::UnavailableError(
-                "subchannel ejected by outlier detection");
+                absl::StrCat(subchannel_wrapper_->address(),
+                             ": subchannel ejected by outlier detection"));
           }
           watcher_->OnConnectivityStateChange(new_state, status);
         }
@@ -203,6 +206,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
       }
 
      private:
+      WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
       std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       absl::optional<grpc_connectivity_state> last_seen_state_;
@@ -463,7 +467,8 @@ void OutlierDetectionLb::SubchannelWrapper::AddDataWatcher(
   if (w->type() == HealthProducer::Type()) {
     auto* health_watcher = static_cast<HealthWatcher*>(watcher.get());
     auto watcher_wrapper = std::make_shared<WatcherWrapper>(
-        health_watcher->TakeWatcher(), ejected_);
+        WeakRefAsSubclass<SubchannelWrapper>(), health_watcher->TakeWatcher(),
+        ejected_);
     watcher_wrapper_ = watcher_wrapper.get();
     health_watcher->SetWatcher(std::move(watcher_wrapper));
   }
@@ -534,8 +539,8 @@ OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
     : picker_(std::move(picker)), counting_enabled_(counting_enabled) {
   GRPC_TRACE_LOG(outlier_detection_lb, INFO)
       << "[outlier_detection_lb " << outlier_detection_lb
-      << "] constructed new picker " << this << " and counting "
-      << "is " << (counting_enabled ? "enabled" : "disabled");
+      << "] constructed new picker " << this << " and counting " << "is "
+      << (counting_enabled ? "enabled" : "disabled");
 }
 
 LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
@@ -904,8 +909,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.success_rate_ejection->minimum_hosts) {
     GRPC_TRACE_LOG(outlier_detection_lb, INFO)
         << "[outlier_detection_lb " << parent_.get()
-        << "] running success rate algorithm: "
-        << "stdev_factor=" << config.success_rate_ejection->stdev_factor
+        << "] running success rate algorithm: " << "stdev_factor="
+        << config.success_rate_ejection->stdev_factor
         << ", enforcement_percentage="
         << config.success_rate_ejection->enforcement_percentage;
     // calculate ejection threshold: (mean - stdev *
@@ -957,8 +962,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           config.failure_percentage_ejection->minimum_hosts) {
     GRPC_TRACE_LOG(outlier_detection_lb, INFO)
         << "[outlier_detection_lb " << parent_.get()
-        << "] running failure percentage algorithm: "
-        << "threshold=" << config.failure_percentage_ejection->threshold
+        << "] running failure percentage algorithm: " << "threshold="
+        << config.failure_percentage_ejection->threshold
         << ", enforcement_percentage="
         << config.failure_percentage_ejection->enforcement_percentage;
     for (auto& candidate : failure_percentage_ejection_candidates) {

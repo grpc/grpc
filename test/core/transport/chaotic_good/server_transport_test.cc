@@ -14,6 +14,13 @@
 
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -26,15 +33,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -43,6 +41,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
@@ -91,8 +90,8 @@ class MockCallDestination : public UnstartedCallDestination {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1);
+  MockPromiseEndpoint data_endpoint(2);
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(

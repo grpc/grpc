@@ -18,14 +18,13 @@
 
 #ifdef GPR_WINDOWS
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {

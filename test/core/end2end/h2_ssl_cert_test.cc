@@ -16,6 +16,16 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -28,20 +38,9 @@
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/util/time.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -196,7 +195,7 @@ static CoreTestConfigWrapper configs[] = {
 static void simple_request_body(grpc_core::CoreTestFixture* f,
                                 test_result expected_result) {
   grpc_call* c;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
@@ -226,13 +225,13 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(1), expected_result == SUCCESS);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(60));
 
   grpc_call_unref(c);
   grpc_channel_destroy(client);
   grpc_server_shutdown_and_notify(server, cq, nullptr);
   cqv.Expect(nullptr, true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(60));
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
   CHECK(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),

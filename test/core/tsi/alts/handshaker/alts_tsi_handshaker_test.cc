@@ -18,25 +18,22 @@
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <gtest/gtest.h>
-
-#include "upb/mem/arena.hpp"
-
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/util/thd.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "upb/mem/arena.hpp"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"

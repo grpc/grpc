@@ -18,21 +18,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <string>
-
 #include <gmock/gmock.h>
-#include <openssl/rsa.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_replace.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -40,13 +26,19 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <openssl/rsa.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <string>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -69,12 +61,17 @@
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/tmpfile.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/uri.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
@@ -213,7 +210,7 @@ const char
         "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
 
 const char
-    valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text
+    valid_url_external_account_creds_options_credential_source_with_query_params_format_text
         [] = "{\"url\":\"https://foo.com:5555/"
              "path/to/url/creds?p1=v1&p2=v2\","
              "\"headers\":{\"Metadata-Flavor\":\"Google\"}}";
@@ -2122,7 +2119,7 @@ TEST_F(CredentialsTest, TestAuthMetadataContext) {
   }
 }
 
-void validate_external_account_creds_token_exchage_request(
+void validate_external_account_creds_token_exchange_request(
     const grpc_http_request* request, const URI& request_uri,
     absl::string_view body) {
   // Check that the body is constructed properly.
@@ -2154,7 +2151,7 @@ void validate_external_account_creds_token_exchage_request(
             "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=");
 }
 
-void validate_external_account_creds_token_exchage_request_with_url_encode(
+void validate_external_account_creds_token_exchange_request_with_url_encode(
     const grpc_http_request* request, const URI& uri, absl::string_view body) {
   // Check that the body is constructed properly.
   EXPECT_EQ(
@@ -2214,7 +2211,7 @@ int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    validate_external_account_creds_token_exchage_request(request, uri, body);
+    validate_external_account_creds_token_exchange_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   } else if (uri.path() == "/service_account_impersonation") {
@@ -2233,7 +2230,7 @@ int external_account_creds_httpcli_post_success(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    validate_external_account_creds_token_exchage_request(request, uri, body);
+    validate_external_account_creds_token_exchange_request(request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   } else if (uri.path() == "/service_account_impersonation") {
@@ -2243,7 +2240,7 @@ int external_account_creds_httpcli_post_success(
         200,
         valid_external_account_creds_service_account_impersonation_response);
   } else if (uri.path() == "/token_url_encode") {
-    validate_external_account_creds_token_exchage_request_with_url_encode(
+    validate_external_account_creds_token_exchange_request_with_url_encode(
         request, uri, body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
@@ -2291,7 +2288,7 @@ int url_external_account_creds_httpcli_get_success(
   return 1;
 }
 
-void validate_aws_external_account_creds_token_exchage_request(
+void validate_aws_external_account_creds_token_exchange_request(
     const grpc_http_request* request, const URI& request_uri,
     absl::string_view body) {
   // Check that the regional_cred_verification_url got constructed
@@ -2380,8 +2377,8 @@ int aws_external_account_creds_httpcli_post_success(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    validate_aws_external_account_creds_token_exchage_request(request, uri,
-                                                              body);
+    validate_aws_external_account_creds_token_exchange_request(request, uri,
+                                                               body);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }
@@ -2492,6 +2489,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   ExecCtx exec_ctx;
   creds_->AddResult(MakeToken("foo", kExpirationTime));
   // First request will trigger a fetch.
+  LOG(INFO) << "First request";
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2499,6 +2497,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   EXPECT_EQ(creds_->num_fetches(), 1);
   // Second request while fetch is still outstanding will be delayed but
   // will not trigger a new fetch.
+  LOG(INFO) << "Second request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/true);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2507,6 +2506,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   // Now tick to finish the fetch.
   event_engine_->TickUntilIdle();
   // Next request will be served from cache with no delay.
+  LOG(INFO) << "Third request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2519,6 +2519,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   // Next request will trigger a new fetch but will still use the
   // cached token.
   creds_->AddResult(MakeToken("bar"));
+  LOG(INFO) << "Fourth request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: foo", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -2526,6 +2527,7 @@ TEST_F(TokenFetcherCredentialsTest, Basic) {
   EXPECT_EQ(creds_->num_fetches(), 2);
   event_engine_->TickUntilIdle();
   // Next request will use the new data.
+  LOG(INFO) << "Fifth request";
   state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: bar", /*expect_delay=*/false);
   state->RunRequestMetadataTest(creds_.get(), kTestUrlScheme, kTestAuthority,
@@ -3200,12 +3202,12 @@ TEST_F(ExternalAccountCredentialsTest,
 }
 
 TEST_F(ExternalAccountCredentialsTest,
-       UrlExternalAccountCredsSuccessWithQureyParamsFormatText) {
+       UrlExternalAccountCredsSuccessWithQueryParamsFormatText) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
   auto credential_source = JsonParse(
-      valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text);
+      valid_url_external_account_creds_options_credential_source_with_query_params_format_text);
   ASSERT_TRUE(credential_source.ok()) << credential_source.status();
   TestExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
@@ -4464,7 +4466,7 @@ TEST_F(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
-TEST_F(CredentialsTest, TestXdsCredentialsCompareSucces) {
+TEST_F(CredentialsTest, TestXdsCredentialsCompareSuccess) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
   auto* xds_creds_2 = grpc_xds_credentials_create(insecure_creds);

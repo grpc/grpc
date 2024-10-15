@@ -14,6 +14,9 @@
 
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -23,10 +26,6 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
@@ -41,10 +40,6 @@
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -65,6 +60,10 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -134,9 +133,12 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                      endpoint) mutable {
             ExecCtx exec_ctx;
             if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
-              ExecCtx::Run(DEBUG_LOCATION,
-                           std::exchange(self->notify_, nullptr),
-                           GRPC_ERROR_CREATE("connect endpoint failed"));
+              MutexLock lock(&self->mu_);
+              if (self->notify_ != nullptr) {
+                ExecCtx::Run(DEBUG_LOCATION,
+                             std::exchange(self->notify_, nullptr),
+                             GRPC_ERROR_CREATE("connect endpoint failed"));
+              }
               return;
             }
             auto* chaotic_good_ext =
@@ -240,9 +242,9 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                    GRPC_ERROR_CREATE("connector shutdown"));
       return;
     }
+    notify_ = notify;
   }
   args_ = args;
-  notify_ = notify;
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
@@ -253,11 +255,14 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               endpoint) mutable {
         ExecCtx exec_ctx;
         if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
-          auto endpoint_status = endpoint.status();
-          auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
-                                                     &endpoint_status, 1);
-          ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
-                       error);
+          MutexLock lock(&self->mu_);
+          if (self->notify_ != nullptr) {
+            auto endpoint_status = endpoint.status();
+            auto error = GRPC_ERROR_CREATE_REFERENCING(
+                "connect endpoint failed", &endpoint_status, 1);
+            ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
+                         error);
+          }
           return;
         }
         auto* chaotic_good_ext =
@@ -320,8 +325,8 @@ void ChaoticGoodConnector::OnHandshakeDone(
         [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "ChaoticGoodConnector::OnHandshakeDone: " << status;
+          MutexLock lock(&self->mu_);
           if (status.ok()) {
-            MutexLock lock(&self->mu_);
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
                 std::move(self->data_endpoint_), self->args_.channel_args,

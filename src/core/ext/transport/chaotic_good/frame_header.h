@@ -15,15 +15,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_HEADER_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <cstdint>
 
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 namespace chaotic_good {

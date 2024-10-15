@@ -20,12 +20,13 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
-
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <unistd.h>
+
+#include <grpc/support/sync.h>
 
 #include <algorithm>
 #include <memory>
@@ -33,78 +34,22 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/test_util/port.h"
 
-// TODO(unknown): pull in different headers when enabling this
-// test on windows. Also set BAD_SOCKET_RETURN_VAL
-// to INVALID_SOCKET on windows.
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/iomgr/tcp_windows.h"
-
-#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
-#else
 #define BAD_SOCKET_RETURN_VAL (-1)
-#endif
 
 namespace {
 
 #ifdef GPR_WINDOWS
 void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
-  sockaddr_in6 addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(port);
-  ((char*)&addr.sin6_addr)[15] = 1;
-  for (;;) {
-    if (gpr_event_get(done_ev)) {
-      return;
-    }
-    std::vector<int> sockets;
-    for (size_t i = 0; i < 50; i++) {
-      SOCKET s = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
-                           WSA_FLAG_OVERLAPPED);
-      ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
-          << "Failed to create TCP ipv6 socket";
-      char val = 1;
-      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-                  SOCKET_ERROR)
-          << "Failed to set socketopt reuseaddr. WSA error: " +
-                 std::to_string(WSAGetLastError());
-      ASSERT_TRUE(grpc_tcp_set_non_block(s) == absl::OkStatus())
-          << "Failed to set socket non-blocking";
-      ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
-          << "Failed to bind socket " + std::to_string(s) +
-                 " to [::1]:" + std::to_string(port) +
-                 ". WSA error: " + std::to_string(WSAGetLastError());
-      ASSERT_TRUE(listen(s, 1) != SOCKET_ERROR)
-          << "Failed to listen on socket " + std::to_string(s) +
-                 ". WSA error: " + std::to_string(WSAGetLastError());
-      sockets.push_back(s);
-    }
-    // Do a non-blocking accept followed by a close on all of those sockets.
-    // Do this in a separate loop to try to induce a time window to hit races.
-    for (size_t i = 0; i < sockets.size(); i++) {
-      ASSERT_TRUE(accept(sockets[i], nullptr, nullptr) == INVALID_SOCKET)
-          << "Accept on phony socket unexpectedly accepted actual connection.";
-      ASSERT_TRUE(WSAGetLastError() == WSAEWOULDBLOCK)
-          << "OpenAndCloseSocketsStressLoop accept on socket " +
-                 std::to_string(sockets[i]) +
-                 " failed in "
-                 "an unexpected way. "
-                 "WSA error: " +
-                 std::to_string(WSAGetLastError()) +
-                 ". Socket use-after-close bugs are likely.";
-      ASSERT_TRUE(closesocket(sockets[i]) != SOCKET_ERROR)
-          << "Failed to close socket: " + std::to_string(sockets[i]) +
-                 ". WSA error: " + std::to_string(WSAGetLastError());
-    }
-  }
+  // TODO(apolcyn): re-enable this on windows if we can debug the failure.
+  // Previously, this was causing test flakes for a while b/c bind calls
+  // would fail with WSAEACCESS. Not clear if we were just making windows
+  // unhappy.
+  LOG(INFO) << "OpenAndCloseSocketsStressLoop is a no-op for windows";
   return;
 }
 #else

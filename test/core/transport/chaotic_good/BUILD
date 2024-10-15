@@ -241,7 +241,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc_public_hdrs",
         "//:parse_address",
-        "//:uri_parser",
+        "//:uri",
         "//src/core:channel_args",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",

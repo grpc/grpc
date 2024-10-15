@@ -23,8 +23,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 

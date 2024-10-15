@@ -19,16 +19,14 @@
 #ifndef GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
 #define GRPC_TEST_CPP_END2END_INTERCEPTORS_UTIL_H
 
-#include <condition_variable>
-
+#include <grpcpp/channel.h>
 #include <gtest/gtest.h>
+
+#include <condition_variable>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpcpp/channel.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 

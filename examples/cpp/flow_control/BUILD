@@ -15,6 +15,33 @@
 licenses(["notice"])
 
 cc_binary(
+    name = "client_flow_control_client",
+    srcs = ["client_flow_control_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+    ],
+)
+
+cc_binary(
+    name = "client_flow_control_server",
+    srcs = ["client_flow_control_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_binary(
     name = "server_flow_control_client",
     srcs = ["server_flow_control_client.cc"],
     defines = ["BAZEL_BUILD"],

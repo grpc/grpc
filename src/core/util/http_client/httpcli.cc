@@ -16,10 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/http_client/httpcli.h"
 
+#include <grpc/grpc.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 
 #include <string>
@@ -29,11 +31,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -41,7 +38,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -53,6 +49,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 

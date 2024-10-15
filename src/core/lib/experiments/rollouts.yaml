@@ -59,7 +59,7 @@
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
+    posix: true
     windows: true
 - name: event_engine_dns
   default:
@@ -74,6 +74,8 @@
     posix: true
     windows: true
 - name: free_large_allocator
+  default: false
+- name: local_connector_secure
   default: false
 - name: max_pings_wo_data_throttle
   default: false
@@ -98,6 +100,8 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
+- name: time_caching_in_party
+  default: true
 - name: trace_record_callops
   default: true
 - name: unconstrained_max_quota_buffer_size
@@ -108,6 +112,6 @@
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken
-    posix: false
+    posix: true
     # TODO(ysseung): Test flakes not fully resolved.
     windows: broken

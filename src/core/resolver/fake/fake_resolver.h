@@ -17,21 +17,20 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_FAKE_FAKE_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_FAKE_FAKE_RESOLVER_H
 
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \

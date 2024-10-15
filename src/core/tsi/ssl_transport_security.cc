@@ -18,11 +18,13 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <string.h>
 
-#include <grpc/support/port_platform.h>
+#include <cstdlib>
 
+#include "src/core/lib/surface/init.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
@@ -35,9 +37,12 @@
 #include <sys/socket.h>
 #endif
 
-#include <memory>
-#include <string>
-
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // For OPENSSL_free
 #include <openssl/engine.h>
@@ -47,26 +52,21 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <memory>
+#include <string>
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 // --- Constants. ---
@@ -189,6 +189,11 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
+  // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
+  // OPENSSL registers an exit handler to clean up global objects, which
+  // otherwise may happen before gRPC removes all references to OPENSSL. Below
+  // exit handler is guaranteed to run after OPENSSL's.
+  std::atexit([]() { grpc_wait_for_shutdown_with_timeout(absl::Seconds(2)); });
 #else
   SSL_library_init();
   SSL_load_error_strings();

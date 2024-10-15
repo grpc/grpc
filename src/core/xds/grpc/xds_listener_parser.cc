@@ -16,6 +16,7 @@
 
 #include "src/core/xds/grpc/xds_listener_parser.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <set>
@@ -43,23 +44,19 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/text/encode.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/match.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core {
 

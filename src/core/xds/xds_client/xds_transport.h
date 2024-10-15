@@ -17,25 +17,22 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_H
 
-#include <functional>
 #include <memory>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
 // A factory for creating new XdsTransport instances.
-class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
+class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
  public:
   // Represents a transport for xDS communication (e.g., a gRPC channel).
-  class XdsTransport : public InternallyRefCounted<XdsTransport> {
+  class XdsTransport : public DualRefCounted<XdsTransport> {
    public:
     // Represents a bidi streaming RPC call.
     class StreamingCall : public InternallyRefCounted<StreamingCall> {
@@ -63,6 +60,25 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
       virtual void StartRecvMessage() = 0;
     };
 
+    // A watcher for connectivity failures.
+    class ConnectivityFailureWatcher
+        : public RefCounted<ConnectivityFailureWatcher> {
+     public:
+      // Will be invoked whenever there is a connectivity failure on the
+      // transport.
+      virtual void OnConnectivityFailure(absl::Status status) = 0;
+    };
+
+    explicit XdsTransport(const char* trace = nullptr)
+        : DualRefCounted(trace) {}
+
+    // Starts a connectivity failure watcher on the transport.
+    virtual void StartConnectivityFailureWatch(
+        RefCountedPtr<ConnectivityFailureWatcher> watcher) = 0;
+    // Stops a connectivity failure watcher on the transport.
+    virtual void StopConnectivityFailureWatch(
+        const RefCountedPtr<ConnectivityFailureWatcher>& watcher) = 0;
+
     // Create a streaming call on this transport for the specified method.
     // Events on the stream will be reported to event_handler.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
@@ -73,15 +89,14 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
     virtual void ResetBackoff() = 0;
   };
 
-  // Creates a new transport for the specified server.
-  // The on_connectivity_failure callback will be invoked whenever there is
-  // a connectivity failure on the transport.
+  // Returns a transport for the specified server.  If there is already
+  // a transport for the server, returns a new ref to that transport;
+  // otherwise, creates a new transport.
+  //
   // *status will be set if there is an error creating the channel,
   // although the returned channel must still accept calls (which may fail).
-  virtual OrphanablePtr<XdsTransport> Create(
-      const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
-      absl::Status* status) = 0;
+  virtual RefCountedPtr<XdsTransport> GetTransport(
+      const XdsBootstrap::XdsServer& server, absl::Status* status) = 0;
 };
 
 }  // namespace grpc_core

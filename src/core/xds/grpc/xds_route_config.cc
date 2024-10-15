@@ -26,9 +26,8 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "re2/re2.h"
-
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/match.h"
+#include "src/core/util/matchers.h"
 
 namespace grpc_core {
 

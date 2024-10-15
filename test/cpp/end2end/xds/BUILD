@@ -281,6 +281,7 @@ grpc_cc_test(
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 5,
     tags = [
+        "no_mac",
         "no_test_ios",
         "no_windows",
         "xds_end2end_test",
@@ -564,6 +565,30 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//test/core/test_util:scoped_env_var",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_http_connect_end2end_test",
+    srcs = ["xds_http_connect_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:address_proto",
+        "//src/proto/grpc/testing/xds/v3:upstream_http_11_connect_proto",
+        "//test/core/end2end:http_proxy",
         "//test/core/test_util:scoped_env_var",
     ],
 )

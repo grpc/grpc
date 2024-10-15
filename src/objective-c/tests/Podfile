@@ -22,7 +22,7 @@ def grpc_deps
 end
 
 target 'TvTests' do
-  platform :tvos, '10.0'
+  platform :tvos, '12.0'
   grpc_deps
 end
 

@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_FILTERS_HTTP_GCP_AUTHN_V3_GCP_AUTHN_PROTO_UPBDEFS_H_
 #define ENVOY_EXTENSIONS_FILTERS_HTTP_GCP_AUTHN_V3_GCP_AUTHN_PROTO_UPBDEFS_H_

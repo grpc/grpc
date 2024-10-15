@@ -13,17 +13,16 @@
 // limitations under the License.
 //
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <numeric>
 #include <string>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
@@ -108,7 +107,7 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-// Tests round robin is not implacted by the endpoint weight, and that the
+// Tests round robin is not impacted by the endpoint weight, and that the
 // localities in a locality map are picked according to their weights.
 TEST_P(CdsTest, EndpointWeightDoesNotImpactWeightedRoundRobin) {
   CreateAndStartBackends(2);
@@ -507,7 +506,7 @@ TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
   CreateAndStartBackends(2);
   const size_t kNumRpcsPerAddress = 100;
   auto endpoints = CreateEndpointsForBackends();
-  endpoints.push_back(MakeNonExistantEndpoint());
+  endpoints.push_back(MakeNonExistentEndpoint());
   endpoints.back().health_status = HealthStatus::DRAINING;
   EdsResourceArgs args({
       {"locality0", std::move(endpoints), kDefaultLocalityWeight,
@@ -607,12 +606,12 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<EdsResourceArgs::Endpoint> endpoints;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    endpoints.emplace_back(MakeNonExistantEndpoint());
+    endpoints.emplace_back(MakeNonExistentEndpoint());
   }
   EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
-  // seconds, and we should disocver in that time that the target backend is
+  // seconds, and we should discover in that time that the target backend is
   // down.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       MakeConnectionFailureRegex(
@@ -677,7 +676,7 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
 // of the invalid cases.
 TEST_P(EdsTest, NacksInvalidResource) {
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
@@ -1073,7 +1072,7 @@ TEST_P(EdsTest, DropPerTenThousand) {
 
 // Tests that drop is working correctly after update.
 TEST_P(EdsTest, DropConfigUpdate) {
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(2);
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kErrorTolerance = 0.05;
@@ -1085,8 +1084,8 @@ TEST_P(EdsTest, DropConfigUpdate) {
       ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   const size_t kNumRpcsBoth =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
-  // The first ADS response contains one drop category.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  // The first EDS response contains backend 0 and one drop category.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
@@ -1100,32 +1099,20 @@ TEST_P(EdsTest, DropConfigUpdate) {
   LOG(INFO) << "First batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate,
               ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
-  // The second ADS response contains two drop categories, send an update EDS
-  // response.
+  // The second EDS response contains both backends and two drop categories.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until the drop rate increases to the middle of the two configs,
-  // which implies that the update has been in effect.
-  const double kDropRateThreshold =
-      (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
-  size_t num_rpcs = kNumRpcsBoth;
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [&](const RpcResult& result) {
-        ++num_rpcs;
-        if (result.status.ok()) {
-          EXPECT_EQ(result.response.message(), kRequestMessage);
-        } else {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_THAT(result.status.error_message(),
-                      ::testing::StartsWith(kStatusMessageDropPrefix));
-          ++num_drops;
-        }
-        seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
-        return seen_drop_rate < kDropRateThreshold;
-      },
-      /*timeout_ms=*/40000);
+  // Wait until backend 1 sees traffic, so that we know the client has
+  // seen the update.
+  WaitForBackend(DEBUG_LOCATION, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::StartsWith(kStatusMessageDropPrefix));
+    }
+  });
   // Send kNumRpcsBoth RPCs and count the drops.
   LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
@@ -1191,10 +1178,10 @@ TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
         {
             CreateEndpoint(0),
             CreateEndpoint(1, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                           /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                            /*hostname=*/kAltAuthority1),
             CreateEndpoint(2, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                           /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                           /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                            /*hostname=*/kAltAuthority2),
         }}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1231,7 +1218,7 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteWithoutEnvVar) {
   EdsResourceArgs args(
       {{"locality0",
         {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                         /*hostname=*/kAltAuthority)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check the authority seen on the server side.
@@ -1261,7 +1248,7 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfServerNotTrustedInBootstrap) {
   EdsResourceArgs args(
       {{"locality0",
         {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                         /*hostname=*/kAltAuthority)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check the authority seen on the server side.
@@ -1308,7 +1295,7 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNotEnabledInRoute) {
   EdsResourceArgs args(
       {{"locality0",
         {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        /*lb_weight=*/1, /*additional_backend_indxes=*/{},
+                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
                         /*hostname=*/kAltAuthority)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send an RPC and check the authority seen on the server side.
@@ -1395,12 +1382,12 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
 TEST_P(FailoverTest, Failover) {
   CreateAndStartBackends(2);
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        2},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        3},
-      {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality3", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
@@ -1413,7 +1400,7 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
   CreateAndStartBackends(1);
   // Priority 0 will be unreachable, so we'll use priority 1.
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1470,8 +1457,8 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
 TEST_P(FailoverTest, UpdateInitialUnavailable) {
   CreateAndStartBackends(2);
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
-      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistentEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -1534,12 +1521,12 @@ TEST_P(FailoverTest, UpdatePriority) {
 // Moves all localities in the current priority to a higher priority.
 TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   CreateAndStartBackends(3);
-  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  auto non_existent_endpoint = MakeNonExistentEndpoint();
   // First update:
   // - Priority 0 is locality 0, containing an unreachable backend.
   // - Priority 1 is locality 1, containing backends 0 and 1.
   EdsResourceArgs args({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 2), kDefaultLocalityWeight,
        1},
   });
@@ -1556,15 +1543,13 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // - We add backend 2 to locality 1, just so we have a way to know
   //   when the update has been seen by the client.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 3), kDefaultLocalityWeight,
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // When backend 2 gets traffic, we know the second update has been seen.
   WaitForBackend(DEBUG_LOCATION, 2);
-  // The xDS server got at least 1 response.
-  EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
 }
 
 // This tests a bug triggered by the xds_cluster_resolver policy reusing
@@ -1572,13 +1557,13 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
 // present but deactivated.
 TEST_P(FailoverTest, PriorityChildNameChurn) {
   CreateAndStartBackends(4);
-  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  auto non_existent_endpoint = MakeNonExistentEndpoint();
   // Initial update:
   // - P0:locality0, child number 0 (unreachable)
   // - P1:locality1, child number 1
   // - P2:locality2, child number 2
   EdsResourceArgs args({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        1},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
@@ -1592,7 +1577,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P2:locality3, child number 3 (new child)
   // Child number 1 will be deactivated.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        1},
       {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
@@ -1606,7 +1591,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P2:locality3, child number 3
   // Child number 1 will be deactivated.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality0", {non_existent_endpoint}, kDefaultLocalityWeight, 0},
       {"locality4", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        1},
       {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
@@ -1733,6 +1718,325 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
                       backends_.size(),
                   (kNumRpcsPerAddress * backends_.size()) * 2.0 +
                       (kNumFailuresPerAddress * backends_.size()) * 0.4))));
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
+// Tests ORCA to LRS propagation.
+TEST_P(ClientLoadReportingTest, OrcaPropagation) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  CreateAndStartBackends(4);
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
+  Cluster cluster = default_cluster_;
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.foo");
+  cluster.add_lrs_report_endpoint_metrics("cpu_utilization");
+  cluster.add_lrs_report_endpoint_metrics("mem_utilization");
+  cluster.add_lrs_report_endpoint_metrics("application_utilization");
+  cluster.add_lrs_report_endpoint_metrics("unknown_field");
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait until all backends are ready.
+  size_t num_warmup_rpcs =
+      WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+                         WaitForBackendOptions().set_reset_counters(false));
+  // Send kNumRpcsPerAddress RPCs per server with named metrics.
+  xds::data::orca::v3::OrcaLoadReport backend_metrics;
+  backend_metrics.set_cpu_utilization(0.8);
+  backend_metrics.set_mem_utilization(0.6);
+  backend_metrics.set_application_utilization(0.4);
+  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+  named_metrics["foo"] = 1.0;
+  named_metrics["bar"] = 2.0;  // Not propagated.
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
+                 RpcOptions().set_backend_metrics(backend_metrics));
+  backend_metrics.set_cpu_utilization(0.4);
+  backend_metrics.set_mem_utilization(0.3);
+  backend_metrics.set_application_utilization(0.2);
+  named_metrics["foo"] = 0.3;
+  named_metrics["bar"] = 0.4;  // Not propagated.
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true).set_backend_metrics(
+                            backend_metrics));
+  }
+  const size_t total_successful_rpcs_sent =
+      (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
+  const size_t total_failed_rpcs_sent =
+      kNumFailuresPerAddress * backends_.size();
+  // Check that the backends got the right number of requests.
+  size_t total_rpcs_sent = 0;
+  for (const auto& backend : backends_) {
+    total_rpcs_sent += backend->backend_service()->request_count();
+  }
+  EXPECT_EQ(total_rpcs_sent,
+            total_successful_rpcs_sent + total_failed_rpcs_sent);
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(load_report.size(), 1UL);
+  ClientStats& client_stats = load_report.front();
+  EXPECT_EQ(client_stats.cluster_name(), kDefaultClusterName);
+  EXPECT_EQ(client_stats.eds_service_name(), kDefaultEdsServiceName);
+  EXPECT_EQ(total_successful_rpcs_sent,
+            client_stats.total_successful_requests());
+  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+  EXPECT_EQ(total_rpcs_sent, client_stats.total_issued_requests());
+  EXPECT_EQ(total_failed_rpcs_sent, client_stats.total_error_requests());
+  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  ASSERT_THAT(
+      client_stats.locality_stats(),
+      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_),
+                             ::testing::Pair("locality1", ::testing::_)));
+  size_t num_successful_rpcs = 0;
+  size_t num_failed_rpcs = 0;
+  ClientStats::LocalityStats::LoadMetric cpu_utilization;
+  ClientStats::LocalityStats::LoadMetric mem_utilization;
+  ClientStats::LocalityStats::LoadMetric application_utilization;
+  std::map<std::string, ClientStats::LocalityStats::LoadMetric>
+      named_metrics_total;
+  for (const auto& p : client_stats.locality_stats()) {
+    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
+    EXPECT_EQ(
+        p.second.total_issued_requests,
+        p.second.total_successful_requests + p.second.total_error_requests);
+    num_successful_rpcs += p.second.total_successful_requests;
+    num_failed_rpcs += p.second.total_error_requests;
+    cpu_utilization += p.second.cpu_utilization;
+    mem_utilization += p.second.mem_utilization;
+    application_utilization += p.second.application_utilization;
+    for (const auto& s : p.second.load_metrics) {
+      named_metrics_total[s.first] += s.second;
+    }
+  }
+  EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
+  EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
+  EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
+  EXPECT_THAT(
+      cpu_utilization,
+      LoadMetricEq(
+          (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+          (kNumRpcsPerAddress * backends_.size()) * 0.8 +
+              (kNumFailuresPerAddress * backends_.size()) * 0.4));
+  EXPECT_THAT(
+      mem_utilization,
+      LoadMetricEq(
+          (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+          (kNumRpcsPerAddress * backends_.size()) * 0.6 +
+              (kNumFailuresPerAddress * backends_.size()) * 0.3));
+  EXPECT_THAT(
+      application_utilization,
+      LoadMetricEq(
+          (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+          (kNumRpcsPerAddress * backends_.size()) * 0.4 +
+              (kNumFailuresPerAddress * backends_.size()) * 0.2));
+  EXPECT_THAT(
+      named_metrics_total,
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          "named_metrics.foo",
+          LoadMetricEq(
+              (kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size(),
+              (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                  (kNumFailuresPerAddress * backends_.size()) * 0.3))));
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
+TEST_P(ClientLoadReportingTest, OrcaPropagationNamedMetricsAll) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  CreateAndStartBackends(4);
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
+  Cluster cluster = default_cluster_;
+  cluster.add_lrs_report_endpoint_metrics("named_metrics.*");
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait until all backends are ready.
+  size_t num_warmup_rpcs =
+      WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+                         WaitForBackendOptions().set_reset_counters(false));
+  // Send kNumRpcsPerAddress RPCs per server with named metrics.
+  xds::data::orca::v3::OrcaLoadReport backend_metrics;
+  backend_metrics.set_cpu_utilization(0.8);
+  backend_metrics.set_mem_utilization(0.6);
+  backend_metrics.set_application_utilization(0.4);
+  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+  named_metrics["foo"] = 1.0;
+  named_metrics["bar"] = 2.0;
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
+                 RpcOptions().set_backend_metrics(backend_metrics));
+  backend_metrics.set_cpu_utilization(0.4);
+  backend_metrics.set_mem_utilization(0.3);
+  backend_metrics.set_application_utilization(0.2);
+  named_metrics["foo"] = 0.3;
+  named_metrics["bar"] = 0.4;
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true).set_backend_metrics(
+                            backend_metrics));
+  }
+  const size_t total_successful_rpcs_sent =
+      (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
+  const size_t total_failed_rpcs_sent =
+      kNumFailuresPerAddress * backends_.size();
+  // Check that the backends got the right number of requests.
+  size_t total_rpcs_sent = 0;
+  for (const auto& backend : backends_) {
+    total_rpcs_sent += backend->backend_service()->request_count();
+  }
+  EXPECT_EQ(total_rpcs_sent,
+            total_successful_rpcs_sent + total_failed_rpcs_sent);
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(load_report.size(), 1UL);
+  ClientStats& client_stats = load_report.front();
+  EXPECT_EQ(client_stats.cluster_name(), kDefaultClusterName);
+  EXPECT_EQ(client_stats.eds_service_name(), kDefaultEdsServiceName);
+  EXPECT_EQ(total_successful_rpcs_sent,
+            client_stats.total_successful_requests());
+  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+  EXPECT_EQ(total_rpcs_sent, client_stats.total_issued_requests());
+  EXPECT_EQ(total_failed_rpcs_sent, client_stats.total_error_requests());
+  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  ASSERT_THAT(
+      client_stats.locality_stats(),
+      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_),
+                             ::testing::Pair("locality1", ::testing::_)));
+  size_t num_successful_rpcs = 0;
+  size_t num_failed_rpcs = 0;
+  std::map<std::string, ClientStats::LocalityStats::LoadMetric>
+      named_metrics_total;
+  for (const auto& p : client_stats.locality_stats()) {
+    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
+    EXPECT_EQ(
+        p.second.total_issued_requests,
+        p.second.total_successful_requests + p.second.total_error_requests);
+    num_successful_rpcs += p.second.total_successful_requests;
+    num_failed_rpcs += p.second.total_error_requests;
+    for (const auto& s : p.second.load_metrics) {
+      named_metrics_total[s.first] += s.second;
+    }
+  }
+  EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
+  EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
+  EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
+  EXPECT_THAT(
+      named_metrics_total,
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(
+              "named_metrics.foo",
+              LoadMetricEq(
+                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                      backends_.size(),
+                  (kNumRpcsPerAddress * backends_.size()) * 1.0 +
+                      (kNumFailuresPerAddress * backends_.size()) * 0.3)),
+          ::testing::Pair(
+              "named_metrics.bar",
+              LoadMetricEq(
+                  (kNumRpcsPerAddress + kNumFailuresPerAddress) *
+                      backends_.size(),
+                  (kNumRpcsPerAddress * backends_.size()) * 2.0 +
+                      (kNumFailuresPerAddress * backends_.size()) * 0.4))));
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
+TEST_P(ClientLoadReportingTest, OrcaPropagationNotConfigured) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
+  CreateAndStartBackends(4);
+  const size_t kNumRpcsPerAddress = 10;
+  const size_t kNumFailuresPerAddress = 3;
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Wait until all backends are ready.
+  size_t num_warmup_rpcs =
+      WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+                         WaitForBackendOptions().set_reset_counters(false));
+  // Send kNumRpcsPerAddress RPCs per server with named metrics.
+  xds::data::orca::v3::OrcaLoadReport backend_metrics;
+  backend_metrics.set_cpu_utilization(0.8);
+  backend_metrics.set_mem_utilization(0.6);
+  backend_metrics.set_application_utilization(0.4);
+  auto& named_metrics = (*backend_metrics.mutable_named_metrics());
+  named_metrics["foo"] = 1.0;
+  named_metrics["bar"] = 2.0;
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size(),
+                 RpcOptions().set_backend_metrics(backend_metrics));
+  backend_metrics.set_cpu_utilization(0.4);
+  backend_metrics.set_mem_utilization(0.3);
+  backend_metrics.set_application_utilization(0.2);
+  named_metrics["foo"] = 0.3;
+  named_metrics["bar"] = 0.4;
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true).set_backend_metrics(
+                            backend_metrics));
+  }
+  const size_t total_successful_rpcs_sent =
+      (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
+  const size_t total_failed_rpcs_sent =
+      kNumFailuresPerAddress * backends_.size();
+  // Check that the backends got the right number of requests.
+  size_t total_rpcs_sent = 0;
+  for (const auto& backend : backends_) {
+    total_rpcs_sent += backend->backend_service()->request_count();
+  }
+  EXPECT_EQ(total_rpcs_sent,
+            total_successful_rpcs_sent + total_failed_rpcs_sent);
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(load_report.size(), 1UL);
+  ClientStats& client_stats = load_report.front();
+  EXPECT_EQ(client_stats.cluster_name(), kDefaultClusterName);
+  EXPECT_EQ(client_stats.eds_service_name(), kDefaultEdsServiceName);
+  EXPECT_EQ(total_successful_rpcs_sent,
+            client_stats.total_successful_requests());
+  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+  EXPECT_EQ(total_rpcs_sent, client_stats.total_issued_requests());
+  EXPECT_EQ(total_failed_rpcs_sent, client_stats.total_error_requests());
+  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  ASSERT_THAT(
+      client_stats.locality_stats(),
+      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_),
+                             ::testing::Pair("locality1", ::testing::_)));
+  size_t num_successful_rpcs = 0;
+  size_t num_failed_rpcs = 0;
+  std::map<std::string, ClientStats::LocalityStats::LoadMetric>
+      named_metrics_total;
+  for (const auto& p : client_stats.locality_stats()) {
+    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
+    EXPECT_EQ(
+        p.second.total_issued_requests,
+        p.second.total_successful_requests + p.second.total_error_requests);
+    num_successful_rpcs += p.second.total_successful_requests;
+    num_failed_rpcs += p.second.total_error_requests;
+    for (const auto& s : p.second.load_metrics) {
+      named_metrics_total[s.first] += s.second;
+    }
+  }
+  EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
+  EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
+  EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
+  EXPECT_THAT(named_metrics_total, ::testing::UnorderedElementsAre());
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());

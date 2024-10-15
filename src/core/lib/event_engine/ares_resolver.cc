@@ -13,10 +13,10 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/ares_resolver.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #endif
 
+#include <grpc/event_engine/event_engine.h>
 #include <string.h>
 
 #include <algorithm>
@@ -59,21 +60,18 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
@@ -272,7 +270,7 @@ void AresResolver::LookupHostname(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {
@@ -351,7 +349,7 @@ void AresResolver::LookupSRV(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {
@@ -386,7 +384,7 @@ void AresResolver::LookupTXT(
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
+             "Unparsable name: ", name))]() mutable { callback(status); });
     return;
   }
   if (host.empty()) {

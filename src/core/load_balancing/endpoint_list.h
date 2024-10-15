@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_ENDPOINT_LIST_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_ENDPOINT_LIST_H
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <memory>
@@ -26,19 +28,15 @@
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 

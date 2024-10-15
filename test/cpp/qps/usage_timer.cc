@@ -18,15 +18,14 @@
 
 #include "test/cpp/qps/usage_timer.h"
 
+#include <grpc/support/time.h>
+
 #include <fstream>
 #include <sstream>
 #include <string>
 
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #ifdef __linux__
 #include <sys/resource.h>
 #include <sys/time.h>

@@ -14,14 +14,13 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {

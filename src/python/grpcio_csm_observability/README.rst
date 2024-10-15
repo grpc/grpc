@@ -3,9 +3,6 @@ gRPC Python CSM Observability
 
 Package for gRPC Python CSM Observability.
 
-Supported Python Versions
--------------------------
-Python >= 3.8
 
 Installation
 ------------

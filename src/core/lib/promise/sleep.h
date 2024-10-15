@@ -15,17 +15,16 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_SLEEP_H
 #define GRPC_SRC_CORE_LIB_PROMISE_SLEEP_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <utility>
 
 #include "absl/status/status.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

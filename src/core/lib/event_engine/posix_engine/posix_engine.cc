@@ -13,6 +13,12 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -30,13 +36,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/forkable.h"
@@ -49,9 +48,9 @@
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -239,14 +238,16 @@ void AsyncConnect::OnWritable(absl::Status status)
   }
 }
 
-EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
-    PosixSocketWrapper sock, OnConnectCallback on_connect, ResolvedAddress addr,
-    MemoryAllocator&& allocator, const PosixTcpOptions& options,
-    Duration timeout) {
+EventEngine::ConnectionHandle
+PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
+    int fd, EventEngine::OnConnectCallback on_connect,
+    const EventEngine::ResolvedAddress& addr,
+    const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
+    EventEngine::Duration timeout) {
   int err;
   int connect_errno;
   do {
-    err = connect(sock.Fd(), addr.address(), addr.size());
+    err = connect(fd, addr.address(), addr.size());
   } while (err < 0 && errno == EINTR);
   connect_errno = (err < 0) ? errno : 0;
 
@@ -262,16 +263,15 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   PosixEventPoller* poller = poller_manager_->Poller();
   EventHandle* handle =
-      poller->CreateHandle(sock.Fd(), name, poller->CanTrackErrors());
+      poller->CreateHandle(fd, name, poller->CanTrackErrors());
 
   if (connect_errno == 0) {
-    // Connection already succeded. Return 0 to discourage any cancellation
+    // Connection already succeeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
-         ep = CreatePosixEndpoint(handle, nullptr, shared_from_this(),
-                                  std::move(allocator), options)]() mutable {
-      on_connect(std::move(ep));
-    });
+         ep = CreatePosixEndpoint(
+             handle, nullptr, shared_from_this(), std::move(memory_allocator),
+             tcp_options)]() mutable { on_connect(std::move(ep)); });
     return EventEngine::ConnectionHandle::kInvalid;
   }
   if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
@@ -289,9 +289,10 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   // Connection is still in progress.
   int64_t connection_id =
       last_connection_id_.fetch_add(1, std::memory_order_acq_rel);
-  AsyncConnect* ac = new AsyncConnect(
-      std::move(on_connect), shared_from_this(), executor_.get(), handle,
-      std::move(allocator), options, addr_uri.value(), connection_id);
+  AsyncConnect* ac =
+      new AsyncConnect(std::move(on_connect), shared_from_this(),
+                       executor_.get(), handle, std::move(memory_allocator),
+                       tcp_options, addr_uri.value(), connection_id);
   int shard_number = connection_id % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   {
@@ -636,11 +637,26 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
          status = socket.status()]() mutable { on_connect(status); });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  return ConnectInternal((*socket).sock, std::move(on_connect),
-                         (*socket).mapped_target_addr,
-                         std::move(memory_allocator), options, timeout);
+  return CreateEndpointFromUnconnectedFdInternal(
+      (*socket).sock.Fd(), std::move(on_connect), (*socket).mapped_target_addr,
+      options, std::move(memory_allocator), timeout);
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   grpc_core::Crash("EventEngine::Connect is not supported on this platform");
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+}
+
+EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
+    int fd, EventEngine::OnConnectCallback on_connect,
+    const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
+    MemoryAllocator memory_allocator, EventEngine::Duration timeout) {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  return CreateEndpointFromUnconnectedFdInternal(
+      fd, std::move(on_connect), addr, TcpOptionsFromEndpointConfig(config),
+      std::move(memory_allocator), timeout);
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::Crash(
+      "EventEngine::CreateEndpointFromUnconnectedFd is not supported on this "
+      "platform");
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 

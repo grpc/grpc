@@ -18,6 +18,8 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -26,15 +28,11 @@
 
 #include "absl/log/log.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/memory.h"
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;
@@ -380,6 +378,7 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
   if (status != GRPC_STATUS_OK) {
     LOG(ERROR) << "Failed to create ALTS crypters, " << error_details;
     gpr_free(error_details);
+    gpr_free(impl);
     return TSI_INTERNAL_ERROR;
   }
   ///

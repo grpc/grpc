@@ -19,9 +19,8 @@
 #ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 #define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 
-#include <openssl/x509v3.h>
-
 #include <grpc/support/sync.h>
+#include <openssl/x509v3.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 

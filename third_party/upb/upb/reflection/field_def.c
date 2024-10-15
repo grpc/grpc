@@ -208,11 +208,11 @@ upb_MessageValue upb_FieldDef_Default(const upb_FieldDef* f) {
 }
 
 const upb_MessageDef* upb_FieldDef_MessageSubDef(const upb_FieldDef* f) {
-  return upb_FieldDef_CType(f) == kUpb_CType_Message ? f->sub.msgdef : NULL;
+  return upb_FieldDef_IsSubMessage(f) ? f->sub.msgdef : NULL;
 }
 
 const upb_EnumDef* upb_FieldDef_EnumSubDef(const upb_FieldDef* f) {
-  return upb_FieldDef_CType(f) == kUpb_CType_Enum ? f->sub.enumdef : NULL;
+  return upb_FieldDef_IsEnum(f) ? f->sub.enumdef : NULL;
 }
 
 const upb_MiniTableField* upb_FieldDef_MiniTable(const upb_FieldDef* f) {
@@ -309,8 +309,11 @@ bool upb_FieldDef_HasDefault(const upb_FieldDef* f) { return f->has_default; }
 bool upb_FieldDef_HasPresence(const upb_FieldDef* f) { return f->has_presence; }
 
 bool upb_FieldDef_HasSubDef(const upb_FieldDef* f) {
-  return upb_FieldDef_IsSubMessage(f) ||
-         upb_FieldDef_CType(f) == kUpb_CType_Enum;
+  return upb_FieldDef_IsSubMessage(f) || upb_FieldDef_IsEnum(f);
+}
+
+bool upb_FieldDef_IsEnum(const upb_FieldDef* f) {
+  return upb_FieldDef_CType(f) == kUpb_CType_Enum;
 }
 
 bool upb_FieldDef_IsMap(const upb_FieldDef* f) {
@@ -645,7 +648,7 @@ static void _upb_FieldDef_Create(upb_DefBuilder* ctx, const char* prefix,
                            f->full_name);
     }
 
-    if (oneof_index >= upb_MessageDef_OneofCount(m)) {
+    if (oneof_index < 0 || oneof_index >= upb_MessageDef_OneofCount(m)) {
       _upb_DefBuilder_Errf(ctx, "oneof_index out of range (%s)", f->full_name);
     }
 

@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <atomic>
 #include <map>
 #include <regex>
@@ -32,12 +35,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -93,13 +92,11 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     static const auto* const allowed_logs_by_module =
         new std::map<absl::string_view, std::regex>(
             {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
-             {"chttp2_transport.cc",
-              std::regex("Sending goaway.*Channel Destroyed")},
              {"chaotic_good_server.cc",
               std::regex("Failed to bind some addresses for.*")},
              {"log.cc",
               std::regex("Prefer WARNING or ERROR. However if you see this "
-                         "message in a debug environmenmt or test environmenmt "
+                         "message in a debug environment or test environment "
                          "it is safe to ignore this message.")}});
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {

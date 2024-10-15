@@ -3,7 +3,8 @@
  *     google/rpc/status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,8 +14,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub google_rpc_Status_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal google_rpc_Status_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
 static const upb_MiniTableField google_rpc_Status__fields[3] = {
@@ -38,6 +40,7 @@ const upb_MiniTable google__rpc__Status_msg_init = {
   })
 };
 
+const upb_MiniTable* google__rpc__Status_msg_init_ptr = &google__rpc__Status_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &google__rpc__Status_msg_init,
 };

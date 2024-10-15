@@ -17,6 +17,8 @@
 //
 
 #include <dirent.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,12 +33,8 @@
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/test_config.h"

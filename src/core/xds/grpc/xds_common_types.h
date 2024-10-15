@@ -22,10 +22,9 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/matchers/matchers.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 

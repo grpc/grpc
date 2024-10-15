@@ -16,18 +16,16 @@
 
 #include "test/cpp/interop/pre_stop_hook_server.h"
 
-#include <thread>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include <thread>
+
+#include "absl/strings/str_format.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

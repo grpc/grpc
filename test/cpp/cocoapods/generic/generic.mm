@@ -32,7 +32,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

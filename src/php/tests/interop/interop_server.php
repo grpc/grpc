@@ -102,7 +102,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
 
     public function StreamingOutputCall(
         \Grpc\Testing\StreamingOutputCallRequest $request,
-        \Grpc\ServerCallWriter $writter,
+        \Grpc\ServerCallWriter $writer,
         \Grpc\ServerContext $context
     ): void {
         $echo_status = $this->maybeEchoStatusAndMessage($request);
@@ -119,10 +119,10 @@ class TestService extends \Grpc\Testing\TestServiceStub
                 'payload' => $payload,
             ]);
             $options = [];
-            $writter->write($response, $options);
+            $writer->write($response, $options);
         }
         $context->setStatus($echo_status ?? \Grpc\Status::ok());
-        $writter->finish();
+        $writer->finish();
     }
 
     public function StreamingInputCall(
@@ -142,7 +142,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
 
     public function FullDuplexCall(
         \Grpc\ServerCallReader $reader,
-        \Grpc\ServerCallWriter $writter,
+        \Grpc\ServerCallWriter $writer,
         \Grpc\ServerContext $context
     ): void {
         list($initial_metadata, $trailing_metadata) =
@@ -155,7 +155,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
             );
             if ($echo_status) {
                 $context->setStatus($echo_status);
-                $writter->finish();
+                $writer->finish();
                 return;
             }
 
@@ -171,20 +171,20 @@ class TestService extends \Grpc\Testing\TestServiceStub
                     'payload' => $payload,
                 ]);
                 $options = [];
-                $writter->write($response, $options);
+                $writer->write($response, $options);
             }
         }
         $context->setStatus(\Grpc\Status::ok($trailing_metadata));
-        $writter->finish();
+        $writer->finish();
     }
 
     public function HalfDuplexCall(
         \Grpc\ServerCallReader $reader,
-        \Grpc\ServerCallWriter $writter,
+        \Grpc\ServerCallWriter $writer,
         \Grpc\ServerContext $context
     ): void {
         $context->setStatus(\Grpc\Status::unimplemented());
-        $writter->finish();
+        $writer->finish();
     }
 
     public function UnimplementedCall(

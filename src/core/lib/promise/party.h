@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -27,21 +29,17 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -394,7 +392,7 @@ class Party : public Activity, private Wakeable {
       const char* op, uint64_t prev_state, uint64_t new_state,
       DebugLocation loc = {}) {
     GRPC_TRACE_LOG(party_state, INFO).AtLocation(loc.file(), loc.line())
-        << DebugTag() << " " << op << " "
+        << this << " " << op << " "
         << absl::StrFormat("%016" PRIx64 " -> %016" PRIx64, prev_state,
                            new_state);
   }
@@ -430,12 +428,14 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
 template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
+  GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
   AddParticipant(new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete)));
 }
 
 template <typename Factory>
 auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
+  GRPC_TRACE_LOG(party_state, INFO) << "PARTY[" << this << "]: spawn " << name;
   auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
       name, std::move(promise_factory));
   Participant* p = participant->Ref().release();

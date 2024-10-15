@@ -13,6 +13,13 @@ When prompted for certificate information, everything is default except the
 common name which is set to badserver.test.google.com.
 
 
+Malformed credentials (malformed.*):
+=====================================
+
+These are invalid PEM blocks. They can be built by generating a valid
+PEM-encoded certificate or private key and deleting a random character in the
+body of the PEM-encoding.
+
 Valid test credentials:
 =======================
 

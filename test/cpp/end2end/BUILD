@@ -373,7 +373,7 @@ grpc_cc_test(
     name = "end2end_test",
     size = "large",
     flaky = True,  # TODO(b/151704375)
-    shard_count = 10,
+    shard_count = 30,
     tags = [
         "cpp_end2end_test",
         "no_test_ios",

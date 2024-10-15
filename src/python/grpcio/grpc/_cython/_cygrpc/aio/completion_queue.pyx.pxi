@@ -22,12 +22,12 @@ cdef float _POLL_AWAKE_INTERVAL_S = 0.2
 cdef bint _has_fd_monitoring = True
 
 IF UNAME_SYSNAME == "Windows":
-    cdef void _unified_socket_write(int fd) nogil:
+    cdef void _unified_socket_write(int fd) noexcept nogil:
         win_socket_send(<WIN_SOCKET>fd, b"1", 1, 0)
 ELSE:
     from posix cimport unistd
 
-    cdef void _unified_socket_write(int fd) nogil:
+    cdef void _unified_socket_write(int fd) noexcept nogil:
         unistd.write(fd, b"1", 1)
 
 
@@ -94,7 +94,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         else:
             self._loops[loop] = _BoundEventLoop(loop, self._read_socket, self._handle_events)
 
-    cdef void _poll(self) nogil:
+    cdef void _poll(self) noexcept nogil:
         cdef grpc_event event
         cdef CallbackContext *context
 

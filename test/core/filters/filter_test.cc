@@ -14,6 +14,8 @@
 
 #include "test/core/filters/filter_test.h"
 
+#include <grpc/grpc.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -24,12 +26,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -39,6 +37,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 using grpc_event_engine::experimental::FuzzingEventEngine;

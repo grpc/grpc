@@ -18,8 +18,7 @@
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_METADATA_PARSER_H
 
 #include "envoy/config/core/v3/base.upb.h"
-
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_metadata.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 

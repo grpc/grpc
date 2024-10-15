@@ -18,7 +18,6 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_SERVICE_CONFIG_PARSER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -27,15 +26,14 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
 #define GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG \

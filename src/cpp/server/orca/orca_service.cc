@@ -14,23 +14,6 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
-#include <map>
-#include <memory>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-#include "google/protobuf/duration.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-#include "xds/service/orca/v3/orca.upb.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/ext/server_metric_recorder.h>
@@ -43,15 +26,30 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+#include <stddef.h>
 
+#include <map>
+#include <memory>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "google/protobuf/duration.upb.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/cpp/server/backend_metric_recorder.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
+#include "xds/service/orca/v3/orca.upb.h"
 
 namespace grpc {
 namespace experimental {

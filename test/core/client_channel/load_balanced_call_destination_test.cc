@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -21,9 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "test/core/call/yodel/yodel_test.h"
 
 using testing::StrictMock;
@@ -117,6 +116,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return call_destination_;
     }
+
+    std::string address() const override { return "test"; }
 
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;

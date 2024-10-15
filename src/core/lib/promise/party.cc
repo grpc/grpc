@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cstdint>
 
@@ -21,18 +23,15 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
+#include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
 
 namespace grpc_core {
@@ -41,18 +40,18 @@ namespace grpc_core {
 // PartySyncUsingAtomics
 
 GRPC_MUST_USE_RESULT bool Party::RefIfNonZero() {
-  auto count = state_.load(std::memory_order_relaxed);
+  auto state = state_.load(std::memory_order_relaxed);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
     // zero
-    if (count == 0) {
+    if ((state & kRefMask) == 0) {
       return false;
     }
-  } while (!state_.compare_exchange_weak(count, count + kOneRef,
+  } while (!state_.compare_exchange_weak(state, state + kOneRef,
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed));
-  LogStateChange("RefIfNonZero", count, count + kOneRef);
+  LogStateChange("RefIfNonZero", state, state + kOneRef);
   return true;
 }
 
@@ -149,15 +148,24 @@ Party::Participant::~Participant() {
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
-  if ((state_.load(std::memory_order_relaxed) & kAllocatedMask) == 0) return;
+  uint64_t prev_state = state_.load(std::memory_order_relaxed);
+  if ((prev_state & kAllocatedMask) == 0) return;
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
-  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
-    if (auto* p =
-            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
-      p->Destroy();
+  uint64_t clear_state = 0;
+  do {
+    for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+      if (auto* p =
+              participants_[i].exchange(nullptr, std::memory_order_acquire)) {
+        clear_state |= 1ull << i << kAllocatedShift;
+        p->Destroy();
+      }
     }
-  }
+    if (clear_state == 0) return;
+  } while (!state_.compare_exchange_weak(prev_state, prev_state & ~clear_state,
+                                         std::memory_order_acq_rel));
+  LogStateChange("CancelRemainingParticipants", prev_state,
+                 prev_state & ~clear_state);
 }
 
 std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
@@ -269,6 +277,12 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
+  absl::optional<ScopedTimeCache> time_cache;
+#if !TARGET_OS_IPHONE
+  if (IsTimeCachingInPartyEnabled()) {
+    time_cache.emplace();
+  }
+#endif
   for (;;) {
     uint64_t keep_allocated_mask = kAllocatedMask;
     // For each wakeup bit...
@@ -316,7 +330,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
             (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef,
             std::memory_order_acq_rel, std::memory_order_acquire)) {
       LogStateChange("Run:End", prev_state,
-                     prev_state & (kRefMask | kAllocatedMask) - kOneRef);
+                     (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef);
       if ((prev_state & kRefMask) == kOneRef) {
         // We're done with the party.
         PartyIsOver();

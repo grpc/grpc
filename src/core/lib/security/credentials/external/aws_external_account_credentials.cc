@@ -15,6 +15,13 @@
 //
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <map>
@@ -28,23 +35,14 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/env.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
@@ -512,7 +510,7 @@ std::string AwsExternalAccountCredentials::debug_string() {
                       ")");
 }
 
-UniqueTypeName AwsExternalAccountCredentials::type() const {
+UniqueTypeName AwsExternalAccountCredentials::Type() {
   static UniqueTypeName::Factory kFactory("AwsExternalAccountCredentials");
   return kFactory.Create();
 }

@@ -27,7 +27,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {

@@ -3,7 +3,8 @@
  *     envoy/service/load_stats/v3/lrs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPBDEFS_H_
 #define ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPBDEFS_H_
