@@ -4,6 +4,7 @@
 
 #include <array>
 #include <chrono>
+#include <csignal>
 #include <cstdio>
 #include <memory>
 #include <thread>
@@ -274,7 +275,7 @@ class EventEngineHolder {
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
-  absl::InitializeLog();
+  // absl::InitializeLog();
   grpc_init();
   // Needs to happen after the scope exit and after all other variables gone
   auto cleanup = absl::MakeCleanup([] { grpc_shutdown(); });
@@ -292,9 +293,23 @@ int main(int argc, char* argv[]) {
   CHECK_NE(client.get(), nullptr);
   auto server_end = holder.GetServerEndpoint();
   CHECK_NE(server_end.get(), nullptr);
-  LOG(INFO) << client.get() << " " << server_end.get();
-  std::string s = "Hello, world!";
-  absl::Status status =
-      SendValidatePayload("Hello world", server_end.get(), client.get());
-  LOG(INFO) << status;
+  LOG(INFO) << "Endpoints status: "
+            << SendValidatePayload("Hello world", server_end.get(),
+                                   client.get());
+
+  pid_t pid = fork();
+  CHECK_GE(pid, 0);
+  if (pid == 0) {
+    LOG(INFO) << "Endpoints status in child: "
+              << SendValidatePayload("Hello world in child", server_end.get(),
+                                     client.get());
+  } else {
+    LOG(INFO) << "Endpoints status in parent: "
+              << SendValidatePayload("Hello world in parent", server_end.get(),
+                                     client.get());
+    int status = 0;
+    waitpid(pid, &status, 0);
+    CHECK(WIFEXITED(status)) << status;
+    LOG(INFO) << "Child finished with " << WEXITSTATUS(status);
+  }
 }
