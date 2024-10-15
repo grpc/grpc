@@ -613,7 +613,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php7Language(object):
+class Php8Language(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -641,12 +641,12 @@ class Php7Language(object):
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/php7_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class PythonConfig(
@@ -1260,7 +1260,7 @@ with open("tools/run_tests/generated/configs.json") as f:
 _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
-    "php7": Php7Language(),
+    "php8": Php8Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
     "csharp": CSharpLanguage(),
