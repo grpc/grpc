@@ -90,35 +90,35 @@ class Call(RpcContext, metaclass=ABCMeta):
     """The abstract base class of an RPC on the client-side."""
 
     @abstractmethod
-    async def initial_metadata(self) -> Metadata:
+    async def initial_metadata(self) -> Optional[Metadata]:
         """Accesses the initial metadata sent by the server.
 
         Returns:
-          The initial :term:`metadata`.
+          The initial :term:`metadata`, or None if no initial metadata has been received.
         """
 
     @abstractmethod
-    async def trailing_metadata(self) -> Metadata:
+    async def trailing_metadata(self) -> Optional[Metadata]:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
-          The trailing :term:`metadata`.
+          The trailing :term:`metadata`, or None if no trailing metadata has been received.
         """
 
     @abstractmethod
-    async def code(self) -> grpc.StatusCode:
+    async def code(self) -> Optional[grpc.StatusCode]:
         """Accesses the status code sent by the server.
 
         Returns:
-          The StatusCode value for the RPC.
+          The StatusCode value for the RPC, or None if the RPC has not been completed.
         """
 
     @abstractmethod
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         """Accesses the details sent by the server.
 
         Returns:
-          The details string of the RPC.
+          The details string of the RPC, or None if the RPC has not been completed.
         """
 
     @abstractmethod
@@ -141,7 +141,7 @@ class UnaryUnaryCall(
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
-    def __await__(self) -> Generator[Any, None, ResponseType]:
+    def __await__(self) -> Generator[ResponseType, None, Any]:
         """Await the response message to be ready.
 
         Returns:
@@ -163,7 +163,7 @@ class UnaryStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]:  # type: ignore
         """Reads one message from the stream.
 
         Read operations must be serialized when called from multiple
@@ -201,7 +201,7 @@ class StreamUnaryCall(
         """
 
     @abstractmethod
-    def __await__(self) -> Generator[Any, None, ResponseType]:
+    def __await__(self) -> Generator[ResponseType, None, Any]:
         """Await the response message to be ready.
 
         Returns:
@@ -223,7 +223,7 @@ class StreamStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]:  # type: ignore
         """Reads one message from the stream.
 
         Read operations must be serialized when called from multiple

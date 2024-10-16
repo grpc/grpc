@@ -508,12 +508,12 @@ async def test_interoperability(
     if method is None:
         raise NotImplementedError(f'Test case "{case}" not implemented!')
     else:
-        num_params = len(inspect.signature(method).parameters)
+        num_params = len(inspect.signature(method).parameters) # type: ignore
         if num_params == 1:
-            await method(stub)
+            await method(stub) # type: ignore
         elif num_params == 2:
             if args is not None:
-                await method(stub, args)
+                await method(stub, args) # type: ignore
             else:
                 raise ValueError(f"Failed to run case [{case}]: args is None")
         else:

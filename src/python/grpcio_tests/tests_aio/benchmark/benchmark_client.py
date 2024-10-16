@@ -18,6 +18,7 @@ import asyncio
 import logging
 import random
 import time
+from typing import Callable, List, Optional
 
 import grpc
 from grpc.experimental import aio
@@ -33,18 +34,20 @@ class GenericStub(object):
     def __init__(self, channel: aio.Channel):
         self.UnaryCall = channel.unary_unary(
             "/grpc.testing.BenchmarkService/UnaryCall"
-        )
+        )  # type: ignore
         self.StreamingFromServer = channel.unary_stream(
             "/grpc.testing.BenchmarkService/StreamingFromServer"
-        )
+        )  # type: ignore
         self.StreamingCall = channel.stream_stream(
             "/grpc.testing.BenchmarkService/StreamingCall"
-        )
+        )  # type: ignore
 
 
 class BenchmarkClient(abc.ABC):
     """Benchmark client interface that exposes a non-blocking send_request()."""
 
+    _response_callbacks: List[Callable]
+    
     def __init__(
         self,
         address: str,
@@ -118,6 +121,9 @@ class BenchmarkClient(abc.ABC):
 
 
 class UnaryAsyncBenchmarkClient(BenchmarkClient):
+    _running: Optional[bool]
+    _stopped: asyncio.Event
+
     def __init__(
         self,
         address: str,
@@ -151,6 +157,10 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
 
 
 class StreamingAsyncBenchmarkClient(BenchmarkClient):
+    _running: Optional[bool]
+    _stopped: asyncio.Event
+    _request: messages_pb2.SimpleRequest
+
     def __init__(
         self,
         address: str,
@@ -184,6 +194,10 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
 
 
 class ServerStreamingAsyncBenchmarkClient(BenchmarkClient):
+    _running: Optional[bool]
+    _stopped: asyncio.Event
+    _request: messages_pb2.SimpleRequest
+
     def __init__(
         self,
         address: str,
