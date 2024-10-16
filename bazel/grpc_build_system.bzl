@@ -234,7 +234,6 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         deps = deps,
     )
 
-
 # TODO(roth): Change all callers of this rule to instead use separate
 # proto_library(), cc_proto_library(), and grpc_cc_grpc_library() rules.
 # Then remove this rule.
@@ -258,7 +257,6 @@ def grpc_proto_library(
         generate_mocks = generate_mocks,
     )
 
-
 def grpc_cc_grpc_library(
         name,
         srcs = [],
@@ -277,8 +275,8 @@ def grpc_cc_grpc_library(
         deps = deps,
         visibility = visibility,
         generate_mocks = generate_mocks,
-        grpc_only = True)
-
+        grpc_only = True,
+    )
 
 def ios_cc_test(
         name,

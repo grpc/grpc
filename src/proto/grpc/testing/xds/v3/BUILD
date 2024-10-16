@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library",
-     "grpc_cc_grpc_library")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_grpc_library",
+    "grpc_package",
+    "grpc_proto_library",
+)
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])

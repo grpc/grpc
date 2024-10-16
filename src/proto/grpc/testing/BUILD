@@ -13,8 +13,12 @@
 # limitations under the License.
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library",
-     "grpc_cc_grpc_library")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_grpc_library",
+    "grpc_package",
+    "grpc_proto_library",
+)
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
@@ -80,12 +84,12 @@ cc_proto_library(
 grpc_cc_grpc_library(
     name = "echo_cc_grpc",
     srcs = ["echo_proto"],
+    generate_mocks = True,
     deps = [
         "echo_cc_proto",
         "echo_messages_cc_proto",
         "simple_messages_cc_proto",
     ],
-    generate_mocks = True,
 )
 
 grpc_proto_library(
