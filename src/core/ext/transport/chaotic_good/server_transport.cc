@@ -124,6 +124,15 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
       });
 }
 
+namespace {
+auto BooleanSuccessToTransportErrorCapturingInitiator(CallInitiator initiator) {
+  return [initiator = std::move(initiator)](bool success) {
+    return success ? absl::OkStatus()
+                   : absl::UnavailableError("Transport closed.");
+  };
+}
+}  // namespace
+
 auto ChaoticGoodServerTransport::SendFragment(
     ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
@@ -132,13 +141,20 @@ auto ChaoticGoodServerTransport::SendFragment(
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
   return Map(outgoing_frames.Send(std::move(frame)),
-             [call_initiator](bool success) -> absl::Status {
-               if (!success) {
-                 // Failed to send outgoing frame.
-                 return absl::UnavailableError("Transport closed.");
-               }
-               return absl::OkStatus();
-             });
+             BooleanSuccessToTransportErrorCapturingInitiator(
+                 std::move(call_initiator)));
+}
+
+auto ChaoticGoodServerTransport::SendFragmentAcked(
+    ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames,
+    CallInitiator call_initiator) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: SendFragmentAcked: frame=" << frame.ToString();
+  // Capture the call_initiator to ensure the underlying call spine is alive
+  // until the outgoing_frames.Send promise completes.
+  return Map(outgoing_frames.SendAcked(std::move(frame)),
+             BooleanSuccessToTransportErrorCapturingInitiator(
+                 std::move(call_initiator)));
 }
 
 auto ChaoticGoodServerTransport::SendCallBody(
@@ -165,7 +181,8 @@ auto ChaoticGoodServerTransport::SendCallBody(
         frame.message =
             FragmentMessage(std::move(message), padding, message_length);
         frame.stream_id = stream_id;
-        return SendFragment(std::move(frame), outgoing_frames, call_initiator);
+        return SendFragmentAcked(std::move(frame), outgoing_frames,
+                                 call_initiator);
       });
 }
 
