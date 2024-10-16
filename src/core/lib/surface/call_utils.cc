@@ -167,47 +167,6 @@ std::string WaitForCqEndOp::StateString(const State& state) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// MessageReceiver
-
-StatusFlag MessageReceiver::FinishRecvMessage(
-    ValueOrFailure<absl::optional<MessageHandle>> result) {
-  if (!result.ok()) {
-    GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
-                               << "[call] RecvMessage: outstanding_recv "
-                                  "finishes: received end-of-stream with error";
-    *recv_message_ = nullptr;
-    recv_message_ = nullptr;
-    return Failure{};
-  }
-  if (!result->has_value()) {
-    GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
-                               << "[call] RecvMessage: outstanding_recv "
-                                  "finishes: received end-of-stream";
-    *recv_message_ = nullptr;
-    recv_message_ = nullptr;
-    return Success{};
-  }
-  MessageHandle& message = **result;
-  test_only_last_message_flags_ = message->flags();
-  if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
-      (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
-    *recv_message_ = grpc_raw_compressed_byte_buffer_create(
-        nullptr, 0, incoming_compression_algorithm_);
-  } else {
-    *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
-  }
-  grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
-                              &(*recv_message_)->data.raw.slice_buffer);
-  GRPC_TRACE_LOG(call, INFO)
-      << Activity::current()->DebugTag()
-      << "[call] RecvMessage: outstanding_recv "
-         "finishes: received "
-      << (*recv_message_)->data.raw.slice_buffer.length << " byte message";
-  recv_message_ = nullptr;
-  return Success{};
-}
-
-////////////////////////////////////////////////////////////////////////
 // MakeErrorString
 
 std::string MakeErrorString(const ServerMetadata* trailing_metadata) {

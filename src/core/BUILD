@@ -8162,6 +8162,7 @@ grpc_cc_library(
         "call_final_info",
         "call_state",
         "dump_args",
+        "for_each",
         "if",
         "latch",
         "map",
