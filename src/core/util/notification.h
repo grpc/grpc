@@ -19,7 +19,6 @@
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
 #include "src/core/util/sync.h"
 
 namespace grpc_core {

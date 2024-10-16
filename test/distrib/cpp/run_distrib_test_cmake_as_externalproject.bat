@@ -28,7 +28,7 @@ set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
 @rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
 
-set VS_GENERATOR="Visual Studio 16 2019"
+set VS_GENERATOR="Visual Studio 17 2022"
 @rem TODO(jtattermusch): switch to x64 build (will require pulling a x64 build of openssl)
 set VS_ARCHITECTURE="Win32"
 

@@ -68,6 +68,10 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_rq_fast_reject =
+    "Resource quota rejects requests immediately (before allocating the "
+    "request structure) under very high memory pressure.";
+const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -93,10 +97,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
-    "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
@@ -141,6 +141,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"rq_fast_reject", description_rq_fast_reject,
+     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -159,10 +161,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
 };
@@ -217,6 +215,10 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_rq_fast_reject =
+    "Resource quota rejects requests immediately (before allocating the "
+    "request structure) under very high memory pressure.";
+const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -242,10 +244,6 @@ const char* const additional_constraints_trace_record_callops = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
-    "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
     "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
@@ -290,6 +288,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"rq_fast_reject", description_rq_fast_reject,
+     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -308,10 +308,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
 };
@@ -366,6 +362,10 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_rq_fast_reject =
+    "Resource quota rejects requests immediately (before allocating the "
+    "request structure) under very high memory pressure.";
+const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -392,10 +392,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
-    "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -417,7 +413,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_application_callbacks, nullptr, 0,
      true, true},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, true},
+     additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -439,6 +435,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"rq_fast_reject", description_rq_fast_reject,
+     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -457,12 +455,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core

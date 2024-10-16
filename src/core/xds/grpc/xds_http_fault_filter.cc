@@ -16,6 +16,9 @@
 
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
@@ -30,11 +33,6 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"

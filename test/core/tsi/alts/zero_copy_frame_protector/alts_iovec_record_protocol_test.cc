@@ -18,14 +18,12 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 
-#include <memory>
-
+#include <grpc/support/alloc.h>
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include "absl/types/span.h"
-
-#include <grpc/support/alloc.h>
-
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 constexpr size_t kMaxDataSize = 1024;

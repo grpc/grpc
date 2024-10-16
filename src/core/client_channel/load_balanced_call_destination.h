@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_LOAD_BALANCED_CALL_DESTINATION_H
 
 #include "absl/functional/any_invocable.h"
-
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/transport/call_destination.h"

@@ -19,6 +19,12 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -32,15 +38,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -552,51 +551,6 @@ typedef enum {
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
   GRPC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
-
-namespace grpc_core {
-
-// A CallTracer wrapper that updates both the legacy and new APIs for
-// transport byte sizes.
-// TODO(ctiller): This can go away as part of removing the
-// grpc_transport_stream_stats struct.
-class Chttp2CallTracerWrapper final : public CallTracerInterface {
- public:
-  explicit Chttp2CallTracerWrapper(grpc_chttp2_stream* stream)
-      : stream_(stream) {}
-
-  void RecordIncomingBytes(
-      const TransportByteSize& transport_byte_size) override;
-  void RecordOutgoingBytes(
-      const TransportByteSize& transport_byte_size) override;
-
-  // Everything else is a no-op.
-  void RecordSendInitialMetadata(
-      grpc_metadata_batch* /*send_initial_metadata*/) override {}
-  void RecordSendTrailingMetadata(
-      grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-  void RecordSendMessage(const SliceBuffer& /*send_message*/) override {}
-  void RecordSendCompressedMessage(
-      const SliceBuffer& /*send_compressed_message*/) override {}
-  void RecordReceivedInitialMetadata(
-      grpc_metadata_batch* /*recv_initial_metadata*/) override {}
-  void RecordReceivedMessage(const SliceBuffer& /*recv_message*/) override {}
-  void RecordReceivedDecompressedMessage(
-      const SliceBuffer& /*recv_decompressed_message*/) override {}
-  void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
-  void RecordAnnotation(absl::string_view /*annotation*/) override {}
-  void RecordAnnotation(const Annotation& /*annotation*/) override {}
-  std::string TraceId() override { return ""; }
-  std::string SpanId() override { return ""; }
-  bool IsSampled() override { return false; }
-
- private:
-  grpc_chttp2_stream* stream_;
-};
-
-}  // namespace grpc_core
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,

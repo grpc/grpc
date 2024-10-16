@@ -16,15 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <forward_list>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <thread>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/generic/async_generic_service.h>
@@ -35,6 +26,14 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>
 
+#include <algorithm>
+#include <forward_list>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <thread>
+
+#include "absl/log/log.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"

@@ -17,10 +17,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_XDS_XDS_OVERRIDE_HOST_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_XDS_XDS_OVERRIDE_HOST_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"

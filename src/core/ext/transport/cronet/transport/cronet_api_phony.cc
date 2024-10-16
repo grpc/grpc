@@ -19,10 +19,10 @@
 // This file has empty implementation of all the functions exposed by the cronet
 // library, so we can build it in all environments
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/log/check.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
-
-#include <grpc/support/port_platform.h>
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 // link with the real CRONET library in the build system

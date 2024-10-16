@@ -19,11 +19,6 @@
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 
-#include <type_traits>
-
-#include "absl/log/absl_check.h"
-#include "absl/strings/cord.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
@@ -32,6 +27,11 @@
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
+
+#include <type_traits>
+
+#include "absl/log/absl_check.h"
+#include "absl/strings/cord.h"
 
 /// This header provides an object that reads bytes directly from a
 /// grpc::ByteBuffer, via the ZeroCopyInputStream interface

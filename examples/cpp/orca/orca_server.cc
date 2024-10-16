@@ -15,6 +15,12 @@
  * limitations under the License.
  *
  */
+#include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/orca_service.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/support/status.h>
+
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -24,12 +30,6 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
 #include "examples/protos/helloworld.grpc.pb.h"
-
-#include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/ext/orca_service.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/support/status.h>
 
 using grpc::CallbackServerContext;
 using grpc::Server;

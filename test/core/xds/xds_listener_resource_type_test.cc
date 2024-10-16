@@ -14,15 +14,16 @@
 // limitations under the License.
 //
 
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/duration.pb.h>
+#include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/duration.pb.h>
-#include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -31,13 +32,19 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "envoy/config/core/v3/address.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/config_source.pb.h"
+#include "envoy/config/core/v3/protocol.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "envoy/type/matcher/v3/string.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -53,20 +60,11 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/proto/grpc/testing/xds/v3/address.pb.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
-#include "src/proto/grpc/testing/xds/v3/protocol.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.pb.h"
-#include "src/proto/grpc/testing/xds/v3/string.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
 
 using envoy::config::listener::v3::Listener;
 using envoy::extensions::filters::http::fault::v3::HTTPFault;

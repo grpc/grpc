@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -22,9 +24,6 @@
 #include <type_traits>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
@@ -385,6 +384,28 @@ template <typename FilterType, typename T,
           void (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
+    to.Add(0, 0,
+           Operator<T>{
+               channel_data,
+               call_offset,
+               [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
+                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
+                     *value);
+                 return ResultOr<T>{std::move(value), nullptr};
+               },
+               nullptr,
+               nullptr,
+           });
+  }
+};
+
+// void $INTERCEPTOR_NAME(const $VALUE_TYPE&)
+template <typename FilterType, typename T,
+          void (FilterType::Call::*impl)(const typename T::element_type&)>
+struct AddOpImpl<FilterType, T,
+                 void (FilterType::Call::*)(const typename T::element_type&),
+                 impl> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
            Operator<T>{
@@ -1590,10 +1611,17 @@ class CallFilters {
   GRPC_MUST_USE_RESULT auto WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
   }
+  // Client & server: returns true if server trailing metadata has been pushed
+  // *and* contained a cancellation, false otherwise.
+  GRPC_MUST_USE_RESULT bool WasCancelledPushed() const {
+    return call_state_.WasCancelledPushed();
+  }
+
   // Returns true if server trailing metadata has been pulled
   bool WasServerTrailingMetadataPulled() const {
     return call_state_.WasServerTrailingMetadataPulled();
   }
+
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 

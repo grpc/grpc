@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
 #define GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
 
+#include <grpc/support/port_platform.h>
+
 #include <tuple>
 #include <variant>
 
@@ -22,9 +24,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -134,13 +133,14 @@ struct WrapInStatusOrTuple {
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok(tuple-of-results).
 template <template <typename> class R, typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::TryJoin<R, Promises...>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
+                                                                    Promises...>
 TryJoin(Promises... promises) {
   return promise_detail::TryJoin<R, Promises...>(std::move(promises)...);
 }
 
 template <template <typename> class R, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TryJoin(F promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TryJoin(F promise) {
   return Map(promise, promise_detail::WrapInStatusOrTuple<R>{});
 }
 

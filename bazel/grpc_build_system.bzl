@@ -122,6 +122,7 @@ def _update_visibility(visibility):
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
+        "latent_see": PRIVATE,
         "otel_plugin": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
@@ -288,7 +289,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "9.0",
+            minimum_os_version = "11.0",
             runner = test_runner,
             deps = ios_test_deps,
         )
@@ -725,7 +726,7 @@ def grpc_package(name, visibility = "private", features = []):
         features: The features to enable.
     """
     if visibility == "tests":
-        visibility = ["//test:__subpackages__"]
+        visibility = ["//test:__subpackages__", "//src/proto/grpc/testing:__subpackages__"]
     elif visibility == "public":
         visibility = ["//visibility:public"]
     elif visibility == "private":

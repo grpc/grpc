@@ -24,7 +24,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
 #include "src/core/util/ring_buffer.h"
 #include "src/core/util/sync.h"
 

@@ -23,7 +23,6 @@
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include "absl/log/check.h"
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"

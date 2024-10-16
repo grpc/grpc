@@ -19,12 +19,12 @@
 #ifndef GRPCPP_EXT_SERVER_METRIC_RECORDER_H
 #define GRPCPP_EXT_SERVER_METRIC_RECORDER_H
 
+#include <grpcpp/impl/sync.h>
+#include <grpcpp/support/string_ref.h>
+
 #include <functional>
 #include <map>
 #include <memory>
-
-#include <grpcpp/impl/sync.h>
-#include <grpcpp/support/string_ref.h>
 
 namespace grpc_core {
 struct BackendMetricData;

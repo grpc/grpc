@@ -79,9 +79,9 @@ Pod::Spec.new do |s|
     :commit => "b8b3e6e11166719a8ebfa43c0cde9ad7d57a84f6",
   }
 
-  s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '12.0'
+  s.ios.deployment_target = '11.0'
+  s.osx.deployment_target = '10.14'
+  s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
 
