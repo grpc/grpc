@@ -48,5 +48,5 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
     cdef object _write_socket   # socket.socket
     cdef dict _loops            # Mapping[asyncio.AbstractLoop, _BoundEventLoop]
 
-    cdef void _poll(self) noexcept nogil
+    cdef void _poll(self) nogil
     cdef shutdown(self)
