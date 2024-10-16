@@ -18,17 +18,9 @@
 
   <%include file="../../apt_get_basic.include"/>
 
-  # Install Python 3.7 from source (and installed as a default python3)
-  # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
-  RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev ${'\\'}
-                              libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-  RUN curl -O https://www.python.org/ftp/python/3.7.17/Python-3.7.17.tar.xz && ${'\\'}
-  tar -xf Python-3.7.17.tar.xz && ${'\\'}
-  cd Python-3.7.17 && ${'\\'}
-  ./configure && ${'\\'}
-  make -j 4 && ${'\\'}
-  make install
-  RUN curl https://bootstrap.pypa.io/pip/3.7/get-pip.py | python3
+  RUN apt update && apt install -y python3 python3-pip && apt-get clean
+  RUN mkdir -p ~/.config/pip
+  RUN echo "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
 
   <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../run_tests_addons.include"/>
@@ -46,10 +38,10 @@
   # otherwise clang-tidy will report missing <gtest/gtest.h> header
   RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
 
-  RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
+  RUN python3 -m pip install simplejson mako virtualenv lxml six
 
   # Upgrade Python's YAML library
-  RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
+  RUN python3 -m pip install --upgrade --ignore-installed PyYAML
 
   # Install prerequisites for the clang-tidy script
   RUN apt-get update && apt-get install -y jq git && apt-get clean
