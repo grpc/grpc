@@ -229,7 +229,8 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION for_each_detail::ForEach<Reader, Action>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline for_each_detail::ForEach<Reader,
+                                                                     Action>
 ForEach(Reader reader, Action action, DebugLocation whence = {}) {
   return for_each_detail::ForEach<Reader, Action>(std::move(reader),
                                                   std::move(action), whence);
