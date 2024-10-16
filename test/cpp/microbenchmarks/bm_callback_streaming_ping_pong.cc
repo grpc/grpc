@@ -47,6 +47,7 @@ static void StreamingPingPongArgs(benchmark::internal::Benchmark* b) {
        msg_size == 0 ? msg_size++ : msg_size *= 8) {
     b->Args({msg_size, 1});
     b->Args({msg_size, 2});
+    b->MeasureProcessCPUTime()->UseRealTime();
   }
 }
 
