@@ -94,7 +94,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         else:
             self._loops[loop] = _BoundEventLoop(loop, self._read_socket, self._handle_events)
 
-    cdef void _poll(self) noexcept nogil:
+    cdef void _poll(self) nogil:
         cdef grpc_event event
         cdef CallbackContext *context
 
