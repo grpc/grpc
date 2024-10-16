@@ -21,6 +21,7 @@ EXPERIMENT_ENABLES = {
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
+    "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
