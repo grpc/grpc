@@ -50,7 +50,7 @@ std::string PackageName(const FileDescriptor* file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
-    return ConvertToPhpNamespace(file->package());
+    return ConvertToPhpNamespace(std::string(file->package()));
   }
 }
 
