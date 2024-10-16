@@ -456,8 +456,8 @@ bool PrivateGenerator::PrintStub(
             std::string(method->ClientStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + request_module_and_class +
             std::string(method->ClientStreaming() ? "]" : "");
         std::string client_response_type =
-            std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + response_module_and_class +
-            std::string(method->ServerStreaming() ? "]" : "");
+            std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : (render_async ? "Coroutine[Any, Any, " : "")) + response_module_and_class +
+            std::string(method->ServerStreaming() ? "]" : (render_async ? "]" : ""));
 
         StringMap method_dict;
         method_dict["Method"] = method->name();
@@ -539,6 +539,7 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
           std::string(method->ServerStreaming() ? (render_async ? "AsyncIterator[" : "Iterator[") : "") + response_module_and_class +
           std::string(method->ServerStreaming() ? "]" : "");
 
+      method_dict["ResponseModuleAndClass"] = response_module_and_class;
       method_dict["InputTypeName"] = server_request_type;
       method_dict["OutputTypeName"] = server_response_type;
       method_dict["AsyncFuncPrefix"] = render_async ? "async " : "";
@@ -552,6 +553,9 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
         out->Print("context.set_code(grpc.StatusCode.UNIMPLEMENTED)\n");
         out->Print("context.set_details('Method not implemented!')\n");
         out->Print("raise NotImplementedError('Method not implemented!')\n");
+        if (method->ServerStreaming()) {
+          out->Print(method_dict, "yield $ResponseModuleAndClass$()\n");
+        }
       }
     }
   }
