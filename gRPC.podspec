@@ -45,9 +45,9 @@ Pod::Spec.new do |s|
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
-  s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '12.0'
+  s.ios.deployment_target = '11.0'
+  s.osx.deployment_target = '10.14'
+  s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
 
@@ -80,9 +80,9 @@ Pod::Spec.new do |s|
                       "src/objective-c/GRPCClient/GRPCTypes.mm"
     ss.dependency "gRPC-RxLibrary/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '11.0'
+    s.osx.deployment_target = '10.14'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
   end
@@ -116,9 +116,9 @@ Pod::Spec.new do |s|
 
     ss.dependency "#{s.name}/Interface-Legacy", version
     ss.dependency "#{s.name}/Privacy", version
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '11.0'
+    s.osx.deployment_target = '10.14'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
   end
@@ -154,9 +154,9 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     ss.dependency 'gRPC-RxLibrary', version
 
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '11.0'
+    s.osx.deployment_target = '10.14'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
   end
@@ -172,16 +172,16 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
     ss.dependency 'CronetFramework'
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '11.0'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
     ss.dependency "#{s.name}/GRPCCore", version
 
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '11.0'
+    s.osx.deployment_target = '10.14'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
   end
@@ -192,9 +192,9 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/objective-c/GRPCClient/internal_testing/*.{h,mm}'
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '11.0'
+    s.osx.deployment_target = '10.14'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
   end
