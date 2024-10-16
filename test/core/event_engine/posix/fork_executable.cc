@@ -1,10 +1,14 @@
 #include <netinet/in.h>
+#include <sched.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #include <array>
 #include <csignal>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -262,21 +266,105 @@ class EventEngineHolder {
   Worker* worker_ = nullptr;
 };
 
-void ReaderThread(absl::string_view label, int fd) {
-  absl::Cord cord;
-  std::array<char, 200000> buffer;
-  ssize_t r = -500;
-  while ((r = read(fd, buffer.data(), buffer.size())) > 0) {
-    cord.Append(absl::string_view(buffer.data(), r));
-    absl::string_view view = cord.Flatten();
-    for (ssize_t it = view.find('\n'); it >= 0; it = view.find('\n')) {
-      std::cout << absl::StrFormat("[ %s ] %s\n", label, view.substr(0, it));
-      view = view.substr(it + 1);
+class ChildMonitor {
+ public:
+  ChildMonitor(pid_t pid, int fd_stdout, int fd_stderr)
+      : pid_(pid),
+        stdout_thread_(MonitorFd, "child out", fd_stdout, this),
+        stderr_thread_(MonitorFd, "child err", fd_stderr, this) {
+    grpc_core::MutexLock lock(&mu_);
+    while (started_count_ < 2) {
+      cond_.Wait(&mu_);
     }
-    cord = view;
   }
-  std::cout << absl::StrFormat("[ %s ] Done\n", label);
-}
+
+  ~ChildMonitor() {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      while (stopped_count_ < 2) {
+        cond_.Wait(&mu_);
+      }
+    }
+    stdout_thread_.join();
+    stderr_thread_.join();
+  }
+
+ private:
+  static void MonitorFd(absl::string_view label, int fd,
+                        ChildMonitor* monitor) {
+    monitor->ReportThreadStarted();
+    absl::Cord cord;
+    std::array<char, 200000> buffer;
+    ssize_t r = -500;
+    while ((r = read(fd, buffer.data(), buffer.size())) > 0) {
+      cord.Append(absl::string_view(buffer.data(), r));
+      absl::string_view view = cord.Flatten();
+      for (ssize_t it = view.find('\n'); it >= 0; it = view.find('\n')) {
+        std::cout << absl::StrFormat("[ %s ] %s\n", label, view.substr(0, it));
+        view = view.substr(it + 1);
+      }
+      cord = view;
+    }
+    close(fd);
+    if (!cord.empty()) {
+      std::cout << absl::StrFormat("[ %s ] %s\n", label, cord);
+    }
+    if (monitor->ReportThreadDone() == 2) {
+      monitor->CheckChildStatus();
+    }
+  }
+
+  static std::string ProcessStatusDescription(int status) {
+    if (WIFSIGNALED(status)) {
+      return absl::StrFormat("Process terminated with signal %s",
+                             strsignal(WTERMSIG(status)));
+    }
+    return absl::StrFormat("Signalled: %v, stopped: %v, continued: %v",
+                           WIFSIGNALED(status), WIFSTOPPED(status),
+                           WIFCONTINUED(status));
+  }
+
+  int ReportThreadStarted() {
+    grpc_core::MutexLock lock(&mu_);
+    started_count_++;
+    cond_.SignalAll();
+    return started_count_;
+  }
+
+  int ReportThreadDone() {
+    grpc_core::MutexLock lock(&mu_);
+    stopped_count_++;
+    cond_.SignalAll();
+    return stopped_count_;
+  }
+
+  void CheckChildStatus() {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      if (done_) {
+        return;
+      }
+    }
+    int status = 0;
+    waitpid(pid_, &status, 0);
+    {
+      grpc_core::MutexLock lock(&mu_);
+      done_ = true;
+    }
+    CHECK(WIFEXITED(status)) << ProcessStatusDescription(status);
+    LOG(INFO) << absl::StrFormat("Child %X done with status %d", pid_,
+                                 WEXITSTATUS(status));
+  }
+
+  pid_t pid_;
+  std::thread stdout_thread_;
+  std::thread stderr_thread_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cond_;
+  int started_count_ ABSL_GUARDED_BY(mu_) = 0;
+  int stopped_count_ ABSL_GUARDED_BY(mu_) = 0;
+  bool done_ ABSL_GUARDED_BY(mu_) = false;
+};
 
 }  // namespace
 
@@ -313,7 +401,7 @@ int main(int argc, char* argv[]) {
     close(stderrs[0]);
     dup2(stdouts[1], 1);
     dup2(stderrs[1], 2);
-    LOG(INFO) << "I am here!";
+    LOG(INFO) << "Child process is running";
     LOG(INFO) << "Endpoints status in child: "
               << SendValidatePayload("Hello world in child", server_end.get(),
                                      client.get());
@@ -322,18 +410,14 @@ int main(int argc, char* argv[]) {
   } else {
     close(stdouts[1]);
     close(stderrs[1]);
-    std::thread stdout_reader(ReaderThread, "child out", stdouts[0]);
-    std::thread stderr_reader(ReaderThread, "child err", stderrs[0]);
+    ChildMonitor monitor(pid, stdouts[0], stderrs[0]);
     LOG(INFO) << "Endpoints status in parent: "
               << SendValidatePayload("Hello world in parent", server_end.get(),
                                      client.get());
     int status = 0;
+    LOG(INFO) << "Waiting for child termination";
     waitpid(pid, &status, 0);
     CHECK(WIFEXITED(status)) << status;
     LOG(INFO) << "Child finished with " << WEXITSTATUS(status);
-    close(stdouts[0]);
-    close(stderrs[0]);
-    stdout_reader.join();
-    stderr_reader.join();
   }
 }
