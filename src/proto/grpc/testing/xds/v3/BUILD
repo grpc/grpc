@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library",
+     "grpc_cc_grpc_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
@@ -52,26 +53,38 @@ grpc_proto_library(
     ],
 )
 
-grpc_proto_library(
+proto_library(
     name = "discovery_proto",
-    srcs = [
-        "discovery.proto",
-    ],
-    well_known_protos = True,
+    srcs = ["discovery.proto"],
     deps = [
-        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@envoy_api//envoy/config/core/v3:pkg",
     ],
 )
 
-grpc_proto_library(
+cc_proto_library(
+    name = "discovery_cc_proto",
+    deps = ["discovery_proto"],
+)
+
+proto_library(
     name = "ads_proto",
-    srcs = [
-        "ads.proto",
-    ],
-    has_services = True,
-    well_known_protos = True,
+    srcs = ["ads.proto"],
+    deps = ["discovery_proto"],
+)
+
+cc_proto_library(
+    name = "ads_cc_proto",
+    deps = ["ads_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "ads_cc_grpc",
+    srcs = ["ads_proto"],
     deps = [
-        "discovery_proto",
+        "ads_cc_proto",
+        "discovery_cc_proto",
     ],
 )
 
@@ -162,14 +175,26 @@ grpc_proto_library(
     ],
 )
 
-grpc_proto_library(
+proto_library(
     name = "lrs_proto",
-    srcs = [
-        "lrs.proto",
-    ],
-    has_services = True,
-    well_known_protos = True,
+    srcs = ["lrs.proto"],
     deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@envoy_api//envoy/config/core/v3:pkg",
+        "@envoy_api//envoy/config/endpoint/v3:pkg",
+    ],
+)
+
+cc_proto_library(
+    name = "lrs_cc_proto",
+    deps = ["lrs_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "lrs_cc_grpc",
+    srcs = ["lrs_proto"],
+    deps = [
+        "lrs_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
     ],
@@ -182,15 +207,26 @@ grpc_proto_library(
     ],
 )
 
-grpc_proto_library(
+proto_library(
     name = "orca_service_proto",
-    srcs = [
-        "orca_service.proto",
-    ],
-    has_services = True,
-    well_known_protos = True,
+    srcs = ["orca_service.proto"],
     deps = [
-        "orca_load_report_proto",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg",
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "orca_service_cc_proto",
+    deps = ["orca_service_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "orca_service_cc_grpc",
+    srcs = ["orca_service_proto"],
+    deps = [
+        "orca_service_cc_proto",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
 )
 

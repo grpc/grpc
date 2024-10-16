@@ -13,7 +13,8 @@
 # limitations under the License.
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library",
+     "grpc_cc_grpc_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
@@ -49,25 +50,42 @@ grpc_proto_library(
     ],
 )
 
-grpc_proto_library(
+proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
     deps = [
-        # TODO(roth): Change this to point to the real proto so that we
-        # can remove this local copy.
-        #"//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
-        "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg",
     ],
 )
 
-grpc_proto_library(
+cc_proto_library(
+    name = "echo_messages_cc_proto",
+    deps = ["echo_messages_proto"],
+)
+
+proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
-    generate_mocks = True,
     deps = [
         "echo_messages_proto",
         "simple_messages_proto",
     ],
+)
+
+cc_proto_library(
+    name = "echo_cc_proto",
+    deps = ["echo_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "echo_cc_grpc",
+    srcs = ["echo_proto"],
+    deps = [
+        "echo_cc_proto",
+        "echo_messages_cc_proto",
+        "simple_messages_cc_proto",
+    ],
+    generate_mocks = True,
 )
 
 grpc_proto_library(
@@ -166,9 +184,14 @@ grpc_proto_library(
     ],
 )
 
-grpc_proto_library(
+proto_library(
     name = "simple_messages_proto",
     srcs = ["simple_messages.proto"],
+)
+
+cc_proto_library(
+    name = "simple_messages_cc_proto",
+    deps = [":simple_messages_proto"],
 )
 
 grpc_proto_library(

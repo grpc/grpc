@@ -197,7 +197,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
         "//src/proto/grpc/testing:simple_messages.proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report.proto",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg",
     ],
     external_deps = [
         "absl/flags:flag",
@@ -213,12 +213,12 @@ grpc_cc_test(
         ":grpc_cli_libs",
         ":test_util",
         "//:grpc++_reflection",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing:simple_messages_proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
 )
 
@@ -294,7 +294,7 @@ grpc_cc_test(
     deps = [
         ":grpc_cli_libs",
         ":test_util",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -310,9 +310,9 @@ grpc_cc_test(
     tags = ["no_test_ios"],
     deps = [
         "//:grpc++_error_details",
-        "//src/proto/grpc/status:status_proto",
-        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "@com_google_googleapis//google/rpc:status_cc_proto",
     ],
 )
 

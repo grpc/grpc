@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library",
+     "grpc_cc_grpc_library")
 
 licenses(["notice"])
 
@@ -21,8 +22,22 @@ grpc_package(
     visibility = "public",
 )
 
-grpc_proto_library(
+proto_library(
     name = "echo_duplicate_proto",
     srcs = ["echo_duplicate.proto"],
     deps = ["//src/proto/grpc/testing:echo_messages_proto"],
+)
+
+cc_proto_library(
+    name = "echo_duplicate_cc_proto",
+    deps = ["echo_duplicate_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "echo_duplicate_cc_grpc",
+    srcs = ["echo_duplicate_proto"],
+    deps = [
+        "echo_duplicate_cc_proto",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+    ],
 )
