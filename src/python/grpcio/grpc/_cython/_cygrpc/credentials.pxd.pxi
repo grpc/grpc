@@ -28,7 +28,7 @@ cdef int _get_metadata(
     size_t *num_creds_md, grpc_status_code *status,
     const char **error_details) except -1 with gil
 
-cdef void _destroy(void *state) noexcept with gil
+cdef void _destroy(void *state) noexcept nogil
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
