@@ -3,9 +3,9 @@
 #include <unistd.h>
 
 #include <array>
-#include <chrono>
 #include <csignal>
 #include <cstdio>
+#include <iostream>
 #include <memory>
 #include <thread>
 
@@ -13,6 +13,7 @@
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
+#include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 
@@ -97,16 +98,6 @@ class Writer {
  private:
   int fd_;
 };
-
-std::pair<std::unique_ptr<Reader>, std::unique_ptr<Writer>> SetupPipe() {
-  std::array<int, 2> fds;
-  if (pipe(fds.data()) == 0) {
-    return {std::make_unique<Reader>(fds[0]), std::make_unique<Writer>(fds[1])};
-  } else {
-    PLOG(FATAL) << "Unable to open pipe";
-    return {nullptr, nullptr};
-  }
-}
 
 // A helper class to drive the polling of Fds. It repeatedly calls the Work(..)
 // method on the poller to get pet pending events, then schedules another
@@ -271,18 +262,33 @@ class EventEngineHolder {
   Worker* worker_ = nullptr;
 };
 
+void ReaderThread(absl::string_view label, int fd) {
+  absl::Cord cord;
+  std::array<char, 200000> buffer;
+  ssize_t r = -500;
+  while ((r = read(fd, buffer.data(), buffer.size())) > 0) {
+    cord.Append(absl::string_view(buffer.data(), r));
+    absl::string_view view = cord.Flatten();
+    for (ssize_t it = view.find('\n'); it >= 0; it = view.find('\n')) {
+      std::cout << absl::StrFormat("[ %s ] %s\n", label, view.substr(0, it));
+      view = view.substr(it + 1);
+    }
+    cord = view;
+  }
+  std::cout << absl::StrFormat("[ %s ] Done\n", label);
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
-  // absl::InitializeLog();
+  absl::InitializeLog();
   grpc_init();
   // Needs to happen after the scope exit and after all other variables gone
   auto cleanup = absl::MakeCleanup([] { grpc_shutdown(); });
   grpc_core::Fork::Enable(true);
   int port = grpc_pick_unused_port_or_die();
   std::string addr = absl::StrCat("localhost:", port);
-  auto reader_writer = SetupPipe();
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
@@ -296,14 +302,28 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Endpoints status: "
             << SendValidatePayload("Hello world", server_end.get(),
                                    client.get());
-
+  int stdouts[2];
+  PCHECK(pipe(stdouts) >= 0);
+  int stderrs[2];
+  PCHECK(pipe(stderrs) >= 0);
   pid_t pid = fork();
   CHECK_GE(pid, 0);
   if (pid == 0) {
+    close(stdouts[0]);
+    close(stderrs[0]);
+    dup2(stdouts[1], 1);
+    dup2(stderrs[1], 2);
+    LOG(INFO) << "I am here!";
     LOG(INFO) << "Endpoints status in child: "
               << SendValidatePayload("Hello world in child", server_end.get(),
                                      client.get());
+    close(stdouts[1]);
+    close(stderrs[1]);
   } else {
+    close(stdouts[1]);
+    close(stderrs[1]);
+    std::thread stdout_reader(ReaderThread, "child out", stdouts[0]);
+    std::thread stderr_reader(ReaderThread, "child err", stderrs[0]);
     LOG(INFO) << "Endpoints status in parent: "
               << SendValidatePayload("Hello world in parent", server_end.get(),
                                      client.get());
@@ -311,5 +331,9 @@ int main(int argc, char* argv[]) {
     waitpid(pid, &status, 0);
     CHECK(WIFEXITED(status)) << status;
     LOG(INFO) << "Child finished with " << WEXITSTATUS(status);
+    close(stdouts[0]);
+    close(stderrs[0]);
+    stdout_reader.join();
+    stderr_reader.join();
   }
 }
