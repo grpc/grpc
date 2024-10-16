@@ -99,12 +99,22 @@ def cc_grpc_library(
 
     if not proto_only:
         codegen_grpc_target = "_" + name + "_grpc_codegen"
+        
+        # Extract unique directories from proto targets
+        unique_dirs = set()
+        for proto_target in proto_targets:
+            dir_path = os.path.dirname(proto_target)
+            unique_dirs.add(dir_path)
+        
+        proto_path_args = " ".join(f"--proto_path={dir}" for dir in unique_dirs)
+        
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
             plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
+            proto_path_args = proto_path_args,  # Pass the unique proto paths
             **kwargs
         )
 
