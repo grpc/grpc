@@ -129,6 +129,7 @@ const absl::string_view
         "insecure_connections_created",
         "rq_connections_dropped",
         "rq_calls_dropped",
+        "rq_calls_rejected",
         "syscall_write",
         "syscall_read",
         "tcp_read_alloc_8k",
@@ -168,6 +169,7 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of insecure connections created",
     "Number of connections dropped due to resource quota exceeded",
     "Number of calls dropped due to resource quota exceeded",
+    "Number of calls rejected (never started) due to resource quota exceeded",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
@@ -469,6 +471,7 @@ GlobalStats::GlobalStats()
       insecure_connections_created{0},
       rq_connections_dropped{0},
       rq_calls_dropped{0},
+      rq_calls_rejected{0},
       syscall_write{0},
       syscall_read{0},
       tcp_read_alloc_8k{0},
@@ -610,6 +613,8 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.rq_connections_dropped.load(std::memory_order_relaxed);
     result->rq_calls_dropped +=
         data.rq_calls_dropped.load(std::memory_order_relaxed);
+    result->rq_calls_rejected +=
+        data.rq_calls_rejected.load(std::memory_order_relaxed);
     result->syscall_write += data.syscall_write.load(std::memory_order_relaxed);
     result->syscall_read += data.syscall_read.load(std::memory_order_relaxed);
     result->tcp_read_alloc_8k +=
@@ -728,6 +733,7 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->rq_connections_dropped =
       rq_connections_dropped - other.rq_connections_dropped;
   result->rq_calls_dropped = rq_calls_dropped - other.rq_calls_dropped;
+  result->rq_calls_rejected = rq_calls_rejected - other.rq_calls_rejected;
   result->syscall_write = syscall_write - other.syscall_write;
   result->syscall_read = syscall_read - other.syscall_read;
   result->tcp_read_alloc_8k = tcp_read_alloc_8k - other.tcp_read_alloc_8k;
