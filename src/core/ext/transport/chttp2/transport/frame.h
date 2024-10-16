@@ -151,6 +151,15 @@ struct Http2WindowUpdateFrame {
   }
 };
 
+// Security-related frame
+struct Http2SecurityFrame {
+  SliceBuffer payload;
+
+  bool operator==(const Http2SecurityFrame& other) const {
+    return payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
+};
+
 // Type of frame was unknown (and should be ignored)
 struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
@@ -164,7 +173,8 @@ struct Http2UnknownFrame {
 using Http2Frame =
     absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
                   Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
-                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
+                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2SecurityFrame,
+                  Http2UnknownFrame>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Frame header

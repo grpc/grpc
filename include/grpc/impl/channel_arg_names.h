@@ -400,6 +400,8 @@
   "grpc.max_allowed_incoming_connections"
 /** Configure per-channel or per-server stats plugins. */
 #define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS "grpc.experimental.stats_plugins"
+/** If non-zero, allow security frames to be sent and received. */
+#define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

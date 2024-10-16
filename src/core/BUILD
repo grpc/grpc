@@ -95,6 +95,7 @@ grpc_cc_library(
     ],
     deps = [
         ":memory_quota",
+        ":slice_buffer",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:tcp_tracer",
@@ -131,6 +132,22 @@ grpc_cc_library(
         "slice_refcount",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "transport_framing_endpoint_extension",
+    hdrs = [
+        "lib/transport/transport_framing_endpoint_extension.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    deps = [
+        "slice_buffer",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
 )

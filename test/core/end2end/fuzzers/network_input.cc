@@ -326,6 +326,9 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
           segment.window_update().stream_id(),
           segment.window_update().increment(),
       });
+    case fuzzer_input::InputSegment::kSecurityFrame:
+      return SliceFromH2Frame(Http2SecurityFrame{
+          SliceBufferFromBytes(segment.security_frame().payload())});
     case fuzzer_input::InputSegment::kClientPrefix:
       return grpc_slice_from_static_string("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n");
     case fuzzer_input::InputSegment::kRepeatedZeros: {
