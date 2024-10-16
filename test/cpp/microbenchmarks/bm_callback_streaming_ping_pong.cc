@@ -59,14 +59,6 @@ BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
                    NoOpMutator)
     ->Apply(StreamingPingPongArgs);
 
-// Streaming with different message number
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
-                   NoOpMutator)
-    ->Apply(StreamingPingPongArgs);
-
 // Client context with different metadata
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
