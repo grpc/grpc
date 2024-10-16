@@ -120,12 +120,13 @@ def grpc_deps():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
-            strip_prefix = "re2-2022-04-01",
+            sha256 = "eb2df807c781601c14a260a507a5bb4509be1ee626024cb45acbd57cb9d4032b",
+            strip_prefix = "re2-2024-07-02",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
-                "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2024-07-02.tar.gz",
+                "https://github.com/google/re2/archive/2024-07-02.tar.gz",
             ],
+            repo_mapping = {"@abseil-cpp": "@com_google_absl"},
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
