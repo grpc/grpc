@@ -2057,7 +2057,7 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
-        "//src/proto/grpc/lb/v1:load_reporter_proto",
+        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
@@ -2522,8 +2522,8 @@ grpc_cc_library(
         "config_vars",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1:reflection_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1:reflection_cc_grpc",
+        "//src/proto/grpc/reflection/v1alpha:reflection_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -2631,7 +2631,7 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
     ],
     alwayslink = 1,
 )
@@ -2654,7 +2654,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        "//src/proto/grpc/testing/xds/v3:csds_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -5103,7 +5103,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+    deps = ["//src/proto/grpc/health/v1:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5123,7 +5123,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5133,17 +5133,17 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

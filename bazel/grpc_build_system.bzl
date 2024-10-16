@@ -234,6 +234,8 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         deps = deps,
     )
 
+# DO NOT USE -- callers should instead be changed to use separate
+# proto_library(), cc_proto_library(), and cc_grpc_library() rules.
 def grpc_proto_library(
         name,
         srcs = [],
@@ -252,6 +254,27 @@ def grpc_proto_library(
         proto_only = not has_services,
         use_external = use_external,
         generate_mocks = generate_mocks,
+    )
+
+def grpc_cc_grpc_library(
+        name,
+        srcs = [],
+        deps = [],
+        visibility = None,
+        generate_mocks = False):
+    """A wrapper around cc_grpc_library that forces grpc_only=True.
+
+    Callers are expected to have their own proto_library() and
+    cc_proto_library() rules and then use this rule to produce only the
+    gRPC generated code.
+    """
+    cc_grpc_library(
+        name = name,
+        srcs = srcs,
+        deps = deps,
+        visibility = visibility,
+        generate_mocks = generate_mocks,
+        grpc_only = True,
     )
 
 def ios_cc_test(
