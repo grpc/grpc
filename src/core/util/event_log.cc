@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_ENABLE_EVENT_LOG
+
 #include <algorithm>
 #include <atomic>
 
@@ -85,3 +87,4 @@ std::string EventLog::EndCollectionAndReportCsv(
 }
 
 }  // namespace grpc_core
+#endif  // GRPC_ENABLE_EVENT_LOG
