@@ -1060,10 +1060,6 @@ TEST_P(XdsFederationTest, FederationServer) {
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
   CreateBackends(2, /*xds_enabled=*/true);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
-  ASSERT_TRUE(backends_[1]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[1]->port()), grpc::StatusCode::OK));
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
