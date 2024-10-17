@@ -92,7 +92,7 @@ def check_linker_need_libatomic():
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-"],
+        [cxx, "-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -103,7 +103,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-", "-latomic"],
+        [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -157,6 +157,21 @@ class BuildExt(build_ext.build_ext):
         build_ext.build_ext.build_extensions(self)
 
 
+# When building extensions for macOS on a system running macOS 10.14 or newer,
+# make sure they target macOS 10.14 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
@@ -176,14 +191,14 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++14 needs to be specified.
-        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
         # Reduce the optimization level from O3 (in many cases) to O1 to
         # workaround gcc misalignment bug with MOVAPS (internal b/329134877)
         EXTRA_ENV_COMPILE_ARGS += " -O1"
     elif "darwin" in sys.platform:
         # AppleClang by defaults uses C17 so only C++14 needs to be specified.
-        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
         EXTRA_ENV_COMPILE_ARGS += " -stdlib=libc++ -DHAVE_UNISTD_H"
 if EXTRA_ENV_LINK_ARGS is None:
