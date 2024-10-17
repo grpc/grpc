@@ -107,8 +107,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   WeightedRoundRobinTest()
       : LoadBalancingPolicyTest(
             "weighted_round_robin",
-            ChannelArgs().Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD,
-                              kLocalityName)) {}
+            ChannelArgs().Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD, kLocalityName),
+            /*intercept_timers=*/true) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
@@ -319,9 +319,11 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
-        LOG(INFO) << "running timer callback...";
         // Increment time and run any timer callbacks.
+        LOG(INFO) << "incrementing time...";
         IncrementTimeBy(Duration::Seconds(1));
+        LOG(INFO) << "running timer callback...";
+        RunTimerCallback();
       }
     }
   }
@@ -694,6 +696,7 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
   IncrementTimeBy(Duration::Seconds(2));
+  RunTimerCallback();
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -721,6 +724,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
   IncrementTimeBy(Duration::Seconds(2));
+  RunTimerCallback();
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -739,6 +743,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
   // Advance time past the blackout period.  This should cause the
   // weights to be used.
   IncrementTimeBy(Duration::Seconds(1));
+  RunTimerCallback();
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 1}});
@@ -785,6 +790,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
   // Advance time to exceed the blackout period and trigger the timer
   // callback to recompute weights.
   IncrementTimeBy(Duration::Seconds(1));
+  RunTimerCallback();
   ExpectWeightedRoundRobinPicks(
       picker.get(),
       {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,
@@ -858,7 +864,7 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
-  SetExpectedTimerDuration(absl::nullopt);
+  SetRunAfterDurationCallback(nullptr);
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
@@ -1150,6 +1156,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   // to recompute weights.
   LOG(INFO) << "advancing time to trigger staleness...";
   IncrementTimeBy(Duration::Seconds(2));
+  RunTimerCallback();
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
