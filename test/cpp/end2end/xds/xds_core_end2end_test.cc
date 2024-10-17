@@ -1247,8 +1247,6 @@ TEST_P(XdsMetricsTest, MetricValues) {
   const std::string kTarget = absl::StrCat("xds:", kServerName);
   const std::string kXdsServer = absl::StrCat("localhost:", balancer_->port());
   CreateAndStartBackends(1, /*xds_enabled=*/true);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1426,10 +1424,6 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
                        kNewListenerTemplate);
   InitClient(builder);
   CreateAndStartBackends(2, /*xds_enabled=*/true);
-  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
-  ASSERT_TRUE(backends_[1]->notifier()->WaitOnServingStatusChange(
-      grpc_core::LocalIpAndPort(backends_[1]->port()), grpc::StatusCode::OK));
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -1458,7 +1452,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
   // Send kNumRpcsToDefaultBalancer RPCs to the current stub.
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer,
+                 RpcOptions().set_wait_for_ready(true).set_timeout_ms(10000));
   // Create second channel to new target uri.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
@@ -1467,7 +1462,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   for (size_t i = 0; i < kNumRpcsToAuthorityBalancer; ++i) {
     ClientContext context;
     EchoRequest request;
-    RpcOptions().SetupRpc(&context, &request);
+    RpcOptions().set_wait_for_ready(true).set_timeout_ms(10000).SetupRpc(
+        &context, &request);
     EchoResponse response;
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
