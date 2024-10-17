@@ -213,7 +213,11 @@ grpc_cc_test(
 grpc_cc_binary(
     name = "fork_executable",
     testonly = 1,
-    srcs = ["fork_executable.cc"],
+    srcs = [
+        "fork_executable.cc",
+        "fork_test_utils.cc",
+        "fork_test_utils.h",
+    ],
     external_deps = [
         "absl/strings",
         "absl/log:flags",
