@@ -306,6 +306,24 @@ std::string GetMethodResponseStreamMaybe(const MethodDescriptor* method) {
   return "";
 }
 
+std::vector<std::string> CSharpKeywords { "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const", "continue",
+"decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", 
+"if", "implicit", "in", "int", "interface", "is", "lock", "long", "namespace", "new", "null", "object", "operator", "out", "override", "params", "private", "protected",
+"public", "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try",
+"typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while" };
+
+bool in_array(const std::string &value, const std::vector<std::string> &array)
+{
+    return std::find(array.begin(), array.end(), value) != array.end();
+}
+
+std::string GetMethodSafeName(const MethodDescriptor* method) {
+  if (in_array(method->name(), CSharpKeywords)) {
+    return "@" + method->name();
+  }
+  return method->name();
+}
+
 // Gets vector of all messages used as input or output types.
 std::vector<const Descriptor*> GetUsedMessages(
     const ServiceDescriptor* service) {
@@ -421,7 +439,7 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {
   out->Print("$methodtype$,\n", "methodtype", GetCSharpMethodType(method));
   out->Print("$servicenamefield$,\n", "servicenamefield",
              GetServiceNameFieldName());
-  out->Print("\"$methodname$\",\n", "methodname", method->name());
+  out->Print("\"$methodname$\",\n", "methodname", GetMethodSafeName(method));
   out->Print("$requestmarshaller$,\n", "requestmarshaller",
              GetMarshallerFieldName(method->input_type()));
   out->Print("$responsemarshaller$);\n", "responsemarshaller",
@@ -471,7 +489,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
         "public virtual $returntype$ "
         "$methodname$($request$$response_stream_maybe$, "
         "grpc::ServerCallContext context)\n",
-        "methodname", method->name(), "returntype",
+        "methodname", GetMethodSafeName(method), "returntype",
         GetMethodReturnTypeServer(method), "request",
         GetMethodRequestParamServer(method), "response_stream_maybe",
         GetMethodResponseStreamMaybe(method));
@@ -555,7 +573,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
           "global::System.Threading.CancellationToken "
           "cancellationToken = "
           "default(global::System.Threading.CancellationToken))\n",
-          "methodname", method->name(), "request",
+          "methodname", GetMethodSafeName(method), "request",
           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "response",
           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()));
       out->Print("{\n");
@@ -564,7 +582,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
           "return $methodname$(request, new grpc::CallOptions(headers, "
           "deadline, "
           "cancellationToken));\n",
-          "methodname", method->name());
+          "methodname", GetMethodSafeName(method));
       out->Outdent();
       out->Print("}\n");
 
@@ -575,7 +593,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::CallOptions options)\n",
-          "methodname", method->name(), "request",
+          "methodname", GetMethodSafeName(method), "request",
           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "response",
           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()));
       out->Print("{\n");
@@ -588,9 +606,11 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       out->Print("}\n");
     }
 
-    std::string method_name = method->name();
+    std::string method_name = "";
     if (!method->client_streaming() && !method->server_streaming()) {
-      method_name += "Async";  // prevent name clash with synchronous method.
+      method_name = method->name() + "Async";  // prevent name clash with synchronous method.
+    } else {
+      method_name = GetMethodSafeName(method);
     }
     GenerateDocCommentClientMethod(out, method, false, false);
     GenerateObsoleteAttribute(out, is_deprecated);
@@ -702,7 +722,7 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
     const MethodDescriptor* method = service->method(i);
     out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
-               method->name());
+               GetMethodSafeName(method));
   }
   out->Print(".Build();\n");
   out->Outdent();
@@ -748,7 +768,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
         GetCSharpServerMethodType(method), "inputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "outputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "methodname",
-        method->name());
+        GetMethodSafeName(method));
   }
 
   out->Outdent();
