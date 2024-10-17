@@ -1060,6 +1060,10 @@ TEST_P(XdsFederationTest, FederationServer) {
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
   CreateBackends(2, /*xds_enabled=*/true);
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[1]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[1]->port()), grpc::StatusCode::OK));
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -1247,6 +1251,8 @@ TEST_P(XdsMetricsTest, MetricValues) {
   const std::string kTarget = absl::StrCat("xds:", kServerName);
   const std::string kXdsServer = absl::StrCat("localhost:", balancer_->port());
   CreateAndStartBackends(1, /*xds_enabled=*/true);
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -1424,6 +1430,10 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
                        kNewListenerTemplate);
   InitClient(builder);
   CreateAndStartBackends(2, /*xds_enabled=*/true);
+  ASSERT_TRUE(backends_[0]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[0]->port()), grpc::StatusCode::OK));
+  ASSERT_TRUE(backends_[1]->notifier()->WaitOnServingStatusChange(
+      grpc_core::LocalIpAndPort(backends_[1]->port()), grpc::StatusCode::OK));
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
