@@ -2104,7 +2104,7 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
-        "//src/proto/grpc/lb/v1:load_reporter_proto",
+        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
 )
 
