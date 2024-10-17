@@ -46,6 +46,7 @@
 #include "absl/types/optional.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -62,6 +63,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -83,6 +85,227 @@
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
+
+using grpc_event_engine::experimental::EventEngine;
+
+//
+// Server::ListenerInterface::LogicalConnection
+//
+
+void Server::ListenerInterface::LogicalConnection::SendGoAway() {
+  work_serializer_.Run(
+      [self = Ref(DEBUG_LOCATION, "SendGoAway")]() {
+        if (!self->SendGoAwayImplLocked()) {
+          return;
+        }
+        if (self->drain_grace_timer_handle_cancelled_) {
+          return;
+        }
+        CHECK(self->drain_grace_timer_handle_ ==
+              EventEngine::TaskHandle::kInvalid);
+        self->drain_grace_timer_handle_ = self->event_engine()->RunAfter(
+            std::max(Duration::Zero(),
+                     self->server_->channel_args()
+                         .GetDurationFromIntMillis(
+                             GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                         .value_or(Duration::Minutes(10))),
+            [self = self->Ref()]() mutable {
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
+              self->OnDrainGraceTimer();
+              self.reset();
+            });
+      },
+      DEBUG_LOCATION);
+}
+
+void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {
+  work_serializer_.Run(
+      [self = Ref(DEBUG_LOCATION, "CancelDrainGraceTimer")]() {
+        self->drain_grace_timer_handle_cancelled_ = true;
+        if (self->drain_grace_timer_handle_ !=
+            EventEngine::TaskHandle::kInvalid) {
+          self->event_engine()->Cancel(self->drain_grace_timer_handle_);
+          self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
+        }
+      },
+      DEBUG_LOCATION);
+}
+
+void Server::ListenerInterface::LogicalConnection::OnDrainGraceTimer() {
+  work_serializer_.Run(
+      [self = Ref(DEBUG_LOCATION, "OnDrainGraceTimer")]() mutable {
+        // If the drain_grace_timer_ was not cancelled, disconnect
+        // immediately.
+        bool disconnect_immediately = false;
+        {
+          self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
+          if (!self->drain_grace_timer_handle_cancelled_) {
+            disconnect_immediately = true;
+          }
+        }
+        if (disconnect_immediately) {
+          self->DisconnectImmediatelyImplLocked();
+        }
+      },
+      DEBUG_LOCATION);
+}
+
+//
+// Server::ListenerState::ConfigFetcherWatcher
+//
+
+void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
+    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+        connection_manager) {
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager_to_destroy;
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections_to_shutdown;
+  auto cleanup = absl::MakeCleanup([&connections_to_shutdown]() {
+    // Send GOAWAYs on the transports so that they get disconnected when
+    // existing RPCs finish, and so that no new RPC is started on them.
+    for (auto& connection : connections_to_shutdown) {
+      connection->SendGoAway();
+    }
+  });
+  {
+    MutexLock lock(&listener_state_->mu_);
+    connection_manager_to_destroy = listener_state_->connection_manager_;
+    listener_state_->connection_manager_ = std::move(connection_manager);
+    connections_to_shutdown = std::move(listener_state_->connections_);
+    if (listener_state_->server_->ShutdownCalled()) {
+      return;
+    }
+    listener_state_->is_serving_ = true;
+    if (listener_state_->started_) return;
+    listener_state_->started_ = true;
+  }
+  listener_state_->listener_->Start();
+}
+
+void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&listener_state_->mu_);
+    listener_state_->is_serving_ = false;
+    connections = std::move(listener_state_->connections_);
+  }
+  // Send GOAWAYs on the transports so that they disconnect when existing
+  // RPCs finish.
+  for (auto& connection : connections) {
+    connection->SendGoAway();
+  }
+}
+
+//
+// Server::ListenerState
+//
+
+void Server::ListenerState::Start() {
+  if (IsServerListenerEnabled()) {
+    if (server_->config_fetcher() != nullptr) {
+      auto watcher =
+          std::make_unique<ListenerState::ConfigFetcherWatcher>(this);
+      config_fetcher_watcher_ = watcher.get();
+      server_->config_fetcher()->StartWatch(
+          grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
+          std::move(watcher));
+    } else {
+      {
+        MutexLock lock(&mu_);
+        started_ = true;
+        is_serving_ = true;
+      }
+      listener_->Start();
+    }
+  } else {
+    listener_->Start();
+  }
+}
+
+void Server::ListenerState::Stop() {
+  if (IsServerListenerEnabled()) {
+    absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+        connections;
+    {
+      MutexLock lock(&mu_);
+      // Orphan the connections so that they can start cleaning up.
+      connections = std::move(connections_);
+      is_serving_ = false;
+    }
+    if (config_fetcher_watcher_ != nullptr) {
+      CHECK_NE(server_->config_fetcher(), nullptr);
+      server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+    }
+  }
+  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_,
+                    grpc_schedule_on_exec_ctx);
+  listener_->SetOnDestroyDone(&destroy_done_);
+  listener_.reset();
+}
+
+absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
+    OrphanablePtr<ListenerInterface::LogicalConnection> connection,
+    const ChannelArgs& args, grpc_endpoint* endpoint) {
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager;
+  {
+    MutexLock lock(&mu_);
+    if (!is_serving_) {
+      // Not serving
+      return absl::nullopt;
+    }
+    connection_manager = connection_manager_;
+  }
+  ChannelArgs new_args = args;
+  if (server_->config_fetcher() != nullptr) {
+    if (connection_manager == nullptr) {
+      // Connection manager not available
+      return absl::nullopt;
+    }
+    absl::StatusOr<ChannelArgs> args_result =
+        connection_manager->UpdateChannelArgsForConnection(new_args, endpoint);
+    if (!args_result.ok()) {
+      return absl::nullopt;
+    }
+    auto* server_credentials =
+        (*args_result).GetObject<grpc_server_credentials>();
+    if (server_credentials == nullptr) {
+      // Could not find server credentials
+      return absl::nullopt;
+    }
+    auto security_connector =
+        server_credentials->create_security_connector(*args_result);
+    if (security_connector == nullptr) {
+      // Unable to create secure server with credentials
+      return absl::nullopt;
+    }
+    new_args = (*args_result).SetObject(security_connector);
+  }
+  MutexLock lock(&mu_);
+  if (!is_serving_ || connection_manager != connection_manager_) {
+    // Not serving
+    return absl::nullopt;
+  }
+  connections_.emplace(std::move(connection));
+  return new_args;
+}
+
+void Server::ListenerState::RemoveLogicalConnection(
+    ListenerInterface::LogicalConnection* connection) {
+  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
+  {
+    // Remove the connection if it wasn't already removed.
+    MutexLock lock(&mu_);
+    auto connection_handle = connections_.extract(connection);
+    if (!connection_handle.empty()) {
+      connection_to_remove = std::move(connection_handle.value());
+    }
+  }
+  connection->CancelDrainGraceTimer();
+}
 
 //
 // Server::RequestMatcherInterface
@@ -925,7 +1148,9 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
     channelz_node_->AddChildListenSocket(
         listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
-  listeners_.emplace_back(std::move(listener));
+  ListenerInterface* ptr = listener.get();
+  listener_states_.emplace_back(this, std::move(listener));
+  ptr->SetServerListenerState(&listener_states_.back());
 }
 
 void Server::Start() {
@@ -957,8 +1182,8 @@ void Server::Start() {
                                    pollset);
     }
   }
-  for (auto& listener : listeners_) {
-    listener.listener->Start(this, &pollsets_);
+  for (auto& listener_state : listener_states_) {
+    listener_state.Start();
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
@@ -1107,15 +1332,15 @@ void Server::MaybeFinishShutdown() {
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
   if (!channels_.empty() || connections_open_ > 0 ||
-      listeners_destroyed_ < listeners_.size()) {
+      listeners_destroyed_ < listener_states_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
       VLOG(2) << "Waiting for " << channels_.size() << " channels "
               << connections_open_ << " connections and "
-              << listeners_.size() - listeners_destroyed_ << "/"
-              << listeners_.size()
+              << listener_states_.size() - listeners_destroyed_ << "/"
+              << listener_states_.size()
               << " listeners to be destroyed before shutting down server";
     }
     return;
@@ -1212,18 +1437,15 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 }
 
 void Server::StopListening() {
-  for (auto& listener : listeners_) {
-    if (listener.listener == nullptr) continue;
+  for (auto& listener_state : listener_states_) {
+    if (listener_state.listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
-        listener.listener->channelz_listen_socket_node();
+        listener_state.listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_node_->RemoveChildListenSocket(
           channelz_listen_socket_node->uuid());
     }
-    GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
-                      grpc_schedule_on_exec_ctx);
-    listener.listener->SetOnDestroyDone(&listener.destroy_done);
-    listener.listener.reset();
+    listener_state.Stop();
   }
 }
 
@@ -1249,8 +1471,8 @@ void Server::SendGoaways() {
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
-    CHECK(ShutdownCalled() || listeners_.empty());
-    CHECK(listeners_destroyed_ == listeners_.size());
+    CHECK(ShutdownCalled() || listener_states_.empty());
+    CHECK(listeners_destroyed_ == listener_states_.size());
   }
   Unref();
 }
@@ -1867,9 +2089,8 @@ grpc_call_error grpc_server_request_call(
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_request_call("
-      << "server=" << server << ", call=" << call << ", details=" << details
-      << ", initial_metadata=" << request_metadata
+      << "grpc_server_request_call(" << "server=" << server << ", call=" << call
+      << ", details=" << details << ", initial_metadata=" << request_metadata
       << ", cq_bound_to_call=" << cq_bound_to_call
       << ", cq_for_notification=" << cq_for_notification << ", tag=" << tag;
   return grpc_core::Server::FromC(server)->RequestCall(
@@ -1888,10 +2109,9 @@ grpc_call_error grpc_server_request_registered_call(
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_request_registered_call("
-      << "server=" << server << ", registered_method=" << registered_method
-      << ", call=" << call << ", deadline=" << deadline
-      << ", request_metadata=" << request_metadata
+      << "grpc_server_request_registered_call(" << "server=" << server
+      << ", registered_method=" << registered_method << ", call=" << call
+      << ", deadline=" << deadline << ", request_metadata=" << request_metadata
       << ", optional_payload=" << optional_payload
       << ", cq_bound_to_call=" << cq_bound_to_call
       << ", cq_for_notification=" << cq_for_notification << ", tag=" << tag_new
