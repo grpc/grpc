@@ -60,8 +60,8 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "handshaker_proto",
-        "transport_security_common_proto",
+        "handshaker_cc_grpc",
+        "transport_security_common_cc_proto",
         "//:grpc++",
     ],
 )
