@@ -7,35 +7,17 @@ PHP_ARG_ENABLE(coverage, whether to include code coverage symbols,
 PHP_ARG_ENABLE(tests, whether to compile helper methods for tests,
 [  --enable-tests          Enable tests methods], no, no)
 
+PHP_ARG_WITH(grpc-dir,	for grpc,
+[	--with-grpc-dir[=DIR]	 Set the path to grpc install prefix.], yes)
+
 dnl Check whether to enable tests
 if test "$PHP_TESTS" != "no"; then
   CPPFLAGS="$CPPFLAGS -DGRPC_PHP_DEBUG"
 fi
 
+PKG_CHECK_MODULES([GRPC], [grpc])
 if test "$PHP_GRPC" != "no"; then
-  dnl Write more examples of tests here...
-
-  dnl # --with-grpc -> check with-path
-  SEARCH_PATH="/usr/local /usr"     # you might want to change this
-  SEARCH_FOR="include/grpc/grpc.h"  # you most likely want to change this
-  if test -r $PHP_GRPC/$SEARCH_FOR; then # path given as parameter
-    GRPC_DIR=$PHP_GRPC
-  else # search default path list
-    AC_MSG_CHECKING([for grpc files in default path])
-    for i in $SEARCH_PATH ; do
-      if test -r $i/$SEARCH_FOR; then
-        GRPC_DIR=$i
-        AC_MSG_RESULT(found in $i)
-      fi
-    done
-  fi
-  if test -z "$GRPC_DIR"; then
-    AC_MSG_RESULT([not found])
-    AC_MSG_ERROR([Please reinstall the grpc distribution])
-  fi
-
-  dnl # --with-grpc -> add include path
-  PHP_ADD_INCLUDE($GRPC_DIR/include)
+  AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 
   LIBS="-lpthread $LIBS"
 
