@@ -103,6 +103,7 @@ def create_jobspec(
 
 
 _MACOS_COMPAT_FLAG = "-mmacosx-version-min=10.10"
+_MACOS_ARM64_COMPAT_FLAG = "-target arm64-apple-macos11"
 
 _ARCH_FLAG_MAP = {"x86": "-m32", "x64": "-m64"}
 
@@ -353,8 +354,10 @@ class ProtocArtifact:
                     environ=environ,
                 )
             else:
-                environ["CXXFLAGS"] += (
-                    " -std=c++14 -stdlib=libc++ %s" % _MACOS_COMPAT_FLAG
+                environ["CXXFLAGS"] += " -std=c++14 -stdlib=libc++ %s" % (
+                    _MACOS_ARM64_COMPAT_FLAG
+                    if self.arch == "arm64"
+                    else _MACOS_COMPAT_FLAG
                 )
                 return create_jobspec(
                     self.name,
@@ -400,6 +403,7 @@ def targets():
             ProtocArtifact("linux", "x86", presubmit=True),
             ProtocArtifact("linux", "aarch64", presubmit=True),
             ProtocArtifact("macos", "x64", presubmit=True),
+            ProtocArtifact("macos", "arm64", presubmit=True),
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp38-cp38", presubmit=True),
