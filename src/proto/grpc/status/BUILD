@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -29,7 +29,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "status_cc_proto",
     deps = ["status_proto"],
 )

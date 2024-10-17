@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_package")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
@@ -34,7 +34,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "address_cc_proto",
     deps = ["address_proto"],
 )
@@ -44,7 +44,7 @@ proto_library(
     srcs = ["percent.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "percent_cc_proto",
     deps = ["percent_proto"],
 )
@@ -59,7 +59,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "base_cc_proto",
     deps = ["base_proto"],
 )
@@ -74,7 +74,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "discovery_cc_proto",
     deps = ["discovery_proto"],
 )
@@ -87,7 +87,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "ads_cc_proto",
     deps = ["ads_proto"],
 )
@@ -103,7 +103,7 @@ proto_library(
     srcs = ["config_source.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "config_source_cc_proto",
     deps = ["config_source_proto"],
 )
@@ -123,7 +123,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "cluster_cc_proto",
     deps = ["cluster_proto"],
 )
@@ -140,7 +140,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "endpoint_cc_proto",
     deps = ["endpoint_proto"],
 )
@@ -150,7 +150,7 @@ proto_library(
     srcs = ["health_check.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "health_check_cc_proto",
     deps = ["health_check_proto"],
 )
@@ -163,7 +163,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "extension_cc_proto",
     deps = ["extension_proto"],
 )
@@ -176,7 +176,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "path_cc_proto",
     deps = ["path_proto"],
 )
@@ -192,7 +192,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "listener_cc_proto",
     deps = ["listener_proto"],
 )
@@ -208,7 +208,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "load_report_cc_proto",
     deps = ["load_report_proto"],
 )
@@ -223,7 +223,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "lrs_cc_proto",
     deps = ["lrs_proto"],
 )
@@ -239,7 +239,7 @@ proto_library(
     srcs = ["orca_load_report.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "orca_load_report_cc_proto",
     deps = ["orca_load_report_proto"],
 )
@@ -253,7 +253,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "orca_service_cc_proto",
     deps = ["orca_service_proto"],
 )
@@ -273,7 +273,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "outlier_detection_cc_proto",
     deps = ["outlier_detection_proto"],
 )
@@ -286,7 +286,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "protocol_cc_proto",
     deps = ["protocol_proto"],
 )
@@ -299,7 +299,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "http_protocol_options_cc_proto",
     deps = ["http_protocol_options_proto"],
 )
@@ -309,7 +309,7 @@ proto_library(
     srcs = ["range.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "range_cc_proto",
     deps = ["range_proto"],
 )
@@ -319,7 +319,7 @@ proto_library(
     srcs = ["regex.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "regex_cc_proto",
     deps = ["regex_proto"],
 )
@@ -340,7 +340,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "route_cc_proto",
     deps = ["route_proto"],
 )
@@ -357,7 +357,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "http_connection_manager_cc_proto",
     deps = ["http_connection_manager_proto"],
 )
@@ -367,7 +367,7 @@ proto_library(
     srcs = ["router.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "router_cc_proto",
     deps = ["router_proto"],
 )
@@ -380,7 +380,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "string_cc_proto",
     deps = ["string_proto"],
 )
@@ -393,7 +393,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "aggregate_cluster_cc_proto",
     deps = ["aggregate_cluster_proto"],
 )
@@ -407,7 +407,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "fault_common_cc_proto",
     deps = ["fault_common_proto"],
 )
@@ -423,7 +423,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "tls_cc_proto",
     deps = ["tls_proto"],
 )
@@ -436,7 +436,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "upstream_http_11_connect_cc_proto",
     deps = ["upstream_http_11_connect_proto"],
 )
@@ -450,7 +450,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "config_dump_cc_proto",
     deps = ["config_dump_proto"],
 )
@@ -466,7 +466,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "csds_cc_proto",
     deps = ["csds_proto"],
 )
@@ -490,7 +490,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "fault_cc_proto",
     deps = ["fault_proto"],
 )
@@ -503,7 +503,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "gcp_authn_cc_proto",
     deps = ["gcp_authn_proto"],
 )
@@ -513,7 +513,7 @@ proto_library(
     srcs = ["metadata.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "metadata_cc_proto",
     deps = ["metadata_proto"],
 )
@@ -523,7 +523,7 @@ proto_library(
     srcs = ["expr.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "expr_cc_proto",
     deps = ["expr_proto"],
 )
@@ -543,7 +543,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "rbac_cc_proto",
     deps = ["rbac_proto"],
 )
@@ -556,7 +556,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "http_filter_rbac_cc_proto",
     deps = ["http_filter_rbac_proto"],
 )
@@ -566,7 +566,7 @@ proto_library(
     srcs = ["audit_logger_stream.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "audit_logger_stream_cc_proto",
     deps = ["audit_logger_stream_proto"],
 )
@@ -580,7 +580,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "client_side_weighted_round_robin_cc_proto",
     deps = ["client_side_weighted_round_robin_proto"],
 )
@@ -590,7 +590,7 @@ proto_library(
     srcs = ["pick_first.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "pick_first_cc_proto",
     deps = ["pick_first_proto"],
 )
@@ -603,7 +603,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "ring_hash_cc_proto",
     deps = ["ring_hash_proto"],
 )
@@ -613,7 +613,7 @@ proto_library(
     srcs = ["round_robin.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "round_robin_cc_proto",
     deps = ["round_robin_proto"],
 )
@@ -626,7 +626,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "wrr_locality_cc_proto",
     deps = ["wrr_locality_proto"],
 )
@@ -639,7 +639,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "typed_struct_cc_proto",
     deps = ["typed_struct_proto"],
 )
@@ -652,7 +652,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "udpa_typed_struct_cc_proto",
     deps = ["udpa_typed_struct_proto"],
 )
@@ -665,7 +665,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "cookie_cc_proto",
     deps = ["cookie_proto"],
 )
@@ -678,7 +678,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "stateful_session_cookie_cc_proto",
     deps = ["stateful_session_cookie_proto"],
 )
@@ -691,7 +691,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "stateful_session_cc_proto",
     deps = ["stateful_session_proto"],
 )

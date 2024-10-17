@@ -234,6 +234,9 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         deps = deps,
     )
 
+def grpc_cc_proto_library(name, deps = [], visibility = None):
+    native.cc_proto_library(name = name, deps = deps, visibility = visibility)
+
 # DO NOT USE -- callers should instead be changed to use separate
 # proto_library(), cc_proto_library(), and cc_grpc_library() rules.
 def grpc_proto_library(

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -33,7 +33,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "channelz_cc_proto",
     deps = ["channelz_proto"],
 )

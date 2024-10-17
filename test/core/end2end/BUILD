@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_package")
 load("grpc_core_end2end_test.bzl", "grpc_core_end2end_test")
 
 licenses(["notice"])
@@ -776,7 +776,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "end2end_test_fuzzer_cc_proto",
     deps = ["end2end_test_fuzzer_proto"],
 )

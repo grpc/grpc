@@ -15,6 +15,7 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_package",
 )
 
@@ -80,7 +81,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "fuzzer_cc_proto",
     visibility = ["//test:__subpackages__"],
     deps = ["fuzzer_proto"],

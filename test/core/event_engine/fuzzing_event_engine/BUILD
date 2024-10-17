@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -44,7 +44,7 @@ proto_library(
     srcs = ["fuzzing_event_engine.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "fuzzing_event_engine_cc_proto",
     deps = [":fuzzing_event_engine_proto"],
 )

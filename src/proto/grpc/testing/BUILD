@@ -16,6 +16,7 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_grpc_library",
+    "grpc_cc_proto_library",
     "grpc_package",
     "grpc_proto_library",
 )
@@ -42,7 +43,7 @@ proto_library(
     srcs = ["compiler_test.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "compiler_test_cc_proto",
     deps = ["compiler_test_proto"],
 )
@@ -64,7 +65,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "control_cc_proto",
     deps = ["control_proto"],
 )
@@ -82,7 +83,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "echo_messages_cc_proto",
     deps = ["echo_messages_proto"],
 )
@@ -96,7 +97,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "echo_cc_proto",
     deps = ["echo_proto"],
 )
@@ -117,7 +118,7 @@ proto_library(
     srcs = ["empty.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "empty_cc_proto",
     deps = ["empty_proto"],
 )
@@ -138,7 +139,7 @@ proto_library(
     srcs = ["messages.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "messages_cc_proto",
     deps = ["messages_proto"],
 )
@@ -159,7 +160,7 @@ proto_library(
     srcs = ["metrics.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "metrics_cc_proto",
     deps = ["metrics_proto"],
 )
@@ -175,7 +176,7 @@ proto_library(
     srcs = ["payloads.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "payloads_cc_proto",
     deps = ["payloads_proto"],
 )
@@ -193,7 +194,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "benchmark_service_cc_proto",
     deps = ["benchmark_service_proto"],
 )
@@ -226,7 +227,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "report_qps_scenario_service_cc_proto",
     deps = ["report_qps_scenario_service_proto"],
 )
@@ -248,7 +249,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "worker_service_cc_proto",
     deps = ["worker_service_proto"],
 )
@@ -278,7 +279,7 @@ proto_library(
     srcs = ["simple_messages.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "simple_messages_cc_proto",
     deps = [":simple_messages_proto"],
 )
@@ -288,7 +289,7 @@ proto_library(
     srcs = ["stats.proto"],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "stats_cc_proto",
     deps = ["stats_proto"],
 )
@@ -307,7 +308,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "test_cc_proto",
     deps = ["test_proto"],
 )
@@ -337,7 +338,7 @@ proto_library(
     ],
 )
 
-cc_proto_library(
+grpc_cc_proto_library(
     name = "istio_echo_cc_proto",
     deps = ["istio_echo_proto"],
 )
