@@ -749,7 +749,8 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   StringMap var;
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
-  out->Print(var, "from typing import AsyncIterator, Iterator, cast\n");
+  out->Print(var, "import $Package$.aio\n");
+  out->Print(var, "from typing import Any, AsyncIterator, Iterator, Coroutine, cast\n");
   out->Print(var, "from collections.abc import Callable\n");
   if (config.grpc_tools_version.size() > 0) {
     out->Print(var, "import warnings\n");
