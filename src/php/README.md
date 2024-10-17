@@ -55,9 +55,12 @@ $ cd grpc
 
 #### Build the gRPC C core library
 
+Please note, grpc core is required to build php extension from source.
+For compiling the grpc core, (grpc team plans to only support cmake and bazel.)[https://github.com/grpc/grpc/issues/20205#issuecomment-539452253]
+
 ```sh
 $ git submodule update --init
-$ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make
+$ cmake .
 ```
 
 #### Build and install the `grpc` extension
@@ -72,6 +75,20 @@ $ GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc="${grpc_root}"
 $ make
 $ [sudo] make install
 ```
+
+Or more simplier, use package manager to install grpc and grpc-devel instead of compile grpc core and libs from source.
+
+eg: with fedora or redhat 
+
+```sh
+dnf install grpc grpc-devel
+cd src/php/ext/grpc
+phpize
+./configure
+make
+[sudo] make install
+```
+
 
 This will compile and install the `grpc` extension into the
 standard PHP extension directory. You should be able to run
