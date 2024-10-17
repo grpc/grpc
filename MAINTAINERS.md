@@ -18,6 +18,7 @@ for general contribution guidelines.
 - [dklempner](https://github.com/dklempner), Google LLC
 - [drfloob](https://github.com/drfloob), Google LLC
 - [ejona86](https://github.com/ejona86), Google LLC
+- [eugeneo](https://github.com/eugeneo), Google LLC
 - [gnossen](https://github.com/gnossen), Google LLC
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
