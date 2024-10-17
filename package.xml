@@ -493,6 +493,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.h" role="src" />
@@ -902,6 +905,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c" role="src" />
@@ -1073,6 +1078,8 @@
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/xds_http_proxy_mapper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/xds_http_proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.h" role="src" />
@@ -1686,7 +1693,6 @@
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_wrr_locality.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry_extra.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/binder/binder_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />

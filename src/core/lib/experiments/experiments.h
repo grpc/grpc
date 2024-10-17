@@ -65,7 +65,6 @@ inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -76,6 +75,7 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerListenerEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -99,7 +99,6 @@ inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
-inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -111,6 +110,7 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerListenerEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -134,7 +134,6 @@ inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
-inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -146,6 +145,7 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerListenerEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -168,7 +168,6 @@ enum ExperimentIds {
   kExperimentIdEventEngineApplicationCallbacks,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
-  kExperimentIdEventEngineDnsNonClientChannel,
   kExperimentIdEventEngineListener,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdLocalConnectorSecure,
@@ -177,6 +176,7 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedInprocTransport,
+  kExperimentIdRqFastReject,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerListener,
   kExperimentIdServerPrivacy,
@@ -212,10 +212,6 @@ inline bool IsEventEngineClientEnabled() {
 inline bool IsEventEngineDnsEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineDns>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
-inline bool IsEventEngineDnsNonClientChannelEnabled() {
-  return IsExperimentEnabled<kExperimentIdEventEngineDnsNonClientChannel>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineListener>();
@@ -247,6 +243,10 @@ inline bool IsPickFirstNewEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedInprocTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RQ_FAST_REJECT
+inline bool IsRqFastRejectEnabled() {
+  return IsExperimentEnabled<kExperimentIdRqFastReject>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {

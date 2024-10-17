@@ -1036,55 +1036,70 @@ absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
 }  // namespace
 
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
-  call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
-    return TrySeq(
-        // Wait for initial metadata to pass through all filters
-        Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
-        // Match request with requested call
-        [this, call_handler](ClientMetadataHandle md) mutable {
-          auto* registered_method = static_cast<RegisteredMethod*>(
-              md->get(GrpcRegisteredMethod()).value_or(nullptr));
-          RequestMatcherInterface* rm;
-          grpc_server_register_method_payload_handling payload_handling =
-              GRPC_SRM_PAYLOAD_NONE;
-          if (registered_method == nullptr) {
-            rm = unregistered_request_matcher_.get();
-          } else {
-            payload_handling = registered_method->payload_handling;
-            rm = registered_method->matcher.get();
-          }
-          auto maybe_read_first_message = If(
-              payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call_handler]() mutable { return call_handler.PullMessage(); },
-              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                return ValueOrFailure<absl::optional<MessageHandle>>(
-                    absl::nullopt);
-              });
-          return TryJoin<absl::StatusOr>(
-              std::move(maybe_read_first_message), rm->MatchRequest(0),
-              [md = std::move(md)]() mutable {
-                return ValueOrFailure<ClientMetadataHandle>(std::move(md));
-              });
-        },
-        // Publish call to cq
-        [call_handler, this](std::tuple<absl::optional<MessageHandle>,
-                                        RequestMatcherInterface::MatchResult,
-                                        ClientMetadataHandle>
-                                 r) {
-          RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
-          auto md = std::move(std::get<2>(r));
-          auto* rc = mr.TakeCall();
-          rc->Complete(std::move(std::get<0>(r)), *md);
-          grpc_call* call =
-              MakeServerCall(call_handler, std::move(md), this,
-                             rc->cq_bound_to_call, rc->initial_metadata);
-          *rc->call = call;
-          return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
-                     [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
-                       return absl::OkStatus();
-                     });
-        });
-  });
+  call_handler.SpawnGuardedUntilCallCompletes(
+      "request_matcher", [this, call_handler]() mutable {
+        return TrySeq(
+            // Wait for initial metadata to pass through all filters
+            Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
+            // Match request with requested call
+            [this, call_handler](ClientMetadataHandle md) mutable {
+              auto* registered_method = static_cast<RegisteredMethod*>(
+                  md->get(GrpcRegisteredMethod()).value_or(nullptr));
+              RequestMatcherInterface* rm;
+              grpc_server_register_method_payload_handling payload_handling =
+                  GRPC_SRM_PAYLOAD_NONE;
+              if (registered_method == nullptr) {
+                rm = unregistered_request_matcher_.get();
+              } else {
+                payload_handling = registered_method->payload_handling;
+                rm = registered_method->matcher.get();
+              }
+              using FirstMessageResult =
+                  ValueOrFailure<absl::optional<MessageHandle>>;
+              auto maybe_read_first_message = If(
+                  payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+                  [call_handler]() mutable {
+                    return Map(
+                        call_handler.PullMessage(),
+                        [](ClientToServerNextMessage next_msg)
+                            -> FirstMessageResult {
+                          if (!next_msg.ok()) return Failure{};
+                          if (!next_msg.has_value()) {
+                            return FirstMessageResult(absl::nullopt);
+                          }
+                          return FirstMessageResult(next_msg.TakeValue());
+                        });
+                  },
+                  []() -> FirstMessageResult {
+                    return FirstMessageResult(absl::nullopt);
+                  });
+              return TryJoin<absl::StatusOr>(
+                  std::move(maybe_read_first_message), rm->MatchRequest(0),
+                  [md = std::move(md)]() mutable {
+                    return ValueOrFailure<ClientMetadataHandle>(std::move(md));
+                  });
+            },
+            // Publish call to cq
+            [call_handler,
+             this](std::tuple<absl::optional<MessageHandle>,
+                              RequestMatcherInterface::MatchResult,
+                              ClientMetadataHandle>
+                       r) {
+              RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
+              auto md = std::move(std::get<2>(r));
+              auto* rc = mr.TakeCall();
+              rc->Complete(std::move(std::get<0>(r)), *md);
+              grpc_call* call =
+                  MakeServerCall(call_handler, std::move(md), this,
+                                 rc->cq_bound_to_call, rc->initial_metadata);
+              *rc->call = call;
+              return Map(
+                  WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
+                  [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
+                    return absl::OkStatus();
+                  });
+            });
+      });
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
@@ -2016,8 +2031,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
   CHECK(!reserved);
   auto cq_type = grpc_get_cq_completion_type(cq);
   if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
-    LOG(INFO) << "Completion queue of type " << static_cast<int>(cq_type)
-              << " is being registered as a server-completion-queue";
+    VLOG(2) << "Completion queue of type " << static_cast<int>(cq_type)
+            << " is being registered as a server-completion-queue";
     // Ideally we should log an error and abort but ruby-wrapped-language API
     // calls grpc_completion_queue_pluck() on server completion queues
   }
