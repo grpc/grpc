@@ -44,7 +44,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "api_fuzzer_proto",
+        "api_fuzzer_cc_proto",
         "//:gpr",
         "//:grpc",
         "//test/core/event_engine/fuzzing_event_engine",
