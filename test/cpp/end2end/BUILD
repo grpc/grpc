@@ -308,7 +308,7 @@ grpc_cc_library(
         "//:grpc++_test",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
