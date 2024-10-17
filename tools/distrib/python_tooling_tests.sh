@@ -18,11 +18,12 @@ set -ex
 BASEDIR=$(dirname "$0")/../..
 cd "$BASEDIR";
 
-# Run tests for grpcio_tests
+# the test module 
+TEST_MODULE="tests.unit.test_all_modules_installed" 
+
+# Run the specific test module
 pushd src/python/grpcio_tests;
-  python3 setup.py test_lite
-  python3 setup.py test_aio
-  python3 setup.py test_py3_only
+  python3 -m unittest "$TEST_MODULE" 
 popd;
 
 chmod -R 755 src/
