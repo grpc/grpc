@@ -89,54 +89,6 @@ namespace grpc_core {
 using grpc_event_engine::experimental::EventEngine;
 
 //
-// Server::ListenerWrapper::ConfigFetcherWatcher
-//
-
-void Server::ListenerWrapper::ConfigFetcherWatcher::UpdateConnectionManager(
-    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-        connection_manager) {
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager_to_destroy;
-  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-      connections_to_shutdown;
-  auto cleanup = absl::MakeCleanup([&connections_to_shutdown]() {
-    // Send GOAWAYs on the transports so that they get disconnected when
-    // existing RPCs finish, and so that no new RPC is started on them.
-    for (auto& connection : connections_to_shutdown) {
-      connection->SendGoAway();
-    }
-  });
-  {
-    MutexLock lock(&listener_->mu_);
-    connection_manager_to_destroy = listener_->connection_manager_;
-    listener_->connection_manager_ = std::move(connection_manager);
-    connections_to_shutdown = std::move(listener_->connections_);
-    if (listener_->server_->ShutdownCalled()) {
-      return;
-    }
-    listener_->is_serving_ = true;
-    if (listener_->started_) return;
-    listener_->started_ = true;
-  }
-  listener_->listener_->Start();
-}
-
-void Server::ListenerWrapper::ConfigFetcherWatcher::StopServing() {
-  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-      connections;
-  {
-    MutexLock lock(&listener_->mu_);
-    listener_->is_serving_ = false;
-    connections = std::move(listener_->connections_);
-  }
-  // Send GOAWAYs on the transports so that they disconnect when existing
-  // RPCs finish.
-  for (auto& connection : connections) {
-    connection->SendGoAway();
-  }
-}
-
-//
 // Server::ListenerInterface::LogicalConnection
 //
 
@@ -200,14 +152,62 @@ void Server::ListenerInterface::LogicalConnection::OnDrainGraceTimer() {
 }
 
 //
-// Server::ListenerInterface
+// Server::ListenerState::ConfigFetcherWatcher
 //
 
-void Server::ListenerWrapper::Start() {
+void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
+    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+        connection_manager) {
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager_to_destroy;
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections_to_shutdown;
+  auto cleanup = absl::MakeCleanup([&connections_to_shutdown]() {
+    // Send GOAWAYs on the transports so that they get disconnected when
+    // existing RPCs finish, and so that no new RPC is started on them.
+    for (auto& connection : connections_to_shutdown) {
+      connection->SendGoAway();
+    }
+  });
+  {
+    MutexLock lock(&listener_->mu_);
+    connection_manager_to_destroy = listener_->connection_manager_;
+    listener_->connection_manager_ = std::move(connection_manager);
+    connections_to_shutdown = std::move(listener_->connections_);
+    if (listener_->server_->ShutdownCalled()) {
+      return;
+    }
+    listener_->is_serving_ = true;
+    if (listener_->started_) return;
+    listener_->started_ = true;
+  }
+  listener_->listener_->Start();
+}
+
+void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&listener_->mu_);
+    listener_->is_serving_ = false;
+    connections = std::move(listener_->connections_);
+  }
+  // Send GOAWAYs on the transports so that they disconnect when existing
+  // RPCs finish.
+  for (auto& connection : connections) {
+    connection->SendGoAway();
+  }
+}
+
+//
+// Server::ListenerState
+//
+
+void Server::ListenerState::Start() {
   if (IsServerListenerEnabled()) {
     if (server_->config_fetcher() != nullptr) {
       auto watcher =
-          std::make_unique<ListenerWrapper::ConfigFetcherWatcher>(this);
+          std::make_unique<ListenerState::ConfigFetcherWatcher>(this);
       config_fetcher_watcher_ = watcher.get();
       server_->config_fetcher()->StartWatch(
           grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
@@ -225,7 +225,7 @@ void Server::ListenerWrapper::Start() {
   }
 }
 
-void Server::ListenerWrapper::Stop() {
+void Server::ListenerState::Stop() {
   if (IsServerListenerEnabled()) {
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
         connections;
@@ -246,7 +246,7 @@ void Server::ListenerWrapper::Stop() {
   listener_.reset();
 }
 
-absl::optional<ChannelArgs> Server::ListenerWrapper::AddLogicalConnection(
+absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
     OrphanablePtr<ListenerInterface::LogicalConnection> connection,
     const ChannelArgs& args, grpc_endpoint* endpoint) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
@@ -293,7 +293,7 @@ absl::optional<ChannelArgs> Server::ListenerWrapper::AddLogicalConnection(
   return new_args;
 }
 
-void Server::ListenerWrapper::RemoveLogicalConnection(
+void Server::ListenerState::RemoveLogicalConnection(
     ListenerInterface::LogicalConnection* connection) {
   OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   {
@@ -1135,7 +1135,7 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   }
   ListenerInterface* ptr = listener.get();
   listeners_.emplace_back(this, std::move(listener));
-  ptr->SetServerListenerWrapper(&listeners_.back());
+  ptr->SetServerListenerState(&listeners_.back());
 }
 
 void Server::Start() {

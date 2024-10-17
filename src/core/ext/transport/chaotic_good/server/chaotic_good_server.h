@@ -132,10 +132,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     return nullptr;
   }
 
-  void SetServerListenerWrapper(Server::ListenerWrapper*) override {}
+  void SetServerListenerState(Server::ListenerState*) override {}
 
   const grpc_resolved_address* resolved_address() const override {
-    // chaotic good doesn't use the new ListenerWrapper interface yet.
+    // chaotic good doesn't use the new ListenerState interface yet.
     Crash("Unimplemented");
     return nullptr;
   }

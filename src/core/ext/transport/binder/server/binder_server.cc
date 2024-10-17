@@ -155,10 +155,10 @@ class BinderServerListener : public Server::ListenerInterface {
     return nullptr;
   }
 
-  void SetServerListenerWrapper(Server::ListenerWrapper*) override {}
+  void SetServerListenerState(Server::ListenerState*) override {}
 
   const grpc_resolved_address* resolved_address() const override {
-    // binder doesn't use the new ListenerWrapper interface yet.
+    // binder doesn't use the new ListenerState interface yet.
     Crash("Unimplemented");
     return nullptr;
   }

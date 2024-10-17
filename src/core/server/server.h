@@ -142,7 +142,7 @@ class Server : public ServerInterface,
     grpc_completion_queue* cq;
   };
 
-  class ListenerWrapper;
+  class ListenerState;
 
   /// Interface for listeners.
   class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
@@ -209,7 +209,7 @@ class Server : public ServerInterface,
     /// supported.
     virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
 
-    virtual void SetServerListenerWrapper(ListenerWrapper* listener) = 0;
+    virtual void SetServerListenerState(ListenerState* listener) = 0;
 
     virtual const grpc_resolved_address* resolved_address() const = 0;
 
@@ -221,29 +221,11 @@ class Server : public ServerInterface,
   // Implements the connection management and config fetching mechanism for
   // listeners.
   // Note that an alternative implementation would have been to combine the
-  // ListenerInterface and ListenerWrapper into a single parent class, but
+  // ListenerInterface and ListenerState into a single parent class, but
   // they are being separated to make code simpler to understand.
-  class ListenerWrapper {
+  class ListenerState {
    public:
-    class ConfigFetcherWatcher
-        : public grpc_server_config_fetcher::WatcherInterface {
-     public:
-      explicit ConfigFetcherWatcher(ListenerWrapper* listener)
-          : listener_(listener) {}
-
-      void UpdateConnectionManager(
-          RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-              connection_manager) override;
-
-      void StopServing() override;
-
-     private:
-      // This doesn't need to be ref-counted since we start and stop config
-      // fetching as part of starting and stopping the listener.
-      ListenerWrapper* const listener_;
-    };
-
-    explicit ListenerWrapper(Server* server, OrphanablePtr<ListenerInterface> l)
+    explicit ListenerState(Server* server, OrphanablePtr<ListenerInterface> l)
         : server_(server), listener_(std::move(l)) {}
 
     void Start();
@@ -269,6 +251,24 @@ class Server : public ServerInterface,
         ListenerInterface::LogicalConnection* connection);
 
    private:
+    class ConfigFetcherWatcher
+        : public grpc_server_config_fetcher::WatcherInterface {
+     public:
+      explicit ConfigFetcherWatcher(ListenerState* listener)
+          : listener_(listener) {}
+
+      void UpdateConnectionManager(
+          RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+              connection_manager) override;
+
+      void StopServing() override;
+
+     private:
+      // This doesn't need to be ref-counted since we start and stop config
+      // fetching as part of starting and stopping the listener.
+      ListenerState* const listener_;
+    };
+
     Server* const server_;
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
@@ -669,7 +669,7 @@ class Server : public ServerInterface,
       connection_manager_ ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
-  std::list<ListenerWrapper> listeners_;
+  std::list<ListenerState> listeners_;
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.

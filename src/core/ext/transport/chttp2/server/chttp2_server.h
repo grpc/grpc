@@ -37,6 +37,9 @@ namespace experimental {
 // An implementation of the public C++ passive listener interface.
 // The server builder holds a weak_ptr to one of these objects, and the
 // application owns the instance.
+// TODO(yashykt): Move this to C-Core since this should be transport agnostic.
+// Refer to https://github.com/grpc/grpc/pull/37601/files#r1803547924 for
+// details.
 class PassiveListenerImpl final : public PassiveListener {
  public:
   absl::Status AcceptConnectedEndpoint(
@@ -59,8 +62,7 @@ class PassiveListenerImpl final : public PassiveListener {
   Mutex mu_;
   // Data members will be populated when initialized.
   RefCountedPtr<Server> server_;
-  Chttp2ServerListener* listener_ = nullptr;
-  NewChttp2ServerListener* new_listener_ = nullptr;
+  absl::variant<Chttp2ServerListener*, NewChttp2ServerListener*> listener_;
 };
 
 }  // namespace experimental
