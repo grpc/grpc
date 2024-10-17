@@ -170,27 +170,27 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     }
   });
   {
-    MutexLock lock(&listener_->mu_);
-    connection_manager_to_destroy = listener_->connection_manager_;
-    listener_->connection_manager_ = std::move(connection_manager);
-    connections_to_shutdown = std::move(listener_->connections_);
-    if (listener_->server_->ShutdownCalled()) {
+    MutexLock lock(&listener_state_->mu_);
+    connection_manager_to_destroy = listener_state_->connection_manager_;
+    listener_state_->connection_manager_ = std::move(connection_manager);
+    connections_to_shutdown = std::move(listener_state_->connections_);
+    if (listener_state_->server_->ShutdownCalled()) {
       return;
     }
-    listener_->is_serving_ = true;
-    if (listener_->started_) return;
-    listener_->started_ = true;
+    listener_state_->is_serving_ = true;
+    if (listener_state_->started_) return;
+    listener_state_->started_ = true;
   }
-  listener_->listener_->Start();
+  listener_state_->listener_->Start();
 }
 
 void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
       connections;
   {
-    MutexLock lock(&listener_->mu_);
-    listener_->is_serving_ = false;
-    connections = std::move(listener_->connections_);
+    MutexLock lock(&listener_state_->mu_);
+    listener_state_->is_serving_ = false;
+    connections = std::move(listener_state_->connections_);
   }
   // Send GOAWAYs on the transports so that they disconnect when existing
   // RPCs finish.
@@ -1149,8 +1149,8 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
         listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
   ListenerInterface* ptr = listener.get();
-  listeners_.emplace_back(this, std::move(listener));
-  ptr->SetServerListenerState(&listeners_.back());
+  listener_states_.emplace_back(this, std::move(listener));
+  ptr->SetServerListenerState(&listener_states_.back());
 }
 
 void Server::Start() {
@@ -1182,8 +1182,8 @@ void Server::Start() {
                                    pollset);
     }
   }
-  for (auto& listener : listeners_) {
-    listener.Start();
+  for (auto& listener_state : listener_states_) {
+    listener_state.Start();
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
@@ -1332,15 +1332,15 @@ void Server::MaybeFinishShutdown() {
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
   if (!channels_.empty() || connections_open_ > 0 ||
-      listeners_destroyed_ < listeners_.size()) {
+      listeners_destroyed_ < listener_states_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
       VLOG(2) << "Waiting for " << channels_.size() << " channels "
               << connections_open_ << " connections and "
-              << listeners_.size() - listeners_destroyed_ << "/"
-              << listeners_.size()
+              << listener_states_.size() - listeners_destroyed_ << "/"
+              << listener_states_.size()
               << " listeners to be destroyed before shutting down server";
     }
     return;
@@ -1437,15 +1437,15 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 }
 
 void Server::StopListening() {
-  for (auto& listener : listeners_) {
-    if (listener.listener() == nullptr) continue;
+  for (auto& listener_state : listener_states_) {
+    if (listener_state.listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
-        listener.listener()->channelz_listen_socket_node();
+        listener_state.listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_node_->RemoveChildListenSocket(
           channelz_listen_socket_node->uuid());
     }
-    listener.Stop();
+    listener_state.Stop();
   }
 }
 
@@ -1471,8 +1471,8 @@ void Server::SendGoaways() {
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
-    CHECK(ShutdownCalled() || listeners_.empty());
-    CHECK(listeners_destroyed_ == listeners_.size());
+    CHECK(ShutdownCalled() || listener_states_.empty());
+    CHECK(listeners_destroyed_ == listener_states_.size());
   }
   Unref();
 }

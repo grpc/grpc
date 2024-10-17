@@ -209,7 +209,7 @@ class Server : public ServerInterface,
     /// supported.
     virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
 
-    virtual void SetServerListenerState(ListenerState* listener) = 0;
+    virtual void SetServerListenerState(ListenerState* listener_state) = 0;
 
     virtual const grpc_resolved_address* resolved_address() const = 0;
 
@@ -254,8 +254,8 @@ class Server : public ServerInterface,
     class ConfigFetcherWatcher
         : public grpc_server_config_fetcher::WatcherInterface {
      public:
-      explicit ConfigFetcherWatcher(ListenerState* listener)
-          : listener_(listener) {}
+      explicit ConfigFetcherWatcher(ListenerState* listener_state)
+          : listener_state_(listener_state) {}
 
       void UpdateConnectionManager(
           RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
@@ -266,7 +266,7 @@ class Server : public ServerInterface,
      private:
       // This doesn't need to be ref-counted since we start and stop config
       // fetching as part of starting and stopping the listener.
-      ListenerState* const listener_;
+      ListenerState* const listener_state_;
     };
 
     Server* const server_;
@@ -669,7 +669,7 @@ class Server : public ServerInterface,
       connection_manager_ ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
-  std::list<ListenerState> listeners_;
+  std::list<ListenerState> listener_states_;
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.
