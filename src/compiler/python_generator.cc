@@ -511,6 +511,15 @@ bool PrivateGenerator::PrintServicer(const grpc_generator::Service* service,
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
     PrintAllComments(service_comments, out);
+
+    out->Print("\n");
+    out->Print("def add_to_server(self, server: grpc.aio.Server) -> None:\n");
+    {
+      IndentScope raii_method_indent(out);
+      out->Print(service_dict,
+             "add_$Service$Servicer$AsyncPostfix$_to_server(servicer=self, server=server)\n");
+    }
+
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
       std::string arg_name =
