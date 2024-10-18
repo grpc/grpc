@@ -30,25 +30,16 @@
 
 namespace grpc_core {
 
-// A function to modify channel args for a listening addr:port. Note that this
-// is used to create a security connector for listeners when the servers are
-// configured with a config fetcher. Not invoked if there is no config fetcher
-// added to the server. On failure, the error parameter will be set.
-using Chttp2ServerArgsModifier =
-    std::function<ChannelArgs(const ChannelArgs&, grpc_error_handle*)>;
-
-/// Adds a port to \a server.  Sets \a port_num to the port number.
-/// Takes ownership of \a args.
-grpc_error_handle Chttp2ServerAddPort(
-    Server* server, const char* addr, const ChannelArgs& args,
-    Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
-
 class Chttp2ServerListener;
+class NewChttp2ServerListener;
 namespace experimental {
 
 // An implementation of the public C++ passive listener interface.
 // The server builder holds a weak_ptr to one of these objects, and the
 // application owns the instance.
+// TODO(yashykt): Move this to C-Core since this should be transport agnostic.
+// Refer to https://github.com/grpc/grpc/pull/37601/files#r1803547924 for
+// details.
 class PassiveListenerImpl final : public PassiveListener {
  public:
   absl::Status AcceptConnectedEndpoint(
@@ -71,7 +62,7 @@ class PassiveListenerImpl final : public PassiveListener {
   Mutex mu_;
   // Data members will be populated when initialized.
   RefCountedPtr<Server> server_;
-  Chttp2ServerListener* listener_;
+  absl::variant<Chttp2ServerListener*, NewChttp2ServerListener*> listener_;
 };
 
 }  // namespace experimental

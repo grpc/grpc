@@ -33,6 +33,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "server_listener": "server_listener",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -55,6 +56,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "local_connector_secure",
+                "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -68,6 +70,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "server_listener",
             ],
         },
         "on": {
@@ -104,6 +109,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "local_connector_secure",
+                "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -117,6 +123,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "server_listener",
             ],
         },
         "on": {
@@ -137,6 +146,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "local_connector_secure",
+                "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -150,6 +160,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "server_listener",
             ],
         },
         "on": {
