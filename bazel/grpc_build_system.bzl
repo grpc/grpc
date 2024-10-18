@@ -235,8 +235,12 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         deps = deps,
     )
 
-def grpc_internal_proto_library(name, srcs = [], deps = [], visibility = None,
-                                **kwds):
+def grpc_internal_proto_library(
+        name,
+        srcs = [],
+        deps = [],
+        visibility = None,
+        **kwds):
     proto_library(
         name = name,
         srcs = srcs,
