@@ -36,7 +36,7 @@
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
 [submodule "third_party/re2"]
 	path = third_party/re2
-	url = https://github.com/google/re2.git
+	url = https://github.com/veblush/re2.git
 [submodule "third_party/xds"]
 	path = third_party/xds
 	url = https://github.com/cncf/xds.git
