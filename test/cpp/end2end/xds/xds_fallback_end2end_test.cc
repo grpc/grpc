@@ -27,7 +27,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"

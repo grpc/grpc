@@ -39,7 +39,7 @@
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/router.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 
 namespace grpc {
