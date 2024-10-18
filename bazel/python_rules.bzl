@@ -14,6 +14,8 @@
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
+
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",
@@ -179,6 +181,9 @@ py_proto_library = rule(
     },
     implementation = _generate_py_impl,
 )
+# def py_proto_library(*, deprecation = "Use py_proto_library from protobuf repository", **kwargs):
+#     _py_proto_library(deprecation = deprecation, **kwargs)
+# py_proto_library = protobuf_py_proto_library
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
