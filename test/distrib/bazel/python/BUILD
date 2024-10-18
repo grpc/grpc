@@ -20,7 +20,6 @@ load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
     "py_grpc_library",
-    # "py_proto_library",
 )
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
@@ -89,7 +88,7 @@ py_test(
 proto_library(
     name = "helloworld_moved_proto",
     srcs = ["helloworld.proto"],
-    import_prefix = "google/cloud",
+    import_prefix = "foo/bar",
     strip_import_prefix = "",
     deps = [
         ":hello_dep_proto",
@@ -116,8 +115,6 @@ py_test(
     python_version = "PY3",
     deps = [
         ":duration_py_pb2",
-        # ":helloworld_py_pb2",
-        # ":helloworld_py_pb2_grpc",
         ":helloworld_moved_py_pb2",
         ":helloworld_moved_py_pb2_grpc",
         ":timestamp_py_pb2",

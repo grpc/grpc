@@ -38,6 +38,8 @@ def generate_bazel_distribtests(name):
             # TODO(https://github.com/grpc/grpc/issues/35391): Fix bazel 7 + distribtest_python test
             # if bazel_version.startswith("7") and shard_name == "distribtest_python":
             #     continue
+            if shard_name != "distribtest_python":
+                continue
             test_name = "bazel_distribtest_%s_%s" % (bazel_version, shard_name)
             grpc_run_bazel_distribtest_test(
                 name = test_name,
