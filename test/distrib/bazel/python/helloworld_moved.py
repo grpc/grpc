@@ -24,6 +24,10 @@ import unittest
 import grpc
 from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
+import sys
+for path in sys.path:
+    print(f"[xuan_testing] sys.path: {path}\n")
+# import sys; sys.stderr.write(f"[xuan_testing] sys.path: {sys.path}\n"); sys.stderr.flush()
 from google.cloud import helloworld_pb2
 from google.cloud import helloworld_pb2_grpc
 
