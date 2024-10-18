@@ -305,7 +305,6 @@ void ResetEventManagerOnFork() {
     close(fork_fd_list_head->WrappedFd());
     PollEventHandle* next = fork_fd_list_head->ForkFdListPos().next;
     fork_fd_list_head->ForceRemoveHandleFromPoller();
-    delete fork_fd_list_head;
     fork_fd_list_head = next;
   }
   // Delete all registered pollers.

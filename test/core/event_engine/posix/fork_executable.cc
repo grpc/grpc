@@ -23,27 +23,22 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
 #include <thread>
-#include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/fork.h>
 
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/posix/fork_test_utils.h"
-#include "test/core/test_util/port.h"
 
 ABSL_FLAG(bool, child_pause, false,
           "Pause child and wait for \"1\" entered on stdin");
@@ -71,22 +66,110 @@ class FdCloser {
   std::vector<int> fds_;
 };
 
+class ReadWriteResult {
+ public:
+  void ReadDone(absl::StatusOr<std::string> result) {
+    absl::MutexLock lock(&mu_);
+    read_result_ = std::move(result);
+    cond_.SignalAll();
+  }
+
+  void WriteDone(absl::Status status) {
+    absl::MutexLock lock(&mu_);
+    write_result_ = std::move(status);
+    cond_.SignalAll();
+  }
+
+  std::pair<absl::Status, absl::StatusOr<std::string>> WaitForResult() {
+    absl::MutexLock lock_(&mu_);
+    while (!read_result_.has_value() || !write_result_.has_value()) {
+      cond_.Wait(&mu_);
+    }
+    return {*write_result_, *read_result_};
+  }
+
+ private:
+  grpc_core::Mutex mu_;
+  absl::CondVar cond_;
+  absl::optional<absl::StatusOr<std::string>> read_result_
+      ABSL_GUARDED_BY(&mu_);
+  absl::optional<absl::Status> write_result_ ABSL_GUARDED_BY(&mu_);
+};
+
+std::pair<absl::Status, absl::StatusOr<std::string>> SendValidatePayload2(
+    absl::string_view data, EventEngine::Endpoint* send_endpoint,
+    EventEngine::Endpoint* receive_endpoint) {
+  CHECK_NE(receive_endpoint, nullptr);
+  CHECK_NE(send_endpoint, nullptr);
+  int num_bytes_written = data.size();
+  SliceBuffer read_slice_buf;
+  SliceBuffer read_store_buf;
+  SliceBuffer write_slice_buf;
+
+  ReadWriteResult result;
+
+  read_slice_buf.Clear();
+  write_slice_buf.Clear();
+  read_store_buf.Clear();
+
+  AppendStringToSliceBuffer(&write_slice_buf, data);
+  EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
+  std::function<void(absl::Status)> read_cb;
+  read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
+             &args, &result](absl::Status status) {
+    if (!status.ok()) {
+      result.ReadDone(status);
+      return;
+    }
+    if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
+      read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
+                                                    read_store_buf);
+      result.ReadDone(ExtractSliceBufferIntoString(&read_store_buf));
+      return;
+    }
+    args.read_hint_bytes -= read_slice_buf.Length();
+    read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
+                                                  read_store_buf);
+    if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+      CHECK_NE(read_slice_buf.Length(), 0u);
+      read_cb(absl::OkStatus());
+    }
+  };
+  // Start asynchronous reading at the receive_endpoint.
+  if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+    read_cb(absl::OkStatus());
+  }
+  // Start asynchronous writing at the send_endpoint.
+  if (send_endpoint->Write(
+          [&result](absl::Status status) {
+            result.WriteDone(std::move(status));
+          },
+          &write_slice_buf, nullptr)) {
+    result.WriteDone(absl::OkStatus());
+  }
+  return result.WaitForResult();
+}
+
 int ChildProcessMain(std::unique_ptr<FdCloser> fds,
                      std::unique_ptr<Endpoint> client,
                      std::unique_ptr<Endpoint> server_end) {
   dup2(fds->stdout(), 1);
   dup2(fds->stderr(), 2);
   if (absl::GetFlag(FLAGS_child_pause)) {
+    // Volatile so compiler does not optimize this out.
+    // Attach GDB, switch to this frame and do `set flag=1` and `continue` to
+    // resume the child.
     volatile bool flag = false;
     while (!flag) {
-      LOG_EVERY_N_SEC(INFO, 15) << "Flip the value in debugger";
+      LOG_EVERY_N_SEC(INFO, 5) << "Flip the value in debugger";
     }
     LOG(INFO) << "Resuming!";
   }
-  LOG(INFO) << "Child process is running";
-  LOG(INFO) << "Endpoints status in child: "
-            << SendValidatePayload("Hello world in child", server_end.get(),
-                                   client.get());
+  LOG(INFO) << absl::StrFormat("Child process %ld is running", getpid());
+  auto doomed_send = SendValidatePayload2("Hello world in child",
+                                          server_end.get(), client.get());
+  CHECK_EQ(doomed_send.second.status().code(), absl::StatusCode::kInternal)
+      << doomed_send.second.status();
   return 0;
 }
 
@@ -97,7 +180,6 @@ class ParentProcessMonitor {
   ~ParentProcessMonitor() {
     done_.store(true);
     bg_thread_.join();
-    LOG(INFO) << absl::StrFormat("Parent %ld is done", getpid());
   }
 
  private:
@@ -105,7 +187,7 @@ class ParentProcessMonitor {
     pid_t pid = getpid();
     auto start_time = absl::Now();
     while (!done->load(std::memory_order_relaxed)) {
-      LOG_EVERY_N_SEC(INFO, 5)
+      LOG_EVERY_N_SEC(INFO, 10)
           << absl::StrFormat("Parent process %ld had been running for %v", pid,
                              absl::Now() - start_time);
       absl::SleepFor(absl::Milliseconds(300));
@@ -137,21 +219,18 @@ int main(int argc, char* argv[]) {
   // Needs to happen after the scope exit and after all other variables gone
   auto cleanup = absl::MakeCleanup([] { grpc_shutdown(); });
   grpc_core::Fork::Enable(true);
-  int port = grpc_pick_unused_port_or_die();
-  std::string addr = absl::StrCat("localhost:", port);
-  std::string target_addr = absl::StrCat(
-      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-  auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
-  event_engine::experimental::testing::EventEngineHolder holder(*resolved_addr);
+  event_engine::experimental::testing::EventEngineHolder holder;
   CHECK(holder.ok());
   auto client = holder.Connect();
   CHECK_NE(client.get(), nullptr);
   auto server_end = holder.GetServerEndpoint();
   CHECK_NE(server_end.get(), nullptr);
-  LOG(INFO) << "Endpoints status: "
-            << SendValidatePayload("Hello world", server_end.get(),
-                                   client.get());
+  auto result =
+      SendValidatePayload2("Hello world", server_end.get(), client.get());
+  CHECK_OK(result.first);
+  CHECK_OK(result.second);
+  CHECK_EQ(*result.second, "Hello world");
+  LOG(INFO) << "Endpoint works";
   std::array<int, 2> stdouts;
   PCHECK(pipe(stdouts.data()) >= 0);
   std::array<int, 2> stderrs;
@@ -166,10 +245,11 @@ int main(int argc, char* argv[]) {
                             std::move(server_end));
   } else {
     child_process_fds.reset();
-    absl::Status child_status =
+    absl::Status child_process_status =
         ParentProcessMain(std::move(parent_process_fds), pid, std::move(client),
                           std::move(server_end));
-    QCHECK_OK(child_status);
+    QCHECK_OK(child_process_status);
+    LOG(INFO) << absl::StrFormat("Parent %ld is done", getpid());
     return 0;
   }
 }

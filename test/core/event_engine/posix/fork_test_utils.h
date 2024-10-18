@@ -53,7 +53,7 @@ class EventEngineHolder {
   using TestScheduler = ::grpc_event_engine::experimental::TestScheduler;
 
  public:
-  EventEngineHolder(const ResolvedAddress& address);
+  EventEngineHolder();
   ~EventEngineHolder();
   std::unique_ptr<Endpoint> Connect();
 
