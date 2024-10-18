@@ -97,6 +97,7 @@ void RegisterOpenCensusViewsForExport() {
   experimental::ServerReceivedMessagesPerRpcCumulative().RegisterForExport();
   experimental::ServerReceivedBytesPerRpcCumulative().RegisterForExport();
   experimental::ServerServerLatencyCumulative().RegisterForExport();
+  experimental::ServerCompletedRpcsCumulative().RegisterForExport();
 }
 
 namespace experimental {
@@ -397,7 +398,7 @@ const ViewDescriptor& ServerCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       DefaultViewDescriptor()
           .set_name("grpc.io/server/completed_rpcs/cumulative")
-          .set_measure(kRpcServerServerLatencyMeasureName)
+          .set_measure(kRpcServerComletedRpcMeasureName)
           .set_aggregation(Aggregation::Count())
           .add_column(ServerMethodTagKey())
           .add_column(ServerStatusTagKey());
