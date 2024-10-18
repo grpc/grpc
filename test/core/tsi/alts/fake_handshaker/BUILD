@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_grpc_library", "grpc_cc_library", "grpc_cc_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_grpc_library", "grpc_cc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -21,7 +21,7 @@ grpc_package(
     visibility = "public",
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "transport_security_common_proto",
     srcs = ["transport_security_common.proto"],
 )
@@ -31,7 +31,7 @@ grpc_cc_proto_library(
     deps = ["transport_security_common_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "handshaker_proto",
     srcs = ["handshaker.proto"],
     deps = [

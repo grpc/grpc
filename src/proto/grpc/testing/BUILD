@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_grpc_library",
     "grpc_cc_proto_library",
+    "grpc_internal_proto_library",
     "grpc_package",
     "grpc_proto_library",
 )
@@ -38,7 +38,7 @@ exports_files([
     "test.proto",
 ])
 
-proto_library(
+grpc_internal_proto_library(
     name = "compiler_test_proto",
     srcs = ["compiler_test.proto"],
 )
@@ -55,7 +55,7 @@ grpc_cc_grpc_library(
     deps = ["compiler_test_cc_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "control_proto",
     srcs = ["control.proto"],
     deps = [
@@ -75,7 +75,7 @@ py_proto_library(
     deps = [":control_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
     deps = [
@@ -88,7 +88,7 @@ grpc_cc_proto_library(
     deps = ["echo_messages_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
     deps = [
@@ -113,7 +113,7 @@ grpc_cc_grpc_library(
     ],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "empty_proto",
     srcs = ["empty.proto"],
 )
@@ -134,7 +134,7 @@ py_grpc_library(
     deps = [":empty_py_pb2"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "messages_proto",
     srcs = ["messages.proto"],
 )
@@ -155,7 +155,7 @@ py_grpc_library(
     deps = [":py_messages_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "metrics_proto",
     srcs = ["metrics.proto"],
 )
@@ -171,7 +171,7 @@ grpc_cc_grpc_library(
     deps = ["metrics_cc_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "payloads_proto",
     srcs = ["payloads.proto"],
 )
@@ -186,7 +186,7 @@ py_proto_library(
     deps = [":payloads_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "benchmark_service_proto",
     srcs = ["benchmark_service.proto"],
     deps = [
@@ -219,7 +219,7 @@ py_grpc_library(
     deps = [":benchmark_service_py_pb2"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],
     deps = [
@@ -241,7 +241,7 @@ grpc_cc_grpc_library(
     ],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "worker_service_proto",
     srcs = ["worker_service.proto"],
     deps = [
@@ -274,7 +274,7 @@ py_grpc_library(
     deps = [":worker_service_py_pb2"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "simple_messages_proto",
     srcs = ["simple_messages.proto"],
 )
@@ -284,7 +284,7 @@ grpc_cc_proto_library(
     deps = [":simple_messages_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
 )
@@ -299,7 +299,7 @@ py_proto_library(
     deps = [":stats_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "test_proto",
     srcs = ["test.proto"],
     deps = [
@@ -330,7 +330,7 @@ py_grpc_library(
     deps = [":py_test_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "istio_echo_proto",
     srcs = ["istio_echo.proto"],
     deps = [

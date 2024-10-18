@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -22,7 +21,7 @@ grpc_package(
     visibility = "public",
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "rls_proto",
     srcs = ["rls.proto"],
 )
@@ -38,7 +37,7 @@ grpc_cc_grpc_library(
     deps = ["rls_cc_proto"],
 )
 
-proto_library(
+grpc_internal_proto_library(
     name = "rls_config_proto",
     srcs = ["rls_config.proto"],
     deps = [
