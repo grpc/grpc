@@ -867,7 +867,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python38_config,
-                    python312_config,
+                    python313_config,
                 )
         elif args.compiler == "python3.8":
             return (python38_config,)
