@@ -30,7 +30,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpcpp_gcp_observability",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
