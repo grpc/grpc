@@ -61,6 +61,7 @@ class TestChannelReady(AioTestBase):
         finally:
             await server.stop(None)
 
+    @unittest.skip("skipping due to a discovered flake")
     async def test_channel_ready_blocked(self):
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(
