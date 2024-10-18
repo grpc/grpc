@@ -24,6 +24,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "channelz_proto",
     srcs = ["channelz.proto"],
+    has_services = True,
     deps = [
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:duration_proto",

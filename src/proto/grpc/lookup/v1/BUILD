@@ -24,6 +24,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "rls_proto",
     srcs = ["rls.proto"],
+    has_services = True,
 )
 
 grpc_cc_proto_library(

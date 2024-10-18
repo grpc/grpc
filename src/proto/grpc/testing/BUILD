@@ -41,6 +41,7 @@ exports_files([
 grpc_internal_proto_library(
     name = "compiler_test_proto",
     srcs = ["compiler_test.proto"],
+    has_services = True,
 )
 
 grpc_cc_proto_library(
@@ -91,6 +92,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
+    has_services = True,
     deps = [
         "echo_messages_proto",
         "simple_messages_proto",
@@ -158,6 +160,7 @@ py_grpc_library(
 grpc_internal_proto_library(
     name = "metrics_proto",
     srcs = ["metrics.proto"],
+    has_services = True,
 )
 
 grpc_cc_proto_library(
@@ -189,6 +192,7 @@ py_proto_library(
 grpc_internal_proto_library(
     name = "benchmark_service_proto",
     srcs = ["benchmark_service.proto"],
+    has_services = True,
     deps = [
         "messages_proto",
     ],
@@ -222,6 +226,7 @@ py_grpc_library(
 grpc_internal_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],
+    has_services = True,
     deps = [
         "control_proto",
     ],
@@ -244,6 +249,7 @@ grpc_cc_grpc_library(
 grpc_internal_proto_library(
     name = "worker_service_proto",
     srcs = ["worker_service.proto"],
+    has_services = True,
     deps = [
         "control_proto",
     ],
@@ -302,6 +308,7 @@ py_proto_library(
 grpc_internal_proto_library(
     name = "test_proto",
     srcs = ["test.proto"],
+    has_services = True,
     deps = [
         "empty_proto",
         "messages_proto",
@@ -333,6 +340,7 @@ py_grpc_library(
 grpc_internal_proto_library(
     name = "istio_echo_proto",
     srcs = ["istio_echo.proto"],
+    has_services = True,
     deps = [
         "@com_google_protobuf//:wrappers_proto",
     ],

@@ -24,6 +24,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "load_balancer_proto",
     srcs = ["load_balancer.proto"],
+    has_services = True,
     deps = [
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
@@ -44,6 +45,7 @@ grpc_cc_grpc_library(
 grpc_internal_proto_library(
     name = "load_reporter_proto",
     srcs = ["load_reporter.proto"],
+    has_services = True,
     deps = [
         "@com_google_protobuf//:duration_proto",
     ],

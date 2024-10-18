@@ -34,6 +34,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "handshaker_proto",
     srcs = ["handshaker.proto"],
+    has_services = True,
     deps = [
         "transport_security_common_proto",
     ],

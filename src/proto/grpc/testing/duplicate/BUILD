@@ -24,6 +24,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "echo_duplicate_proto",
     srcs = ["echo_duplicate.proto"],
+    has_services = True,
     deps = ["//src/proto/grpc/testing:echo_messages_proto"],
 )
 

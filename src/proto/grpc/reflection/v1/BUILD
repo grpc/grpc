@@ -24,6 +24,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
+    has_services = True,
 )
 
 grpc_cc_proto_library(

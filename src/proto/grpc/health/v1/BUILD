@@ -24,6 +24,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "health_proto",
     srcs = ["health.proto"],
+    has_services = True,
 )
 
 grpc_cc_proto_library(

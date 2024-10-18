@@ -67,6 +67,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "discovery_proto",
     srcs = ["discovery.proto"],
+    has_services = True,
     deps = [
         "base_proto",
         "@com_google_protobuf//:any_proto",
@@ -82,6 +83,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "ads_proto",
     srcs = ["ads.proto"],
+    has_services = True,
     deps = [
         "discovery_proto",
     ],
@@ -216,6 +218,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "lrs_proto",
     srcs = ["lrs.proto"],
+    has_services = True,
     deps = [
         "base_proto",
         "load_report_proto",
@@ -247,6 +250,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "orca_service_proto",
     srcs = ["orca_service.proto"],
+    has_services = True,
     deps = [
         "orca_load_report_proto",
         "@com_google_protobuf//:duration_proto",
@@ -458,6 +462,7 @@ grpc_cc_proto_library(
 grpc_internal_proto_library(
     name = "csds_proto",
     srcs = ["csds.proto"],
+    has_services = True,
     deps = [
         "base_proto",
         "config_dump_proto",
