@@ -313,7 +313,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           A map of strings to an iterable of bytes for each auth property.
         """
 
-    def time_remaining(self) -> float:  # type: ignore
+    def time_remaining(self) -> float:
         """Describes the length of allowed time remaining for the RPC.
 
         Returns:
@@ -321,6 +321,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
         """
+        raise NotImplementedError()
 
     def trailing_metadata(self):
         """Access value to be used as trailing metadata upon RPC completion.
@@ -362,7 +363,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
             object as its only argument.
         """
 
-    def cancelled(self) -> bool:  # type: ignore
+    def cancelled(self) -> bool:
         """Return True if the RPC is cancelled.
 
         The RPC is cancelled when the cancellation was requested with cancel().
@@ -372,8 +373,9 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates whether the RPC is cancelled or not.
         """
+        raise NotImplementedError()
 
-    def done(self) -> bool:  # type: ignore
+    def done(self) -> bool:
         """Return True if the RPC is done.
 
         An RPC is done if the RPC is completed, cancelled or aborted.
@@ -383,3 +385,4 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates if the RPC is done.
         """
+        raise NotImplementedError()

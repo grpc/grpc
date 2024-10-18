@@ -393,7 +393,10 @@ class _StreamResponseMixin(Call):
                 raw_response, self._response_deserializer
             )
 
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
+        # Wait for the request being sent
+        await self._preparation
+
         if self.done():
             await self._raise_for_status()
             return cygrpc.EOF
@@ -613,7 +616,6 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
     """
 
-    _request: RequestType  # type: ignore
     _send_unary_request_task: asyncio.Task
 
     # pylint: disable=too-many-arguments

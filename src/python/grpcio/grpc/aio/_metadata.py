@@ -93,6 +93,7 @@ class Metadata(abc.Collection):
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
+        # mypy can't infer the type of the view due to limitations with generic ABCs
         return abc.KeysView(self)  # type: ignore[arg-type]
 
     def values(self) -> abc.ValuesView:

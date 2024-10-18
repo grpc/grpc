@@ -500,7 +500,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             )
         return self._response_aiter
 
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -1158,7 +1158,7 @@ class UnaryStreamCallResponseIterator(
 ):
     """UnaryStreamCall class wich uses an alternative response iterator."""
 
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
         # Behind the scenes everyting goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
@@ -1169,7 +1169,7 @@ class StreamStreamCallResponseIterator(
 ):
     """StreamStreamCall class wich uses an alternative response iterator."""
 
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
         # Behind the scenes everyting goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()

@@ -17,6 +17,15 @@ from typing import Optional
 
 
 def _timeout_to_deadline(timeout: Optional[float]) -> Optional[float]:
+    """Converts a timeout value to a deadline timestamp.
+
+    Args:
+        timeout: A timeout value in seconds, or None for no timeout.
+
+    Returns:
+        A deadline timestamp as a floating-point number representing seconds
+        since the epoch, or None if `timeout` is None.
+    """
     if timeout is None:
         return None
     return time.time() + timeout

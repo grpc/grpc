@@ -163,7 +163,7 @@ class UnaryStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]:  # type: ignore
+    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
         """Reads one message from the stream.
 
         Read operations must be serialized when called from multiple
@@ -223,7 +223,7 @@ class StreamStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]:  # type: ignore
+    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
         """Reads one message from the stream.
 
         Read operations must be serialized when called from multiple
