@@ -23,6 +23,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
+    "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
     "local_connector_secure": "local_connector_secure",
@@ -46,6 +47,7 @@ EXPERIMENT_ENABLES = {
 EXPERIMENT_POLLERS = [
     "event_engine_client",
     "event_engine_dns",
+    "event_engine_dns_non_client_channel",
     "event_engine_listener",
 ]
 
@@ -55,6 +57,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "server_listener",
             ],
@@ -108,6 +111,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "server_listener",
             ],
@@ -145,6 +149,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "event_engine_dns_non_client_channel",
                 "local_connector_secure",
                 "server_listener",
             ],
