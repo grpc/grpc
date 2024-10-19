@@ -1047,6 +1047,9 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
                      OrphanablePtr<grpc_endpoint> endpoint);
     void Start(const ChannelArgs& args);
 
+    void SendGoAway() override;
+    void DisconnectImmediately() override;
+
     void Orphan() override;
 
     // Needed to be able to grab an external weak ref in
@@ -1054,13 +1057,13 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     using InternallyRefCounted<LogicalConnection>::RefAsSubclass;
 
    private:
-    bool SendGoAwayImplLocked() override;
-    void DisconnectImmediatelyImplLocked() override;
     static void OnClose(void* arg, grpc_error_handle error);
-    void OnDrainGraceTimeExpiry() ABSL_LOCKS_EXCLUDED(&mu_);
+    void SendGoAwayImplLocked();
+    void DisconnectImmediatelyImplLocked();
 
     RefCountedPtr<NewChttp2ServerListener> const listener_;
-    // FOllowing fields are protected by WorkSerializer.
+    WorkSerializer work_serializer_;
+    // Following fields are protected by WorkSerializer.
     // Set by HandshakingState before the handshaking begins and reset when
     // handshaking is done.
     OrphanablePtr<HandshakingState> handshaking_state_;
@@ -1086,6 +1089,12 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
 
   static void DestroyListener(Server* /*server*/, void* arg,
                               grpc_closure* destroy_done);
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return listener_state_->server()
+        ->channel_args()
+        .GetObject<grpc_event_engine::experimental::EventEngine>();
+  }
 
   grpc_tcp_server* tcp_server_ = nullptr;
   grpc_resolved_address resolved_address_;
@@ -1138,7 +1147,7 @@ NewChttp2ServerListener::ActiveConnection::HandshakingState::
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
-  connection_->work_serializer()->Run(
+  connection_->work_serializer_.Run(
       [this] {
         ShutdownLocked(absl::UnavailableError("Listener stopped serving."));
         Unref();
@@ -1156,10 +1165,9 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::StartLocked(
       std::move(endpoint_), channel_args, deadline_, acceptor_.get(),
       [self = Ref()](absl::StatusOr<HandshakerArgs*> result) mutable {
         auto* self_ptr = self.get();
-        self_ptr->connection_->work_serializer()->Run(
+        self_ptr->connection_->work_serializer_.Run(
             [self = std::move(self), result = std::move(result)]() mutable {
               self->OnHandshakeDoneLocked(std::move(result));
-              self->Unref();
             },
             DEBUG_LOCATION);
       });
@@ -1187,10 +1195,11 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     OnReceiveSettings(void* arg, grpc_error_handle /* error */) {
   HandshakingState* self = static_cast<HandshakingState*>(arg);
-  self->connection_->work_serializer()->Run(
+  self->connection_->work_serializer_.Run(
       [self] {
         if (self->timer_handle_.has_value()) {
-          self->connection_->event_engine()->Cancel(*self->timer_handle_);
+          self->connection_->listener_->event_engine()->Cancel(
+              *self->timer_handle_);
           self->timer_handle_.reset();
         }
         self->Unref();
@@ -1257,10 +1266,10 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
         grpc_chttp2_transport_start_reading(
             transport.get(), (*result)->read_buffer.c_slice_buffer(),
             &on_receive_settings_, nullptr, on_close);
-        timer_handle_ = connection_->event_engine()->RunAfter(
+        timer_handle_ = connection_->listener_->event_engine()->RunAfter(
             deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
               auto* self_ptr = self.get();
-              self_ptr->connection_->work_serializer()->Run(
+              self_ptr->connection_->work_serializer_.Run(
                   [self = std::move(self)]() mutable {
                     ApplicationCallbackExecCtx callback_exec_ctx;
                     ExecCtx exec_ctx;
@@ -1306,8 +1315,9 @@ NewChttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_pollset* accepting_pollset, AcceptorPtr acceptor,
     const ChannelArgs& args, MemoryOwner memory_owner,
     OrphanablePtr<grpc_endpoint> endpoint)
-    : LogicalConnection(listener->listener_state_->server()),
-      listener_(std::move(listener)),
+    : listener_(std::move(listener)),
+      work_serializer_(
+          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
           RefAsSubclass<ActiveConnection>(), accepting_pollset,
           std::move(acceptor), args, std::move(endpoint))) {
@@ -1316,7 +1326,7 @@ NewChttp2ServerListener::ActiveConnection::ActiveConnection(
 }
 
 void NewChttp2ServerListener::ActiveConnection::Orphan() {
-  work_serializer()->Run(
+  work_serializer_.Run(
       [this]() {
         shutdown_ = true;
         // Reset handshaking_state_ since we have been orphaned by the
@@ -1327,28 +1337,24 @@ void NewChttp2ServerListener::ActiveConnection::Orphan() {
       DEBUG_LOCATION);
 }
 
-bool NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
-  if (!shutdown_) {
-    // Shutdown the handshaker if it's still in progress.
-    if (handshaking_state_ != nullptr) {
-      handshaking_state_->ShutdownLocked(
-          absl::UnavailableError("Connection going away"));
-    }
-    shutdown_ = true;
-    // Send a GOAWAY if the transport exists
-    if (transport_ != nullptr) {
-      grpc_transport_op* op = grpc_make_transport_op(nullptr);
-      op->goaway_error =
-          GRPC_ERROR_CREATE("Server is stopping to serve requests.");
-      transport_->PerformOp(op);
-      return true;
-    }
-  }
-  return false;
+void NewChttp2ServerListener::ActiveConnection::SendGoAway() {
+  work_serializer_.Run(
+      [self = RefAsSubclass<ActiveConnection>()]() mutable {
+        self->SendGoAwayImplLocked();
+      },
+      DEBUG_LOCATION);
+}
+
+void NewChttp2ServerListener::ActiveConnection::DisconnectImmediately() {
+  work_serializer_.Run(
+      [self = RefAsSubclass<ActiveConnection>()]() mutable {
+        self->DisconnectImmediatelyImplLocked();
+      },
+      DEBUG_LOCATION);
 }
 
 void NewChttp2ServerListener::ActiveConnection::Start(const ChannelArgs& args) {
-  work_serializer()->Run(
+  work_serializer_.Run(
       [self = RefAsSubclass<ActiveConnection>(), args]() mutable {
         // If the Connection is already shutdown at this point, it implies the
         // owning NewChttp2ServerListener and all associated
@@ -1365,6 +1371,24 @@ void NewChttp2ServerListener::ActiveConnection::OnClose(
   self->listener_->listener_state_->RemoveLogicalConnection(self);
   self->listener_->connection_quota_->ReleaseConnections(1);
   self->Unref();
+}
+
+void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
+  if (!shutdown_) {
+    // Shutdown the handshaker if it's still in progress.
+    if (handshaking_state_ != nullptr) {
+      handshaking_state_->ShutdownLocked(
+          absl::UnavailableError("Connection going away"));
+    }
+    shutdown_ = true;
+    // Send a GOAWAY if the transport exists
+    if (transport_ != nullptr) {
+      grpc_transport_op* op = grpc_make_transport_op(nullptr);
+      op->goaway_error =
+          GRPC_ERROR_CREATE("Server is stopping to serve requests.");
+      transport_->PerformOp(op);
+    }
+  }
 }
 
 void NewChttp2ServerListener::ActiveConnection::

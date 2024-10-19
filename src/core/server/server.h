@@ -150,54 +150,12 @@ class Server : public ServerInterface,
     // State for a connection that is being managed by this listener.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
-      explicit LogicalConnection(Server* server)
-          : server_(server),
-            work_serializer_(
-                server_->channel_args()
-                    .GetObjectRef<
-                        grpc_event_engine::experimental::EventEngine>()) {}
-      LogicalConnection(const LogicalConnection&) = delete;
-      LogicalConnection& operator=(const LogicalConnection&) = delete;
-      LogicalConnection(LogicalConnection&&) = delete;
-      LogicalConnection& operator=(LogicalConnection&&) = delete;
       ~LogicalConnection() override = default;
 
-      void SendGoAway();
-
-      // Cancel drain grace timer. It won't be started in the future either.
-      void CancelDrainGraceTimer();
-
-      WorkSerializer* work_serializer() { return &work_serializer_; }
-
-     protected:
-      grpc_event_engine::experimental::EventEngine* event_engine() const {
-        return server_->channel_args()
-            .GetObject<grpc_event_engine::experimental::EventEngine>();
-      }
-
-     private:
       // The following two methods are called in the context of a server config
       // event.
-
-      // Returns true if the operation was successful, false, if it was
-      // not performed for example if the connection was already shutdown.
-      virtual bool SendGoAwayImplLocked() = 0;
-      virtual void DisconnectImmediatelyImplLocked() = 0;
-
-      void OnDrainGraceTimer();
-
-      Server* server_;
-      // A mutex can be used here but using a WorkSerializer to make code easier
-      // to understand.
-      WorkSerializer work_serializer_;
-      // TODO(yashykt): Optimize this by having a single timer for all the
-      // connections that need to be drained.
-      grpc_event_engine::experimental::EventEngine::TaskHandle
-          drain_grace_timer_handle_ = grpc_event_engine::experimental::
-              EventEngine::TaskHandle::kInvalid;
-      // The drain grace timer should only be started if it wasn't previously
-      // cancelled.
-      bool drain_grace_timer_handle_cancelled_ = false;
+      virtual void SendGoAway() = 0;
+      virtual void DisconnectImmediately() = 0;
     };
 
     ~ListenerInterface() override = default;
@@ -269,6 +227,23 @@ class Server : public ServerInterface,
       ListenerState* const listener_state_;
     };
 
+    struct ConnectionsToBeDrained {
+      absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+          connections;
+      grpc_event_engine::experimental::EventEngine::TaskHandle
+          drain_grace_timer_handle = grpc_event_engine::experimental::
+              EventEngine::TaskHandle::kInvalid;
+    };
+
+    void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+    void OnDrainGraceTimer();
+
+    grpc_event_engine::experimental::EventEngine* event_engine() {
+      return server_->channel_args()
+          .GetObject<grpc_event_engine::experimental::EventEngine>();
+    }
+
     Server* const server_;
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
@@ -282,6 +257,7 @@ class Server : public ServerInterface,
     bool started_ ABSL_GUARDED_BY(mu_) = false;
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
         connections_ ABSL_GUARDED_BY(mu_);
+    std::deque<ConnectionsToBeDrained> connections_to_be_drained_list_;
   };
 
   explicit Server(const ChannelArgs& args);

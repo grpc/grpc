@@ -86,71 +86,6 @@
 
 namespace grpc_core {
 
-using grpc_event_engine::experimental::EventEngine;
-
-//
-// Server::ListenerInterface::LogicalConnection
-//
-
-void Server::ListenerInterface::LogicalConnection::SendGoAway() {
-  work_serializer_.Run(
-      [self = Ref(DEBUG_LOCATION, "SendGoAway")]() {
-        if (!self->SendGoAwayImplLocked()) {
-          return;
-        }
-        if (self->drain_grace_timer_handle_cancelled_) {
-          return;
-        }
-        CHECK(self->drain_grace_timer_handle_ ==
-              EventEngine::TaskHandle::kInvalid);
-        self->drain_grace_timer_handle_ = self->event_engine()->RunAfter(
-            std::max(Duration::Zero(),
-                     self->server_->channel_args()
-                         .GetDurationFromIntMillis(
-                             GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
-                         .value_or(Duration::Minutes(10))),
-            [self = self->Ref()]() mutable {
-              ApplicationCallbackExecCtx callback_exec_ctx;
-              ExecCtx exec_ctx;
-              self->OnDrainGraceTimer();
-              self.reset();
-            });
-      },
-      DEBUG_LOCATION);
-}
-
-void Server::ListenerInterface::LogicalConnection::CancelDrainGraceTimer() {
-  work_serializer_.Run(
-      [self = Ref(DEBUG_LOCATION, "CancelDrainGraceTimer")]() {
-        self->drain_grace_timer_handle_cancelled_ = true;
-        if (self->drain_grace_timer_handle_ !=
-            EventEngine::TaskHandle::kInvalid) {
-          self->event_engine()->Cancel(self->drain_grace_timer_handle_);
-          self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
-        }
-      },
-      DEBUG_LOCATION);
-}
-
-void Server::ListenerInterface::LogicalConnection::OnDrainGraceTimer() {
-  work_serializer_.Run(
-      [self = Ref(DEBUG_LOCATION, "OnDrainGraceTimer")]() mutable {
-        // If the drain_grace_timer_ was not cancelled, disconnect
-        // immediately.
-        bool disconnect_immediately = false;
-        {
-          self->drain_grace_timer_handle_ = EventEngine::TaskHandle::kInvalid;
-          if (!self->drain_grace_timer_handle_cancelled_) {
-            disconnect_immediately = true;
-          }
-        }
-        if (disconnect_immediately) {
-          self->DisconnectImmediatelyImplLocked();
-        }
-      },
-      DEBUG_LOCATION);
-}
-
 //
 // Server::ListenerState::ConfigFetcherWatcher
 //
@@ -160,20 +95,11 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
         connection_manager) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
-  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-      connections_to_shutdown;
-  auto cleanup = absl::MakeCleanup([&connections_to_shutdown]() {
-    // Send GOAWAYs on the transports so that they get disconnected when
-    // existing RPCs finish, and so that no new RPC is started on them.
-    for (auto& connection : connections_to_shutdown) {
-      connection->SendGoAway();
-    }
-  });
   {
     MutexLock lock(&listener_state_->mu_);
     connection_manager_to_destroy = listener_state_->connection_manager_;
     listener_state_->connection_manager_ = std::move(connection_manager);
-    connections_to_shutdown = std::move(listener_state_->connections_);
+    listener_state_->DrainConnectionsLocked();
     if (listener_state_->server_->ShutdownCalled()) {
       return;
     }
@@ -190,12 +116,7 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
   {
     MutexLock lock(&listener_state_->mu_);
     listener_state_->is_serving_ = false;
-    connections = std::move(listener_state_->connections_);
-  }
-  // Send GOAWAYs on the transports so that they disconnect when existing
-  // RPCs finish.
-  for (auto& connection : connections) {
-    connection->SendGoAway();
+    listener_state_->DrainConnectionsLocked();
   }
 }
 
@@ -302,9 +223,64 @@ void Server::ListenerState::RemoveLogicalConnection(
     auto connection_handle = connections_.extract(connection);
     if (!connection_handle.empty()) {
       connection_to_remove = std::move(connection_handle.value());
+      return;
+    }
+    for (auto it = connections_to_be_drained_list_.begin();
+         it != connections_to_be_drained_list_.end(); ++it) {
+      auto connection_handle = it->connections.extract(connection);
+      if (!connection_handle.empty()) {
+        connection_to_remove = std::move(connection_handle.value());
+        if (it->connections.empty()) {
+          // Cancel the timer if the set of connections is now empty.
+          if (event_engine()->Cancel(it->drain_grace_timer_handle)) {
+            // Only remove the entry from the list if the cancellation was
+            // actually successful. OnDrainGraceTimer() will remove if
+            // cancellation is not successful.
+            connections_to_be_drained_list_.erase(it);
+          }
+        }
+        return;
+      }
     }
   }
-  connection->CancelDrainGraceTimer();
+}
+
+void Server::ListenerState::DrainConnectionsLocked() {
+  // Send GOAWAYs on the transports so that they disconnect when existing
+  // RPCs finish.
+  for (auto& connection : connections_) {
+    connection->SendGoAway();
+  }
+  auto& connections_to_be_drained = connections_to_be_drained_list_.back();
+  connections_to_be_drained.connections = std::move(connections_);
+  connections_to_be_drained.drain_grace_timer_handle = event_engine()->RunAfter(
+      std::max(Duration::Zero(),
+               server_->channel_args()
+                   .GetDurationFromIntMillis(
+                       GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                   .value_or(Duration::Minutes(10))),
+      [this]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        OnDrainGraceTimer();
+      });
+}
+
+void Server::ListenerState::OnDrainGraceTimer() {
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections_to_be_drained;
+  {
+    MutexLock lock(&mu_);
+    if (connections_to_be_drained_list_.empty()) {
+      return;
+    }
+    connections_to_be_drained =
+        std::move(connections_to_be_drained_list_.front().connections);
+    connections_to_be_drained_list_.pop_front();
+  }
+  for (auto& connection : connections_to_be_drained) {
+    connection->DisconnectImmediately();
+  }
 }
 
 //

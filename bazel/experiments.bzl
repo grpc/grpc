@@ -33,7 +33,6 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
-    "server_listener": "server_listener",
     "server_privacy": "server_privacy",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -41,6 +40,7 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_dispatch": "work_serializer_dispatch",
+    "server_listener": "server_listener,work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [

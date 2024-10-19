@@ -139,6 +139,7 @@
 - name: server_listener
   description:
     If set, the new server listener classes are used.
+  requires: ["work_serializer_dispatch"]
   expiry: 2025/03/31
   owner: yashkt@google.com
   test_tags: ["xds_end2end_test", "core_end2end_test"]
