@@ -32,7 +32,9 @@ namespace grpc_core {
 namespace metadata_detail {
 
 void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
-  if (!out_.empty()) out_.append(", ");
+  if (!out_.empty()) {
+    out_.append(", ");
+  }
   absl::StrAppend(&out_, absl::CEscape(key), ": ", absl::CEscape(value));
 }
 
