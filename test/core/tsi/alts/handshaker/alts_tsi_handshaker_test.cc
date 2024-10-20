@@ -709,11 +709,8 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailure) {
   tsi_handshaker* server_handshaker =
       create_test_handshaker(false /* is_client */);
   // Client start.
-  ASSERT_EQ(tsi_handshaker_next(
-                client_handshaker,
-                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                nullptr, check_must_not_be_called, nullptr),
+  ASSERT_EQ(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr, nullptr,
+                                nullptr, check_must_not_be_called, nullptr),
             TSI_INTERNAL_ERROR);
   // Server start.
   ASSERT_EQ(tsi_handshaker_next(
