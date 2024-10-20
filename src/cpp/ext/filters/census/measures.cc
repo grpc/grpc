@@ -180,6 +180,13 @@ MeasureInt64 RpcServerReceivedMessagesPerRpc() {
   return measure;
 }
 
+MeasureInt64 RpcServerCompletedRpcs() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcServerComletedRpcMeasureName,
+                             "Number of completed rpcs", kCount);
+  return measure;
+}
+
 namespace internal {
 
 MeasureDouble RpcClientApiLatency() {
