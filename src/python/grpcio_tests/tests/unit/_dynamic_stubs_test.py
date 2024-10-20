@@ -131,10 +131,18 @@ def _test_grpc_tools_unimportable():
 
 # NOTE(rbellevi): multiprocessing.Process fails to pickle function objects
 # when they do not come from the "__main__" module, so this test passes
-# if run directly on Windows or MacOS, but not if started by the test runner.
+# if run directly on Windows, but not if started by the test runner.
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
-    "Windows and MacOS multiprocessing unsupported",
+    "Windows multiprocessing unsupported",
+)
+@unittest.skipIf(
+    test_common.running_under_gevent(),
+    "Import paths do not work with gevent runner.",
+)
+@unittest.skipIf(
+    test_common.running_under_run_time_type_check(),
+    "Import paths do not work with type check tests runner.",
 )
 class DynamicStubTest(unittest.TestCase):
     def test_sunny_day(self):
