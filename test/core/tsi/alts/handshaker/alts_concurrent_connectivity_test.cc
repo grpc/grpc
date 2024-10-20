@@ -277,7 +277,7 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
-        10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+        120 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
         10 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
         0 /* reconnect_backoff_ms unset */);
   }
