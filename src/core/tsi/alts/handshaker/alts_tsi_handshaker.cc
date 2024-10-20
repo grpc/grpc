@@ -536,11 +536,11 @@ static tsi_result handshaker_next(
       if (error != nullptr) *error = "handshake shutdown";
       return TSI_HANDSHAKE_SHUTDOWN;
     }
-    if (!handshaker->is_client && received_bytes_size == 0) {
-      return TSI_INCOMPLETE_DATA;
-    }
   }
 
+  if (!handshaker->is_client && received_bytes_size == 0) {
+    return TSI_INCOMPLETE_DATA;
+  }
   if (handshaker->channel == nullptr && !handshaker->use_dedicated_cq) {
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         new alts_tsi_handshaker_continue_handshaker_next_args();
