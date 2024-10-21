@@ -929,11 +929,11 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
 }
 
 size_t MaxNumberOfConcurrentHandshakes() {
-  size_t max_concurrent_handshakes = 40;
+  size_t max_concurrent_handshakes = 100;
   absl::optional<std::string> env_var_max_concurrent_handshakes =
       grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
   if (env_var_max_concurrent_handshakes.has_value()) {
-    size_t effective_max_concurrent_handshakes = 40;
+    size_t effective_max_concurrent_handshakes = 100;
     if (absl::SimpleAtoi(*env_var_max_concurrent_handshakes,
                          &effective_max_concurrent_handshakes)) {
       max_concurrent_handshakes = effective_max_concurrent_handshakes;
