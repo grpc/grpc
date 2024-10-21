@@ -1462,6 +1462,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/certificate_provider/certificate_provider_factory.h )
   s.files += %w( src/core/lib/security/certificate_provider/certificate_provider_registry.cc )
   s.files += %w( src/core/lib/security/certificate_provider/certificate_provider_registry.h )
+  s.files += %w( src/core/lib/security/context/connection_auth_context.cc )
+  s.files += %w( src/core/lib/security/context/connection_auth_context.h )
   s.files += %w( src/core/lib/security/context/security_context.cc )
   s.files += %w( src/core/lib/security/context/security_context.h )
   s.files += %w( src/core/lib/security/credentials/alts/alts_credentials.cc )
