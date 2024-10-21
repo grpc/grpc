@@ -45,8 +45,6 @@ grpc_status_code grpc_http2_error_to_grpc_status(
     case GRPC_HTTP2_NO_ERROR:
       return GRPC_STATUS_INTERNAL;
     case GRPC_HTTP2_CANCEL:
-      // http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
-      // exceeded
       return grpc_core::Timestamp::Now() > deadline
                  ? GRPC_STATUS_DEADLINE_EXCEEDED
                  : GRPC_STATUS_CANCELLED;
