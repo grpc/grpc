@@ -48,6 +48,11 @@ const char* const additional_constraints_event_engine_client = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
+const char* const description_event_engine_dns_non_client_channel =
+    "If set, use EventEngine DNSResolver in other places besides client "
+    "channel.";
+const char* const additional_constraints_event_engine_dns_non_client_channel =
+    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -75,6 +80,10 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_rq_fast_reject =
+    "Resource quota rejects requests immediately (before allocating the "
+    "request structure) under very high memory pressure.";
+const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -128,6 +137,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, false, false},
+    {"event_engine_dns_non_client_channel",
+     description_event_engine_dns_non_client_channel,
+     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
+     false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
@@ -147,6 +160,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"rq_fast_reject", description_rq_fast_reject,
+     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -198,6 +213,11 @@ const char* const additional_constraints_event_engine_client = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
+const char* const description_event_engine_dns_non_client_channel =
+    "If set, use EventEngine DNSResolver in other places besides client "
+    "channel.";
+const char* const additional_constraints_event_engine_dns_non_client_channel =
+    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -225,6 +245,10 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_rq_fast_reject =
+    "Resource quota rejects requests immediately (before allocating the "
+    "request structure) under very high memory pressure.";
+const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -278,6 +302,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
+    {"event_engine_dns_non_client_channel",
+     description_event_engine_dns_non_client_channel,
+     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
+     false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
@@ -297,6 +325,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"rq_fast_reject", description_rq_fast_reject,
+     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -348,6 +378,11 @@ const char* const additional_constraints_event_engine_client = "{}";
 const char* const description_event_engine_dns =
     "If set, use EventEngine DNSResolver for client channel resolution";
 const char* const additional_constraints_event_engine_dns = "{}";
+const char* const description_event_engine_dns_non_client_channel =
+    "If set, use EventEngine DNSResolver in other places besides client "
+    "channel.";
+const char* const additional_constraints_event_engine_dns_non_client_channel =
+    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -375,6 +410,10 @@ const char* const additional_constraints_pick_first_new = "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_rq_fast_reject =
+    "Resource quota rejects requests immediately (before allocating the "
+    "request structure) under very high memory pressure.";
+const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -428,6 +467,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
+    {"event_engine_dns_non_client_channel",
+     description_event_engine_dns_non_client_channel,
+     additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
+     false, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
@@ -447,6 +490,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"rq_fast_reject", description_rq_fast_reject,
+     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,

@@ -831,14 +831,24 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
                 payload_handling = registered_method->payload_handling;
                 rm = registered_method->matcher.get();
               }
+              using FirstMessageResult =
+                  ValueOrFailure<absl::optional<MessageHandle>>;
               auto maybe_read_first_message = If(
                   payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
                   [call_handler]() mutable {
-                    return call_handler.PullMessage();
+                    return Map(
+                        call_handler.PullMessage(),
+                        [](ClientToServerNextMessage next_msg)
+                            -> FirstMessageResult {
+                          if (!next_msg.ok()) return Failure{};
+                          if (!next_msg.has_value()) {
+                            return FirstMessageResult(absl::nullopt);
+                          }
+                          return FirstMessageResult(next_msg.TakeValue());
+                        });
                   },
-                  []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                    return ValueOrFailure<absl::optional<MessageHandle>>(
-                        absl::nullopt);
+                  []() -> FirstMessageResult {
+                    return FirstMessageResult(absl::nullopt);
                   });
               return TryJoin<absl::StatusOr>(
                   std::move(maybe_read_first_message), rm->MatchRequest(0),

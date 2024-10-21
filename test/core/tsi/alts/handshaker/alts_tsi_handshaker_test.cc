@@ -535,14 +535,15 @@ static tsi_result mock_server_start(alts_handshaker_client* client,
   }
   alts_handshaker_client_check_fields_for_testing(
       client, on_server_start_success_cb, nullptr, true, nullptr);
-  grpc_slice slice = grpc_empty_slice();
-  EXPECT_EQ(grpc_slice_cmp(*bytes_received, slice), 0);
+  EXPECT_EQ(memcmp(GRPC_SLICE_START_PTR(*bytes_received),
+                   ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                   GRPC_SLICE_LENGTH(*bytes_received)),
+            0);
   // Populate handshaker response for server_start request.
   grpc_byte_buffer** recv_buffer_ptr =
       alts_handshaker_client_get_recv_buffer_addr_for_testing(client);
   *recv_buffer_ptr = generate_handshaker_response(SERVER_START);
   cb_event = client;
-  grpc_slice_unref(slice);
   signal(&caller_to_tsi_notification);
   return TSI_OK;
 }
@@ -655,8 +656,11 @@ static void check_handshaker_next_success() {
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Server start.
-  ASSERT_EQ(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr, nullptr,
-                                nullptr, on_server_start_success_cb, nullptr),
+  ASSERT_EQ(tsi_handshaker_next(
+                server_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, on_server_start_success_cb, nullptr),
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Server next.
@@ -709,8 +713,11 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailure) {
                                 nullptr, check_must_not_be_called, nullptr),
             TSI_INTERNAL_ERROR);
   // Server start.
-  ASSERT_EQ(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr, nullptr,
-                                nullptr, check_must_not_be_called, nullptr),
+  ASSERT_EQ(tsi_handshaker_next(
+                server_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, check_must_not_be_called, nullptr),
             TSI_INTERNAL_ERROR);
   // Server next.
   ASSERT_EQ(tsi_handshaker_next(
@@ -729,6 +736,18 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailure) {
   // Cleanup.
   run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
   run_tsi_handshaker_destroy_with_exec_ctx(client_handshaker);
+}
+
+TEST(AltsTsiHandshakerTest, CheckHandshakerNextIncomplete) {
+  should_handshaker_client_api_succeed = false;
+  tsi_handshaker* server_handshaker =
+      create_test_handshaker(false /* is_client */);
+  // Server start.
+  ASSERT_EQ(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr, nullptr,
+                                nullptr, check_must_not_be_called, nullptr),
+            TSI_INCOMPLETE_DATA);
+  // Cleanup.
+  run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
 }
 
 static void on_invalid_input_cb(tsi_result status, void* user_data,

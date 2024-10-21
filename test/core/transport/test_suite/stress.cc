@@ -53,17 +53,17 @@ TRANSPORT_TEST(ManyUnaryRequests) {
                     ContentTypeMetadata::kApplicationGrpc);
           return initiator.PullMessage();
         },
-        [initiator, i, &server_messages](
-            ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+        [initiator, i,
+         &server_messages](ServerToClientNextMessage msg) mutable {
           EXPECT_TRUE(msg.ok());
-          EXPECT_TRUE(msg.value().has_value());
-          EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+          EXPECT_TRUE(msg.has_value());
+          EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                     server_messages[i]);
           return initiator.PullMessage();
         },
-        [initiator](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+        [initiator](ServerToClientNextMessage msg) mutable {
           EXPECT_TRUE(msg.ok());
-          EXPECT_FALSE(msg.value().has_value());
+          EXPECT_FALSE(msg.has_value());
           return initiator.PullServerTrailingMetadata();
         },
         [initiator](ValueOrFailure<ServerMetadataHandle> md) mutable {
@@ -87,17 +87,17 @@ TRANSPORT_TEST(ManyUnaryRequests) {
               &*this_call_index));
           return handler.PullMessage();
         },
-        [handler, this_call_index, &client_messages](
-            ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+        [handler, this_call_index,
+         &client_messages](ClientToServerNextMessage msg) mutable {
           EXPECT_TRUE(msg.ok());
-          EXPECT_TRUE(msg.value().has_value());
-          EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+          EXPECT_TRUE(msg.has_value());
+          EXPECT_EQ(msg.value().payload()->JoinIntoString(),
                     client_messages[*this_call_index]);
           return handler.PullMessage();
         },
-        [handler](ValueOrFailure<absl::optional<MessageHandle>> msg) mutable {
+        [handler](ClientToServerNextMessage msg) mutable {
           EXPECT_TRUE(msg.ok());
-          EXPECT_FALSE(msg.value().has_value());
+          EXPECT_FALSE(msg.has_value());
           auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
           md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
           return handler.PushServerInitialMetadata(std::move(md));

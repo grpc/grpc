@@ -333,6 +333,44 @@ TEST(CallStateTest, CanWaitForPullServerMessage) {
   EXPECT_THAT(state.PollPullServerToClientMessageStarted(), IsReady(Success{}));
 }
 
+TEST(CallStateTest, ClientSendBlockedUntilPullCompletes) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  state.PushServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
+  state.FinishPullServerInitialMetadata();
+  state.BeginPullClientInitialMetadata();
+  state.FinishPullClientInitialMetadata();
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
+  EXPECT_WAKEUP(activity, state.BeginPushClientToServerMessage());
+  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsReady());
+  EXPECT_THAT(state.PollPushClientToServerMessage(), IsPending());
+  EXPECT_WAKEUP(activity, state.FinishPullClientToServerMessage());
+  EXPECT_THAT(state.PollPushClientToServerMessage(), IsReady(Success{}));
+}
+
+TEST(CallStateTest, ServerSendBlockedUntilPullCompletes) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  state.PushServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
+  state.FinishPullServerInitialMetadata();
+  state.BeginPullClientInitialMetadata();
+  state.FinishPullClientInitialMetadata();
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
+  EXPECT_WAKEUP(activity, state.BeginPushServerToClientMessage());
+  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady());
+  EXPECT_THAT(state.PollPushServerToClientMessage(), IsPending());
+  EXPECT_WAKEUP(activity, state.FinishPullServerToClientMessage());
+  EXPECT_THAT(state.PollPushServerToClientMessage(), IsReady(Success{}));
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

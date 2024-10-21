@@ -71,8 +71,8 @@ class Immediate {
 
 // Return \a value immediately
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Immediate<T> Immediate(
-    T value) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Immediate<T>
+Immediate(T value) {
   return promise_detail::Immediate<T>(std::move(value));
 }
 
@@ -89,7 +89,7 @@ struct ImmediateOkStatus {
 // should fail to compile. When modifying this code these should be uncommented
 // and their miscompilation verified.
 template <typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto WithResult(F f) ->
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto WithResult(F f) ->
     typename std::enable_if<std::is_same<decltype(f()), Poll<T>>::value,
                             F>::type {
   return f;

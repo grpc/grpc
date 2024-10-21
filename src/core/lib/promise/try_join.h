@@ -133,13 +133,14 @@ struct WrapInStatusOrTuple {
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok(tuple-of-results).
 template <template <typename> class R, typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::TryJoin<R, Promises...>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::TryJoin<R,
+                                                                    Promises...>
 TryJoin(Promises... promises) {
   return promise_detail::TryJoin<R, Promises...>(std::move(promises)...);
 }
 
 template <template <typename> class R, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto TryJoin(F promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto TryJoin(F promise) {
   return Map(promise, promise_detail::WrapInStatusOrTuple<R>{});
 }
 

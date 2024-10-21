@@ -68,6 +68,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -640,6 +642,18 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
                                           t->incoming_stream_id,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
+    } else if (grpc_core::IsRqFastRejectEnabled() &&
+               GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+      // We have more streams allocated than we'd like, so apply some pushback
+      // by refusing this stream.
+      grpc_core::global_stats().IncrementRqCallsRejected();
+      ++t->num_pending_induced_frames;
+      grpc_slice_buffer_add(
+          &t->qbuf,
+          grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+                                        GRPC_HTTP2_ENHANCE_YOUR_CALM, nullptr));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
