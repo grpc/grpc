@@ -22,6 +22,10 @@
 #include <regex>
 #include <tuple>
 
+#ifdef GPR_WINDOWS
+#include <iphlpapi.h>
+#endif
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
@@ -64,6 +68,20 @@ Slice RandomBinarySlice(size_t length) {
 void CoreEnd2endTest::SetUp() {
   CoreConfiguration::Reset();
   initialized_ = false;
+#ifdef GPR_WINDOWS
+  // On Windows RBE, c-ares' ares_init_options which internally calls
+  // GetAdaptersAddresses sometimes take >20s to return causing tests to
+  // timeout. This is a hack to prewarm the cache by calling that function
+  // here.
+#define IPAA_INITIAL_BUF_SZ 15 * 1024
+  ULONG AddrFlags = 0;
+  ULONG Bufsz = IPAA_INITIAL_BUF_SZ;
+  ULONG ReqBufsz = IPAA_INITIAL_BUF_SZ;
+  IP_ADAPTER_ADDRESSES* ipaa;
+  ipaa = static_cast<IP_ADAPTER_ADDRESSES*>(malloc(Bufsz));
+  GetAdaptersAddresses(AF_UNSPEC, AddrFlags, NULL, ipaa, &ReqBufsz);
+  free(ipaa);
+#endif
 }
 
 void CoreEnd2endTest::TearDown() {
