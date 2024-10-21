@@ -20,6 +20,8 @@ import unittest
 
 from grpc import _auth
 
+from tests.unit import test_common
+
 
 class MockGoogleCreds(object):
     def get_access_token(self):
@@ -35,6 +37,10 @@ class MockExceptionGoogleCreds(object):
         raise Exception()
 
 
+@unittest.skipIf(
+    test_common.running_under_run_time_type_check(),
+    "This test case used unsupported types",
+)
 class GoogleCallCredentialsTest(unittest.TestCase):
     def test_google_call_credentials_success(self):
         callback_event = threading.Event()
@@ -61,6 +67,10 @@ class GoogleCallCredentialsTest(unittest.TestCase):
 
 
 class AccessTokenAuthMetadataPluginTest(unittest.TestCase):
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def test_google_call_credentials_success(self):
         callback_event = threading.Event()
 

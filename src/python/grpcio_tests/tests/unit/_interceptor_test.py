@@ -503,6 +503,10 @@ class InterceptorTest(unittest.TestCase):
         self._server_pool.shutdown(wait=True)
         self._channel.close()
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testTripleRequestMessagesClientInterceptor(self):
         def triple(request_iterator):
             while True:
@@ -548,6 +552,10 @@ class InterceptorTest(unittest.TestCase):
         responses = tuple(response_iterator)
         self.assertEqual(len(responses), test_constants.STREAM_LENGTH)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testDefectiveClientInterceptor(self):
         interceptor = _DefectiveClientInterceptor()
         defective_channel = grpc.intercept_channel(self._channel, interceptor)
@@ -565,6 +573,10 @@ class InterceptorTest(unittest.TestCase):
         self.assertIsNotNone(call_future.exception())
         self.assertEqual(call_future.code(), grpc.StatusCode.INTERNAL)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedHeaderManipulationWithServerSideVerification(self):
         request = b"\x07\x08"
 
@@ -602,6 +614,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedUnaryRequestBlockingUnaryResponse(self):
         request = b"\x07\x08"
 
@@ -632,6 +648,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedUnaryRequestBlockingUnaryResponseWithError(self):
         request = _EXCEPTION_REQUEST
 
@@ -659,6 +679,10 @@ class InterceptorTest(unittest.TestCase):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedUnaryRequestBlockingUnaryResponseWithCall(self):
         request = b"\x07\x08"
 
@@ -692,6 +716,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedUnaryRequestFutureUnaryResponse(self):
         request = b"\x07\x08"
 
@@ -720,6 +748,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedUnaryRequestStreamResponse(self):
         request = b"\x37\x58"
 
@@ -748,6 +780,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedUnaryRequestStreamResponseWithError(self):
         request = _EXCEPTION_REQUEST
 
@@ -773,6 +809,10 @@ class InterceptorTest(unittest.TestCase):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedStreamRequestBlockingUnaryResponse(self):
         requests = tuple(
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
@@ -805,6 +845,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedStreamRequestBlockingUnaryResponseWithCall(self):
         requests = tuple(
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
@@ -840,6 +884,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedStreamRequestFutureUnaryResponse(self):
         requests = tuple(
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
@@ -871,6 +919,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedStreamRequestFutureUnaryResponseWithError(self):
         requests = tuple(
             _EXCEPTION_REQUEST for _ in range(test_constants.STREAM_LENGTH)
@@ -899,6 +951,10 @@ class InterceptorTest(unittest.TestCase):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedStreamRequestStreamResponse(self):
         requests = tuple(
             b"\x77\x58" for _ in range(test_constants.STREAM_LENGTH)
@@ -930,6 +986,10 @@ class InterceptorTest(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testInterceptedStreamRequestStreamResponseWithError(self):
         requests = tuple(
             _EXCEPTION_REQUEST for _ in range(test_constants.STREAM_LENGTH)
@@ -958,6 +1018,10 @@ class InterceptorTest(unittest.TestCase):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
 
+    @unittest.skipIf(
+        test_common.running_under_run_time_type_check(),
+        "This test case used unsupported types",
+    )
     def testServerInterceptorWithCorrectHandlerCallDetails(self):
         request = b"\x07\x08"
 
