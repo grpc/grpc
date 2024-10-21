@@ -59,14 +59,14 @@ static grpc_core::Duration g_poll_interval =
     grpc_core::Duration::Milliseconds(DEFAULT_POLL_INTERVAL_MS);
 // TODO(hork): delete the backup poller when EventEngine is rolled out
 // everywhere.
-static bool backup_polling_disabled;
+static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
   // Disable backup polling if EventEngine is used everywhere.
-  backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
-                            grpc_core::IsEventEngineListenerEnabled() &&
-                            grpc_core::IsEventEngineDnsEnabled();
-  if (backup_polling_disabled) {
+  g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
+                              grpc_core::IsEventEngineListenerEnabled() &&
+                              grpc_core::IsEventEngineDnsEnabled();
+  if (g_backup_polling_disabled) {
     return;
   }
 
@@ -157,7 +157,7 @@ static void g_poller_init_locked() {
 
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties) {
-  if (backup_polling_disabled ||
+  if (g_backup_polling_disabled ||
       g_poll_interval == grpc_core::Duration::Zero() ||
       grpc_iomgr_run_in_background()) {
     return;
@@ -177,7 +177,7 @@ void grpc_client_channel_start_backup_polling(
 
 void grpc_client_channel_stop_backup_polling(
     grpc_pollset_set* interested_parties) {
-  if (backup_polling_disabled ||
+  if (g_backup_polling_disabled ||
       g_poll_interval == grpc_core::Duration::Zero() ||
       grpc_iomgr_run_in_background()) {
     return;
