@@ -87,6 +87,7 @@ inline bool IsTimeCachingInPartyEnabled() { return true; }
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsServerListenerEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
@@ -122,6 +123,7 @@ inline bool IsTimeCachingInPartyEnabled() { return true; }
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsServerListenerEnabled() { return false; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
@@ -158,6 +160,7 @@ inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
+inline bool IsServerListenerEnabled() { return false; }
 #endif
 
 #else
@@ -186,6 +189,7 @@ enum ExperimentIds {
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdWorkSerializerDispatch,
+  kExperimentIdServerListener,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
@@ -283,6 +287,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {
   return IsExperimentEnabled<kExperimentIdWorkSerializerDispatch>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
+inline bool IsServerListenerEnabled() {
+  return IsExperimentEnabled<kExperimentIdServerListener>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

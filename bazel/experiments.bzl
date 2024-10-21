@@ -41,6 +41,7 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_dispatch": "work_serializer_dispatch",
+    "server_listener": "server_listener,work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
@@ -58,6 +59,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -71,6 +73,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "server_listener",
             ],
         },
         "on": {
@@ -108,6 +113,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -121,6 +127,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "server_listener",
             ],
         },
         "on": {
@@ -142,6 +151,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
+                "server_listener",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -155,6 +165,9 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "server_listener",
             ],
         },
         "on": {

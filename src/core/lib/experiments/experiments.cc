@@ -17,6 +17,7 @@
 #include "src/core/lib/experiments/experiments.h"
 
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
@@ -108,6 +109,11 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
+const uint8_t required_experiments_server_listener[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -172,6 +178,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener,
+     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -264,6 +273,11 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
+const uint8_t required_experiments_server_listener[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -328,6 +342,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener,
+     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -420,6 +437,11 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_server_listener =
+    "If set, the new server listener classes are used.";
+const char* const additional_constraints_server_listener = "{}";
+const uint8_t required_experiments_server_listener[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -484,6 +506,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, true, true},
+    {"server_listener", description_server_listener,
+     additional_constraints_server_listener,
+     required_experiments_server_listener, 1, false, true},
 };
 
 }  // namespace grpc_core
