@@ -12,23 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 import logging
+import unittest
+
 
 class TestAllModulesInstalled(unittest.TestCase):
     def test_import_all_modules(self):
+        import grpc_admin
         import grpc_channelz
         import grpc_csds
-        import grpc_admin
+        import grpc_csm_observability
         import grpc_health
+        import grpc_observability
         import grpc_reflection
         import grpc_status
-        import grpc_observability
-        import grpc_csm_observability
+
         # This test simply imports all the modules.
         # If any module fails to import, the test will fail.
         pass
-
 
 
 if __name__ == "__main__":
