@@ -55,6 +55,8 @@
   default: false
 - name: event_engine_application_callbacks
   default: true
+- name: event_engine_callback_cq
+  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all
