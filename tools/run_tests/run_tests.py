@@ -940,7 +940,7 @@ class RubyLanguage(object):
             "src/ruby/spec/debug_message_spec.rb",
             "src/ruby/spec/logconfig_spec.rb",
             "src/ruby/spec/call_spec.rb",
-            "src/ruby/spec/client_auth_spec.rb"
+            "src/ruby/spec/client_auth_spec.rb",
         ]:
             tests.append(
                 self.config.job_spec(
