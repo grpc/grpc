@@ -910,6 +910,7 @@ class RubyLanguage(object):
         _check_compiler(self.args.compiler, ["default"])
 
     def test_specs(self):
+        tests = []
         for test in [
             "src/ruby/spec/google_rpc_status_utils_spec.rb",
             "src/ruby/spec/client_server_spec.rb",
