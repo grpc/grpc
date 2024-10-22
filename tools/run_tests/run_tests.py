@@ -919,7 +919,7 @@ class RubyLanguage(object):
             "src/ruby/spec/pb/health/checker_spec.rb",
             "src/ruby/spec/pb/duplicate/codegen_spec.rb",
             "src/ruby/spec/server_spec.rb",
-            "src/ruby/spec/error_sanity_spec.rb"
+            "src/ruby/spec/error_sanity_spec.rb",
             "src/ruby/spec/channel_spec.rb",
             "src/ruby/spec/user_agent_spec.rb",
             "src/ruby/spec/call_credentials_spec.rb",
