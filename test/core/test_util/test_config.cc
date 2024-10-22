@@ -56,8 +56,10 @@ static unsigned seed(void) { return (unsigned)_getpid(); }
 #endif
 
 #ifdef GPR_WINDOWS
+// clang-format off
 #include <winsock2.h>
 #include <iphlpapi.h>
+// clang-format on
 #endif
 
 int64_t grpc_test_sanitizer_slowdown_factor() {
