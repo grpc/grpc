@@ -185,7 +185,7 @@ void grpc_prewarm_os_for_tests() {
   // On Windows RBE, c-ares' ares_init_options which internally calls
   // GetAdaptersAddresses sometimes take >20s to return causing tests to
   // timeout. This is a hack to prewarm the cache by calling that function
-  // here.
+  // during test setup.
 #define IPAA_INITIAL_BUF_SZ 15 * 1024
   ULONG AddrFlags = 0;
   ULONG Bufsz = IPAA_INITIAL_BUF_SZ;
