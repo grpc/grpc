@@ -29,7 +29,6 @@ class TestAllModulesInstalled(unittest.TestCase):
 
         # This test simply imports all the modules.
         # If any module fails to import, the test will fail.
-        pass
 
 
 if __name__ == "__main__":
