@@ -58,13 +58,25 @@ CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
+  // Ideally, the client would include the recv_initial_metadata op in
+  // the same batch as the others.  However, there are cases where
+  // callbacks get reordered such that the retry filter sees
+  // recv_trailing_metadata complete before recv_initial_metadata,
+  // which causes it to trigger a retry.  Putting recv_initial_metadata
+  // in its own batch allows us to wait for the client to receive that
+  // op before the server sends trailing metadata, thus avoiding that
+  // problem.  This is in principle a little sub-optimal, since it doesn't
+  // cover the code paths where all the ops are in the same batch.
+  // However, that will be less of an issue once we finish the promise
+  // migration, since the promise-based retry impl won't be sensitive to
+  // batching, so this is just a short-term deficiency.
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
       .RecvMessage(server_message)
       .SendCloseFromClient()
-      .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
+  c.NewBatch(2).RecvInitialMetadata(server_initial_metadata);
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
@@ -79,6 +91,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
   // won't send a Trailers-Only response, even if the batches are combined.
   s.NewBatch(102).SendInitialMetadata({{"key1", "val1"}});
   Expect(102, true);
+  Expect(2, true);
   Step();
   IncomingCloseOnServer client_close;
   s.NewBatch(103)

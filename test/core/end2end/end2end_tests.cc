@@ -64,6 +64,7 @@ Slice RandomBinarySlice(size_t length) {
 void CoreEnd2endTest::SetUp() {
   CoreConfiguration::Reset();
   initialized_ = false;
+  grpc_prewarm_os_for_tests();
 }
 
 void CoreEnd2endTest::TearDown() {

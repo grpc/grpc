@@ -28,6 +28,8 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
@@ -188,6 +190,9 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
 }
 
 CompletionQueue* CompletionQueue::CallbackAlternativeCQ() {
+  if (grpc_core::IsEventEngineCallbackCqEnabled()) {
+    grpc_core::Crash("CallbackAlternativeCQ should not be instantiated");
+  }
   gpr_once_init(&g_once_init_callback_alternative,
                 [] { g_callback_alternative_mu = new grpc_core::Mutex(); });
   return g_callback_alternative_cq.Ref();

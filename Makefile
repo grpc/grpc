@@ -367,7 +367,7 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 44.0.0
+CORE_VERSION = 44.1.0
 CPP_VERSION = 1.68.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
@@ -1358,7 +1358,6 @@ LIBGRPC_SRC = \
     src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
-    src/core/resolver/binder/binder_resolver.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \

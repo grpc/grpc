@@ -258,6 +258,11 @@ class PromiseEndpoint {
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetLocalAddress() const;
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+  GetEventEngineEndpoint() const {
+    return endpoint_;
+  }
+
  private:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
       endpoint_;

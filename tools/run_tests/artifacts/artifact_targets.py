@@ -299,7 +299,7 @@ class PHPArtifact:
         if self.platform == "linux":
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/test/php73_zts_debian11_{}".format(self.arch),
+                "tools/dockerfile/test/php8_zts_debian12_{}".format(self.arch),
                 "tools/run_tests/artifacts/build_artifact_php.sh",
             )
         else:

@@ -311,6 +311,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       pending_promises_.front()->Finish(absl::InternalError("Server closed"));
       pending_promises_.pop();
     }
+    zombified_ = true;
   }
 
   void KillRequests(grpc_error_handle error) override {
@@ -468,6 +469,9 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
           return Immediate(absl::ResourceExhaustedError(
               "Too many pending requests for this server"));
         }
+        if (zombified_) {
+          return Immediate(absl::InternalError("Server closed"));
+        }
         auto w = std::make_shared<ActivityWaiter>(
             GetContext<Activity>()->MakeOwningWaker());
         pending_promises_.push(w);
@@ -478,7 +482,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
               if (r == nullptr) return Pending{};
               return std::move(*r);
             },
-            [w]() { w->Expire(); });
+            [w]() { w->Finish(absl::CancelledError()); });
       }
     }
     return Immediate(MatchResult(server(), cq_idx, rc));
@@ -498,8 +502,14 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::Status status) {
-      delete result.exchange(new ResultType(std::move(status)),
-                             std::memory_order_acq_rel);
+      ResultType* expected = nullptr;
+      ResultType* new_value = new ResultType(std::move(status));
+      if (!result.compare_exchange_strong(expected, new_value,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acquire)) {
+        delete new_value;
+        return;
+      }
       waker.WakeupAsync();
     }
     // Returns true if requested_call consumed, false otherwise.
@@ -518,10 +528,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       waker.WakeupAsync();
       return true;
     }
-    void Expire() {
-      delete result.exchange(new ResultType(absl::CancelledError()),
-                             std::memory_order_acq_rel);
-    }
     Duration Age() { return Timestamp::Now() - created; }
     Waker waker;
     std::atomic<ResultType*> result{nullptr};
@@ -531,6 +537,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   std::queue<PendingCallFilterStack> pending_filter_stack_;
   std::queue<PendingCallPromises> pending_promises_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
+  bool zombified_ = false;
 };
 
 // AllocatingRequestMatchers don't allow the application to request an RPC in
@@ -831,14 +838,24 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
                 payload_handling = registered_method->payload_handling;
                 rm = registered_method->matcher.get();
               }
+              using FirstMessageResult =
+                  ValueOrFailure<absl::optional<MessageHandle>>;
               auto maybe_read_first_message = If(
                   payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
                   [call_handler]() mutable {
-                    return call_handler.PullMessage();
+                    return Map(
+                        call_handler.PullMessage(),
+                        [](ClientToServerNextMessage next_msg)
+                            -> FirstMessageResult {
+                          if (!next_msg.ok()) return Failure{};
+                          if (!next_msg.has_value()) {
+                            return FirstMessageResult(absl::nullopt);
+                          }
+                          return FirstMessageResult(next_msg.TakeValue());
+                        });
                   },
-                  []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                    return ValueOrFailure<absl::optional<MessageHandle>>(
-                        absl::nullopt);
+                  []() -> FirstMessageResult {
+                    return FirstMessageResult(absl::nullopt);
                   });
               return TryJoin<absl::StatusOr>(
                   std::move(maybe_read_first_message), rm->MatchRequest(0),
@@ -1799,8 +1816,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
   CHECK(!reserved);
   auto cq_type = grpc_get_cq_completion_type(cq);
   if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
-    LOG(INFO) << "Completion queue of type " << static_cast<int>(cq_type)
-              << " is being registered as a server-completion-queue";
+    VLOG(2) << "Completion queue of type " << static_cast<int>(cq_type)
+            << " is being registered as a server-completion-queue";
     // Ideally we should log an error and abort but ruby-wrapped-language API
     // calls grpc_completion_queue_pluck() on server completion queues
   }

@@ -74,8 +74,8 @@ class Race<Promise> {
 /// If two results are simultaneously available, bias towards the first result
 /// listed.
 template <typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Race<Promises...> Race(
-    Promises... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Race<Promises...>
+Race(Promises... promises) {
   return promise_detail::Race<Promises...>(std::move(promises)...);
 }
 

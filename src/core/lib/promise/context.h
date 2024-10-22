@@ -105,13 +105,13 @@ class WithContext {
 
 // Return true if a context of type T is currently active.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool HasContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool HasContext() {
   return promise_detail::Context<T>::get() != nullptr;
 }
 
 // Retrieve the current value of a context, or abort if the value is unset.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
   DCHECK_NE(p, nullptr);
   return p;
@@ -119,12 +119,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
 
 // Retrieve the current value of a context, or nullptr if the value is unset.
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* MaybeGetContext() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* MaybeGetContext() {
   return promise_detail::Context<T>::get();
 }
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SetContext(T* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void SetContext(T* p) {
   promise_detail::Context<T>::set(p);
 }
 
