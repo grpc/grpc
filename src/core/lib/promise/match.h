@@ -28,8 +28,9 @@ struct ConstructPromiseVariantVisitor {
   Constructor constructor;
 
   template <typename T>
-  auto operator()(T x) -> absl::variant<promise_detail::PromiseLike<
-      decltype(std::declval<Constructor>()(std::declval<Ts>()))...>> {
+  auto operator()(T x)
+      -> absl::variant<promise_detail::PromiseLike<
+          decltype(std::declval<Constructor>()(std::declval<Ts>()))...>> {
     return constructor(std::move(x));
   }
 };
@@ -66,4 +67,4 @@ auto MatchPromise(absl::variant<Ts...> value, Fs... fs) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_MATCH_H
