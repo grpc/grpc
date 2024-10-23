@@ -24,16 +24,31 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// This types job is to visit a supplied variant, and apply a mapping
+// Constructor from input types to promises, returning a variant full of
+// promises.
 template <typename Constructor, typename... Ts>
 struct ConstructPromiseVariantVisitor {
+  // Factory functions supplied to the top level `Match` object, wrapped by
+  // OverloadType to become overloaded members.
   Constructor constructor;
 
+  // Helper function... only callable once.
+  // Given a value, construct a Promise Factory that accepts that value type,
+  // and uses the constructor type above to map from that type to a promise
+  // returned by the factory.
+  // We use the Promise Factory infrastructure to deal with all the common
+  // variants of factory signatures that we've found to be convenient.
   template <typename T>
   auto CallConstructorThenFactory(T x) {
     OncePromiseFactory<T, Constructor> factory(std::move(constructor));
     return factory.Make(std::move(x));
   }
 
+  // Polling operator.
+  // Given a visited type T, construct a Promise Factory, use it, and then cast
+  // the result into a variant type that covers ALL of the possible return types
+  // given the input types listed in Ts...
   template <typename T>
   auto operator()(T x) -> absl::variant<promise_detail::PromiseLike<
       decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
@@ -41,6 +56,8 @@ struct ConstructPromiseVariantVisitor {
   }
 };
 
+// Visitor function for PromiseVariant - calls the poll operator on the inner
+// type
 class PollVisitor {
  public:
   template <typename T>
@@ -49,6 +66,8 @@ class PollVisitor {
   }
 };
 
+// Helper type - given a variant V, provides the poll operator (which simply
+// visits the inner type on the variant with PollVisitor)
 template <typename V>
 class PromiseVariant {
  public:
@@ -68,14 +87,18 @@ class PromiseVariant {
 // polled selected by the type that was in the variant.
 template <typename... Fs, typename... Ts>
 auto MatchPromise(absl::variant<Ts...> value, Fs... fs) {
+  // Construct a variant of promises using the factory functions fs, selected by
+  // the type held by value.
   auto body = absl::visit(
       promise_detail::ConstructPromiseVariantVisitor<OverloadType<Fs...>,
                                                      Ts...>{
           OverloadType<Fs...>(std::move(fs)...)},
       std::move(value));
+  // Wrap that in a PromiseVariant that provides the promise API on the wrapped
+  // variant.
   return promise_detail::PromiseVariant<decltype(body)>(std::move(body));
 }
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_MATCH_H
