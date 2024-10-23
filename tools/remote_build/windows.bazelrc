@@ -8,7 +8,7 @@ build --extra_execution_platforms=//third_party/toolchains:rbe_windows_default_p
 build --host_platform=//third_party/toolchains:rbe_windows_default_platform
 build --platforms=//third_party/toolchains:rbe_windows_default_platform
 # Needs to match the location of binaries in the RBE docker container
-build --shell_executable=C:\\msys64\\usr\\bin\\bash.exe
+build --shell_executable=C:\\tools\\msys64\\usr\\bin\\bash.exe
 build --python_path="C:\\Program Files\\Python310\\python.exe"
 
 build --test_tag_filters=-no_windows
