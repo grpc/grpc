@@ -683,16 +683,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "match_promise",
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = ["lib/promise/match_promise.h"],
-    external_deps = [
-        "absl/strings"
-    ],
     deps = [
-        "poll",
-        "promise_like",
-        "promise_factory",
         "overload",
+        "poll",
+        "promise_factory",
+        "promise_like",
         "//:gpr_platform",
     ],
 )
