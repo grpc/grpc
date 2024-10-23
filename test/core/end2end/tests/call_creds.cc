@@ -16,17 +16,16 @@
 //
 //
 
-#include <memory>
-
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "absl/log/log.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/time.h"
@@ -264,11 +263,17 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
 }
 
 CORE_END2END_TEST(PerCallCredsTest, RequestResponseWithPayloadAndCallCreds) {
+  if (IsLocalConnectorSecureEnabled()) {
+    SKIP_IF_LOCAL_TCP_CREDS();
+  }
   TestRequestResponseWithPayloadAndCallCreds(*this, true);
 }
 
 CORE_END2END_TEST(PerCallCredsTest,
                   RequestResponseWithPayloadAndOverriddenCallCreds) {
+  if (IsLocalConnectorSecureEnabled()) {
+    SKIP_IF_LOCAL_TCP_CREDS();
+  }
   TestRequestResponseWithPayloadAndOverriddenCallCreds(*this, true);
 }
 

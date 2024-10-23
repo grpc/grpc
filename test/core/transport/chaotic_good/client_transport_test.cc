@@ -14,6 +14,13 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
@@ -29,14 +36,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -102,8 +101,8 @@ ChannelArgs MakeChannelArgs() {
 }
 
 TEST_F(TransportTest, AddOneStream) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1000);
+  MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kFragment, 7, 1, 26, 8, 56, 15),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
@@ -120,7 +119,6 @@ TEST_F(TransportTest, AddOneStream) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.StartCall());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -136,6 +134,7 @@ TEST_F(TransportTest, AddOneStream) {
       {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
+  transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 1);
@@ -155,17 +154,16 @@ TEST_F(TransportTest, AddOneStream) {
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "12345678");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_FALSE(msg.value().has_value());
+              EXPECT_FALSE(msg.has_value());
               return Empty{};
             },
             [initiator]() mutable {
@@ -183,8 +181,8 @@ TEST_F(TransportTest, AddOneStream) {
 }
 
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1000);
+  MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kFragment, 3, 1, 26, 8, 56, 0),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
@@ -206,7 +204,6 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
   auto call = MakeCall(TestInitialMetadata());
-  transport->StartCall(call.handler.StartCall());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -227,6 +224,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       {EventEngineSlice::FromCopiedString("1"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
+  transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 2);
@@ -246,25 +244,23 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "12345678");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "87654321");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "87654321");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_FALSE(msg.value().has_value());
+              EXPECT_FALSE(msg.has_value());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),

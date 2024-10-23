@@ -3,7 +3,8 @@
  *     udpa/annotations/migrate.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_MINITABLE_H_
 #define UDPA_ANNOTATIONS_MIGRATE_PROTO_UPB_MINITABLE_H_
@@ -18,8 +19,11 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable udpa__annotations__MigrateAnnotation_msg_init;
+extern const upb_MiniTable* udpa__annotations__MigrateAnnotation_msg_init_ptr;
 extern const upb_MiniTable udpa__annotations__FieldMigrateAnnotation_msg_init;
+extern const upb_MiniTable* udpa__annotations__FieldMigrateAnnotation_msg_init_ptr;
 extern const upb_MiniTable udpa__annotations__FileMigrateAnnotation_msg_init;
+extern const upb_MiniTable* udpa__annotations__FileMigrateAnnotation_msg_init_ptr;
 extern const upb_MiniTableExtension udpa_annotations_message_migrate_ext;
 extern const upb_MiniTableExtension udpa_annotations_field_migrate_ext;
 extern const upb_MiniTableExtension udpa_annotations_enum_migrate_ext;

@@ -3,7 +3,8 @@
  *     src/proto/grpc/gcp/handshaker.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,6 +14,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField grpc_gcp_Endpoint__fields[3] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -34,8 +36,9 @@ const upb_MiniTable grpc__gcp__Endpoint_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_Identity_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity__AttributesEntry_msg_init},
+const upb_MiniTable* grpc__gcp__Endpoint_msg_init_ptr = &grpc__gcp__Endpoint_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_Identity_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity__AttributesEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_Identity__fields[3] = {
@@ -59,6 +62,7 @@ const upb_MiniTable grpc__gcp__Identity_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__gcp__Identity_msg_init_ptr = &grpc__gcp__Identity_msg_init;
 static const upb_MiniTableField grpc_gcp_Identity_AttributesEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -79,12 +83,13 @@ const upb_MiniTable grpc__gcp__Identity__AttributesEntry_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_StartClientHandshakeReq_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init},
+const upb_MiniTable* grpc__gcp__Identity__AttributesEntry_msg_init_ptr = &grpc__gcp__Identity__AttributesEntry_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_StartClientHandshakeReq_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_StartClientHandshakeReq__fields[10] = {
@@ -127,8 +132,9 @@ const upb_MiniTable grpc__gcp__StartClientHandshakeReq_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_ServerHandshakeParameters_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init},
+const upb_MiniTable* grpc__gcp__StartClientHandshakeReq_msg_init_ptr = &grpc__gcp__StartClientHandshakeReq_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_ServerHandshakeParameters_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_ServerHandshakeParameters__fields[2] = {
@@ -151,11 +157,12 @@ const upb_MiniTable grpc__gcp__ServerHandshakeParameters_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_StartServerHandshakeReq_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init},
+const upb_MiniTable* grpc__gcp__ServerHandshakeParameters_msg_init_ptr = &grpc__gcp__ServerHandshakeParameters_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_StartServerHandshakeReq_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Endpoint_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_StartServerHandshakeReq__fields[7] = {
@@ -187,8 +194,9 @@ const upb_MiniTable grpc__gcp__StartServerHandshakeReq_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__ServerHandshakeParameters_msg_init},
+const upb_MiniTable* grpc__gcp__StartServerHandshakeReq_msg_init_ptr = &grpc__gcp__StartServerHandshakeReq_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__ServerHandshakeParameters_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry__fields[2] = {
@@ -209,6 +217,7 @@ const upb_MiniTable grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry
   })
 };
 
+const upb_MiniTable* grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry_msg_init_ptr = &grpc__gcp__StartServerHandshakeReq__HandshakeParametersEntry_msg_init;
 static const upb_MiniTableField grpc_gcp_NextHandshakeMessageReq__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -226,10 +235,11 @@ const upb_MiniTable grpc__gcp__NextHandshakeMessageReq_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_HandshakerReq_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__StartClientHandshakeReq_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__StartServerHandshakeReq_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__NextHandshakeMessageReq_msg_init},
+const upb_MiniTable* grpc__gcp__NextHandshakeMessageReq_msg_init_ptr = &grpc__gcp__NextHandshakeMessageReq_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_HandshakerReq_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__StartClientHandshakeReq_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__StartServerHandshakeReq_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__NextHandshakeMessageReq_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_HandshakerReq__fields[3] = {
@@ -253,10 +263,11 @@ const upb_MiniTable grpc__gcp__HandshakerReq_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_HandshakerResult_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init},
+const upb_MiniTable* grpc__gcp__HandshakerReq_msg_init_ptr = &grpc__gcp__HandshakerReq_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_HandshakerResult_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__Identity_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_HandshakerResult__fields[8] = {
@@ -297,6 +308,7 @@ const upb_MiniTable grpc__gcp__HandshakerResult_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__gcp__HandshakerResult_msg_init_ptr = &grpc__gcp__HandshakerResult_msg_init;
 static const upb_MiniTableField grpc_gcp_HandshakerStatus__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -317,9 +329,10 @@ const upb_MiniTable grpc__gcp__HandshakerStatus_msg_init = {
   })
 };
 
-static const upb_MiniTableSub grpc_gcp_HandshakerResp_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__HandshakerResult_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__HandshakerStatus_msg_init},
+const upb_MiniTable* grpc__gcp__HandshakerStatus_msg_init_ptr = &grpc__gcp__HandshakerStatus_msg_init;
+static const upb_MiniTableSubInternal grpc_gcp_HandshakerResp_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__HandshakerResult_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__HandshakerStatus_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_HandshakerResp__fields[4] = {
@@ -344,6 +357,7 @@ const upb_MiniTable grpc__gcp__HandshakerResp_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__gcp__HandshakerResp_msg_init_ptr = &grpc__gcp__HandshakerResp_msg_init;
 static const upb_MiniTable *messages_layout[12] = {
   &grpc__gcp__Endpoint_msg_init,
   &grpc__gcp__Identity_msg_init,

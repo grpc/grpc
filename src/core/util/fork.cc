@@ -16,15 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/fork.h"
 
-#include <utility>
-
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include <utility>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/thread_local.h"

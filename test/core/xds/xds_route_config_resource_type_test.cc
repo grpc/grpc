@@ -14,6 +14,11 @@
 // limitations under the License.
 //
 
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/duration.pb.h>
+#include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <limits>
@@ -23,10 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/duration.pb.h>
-#include <google/protobuf/wrappers.pb.h>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -34,15 +35,17 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/type/matcher/v3/regex.pb.h"
+#include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.pb.h"
+#include "envoy/type/v3/range.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -58,17 +61,11 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.pb.h"
-#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
-#include "src/proto/grpc/testing/xds/v3/range.pb.h"
-#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.pb.h"
-#include "src/proto/grpc/testing/xds/v3/string.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
 
 using envoy::config::route::v3::RouteConfiguration;
 using grpc::lookup::v1::RouteLookupClusterSpecifier;

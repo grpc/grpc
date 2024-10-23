@@ -3,7 +3,8 @@
  *     envoy/config/endpoint/v3/load_report.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -20,13 +21,14 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[6] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_UpstreamLocalityStats_submsgs[6] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Locality_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamLocalityStats__fields[14] = {
@@ -73,10 +75,11 @@ const upb_MiniTable envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init 
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init_ptr = &envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_UpstreamEndpointStats_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_UpstreamEndpointStats__fields[7] = {
@@ -108,6 +111,7 @@ const upb_MiniTable envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init 
   })
 };
 
+const upb_MiniTable* envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init_ptr = &envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init;
 static const upb_MiniTableField envoy_config_endpoint_v3_EndpointLoadMetricStats__fields[3] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -129,6 +133,7 @@ const upb_MiniTable envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_ini
   })
 };
 
+const upb_MiniTable* envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init_ptr = &envoy__config__endpoint__v3__EndpointLoadMetricStats_msg_init;
 static const upb_MiniTableField envoy_config_endpoint_v3_UnnamedEndpointLoadMetricStats__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 16, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -149,10 +154,11 @@ const upb_MiniTable envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterStats_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init_ptr = &envoy__config__endpoint__v3__UnnamedEndpointLoadMetricStats_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterStats_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterStats__fields[6] = {
@@ -183,6 +189,7 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterStats_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterStats_msg_init_ptr = &envoy__config__endpoint__v3__ClusterStats_msg_init;
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterStats_DroppedRequests__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -203,6 +210,7 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterStats__DroppedRequests_m
   })
 };
 
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init_ptr = &envoy__config__endpoint__v3__ClusterStats__DroppedRequests_msg_init;
 static const upb_MiniTable *messages_layout[6] = {
   &envoy__config__endpoint__v3__UpstreamLocalityStats_msg_init,
   &envoy__config__endpoint__v3__UpstreamEndpointStats_msg_init,

@@ -74,17 +74,6 @@ config_setting(
     flag_values = {":disable_grpc_rls": "true"},
 )
 
-# When gRPC is build as shared library, binder transport code might still
-# get included even when user's code does not depend on it. In that case
-# --define=grpc_no_binder=true can be used to disable binder transport
-# related code to reduce binary size.
-# For users using build system other than bazel, they can define
-# GRPC_NO_BINDER to achieve the same effect.
-config_setting(
-    name = "grpc_no_binder_define",
-    values = {"define": "grpc_no_binder=true"},
-)
-
 config_setting(
     name = "android",
     values = {"crosstool_top": "//external:android/crosstool"},
@@ -131,15 +120,6 @@ selects.config_setting_group(
         # likely to be needed and where reducing the binary size is more
         # important.
         ":android",
-        ":ios",
-    ],
-)
-
-selects.config_setting_group(
-    name = "grpc_no_binder",
-    match_any = [
-        ":grpc_no_binder_define",
-        # We do not need binder on ios.
         ":ios",
     ],
 )
@@ -229,7 +209,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "groovy"  # @unused
 
-core_version = "44.0.0"  # @unused
+core_version = "44.1.0"  # @unused
 
 version = "1.68.0-dev"  # @unused
 
@@ -624,6 +604,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_resolver_c2p",
     "//src/core:grpc_xds_server_config_fetcher",
     "//src/core:grpc_stateful_session_filter",
+    "//src/core:xds_http_proxy_mapper",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -855,7 +836,6 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_message_size_filter",
-        "//src/core:grpc_resolver_binder",
         "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "//src/core:grpc_resolver_dns_native",
@@ -939,12 +919,6 @@ grpc_cc_library(
             "//conditions:default": [
                 "grpc++_xds_client",
                 "grpc++_xds_server",
-            ],
-        },
-        {
-            "grpc_no_binder": [],
-            "//conditions:default": [
-                "grpc++_binder",
             ],
         },
     ],
@@ -1074,112 +1048,6 @@ grpc_cc_library(
         "gpr",
         "grpc_mock_cel",
         "//src/core:grpc_authorization_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_binder",
-    srcs = [
-        "//src/core:ext/transport/binder/client/binder_connector.cc",
-        "//src/core:ext/transport/binder/client/channel_create.cc",
-        "//src/core:ext/transport/binder/client/channel_create_impl.cc",
-        "//src/core:ext/transport/binder/client/connection_id_generator.cc",
-        "//src/core:ext/transport/binder/client/endpoint_binder_pool.cc",
-        "//src/core:ext/transport/binder/client/jni_utils.cc",
-        "//src/core:ext/transport/binder/client/security_policy_setting.cc",
-        "//src/core:ext/transport/binder/security_policy/binder_security_policy.cc",
-        "//src/core:ext/transport/binder/server/binder_server.cc",
-        "//src/core:ext/transport/binder/server/binder_server_credentials.cc",
-        "//src/core:ext/transport/binder/transport/binder_transport.cc",
-        "//src/core:ext/transport/binder/utils/ndk_binder.cc",
-        "//src/core:ext/transport/binder/utils/transport_stream_receiver_impl.cc",
-        "//src/core:ext/transport/binder/wire_format/binder_android.cc",
-        "//src/core:ext/transport/binder/wire_format/binder_constants.cc",
-        "//src/core:ext/transport/binder/wire_format/transaction.cc",
-        "//src/core:ext/transport/binder/wire_format/wire_reader_impl.cc",
-        "//src/core:ext/transport/binder/wire_format/wire_writer.cc",
-    ],
-    hdrs = [
-        "//src/core:ext/transport/binder/client/binder_connector.h",
-        "//src/core:ext/transport/binder/client/channel_create_impl.h",
-        "//src/core:ext/transport/binder/client/connection_id_generator.h",
-        "//src/core:ext/transport/binder/client/endpoint_binder_pool.h",
-        "//src/core:ext/transport/binder/client/jni_utils.h",
-        "//src/core:ext/transport/binder/client/security_policy_setting.h",
-        "//src/core:ext/transport/binder/server/binder_server.h",
-        "//src/core:ext/transport/binder/transport/binder_stream.h",
-        "//src/core:ext/transport/binder/transport/binder_transport.h",
-        "//src/core:ext/transport/binder/utils/binder_auto_utils.h",
-        "//src/core:ext/transport/binder/utils/ndk_binder.h",
-        "//src/core:ext/transport/binder/utils/transport_stream_receiver.h",
-        "//src/core:ext/transport/binder/utils/transport_stream_receiver_impl.h",
-        "//src/core:ext/transport/binder/wire_format/binder.h",
-        "//src/core:ext/transport/binder/wire_format/binder_android.h",
-        "//src/core:ext/transport/binder/wire_format/binder_constants.h",
-        "//src/core:ext/transport/binder/wire_format/transaction.h",
-        "//src/core:ext/transport/binder/wire_format/wire_reader.h",
-        "//src/core:ext/transport/binder/wire_format/wire_reader_impl.h",
-        "//src/core:ext/transport/binder/wire_format/wire_writer.h",
-    ],
-    defines = select({
-        "grpc_no_binder": ["GRPC_NO_BINDER"],
-        "//conditions:default": [],
-    }),
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/cleanup",
-        "absl/container:flat_hash_map",
-        "absl/functional:any_invocable",
-        "absl/hash",
-        "absl/log:check",
-        "absl/log:log",
-        "absl/memory",
-        "absl/meta:type_traits",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/synchronization",
-        "absl/time",
-        "absl/types:variant",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpcpp/security/binder_security_policy.h",
-        "include/grpcpp/create_channel_binder.h",
-        "include/grpcpp/security/binder_credentials.h",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "channel",
-        "channel_create",
-        "config",
-        "debug_location",
-        "exec_ctx",
-        "gpr",
-        "gpr_platform",
-        "grpc",
-        "grpc++_base",
-        "grpc_base",
-        "grpc_client_channel",
-        "grpc_public_hdrs",
-        "orphanable",
-        "ref_counted_ptr",
-        "server",
-        "//src/core:arena",
-        "//src/core:channel_args",
-        "//src/core:channel_args_preconditioning",
-        "//src/core:channel_stack_type",
-        "//src/core:default_event_engine",
-        "//src/core:error_utils",
-        "//src/core:iomgr_fwd",
-        "//src/core:iomgr_port",
-        "//src/core:metadata_batch",
-        "//src/core:notification",
-        "//src/core:slice",
-        "//src/core:slice_refcount",
-        "//src/core:status_helper",
-        "//src/core:subchannel_connector",
-        "//src/core:transport_fwd",
     ],
 )
 
@@ -2043,6 +1911,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
@@ -2487,6 +2356,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_audit_logging",
@@ -2574,6 +2444,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_provider",
@@ -2961,6 +2832,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "generic_stub",
+    hdrs = [
+        "include/grpcpp/generic/generic_stub.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "generic_stub_internal",
+    ],
+)
+
+grpc_cc_library(
     name = "generic_stub_callback",
     hdrs = [
         "include/grpcpp/generic/generic_stub_callback.h",
@@ -2969,6 +2852,18 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "generic_stub_internal",
+    ],
+)
+
+grpc_cc_library(
+    name = "async_generic_service",
+    hdrs = [
+        "include/grpcpp/generic/async_generic_service.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++_public_hdrs",
     ],
 )
 
@@ -3780,6 +3675,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
+        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_spine",
@@ -4360,6 +4256,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
+        "//src/core:latent_see",
         "//src/core:map",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",
@@ -4395,17 +4292,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_client",
     srcs = [
+        "//src/core:xds/xds_client/lrs_client.cc",
         "//src/core:xds/xds_client/xds_api.cc",
         "//src/core:xds/xds_client/xds_bootstrap.cc",
         "//src/core:xds/xds_client/xds_client.cc",
-        "//src/core:xds/xds_client/xds_client_stats.cc",
     ],
     hdrs = [
+        "//src/core:xds/xds_client/lrs_client.h",
         "//src/core:xds/xds_client/xds_api.h",
         "//src/core:xds/xds_client/xds_bootstrap.h",
         "//src/core:xds/xds_client/xds_channel_args.h",
         "//src/core:xds/xds_client/xds_client.h",
-        "//src/core:xds/xds_client/xds_client_stats.h",
+        "//src/core:xds/xds_client/xds_locality.h",
         "//src/core:xds/xds_client/xds_metrics.h",
         "//src/core:xds/xds_client/xds_resource_type.h",
         "//src/core:xds/xds_client/xds_resource_type_impl.h",
@@ -4461,12 +4359,15 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:dual_ref_counted",
         "//src/core:env",
+        "//src/core:grpc_backend_metric_data",
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
+        "//src/core:ref_counted_string",
         "//src/core:time",
         "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/core:xds_backend_metric_propagation",
     ],
 )
 
@@ -4756,6 +4657,7 @@ grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
+        "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.cc",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.cc",
         "//src/core:ext/transport/chttp2/transport/frame_data.cc",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.cc",
@@ -4769,6 +4671,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.h",
+        "//src/core:ext/transport/chttp2/transport/call_tracer_wrapper.h",
         "//src/core:ext/transport/chttp2/transport/chttp2_transport.h",
         "//src/core:ext/transport/chttp2/transport/frame_data.h",
         "//src/core:ext/transport/chttp2/transport/frame_goaway.h",
@@ -4777,6 +4680,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_settings.h",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.h",
         "//src/core:ext/transport/chttp2/transport/internal.h",
+        "//src/core:ext/transport/chttp2/transport/stream_lists.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4959,6 +4863,11 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
 
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_core_upbdefs",
+    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+)
+
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
     deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
@@ -5112,6 +5021,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(

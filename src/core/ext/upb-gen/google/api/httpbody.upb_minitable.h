@@ -3,7 +3,8 @@
  *     google/api/httpbody.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef GOOGLE_API_HTTPBODY_PROTO_UPB_MINITABLE_H_
 #define GOOGLE_API_HTTPBODY_PROTO_UPB_MINITABLE_H_
@@ -18,6 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__api__HttpBody_msg_init;
+extern const upb_MiniTable* google__api__HttpBody_msg_init_ptr;
 
 extern const upb_MiniTableFile google_api_httpbody_proto_upb_file_layout;
 

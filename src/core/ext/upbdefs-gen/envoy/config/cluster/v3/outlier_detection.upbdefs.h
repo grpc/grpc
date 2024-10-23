@@ -3,7 +3,8 @@
  *     envoy/config/cluster/v3/outlier_detection.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPBDEFS_H_

@@ -18,6 +18,9 @@
 
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/opencensus.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -40,11 +43,6 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/opencensus.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -196,7 +194,7 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Duration elapsed_time_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
-  // Buffer needed for grpc_slice to reference it when adding metatdata to
+  // Buffer needed for grpc_slice to reference it when adding metadata to
   // response.
   char stats_buf_[kMaxServerStatsLen];
   // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated

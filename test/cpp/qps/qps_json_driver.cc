@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -24,9 +26,6 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpcpp/impl/codegen/config_protobuf.h>
-
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
@@ -104,8 +103,9 @@ ConstructPerWorkerCredentialTypesMap() {
     }
     size_t comma = next_entry.find(',');
     if (comma == std::string::npos) {
-      LOG(ERROR) << "Expectd --per_worker_credential_types to be a list of the "
-                    "form: 'addr1,cred_type1;addr2,cred_type2;...' into.";
+      LOG(ERROR)
+          << "Expected --per_worker_credential_types to be a list of the "
+             "form: 'addr1,cred_type1;addr2,cred_type2;...' into.";
       abort();
     }
     std::string addr = next_entry.substr(0, comma);

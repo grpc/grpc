@@ -5,7 +5,7 @@ import warnings
 
 import helloworld_pb2 as helloworld__pb2
 
-GRPC_GENERATED_VERSION = '1.67.0.dev0'
+GRPC_GENERATED_VERSION = '1.66.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 

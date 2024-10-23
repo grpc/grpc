@@ -70,6 +70,15 @@ message LbEndpoint {
   // Optional health status when known and supplied by EDS server.
   core.v3.HealthStatus health_status = 2;
 
+  // The endpoint metadata specifies values that may be used by the load
+  // balancer to select endpoints in a cluster for a given request. The filter
+  // name should be specified as ``envoy.lb``. An example boolean key-value pair
+  // is ``canary``, providing the optional canary status of the upstream host.
+  // This may be matched against in a route's
+  // :ref:`RouteAction <envoy_v3_api_msg_config.route.v3.RouteAction>` metadata_match field
+  // to subset the endpoints considered in cluster load balancing.
+  core.v3.Metadata metadata = 3;
+
   // The optional load balancing weight of the upstream host; at least 1.
   // Envoy uses the load balancing weight in some of the built in load
   // balancers. The load balancing weight for an endpoint is divided by the sum
@@ -90,6 +99,9 @@ message LbEndpoint {
 message LocalityLbEndpoints {
   // Identifies location of where the upstream hosts run.
   core.v3.Locality locality = 1;
+
+  // Metadata to provide additional information about the locality endpoints in aggregate.
+  core.v3.Metadata metadata = 9;
 
   // The group of endpoints belonging to the locality specified.
   repeated LbEndpoint lb_endpoints = 2;

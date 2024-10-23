@@ -16,12 +16,7 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
 #include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -32,6 +27,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
+
+#include <memory>
+#include <vector>
 
 #include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
 #include "src/proto/grpc/reflection/v1/reflection.pb.h"
@@ -148,7 +147,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
 
   std::vector<std::string> services;
   desc_db_->GetServices(&services);
-  // The service list has at least one service (reflection servcie).
+  // The service list has at least one service (reflection service).
   EXPECT_TRUE(!services.empty());
 
   for (auto it = services.begin(); it != services.end(); ++it) {

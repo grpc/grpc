@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/protocol.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -21,6 +22,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 const upb_MiniTable envoy__config__core__v3__TcpProtocolOptions_msg_init = {
   NULL,
   NULL,
@@ -30,9 +32,10 @@ const upb_MiniTable envoy__config__core__v3__TcpProtocolOptions_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_QuicKeepAliveSettings_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__core__v3__TcpProtocolOptions_msg_init_ptr = &envoy__config__core__v3__TcpProtocolOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_QuicKeepAliveSettings_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_QuicKeepAliveSettings__fields[2] = {
@@ -49,13 +52,14 @@ const upb_MiniTable envoy__config__core__v3__QuicKeepAliveSettings_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_QuicProtocolOptions_submsgs[6] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicKeepAliveSettings_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__core__v3__QuicKeepAliveSettings_msg_init_ptr = &envoy__config__core__v3__QuicKeepAliveSettings_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_QuicProtocolOptions_submsgs[6] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicKeepAliveSettings_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_QuicProtocolOptions__fields[8] = {
@@ -88,6 +92,7 @@ const upb_MiniTable envoy__config__core__v3__QuicProtocolOptions_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__QuicProtocolOptions_msg_init_ptr = &envoy__config__core__v3__QuicProtocolOptions_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_UpstreamHttpProtocolOptions__fields[3] = {
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -109,10 +114,11 @@ const upb_MiniTable envoy__config__core__v3__UpstreamHttpProtocolOptions_msg_ini
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__AlternateProtocolsCacheOptions__AlternateProtocolsCacheEntry_msg_init},
+const upb_MiniTable* envoy__config__core__v3__UpstreamHttpProtocolOptions_msg_init_ptr = &envoy__config__core__v3__UpstreamHttpProtocolOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__AlternateProtocolsCacheOptions__AlternateProtocolsCacheEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_AlternateProtocolsCacheOptions__fields[5] = {
@@ -142,6 +148,7 @@ const upb_MiniTable envoy__config__core__v3__AlternateProtocolsCacheOptions_msg_
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__AlternateProtocolsCacheOptions_msg_init_ptr = &envoy__config__core__v3__AlternateProtocolsCacheOptions_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry__fields[2] = {
   {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 8, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -162,12 +169,13 @@ const upb_MiniTable envoy__config__core__v3__AlternateProtocolsCacheOptions__Alt
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HttpProtocolOptions_submsgs[5] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+const upb_MiniTable* envoy__config__core__v3__AlternateProtocolsCacheOptions__AlternateProtocolsCacheEntry_msg_init_ptr = &envoy__config__core__v3__AlternateProtocolsCacheOptions__AlternateProtocolsCacheEntry_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_HttpProtocolOptions_submsgs[5] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_HttpProtocolOptions__fields[6] = {
@@ -198,11 +206,12 @@ const upb_MiniTable envoy__config__core__v3__HttpProtocolOptions_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Http1ProtocolOptions_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__config__core__v3__HttpProtocolOptions_msg_init_ptr = &envoy__config__core__v3__HttpProtocolOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Http1ProtocolOptions_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Http1ProtocolOptions__fields[10] = {
@@ -245,9 +254,10 @@ const upb_MiniTable envoy__config__core__v3__Http1ProtocolOptions_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat__ProperCaseWords_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Http1ProtocolOptions_msg_init_ptr = &envoy__config__core__v3__Http1ProtocolOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat__ProperCaseWords_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat__fields[2] = {
@@ -282,6 +292,7 @@ const upb_MiniTable envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyForm
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat_msg_init_ptr = &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat_msg_init;
 const upb_MiniTable envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat__ProperCaseWords_msg_init = {
   NULL,
   NULL,
@@ -291,11 +302,12 @@ const upb_MiniTable envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyForm
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_KeepaliveSettings_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat__ProperCaseWords_msg_init_ptr = &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat__ProperCaseWords_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_KeepaliveSettings_submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_KeepaliveSettings__fields[4] = {
@@ -314,20 +326,21 @@ const upb_MiniTable envoy__config__core__v3__KeepaliveSettings_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Http2ProtocolOptions_submsgs[13] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions__SettingsParameter_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__KeepaliveSettings_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__config__core__v3__KeepaliveSettings_msg_init_ptr = &envoy__config__core__v3__KeepaliveSettings_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Http2ProtocolOptions_submsgs[13] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions__SettingsParameter_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__KeepaliveSettings_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Http2ProtocolOptions__fields[16] = {
@@ -376,9 +389,10 @@ const upb_MiniTable envoy__config__core__v3__Http2ProtocolOptions_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Http2ProtocolOptions_msg_init_ptr = &envoy__config__core__v3__Http2ProtocolOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter__fields[2] = {
@@ -395,8 +409,9 @@ const upb_MiniTable envoy__config__core__v3__Http2ProtocolOptions__SettingsParam
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_GrpcProtocolOptions_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init},
+const upb_MiniTable* envoy__config__core__v3__Http2ProtocolOptions__SettingsParameter_msg_init_ptr = &envoy__config__core__v3__Http2ProtocolOptions__SettingsParameter_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcProtocolOptions_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Http2ProtocolOptions_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcProtocolOptions__fields[1] = {
@@ -412,9 +427,10 @@ const upb_MiniTable envoy__config__core__v3__GrpcProtocolOptions_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_Http3ProtocolOptions_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicProtocolOptions_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__config__core__v3__GrpcProtocolOptions_msg_init_ptr = &envoy__config__core__v3__GrpcProtocolOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_Http3ProtocolOptions_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__QuicProtocolOptions_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_Http3ProtocolOptions__fields[4] = {
@@ -443,6 +459,7 @@ const upb_MiniTable envoy__config__core__v3__Http3ProtocolOptions_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__Http3ProtocolOptions_msg_init_ptr = &envoy__config__core__v3__Http3ProtocolOptions_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_SchemeHeaderTransformation__fields[2] = {
   {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
@@ -463,6 +480,7 @@ const upb_MiniTable envoy__config__core__v3__SchemeHeaderTransformation_msg_init
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__SchemeHeaderTransformation_msg_init_ptr = &envoy__config__core__v3__SchemeHeaderTransformation_msg_init;
 static const upb_MiniTable *messages_layout[16] = {
   &envoy__config__core__v3__TcpProtocolOptions_msg_init,
   &envoy__config__core__v3__QuicKeepAliveSettings_msg_init,

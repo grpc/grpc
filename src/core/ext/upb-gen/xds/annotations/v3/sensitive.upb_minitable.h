@@ -3,7 +3,8 @@
  *     xds/annotations/v3/sensitive.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_MINITABLE_H_
 #define XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_MINITABLE_H_

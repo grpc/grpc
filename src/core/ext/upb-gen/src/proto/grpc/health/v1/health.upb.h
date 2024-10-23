@@ -3,7 +3,8 @@
  *     src/proto/grpc/health/v1/health.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_HEALTH_V1_HEALTH_PROTO_UPB_H_

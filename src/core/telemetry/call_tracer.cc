@@ -18,14 +18,13 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
 

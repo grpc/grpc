@@ -3,7 +3,8 @@
  *     envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_TLS_SPIFFE_VALIDATOR_CONFIG_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_TLS_SPIFFE_VALIDATOR_CONFIG_PROTO_UPB_H_
@@ -71,6 +72,7 @@ UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorCon
 }
 UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* const* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -82,6 +84,7 @@ UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorCo
 }
 UPB_INLINE const upb_Array* _envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_trust_domains_upb_array(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -90,6 +93,7 @@ UPB_INLINE const upb_Array* _envoy_extensions_transport_sockets_tls_v3_SPIFFECer
 }
 UPB_INLINE upb_Array* _envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_trust_domains_mutable_upb_array(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -100,6 +104,7 @@ UPB_INLINE upb_Array* _envoy_extensions_transport_sockets_tls_v3_SPIFFECertValid
 
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain** envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_mutable_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t* size) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -116,6 +121,7 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_T
 }
 UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_add_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__SPIFFECertValidatorConfig__TrustDomain_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -185,6 +191,7 @@ UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_extensions_transp
   const struct envoy_config_core_v3_DataSource* default_val = NULL;
   const struct envoy_config_core_v3_DataSource* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -200,6 +207,7 @@ UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorCon
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_set_trust_bundle(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain *msg, struct envoy_config_core_v3_DataSource* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_mutable_trust_bundle(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, upb_Arena* arena) {

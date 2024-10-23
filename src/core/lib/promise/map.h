@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MAP_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MAP_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <tuple>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -68,8 +67,8 @@ class Map {
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Map<Promise, Fn> Map(
-    Promise promise, Fn fn) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Map<Promise, Fn>
+Map(Promise promise, Fn fn) {
   return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
@@ -77,7 +76,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Map<Promise, Fn> Map(
 // and a bool indicating whether there was ever a Pending{} value observed from
 // polling.
 template <typename Promise>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CheckDelayed(Promise promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto CheckDelayed(Promise promise) {
   using P = promise_detail::PromiseLike<Promise>;
   return [delayed = false, promise = P(std::move(promise))]() mutable
          -> Poll<std::tuple<typename P::Result, bool>> {

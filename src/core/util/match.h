@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "absl/types/variant.h"
-
 #include "src/core/util/overload.h"
 
 namespace grpc_core {

@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/opencensus.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_TRACE_V3_OPENCENSUS_PROTO_UPB_H_
 #define ENVOY_CONFIG_TRACE_V3_OPENCENSUS_PROTO_UPB_H_
@@ -84,6 +85,7 @@ UPB_INLINE const struct opencensus_proto_trace_v1_TraceConfig* envoy_config_trac
   const struct opencensus_proto_trace_v1_TraceConfig* default_val = NULL;
   const struct opencensus_proto_trace_v1_TraceConfig* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__TraceConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -260,6 +262,7 @@ UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_
   const struct envoy_config_core_v3_GrpcService* default_val = NULL;
   const struct envoy_config_core_v3_GrpcService* ret;
   const upb_MiniTableField field = {13, UPB_SIZE(32, 104), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -276,6 +279,7 @@ UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_
   const struct envoy_config_core_v3_GrpcService* default_val = NULL;
   const struct envoy_config_core_v3_GrpcService* ret;
   const upb_MiniTableField field = {14, UPB_SIZE(36, 112), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -287,6 +291,7 @@ UPB_INLINE bool envoy_config_trace_v3_OpenCensusConfig_has_ocagent_grpc_service(
 
 UPB_INLINE void envoy_config_trace_v3_OpenCensusConfig_set_trace_config(envoy_config_trace_v3_OpenCensusConfig *msg, struct opencensus_proto_trace_v1_TraceConfig* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&opencensus__proto__trace__v1__TraceConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_TraceConfig* envoy_config_trace_v3_OpenCensusConfig_mutable_trace_config(envoy_config_trace_v3_OpenCensusConfig* msg, upb_Arena* arena) {
@@ -387,6 +392,7 @@ UPB_INLINE void envoy_config_trace_v3_OpenCensusConfig_set_ocagent_address(envoy
 }
 UPB_INLINE void envoy_config_trace_v3_OpenCensusConfig_set_stackdriver_grpc_service(envoy_config_trace_v3_OpenCensusConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {13, UPB_SIZE(32, 104), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenCensusConfig_mutable_stackdriver_grpc_service(envoy_config_trace_v3_OpenCensusConfig* msg, upb_Arena* arena) {
@@ -399,6 +405,7 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenCe
 }
 UPB_INLINE void envoy_config_trace_v3_OpenCensusConfig_set_ocagent_grpc_service(envoy_config_trace_v3_OpenCensusConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {14, UPB_SIZE(36, 112), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenCensusConfig_mutable_ocagent_grpc_service(envoy_config_trace_v3_OpenCensusConfig* msg, upb_Arena* arena) {

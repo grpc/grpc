@@ -34,13 +34,14 @@ sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import observability_lib_deps
+import python_version
 
 import grpc_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -287,7 +288,7 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=list(PACKAGES),
-    python_requires=">=3.8",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
         "setuptools>=59.6.0",

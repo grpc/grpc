@@ -22,7 +22,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/util/useful.h"
 
 // Provides a type name that is unique by instance rather than by

@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/domain.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,8 +16,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_type_matcher_v3_ServerNameMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_type_matcher_v3_ServerNameMatcher_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_type_matcher_v3_ServerNameMatcher__fields[1] = {
@@ -36,8 +38,9 @@ const upb_MiniTable xds__type__matcher__v3__ServerNameMatcher_msg_init = {
   })
 };
 
-static const upb_MiniTableSub xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher__OnMatch_msg_init},
+const upb_MiniTable* xds__type__matcher__v3__ServerNameMatcher_msg_init_ptr = &xds__type__matcher__v3__ServerNameMatcher_msg_init;
+static const upb_MiniTableSubInternal xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher__OnMatch_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_type_matcher_v3_ServerNameMatcher_DomainMatcher__fields[2] = {
@@ -58,6 +61,7 @@ const upb_MiniTable xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg
   })
 };
 
+const upb_MiniTable* xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init_ptr = &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &xds__type__matcher__v3__ServerNameMatcher_msg_init,
   &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init,

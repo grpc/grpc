@@ -18,6 +18,10 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,12 +38,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

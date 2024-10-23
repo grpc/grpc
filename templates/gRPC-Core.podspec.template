@@ -114,16 +114,16 @@
     # which was released in Cocoapods v1.2.0.
     s.cocoapods_version = '>= 1.2.0'
 
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '11.0'
+    s.osx.deployment_target = '10.14'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
 
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '~> 1.20240116.2'
+    abseil_version = '~> 1.20240722.0'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include

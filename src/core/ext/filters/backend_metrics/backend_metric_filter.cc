@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -26,12 +26,6 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -43,6 +37,10 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/latent_see.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
 
 namespace grpc_core {
 
@@ -125,6 +123,8 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "BackendMetricFilter::Call::OnServerTrailingMetadata");
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {

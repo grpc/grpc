@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/filter_state.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H_
 #define ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H_
@@ -93,6 +94,7 @@ UPB_INLINE const struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_
   const struct envoy_type_matcher_v3_StringMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_StringMatcher* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__StringMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -108,6 +110,7 @@ UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_key(envoy_type_matc
 }
 UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_string_match(envoy_type_matcher_v3_FilterStateMatcher *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__StringMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_FilterStateMatcher_mutable_string_match(envoy_type_matcher_v3_FilterStateMatcher* msg, upb_Arena* arena) {

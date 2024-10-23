@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -244,6 +244,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_call_spine",
     srcs = ["bm_call_spine.cc"],
+    monitoring = HISTORY,
     deps = [
         ":call_spine_benchmarks",
         "//:grpc",
@@ -254,6 +255,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
+    monitoring = HISTORY,
     deps = [
         ":call_spine_benchmarks",
         "//:grpc",

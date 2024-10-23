@@ -14,12 +14,11 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
 
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_event_engine {

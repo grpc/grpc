@@ -3,7 +3,8 @@
  *     envoy/type/v3/range.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -14,6 +15,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_type_v3_Int64Range__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -34,6 +36,7 @@ const upb_MiniTable envoy__type__v3__Int64Range_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__v3__Int64Range_msg_init_ptr = &envoy__type__v3__Int64Range_msg_init;
 static const upb_MiniTableField envoy_type_v3_Int32Range__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -54,6 +57,7 @@ const upb_MiniTable envoy__type__v3__Int32Range_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__v3__Int32Range_msg_init_ptr = &envoy__type__v3__Int32Range_msg_init;
 static const upb_MiniTableField envoy_type_v3_DoubleRange__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 16, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -74,6 +78,7 @@ const upb_MiniTable envoy__type__v3__DoubleRange_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__v3__DoubleRange_msg_init_ptr = &envoy__type__v3__DoubleRange_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &envoy__type__v3__Int64Range_msg_init,
   &envoy__type__v3__Int32Range_msg_init,

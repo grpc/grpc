@@ -15,6 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -32,12 +36,6 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -88,9 +86,6 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void AbortWithError();
 
  private:
-  // Queue size of each stream pipe is set to 2, so that for each stream read it
-  // will queue at most 2 frames.
-  static const size_t kServerFrameQueueSize = 2;
   using StreamMap = absl::flat_hash_map<uint32_t, CallHandler>;
 
   uint32_t MakeStream(CallHandler call_handler);
@@ -112,8 +107,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
-  ActivityPtr writer_;
-  ActivityPtr reader_;
+  RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_client", GRPC_CHANNEL_READY};
 };

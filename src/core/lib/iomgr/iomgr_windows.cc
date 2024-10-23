@@ -23,7 +23,6 @@
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include "absl/log/check.h"
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -108,6 +107,8 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 
-bool grpc_iomgr_run_in_background() { return false; }
+bool grpc_iomgr_run_in_background() {
+  return grpc_core::IsEventEngineCallbackCqEnabled();
+}
 
 #endif  // GRPC_WINSOCK_SOCKET

@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/trace.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_MINITABLE_H_
 #define ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_MINITABLE_H_

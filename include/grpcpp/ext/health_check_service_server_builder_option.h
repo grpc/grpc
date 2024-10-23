@@ -19,11 +19,11 @@
 #ifndef GRPCPP_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
 #define GRPCPP_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
 
-#include <memory>
-
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
 
 namespace grpc {
 

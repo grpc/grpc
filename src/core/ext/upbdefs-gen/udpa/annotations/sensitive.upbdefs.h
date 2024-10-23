@@ -3,7 +3,8 @@
  *     udpa/annotations/sensitive.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPBDEFS_H_
 #define UDPA_ANNOTATIONS_SENSITIVE_PROTO_UPBDEFS_H_

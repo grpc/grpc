@@ -3,7 +3,8 @@
  *     envoy/config/listener/v3/listener.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -30,9 +31,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_listener_v3_AdditionalAddress_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOptionsOverride_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_listener_v3_AdditionalAddress_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOptionsOverride_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_listener_v3_AdditionalAddress__fields[2] = {
@@ -49,8 +51,9 @@ const upb_MiniTable envoy__config__listener__v3__AdditionalAddress_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_listener_v3_ListenerCollection_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry_msg_init},
+const upb_MiniTable* envoy__config__listener__v3__AdditionalAddress_msg_init_ptr = &envoy__config__listener__v3__AdditionalAddress_msg_init;
+static const upb_MiniTableSubInternal envoy_config_listener_v3_ListenerCollection_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_listener_v3_ListenerCollection__fields[1] = {
@@ -70,31 +73,32 @@ const upb_MiniTable envoy__config__listener__v3__ListenerCollection_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_listener_v3_Listener_submsgs[24] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__FilterChain_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__DeprecatedV1_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilter_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__UdpListenerConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ApiListener_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__FilterChain_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__InternalListenerConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__AdditionalAddress_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
+const upb_MiniTable* envoy__config__listener__v3__ListenerCollection_msg_init_ptr = &envoy__config__listener__v3__ListenerCollection_msg_init;
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_submsgs[24] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__FilterChain_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Metadata_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__DeprecatedV1_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ListenerFilter_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__UdpListenerConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__ApiListener_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__FilterChain_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__InternalListenerConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__type__matcher__v3__Matcher_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__AdditionalAddress_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_listener_v3_Listener__fields[33] = {
@@ -176,8 +180,9 @@ const upb_MiniTable envoy__config__listener__v3__Listener_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+const upb_MiniTable* envoy__config__listener__v3__Listener_msg_init_ptr = &envoy__config__listener__v3__Listener_msg_init;
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_listener_v3_Listener_DeprecatedV1__fields[1] = {
@@ -193,9 +198,10 @@ const upb_MiniTable envoy__config__listener__v3__Listener__DeprecatedV1_msg_init
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig__ExactBalance_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+const upb_MiniTable* envoy__config__listener__v3__Listener__DeprecatedV1_msg_init_ptr = &envoy__config__listener__v3__Listener__DeprecatedV1_msg_init;
+static const upb_MiniTableSubInternal envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig__ExactBalance_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[2] = {
@@ -218,6 +224,7 @@ const upb_MiniTable envoy__config__listener__v3__Listener__ConnectionBalanceConf
   })
 };
 
+const upb_MiniTable* envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init_ptr = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init;
 const upb_MiniTable envoy__config__listener__v3__Listener__ConnectionBalanceConfig__ExactBalance_msg_init = {
   NULL,
   NULL,
@@ -227,6 +234,7 @@ const upb_MiniTable envoy__config__listener__v3__Listener__ConnectionBalanceConf
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__Listener__ConnectionBalanceConfig__ExactBalance_msg_init_ptr = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig__ExactBalance_msg_init;
 const upb_MiniTable envoy__config__listener__v3__Listener__InternalListenerConfig_msg_init = {
   NULL,
   NULL,
@@ -236,6 +244,7 @@ const upb_MiniTable envoy__config__listener__v3__Listener__InternalListenerConfi
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__Listener__InternalListenerConfig_msg_init_ptr = &envoy__config__listener__v3__Listener__InternalListenerConfig_msg_init;
 const upb_MiniTable envoy__config__listener__v3__ListenerManager_msg_init = {
   NULL,
   NULL,
@@ -245,6 +254,7 @@ const upb_MiniTable envoy__config__listener__v3__ListenerManager_msg_init = {
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__ListenerManager_msg_init_ptr = &envoy__config__listener__v3__ListenerManager_msg_init;
 const upb_MiniTable envoy__config__listener__v3__ValidationListenerManager_msg_init = {
   NULL,
   NULL,
@@ -254,6 +264,7 @@ const upb_MiniTable envoy__config__listener__v3__ValidationListenerManager_msg_i
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__ValidationListenerManager_msg_init_ptr = &envoy__config__listener__v3__ValidationListenerManager_msg_init;
 const upb_MiniTable envoy__config__listener__v3__ApiListenerManager_msg_init = {
   NULL,
   NULL,
@@ -263,6 +274,7 @@ const upb_MiniTable envoy__config__listener__v3__ApiListenerManager_msg_init = {
 #endif
 };
 
+const upb_MiniTable* envoy__config__listener__v3__ApiListenerManager_msg_init_ptr = &envoy__config__listener__v3__ApiListenerManager_msg_init;
 static const upb_MiniTable *messages_layout[10] = {
   &envoy__config__listener__v3__AdditionalAddress_msg_init,
   &envoy__config__listener__v3__ListenerCollection_msg_init,
