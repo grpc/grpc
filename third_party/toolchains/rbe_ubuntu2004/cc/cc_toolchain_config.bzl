@@ -14,10 +14,13 @@
 
 """A Starlark cc_toolchain configuration rule"""
 
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "action_config",
     "artifact_name_pattern",
+    "env_entry",
+    "env_set",
     "feature",
     "feature_set",
     "flag_group",
@@ -27,9 +30,13 @@ load(
     "variable_with_value",
     "with_feature_set",
 )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
-def layering_check_features(compiler):
+def _target_os_version(ctx):
+    platform_type = ctx.fragments.apple.single_arch_platform.platform_type
+    xcode_config = ctx.attr._xcode_config[apple_common.XcodeVersionConfig]
+    return xcode_config.minimum_os_for_platform_type(platform_type)
+
+def layering_check_features(compiler, extra_flags_per_feature, is_macos):
     if compiler != "clang":
         return []
     return [
@@ -46,10 +53,12 @@ def layering_check_features(compiler):
                     ],
                     flag_groups = [
                         flag_group(
-                            flags = [
+                            # macOS requires -Xclang because of a bug in Apple Clang
+                            flags = (["-Xclang"] if is_macos else []) + [
                                 "-fmodule-name=%{module_name}",
+                            ] + (["-Xclang"] if is_macos else []) + [
                                 "-fmodule-map-file=%{module_map_file}",
-                            ],
+                            ] + extra_flags_per_feature.get("use_module_maps", []),
                         ),
                     ],
                 ),
@@ -79,7 +88,7 @@ def layering_check_features(compiler):
                         ]),
                         flag_group(
                             iterate_over = "dependent_module_map_files",
-                            flags = [
+                            flags = (["-Xclang"] if is_macos else []) + [
                                 "-fmodule-map-file=%{dependent_module_map_files}",
                             ],
                         ),
@@ -88,6 +97,47 @@ def layering_check_features(compiler):
             ],
         ),
     ]
+
+def parse_headers_support(parse_headers_tool_path):
+    if not parse_headers_tool_path:
+        return [], []
+    action_configs = [
+        action_config(
+            action_name = ACTION_NAMES.cpp_header_parsing,
+            tools = [
+                tool(path = parse_headers_tool_path),
+            ],
+            flag_sets = [
+                flag_set(
+                    flag_groups = [
+                        flag_group(
+                            flags = [
+                                # Note: This treats all headers as C++ headers, which may lead to
+                                # parsing failures for C headers that are not valid C++.
+                                # For such headers, use features = ["-parse_headers"] to selectively
+                                # disable parsing.
+                                "-xc++-header",
+                                "-fsyntax-only",
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+            implies = [
+                # Copied from the legacy feature definition in CppActionConfigs.java.
+                "legacy_compile_flags",
+                "user_compile_flags",
+                "sysroot",
+                "unfiltered_compile_flags",
+                "compiler_input_flags",
+                "compiler_output_flags",
+            ],
+        ),
+    ]
+    features = [
+        feature(name = "parse_headers"),
+    ]
+    return action_configs, features
 
 all_compile_actions = [
     ACTION_NAMES.c_compile,
@@ -187,7 +237,17 @@ def _impl(ctx):
         ],
     )
 
+    objcopy_action = action_config(
+        action_name = ACTION_NAMES.objcopy_embed_data,
+        tools = [
+            tool(
+                path = ctx.attr.tool_paths["objcopy"],
+            ),
+        ],
+    )
+
     action_configs.append(llvm_cov_action)
+    action_configs.append(objcopy_action)
 
     supports_pic_feature = feature(
         name = "supports_pic",
@@ -196,6 +256,16 @@ def _impl(ctx):
     supports_start_end_lib_feature = feature(
         name = "supports_start_end_lib",
         enabled = True,
+    )
+
+    gcc_quoting_for_param_files_feature = feature(
+        name = "gcc_quoting_for_param_files",
+        enabled = True,
+    )
+
+    static_link_cpp_runtimes_feature = feature(
+        name = "static_link_cpp_runtimes",
+        enabled = False,
     )
 
     default_compile_flags_feature = feature(
@@ -244,6 +314,14 @@ def _impl(ctx):
                 with_features = [with_feature_set(features = ["opt"])],
             ),
             flag_set(
+                actions = [ACTION_NAMES.c_compile],
+                flag_groups = ([
+                    flag_group(
+                        flags = ctx.attr.conly_flags,
+                    ),
+                ] if ctx.attr.conly_flags else []),
+            ),
+            flag_set(
                 actions = all_cpp_compile_actions + [ACTION_NAMES.lto_backend],
                 flag_groups = ([
                     flag_group(
@@ -274,6 +352,18 @@ def _impl(ctx):
                     ),
                 ] if ctx.attr.opt_link_flags else []),
                 with_features = [with_feature_set(features = ["opt"])],
+            ),
+        ],
+        env_sets = [
+            env_set(
+                actions = all_link_actions + lto_index_actions + [ACTION_NAMES.cpp_link_static_library],
+                env_entries = ([
+                    env_entry(
+                        # Required for hermetic links on macOS
+                        key = "ZERO_AR_DATE",
+                        value = "1",
+                    ),
+                ]),
             ),
         ],
     )
@@ -749,23 +839,6 @@ def _impl(ctx):
         ],
     )
 
-    symbol_counts_feature = feature(
-        name = "symbol_counts",
-        flag_sets = [
-            flag_set(
-                actions = all_link_actions + lto_index_actions,
-                flag_groups = [
-                    flag_group(
-                        flags = [
-                            "-Wl,--print-symbol-counts=%{symbol_counts_output}",
-                        ],
-                        expand_if_available = "symbol_counts_output",
-                    ),
-                ],
-            ),
-        ],
-    )
-
     strip_debug_symbols_feature = feature(
         name = "strip_debug_symbols",
         flag_sets = [
@@ -811,24 +884,6 @@ def _impl(ctx):
         ],
     )
 
-    is_linux = ctx.attr.target_libc != "macosx"
-    if is_linux:
-        versioned_library_flag_group = flag_group(
-            flags = ["-l:%{libraries_to_link.name}"],
-            expand_if_equal = variable_with_value(
-                name = "libraries_to_link.type",
-                value = "versioned_dynamic_library",
-            ),
-        )
-    else:
-        versioned_library_flag_group = flag_group(
-            flags = ["%{libraries_to_link.path}"],
-            expand_if_equal = variable_with_value(
-                name = "libraries_to_link.type",
-                value = "versioned_dynamic_library",
-            ),
-        )
-
     libraries_to_link_feature = feature(
         name = "libraries_to_link",
         flag_sets = [
@@ -849,6 +904,10 @@ def _impl(ctx):
                                 flags = ["-Wl,-whole-archive"],
                                 expand_if_true =
                                     "libraries_to_link.is_whole_archive",
+                                expand_if_equal = variable_with_value(
+                                    name = "libraries_to_link.type",
+                                    value = "static_library",
+                                ),
                             ),
                             flag_group(
                                 flags = ["%{libraries_to_link.object_files}"],
@@ -886,10 +945,20 @@ def _impl(ctx):
                                     value = "dynamic_library",
                                 ),
                             ),
-                            versioned_library_flag_group,
+                            flag_group(
+                                flags = ["-l:%{libraries_to_link.name}"],
+                                expand_if_equal = variable_with_value(
+                                    name = "libraries_to_link.type",
+                                    value = "versioned_dynamic_library",
+                                ),
+                            ),
                             flag_group(
                                 flags = ["-Wl,-no-whole-archive"],
                                 expand_if_true = "libraries_to_link.is_whole_archive",
+                                expand_if_equal = variable_with_value(
+                                    name = "libraries_to_link.type",
+                                    value = "static_library",
+                                ),
                             ),
                             flag_group(
                                 flags = ["-Wl,--end-lib"],
@@ -975,15 +1044,23 @@ def _impl(ctx):
         ],
     )
 
+    is_linux = ctx.attr.target_libc != "macosx"
+    libtool_feature = feature(
+        name = "libtool",
+        enabled = not is_linux,
+    )
+
     archiver_flags_feature = feature(
         name = "archiver_flags",
         flag_sets = [
             flag_set(
                 actions = [ACTION_NAMES.cpp_link_static_library],
                 flag_groups = [
-                    flag_group(flags = ["rcsD"]),
                     flag_group(
-                        flags = ["%{output_execpath}"],
+                        flags = [
+                            "rcsD" if is_linux else "rcs",
+                            "%{output_execpath}",
+                        ],
                         expand_if_available = "output_execpath",
                     ),
                 ],
@@ -996,9 +1073,12 @@ def _impl(ctx):
             flag_set(
                 actions = [ACTION_NAMES.cpp_link_static_library],
                 flag_groups = [
-                    flag_group(flags = ["-static", "-s"]),
                     flag_group(
-                        flags = ["-o", "%{output_execpath}"],
+                        flags = [
+                            "-static",
+                            "-o",
+                            "%{output_execpath}",
+                        ],
                         expand_if_available = "output_execpath",
                     ),
                 ],
@@ -1139,6 +1219,25 @@ def _impl(ctx):
         ],
     )
 
+    generate_linkmap_feature = feature(
+        name = "generate_linkmap",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = [
+                            "-Wl,-Map=%{output_execpath}.map" if is_linux else "-Wl,-map,%{output_execpath}.map",
+                        ],
+                        expand_if_available = "output_execpath",
+                    ),
+                ],
+            ),
+        ],
+    )
+
     output_execpath_flags_feature = feature(
         name = "output_execpath_flags",
         flag_sets = [
@@ -1254,7 +1353,9 @@ def _impl(ctx):
             ),
             flag_set(
                 actions = all_link_actions,
-                flag_groups = [flag_group(flags = ["-Wl,-fatal-warnings"])],
+                flag_groups = [flag_group(
+                    flags = ["-Wl,-fatal-warnings"] if is_linux else ["-Wl,-fatal_warnings"],
+                )],
             ),
         ],
     )
@@ -1295,9 +1396,34 @@ def _impl(ctx):
         ],
     )
 
-    libtool_feature = feature(
-        name = "libtool",
-        enabled = not is_linux,
+    # If you have Xcode + the CLT installed the version defaults can be
+    # too old for some standard C apis such as thread locals
+    macos_minimum_os_feature = feature(
+        name = "macos_minimum_os",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = all_compile_actions + all_link_actions,
+                flag_groups = [flag_group(flags = ["-mmacosx-version-min={}".format(_target_os_version(ctx))])],
+            ),
+        ],
+    )
+
+    # Kept for backwards compatibility with the crosstool that moved. Without
+    # linking the objc runtime binaries don't link CoreFoundation for free,
+    # which breaks abseil.
+    macos_default_link_flags_feature = feature(
+        name = "macos_default_link_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = all_link_actions,
+                flag_groups = [flag_group(flags = [
+                    "-no-canonical-prefixes",
+                    "-fobjc-link-runtime",
+                ])],
+            ),
+        ],
     )
 
     # TODO(#8303): Mac crosstool should also declare every feature.
@@ -1322,7 +1448,7 @@ def _impl(ctx):
             autofdo_feature,
             build_interface_libraries_feature,
             dynamic_library_linker_tool_feature,
-            symbol_counts_feature,
+            generate_linkmap_feature,
             shared_flag_feature,
             linkstamps_feature,
             output_execpath_flags_feature,
@@ -1338,6 +1464,8 @@ def _impl(ctx):
             asan_feature,
             tsan_feature,
             ubsan_feature,
+            gcc_quoting_for_param_files_feature,
+            static_link_cpp_runtimes_feature,
         ] + (
             [
                 supports_start_end_lib_feature,
@@ -1358,7 +1486,7 @@ def _impl(ctx):
             unfiltered_compile_flags_feature,
             treat_warnings_as_errors_feature,
             archive_param_file_feature,
-        ] + layering_check_features(ctx.attr.compiler)
+        ] + layering_check_features(ctx.attr.compiler, ctx.attr.extra_flags_per_feature, is_macos = False)
     else:
         # macOS artifact name patterns differ from the defaults only for dynamic
         # libraries.
@@ -1370,12 +1498,15 @@ def _impl(ctx):
             ),
         ]
         features = [
+            macos_minimum_os_feature,
+            macos_default_link_flags_feature,
             libtool_feature,
             archiver_flags_feature,
-            supports_pic_feature,
             asan_feature,
             tsan_feature,
             ubsan_feature,
+            gcc_quoting_for_param_files_feature,
+            static_link_cpp_runtimes_feature,
         ] + (
             [
                 supports_start_end_lib_feature,
@@ -1386,8 +1517,8 @@ def _impl(ctx):
             default_link_flags_feature,
             user_link_flags_feature,
             default_link_libs_feature,
+            external_include_paths_feature,
             fdo_optimize_feature,
-            supports_dynamic_linker_feature,
             dbg_feature,
             opt_feature,
             user_compile_flags_feature,
@@ -1395,7 +1526,14 @@ def _impl(ctx):
             unfiltered_compile_flags_feature,
             treat_warnings_as_errors_feature,
             archive_param_file_feature,
-        ] + layering_check_features(ctx.attr.compiler)
+            generate_linkmap_feature,
+        ] + layering_check_features(ctx.attr.compiler, ctx.attr.extra_flags_per_feature, is_macos = True)
+
+    parse_headers_action_configs, parse_headers_features = parse_headers_support(
+        parse_headers_tool_path = ctx.attr.tool_paths.get("parse_headers"),
+    )
+    action_configs += parse_headers_action_configs
+    features += parse_headers_features
 
     return cc_common.create_cc_toolchain_config_info(
         ctx = ctx,
@@ -1431,6 +1569,7 @@ cc_toolchain_config = rule(
         "compile_flags": attr.string_list(),
         "dbg_compile_flags": attr.string_list(),
         "opt_compile_flags": attr.string_list(),
+        "conly_flags": attr.string_list(),
         "cxx_flags": attr.string_list(),
         "link_flags": attr.string_list(),
         "archive_flags": attr.string_list(),
@@ -1441,6 +1580,12 @@ cc_toolchain_config = rule(
         "coverage_link_flags": attr.string_list(),
         "supports_start_end_lib": attr.bool(),
         "builtin_sysroot": attr.string(),
+        "extra_flags_per_feature": attr.string_list_dict(),
+        "_xcode_config": attr.label(default = configuration_field(
+            fragment = "apple",
+            name = "xcode_config_label",
+        )),
     },
+    fragments = ["apple"],
     provides = [CcToolchainConfigInfo],
 )
