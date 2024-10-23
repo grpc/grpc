@@ -55,11 +55,13 @@
   default: false
 - name: event_engine_application_callbacks
   default: true
+- name: event_engine_callback_cq
+  default: true
 - name: event_engine_client
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
+    posix: true
     windows: true
 - name: event_engine_dns
   default:
@@ -112,6 +114,6 @@
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken
-    posix: false
+    posix: true
     # TODO(ysseung): Test flakes not fully resolved.
     windows: broken

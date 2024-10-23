@@ -23,7 +23,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -80,10 +79,14 @@ class GcpAuthenticationFilter
   };
 
   GcpAuthenticationFilter(
+      RefCountedPtr<ServiceConfig> service_config,
       const GcpAuthenticationParsedConfig::Config* filter_config,
       RefCountedPtr<const XdsConfig> xds_config,
       RefCountedPtr<CallCredentialsCache> cache);
 
+  // TODO(roth): Consider having the channel stack hold this ref so that
+  // individual filters don't need to.
+  const RefCountedPtr<ServiceConfig> service_config_;
   const GcpAuthenticationParsedConfig::Config* filter_config_;
   const RefCountedPtr<const XdsConfig> xds_config_;
   const RefCountedPtr<CallCredentialsCache> cache_;

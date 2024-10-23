@@ -18,13 +18,12 @@
 
 #include "src/cpp/ext/csm/csm_observability.h"
 
-#include "google/cloud/opentelemetry/resource_detector.h"
-#include "gtest/gtest.h"
-#include "opentelemetry/sdk/metrics/meter_provider.h"
-
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/otel_plugin.h>
 
+#include "google/cloud/opentelemetry/resource_detector.h"
+#include "gtest/gtest.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "src/core/xds/grpc/xds_enabled_server.h"
 #include "test/core/test_util/test_config.h"
 
@@ -42,7 +41,7 @@ TEST(CsmObservabilityBuilderTest, Basic) {
       absl::OkStatus());
 }
 
-TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
+TEST(CsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
   EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
 }
 

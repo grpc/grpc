@@ -19,12 +19,11 @@
 
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "upb/reflection/def.h"
-
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

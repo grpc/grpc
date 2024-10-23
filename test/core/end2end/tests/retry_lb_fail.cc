@@ -14,15 +14,14 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <atomic>
 #include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/util/time.h"

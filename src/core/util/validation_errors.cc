@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/validation_errors.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <utility>

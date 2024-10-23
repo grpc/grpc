@@ -18,13 +18,11 @@
 
 #include "test/core/bad_ssl/server_common.h"
 
+#include <grpc/support/time.h>
 #include <signal.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/test_config.h"
 

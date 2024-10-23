@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ALL_OK_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ALL_OK_H
 
+#include <grpc/support/port_platform.h>
+
 #include <tuple>
 #include <variant>
 
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -78,7 +77,7 @@ class AllOk {
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok.
 template <typename Result, typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto AllOk(Promises... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AllOk(Promises... promises) {
   return promise_detail::AllOk<Result, Promises...>(std::move(promises)...);
 }
 

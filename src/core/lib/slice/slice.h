@@ -15,6 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_H
 
+#include <grpc/event_engine/internal/slice_cast.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <cstdint>
@@ -23,12 +27,6 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/internal/slice_cast.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/util/debug_location.h"

@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_POLL_H
 #define GRPC_SRC_CORE_LIB_PROMISE_POLL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
@@ -223,8 +222,8 @@ struct PollTraits<Poll<T>> {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(const Poll<T>& a,
-                                                     const Poll<T>& b) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool operator==(const Poll<T>& a,
+                                                            const Poll<T>& b) {
   if (a.pending() && b.pending()) return true;
   if (a.ready() && b.ready()) return a.value() == b.value();
   return false;
@@ -263,7 +262,7 @@ struct PollCastImpl<T, Poll<T>> {
 };
 
 template <typename T, typename U>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<T> poll_cast(U poll) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<T> poll_cast(U poll) {
   return PollCastImpl<T, U>::Cast(std::move(poll));
 }
 

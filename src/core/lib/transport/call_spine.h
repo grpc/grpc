@@ -15,10 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -206,6 +205,8 @@ class CallSpine final : public Party {
 
 class CallInitiator {
  public:
+  using NextMessage = ServerToClientNextMessage;
+
   CallInitiator() = default;
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
@@ -263,6 +264,10 @@ class CallInitiator {
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
+  bool WasCancelledPushed() const {
+    return spine_->call_filters().WasCancelledPushed();
+  }
+
   Arena* arena() { return spine_->arena(); }
   Party* party() { return spine_.get(); }
 
@@ -272,6 +277,8 @@ class CallInitiator {
 
 class CallHandler {
  public:
+  using NextMessage = ClientToServerNextMessage;
+
   explicit CallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
@@ -303,6 +310,10 @@ class CallHandler {
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
   auto WasCancelled() { return spine_->WasCancelled(); }
+
+  bool WasCancelledPushed() const {
+    return spine_->call_filters().WasCancelledPushed();
+  }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,

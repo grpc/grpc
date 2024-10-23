@@ -23,7 +23,7 @@ exports_files([
 
 grpc_package(
     name = "xds_v3",
-    visibility = "public",
+    visibility = "tests",
 )
 
 grpc_proto_library(
@@ -319,6 +319,16 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "upstream_http_11_connect_proto",
+    srcs = [
+        "upstream_http_11_connect.proto",
+    ],
+    deps = [
+        "base_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "config_dump_proto",
     srcs = [
         "config_dump.proto",
@@ -331,6 +341,8 @@ grpc_proto_library(
     srcs = [
         "csds.proto",
     ],
+    # Needs to be visible to //:grpcpp_csds
+    visibility = ["//:__subpackages__"],
     well_known_protos = True,
     deps = [
         "base_proto",

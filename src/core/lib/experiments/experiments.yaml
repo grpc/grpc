@@ -63,6 +63,11 @@
   description: Run application callbacks in EventEngine threads, instead of on the thread-local ApplicationCallbackExecCtx
   expiry: 2025/03/01
   owner: hork@google.com
+- name: event_engine_callback_cq
+  description: Use EventEngine instead of the CallbackAlternativeCQ.
+  expiry: 2025/03/01
+  owner: hork@google.com
+  requires: ["event_engine_application_callbacks"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2025/03/01
@@ -77,6 +82,14 @@
   test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
   uses_polling: true
+- name: event_engine_dns_non_client_channel
+  description:
+    If set, use EventEngine DNSResolver in other places besides client channel.
+  expiry: 2025/03/01
+  owner: yijiem@google.com
+  test_tags: ["core_end2end_test"]
+  allow_in_fuzzing_config: false
+  uses_polling: true
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2025/03/01
@@ -85,7 +98,7 @@
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2024/12/01
+  expiry: 2025/03/31
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: local_connector_secure
@@ -109,21 +122,28 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/09/15
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: pick_first_new
   description: New pick_first impl with memory reduction.
-  expiry: 2024/10/30
+  expiry: 2025/03/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
-  expiry: 2024/09/15
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+- name: rq_fast_reject
+  description:
+    Resource quota rejects requests immediately (before allocating the request
+    structure) under very high memory pressure.
+  expiry: 2025/06/06
+  owner: ctiller@google.com
+  test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2024/12/01
@@ -162,20 +182,14 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/09/09
+  expiry: 2025/03/03
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: work_serializer_clears_time_cache
-  description:
-    Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/10/01
-  owner: ctiller@google.com
-  test_tags: []
 - name: work_serializer_dispatch
   description:
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/09/30
+  expiry: 2024/12/31
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]

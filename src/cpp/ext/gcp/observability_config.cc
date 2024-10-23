@@ -16,6 +16,9 @@
 
 #include "src/cpp/ext/gcp/observability_config.h"
 
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -27,11 +30,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -77,7 +75,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
 // Tries to get the GCP Project ID from environment variables, or returns an
 // empty string if not found.
 std::string GetProjectIdFromGcpEnvVar() {
-  // First check GCP_PROEJCT
+  // First check GCP_PROJECT
   absl::optional<std::string> project_id = grpc_core::GetEnv("GCP_PROJECT");
   if (project_id.has_value() && !project_id->empty()) {
     return project_id.value();

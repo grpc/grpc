@@ -25,15 +25,14 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
 #include <iosfwd>
 #include <memory>
 #include <utility>
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -94,7 +93,7 @@ class ArenaContextTraits : public BaseArenaContextTraits {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void DestroyArenaContext(void* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
   ArenaContextType<T>::Destroy(static_cast<T*>(p));
 }
 

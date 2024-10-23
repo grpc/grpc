@@ -23,7 +23,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -94,6 +93,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
   // The set of metrics to propagate from ORCA to LRS.
   RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
+
+  bool use_http_connect = false;
 
   // Tls Context used by clients
   CommonTlsContext common_tls_context;

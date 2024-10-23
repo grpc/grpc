@@ -17,15 +17,13 @@
 #ifndef GRPC_SRC_CORE_UTIL_WORK_SERIALIZER_H
 #define GRPC_SRC_CORE_UTIL_WORK_SERIALIZER_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 

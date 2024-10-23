@@ -15,10 +15,9 @@
 #ifndef GRPC_TEST_CORE_END2END_FUZZERS_SERVER_FUZZER_H
 #define GRPC_TEST_CORE_END2END_FUZZERS_SERVER_FUZZER_H
 
-#include "absl/functional/function_ref.h"
-
 #include <grpc/grpc.h>
 
+#include "absl/functional/function_ref.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 

@@ -63,8 +63,11 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
+inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
+inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -75,6 +78,7 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -84,8 +88,6 @@ inline bool IsTimeCachingInPartyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
@@ -95,10 +97,13 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
+inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
+inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -110,6 +115,7 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -119,8 +125,6 @@ inline bool IsTimeCachingInPartyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #else
@@ -130,9 +134,13 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_APPLICATION_CALLBACKS
 inline bool IsEventEngineApplicationCallbacksEnabled() { return true; }
-inline bool IsEventEngineClientEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
+inline bool IsEventEngineCallbackCqEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
+inline bool IsEventEngineClientEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
+inline bool IsEventEngineDnsNonClientChannelEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -144,6 +152,7 @@ inline bool IsMultipingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -153,9 +162,8 @@ inline bool IsTimeCachingInPartyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #endif
 
 #else
@@ -164,8 +172,10 @@ enum ExperimentIds {
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineApplicationCallbacks,
+  kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
+  kExperimentIdEventEngineDnsNonClientChannel,
   kExperimentIdEventEngineListener,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdLocalConnectorSecure,
@@ -174,6 +184,7 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedInprocTransport,
+  kExperimentIdRqFastReject,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerPrivacy,
   kExperimentIdTcpFrameSizeTuning,
@@ -181,7 +192,6 @@ enum ExperimentIds {
   kExperimentIdTimeCachingInParty,
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
-  kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
   kNumExperiments
 };
@@ -201,6 +211,10 @@ inline bool IsClientPrivacyEnabled() {
 inline bool IsEventEngineApplicationCallbacksEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineApplicationCallbacks>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
+inline bool IsEventEngineCallbackCqEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineCallbackCq>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineClient>();
@@ -208,6 +222,10 @@ inline bool IsEventEngineClientEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineDns>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
+inline bool IsEventEngineDnsNonClientChannelEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineDnsNonClientChannel>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() {
@@ -241,6 +259,10 @@ inline bool IsPickFirstNewEnabled() {
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedInprocTransport>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RQ_FAST_REJECT
+inline bool IsRqFastRejectEnabled() {
+  return IsExperimentEnabled<kExperimentIdRqFastReject>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
@@ -268,10 +290,6 @@ inline bool IsTraceRecordCallopsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled<kExperimentIdUnconstrainedMaxQuotaBufferSize>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() {
-  return IsExperimentEnabled<kExperimentIdWorkSerializerClearsTimeCache>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {

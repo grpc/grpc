@@ -23,9 +23,8 @@
 
 #ifdef GRPC_POSIX_SYSCONF
 
-#include <unistd.h>
-
 #include <grpc/support/alloc.h>
+#include <unistd.h>
 
 char* grpc_gethostname() {
   size_t host_name_max = (size_t)sysconf(_SC_HOST_NAME_MAX);

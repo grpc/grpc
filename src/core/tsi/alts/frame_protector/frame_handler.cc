@@ -18,6 +18,8 @@
 
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
@@ -25,10 +27,6 @@
 #include <algorithm>
 
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
 

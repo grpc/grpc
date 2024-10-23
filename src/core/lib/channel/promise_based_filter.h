@@ -19,6 +19,9 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -37,11 +40,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -977,7 +975,8 @@ class BaseCallData : public Activity, private Wakeable {
   class Flusher : public latent_see::InnerScope {
    public:
     explicit Flusher(BaseCallData* call,
-                     const char* desc = "PromiseBasedFilter::Flusher");
+                     latent_see::Metadata* desc = GRPC_LATENT_SEE_METADATA(
+                         "PromiseBasedFilter::Flusher"));
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 

@@ -14,6 +14,13 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
@@ -29,14 +36,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -155,17 +154,16 @@ TEST_F(TransportTest, AddOneStream) {
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "12345678");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_FALSE(msg.value().has_value());
+              EXPECT_FALSE(msg.has_value());
               return Empty{};
             },
             [initiator]() mutable {
@@ -246,25 +244,23 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "12345678");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "87654321");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "87654321");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_FALSE(msg.value().has_value());
+              EXPECT_FALSE(msg.has_value());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),

@@ -18,6 +18,14 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/status.h>
+
 #include <algorithm>
 #include <map>
 #include <utility>
@@ -33,15 +41,6 @@
 #include "google/logging/v2/logging.grpc.pb.h"
 #include "google/logging/v2/logging.pb.h"
 #include "google/protobuf/text_format.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
