@@ -95,7 +95,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call
-  auto PushFrameIntoCall(ServerFragmentFrame frame, CallHandler call_handler);
+  auto PushFrameIntoCall(ServerFrame frame, CallHandler call_handler);
 
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue

@@ -91,7 +91,7 @@ absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
   return it->second;
 }
 
-auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
+auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFrame frame,
                                                    CallHandler call_handler) {
   const bool has_headers = frame.headers != nullptr;
   auto push = TrySeq(
