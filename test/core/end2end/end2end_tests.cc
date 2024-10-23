@@ -56,7 +56,6 @@ Slice RandomBinarySlice(size_t length) {
   std::vector<uint8_t> output;
   output.resize(length);
   for (i = 0; i < length; ++i) {
-
     output[i] = rand();
   }
   return Slice::FromCopiedBuffer(output);
