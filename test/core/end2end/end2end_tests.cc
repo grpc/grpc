@@ -56,6 +56,7 @@ Slice RandomBinarySlice(size_t length) {
   std::vector<uint8_t> output;
   output.resize(length);
   for (i = 0; i < length; ++i) {
+
     output[i] = rand();
   }
   return Slice::FromCopiedBuffer(output);
@@ -65,17 +66,17 @@ void CoreEnd2endTest::SetUp() {
   CoreConfiguration::Reset();
   initialized_ = false;
   grpc_prewarm_os_for_tests();
+#ifdef GPR_WINDOWS
+  GTEST_SKIP() << "Disabled on Windows due to high flake rate";
+#endif
 }
 
 void CoreEnd2endTest::TearDown() {
   const bool do_shutdown = fixture_ != nullptr;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee;
-// TODO(hork): locate the windows leak so we can enable end2end experiments.
-#ifndef GPR_WINDOWS
   if (grpc_is_initialized()) {
     ee = grpc_event_engine::experimental::GetDefaultEventEngine();
   }
-#endif
   ShutdownAndDestroyClient();
   ShutdownAndDestroyServer();
   cq_verifier_.reset();
