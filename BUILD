@@ -209,7 +209,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "groovy"  # @unused
 
-core_version = "44.0.0"  # @unused
+core_version = "44.1.0"  # @unused
 
 version = "1.68.0-dev"  # @unused
 
@@ -2356,6 +2356,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_audit_logging",
@@ -2443,6 +2444,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_provider",

@@ -75,7 +75,7 @@ load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
 
 install_deps()
 
-load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
+load("@com_google_protobuf//python/dist:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
