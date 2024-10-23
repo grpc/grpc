@@ -174,16 +174,20 @@ async def _create_server_stub_pair(
 
 
 class TestServerInterceptor(AioTestBase):
-    async def test_invalid_interceptor(self):
+    async def test_invalid_interceptor(self, sync_handler=False):
         class InvalidInterceptor:
             """Just an invalid Interceptor"""
 
         with self.assertRaises(ValueError):
             server_target, _ = await start_test_server(
-                interceptors=(InvalidInterceptor(),)
+                interceptors=(InvalidInterceptor(),),
+                sync_handler=sync_handler,
             )
 
-    async def test_executed_right_order(self):
+    async def test_invalid_interceptor_sync_handler(self):
+        self.test_invalid_interceptor(sync_handler=True)
+
+    async def test_executed_right_order(self, sync_handler=False):
         record = []
         server_target, _ = await start_test_server(
             record=record,
@@ -192,6 +196,7 @@ class TestServerInterceptor(AioTestBase):
                 _ContextVarSettingInterceptor("context_var_value"),
                 _LoggingInterceptor("log2", record),
             ),
+            sync_handler=sync_handler,
         )
 
         async with aio.insecure_channel(server_target) as channel:
@@ -214,6 +219,9 @@ class TestServerInterceptor(AioTestBase):
                 record,
             )
             self.assertIsInstance(response, messages_pb2.SimpleResponse)
+
+    async def test_executed_right_order_sync_handler(self):
+        self.test_executed_right_order(sync_handler=True)
 
     async def test_unique_context_per_call(self):
         record = []

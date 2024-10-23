@@ -49,6 +49,23 @@ async def _maybe_echo_metadata(servicer_context):
         servicer_context.set_trailing_metadata((trailing_metadatum,))
 
 
+def _maybe_echo_metadata_sync(servicer_context):
+    """Copies metadata from request to response if it is present."""
+    invocation_metadata = dict(servicer_context.invocation_metadata())
+    if _INITIAL_METADATA_KEY in invocation_metadata:
+        initial_metadatum = (
+            _INITIAL_METADATA_KEY,
+            invocation_metadata[_INITIAL_METADATA_KEY],
+        )
+        servicer_context.send_initial_metadata((initial_metadatum,))
+    if _TRAILING_METADATA_KEY in invocation_metadata:
+        trailing_metadatum = (
+            _TRAILING_METADATA_KEY,
+            invocation_metadata[_TRAILING_METADATA_KEY],
+        )
+        servicer_context.set_trailing_metadata((trailing_metadatum,))
+
+
 async def _maybe_echo_status(
     request: messages_pb2.SimpleRequest, servicer_context
 ):
@@ -59,12 +76,25 @@ async def _maybe_echo_status(
         )
 
 
-class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
+def _maybe_echo_status_sync(
+    request: messages_pb2.SimpleRequest, servicer_context
+):
+    """Echos the RPC status if demanded by the request."""
+    if request.HasField("response_status"):
+        servicer_context.abort(
+            request.response_status.code, request.response_status.message
+        )
+
+
+class TestServiceServicerBase(test_pb2_grpc.TestServiceServicer):
     def __init__(self, record: Optional[list] = None):
         self.record = record if record is not None else []
 
     def _append_to_log(self):
         self.record.append("servicer:" + TEST_CONTEXT_VAR.get("service"))
+
+
+class TestServiceServicer(TestServiceServicerBase):
 
     async def UnaryCall(self, request, context):
         self._append_to_log()
@@ -143,7 +173,25 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
                     yield messages_pb2.StreamingOutputCallResponse()
 
 
-def _create_extra_generic_handler(servicer: TestServiceServicer):
+class TestServiceServicerSyncHandler(TestServiceServicerBase):
+
+    def UnaryCall(self, request, context):
+        self._append_to_log()
+        _maybe_echo_metadata_sync(context)
+        _maybe_echo_status_sync(request, context)
+        return messages_pb2.SimpleResponse(
+            payload=messages_pb2.Payload(
+                type=messages_pb2.COMPRESSABLE,
+                body=b"\x00" * request.response_size,
+            )
+        )
+
+    def EmptyCall(self, request, context):
+        self._append_to_log()
+        return empty_pb2.Empty()
+
+
+def _create_extra_generic_handler(servicer: TestServiceServicerBase):
     # Add programatically extra methods not provided by the proto file
     # that are used during the tests
     rpc_method_handlers = {
@@ -164,11 +212,15 @@ async def start_test_server(
     server_credentials=None,
     interceptors=None,
     record: Optional[list] = None,
+    sync_handler = False,
 ):
     server = aio.server(
         options=(("grpc.so_reuseport", 0),), interceptors=interceptors
     )
-    servicer = TestServiceServicer(record)
+    if sync_handler:
+        servicer = TestServiceServicerSyncHandler(record)
+    else:
+        servicer = TestServiceServicer(record)
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
 
     server.add_generic_rpc_handlers((_create_extra_generic_handler(servicer),))
