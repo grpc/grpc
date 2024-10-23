@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <atomic>
 #include <map>
 #include <regex>
@@ -32,10 +35,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"

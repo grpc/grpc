@@ -16,6 +16,15 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -45,17 +54,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -361,34 +360,6 @@ std::string HttpAnnotation::ToString() const {
   return s;
 }
 
-void Chttp2CallTracerWrapper::RecordIncomingBytes(
-    const CallTracerInterface::TransportByteSize& transport_byte_size) {
-  // Update legacy API.
-  stream_->stats.incoming.framing_bytes += transport_byte_size.framing_bytes;
-  stream_->stats.incoming.data_bytes += transport_byte_size.data_bytes;
-  stream_->stats.incoming.header_bytes += transport_byte_size.header_bytes;
-  // Update new API.
-  if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->arena->GetContext<CallTracerInterface>();
-  if (call_tracer != nullptr) {
-    call_tracer->RecordIncomingBytes(transport_byte_size);
-  }
-}
-
-void Chttp2CallTracerWrapper::RecordOutgoingBytes(
-    const CallTracerInterface::TransportByteSize& transport_byte_size) {
-  // Update legacy API.
-  stream_->stats.outgoing.framing_bytes += transport_byte_size.framing_bytes;
-  stream_->stats.outgoing.data_bytes += transport_byte_size.data_bytes;
-  stream_->stats.outgoing.header_bytes +=
-      transport_byte_size.header_bytes;  // Update new API.
-  if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->arena->GetContext<CallTracerInterface>();
-  if (call_tracer != nullptr) {
-    call_tracer->RecordOutgoingBytes(transport_byte_size);
-  }
-}
-
 }  // namespace grpc_core
 
 //
@@ -441,7 +412,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
 static void read_channel_args(grpc_chttp2_transport* t,
                               const grpc_core::ChannelArgs& channel_args,
-                              bool is_client) {
+                              const bool is_client) {
   const int initial_sequence_number =
       channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
   if (initial_sequence_number > 0) {
@@ -611,7 +582,7 @@ using grpc_event_engine::experimental::TcpTraceExtension;
 
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args,
-    grpc_core::OrphanablePtr<grpc_endpoint> endpoint, bool is_client)
+    grpc_core::OrphanablePtr<grpc_endpoint> endpoint, const bool is_client)
     : ep(std::move(endpoint)),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep.get()))),
@@ -935,7 +906,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
 // OUTPUT PROCESSING
 //
 
-static const char* write_state_name(grpc_chttp2_write_state st) {
+static const char* get_write_state_name(grpc_chttp2_write_state st) {
   switch (st) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       return "IDLE";
@@ -952,8 +923,8 @@ static void set_write_state(grpc_chttp2_transport* t,
   GRPC_TRACE_LOG(http, INFO)
       << "W:" << t << " " << (t->is_client ? "CLIENT" : "SERVER") << " ["
       << t->peer_string.as_string_view() << "] state "
-      << write_state_name(t->write_state) << " -> " << write_state_name(st)
-      << " [" << reason << "]";
+      << get_write_state_name(t->write_state) << " -> "
+      << get_write_state_name(st) << " [" << reason << "]";
   t->write_state = st;
   // If the state is being reset back to idle, it means a write was just
   // finished. Make sure all the run_after_write closures are scheduled.
@@ -1315,7 +1286,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
       << " flags="
       << (closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT)
       << " desc=" << desc << " err=" << grpc_core::StatusToString(error)
-      << " write_state=" << write_state_name(t->write_state)
+      << " write_state=" << get_write_state_name(t->write_state)
       << " whence=" << whence.file() << ":" << whence.line();
 
   if (!error.ok()) {
@@ -1324,7 +1295,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     if (cl_err.ok()) {
       cl_err = GRPC_ERROR_CREATE(absl::StrCat(
           "Error in HTTP transport completing operation: ", desc,
-          " write_state=", write_state_name(t->write_state),
+          " write_state=", get_write_state_name(t->write_state),
           " refs=", closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT,
           " flags=", closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
           " peer_address=", t->peer_string.as_string_view()));
@@ -1353,7 +1324,7 @@ static bool contains_non_ok_status(grpc_metadata_batch* batch) {
 }
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
-                         bool is_client, bool is_initial) {
+                         const bool is_client, const bool is_initial) {
   VLOG(2) << "--metadata--";
   const std::string prefix = absl::StrCat(
       "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
@@ -1936,7 +1907,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 }  // namespace
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
-                        bool immediate_disconnect_hint) {
+                        const bool immediate_disconnect_hint) {
   grpc_http2_error_code http_error;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp::InfFuture(), nullptr,
@@ -3137,6 +3108,7 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
+    grpc_core::global_stats().IncrementRqConnectionsDropped();
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - send goaway to free memory";
@@ -3166,6 +3138,7 @@ static void destructive_reclaimer_locked(
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - abandon stream id " << s->id;
+    grpc_core::global_stats().IncrementRqCallsDropped();
     grpc_chttp2_cancel_stream(
         t.get(), s,
         grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
@@ -3262,7 +3235,7 @@ grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
 
 grpc_core::Transport* grpc_create_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args,
-    grpc_core::OrphanablePtr<grpc_endpoint> ep, bool is_client) {
+    grpc_core::OrphanablePtr<grpc_endpoint> ep, const bool is_client) {
   return new grpc_chttp2_transport(channel_args, std::move(ep), is_client);
 }
 

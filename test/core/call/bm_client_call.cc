@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <benchmark/benchmark.h>
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -151,7 +150,7 @@ void BM_Unary(benchmark::State& state) {
                     return status.status();
                   }),
               Map(handler.PullMessage(),
-                  [](ValueOrFailure<absl::optional<MessageHandle>> message) {
+                  [](ClientToServerNextMessage message) {
                     return message.status();
                   }),
               handler.PushMessage(std::move(response))),

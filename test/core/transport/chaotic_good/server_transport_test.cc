@@ -14,6 +14,13 @@
 
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -26,14 +33,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -138,17 +137,16 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                 return Empty{};
               },
               [handler]() mutable { return handler.PullMessage(); },
-              [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              [](ClientToServerNextMessage msg) {
                 EXPECT_TRUE(msg.ok());
-                EXPECT_TRUE(msg.value().has_value());
-                EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                          "12345678");
+                EXPECT_TRUE(msg.has_value());
+                EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
                 return Empty{};
               },
               [handler]() mutable { return handler.PullMessage(); },
-              [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              [](ClientToServerNextMessage msg) {
                 EXPECT_TRUE(msg.ok());
-                EXPECT_FALSE(msg.value().has_value());
+                EXPECT_FALSE(msg.has_value());
                 return Empty{};
               },
               [handler]() mutable {

@@ -15,14 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_SRC_CORE_LIB_PROMISE_JOIN_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <tuple>
 
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 
@@ -76,13 +74,13 @@ struct WrapInTuple {
 /// Combinator to run all promises to completion, and return a tuple
 /// of their results.
 template <typename... Promise>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Join<Promise...> Join(
-    Promise... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Join<Promise...>
+Join(Promise... promises) {
   return promise_detail::Join<Promise...>(std::move(promises)...);
 }
 
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Join(F promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Join(F promise) {
   return Map(std::move(promise), promise_detail::WrapInTuple{});
 }
 

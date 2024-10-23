@@ -18,6 +18,11 @@
 
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 
@@ -27,12 +32,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"

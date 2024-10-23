@@ -85,7 +85,7 @@ tvos_application(
     name = "tvos-host",
     bundle_id = "grpc.objc.tests.tvos-host",
     infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "10.0",
+    minimum_os_version = "13.0",
     deps = ["host-lib"],
 )
 
@@ -306,7 +306,7 @@ grpc_objc_ios_unit_test(
 
 macos_unit_test(
     name = "MacTests",
-    minimum_os_version = "10.10",
+    minimum_os_version = "10.14",
     deps = [
         ":APIv2Tests-lib",
         ":InteropTestsLocalCleartext-lib",
@@ -368,7 +368,7 @@ grpc_objc_ios_unit_test(
 # See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
     name = "TvTests",
-    minimum_os_version = "10.0",
+    minimum_os_version = "13.0",
     test_host = ":tvos-host",
     deps = [
         ":APIv2Tests-lib",

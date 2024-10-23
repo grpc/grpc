@@ -18,6 +18,9 @@
 
 #include "src/core/lib/transport/transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <memory>
@@ -26,11 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"

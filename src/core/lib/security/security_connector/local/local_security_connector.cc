@@ -18,6 +18,11 @@
 
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include <string>
@@ -30,13 +35,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"

@@ -16,19 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -38,7 +25,18 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
+#include <gtest/gtest.h>
 
+#include <algorithm>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -1057,7 +1055,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelDuring) {
   }
 }
 
-// Server to cancel after writing all the respones to the stream but before
+// Server to cancel after writing all the responses to the stream but before
 // returning to the client
 TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
   ResetStub();

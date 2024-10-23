@@ -16,10 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/http_client/parser.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -27,8 +27,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
 
 static char* buf2str(void* buffer, size_t length) {
   char* out = static_cast<char*>(gpr_malloc(length + 1));

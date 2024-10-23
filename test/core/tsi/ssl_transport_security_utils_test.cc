@@ -16,10 +16,6 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
-#include <array>
-#include <string>
-#include <vector>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <openssl/bio.h>
@@ -28,12 +24,15 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
+#include <array>
+#include <string>
+#include <vector>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"

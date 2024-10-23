@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <list>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
+#include <gtest/gtest.h>
+
+#include <list>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"

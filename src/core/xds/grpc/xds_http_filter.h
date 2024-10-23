@@ -23,8 +23,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/reflection/def.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/transport/interception_chain.h"
@@ -33,6 +31,7 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

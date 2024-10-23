@@ -16,7 +16,6 @@
 
 #include "absl/flags/flag.h"
 #include "gtest/gtest.h"
-
 #include "src/core/util/env.h"
 
 ABSL_FLAG(std::vector<std::string>, comma_separated_strings, {}, "");

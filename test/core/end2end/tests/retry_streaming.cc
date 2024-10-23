@@ -16,15 +16,14 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <string>
 
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel.h"

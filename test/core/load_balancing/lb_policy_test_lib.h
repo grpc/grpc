@@ -17,6 +17,10 @@
 #ifndef GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -48,12 +52,6 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"

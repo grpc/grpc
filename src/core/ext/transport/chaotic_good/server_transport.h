@@ -15,6 +15,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -37,13 +42,6 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -113,6 +111,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   static auto SendFragment(ServerFragmentFrame frame,
                            MpscSender<ServerFrame> outgoing_frames,
                            CallInitiator call_initiator);
+  static auto SendFragmentAcked(ServerFragmentFrame frame,
+                                MpscSender<ServerFrame> outgoing_frames,
+                                CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
@@ -145,6 +146,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
+  bool aborted_with_error_ ABSL_GUARDED_BY(mu_) = false;
   uint32_t last_seen_new_stream_id_ = 0;
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
