@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_LIB_PROMISE_MATCH_H
 
 #include "absl/types/variant.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/util/overload.h"
 
@@ -28,9 +29,15 @@ struct ConstructPromiseVariantVisitor {
   Constructor constructor;
 
   template <typename T>
+  auto CallConstructorThenFactory(T x) {
+    OncePromiseFactory<T, Constructor> factory(std::move(constructor));
+    return factory.Make(std::move(x));
+  }
+
+  template <typename T>
   auto operator()(T x) -> absl::variant<promise_detail::PromiseLike<
-      decltype(std::declval<Constructor>()(std::declval<Ts>()))...>> {
-    return constructor(std::move(x));
+      decltype(CallConstructorThenFactory(std::declval<Ts>()))>...> {
+    return CallConstructorThenFactory(x);
   }
 };
 
@@ -54,12 +61,17 @@ class PromiseVariant {
 
 }  // namespace promise_detail
 
+// Match for promises
+// Like the Match function takes a variant of some set of types,
+// and a set of functions - one per variant type.
+// We use these functions as Promise Factories, and return a Promise that can be
+// polled selected by the type that was in the variant.
 template <typename... Fs, typename... Ts>
 auto MatchPromise(absl::variant<Ts...> value, Fs... fs) {
   auto body = absl::visit(
       promise_detail::ConstructPromiseVariantVisitor<OverloadType<Fs...>,
-                                                     Ts...>(
-          OverloadType<Fs...>(std::move(fs)...)),
+                                                     Ts...>{
+          OverloadType<Fs...>(std::move(fs)...)},
       std::move(value));
   return promise_detail::PromiseVariant<decltype(body)>(std::move(body));
 }

@@ -682,6 +682,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "match_promise",
+    language = "c++",
+    public_hdrs = ["lib/promise/match_promise.h"],
+    external_deps = [
+        "absl/strings"
+    ],
+    deps = [
+        "poll",
+        "promise_like",
+        "promise_factory",
+        "overload",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "sleep",
     srcs = [
         "lib/promise/sleep.cc",
