@@ -96,7 +96,7 @@ struct SettingsFrame final : public FrameInterface {
   bool operator==(const SettingsFrame&) const { return true; }
 };
 
-struct ClientInitialMetadataFrame : public FrameInterface {
+struct ClientInitialMetadataFrame final : public FrameInterface {
   absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
                                    SliceBuffer payload) override;
@@ -108,7 +108,7 @@ struct ClientInitialMetadataFrame : public FrameInterface {
   ClientMetadataHandle headers;
 };
 
-struct MessageFrame : public FrameInterface {
+struct MessageFrame final : public FrameInterface {
   absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
                                    SliceBuffer payload) override;
@@ -120,7 +120,7 @@ struct MessageFrame : public FrameInterface {
   MessageHandle message;
 };
 
-struct ClientEndOfStream : public FrameInterface {
+struct ClientEndOfStream final : public FrameInterface {
   absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
                                    SliceBuffer payload) override;
@@ -131,7 +131,7 @@ struct ClientEndOfStream : public FrameInterface {
   uint32_t stream_id;
 };
 
-struct ServerInitialMetadataFrame : public FrameInterface {
+struct ServerInitialMetadataFrame final : public FrameInterface {
   absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
                                    SliceBuffer payload) override;
@@ -143,7 +143,7 @@ struct ServerInitialMetadataFrame : public FrameInterface {
   ServerMetadataHandle headers;
 };
 
-struct ServerTrailingMetadataFrame : public FrameInterface {
+struct ServerTrailingMetadataFrame final : public FrameInterface {
   absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
                                    SliceBuffer payload) override;
@@ -153,18 +153,6 @@ struct ServerTrailingMetadataFrame : public FrameInterface {
 
   uint32_t stream_id;
   ServerMetadataHandle trailers;
-};
-
-struct PaddingFrame : public FrameInterface {
-  absl::Status Deserialize(const DeserializeContext& ctx,
-                                   const FrameHeader& header,
-                                   SliceBuffer payload) override;
-  void Serialize(const SerializeContext& ctx,
-                         BufferPair* out) const override;
-  std::string ToString() const override;
-
-  uint32_t length;
-  uint16_t connection_id;
 };
 
 struct CancelFrame final : public FrameInterface {
@@ -186,9 +174,9 @@ struct CancelFrame final : public FrameInterface {
 };
 
 using ClientFrame = absl::variant<ClientInitialMetadataFrame, MessageFrame,
-                                  CancelFrame, PaddingFrame>;
+                                  ClientEndOfStream, CancelFrame>;
 using ServerFrame = absl::variant<ServerInitialMetadataFrame, MessageFrame,
-                                  ServerTrailingMetadataFrame, PaddingFrame>;
+                                  ServerTrailingMetadataFrame>;
 
 inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
   return MatchMutable(
@@ -197,8 +185,8 @@ inline FrameInterface& GetFrameInterface(ClientFrame& frame) {
         return *frame;
       },
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
-      [](CancelFrame* frame) -> FrameInterface& { return *frame; },
-      [](PaddingFrame* frame) -> FrameInterface& { return *frame; });
+      [](ClientEndOfStream* frame) -> FrameInterface& { return *frame; },
+      [](CancelFrame* frame) -> FrameInterface& { return *frame; });
 }
 
 inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
@@ -210,7 +198,7 @@ inline FrameInterface& GetFrameInterface(ServerFrame& frame) {
       [](MessageFrame* frame) -> FrameInterface& { return *frame; },
       [](ServerTrailingMetadataFrame* frame) -> FrameInterface& {
         return *frame;
-      }, [](PaddingFrame* frame) -> FrameInterface& { return *frame; });
+      });
 }
 
 }  // namespace chaotic_good

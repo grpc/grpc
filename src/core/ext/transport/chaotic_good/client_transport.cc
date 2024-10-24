@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/switch.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -91,36 +92,47 @@ absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
   return it->second;
 }
 
-auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFrame frame,
+auto ChaoticGoodClientTransport::PushFrameIntoCall(
+    ServerInitialMetadataFrame frame, CallHandler call_handler) {
+  return Immediate(
+      call_handler.PushServerInitialMetadata(std::move(frame.headers)));
+}
+
+auto ChaoticGoodClientTransport::PushFrameIntoCall(MessageFrame frame,
                                                    CallHandler call_handler) {
-  const bool has_headers = frame.headers != nullptr;
-  auto push = TrySeq(
-      If(
-          has_headers,
-          [call_handler, headers = std::move(frame.headers)]() mutable {
-            return call_handler.PushServerInitialMetadata(std::move(headers));
-          },
-          []() -> StatusFlag { return Success{}; }),
-      [call_handler, message = std::move(frame.message)]() mutable {
-        return If(
-            message.has_value(),
-            [&call_handler, &message]() mutable {
-              return call_handler.PushMessage(std::move(message->message));
-            },
-            []() -> StatusFlag { return Success{}; });
+  return call_handler.PushMessage(std::move(frame.message));
+}
+
+auto ChaoticGoodClientTransport::PushFrameIntoCall(
+    ServerTrailingMetadataFrame frame, CallHandler call_handler) {
+  call_handler.PushServerTrailingMetadata(std::move(frame.trailers));
+  return Immediate(Success{});
+}
+
+template <typename T>
+auto ChaoticGoodClientTransport::DispatchFrame(ChaoticGoodTransport* transport,
+                                               const FrameHeader& header,
+                                               SliceBuffer payload) {
+  return TrySeq(
+      [transport, &header, &payload]() {
+        return transport->DeserializeFrame<T>(header, std::move(payload));
       },
-      [call_handler,
-       trailers = std::move(frame.trailers)]() mutable -> StatusFlag {
-        if (trailers != nullptr) {
-          call_handler.PushServerTrailingMetadata(std::move(trailers));
-        }
-        return Success{};
+      [this](T frame) {
+        absl::optional<CallHandler> call_handler =
+            LookupStream(frame.stream_id);
+        return If(
+            call_handler.has_value(),
+            [this, &call_handler, &frame]() {
+              return call_handler->SpawnWaitable(
+                  "push-frame", [this, call_handler = *call_handler,
+                                 frame = std::move(frame)]() mutable {
+                    return Map(call_handler.CancelIfFails(PushFrameIntoCall(
+                                   std::move(frame), call_handler)),
+                               [](StatusFlag) { return absl::OkStatus(); });
+                  });
+            },
+            []() { return absl::OkStatus(); });
       });
-  // Wrap the actual sequence with something that owns the call handler so that
-  // its lifetime extends until the push completes.
-  return GRPC_LATENT_SEE_PROMISE(
-      "PushFrameIntoCall",
-      ([call_handler, push = std::move(push)]() mutable { return push(); }));
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop(
@@ -128,54 +140,32 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
   return Loop([this, transport = std::move(transport)] {
     return TrySeq(
         transport->ReadFrameBytes(),
-        [](std::tuple<FrameHeader, BufferPair> frame_bytes)
-            -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
-          const auto& frame_header = std::get<0>(frame_bytes);
-          if (frame_header.type != FrameType::kFragment) {
-            return absl::InternalError(
-                absl::StrCat("Expected fragment frame, got ",
-                             static_cast<int>(frame_header.type)));
-          }
-          return frame_bytes;
-        },
         [this, transport = transport.get()](
-            std::tuple<FrameHeader, BufferPair> frame_bytes) {
-          const auto& frame_header = std::get<0>(frame_bytes);
-          auto& buffers = std::get<1>(frame_bytes);
-          absl::optional<CallHandler> call_handler =
-              LookupStream(frame_header.stream_id);
-          ServerFragmentFrame frame;
-          absl::Status deserialize_status;
-          const FrameLimits frame_limits{1024 * 1024 * 1024,
-                                         aligned_bytes_ - 1};
-          if (call_handler.has_value()) {
-            deserialize_status = transport->DeserializeFrame(
-                frame_header, std::move(buffers), call_handler->arena(), frame,
-                frame_limits);
-          } else {
-            // Stream not found, skip the frame.
-            deserialize_status = transport->DeserializeFrame(
-                frame_header, std::move(buffers),
-                SimpleArenaAllocator()->MakeArena().get(), frame, frame_limits);
-          }
-          return If(
-              deserialize_status.ok() && call_handler.has_value(),
-              [this, &frame, &call_handler]() {
-                return call_handler->SpawnWaitable(
-                    "push-frame", [this, call_handler = *call_handler,
-                                   frame = std::move(frame)]() mutable {
-                      return Map(call_handler.CancelIfFails(PushFrameIntoCall(
-                                     std::move(frame), call_handler)),
-                                 [](StatusFlag) { return absl::OkStatus(); });
-                    });
-              },
-              [&deserialize_status]() {
-                // Stream not found, nothing to do.
-                return [deserialize_status =
-                            std::move(deserialize_status)]() mutable {
-                  return std::move(deserialize_status);
-                };
-              });
+            std::tuple<FrameHeader, SliceBuffer> frame_bytes) {
+          const auto& header = std::get<0>(frame_bytes);
+          SliceBuffer& payload = std::get<1>(frame_bytes);
+          return Switch(
+              header.type,
+              Case(FrameType::kServerInitialMetadata,
+                   [&, this]() {
+                     return DispatchFrame<ServerInitialMetadataFrame>(
+                         transport, header, std::move(payload));
+                   }),
+              Case(FrameType::kServerTrailingMetadata,
+                   [&, this]() {
+                     return DispatchFrame<ServerTrailingMetadataFrame>(
+                         transport, header, std::move(payload));
+                   }),
+              Case(FrameType::kMessage,
+                   [&, this]() {
+                     return DispatchFrame<MessageFrame>(transport, header,
+                                                        std::move(payload));
+                   }),
+              Default([&]() {
+                LOG_EVERY_N_SEC(INFO, 10)
+                    << "Bad frame type: " << header.ToString();
+                return absl::OkStatus();
+              }));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });
@@ -212,7 +202,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   }
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
-      std::move(hpack_parser), std::move(hpack_encoder));
+      std::move(hpack_parser), std::move(hpack_encoder), 64, 64);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
@@ -276,15 +266,15 @@ absl::Status BooleanSuccessToTransportError(bool success) {
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                                                   CallHandler call_handler) {
   auto send_fragment = [stream_id,
-                        outgoing_frames = outgoing_frames_.MakeSender()](
-                           ClientFragmentFrame frame) mutable {
+                        outgoing_frames =
+                            outgoing_frames_.MakeSender()](auto frame) mutable {
     frame.stream_id = stream_id;
     return Map(outgoing_frames.Send(std::move(frame)),
                BooleanSuccessToTransportError);
   };
   auto send_fragment_acked = [stream_id,
                               outgoing_frames = outgoing_frames_.MakeSender()](
-                                 ClientFragmentFrame frame) mutable {
+                                 auto frame) mutable {
     frame.stream_id = stream_id;
     return Map(outgoing_frames.SendAcked(std::move(frame)),
                BooleanSuccessToTransportError);
@@ -298,31 +288,19 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
             GRPC_TRACE_LOG(chaotic_good, INFO)
                 << "CHAOTIC_GOOD: Sending initial metadata: "
                 << md->DebugString();
-            ClientFragmentFrame frame;
+            ClientInitialMetadataFrame frame;
             frame.headers = std::move(md);
             return send_fragment(std::move(frame));
           },
           // Continuously send client frame with client to server messages.
           ForEach(OutgoingMessages(call_handler),
-                  [send_fragment_acked, aligned_bytes = aligned_bytes_](
-                      MessageHandle message) mutable {
-                    ClientFragmentFrame frame;
-                    // Construct frame header (flags, header_length and
-                    // trailer_length will be added in serialization).
-                    const uint32_t message_length =
-                        message->payload()->Length();
-                    const uint32_t padding =
-                        message_length % aligned_bytes == 0
-                            ? 0
-                            : aligned_bytes - message_length % aligned_bytes;
-                    CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
-                    frame.message = FragmentMessage(std::move(message), padding,
-                                                    message_length);
+                  [send_fragment_acked](MessageHandle message) mutable {
+                    MessageFrame frame;
+                    frame.message = std::move(message);
                     return send_fragment_acked(std::move(frame));
                   }),
           [send_fragment]() mutable {
-            ClientFragmentFrame frame;
-            frame.end_of_stream = true;
+            ClientEndOfStream frame;
             return send_fragment(std::move(frame));
           }));
 }

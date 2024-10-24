@@ -8047,6 +8047,7 @@ grpc_cc_library(
         "resource_quota",
         "slice",
         "slice_buffer",
+        "switch",
         "try_join",
         "try_seq",
         "//:exec_ctx",

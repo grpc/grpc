@@ -106,8 +106,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         });
   }
 
-  absl::Status DeserializeFrame(const FrameHeader& header, SliceBuffer payload,
-                                Arena* arena, FrameInterface& frame) {
+  template <typename T>
+  absl::StatusOr<T> DeserializeFrame(const FrameHeader& header,
+                                     SliceBuffer payload) {
+    T frame;
     auto s = frame.Deserialize(
         DeserializeContext{
             decode_alignment_,

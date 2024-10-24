@@ -141,8 +141,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
-  // Assigned aligned bytes from setting frame.
-  size_t aligned_bytes_ = 64;
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
