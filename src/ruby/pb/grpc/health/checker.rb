@@ -66,7 +66,7 @@ module Grpc
         @status_mutex.synchronize { @statuses.delete("#{service}") }
       end
 
-      # Clears alls the statuses.
+      # Clears all the statuses.
       def clear_all
         @status_mutex.synchronize { @statuses = {} }
       end
