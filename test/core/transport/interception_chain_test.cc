@@ -14,15 +14,14 @@
 
 #include "src/core/lib/transport/interception_chain.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
 #include <memory>
 
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/poll_matcher.h"

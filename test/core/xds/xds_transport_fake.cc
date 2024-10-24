@@ -16,6 +16,9 @@
 
 #include "test/core/xds/xds_transport_fake.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -25,10 +28,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"

@@ -19,8 +19,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_HTTP_CLIENT_HTTPCLI_H
 #define GRPC_SRC_CORE_UTIL_HTTP_CLIENT_HTTPCLI_H
 
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <functional>
@@ -32,10 +33,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"

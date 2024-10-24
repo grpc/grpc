@@ -15,7 +15,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 #include "gtest/gtest.h"
-
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

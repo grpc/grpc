@@ -16,15 +16,13 @@
 //
 //
 
-#include <sys/socket.h>
-
-#include <gtest/gtest.h>
-
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
+#include <gtest/gtest.h>
+#include <sys/socket.h>
 
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

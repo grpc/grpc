@@ -13,10 +13,10 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/ares_resolver.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #endif
 
+#include <grpc/event_engine/event_engine.h>
 #include <string.h>
 
 #include <algorithm>
@@ -59,9 +60,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"

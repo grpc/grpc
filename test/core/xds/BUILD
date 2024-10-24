@@ -172,12 +172,15 @@ grpc_cc_test(
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
+        "//:grpc++_codegen_proto",
+        "//:grpc++_config_proto",
         "//:xds_client",
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 
@@ -343,6 +346,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//src/proto/grpc/testing/xds/v3:upstream_http_11_connect_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",

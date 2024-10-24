@@ -16,14 +16,13 @@
 
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"

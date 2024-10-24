@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <cstdint>
@@ -28,9 +29,6 @@
 #include <vector>
 
 #include "absl/functional/function_ref.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/lib/transport/metadata_batch.h"

@@ -13,13 +13,12 @@
 // limitations under the License.
 #include "src/core/resolver/dns/dns_resolver_plugin.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"

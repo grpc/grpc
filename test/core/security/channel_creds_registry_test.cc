@@ -19,12 +19,10 @@
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"

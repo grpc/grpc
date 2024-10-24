@@ -14,18 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_filter.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
-
-#include <grpc/grpc_security.h>
-
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"

@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 

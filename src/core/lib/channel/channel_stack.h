@@ -37,17 +37,16 @@
 // it can have an effect on the call status.
 //
 
-#include <stddef.h>
-
-#include <functional>
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
+
+#include <functional>
+#include <memory>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

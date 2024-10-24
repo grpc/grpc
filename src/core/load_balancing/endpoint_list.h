@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_ENDPOINT_LIST_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_ENDPOINT_LIST_H
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <memory>
@@ -26,10 +28,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/load_balancing/lb_policy.h"

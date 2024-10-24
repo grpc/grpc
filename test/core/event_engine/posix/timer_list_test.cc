@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/time.h>
+
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -23,10 +26,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/util/time.h"
 

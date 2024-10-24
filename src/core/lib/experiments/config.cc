@@ -14,6 +14,7 @@
 
 #include "src/core/lib/experiments/config.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -30,9 +31,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep

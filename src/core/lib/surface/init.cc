@@ -18,11 +18,6 @@
 
 #include "src/core/lib/surface/init.h"
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -31,6 +26,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"

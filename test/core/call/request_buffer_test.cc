@@ -15,7 +15,6 @@
 #include "src/core/call/request_buffer.h"
 
 #include "gtest/gtest.h"
-
 #include "test/core/promise/poll_matcher.h"
 
 using testing::Mock;

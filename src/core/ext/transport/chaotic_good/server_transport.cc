@@ -14,6 +14,11 @@
 
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 #include <tuple>
@@ -24,12 +29,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -398,6 +397,7 @@ void ChaoticGoodServerTransport::AbortWithError() {
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
   ReleasableMutexLock lock(&mu_);
+  aborted_with_error_ = true;
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
@@ -440,6 +440,9 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id;
   MutexLock lock(&mu_);
+  if (aborted_with_error_) {
+    return absl::UnavailableError("Transport closed");
+  }
   auto it = stream_map_.find(stream_id);
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");

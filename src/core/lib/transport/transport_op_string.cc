@@ -16,14 +16,13 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"

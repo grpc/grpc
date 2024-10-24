@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
@@ -24,8 +26,6 @@
 #include <vector>
 
 #include "caching_interceptor.h"
-
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"
