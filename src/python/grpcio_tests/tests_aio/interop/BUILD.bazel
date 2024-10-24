@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
 package(default_testonly = 1)
 
