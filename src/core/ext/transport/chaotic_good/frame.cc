@@ -57,6 +57,7 @@ void AddFrame(FrameType frame_type, uint32_t stream_id, const SliceBuffer& paylo
   header.stream_id = stream_id;
   header.payload_length = payload.Length();
   header.payload_connection_id = header.payload_length > 1024 ? 1 : 0;
+  LOG(INFO) << "Serialize header: " << header;
   header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
   if (header.payload_connection_id == 0) {
     out->control.Append(payload);
@@ -79,6 +80,7 @@ void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
   header.stream_id = stream_id;
   header.payload_length = size_after - size_before;
   header.payload_connection_id = 0;
+  LOG(INFO) << "Serialize header: " << header;
   header.Serialize(const_cast<uint8_t*>(
       GRPC_SLICE_START_PTR(out->control.c_slice_at(header_slice))));
 }
@@ -117,7 +119,7 @@ absl::Status SettingsFrame::Deserialize(const DeserializeContext& ctx,
                                         SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kSettings);
   if (header.stream_id != 0) {
-    return absl::InvalidArgumentError("Expected stream id 0");
+    return absl::InternalError("Expected stream id 0");
   }
   return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, true,
                       ctx.bitsrc, &headers);
@@ -144,7 +146,7 @@ absl::Status ClientInitialMetadataFrame::Deserialize(const DeserializeContext& c
                                                      SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kClientInitialMetadata);
   if (header.stream_id == 0) {
-    return absl::InvalidArgumentError("Expected non-zero stream id");
+    return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
   return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, true,
@@ -155,7 +157,7 @@ void ClientInitialMetadataFrame::Serialize(const SerializeContext& ctx,
                                            BufferPair* out) const {
   CHECK_NE(stream_id, 0u);
   AddInlineFrame(
-      FrameType::kSettings, 0,
+      FrameType::kClientInitialMetadata, stream_id,
       [&ctx, this](SliceBuffer& out) {
         ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
       },
@@ -168,12 +170,35 @@ std::string ClientInitialMetadataFrame::ToString() const {
       ", headers=", headers == nullptr ? "" : headers->DebugString(), "}");
 }
 
+absl::Status ClientEndOfStream::Deserialize(const DeserializeContext& ctx,
+                                            const FrameHeader& header,
+                                            SliceBuffer payload) {
+  CHECK_EQ(header.type, FrameType::kClientEndOfStream);
+  if (header.stream_id == 0) {
+    return absl::InternalError("Expected non-zero stream id");
+  }
+  if (header.payload_length != 0) {
+    return absl::InternalError(
+        "Expected zero payload length on ClientEndOfStream");
+  }
+  stream_id = header.stream_id;
+  return absl::OkStatus();
+}
+
+void ClientEndOfStream::Serialize(const SerializeContext& ctx,
+                                  BufferPair* out) const {
+  AddInlineFrame(
+      FrameType::kClientEndOfStream, stream_id, [](SliceBuffer&) {}, out);
+}
+
+std::string ClientEndOfStream::ToString() const { return "ClientEndOfStream"; }
+
 absl::Status MessageFrame::Deserialize(const DeserializeContext& ctx,
                                        const FrameHeader& header,
                                        SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kMessage);
   if (header.stream_id == 0) {
-    return absl::InvalidArgumentError("Expected non-zero stream id");
+    return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
   message = Arena::MakePooled<Message>(std::move(payload), 0);
@@ -199,7 +224,7 @@ absl::Status ServerInitialMetadataFrame::Deserialize(const DeserializeContext& c
                                                      SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerInitialMetadata);
   if (header.stream_id == 0) {
-    return absl::InvalidArgumentError("Expected non-zero stream id");
+    return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
   return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, false,
@@ -228,7 +253,7 @@ absl::Status ServerTrailingMetadataFrame::Deserialize(const DeserializeContext& 
                                                       SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerTrailingMetadata);
   if (header.stream_id == 0) {
-    return absl::InvalidArgumentError("Expected non-zero stream id");
+    return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
   return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, false, false,
@@ -260,12 +285,12 @@ absl::Status CancelFrame::Deserialize(const DeserializeContext& ctx,
   
   // Ensure the stream_id is non-zero
   if (header.stream_id == 0) {
-    return absl::InvalidArgumentError("Expected non-zero stream id");
+    return absl::InternalError("Expected non-zero stream id");
   }
   
   // Ensure there is no payload
   if (payload.Length() != 0) {
-    return absl::InvalidArgumentError("Unexpected payload for Cancel frame");
+    return absl::InternalError("Unexpected payload for Cancel frame");
   }
   
   // Set the stream_id

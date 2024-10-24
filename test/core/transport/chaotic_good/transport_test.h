@@ -71,8 +71,8 @@ class TransportTest : public ::testing::Test {
 };
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(
-    FrameType type, uint8_t flags, uint32_t stream_id, uint32_t header_length,
-    uint32_t message_length, uint32_t message_padding, uint32_t trailer_length);
+    FrameType type, uint16_t payload_connection_id, uint32_t stream_id,
+    uint32_t payload_length);
 
 grpc_event_engine::experimental::Slice Zeros(uint32_t length);
 

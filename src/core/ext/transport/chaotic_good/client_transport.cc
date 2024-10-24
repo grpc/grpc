@@ -114,7 +114,7 @@ auto ChaoticGoodClientTransport::DispatchFrame(ChaoticGoodTransport* transport,
                                                const FrameHeader& header,
                                                SliceBuffer payload) {
   return TrySeq(
-      [transport, &header, &payload]() {
+      [transport, header, payload = std::move(payload)]() mutable {
         return transport->DeserializeFrame<T>(header, std::move(payload));
       },
       [this](T frame) {

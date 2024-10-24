@@ -28,22 +28,22 @@ namespace chaotic_good {
 
 enum class FrameType : uint8_t {
   kSettings = 0x00,
-  kPadding = 0x10,
   kClientInitialMetadata = 0x80,
-  kMessage = 0x81,
-  kServerInitialMetadata = 0x82,
-  kServerTrailingMetadata = 0x83,
-  kCancel = 0x84,
+  kClientEndOfStream = 0x81,
+  kServerInitialMetadata = 0x91,
+  kServerTrailingMetadata = 0x92,
+  kMessage = 0xa0,
+  kCancel = 0xff,
 };
 
 inline std::ostream& operator<<(std::ostream& out, FrameType type) {
   switch (type) {
     case FrameType::kSettings:
       return out << "Settings";
-    case FrameType::kPadding:
-      return out << "Padding";
     case FrameType::kClientInitialMetadata:
       return out << "ClientInitialMetadata";
+    case FrameType::kClientEndOfStream:
+      return out << "ClientEndOfStream";
     case FrameType::kMessage:
       return out << "Message";
     case FrameType::kServerInitialMetadata:

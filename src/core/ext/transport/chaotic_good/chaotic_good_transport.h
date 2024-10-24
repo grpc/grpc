@@ -120,7 +120,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: DeserializeFrame "
         << (s.ok() ? frame.ToString() : s.ToString());
-    return s;
+    if (s.ok()) return std::move(frame);
+    return std::move(s);
   }
 
  private:
