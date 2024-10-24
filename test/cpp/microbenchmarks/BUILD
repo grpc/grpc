@@ -102,7 +102,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
@@ -125,7 +125,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
@@ -316,7 +316,7 @@ grpc_cc_benchmark(
     deps = [
         ":helpers_secure",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )
 
@@ -331,7 +331,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/cpp/util:test_util",
     ],
 )

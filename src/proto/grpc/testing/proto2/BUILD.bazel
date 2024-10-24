@@ -19,6 +19,7 @@ package(default_visibility = ["//visibility:public"])
 proto_library(
     name = "empty2_proto_descriptor",
     srcs = ["empty2.proto"],
+    compatible_with = ["//buildenv/target:non_prod"],
 )
 
 py_proto_library(
@@ -29,6 +30,7 @@ py_proto_library(
 proto_library(
     name = "empty2_extensions_proto_descriptor",
     srcs = ["empty2_extensions.proto"],
+    compatible_with = ["//buildenv/target:non_prod"],
     deps = [
         ":empty2_proto_descriptor",
     ],
