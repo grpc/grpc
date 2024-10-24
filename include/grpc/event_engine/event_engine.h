@@ -162,6 +162,15 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     socklen_t size_ = 0;
   };
 
+  class FileDescriptor {
+   public:
+    explicit FileDescriptor(int fd) : fd_(fd) {}
+    int fd() const { return fd_; }
+
+   private:
+    int fd_;
+  };
+
   /// One end of a connection between a gRPC client and server. Endpoints are
   /// created when connections are established, and Endpoint operations are
   /// gRPC's primary means of communication.

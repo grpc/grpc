@@ -69,7 +69,9 @@ class PassiveListenerOwner final
     return listener_->AcceptConnectedEndpoint(std::move(endpoint));
   }
 
-  absl::Status AcceptConnectedFd(int fd) override {
+  absl::Status AcceptConnectedFd(
+      const grpc_event_engine::experimental::EventEngine::FileDescriptor& fd)
+      override {
     return listener_->AcceptConnectedFd(fd);
   }
 

@@ -172,7 +172,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) override;
   std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
-      int fd, const EndpointConfig& config) override;
+      const FileDescriptor& fd, const EndpointConfig& config) override;
 
   ConnectionHandle CreateEndpointFromUnconnectedFd(
       int fd, EventEngine::OnConnectCallback on_connect,

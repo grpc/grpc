@@ -117,7 +117,7 @@ class EventEngineSupportsFdExtension {
   /// This has the same behavior, but the \a memory_allocator is taken from the
   /// EndpointConfig's resource quota.
   virtual std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
-      int fd, const EndpointConfig& config) = 0;
+      const EventEngine::FileDescriptor& fd, const EndpointConfig& config) = 0;
 
   /// Creates an EventEngine::Endpoint from a file descriptor that is configured
   /// and bound locally but not yet connected to a remote peer. Returns a
