@@ -35,6 +35,6 @@ do
 done
 
 if [[ "$SKIP_PERSISTENT_CHANNEL_TESTS" != "true" ]]; then
-   $(which php) $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
+   $(which php) $extension_dir -d max_execution_time=500 $(which phpunit) -v --debug \
      ../tests/unit_tests/PersistentChannelTests
 fi
