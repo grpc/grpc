@@ -153,8 +153,7 @@ class OpHandlerImpl {
  public:
   using PromiseFactory = promise_detail::OncePromiseFactory<void, SetupResult>;
   using Promise = typename PromiseFactory::Promise;
-  static_assert(!std::is_same<Promise, void>::value,
-                "PromiseFactory must return a promise");
+  static_assert(!std::is_same<Promise, void>::value);
 
   OpHandlerImpl() : state_(State::kDismissed) {}
   explicit OpHandlerImpl(SetupResult result) : state_(State::kPromiseFactory) {
