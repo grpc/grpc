@@ -56,6 +56,13 @@ struct StatusCastImpl<absl::Status, Success> {
 };
 
 template <>
+struct StatusCastImpl<absl::Status, Success&> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
+    return absl::OkStatus();
+  }
+};
+
+template <>
 struct StatusCastImpl<absl::Status, const Success&> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Cast(Success) {
     return absl::OkStatus();
