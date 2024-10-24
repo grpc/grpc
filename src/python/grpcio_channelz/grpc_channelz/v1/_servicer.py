@@ -21,6 +21,7 @@ from grpc._cython import cygrpc
 import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
+GenericServicerContext = Union[grpc.ServicerContext, grpc.aio._base_server.ServicerContext]
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """Servicer handling RPCs for service statuses."""
@@ -28,9 +29,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetTopChannels(
         request: _channelz_pb2.GetTopChannelsRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetTopChannelsResponse:
         try:
             return json_format.Parse(
@@ -44,9 +43,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetServers(
         request: _channelz_pb2.GetServersRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetServersResponse:
         try:
             return json_format.Parse(
@@ -60,9 +57,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetServer(
         request: _channelz_pb2.GetServerRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetServerResponse:
         try:
             return json_format.Parse(
@@ -79,9 +74,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetServerSockets(
         request: _channelz_pb2.GetServerSocketsRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetServerSocketsResponse:
         try:
             return json_format.Parse(
@@ -102,9 +95,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetChannel(
         request: _channelz_pb2.GetChannelRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetChannelResponse:
         try:
             return json_format.Parse(
@@ -121,9 +112,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetSubchannel(
         request: _channelz_pb2.GetSubchannelRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetSubchannelResponse:
         try:
             return json_format.Parse(
@@ -140,9 +129,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetSocket(
         request: _channelz_pb2.GetSocketRequest,
-        context: Union[
-            grpc.ServicerContext, grpc.aio._base_server.ServicerContext
-        ],
+        context: GenericServicerContext,
     ) -> _channelz_pb2.GetSocketResponse:
         try:
             return json_format.Parse(
