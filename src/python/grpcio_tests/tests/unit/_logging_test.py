@@ -42,8 +42,8 @@ class LoggingTest(unittest.TestCase):
 
             import grpc
         """
-        out, err = self._verifyScriptSucceeds(script)
-        self.assertEqual(0, len(err), "unexpected output to stderr")
+        out, err, returncode = self._verifyScriptSucceeds(script)
+        self.assertEqual(0, returncode, "unexpected output to stderr")
 
     def test_can_configure_logger(self):
         script = """if True:
@@ -95,7 +95,7 @@ class LoggingTest(unittest.TestCase):
             "process failed with exit code %d (stdout: %s, stderr: %s)"
             % (process.returncode, out, err),
         )
-        return out, err
+        return out, err, process.returncode
 
 
 if __name__ == "__main__":

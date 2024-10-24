@@ -18,6 +18,7 @@ import contextlib
 import enum
 import logging
 import sys
+import warnings
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -32,6 +33,22 @@ try:
     from grpc._grpcio_metadata import __version__
 except ImportError:
     __version__ = "dev0"
+
+PROJECT_NAME = "gRPC"
+VERSION_TO_BE_DROPPED = (3, 8)
+EXPECTED_ERROR_RELEASE_VERSION = "v1.68.0"
+EXPECTED_ERROR_RELEASE_DATE = "October 29, 2024"
+
+current_version = sys.version_info[:2]
+
+if current_version == VERSION_TO_BE_DROPPED:
+    warning_message = (
+        f" ⚠️  Support for Python {VERSION_TO_BE_DROPPED[0]}.{VERSION_TO_BE_DROPPED[1]} will end in {EXPECTED_ERROR_RELEASE_VERSION} "
+        f"(scheduled for {EXPECTED_ERROR_RELEASE_DATE}). ⚠️ \n "
+        f"Please upgrade your Python installation to ensure compatibility with future {PROJECT_NAME} releases."
+    )
+
+    warnings.warn(warning_message, DeprecationWarning, stacklevel=2)
 
 ############################## Future Interface  ###############################
 
