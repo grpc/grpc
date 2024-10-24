@@ -100,7 +100,7 @@ bool GetModuleAndMessagePath(
     message_path.push_back(path_elem_type);
     path_elem_type = path_elem_type->containing_type();
   } while (path_elem_type);  // implicit nullptr comparison; don't be explicit
-  std::string file_name = type->file()->name();
+  std::string file_name(type->file()->name());
   static const int proto_suffix_length = strlen(".proto");
   if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&
         file_name.find_last_of(".proto") == file_name.size() - 1)) {
@@ -116,7 +116,7 @@ bool GetModuleAndMessagePath(
   std::string message_type;
   for (DescriptorVector::reverse_iterator path_iter = message_path.rbegin();
        path_iter != message_path.rend(); ++path_iter) {
-    message_type += (*path_iter)->name() + ".";
+    message_type += std::string((*path_iter)->name()) + ".";
   }
   // no pop_back prior to C++11
   message_type.resize(message_type.size() - 1);
