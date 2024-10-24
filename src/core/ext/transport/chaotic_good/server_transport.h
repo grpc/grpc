@@ -108,12 +108,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                                       CallInitiator call_initiator);
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
-  static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames,
-                           CallInitiator call_initiator);
-  static auto SendFragmentAcked(ServerFragmentFrame frame,
-                                MpscSender<ServerFrame> outgoing_frames,
-                                CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
@@ -130,10 +124,19 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto DeserializeAndPushFragmentToExistingCall(
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
-  auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame);
-  auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame);
+  absl::Status NewStream(ChaoticGoodTransport& transport,
+                         const FrameHeader& header,
+                         SliceBuffer initial_metadata_payload);
+  template <typename T>
+  auto DispatchFrame(ChaoticGoodTransport& transport, const FrameHeader& header,
+                     SliceBuffer payload);
+  auto PushFrameIntoCall(CallInitiator call_initiator, MessageFrame frame);
+  auto PushFrameIntoCall(CallInitiator call_initiator, ClientEndOfStream frame);
+  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+                 CallInitiator call_initiator);
+  auto SendFrameAcked(ServerFrame frame,
+                      MpscSender<ServerFrame> outgoing_frames,
+                      CallInitiator call_initiator);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
