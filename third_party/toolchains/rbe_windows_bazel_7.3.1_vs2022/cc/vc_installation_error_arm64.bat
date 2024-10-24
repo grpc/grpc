@@ -18,10 +18,10 @@ echo. 1>&2
 echo The target you are compiling requires Visual C++ build tools. 1>&2
 echo Bazel couldn't find a valid Visual C++ build tools installation on your machine. 1>&2
 echo. 1>&2
-echo Visual C++ build tools seems to be installed at C:\VS\VC 1>&2
+echo Visual C++ build tools seems to be installed at C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC 1>&2
 echo But Bazel can't find the following tools: 1>&2
 echo     cl.exe, link.exe, lib.exe 1>&2
-echo for arm target architecture 1>&2
+echo for arm64 target architecture 1>&2
 echo. 1>&2
 echo Please check your installation following https://bazel.build/docs/windows#using 1>&2
 echo. 1>&2

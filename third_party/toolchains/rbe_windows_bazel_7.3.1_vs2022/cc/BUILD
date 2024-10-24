@@ -20,6 +20,24 @@ load(":armeabi_cc_toolchain_config.bzl", "armeabi_cc_toolchain_config")
 
 package(default_visibility = ["//visibility:public"])
 
+cc_library(name = "empty_lib")
+
+# Label flag for extra libraries to be linked into every binary.
+# TODO(bazel-team): Support passing flag multiple times to build a list.
+label_flag(
+    name = "link_extra_libs",
+    build_setting_default = ":empty_lib",
+)
+
+# The final extra library to be linked into every binary target. This collects
+# the above flag, but may also include more libraries depending on config.
+cc_library(
+    name = "link_extra_lib",
+    deps = [
+        ":link_extra_libs",
+    ],
+)
+
 cc_library(
     name = "malloc",
 )
@@ -93,19 +111,19 @@ cc_toolchain_config(
     target_libc = "msys",
     abi_version = "local",
     abi_libc_version = "local",
-    cxx_builtin_include_directories = [        "c:/msys64/usr/",
+    cxx_builtin_include_directories = [        "c:/tools/msys64/usr/",
         ],
-    tool_paths = {"ar": "c:/msys64/usr/bin/ar",
-        "cpp": "c:/msys64/usr/bin/cpp",
-        "dwp": "c:/msys64/usr/bin/dwp",
-        "gcc": "c:/msys64/usr/bin/gcc",
-        "gcov": "c:/msys64/usr/bin/gcov",
-        "ld": "c:/msys64/usr/bin/ld",
-        "nm": "c:/msys64/usr/bin/nm",
-        "objcopy": "c:/msys64/usr/bin/objcopy",
-        "objdump": "c:/msys64/usr/bin/objdump",
-        "strip": "c:/msys64/usr/bin/strip"},
-    tool_bin_path = "c:/msys64/usr/bin",
+    tool_paths = {"ar": "c:/tools/msys64/usr/bin/ar",
+        "cpp": "c:/tools/msys64/usr/bin/cpp",
+        "dwp": "c:/tools/msys64/usr/bin/dwp",
+        "gcc": "c:/tools/msys64/usr/bin/gcc",
+        "gcov": "c:/tools/msys64/usr/bin/gcov",
+        "ld": "c:/tools/msys64/usr/bin/ld",
+        "nm": "c:/tools/msys64/usr/bin/nm",
+        "objcopy": "c:/tools/msys64/usr/bin/objcopy",
+        "objdump": "c:/tools/msys64/usr/bin/objdump",
+        "strip": "c:/tools/msys64/usr/bin/strip"},
+    tool_bin_path = "c:/tools/msys64/usr/bin",
     dbg_mode_debug_flag = "/DEBUG:FULL",
     fastbuild_mode_debug_flag = "/DEBUG:FASTLINK",
 )
@@ -149,19 +167,19 @@ cc_toolchain_config(
     target_libc = "mingw",
     abi_version = "local",
     abi_libc_version = "local",
-    tool_bin_path = "c:/msys64/mingw64/bin",
-    cxx_builtin_include_directories = [        "c:/msys64/mingw64/",
+    tool_bin_path = "c:/tools/msys64/mingw64/bin",
+    cxx_builtin_include_directories = [        "c:/tools/msys64/mingw64/",
         ],
-    tool_paths = {"ar": "c:/msys64/mingw64/bin/ar",
-        "cpp": "c:/msys64/mingw64/bin/cpp",
-        "dwp": "c:/msys64/mingw64/bin/dwp",
-        "gcc": "c:/msys64/mingw64/bin/gcc",
-        "gcov": "c:/msys64/mingw64/bin/gcov",
-        "ld": "c:/msys64/mingw64/bin/ld",
-        "nm": "c:/msys64/mingw64/bin/nm",
-        "objcopy": "c:/msys64/mingw64/bin/objcopy",
-        "objdump": "c:/msys64/mingw64/bin/objdump",
-        "strip": "c:/msys64/mingw64/bin/strip"},
+    tool_paths = {"ar": "c:/tools/msys64/mingw64/bin/ar",
+        "cpp": "c:/tools/msys64/mingw64/bin/cpp",
+        "dwp": "c:/tools/msys64/mingw64/bin/dwp",
+        "gcc": "c:/tools/msys64/mingw64/bin/gcc",
+        "gcov": "c:/tools/msys64/mingw64/bin/gcov",
+        "ld": "c:/tools/msys64/mingw64/bin/ld",
+        "nm": "c:/tools/msys64/mingw64/bin/nm",
+        "objcopy": "c:/tools/msys64/mingw64/bin/objcopy",
+        "objdump": "c:/tools/msys64/mingw64/bin/objdump",
+        "strip": "c:/tools/msys64/mingw64/bin/strip"},
     dbg_mode_debug_flag = "/DEBUG:FULL",
     fastbuild_mode_debug_flag = "/DEBUG:FASTLINK",
 )
@@ -207,26 +225,27 @@ cc_toolchain_config(
     abi_libc_version = "local",
     toolchain_identifier = "msvc_x64",
     msvc_env_tmp = "C:\\Users\\ContainerAdministrator\\AppData\\Local\\Temp",
-    msvc_env_path = "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64;C:\\VS\\Common7\\IDE\\VC\\VCPackages;C:\\VS\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\VS\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\VS\\MSBuild\\Current\\bin\\Roslyn;C:\\VS\\Common7\\Tools\\devinit;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.20348.0\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\x64;C:\\VS\\\\MSBuild\\Current\\Bin;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\VS\\Common7\\IDE\\;C:\\VS\\Common7\\Tools\\;;C:\\Windows\\system32",
-    msvc_env_include = "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\um;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\cppwinrt",
-    msvc_env_lib = "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.20348.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.20348.0\\um\\x64",
-    msvc_cl_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/cl.exe",
-    msvc_ml_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/ml64.exe",
-    msvc_link_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe",
-    msvc_lib_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/lib.exe",
-    cxx_builtin_include_directories = [        "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\include",
+    msvc_env_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.20348.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\;;C:\\Windows\\system32;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe",
+    msvc_env_include = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\include;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\cppwinrt",
+    msvc_env_lib = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.20348.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.20348.0\\\\um\\x64",
+    msvc_cl_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/cl.exe",
+    msvc_ml_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/ml64.exe",
+    msvc_link_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe",
+    msvc_lib_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/lib.exe",
+    cxx_builtin_include_directories = [        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\include",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\VS\\include",
         "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\ucrt",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\shared",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\um",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\winrt",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\cppwinrt"],
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\um",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\shared",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\winrt",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\cppwinrt"],
     tool_paths = {
-        "ar": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/lib.exe",
-        "ml": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/ml64.exe",
-        "cpp": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/cl.exe",
-        "gcc": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/cl.exe",
+        "ar": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/lib.exe",
+        "ml": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/ml64.exe",
+        "cpp": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/cl.exe",
+        "gcc": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/cl.exe",
         "gcov": "wrapper/bin/msvc_nop.bat",
-        "ld": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe",
+        "ld": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe",
         "nm": "wrapper/bin/msvc_nop.bat",
         "objcopy": "wrapper/bin/msvc_nop.bat",
         "objdump": "wrapper/bin/msvc_nop.bat",
@@ -236,6 +255,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:X64"],
     dbg_mode_debug_flag = "/DEBUG:FULL",
     fastbuild_mode_debug_flag = "/DEBUG:FASTLINK",
+    supports_parse_showincludes = True,
 )
 
 toolchain(
@@ -278,26 +298,27 @@ cc_toolchain_config(
     abi_libc_version = "local",
     toolchain_identifier = "msvc_x64_x86",
     msvc_env_tmp = "C:\\Users\\ContainerAdministrator\\AppData\\Local\\Temp",
-    msvc_env_path = "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x86;C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64;C:\\VS\\Common7\\IDE\\VC\\VCPackages;C:\\VS\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\VS\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\VS\\MSBuild\\Current\\bin\\Roslyn;C:\\VS\\Common7\\Tools\\devinit;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.20348.0\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\x64;C:\\VS\\\\MSBuild\\Current\\Bin;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\VS\\Common7\\IDE\\;C:\\VS\\Common7\\Tools\\;;C:\\Windows\\system32",
-    msvc_env_include = "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\um;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\cppwinrt",
-    msvc_env_lib = "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\lib\\x86;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.20348.0\\ucrt\\x86;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.20348.0\\um\\x86",
-    msvc_cl_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/cl.exe",
-    msvc_ml_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/ml.exe",
-    msvc_link_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/link.exe",
-    msvc_lib_path = "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/lib.exe",
-    cxx_builtin_include_directories = [        "C:\\VS\\VC\\Tools\\MSVC\\14.29.30133\\include",
+    msvc_env_path = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x86;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.20348.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\;;C:\\Windows\\system32;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe",
+    msvc_env_include = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\include;C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\um;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\cppwinrt",
+    msvc_env_lib = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\lib\\x86;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.20348.0\\ucrt\\x86;C:\\Program Files (x86)\\Windows Kits\\10\\\\lib\\10.0.20348.0\\\\um\\x86",
+    msvc_cl_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/cl.exe",
+    msvc_ml_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/ml.exe",
+    msvc_link_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/link.exe",
+    msvc_lib_path = "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/lib.exe",
+    cxx_builtin_include_directories = [        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.41.34120\\include",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\VS\\include",
         "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\ucrt",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\shared",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\um",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\winrt",
-        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.20348.0\\cppwinrt"],
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\um",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\shared",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\winrt",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\\\include\\10.0.20348.0\\\\cppwinrt"],
     tool_paths = {
-        "ar": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/lib.exe",
-        "ml": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/ml.exe",
-        "cpp": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/cl.exe",
-        "gcc": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/cl.exe",
+        "ar": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/lib.exe",
+        "ml": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/ml.exe",
+        "cpp": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/cl.exe",
+        "gcc": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/cl.exe",
         "gcov": "wrapper/bin/msvc_nop.bat",
-        "ld": "C:/VS/VC/Tools/MSVC/14.29.30133/bin/HostX64/x86/link.exe",
+        "ld": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.41.34120/bin/HostX64/x86/link.exe",
         "nm": "wrapper/bin/msvc_nop.bat",
         "objcopy": "wrapper/bin/msvc_nop.bat",
         "objdump": "wrapper/bin/msvc_nop.bat",
@@ -307,6 +328,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:X86"],
     dbg_mode_debug_flag = "/DEBUG:FULL",
     fastbuild_mode_debug_flag = "/DEBUG:FASTLINK",
+    supports_parse_showincludes = True,
 )
 
 toolchain(
@@ -373,6 +395,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:ARM"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
@@ -439,6 +462,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:ARM64"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
@@ -502,9 +526,10 @@ cc_toolchain_config(
         "strip": "wrapper/bin/msvc_nop.bat",
     },
     archiver_flags = ["/MACHINE:X64"],
-    default_link_flags = ["/MACHINE:X64", "/DEFAULTLIB:clang_rt.builtins-x86_64.lib"],
+    default_link_flags = ["/MACHINE:X64"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
@@ -572,6 +597,7 @@ cc_toolchain_config(
     default_link_flags = ["/MACHINE:ARM64"],
     dbg_mode_debug_flag = "/DEBUG",
     fastbuild_mode_debug_flag = "/DEBUG",
+    supports_parse_showincludes = False,
 )
 
 toolchain(
