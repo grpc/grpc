@@ -12822,6 +12822,25 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
+- name: match_promise_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/util/overload.h
+  - test/core/promise/poll_matcher.h
+  src:
+  - test/core/promise/match_promise_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
+  - gpr
+  uses_polling: false
 - name: match_test
   gtest: true
   build: test
