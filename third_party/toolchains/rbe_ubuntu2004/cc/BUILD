@@ -22,6 +22,24 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # Apache 2.0
 
+cc_library(name = "empty_lib")
+
+# Label flag for extra libraries to be linked into every binary.
+# TODO(bazel-team): Support passing flag multiple times to build a list.
+label_flag(
+    name = "link_extra_libs",
+    build_setting_default = ":empty_lib",
+)
+
+# The final extra library to be linked into every binary target. This collects
+# the above flag, but may also include more libraries depending on config.
+cc_library(
+    name = "link_extra_lib",
+    deps = [
+        ":link_extra_libs",
+    ],
+)
+
 cc_library(
     name = "malloc",
 )
@@ -38,7 +56,8 @@ filegroup(
 
 filegroup(
     name = "compiler_deps",
-    srcs = glob(["extra_tools/**"], allow_empty = True) + [":builtin_include_directory_paths"],
+    srcs = glob(["extra_tools/**"], allow_empty = True) + [":builtin_include_directory_paths",
+    ":cc_wrapper"],
 )
 
 # This is the entry point for --crosstool_top.  Toolchains are found
@@ -66,6 +85,7 @@ cc_toolchain(
     linker_files = ":compiler_deps",
     objcopy_files = ":empty",
     strip_files = ":empty",
+    supports_header_parsing = 1,
     supports_param_files = 1,
     module_map = ":module.modulemap",
 )
@@ -88,7 +108,8 @@ cc_toolchain_config(
     "/usr/include/c++/9",
     "/usr/include/x86_64-linux-gnu/c++/9",
     "/usr/include/c++/9/backward",
-    "/usr/local/include/c++/v1"],
+    "/usr/local/include/c++/v1",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"],
     tool_paths = {"ar": "/usr/bin/ar",
         "ld": "/usr/bin/ld",
         "llvm-cov": "/usr/local/bin/llvm-cov",
@@ -100,7 +121,8 @@ cc_toolchain_config(
         "nm": "/usr/bin/nm",
         "objcopy": "/usr/bin/objcopy",
         "objdump": "/usr/bin/objdump",
-        "strip": "/usr/bin/strip"},
+        "strip": "/usr/bin/strip",
+        "parse_headers": "cc_wrapper.sh"},
     compile_flags = ["-fstack-protector",
     "-Wall",
     "-Wthread-safety",
@@ -116,13 +138,18 @@ cc_toolchain_config(
     "-ffunction-sections",
     "-fdata-sections"],
     dbg_compile_flags = ["-g"],
+    conly_flags = [],
     cxx_flags = ["-std=c++14"],
     link_flags = ["-fuse-ld=/usr/local/bin/ld.lld",
+    "-B/usr/local/bin",
     "-Wl,-no-as-needed",
-    "-Wl,-z,relro,-z,now",
-    "-B/usr/local/bin"],
-    link_libs = ["-lstdc++",
-    "-lm"],
+    "-Wl,-z,relro,-z,now"],
+    link_libs = ["-Wl,--push-state,-as-needed",
+    "-lstdc++",
+    "-Wl,--pop-state",
+    "-Wl,--push-state,-as-needed",
+    "-lm",
+    "-Wl,--pop-state"],
     opt_link_flags = ["-Wl,--gc-sections"],
     unfiltered_compile_flags = ["-no-canonical-prefixes",
     "-Wno-builtin-macro-redefined",
@@ -132,6 +159,7 @@ cc_toolchain_config(
     coverage_compile_flags = ["--coverage"],
     coverage_link_flags = ["--coverage"],
     supports_start_end_lib = True,
+    extra_flags_per_feature = {"use_module_maps": ["-Xclang", "-fno-cxx-modules"]},
 )
 
 # Android tooling requires a default toolchain for the armeabi-v7a cpu.
