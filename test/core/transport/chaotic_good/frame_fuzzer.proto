@@ -20,4 +20,5 @@ message Test {
     bool is_server = 1;
     bytes control = 2;
     bytes data = 3;
+    uint32 alignment = 4;
 }

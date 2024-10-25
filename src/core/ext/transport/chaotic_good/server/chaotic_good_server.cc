@@ -227,18 +227,17 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             [self, &frame_header]() {
               return TrySeq(
                   self->connection_->endpoint_.Read(
-                      frame_header->GetFrameLength()),
+                      frame_header->payload_length),
                   [frame_header = *frame_header,
                    self](SliceBuffer buffer) -> absl::StatusOr<bool> {
                     // Read Setting frame.
                     SettingsFrame frame;
                     // Deserialize frame from read buffer.
-                    BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
                     auto status = frame.Deserialize(
-                        &self->connection_->hpack_parser_, frame_header,
-                        absl::BitGenRef(self->connection_->bitgen_),
-                        GetContext<Arena>(), std::move(buffer_pair),
-                        FrameLimits{});
+                        DeserializeContext{
+                            1, &self->connection_->hpack_parser_,
+                            absl::BitGenRef(self->connection_->bitgen_)},
+                        frame_header, std::move(buffer));
                     if (!status.ok()) return status;
                     if (frame.headers == nullptr) {
                       return absl::UnavailableError("no settings headers");
@@ -333,8 +332,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                        absl::nullopt}
           .ToMetadataBatch();
   bool saw_encoding_errors = false;
-  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
-                                      saw_encoding_errors);
+  BufferPair write_buffer;
+  frame.Serialize(SerializeContext{1, &self->connection_->hpack_compressor_,
+                                   saw_encoding_errors},
+                  &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
@@ -350,8 +351,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                        self->connection_->data_alignment_}
           .ToMetadataBatch();
   bool saw_encoding_errors = false;
-  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
-                                      saw_encoding_errors);
+  BufferPair write_buffer;
+  frame.Serialize(SerializeContext{1, &self->connection_->hpack_compressor_,
+                                   saw_encoding_errors},
+                  &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),

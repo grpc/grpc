@@ -92,8 +92,6 @@ struct SettingsFrame final : public FrameInterface {
                          BufferPair* out) const override;
   ClientMetadataHandle headers;
   std::string ToString() const override;
-
-  bool operator==(const SettingsFrame&) const { return true; }
 };
 
 struct ClientInitialMetadataFrame final : public FrameInterface {
@@ -167,10 +165,6 @@ struct CancelFrame final : public FrameInterface {
   std::string ToString() const override;
 
   uint32_t stream_id;
-
-  bool operator==(const CancelFrame& other) const {
-    return stream_id == other.stream_id;
-  }
 };
 
 using ClientFrame = absl::variant<ClientInitialMetadataFrame, MessageFrame,

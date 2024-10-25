@@ -41,7 +41,7 @@ TEST(FrameHeaderTest, SimpleSerialize) {
   EXPECT_EQ(
       Serialize(FrameHeader{FrameType::kCancel, 1, 0x01020304, 0x05060708}),
       std::vector<uint8_t>({
-          1, 0, 0x84, 0,           // type, payload_connection_id
+          1, 0, 0xff, 0,           // type, payload_connection_id
           0x04, 0x03, 0x02, 0x01,  // stream_id
           0x08, 0x07, 0x06, 0x05,  // payload_length
       }));
@@ -49,7 +49,7 @@ TEST(FrameHeaderTest, SimpleSerialize) {
 
 TEST(FrameHeaderTest, SimpleDeserialize) {
   EXPECT_EQ(Deserialize(std::vector<uint8_t>({
-                1, 0, 0x84, 0,           // type, payload_connection_id
+                1, 0, 0xff, 0,           // type, payload_connection_id
                 0x04, 0x03, 0x02, 0x01,  // stream_id
                 0x08, 0x07, 0x06, 0x05,  // payload_length
             })),

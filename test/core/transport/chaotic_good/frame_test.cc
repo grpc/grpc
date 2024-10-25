@@ -64,7 +64,10 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type, uint32_t al
       output.Deserialize(deser_ctx, header.value(),
                       std::move(payload));
   CHECK_OK(deser);
-  if (!saw_encoding_errors) CHECK_EQ(output, input);
+  if (!saw_encoding_errors) {
+    output.headers->Remove(GrpcStatusFromWire());
+    CHECK_EQ(output.ToString(), input.ToString());
+  }
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

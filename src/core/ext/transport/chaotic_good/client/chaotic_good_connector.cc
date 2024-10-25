@@ -101,7 +101,7 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
         return If(
             frame_header_.ok(),
             [frame_header_ = *frame_header_, self]() {
-              auto frame_header_length = frame_header_.GetFrameLength();
+              auto frame_header_length = frame_header_.payload_length;
               return TrySeq(self->data_endpoint_.Read(frame_header_length),
                             []() { return absl::OkStatus(); });
             },
@@ -118,8 +118,10 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
                                    self->connection_id_, kDataAlignmentBytes}
                       .ToMetadataBatch();
   bool saw_encoding_errors = false;
-  auto write_buffer =
-      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
+  BufferPair write_buffer;
+  frame.Serialize(
+      SerializeContext{1, &self->hpack_compressor_, saw_encoding_errors},
+      &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return self->data_endpoint_.Write(std::move(write_buffer.control));
 }
@@ -186,15 +188,14 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
         return If(
             frame_header.ok(),
             TrySeq(
-                self->control_endpoint_.Read(frame_header->GetFrameLength()),
+                self->control_endpoint_.Read(frame_header->payload_length),
                 [frame_header = *frame_header, self](SliceBuffer buffer) {
                   // Deserialize setting frame.
                   SettingsFrame frame;
-                  BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
                   auto status = frame.Deserialize(
-                      &self->hpack_parser_, frame_header,
-                      absl::BitGenRef(self->bitgen_), GetContext<Arena>(),
-                      std::move(buffer_pair), FrameLimits{});
+                      DeserializeContext{1, &self->hpack_parser_,
+                                         absl::BitGenRef(self->bitgen_)},
+                      frame_header, std::move(buffer));
                   if (!status.ok()) return status;
                   if (frame.headers == nullptr) {
                     return absl::UnavailableError("no settings headers");
@@ -225,8 +226,10 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
                                    absl::nullopt, absl::nullopt}
                       .ToMetadataBatch();
   bool saw_encoding_errors = false;
-  auto write_buffer =
-      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
+  BufferPair write_buffer;
+  frame.Serialize(
+      SerializeContext{1, &self->hpack_compressor_, saw_encoding_errors},
+      &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return self->control_endpoint_.Write(std::move(write_buffer.control));
 }
