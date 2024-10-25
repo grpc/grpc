@@ -86,7 +86,7 @@ struct FrameHeader {
            payload_length == h.payload_length;
   }
   // Frame header size is fixed to 12 bytes.
-  enum { kFrameHeaderSize = 12};
+  enum { kFrameHeaderSize = 12 };
 };
 
 inline std::ostream& operator<<(std::ostream& out, const FrameHeader& h) {

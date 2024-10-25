@@ -22,6 +22,7 @@
 
 #include "absl/log/log.h"
 #include "absl/random/random.h"
+#include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
@@ -110,6 +111,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   absl::StatusOr<T> DeserializeFrame(const FrameHeader& header,
                                      SliceBuffer payload) {
     T frame;
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
+        << absl::CEscape(payload.JoinIntoString());
+    CHECK_EQ(header.payload_length, payload.Length());
     auto s = frame.Deserialize(
         DeserializeContext{
             decode_alignment_,

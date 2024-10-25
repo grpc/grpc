@@ -213,7 +213,7 @@ void MessageFrame::Serialize(const SerializeContext& ctx, BufferPair* out) const
 std::string MessageFrame::ToString() const {
   std::string out = "MessageFrame{";
   if (message.get() != nullptr) {
-    absl::StrAppend(&out, ", message=", message->DebugString().c_str());
+    absl::StrAppend(&out, "message=", message->DebugString().c_str());
   }
   absl::StrAppend(&out, "}");
   return out;

@@ -146,8 +146,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
   // Continuously send client frame with client to server messages.
   return ForEach(OutgoingMessages(call_initiator),
                  [this, stream_id, outgoing_frames = std::move(outgoing_frames),
-                  call_initiator = std::move(call_initiator)](
-                     MessageHandle message) mutable {
+                  call_initiator](MessageHandle message) mutable {
                    MessageFrame frame;
                    frame.message = std::move(message);
                    frame.stream_id = stream_id;
@@ -209,6 +208,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
+  CHECK_EQ(header.payload_length, payload.Length());
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));
@@ -244,31 +244,34 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
           transport.ReadFrameBytes(),
           [this, transport = &transport](
               std::tuple<FrameHeader, SliceBuffer> frame_bytes) {
-            const auto& frame_header = std::get<0>(frame_bytes);
-            auto& bytes = std::get<1>(frame_bytes);
+            const auto& header = std::get<0>(frame_bytes);
+            SliceBuffer& payload = std::get<1>(frame_bytes);
+            CHECK_EQ(header.payload_length, payload.Length());
+            LOG(INFO) << "bytes=" << absl::CEscape(payload.JoinIntoString());
             return Switch(
-                frame_header.type,
+                header.type,
                 Case(FrameType::kClientInitialMetadata,
                      [&, this]() {
-                       return NewStream(*transport, frame_header,
-                                        std::move(bytes));
+                       LOG(INFO) << "bytes="
+                                 << absl::CEscape(payload.JoinIntoString());
+                       return NewStream(*transport, header, std::move(payload));
                      }),
                 Case(FrameType::kMessage,
                      [&, this]() {
-                       return DispatchFrame<MessageFrame>(
-                           *transport, frame_header, std::move(bytes));
+                       return DispatchFrame<MessageFrame>(*transport, header,
+                                                          std::move(payload));
                      }),
                 Case(FrameType::kClientEndOfStream,
                      [&, this]() {
                        return DispatchFrame<ClientEndOfStream>(
-                           *transport, frame_header, std::move(bytes));
+                           *transport, header, std::move(payload));
                      }),
                 Case(FrameType::kCancel,
-                     [this, &frame_header]() {
+                     [&, this]() {
                        absl::optional<CallInitiator> call_initiator =
-                           ExtractStream(frame_header.stream_id);
+                           ExtractStream(header.stream_id);
                        GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "Cancel stream " << frame_header.stream_id
+                           << "Cancel stream " << header.stream_id
                            << (call_initiator.has_value() ? " (active)"
                                                           : " (not found)");
                        return If(
@@ -282,10 +285,10 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                            },
                            []() -> absl::Status { return absl::OkStatus(); });
                      }),
-                Default([frame_header]() {
+                Default([&]() {
                   return absl::InternalError(
                       absl::StrCat("Unexpected frame type: ",
-                                   static_cast<uint8_t>(frame_header.type)));
+                                   static_cast<uint8_t>(header.type)));
                 }));
           },
           []() -> LoopCtl<absl::Status> { return Continue{}; }));

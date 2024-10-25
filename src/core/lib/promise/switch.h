@@ -38,6 +38,9 @@ struct Default {
 };
 }  // namespace promise_detail
 
+// TODO(ctiller): when we have C++17, make this
+// template <auto D, typename PromiseFactory> and keep the discriminator
+// as part of the Case type.
 template <typename D, typename PromiseFactory>
 auto Case(D discriminator, PromiseFactory f) {
   return promise_detail::Case<D, PromiseFactory>{discriminator, std::move(f)};
