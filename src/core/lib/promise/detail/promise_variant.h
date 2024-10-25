@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_VARIANT_H
+#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_VARIANT_H
+
 #include "absl/types/variant.h"
 
 namespace grpc_core {
@@ -43,3 +46,5 @@ class PromiseVariant {
 }  // namespace promise_detail
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_VARIANT_H
