@@ -33,8 +33,10 @@ class ReflectionServicer(BaseReflectionServicer):
     def ServerReflectionInfo(
         self,
         request_iterator: Iterable[_reflection_pb2.ServerReflectionRequest],
-        context,
-    ) -> Iterable[_reflection_pb2.ServerReflectionResponse]:        # pylint: disable=unused-argument
+        context: grpc.ServicerContext,
+    ) -> Iterable[
+        _reflection_pb2.ServerReflectionResponse
+    ]:  # pylint: disable=unused-argument
         for request in request_iterator:
             if request.HasField("file_by_filename"):
                 yield self._file_by_filename(request, request.file_by_filename)
@@ -86,7 +88,7 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
         service_names: Iterable[str],
         server: Union[grpc.Server, grpc.aio._server.Server],
         pool: Optional[descriptor_pool.DescriptorPool] = None,
-    ) -> None:        
+    ) -> None:
         if isinstance(server, grpc_aio.Server):
             _reflection_pb2_grpc.add_ServerReflectionServicer_to_server(
                 aio.ReflectionServicer(service_names, pool=pool), server

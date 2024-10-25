@@ -21,12 +21,10 @@ import pkgutil
 
 from typeguard import install_import_hook
 
-install_import_hook('grpc_admin')
-install_import_hook('grpc_channelz')
-install_import_hook('grpc_csds')
-install_import_hook('grpc_health')
-install_import_hook('grpc_reflection')
-install_import_hook('grpc_status')
+grpc_modules = ['grpc_admin', 'grpc_channelz', 'grpc_csds', 'grpc_health', 'grpc_reflection', 'grpc_status']
+
+for module_name in grpc_modules:
+    install_import_hook(module_name)
 
 
 class SingleLoader(object):

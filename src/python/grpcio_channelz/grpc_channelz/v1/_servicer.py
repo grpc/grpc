@@ -15,13 +15,16 @@
 
 from typing import Union
 
-from google.protobuf import json_format  # pytype: disable=pyi-error
+from google.protobuf import json_format
 import grpc
 from grpc._cython import cygrpc
 import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
-GenericServicerContext = Union[grpc.ServicerContext, grpc.aio._base_server.ServicerContext]
+GenericServicerContext = Union[
+    grpc.ServicerContext, grpc.aio._base_server.ServicerContext
+]
+
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """Servicer handling RPCs for service statuses."""

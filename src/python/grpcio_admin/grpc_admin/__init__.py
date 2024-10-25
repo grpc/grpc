@@ -18,7 +18,7 @@ from grpc_channelz.v1 import channelz
 import grpc_csds
 
 
-def add_admin_servicers(server: Server) -> None: 
+def add_admin_servicers(server: Server) -> None:
     """Register admin servicers to a server.
 
     gRPC provides some predefined admin services to make debugging easier by

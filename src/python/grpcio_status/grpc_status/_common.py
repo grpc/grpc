@@ -14,6 +14,7 @@
 """Reference implementation for status mapping in gRPC Python."""
 
 from typing import Any
+
 import grpc
 
 _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}

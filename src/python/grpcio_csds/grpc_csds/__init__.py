@@ -15,6 +15,7 @@
 
 
 from typing import Any, Iterable
+
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format  # pytype: disable=pyi-error
@@ -28,13 +29,19 @@ class ClientStatusDiscoveryServiceServicer(
     """CSDS Servicer works for both the sync API and asyncio API."""
 
     @staticmethod
-    def FetchClientStatus(request: csds_pb2.ClientStatusRequest, unused_context: grpc.ServicerContext):
+    def FetchClientStatus(
+        request: csds_pb2.ClientStatusRequest,
+        unused_context: grpc.ServicerContext,
+    ):
         return csds_pb2.ClientStatusResponse.FromString(
             cygrpc.dump_xds_configs()
         )
 
     @staticmethod
-    def StreamClientStatus(request_iterator: Iterable[csds_pb2.ClientStatusRequest], context: grpc.ServicerContext):
+    def StreamClientStatus(
+        request_iterator: Iterable[csds_pb2.ClientStatusRequest],
+        context: grpc.ServicerContext,
+    ):
         for request in request_iterator:
             yield ClientStatusDiscoveryServiceServicer.FetchClientStatus(
                 request, context

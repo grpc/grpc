@@ -38,5 +38,4 @@ typing-extensions==4.9.0
 pyasn1-modules==0.3.0
 zipp==3.17.0
 wrapt==1.16.0
-xds-protos==0.0.11
 typeguard==3.0.2

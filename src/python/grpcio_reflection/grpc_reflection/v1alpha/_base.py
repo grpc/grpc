@@ -64,14 +64,15 @@ def _file_descriptor_response(descriptor, original_request):
 
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     """Base class for reflection servicer."""
+
     _service_names: Sequence[str]
     _pool: descriptor_pool.DescriptorPool
-    
+
     def __init__(
-            self,
-            service_names: Iterable[str],
-            pool: Optional[descriptor_pool.DescriptorPool] = None,
-        ):        
+        self,
+        service_names: Iterable[str],
+        pool: Optional[descriptor_pool.DescriptorPool] = None,
+    ):
         """Constructor.
 
         Args:
