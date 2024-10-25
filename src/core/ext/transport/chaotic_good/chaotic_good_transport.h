@@ -95,6 +95,9 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           auto con = frame_header.payload_connection_id == 0
                          ? &control_endpoint_
                          : &data_endpoint_;
+          LOG(INFO) << "For " << frame_header << " read with padding "
+                    << frame_header.Padding(decode_alignment_)
+                    << " (decode alignment =" << decode_alignment_ << ")";
           return con->Read(frame_header.payload_length +
                            frame_header.Padding(decode_alignment_));
         },
