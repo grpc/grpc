@@ -31,7 +31,7 @@ os.chdir(_ROOT)
 _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 
 # C/C++ tests can take long time
-_CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
+_CPP_RUNTESTS_TIMEOUT = 6 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
 _OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
