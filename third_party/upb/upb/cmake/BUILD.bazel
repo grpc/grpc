@@ -5,6 +5,7 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load(
     "//upb/bazel:build_defs.bzl",
     "make_shell_script",

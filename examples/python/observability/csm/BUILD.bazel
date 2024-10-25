@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 # TODO(xuanwn): Instead of using Bazel build, we should pip install all dependencies
 # once we have a released version of grpcio-csm-observability.

@@ -14,6 +14,7 @@
 """Bazel rule tests of bazel/python_rules.bzl"""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_python//python:py_info.bzl", "PyInfo")
 
 def _assert_in(env, item, container):
     asserts.true(
