@@ -682,6 +682,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_variant",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["lib/promise/detail/promise_variant.h"],
+    deps = [
+    ],
+)
+
+grpc_cc_library(
     name = "match_promise",
     external_deps = [
         "absl/strings",
@@ -694,6 +705,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
+        "promise_variant",
         "//:gpr_platform",
     ],
 )
@@ -814,6 +826,7 @@ grpc_cc_library(
     public_hdrs = ["lib/promise/switch.h"],
     deps = [
         "if",
+        "promise_variant",
         "promise_factory",
         "//:gpr_platform",
     ],
