@@ -23,20 +23,12 @@ if(gRPC_RE2_PROVIDER STREQUAL "module")
   if(EXISTS "${RE2_ROOT_DIR}/CMakeLists.txt")
     # Explicitly disable BUILD_TESTING to avoid re2's CMakeLists.txt triggering https://github.com/grpc/grpc/issues/23586
     option(BUILD_TESTING "re2.cmake explicitly disabled CTest's BUILD_TESTING option." OFF)
-
-    include_directories("${RE2_ROOT_DIR}")
-    add_subdirectory(${RE2_ROOT_DIR} third_party/re2)
-
-    if(TARGET re2)
-      set(_gRPC_RE2_LIBRARIES re2)
-      set(_gRPC_RE2_INCLUDE_DIR "${RE2_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/re2")
-      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
-        install(TARGETS re2 EXPORT gRPCTargets
-          RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-          LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-          ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
-      endif()
+    if(gRPC_INSTALL)
+      # When gRPC_INSTALL is enabled and re2 will be built as a module,
+      # re2 will be installed along with gRPC for convenience.
+      set(RE2_ENABLE_INSTALL ON)
     endif()
+    add_subdirectory(${RE2_ROOT_DIR} third_party/re2)
   else()
     message(WARNING "gRPC_RE2_PROVIDER is \"module\" but RE2_ROOT_DIR(${RE2_ROOT_DIR}) is wrong")
   endif()
@@ -44,10 +36,13 @@ if(gRPC_RE2_PROVIDER STREQUAL "module")
     message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_RE2_PROVIDER is \"module\"  and CMake version (${CMAKE_VERSION}) is less than 3.13.")
     set(gRPC_INSTALL FALSE)
   endif()
+  if(TARGET re2)
+    set(_gRPC_RE2_LIBRARIES re2)
+  endif()
 elseif(gRPC_RE2_PROVIDER STREQUAL "package")
   find_package(re2 REQUIRED)
   if(TARGET re2::re2)
     set(_gRPC_RE2_LIBRARIES re2::re2)
   endif()
-  set(_gRPC_FIND_RE2 "if(NOT re2_FOUND)\n  find_package(re2)\nendif()")
 endif()
+set(_gRPC_FIND_RE2 "if(NOT re2_FOUND)\n  find_package(re2)\nendif()")
