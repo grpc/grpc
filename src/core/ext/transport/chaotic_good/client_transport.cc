@@ -146,21 +146,18 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
           SliceBuffer& payload = std::get<1>(frame_bytes);
           return Switch(
               header.type,
-              Case(FrameType::kServerInitialMetadata,
-                   [&, this]() {
-                     return DispatchFrame<ServerInitialMetadataFrame>(
-                         transport, header, std::move(payload));
-                   }),
-              Case(FrameType::kServerTrailingMetadata,
-                   [&, this]() {
-                     return DispatchFrame<ServerTrailingMetadataFrame>(
-                         transport, header, std::move(payload));
-                   }),
-              Case(FrameType::kMessage,
-                   [&, this]() {
-                     return DispatchFrame<MessageFrame>(transport, header,
-                                                        std::move(payload));
-                   }),
+              Case<FrameType, FrameType::kServerInitialMetadata>([&, this]() {
+                return DispatchFrame<ServerInitialMetadataFrame>(
+                    transport, header, std::move(payload));
+              }),
+              Case<FrameType, FrameType::kServerTrailingMetadata>([&, this]() {
+                return DispatchFrame<ServerTrailingMetadataFrame>(
+                    transport, header, std::move(payload));
+              }),
+              Case<FrameType, FrameType::kMessage>([&, this]() {
+                return DispatchFrame<MessageFrame>(transport, header,
+                                                   std::move(payload));
+              }),
               Default([&]() {
                 LOG_EVERY_N_SEC(INFO, 10)
                     << "Bad frame type: " << header.ToString();

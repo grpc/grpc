@@ -250,41 +250,38 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
             LOG(INFO) << "bytes=" << absl::CEscape(payload.JoinIntoString());
             return Switch(
                 header.type,
-                Case(FrameType::kClientInitialMetadata,
-                     [&, this]() {
-                       LOG(INFO) << "bytes="
-                                 << absl::CEscape(payload.JoinIntoString());
-                       return NewStream(*transport, header, std::move(payload));
-                     }),
-                Case(FrameType::kMessage,
-                     [&, this]() {
-                       return DispatchFrame<MessageFrame>(*transport, header,
+                Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {
+                  LOG(INFO)
+                      << "bytes=" << absl::CEscape(payload.JoinIntoString());
+                  return Immediate(
+                      NewStream(*transport, header, std::move(payload)));
+                }),
+                Case<FrameType, FrameType::kMessage>([&, this]() {
+                  return DispatchFrame<MessageFrame>(*transport, header,
+                                                     std::move(payload));
+                }),
+                Case<FrameType, FrameType::kClientEndOfStream>([&, this]() {
+                  return DispatchFrame<ClientEndOfStream>(*transport, header,
                                                           std::move(payload));
-                     }),
-                Case(FrameType::kClientEndOfStream,
-                     [&, this]() {
-                       return DispatchFrame<ClientEndOfStream>(
-                           *transport, header, std::move(payload));
-                     }),
-                Case(FrameType::kCancel,
-                     [&, this]() {
-                       absl::optional<CallInitiator> call_initiator =
-                           ExtractStream(header.stream_id);
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "Cancel stream " << header.stream_id
-                           << (call_initiator.has_value() ? " (active)"
-                                                          : " (not found)");
-                       return If(
-                           call_initiator.has_value(),
-                           [&call_initiator]() {
-                             auto c = std::move(*call_initiator);
-                             return c.SpawnWaitable("cancel", [c]() mutable {
-                               c.Cancel();
-                               return absl::OkStatus();
-                             });
-                           },
-                           []() -> absl::Status { return absl::OkStatus(); });
-                     }),
+                }),
+                Case<FrameType, FrameType::kCancel>([&, this]() {
+                  absl::optional<CallInitiator> call_initiator =
+                      ExtractStream(header.stream_id);
+                  GRPC_TRACE_LOG(chaotic_good, INFO)
+                      << "Cancel stream " << header.stream_id
+                      << (call_initiator.has_value() ? " (active)"
+                                                     : " (not found)");
+                  return If(
+                      call_initiator.has_value(),
+                      [&call_initiator]() {
+                        auto c = std::move(*call_initiator);
+                        return c.SpawnWaitable("cancel", [c]() mutable {
+                          c.Cancel();
+                          return absl::OkStatus();
+                        });
+                      },
+                      []() -> absl::Status { return absl::OkStatus(); });
+                }),
                 Default([&]() {
                   return absl::InternalError(
                       absl::StrCat("Unexpected frame type: ",
