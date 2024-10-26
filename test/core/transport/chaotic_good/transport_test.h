@@ -15,6 +15,8 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
 
+#include <google/protobuf/text_format.h>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -77,6 +79,15 @@ grpc_event_engine::experimental::Slice SerializedFrameHeader(
     uint32_t payload_length);
 
 grpc_event_engine::experimental::Slice Zeros(uint32_t length);
+
+template <typename T>
+grpc_event_engine::experimental::Slice EncodeProto(const std::string& fields) {
+  T msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(fields, &msg));
+  std::string out;
+  CHECK(msg.SerializeToString(&out));
+  return grpc_event_engine::experimental::Slice::FromCopiedString(out);
+}
 
 }  // namespace testing
 }  // namespace chaotic_good

@@ -59,19 +59,9 @@ namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
 
-// Encoded string of header ":path: /demo.Service/Step".
-const uint8_t kPathDemoServiceStep[] = {
-    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
-    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
-    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
-
-// Encoded string of trailer "grpc-status: 0".
-const uint8_t kGrpcStatus0[] = {0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
-                                0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
-
 ServerMetadataHandle TestInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
-  md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
+  md->Set(GrpcMessageMetadata(), Slice::FromStaticString("hello"));
   return md;
 }
 
@@ -100,13 +90,19 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
           .PreconditionChannelArgs(nullptr),
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), event_engine());
+  const auto server_initial_metadata =
+      EncodeProto<chaotic_good_frame::ServerMetadata>("message: 'hello'");
+  const auto server_trailing_metadata =
+      EncodeProto<chaotic_good_frame::ServerMetadata>("status: 0");
+  const auto client_initial_metadata =
+      EncodeProto<chaotic_good_frame::ClientMetadata>(
+          "path: '/demo.Service/Step'");
   // Once we set the acceptor, expect to read some frames.
   // We'll return a new request with a payload of "12345678".
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kClientInitialMetadata, 0, 1,
-                             sizeof(kPathDemoServiceStep)),
-       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep)),
+                             client_initial_metadata.length()),
+       client_initial_metadata.Copy(),
        SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
        EventEngineSlice::FromCopiedString("12345678"),
        SerializedFrameHeader(FrameType::kClientEndOfStream, 0, 1, 0)},
@@ -175,9 +171,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       .WillOnce(Return(false));
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
-                             sizeof(kPathDemoServiceStep)),
-       EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
+                             server_initial_metadata.length()),
+       server_initial_metadata.Copy()},
       nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
@@ -185,8 +180,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kServerTrailingMetadata, 0, 1,
-                             sizeof(kGrpcStatus0)),
-       EventEngineSlice::FromCopiedBuffer(kGrpcStatus0, sizeof(kGrpcStatus0))},
+                             server_trailing_metadata.length()),
+       server_trailing_metadata.Copy()},
       nullptr);
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();

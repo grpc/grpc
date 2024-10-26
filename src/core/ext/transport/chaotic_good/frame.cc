@@ -128,6 +128,7 @@ chaotic_good_frame::ClientMetadata ClientMetadataProtoFromGrpc(
 
 absl::StatusOr<ClientMetadataHandle> ClientMetadataGrpcFromProto(
     chaotic_good_frame::ClientMetadata& metadata) {
+  LOG(INFO) << "MD: " << metadata.DebugString();
   auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromCopiedString(metadata.path()));
   if (metadata.timeout_ms() != 0) {
