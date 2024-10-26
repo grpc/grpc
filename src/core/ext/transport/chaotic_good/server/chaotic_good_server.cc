@@ -221,6 +221,9 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         // Parse frame header
         auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
             GRPC_SLICE_START_PTR(slice.c_slice())));
+        if (frame_header.ok() && frame_header->type != FrameType::kSettings) {
+          frame_header = absl::InternalError("Not a settings frame");
+        }
         return If(
             frame_header.ok(),
             [self, &frame_header]() {

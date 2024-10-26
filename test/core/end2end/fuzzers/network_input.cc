@@ -236,6 +236,11 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
   h.stream_id = frame.stream_id();
   h.payload_connection_id = 0;
   h.payload_length = 0;
+  auto proto_payload = [&](auto payload) {
+    std::string temp = payload.SerializeAsString();
+    h.payload_length = temp.length();
+    suffix.Append(Slice::FromCopiedString(temp));
+  };
   switch (frame.payload_case()) {
     case fuzzer_input::ChaoticGoodFrame::kPayloadNone:
     case fuzzer_input::ChaoticGoodFrame::PAYLOAD_NOT_SET:
@@ -245,13 +250,6 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       h.payload_length = frame.payload_raw_bytes().length();
       suffix.Append(Slice::FromCopiedString(frame.payload_raw_bytes()));
       break;
-    case fuzzer_input::ChaoticGoodFrame::kPayloadSimpleHeader: {
-      SliceBuffer append =
-          SliceBufferFromSimpleHeaders(frame.payload_simple_header());
-      if (append.Length() == 0) break;
-      h.payload_length = append.Length();
-      suffix.Append(append.JoinIntoSlice());
-    } break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadEmptyOfLength:
       h.payload_length = frame.payload_empty_of_length();
       suffix.Append(Slice::FromCopiedString(
@@ -261,6 +259,15 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       h.payload_connection_id =
           frame.payload_other_connection_id().connection_id();
       h.payload_length = frame.payload_other_connection_id().length();
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kSettings:
+      proto_payload(frame.settings());
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kClientMetadata:
+      proto_payload(frame.client_metadata());
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kServerMetadata:
+      proto_payload(frame.server_metadata());
       break;
   }
   uint8_t bytes[chaotic_good::FrameHeader::kFrameHeaderSize];

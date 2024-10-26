@@ -20,6 +20,7 @@ import "test/core/end2end/fuzzers/api_fuzzer.proto";
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 import "test/core/test_util/fuzz_config_vars.proto";
 import "test/core/test_util/fuzzing_channel_args.proto";
+import "src/core/ext/transport/chaotic_good/chaotic_good_frame.proto";
 
 message Empty{};
 
@@ -166,7 +167,9 @@ message ChaoticGoodFrame {
         Empty payload_none = 11;
         bytes payload_raw_bytes = 12;
         uint32 payload_empty_of_length = 13;
-        SimpleHeaders payload_simple_header = 14;
+        chaotic_good_frame.Settings settings = 14;
+        chaotic_good_frame.ClientMetadata client_metadata = 15;
+        chaotic_good_frame.ServerMetadata server_metadata = 16;
     }
 }
 
