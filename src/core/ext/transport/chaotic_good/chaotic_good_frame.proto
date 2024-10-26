@@ -37,7 +37,7 @@ message ClientMetadata {
 
 message ServerMetadata {
     optional uint32 status = 1;
-    optional string message = 2;
+    optional bytes message = 2;
 
     repeated UnknownMetadata unknown_metadata = 100;
 }
