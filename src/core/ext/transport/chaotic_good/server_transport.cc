@@ -249,12 +249,9 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
             const auto& header = std::get<0>(frame_bytes);
             SliceBuffer& payload = std::get<1>(frame_bytes);
             CHECK_EQ(header.payload_length, payload.Length());
-            LOG(INFO) << "bytes=" << absl::CEscape(payload.JoinIntoString());
             return Switch(
                 header.type,
                 Case<FrameType, FrameType::kClientInitialMetadata>([&, this]() {
-                  LOG(INFO)
-                      << "bytes=" << absl::CEscape(payload.JoinIntoString());
                   return Immediate(
                       NewStream(*transport, header, std::move(payload)));
                 }),

@@ -216,7 +216,6 @@ void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
   header.stream_id = stream_id;
   header.payload_length = size_after - size_before;
   header.payload_connection_id = 0;
-  LOG(INFO) << "Serialize header: " << header;
   header.Serialize(const_cast<uint8_t*>(
       GRPC_SLICE_START_PTR(out->control.c_slice_at(header_slice))));
 }
