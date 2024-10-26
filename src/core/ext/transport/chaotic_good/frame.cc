@@ -47,9 +47,19 @@ struct ClientMetadataEncoder {
     out.set_path(value.as_string_view());
   }
 
+  void Encode(HttpAuthorityMetadata,
+              const typename HttpAuthorityMetadata::ValueType& value) {
+    out.set_authority(value.as_string_view());
+  }
+
   void Encode(GrpcTimeoutMetadata,
               const typename GrpcTimeoutMetadata::ValueType& value) {
-    out.set_timeout_ms((value - Timestamp::Now()).millis());
+    auto now = Timestamp::Now();
+    if (now > value) {
+      out.set_timeout_ms(0);
+    } else {
+      out.set_timeout_ms((value - now).millis());
+    }
   }
 
   template <typename Which>
@@ -128,10 +138,16 @@ chaotic_good_frame::ClientMetadata ClientMetadataProtoFromGrpc(
 
 absl::StatusOr<ClientMetadataHandle> ClientMetadataGrpcFromProto(
     chaotic_good_frame::ClientMetadata& metadata) {
-  LOG(INFO) << "MD: " << metadata.DebugString();
   auto md = Arena::MakePooled<ClientMetadata>();
-  md->Set(HttpPathMetadata(), Slice::FromCopiedString(metadata.path()));
-  if (metadata.timeout_ms() != 0) {
+  md->Set(GrpcStatusFromWire(), true);
+  if (metadata.has_path()) {
+    md->Set(HttpPathMetadata(), Slice::FromCopiedString(metadata.path()));
+  }
+  if (metadata.has_authority()) {
+    md->Set(HttpAuthorityMetadata(),
+            Slice::FromCopiedString(metadata.authority()));
+  }
+  if (metadata.has_timeout_ms()) {
     md->Set(GrpcTimeoutMetadata(),
             Timestamp::Now() + Duration::Milliseconds(metadata.timeout_ms()));
   }
@@ -148,9 +164,14 @@ chaotic_good_frame::ServerMetadata ServerMetadataProtoFromGrpc(
 absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
     chaotic_good_frame::ServerMetadata& metadata) {
   auto md = Arena::MakePooled<ServerMetadata>();
-  md->Set(GrpcStatusMetadata(),
-          static_cast<grpc_status_code>(metadata.status()));
-  md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(metadata.message()));
+  md->Set(GrpcStatusFromWire(), true);
+  if (metadata.has_status()) {
+    md->Set(GrpcStatusMetadata(),
+            static_cast<grpc_status_code>(metadata.status()));
+  }
+  if (metadata.has_message()) {
+    md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(metadata.message()));
+  }
   return ReadUnknownFields(metadata, std::move(md));
 }
 
@@ -211,7 +232,13 @@ absl::Status ReadProto(SliceBuffer payload,
 
 void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
   auto length = msg.ByteSizeLong();
-  CHECK(msg.SerializeToArray(output.AddTiny(length), length));
+  if (length <= GRPC_SLICE_INLINED_SIZE) {
+    CHECK(msg.SerializeToArray(output.AddTiny(length), length));
+  } else {
+    auto slice = MutableSlice::CreateUninitialized(length);
+    CHECK(msg.SerializeToArray(slice.data(), length));
+    output.AppendIndexed(Slice(std::move(slice)));
+  }
 }
 
 }  // namespace

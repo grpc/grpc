@@ -28,15 +28,16 @@ message UnknownMetadata {
 }
 
 message ClientMetadata {
-    string path = 1;
-    uint64 timeout_ms = 2;
+    optional string path = 1;
+    optional string authority = 2;
+    optional uint64 timeout_ms = 3;
 
     repeated UnknownMetadata unknown_metadata = 100;
 }
 
 message ServerMetadata {
-    uint32 status = 1;
-    string message = 2;
+    optional uint32 status = 1;
+    optional string message = 2;
 
     repeated UnknownMetadata unknown_metadata = 100;
 }
