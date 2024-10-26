@@ -18,6 +18,7 @@ load(
     "grpc_generate_one_off_internal_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
+    "grpc_proto_library"
 )
 
 licenses(["reciprocal"])
@@ -7782,6 +7783,12 @@ grpc_cc_library(
     ],
 )
 
+grpc_proto_library(
+    name = "chaotic_good_frame_proto",
+    srcs = ["ext/transport/chaotic_good/chaotic_good_frame.proto"],
+    has_services = False,
+)
+
 grpc_cc_library(
     name = "chaotic_good_frame",
     srcs = [
@@ -7801,8 +7808,11 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
+        "chaotic_good_frame_proto",
         "context",
         "match",
+        "message",
+        "metadata",
         "metadata_batch",
         "no_destruct",
         "slice",
@@ -7810,27 +7820,6 @@ grpc_cc_library(
         "status_helper",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:hpack_encoder",
-        "//:hpack_parser",
-    ],
-)
-
-grpc_cc_library(
-    name = "chaotic_good_settings_metadata",
-    srcs = [
-        "ext/transport/chaotic_good/settings_metadata.cc",
-    ],
-    hdrs = [
-        "ext/transport/chaotic_good/settings_metadata.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/types:optional",
-    ],
-    deps = [
-        "arena",
-        "metadata_batch",
-        "//:gpr",
     ],
 )
 
@@ -8010,7 +7999,6 @@ grpc_cc_library(
         "try_seq",
         "//:gpr_platform",
         "//:grpc_trace",
-        "//:hpack_encoder",
         "//:promise",
     ],
 )
@@ -8067,8 +8055,6 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:hpack_encoder",
-        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
@@ -8128,8 +8114,6 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:hpack_encoder",
-        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
@@ -8481,7 +8465,6 @@ grpc_cc_library(
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "chaotic_good_server_transport",
-        "chaotic_good_settings_metadata",
         "closure",
         "context",
         "error",
@@ -8513,8 +8496,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:handshaker",
-        "//:hpack_encoder",
-        "//:hpack_parser",
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -8547,7 +8528,7 @@ grpc_cc_library(
         "chaotic_good_client_transport",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
-        "chaotic_good_settings_metadata",
+        "chaotic_good_frame_proto",
         "closure",
         "context",
         "error",
@@ -8582,8 +8563,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:handshaker",
-        "//:hpack_encoder",
-        "//:hpack_parser",
         "//:iomgr",
         "//:ref_counted_ptr",
     ],

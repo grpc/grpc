@@ -26,6 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -37,6 +38,120 @@
 
 namespace grpc_core {
 namespace chaotic_good {
+
+namespace {
+
+struct ClientMetadataEncoder {
+  void Encode(HttpPathMetadata,
+              const typename HttpPathMetadata::ValueType& value) {
+    out.set_path(value.as_string_view());
+  }
+
+  void Encode(GrpcTimeoutMetadata,
+              const typename GrpcTimeoutMetadata::ValueType& value) {
+    out.set_timeout_ms((value - Timestamp::Now()).millis());
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    EncodeWithWarning(Slice::FromExternalString(Which::key()),
+                      Slice(Which::Encode(value)));
+  }
+
+  void EncodeWithWarning(const Slice& key, const Slice& value) {
+    LOG_EVERY_N_SEC(INFO, 10) << "encoding known key " << key.as_string_view()
+                              << " with unknown encoding";
+    Encode(key, value);
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    auto* unk = out.add_unknown_metadata();
+    unk->set_key(key.as_string_view());
+    unk->set_value(value.as_string_view());
+  }
+
+  chaotic_good_frame::ClientMetadata out;
+};
+
+struct ServerMetadataEncoder {
+  void Encode(GrpcStatusMetadata, grpc_status_code code) {
+    out.set_status(code);
+  }
+
+  void Encode(GrpcMessageMetadata, const Slice& value) {
+    out.set_message(value.as_string_view());
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    EncodeWithWarning(Slice::FromExternalString(Which::key()),
+                      Slice(Which::Encode(value)));
+  }
+
+  void EncodeWithWarning(const Slice& key, const Slice& value) {
+    LOG_EVERY_N_SEC(INFO, 10) << "encoding known key " << key.as_string_view()
+                              << " with unknown encoding";
+    Encode(key, value);
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    auto* unk = out.add_unknown_metadata();
+    unk->set_key(key.as_string_view());
+    unk->set_value(value.as_string_view());
+  }
+
+  chaotic_good_frame::ServerMetadata out;
+};
+
+template <typename T, typename M>
+absl::StatusOr<T> ReadUnknownFields(const M& msg, T md) {
+  absl::Status error = absl::OkStatus();
+  for (const auto& unk : msg.unknown_metadata()) {
+    md->Append(unk.key(), Slice::FromCopiedString(unk.value()),
+               [&error](absl::string_view error_msg, const Slice&) {
+                 if (!error.ok()) return;
+                 error = absl::InternalError(error_msg);
+               });
+  }
+  if (!error.ok()) return error;
+  return std::move(md);
+}
+
+}  // namespace
+
+chaotic_good_frame::ClientMetadata ClientMetadataProtoFromGrpc(
+    const ClientMetadata& md) {
+  ClientMetadataEncoder e;
+  md.Encode(&e);
+  return std::move(e.out);
+}
+
+absl::StatusOr<ClientMetadataHandle> ClientMetadataGrpcFromProto(
+    chaotic_good_frame::ClientMetadata& metadata) {
+  auto md = Arena::MakePooled<ClientMetadata>();
+  md->Set(HttpPathMetadata(), Slice::FromCopiedString(metadata.path()));
+  if (metadata.timeout_ms() != 0) {
+    md->Set(GrpcTimeoutMetadata(),
+            Timestamp::Now() + Duration::Milliseconds(metadata.timeout_ms()));
+  }
+  return ReadUnknownFields(metadata, std::move(md));
+}
+
+chaotic_good_frame::ServerMetadata ServerMetadataProtoFromGrpc(
+    const ServerMetadata& md) {
+  ServerMetadataEncoder e;
+  md.Encode(&e);
+  return std::move(e.out);
+}
+
+absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
+    chaotic_good_frame::ServerMetadata& metadata) {
+  auto md = Arena::MakePooled<ServerMetadata>();
+  md->Set(GrpcStatusMetadata(),
+          static_cast<grpc_status_code>(metadata.status()));
+  md->Set(GrpcMessageMetadata(), Slice::FromCopiedString(metadata.message()));
+  return ReadUnknownFields(metadata, std::move(md));
+}
 
 namespace {
 const NoDestruct<Slice> kZeroHeader{[] {
@@ -85,33 +200,19 @@ void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
       GRPC_SLICE_START_PTR(out->control.c_slice_at(header_slice))));
 }
 
-template <typename Metadata>
-absl::Status ReadMetadata(HPackParser* parser,
-                          absl::StatusOr<SliceBuffer> maybe_slices,
-                          uint32_t stream_id, bool is_header, bool is_client,
-                          absl::BitGenRef bitsrc, Metadata* metadata) {
-  if (!maybe_slices.ok()) return maybe_slices.status();
-  auto& slices = *maybe_slices;
-  *metadata = Arena::MakePooledForOverwrite<
-      typename std::remove_reference<decltype(**metadata)>::type>();
-  parser->BeginFrame(
-      metadata->get(), std::numeric_limits<uint32_t>::max(),
-      std::numeric_limits<uint32_t>::max(),
-      is_header ? HPackParser::Boundary::EndOfHeaders
-                : HPackParser::Boundary::EndOfStream,
-      HPackParser::Priority::None,
-      HPackParser::LogInfo{stream_id,
-                           is_header ? HPackParser::LogInfo::Type::kHeaders
-                                     : HPackParser::LogInfo::Type::kTrailers,
-                           is_client});
-  for (size_t i = 0; i < slices.Count(); i++) {
-    GRPC_RETURN_IF_ERROR(parser->Parse(slices.c_slice_at(i),
-                                       i == slices.Count() - 1, bitsrc,
-                                       /*call_tracer=*/nullptr));
-  }
-  parser->FinishFrame();
-  return absl::OkStatus();
+absl::Status ReadProto(SliceBuffer payload,
+                       google::protobuf::MessageLite& msg) {
+  auto payload_slice = payload.JoinIntoSlice();
+  const bool ok =
+      msg.ParseFromArray(payload_slice.data(), payload_slice.length());
+  return ok ? absl::OkStatus() : absl::InternalError("Protobuf parse error");
 }
+
+void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
+  auto length = msg.ByteSizeLong();
+  CHECK(msg.SerializeToArray(output.AddTiny(length), length));
+}
+
 }  // namespace
 
 absl::Status SettingsFrame::Deserialize(const DeserializeContext& ctx,
@@ -121,24 +222,18 @@ absl::Status SettingsFrame::Deserialize(const DeserializeContext& ctx,
   if (header.stream_id != 0) {
     return absl::InternalError("Expected stream id 0");
   }
-  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, true,
-                      ctx.bitsrc, &headers);
+  return ReadProto(std::move(payload), settings);
 }
 
 void SettingsFrame::Serialize(const SerializeContext& ctx,
                               BufferPair* out) const {
   AddInlineFrame(
       FrameType::kSettings, 0,
-      [&ctx, this](SliceBuffer& out) {
-        if (headers == nullptr) return;
-        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
-      },
-      out);
+      [this](SliceBuffer& out) { WriteProto(settings, out); }, out);
 }
 
 std::string SettingsFrame::ToString() const {
-  return absl::StrCat("SettingsFrame{",
-                      headers == nullptr ? "" : headers->DebugString(), "}");
+  return settings.ShortDebugString();
 }
 
 absl::Status ClientInitialMetadataFrame::Deserialize(const DeserializeContext& ctx,
@@ -149,8 +244,7 @@ absl::Status ClientInitialMetadataFrame::Deserialize(const DeserializeContext& c
     return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
-  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, true,
-                      ctx.bitsrc, &headers);
+  return ReadProto(std::move(payload), headers);
 }
 
 void ClientInitialMetadataFrame::Serialize(const SerializeContext& ctx,
@@ -158,16 +252,12 @@ void ClientInitialMetadataFrame::Serialize(const SerializeContext& ctx,
   CHECK_NE(stream_id, 0u);
   AddInlineFrame(
       FrameType::kClientInitialMetadata, stream_id,
-      [&ctx, this](SliceBuffer& out) {
-        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
-      },
-      out);
+      [this](SliceBuffer& out) { WriteProto(headers, out); }, out);
 }
 
 std::string ClientInitialMetadataFrame::ToString() const {
-  return absl::StrCat(
-      "ClientInitialMetadataFrame{stream_id=", stream_id,
-      ", headers=", headers == nullptr ? "" : headers->DebugString(), "}");
+  return absl::StrCat("ClientInitialMetadataFrame{stream_id=", stream_id,
+                      ", headers=", headers.ShortDebugString(), "}");
 }
 
 absl::Status ClientEndOfStream::Deserialize(const DeserializeContext& ctx,
@@ -227,8 +317,7 @@ absl::Status ServerInitialMetadataFrame::Deserialize(const DeserializeContext& c
     return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
-  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, true, false,
-                      ctx.bitsrc, &headers);
+  return ReadProto(std::move(payload), headers);
 }
 
 void ServerInitialMetadataFrame::Serialize(const SerializeContext& ctx,
@@ -236,16 +325,12 @@ void ServerInitialMetadataFrame::Serialize(const SerializeContext& ctx,
   CHECK_NE(stream_id, 0u);
   AddInlineFrame(
       FrameType::kServerInitialMetadata, stream_id,
-      [&ctx, this](SliceBuffer& out) {
-        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*headers, out);
-      },
-      out);
+      [this](SliceBuffer& out) { WriteProto(headers, out); }, out);
 }
 
 std::string ServerInitialMetadataFrame::ToString() const {
-  return absl::StrCat(
-      "ServerInitialMetadataFrame{stream_id=", stream_id,
-      ", headers=", headers == nullptr ? "" : headers->DebugString(), "}");
+  return absl::StrCat("ServerInitialMetadataFrame{stream_id=", stream_id,
+                      ", headers=", headers.ShortDebugString(), "}");
 }
 
 absl::Status ServerTrailingMetadataFrame::Deserialize(const DeserializeContext& ctx,
@@ -256,8 +341,7 @@ absl::Status ServerTrailingMetadataFrame::Deserialize(const DeserializeContext& 
     return absl::InternalError("Expected non-zero stream id");
   }
   stream_id = header.stream_id;
-  return ReadMetadata(ctx.parser, std::move(payload), header.stream_id, false, false,
-                      ctx.bitsrc, &trailers);
+  return ReadProto(std::move(payload), trailers);
 }
 
 void ServerTrailingMetadataFrame::Serialize(const SerializeContext& ctx,
@@ -265,16 +349,12 @@ void ServerTrailingMetadataFrame::Serialize(const SerializeContext& ctx,
   CHECK_NE(stream_id, 0u);
   AddInlineFrame(
       FrameType::kServerTrailingMetadata, stream_id,
-      [&ctx, this](SliceBuffer& out) {
-        ctx.saw_encoding_errors |= !ctx.encoder->EncodeRawHeaders(*trailers, out);
-      },
-      out);
+      [this](SliceBuffer& out) { WriteProto(trailers, out); }, out);
 }
 
 std::string ServerTrailingMetadataFrame::ToString() const {
-  return absl::StrCat(
-      "ServerTrailingMetadataFrame{stream_id=", stream_id,
-      ", trailers=", trailers == nullptr ? "" : trailers->DebugString(), "}");
+  return absl::StrCat("ServerTrailingMetadataFrame{stream_id=", stream_id,
+                      ", trailers=", trailers.ShortDebugString(), "}");
 }
 
 absl::Status CancelFrame::Deserialize(const DeserializeContext& ctx,

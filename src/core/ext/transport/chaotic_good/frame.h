@@ -23,13 +23,12 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/message.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/match.h"
 
 namespace grpc_core {
@@ -42,14 +41,10 @@ struct BufferPair {
 
 struct DeserializeContext {
   uint32_t alignment;
-  HPackParser* const parser;
-  absl::BitGenRef bitsrc;
 };
 
 struct SerializeContext {
   uint32_t alignment;
-  HPackCompressor* encoder;
-  bool& saw_encoding_errors;
 };
 
 class FrameInterface {
@@ -67,16 +62,6 @@ class FrameInterface {
   }
 
  protected:
-  static bool EqVal(const grpc_metadata_batch& a,
-                    const grpc_metadata_batch& b) {
-    return a.DebugString() == b.DebugString();
-  }
-  template <typename T>
-  static bool EqHdl(const Arena::PoolPtr<T>& a, const Arena::PoolPtr<T>& b) {
-    if (a == nullptr && b == nullptr) return true;
-    if (a == nullptr || b == nullptr) return false;
-    return EqVal(*a, *b);
-  }
   ~FrameInterface() = default;
 };
 
@@ -84,13 +69,22 @@ inline std::ostream& operator<<(std::ostream& os, const FrameInterface& frame) {
   return os << frame.ToString();
 }
 
+chaotic_good_frame::ClientMetadata ClientMetadataProtoFromGrpc(
+    const ClientMetadata& md);
+absl::StatusOr<ClientMetadataHandle> ClientMetadataGrpcFromProto(
+    chaotic_good_frame::ClientMetadata& metadata);
+chaotic_good_frame::ServerMetadata ServerMetadataProtoFromGrpc(
+    const ServerMetadata& md);
+absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
+    chaotic_good_frame::ServerMetadata& metadata);
+
 struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(const DeserializeContext& ctx,
                                    const FrameHeader& header,
                                    SliceBuffer payload) override;
   void Serialize(const SerializeContext& ctx,
                          BufferPair* out) const override;
-  ClientMetadataHandle headers;
+  chaotic_good_frame::Settings settings;
   std::string ToString() const override;
 };
 
@@ -103,7 +97,7 @@ struct ClientInitialMetadataFrame final : public FrameInterface {
   std::string ToString() const override;
 
   uint32_t stream_id;
-  ClientMetadataHandle headers;
+  chaotic_good_frame::ClientMetadata headers;
 };
 
 struct MessageFrame final : public FrameInterface {
@@ -138,7 +132,7 @@ struct ServerInitialMetadataFrame final : public FrameInterface {
   std::string ToString() const override;
 
   uint32_t stream_id;
-  ServerMetadataHandle headers;
+  chaotic_good_frame::ServerMetadata headers;
 };
 
 struct ServerTrailingMetadataFrame final : public FrameInterface {
@@ -150,7 +144,7 @@ struct ServerTrailingMetadataFrame final : public FrameInterface {
   std::string ToString() const override;
 
   uint32_t stream_id;
-  ServerMetadataHandle trailers;
+  chaotic_good_frame::ServerMetadata trailers;
 };
 
 struct CancelFrame final : public FrameInterface {

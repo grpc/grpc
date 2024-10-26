@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
@@ -94,8 +93,12 @@ absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
     ServerInitialMetadataFrame frame, CallHandler call_handler) {
-  return Immediate(
-      call_handler.PushServerInitialMetadata(std::move(frame.headers)));
+  auto headers = ServerMetadataGrpcFromProto(frame.headers);
+  if (!headers.ok()) {
+    LOG_EVERY_N_SEC(INFO, 10) << "Encode headers failed: " << headers.status();
+    return Immediate(StatusFlag(Failure{}));
+  }
+  return Immediate(call_handler.PushServerInitialMetadata(std::move(*headers)));
 }
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(MessageFrame frame,
@@ -105,7 +108,13 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(MessageFrame frame,
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
     ServerTrailingMetadataFrame frame, CallHandler call_handler) {
-  call_handler.PushServerTrailingMetadata(std::move(frame.trailers));
+  auto trailers = ServerMetadataGrpcFromProto(frame.trailers);
+  if (!trailers.ok()) {
+    call_handler.PushServerTrailingMetadata(
+        CancelledServerMetadataFromStatus(trailers.status()));
+  } else {
+    call_handler.PushServerTrailingMetadata(std::move(*trailers));
+  }
   return Immediate(Success{});
 }
 
@@ -182,8 +191,7 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone(
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
     const ChannelArgs& args,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    HPackParser hpack_parser, HPackCompressor hpack_encoder)
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
@@ -198,8 +206,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     }
   }
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoint),
-      std::move(hpack_parser), std::move(hpack_encoder), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoint), 64, 64);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
@@ -286,7 +293,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                 << "CHAOTIC_GOOD: Sending initial metadata: "
                 << md->DebugString();
             ClientInitialMetadataFrame frame;
-            frame.headers = std::move(md);
+            frame.headers = ClientMetadataProtoFromGrpc(*md);
             return send_fragment(std::move(frame));
           },
           // Continuously send client frame with client to server messages.

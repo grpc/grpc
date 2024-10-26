@@ -45,8 +45,6 @@
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -81,8 +79,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
       PromiseEndpoint data_endpoint,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine,
-      HPackParser hpack_parser, HPackCompressor hpack_encoder);
+          event_engine);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }

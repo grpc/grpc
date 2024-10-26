@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
-#include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -234,38 +233,24 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                     SettingsFrame frame;
                     // Deserialize frame from read buffer.
                     auto status = frame.Deserialize(
-                        DeserializeContext{
-                            1, &self->connection_->hpack_parser_,
-                            absl::BitGenRef(self->connection_->bitgen_)},
-                        frame_header, std::move(buffer));
+                        DeserializeContext{1}, frame_header, std::move(buffer));
                     if (!status.ok()) return status;
-                    if (frame.headers == nullptr) {
-                      return absl::UnavailableError("no settings headers");
-                    }
-                    auto settings_metadata =
-                        SettingsMetadata::FromMetadataBatch(*frame.headers);
-                    if (!settings_metadata.ok()) {
-                      return settings_metadata.status();
-                    }
-                    const bool is_control_endpoint =
-                        settings_metadata->connection_type ==
-                        SettingsMetadata::ConnectionType::kControl;
-                    if (!is_control_endpoint) {
-                      if (!settings_metadata->connection_id.has_value()) {
+                    if (frame.settings.data_channel()) {
+                      if (frame.settings.connection_id().empty()) {
                         return absl::UnavailableError(
                             "no connection id in data endpoint settings frame");
                       }
-                      if (!settings_metadata->alignment.has_value()) {
+                      if (frame.settings.alignment() == 0) {
                         return absl::UnavailableError(
                             "no alignment in data endpoint settings frame");
                       }
                       // Get connection-id and data-alignment for data endpoint.
                       self->connection_->connection_id_ =
-                          *settings_metadata->connection_id;
+                          frame.settings.connection_id();
                       self->connection_->data_alignment_ =
-                          *settings_metadata->alignment;
+                          frame.settings.alignment();
                     }
-                    return is_control_endpoint;
+                    return !frame.settings.data_channel();
                   });
             },
             [&frame_header]() {
@@ -305,9 +290,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 new ChaoticGoodServerTransport(
                     self->connection_->args(),
                     std::move(self->connection_->endpoint_), std::move(ret),
-                    self->connection_->listener_->event_engine_,
-                    std::move(self->connection_->hpack_parser_),
-                    std::move(self->connection_->hpack_compressor_)),
+                    self->connection_->listener_->event_engine_),
                 nullptr, self->connection_->args(), nullptr);
           }),
       // Set timeout for waiting data endpoint connect.
@@ -327,15 +310,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
   self->connection_->NewConnectionID();
   SettingsFrame frame;
-  frame.headers =
-      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                       absl::nullopt}
-          .ToMetadataBatch();
-  bool saw_encoding_errors = false;
+  frame.settings.set_data_channel(false);
+  frame.settings.set_connection_id(self->connection_->connection_id_);
   BufferPair write_buffer;
-  frame.Serialize(SerializeContext{1, &self->connection_->hpack_compressor_,
-                                   saw_encoding_errors},
-                  &write_buffer);
+  frame.Serialize(SerializeContext{1}, &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
@@ -346,15 +324,11 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     DataEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
   // Send data endpoint setting frame
   SettingsFrame frame;
-  frame.headers =
-      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                       self->connection_->data_alignment_}
-          .ToMetadataBatch();
-  bool saw_encoding_errors = false;
+  frame.settings.set_data_channel(true);
+  frame.settings.set_connection_id(self->connection_->connection_id_);
+  frame.settings.set_alignment(self->connection_->data_alignment_);
   BufferPair write_buffer;
-  frame.Serialize(SerializeContext{1, &self->connection_->hpack_compressor_,
-                                   saw_encoding_errors},
-                  &write_buffer);
+  frame.Serialize(SerializeContext{1}, &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),

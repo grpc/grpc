@@ -25,8 +25,6 @@
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -51,12 +49,8 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type,
                       uint32_t alignment) {
-  HPackCompressor hpack_compressor;
-  bool saw_encoding_errors = false;
   BufferPair serialized;
-  input.Serialize(
-      SerializeContext{alignment, &hpack_compressor, saw_encoding_errors},
-      &serialized);
+  input.Serialize(SerializeContext{alignment}, &serialized);
   CHECK_GE(serialized.control.Length(), FrameHeader::kFrameHeaderSize);
   uint8_t header_bytes[FrameHeader::kFrameHeaderSize];
   serialized.control.MoveFirstNBytesIntoBuffer(FrameHeader::kFrameHeaderSize,
@@ -70,15 +64,15 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type,
   }
   CHECK_EQ(header->type, expected_frame_type);
   T output;
-  HPackParser hpack_parser;
-  DeterministicBitGen bitgen;
   auto deser = output.Deserialize(
-      DeserializeContext{alignment, &hpack_parser, absl::BitGenRef(bitgen)},
+      DeserializeContext{
+          alignment,
+      },
       header.value(),
       std::move(header->payload_connection_id == 0 ? serialized.control
                                                    : serialized.data));
   CHECK_OK(deser);
-  if (!saw_encoding_errors) CHECK_EQ(input.ToString(), output.ToString());
+  CHECK_EQ(input.ToString(), output.ToString());
 }
 
 template <typename T>
@@ -86,11 +80,8 @@ void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers,
                           uint32_t alignment) {
   T parsed;
   ExecCtx exec_ctx;  // Initialized to get this_cpu() info in global_stat().
-  HPackParser hpack_parser;
-  DeterministicBitGen bitgen;
   auto deser = parsed.Deserialize(
-      DeserializeContext{alignment, &hpack_parser, absl::BitGenRef(bitgen)},
-      header,
+      DeserializeContext{alignment}, header,
       std::move(header.payload_connection_id == 0 ? buffers.control
                                                   : buffers.data));
   if (!deser.ok()) return;

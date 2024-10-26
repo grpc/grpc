@@ -120,7 +120,7 @@ TEST_F(TransportTest, AddOneStream) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      event_engine());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -186,7 +186,6 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   MockPromiseEndpoint control_endpoint(1000);
   MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
-      // 3, 1, 26, 8, 56, 0
       {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1, 26),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
                                           sizeof(kPathDemoServiceStep)),
@@ -203,7 +202,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine(), HPackParser(), HPackCompressor());
+      event_engine());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());

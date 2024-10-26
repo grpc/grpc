@@ -25,7 +25,6 @@
 #include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
@@ -40,13 +39,10 @@ namespace chaotic_good {
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
   ChaoticGoodTransport(PromiseEndpoint control_endpoint,
-                       PromiseEndpoint data_endpoint, HPackParser hpack_parser,
-                       HPackCompressor hpack_encoder, uint32_t encode_alignment,
+                       PromiseEndpoint data_endpoint, uint32_t encode_alignment,
                        uint32_t decode_alignment)
       : control_endpoint_(std::move(control_endpoint)),
         data_endpoint_(std::move(data_endpoint)),
-        encoder_(std::move(hpack_encoder)),
-        parser_(std::move(hpack_parser)),
         encode_alignment_(encode_alignment),
         decode_alignment_(decode_alignment) {
     // Enable RxMemoryAlignment and RPC receive coalescing after the transport
@@ -56,11 +52,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    bool saw_encoding_errors = false;
     BufferPair buffers;
-    frame.Serialize(
-        SerializeContext{encode_alignment_, &encoder_, saw_encoding_errors},
-        &buffers);
+    frame.Serialize(SerializeContext{encode_alignment_}, &buffers);
     // ignore encoding errors: they will be logged separately already
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: WriteFrame to:"
@@ -121,8 +114,6 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     auto s = frame.Deserialize(
         DeserializeContext{
             decode_alignment_,
-            &parser_,
-            bitgen_,
         },
         header, std::move(payload));
     GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -135,12 +126,9 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  private:
   PromiseEndpoint control_endpoint_;
   PromiseEndpoint data_endpoint_;
-  HPackCompressor encoder_;
-  HPackParser parser_;
   FrameHeader current_frame_header_;
   const uint32_t encode_alignment_;
   const uint32_t decode_alignment_;
-  absl::BitGen bitgen_;
 };
 
 }  // namespace chaotic_good

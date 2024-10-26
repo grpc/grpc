@@ -30,9 +30,7 @@ namespace {
 
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type, uint32_t alignment) {
-  HPackCompressor hpack_compressor;
-  bool saw_encoding_errors = false;
-  SerializeContext ser_ctx{alignment, &hpack_compressor, saw_encoding_errors};
+  SerializeContext ser_ctx{alignment};
   BufferPair output_buffer;
   input.Serialize(ser_ctx, &output_buffer);
   EXPECT_GE(output_buffer.control.Length(),
@@ -57,17 +55,12 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type, uint32_t al
     EXPECT_EQ(output_buffer.data.Length(), header->Padding(alignment));
   }
   T output;
-  HPackParser hpack_parser;
-  absl::BitGen bitgen;
-  DeserializeContext deser_ctx{alignment, &hpack_parser, absl::BitGenRef(bitgen)};
+  DeserializeContext deser_ctx{alignment};
   auto deser =
       output.Deserialize(deser_ctx, header.value(),
                       std::move(payload));
   CHECK_OK(deser);
-  if (!saw_encoding_errors) {
-    output.headers->Remove(GrpcStatusFromWire());
-    CHECK_EQ(output.ToString(), input.ToString());
-  }
+  CHECK_EQ(output.ToString(), input.ToString());
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

@@ -32,7 +32,6 @@
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -170,7 +169,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
             md.has_value(),
             [&md, stream_id, &outgoing_frames, &call_initiator, this]() {
               ServerInitialMetadataFrame frame;
-              frame.headers = std::move(*md);
+              frame.headers = ServerMetadataProtoFromGrpc(**md);
               frame.stream_id = stream_id;
               return TrySeq(
                   SendFrame(std::move(frame), outgoing_frames, call_initiator),
@@ -199,7 +198,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
           [this, stream_id, outgoing_frames,
            call_initiator](ServerMetadataHandle md) mutable {
             ServerTrailingMetadataFrame frame;
-            frame.trailers = std::move(md);
+            frame.trailers = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return SendFrame(std::move(frame), outgoing_frames, call_initiator);
           }));
@@ -215,12 +214,15 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   if (!client_initial_metadata_frame.ok()) {
     return client_initial_metadata_frame.status();
   }
+  auto md = ClientMetadataGrpcFromProto(client_initial_metadata_frame->headers);
+  if (!md.ok()) {
+    return md.status();
+  }
   RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
   absl::optional<CallInitiator> call_initiator;
-  auto call = MakeCallPair(std::move(client_initial_metadata_frame->headers),
-                           std::move(arena));
+  auto call = MakeCallPair(std::move(*md), std::move(arena));
   call_initiator.emplace(std::move(call.initiator));
   const auto stream_id = client_initial_metadata_frame->stream_id;
   auto add_result = NewStream(stream_id, *call_initiator);
@@ -313,8 +315,7 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, PromiseEndpoint control_endpoint,
     PromiseEndpoint data_endpoint,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    HPackParser hpack_parser, HPackCompressor hpack_encoder)
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -323,8 +324,7 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
       event_engine_(event_engine),
       outgoing_frames_(4) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoint),
-      std::move(hpack_parser), std::move(hpack_encoder), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoint), 64, 64);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

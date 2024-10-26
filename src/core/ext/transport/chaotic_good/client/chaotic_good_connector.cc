@@ -28,10 +28,10 @@
 #include "absl/status/statusor.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -113,15 +113,11 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
     RefCountedPtr<ChaoticGoodConnector> self) {
   // Serialize setting frame.
   SettingsFrame frame;
-  // frame.header set connectiion_type: control
-  frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kData,
-                                   self->connection_id_, kDataAlignmentBytes}
-                      .ToMetadataBatch();
-  bool saw_encoding_errors = false;
+  frame.settings.set_data_channel(true);
+  frame.settings.set_connection_id(self->connection_id_);
+  frame.settings.set_alignment(kDataAlignmentBytes);
   BufferPair write_buffer;
-  frame.Serialize(
-      SerializeContext{1, &self->hpack_compressor_, saw_encoding_errors},
-      &write_buffer);
+  frame.Serialize(SerializeContext{1}, &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return self->data_endpoint_.Write(std::move(write_buffer.control));
 }
@@ -193,23 +189,13 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                   // Deserialize setting frame.
                   SettingsFrame frame;
                   auto status = frame.Deserialize(
-                      DeserializeContext{1, &self->hpack_parser_,
-                                         absl::BitGenRef(self->bitgen_)},
-                      frame_header, std::move(buffer));
+                      DeserializeContext{1}, frame_header, std::move(buffer));
                   if (!status.ok()) return status;
-                  if (frame.headers == nullptr) {
-                    return absl::UnavailableError("no settings headers");
-                  }
-                  auto settings_metadata =
-                      SettingsMetadata::FromMetadataBatch(*frame.headers);
-                  if (!settings_metadata.ok()) {
-                    return settings_metadata.status();
-                  }
-                  if (!settings_metadata->connection_id.has_value()) {
+                  if (frame.settings.connection_id().empty()) {
                     return absl::UnavailableError(
                         "no connection id in settings frame");
                   }
-                  self->connection_id_ = *settings_metadata->connection_id;
+                  self->connection_id_ = frame.settings.connection_id();
                   return absl::OkStatus();
                 },
                 WaitForDataEndpointSetup(self)),
@@ -222,14 +208,9 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   // Serialize setting frame.
   SettingsFrame frame;
   // frame.header set connectiion_type: control
-  frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kControl,
-                                   absl::nullopt, absl::nullopt}
-                      .ToMetadataBatch();
-  bool saw_encoding_errors = false;
+  frame.settings.set_data_channel(false);
   BufferPair write_buffer;
-  frame.Serialize(
-      SerializeContext{1, &self->hpack_compressor_, saw_encoding_errors},
-      &write_buffer);
+  frame.Serialize(SerializeContext{1}, &write_buffer);
   // ignore encoding errors: they will be logged separately already
   return self->control_endpoint_.Write(std::move(write_buffer.control));
 }
@@ -333,8 +314,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
                 std::move(self->data_endpoint_), self->args_.channel_args,
-                self->event_engine_, std::move(self->hpack_parser_),
-                std::move(self->hpack_compressor_));
+                self->event_engine_);
             self->result_->channel_args = self->args_.channel_args;
             ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
                          status);
