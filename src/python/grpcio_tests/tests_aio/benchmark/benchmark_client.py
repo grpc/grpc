@@ -47,7 +47,7 @@ class BenchmarkClient(abc.ABC):
     """Benchmark client interface that exposes a non-blocking send_request()."""
 
     _response_callbacks: List[Callable]
-    
+
     def __init__(
         self,
         address: str,

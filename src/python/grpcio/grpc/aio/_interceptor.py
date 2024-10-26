@@ -27,8 +27,8 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Union,
     Tuple,
+    Union,
 )
 
 import grpc
@@ -43,10 +43,10 @@ from ._call import UnaryUnaryCall
 from ._call import _API_STYLE_ERROR
 from ._call import _RPC_ALREADY_FINISHED_DETAILS
 from ._call import _RPC_HALF_CLOSED_DETAILS
+from ._constants import EOF
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
-from ._typing import EOFType
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
@@ -117,7 +117,7 @@ class ClientCallDetails(
 
     method: bytes
     timeout: Optional[float]
-    metadata: Optional[Sequence[Tuple[Union[str, bytes], Union[str, bytes]]]]
+    metadata: MetadataType
     credentials: Optional[grpc.CallCredentials]
     wait_for_ready: Optional[bool]
 
@@ -137,7 +137,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> Union[UnaryUnaryCall, ResponseType]:
+    ) -> UnaryUnaryCall:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -500,7 +500,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             )
         return self._response_aiter
 
-    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
+    async def read(self) -> Union[EOF, ResponseType]:  # type: ignore
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -627,7 +627,7 @@ class InterceptedUnaryUnaryCall(
     def __init__(
         self,
         interceptors: Sequence[UnaryUnaryClientInterceptor],
-        request: RequestType,
+        request: RequestType,  # type: ignore
         timeout: Optional[float],
         metadata: MetadataType,
         credentials: Optional[grpc.CallCredentials],
@@ -726,7 +726,7 @@ class InterceptedUnaryStreamCall(
     def __init__(
         self,
         interceptors: Sequence[UnaryStreamClientInterceptor],
-        request: RequestType,
+        request: RequestType,  # type: ignore
         timeout: Optional[float],
         metadata: MetadataType,
         credentials: Optional[grpc.CallCredentials],
@@ -1060,7 +1060,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
 
     _response: ResponseType  # type: ignore
 
-    def __init__(self, response: ResponseType) -> None:
+    def __init__(self, response: ResponseType) -> None:  # type: ignore
         self._response = response
 
     def cancel(self) -> bool:
@@ -1158,7 +1158,7 @@ class UnaryStreamCallResponseIterator(
 ):
     """UnaryStreamCall class wich uses an alternative response iterator."""
 
-    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
+    async def read(self) -> Union[EOF, ResponseType]:  # type: ignore
         # Behind the scenes everyting goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
@@ -1169,12 +1169,12 @@ class StreamStreamCallResponseIterator(
 ):
     """StreamStreamCall class wich uses an alternative response iterator."""
 
-    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
+    async def read(self) -> Union[EOF, ResponseType]:  # type: ignore
         # Behind the scenes everyting goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
-    async def write(self, request: RequestType) -> None:
+    async def write(self, request: RequestType) -> None:  # type: ignore
         # Behind the scenes everyting goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.

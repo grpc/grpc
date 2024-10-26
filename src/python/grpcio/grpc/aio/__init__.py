@@ -22,7 +22,6 @@ from typing import Any, Optional, Sequence, Tuple
 import grpc
 from grpc._cython.cygrpc import AbortError
 from grpc._cython.cygrpc import BaseError
-from grpc._cython.cygrpc import EOF
 from grpc._cython.cygrpc import InternalError
 from grpc._cython.cygrpc import UsageError
 from grpc._cython.cygrpc import init_grpc_aio
@@ -44,6 +43,7 @@ from ._base_server import ServicerContext
 from ._call import AioRpcError
 from ._channel import insecure_channel
 from ._channel import secure_channel
+from ._constants import EOF
 from ._interceptor import ClientCallDetails
 from ._interceptor import ClientInterceptor
 from ._interceptor import InterceptedUnaryUnaryCall

@@ -24,9 +24,9 @@ from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 
+from ._constants import EOF
 from ._metadata import Metadata
 from ._typing import DoneCallbackType
-from ._typing import EOFType
 from ._typing import RequestType
 from ._typing import ResponseType
 
@@ -163,7 +163,7 @@ class UnaryStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
+    async def read(self) -> Union[EOF, ResponseType]:
         """Reads one message from the stream.
 
         Read operations must be serialized when called from multiple
@@ -223,7 +223,7 @@ class StreamStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]: # type: ignore
+    async def read(self) -> Union[EOF, ResponseType]:
         """Reads one message from the stream.
 
         Read operations must be serialized when called from multiple

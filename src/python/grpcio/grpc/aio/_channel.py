@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Generic, Iterable, List, Optional, Sequence, Union, cast
 
 import grpc
 from grpc import _common
@@ -44,6 +44,7 @@ from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
+from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
@@ -79,7 +80,7 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable:
+class _BaseMultiCallable(Generic[RequestType, ResponseType]):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -90,7 +91,7 @@ class _BaseMultiCallable:
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
-    _interceptors: Optional[Sequence[ClientInterceptor]]
+    _interceptors: Sequence[ClientInterceptor]
     _references: List[Any]
 
     # pylint: disable=too-many-arguments
@@ -100,7 +101,7 @@ class _BaseMultiCallable:
         method: bytes,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-        interceptors: Optional[Sequence[ClientInterceptor]],
+        interceptors: Sequence[ClientInterceptor],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
@@ -131,10 +132,10 @@ class _BaseMultiCallable:
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable
+    _BaseMultiCallable,
+    _base_channel.UnaryUnaryMultiCallable,
+    Generic[RequestType, ResponseType],
 ):
-    _interceptors: Sequence[UnaryUnaryClientInterceptor]
-
     def __call__(
         self,
         request: RequestType,
@@ -162,8 +163,11 @@ class UnaryUnaryMultiCallable(
                 self._loop,
             )
         else:
+            _unary_unary_interceptors = cast(
+                List[UnaryUnaryClientInterceptor], self._interceptors
+            )
             call = InterceptedUnaryUnaryCall(
-                self._interceptors,
+                _unary_unary_interceptors,
                 request,
                 timeout,
                 metadata,
@@ -180,10 +184,10 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable
+    _BaseMultiCallable,
+    _base_channel.UnaryStreamMultiCallable,
+    Generic[RequestType, ResponseType],
 ):
-    _interceptors: Sequence[UnaryStreamClientInterceptor]
-
     def __call__(
         self,
         request: RequestType,
@@ -212,8 +216,11 @@ class UnaryStreamMultiCallable(
                 self._loop,
             )
         else:
+            _unary_stream_interceptors = cast(
+                List[UnaryStreamClientInterceptor], self._interceptors
+            )
             call = InterceptedUnaryStreamCall(
-                self._interceptors,
+                _unary_stream_interceptors,
                 request,
                 timeout,
                 metadata,
@@ -230,10 +237,10 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable
+    _BaseMultiCallable,
+    _base_channel.StreamUnaryMultiCallable,
+    Generic[RequestType, ResponseType],
 ):
-    _interceptors: Sequence[StreamUnaryClientInterceptor]
-
     def __call__(
         self,
         request_iterator: Optional[RequestIterableType] = None,
@@ -261,8 +268,11 @@ class StreamUnaryMultiCallable(
                 self._loop,
             )
         else:
+            _stream_unary_interceptors = cast(
+                List[StreamUnaryClientInterceptor], self._interceptors
+            )
             call = InterceptedStreamUnaryCall(
-                self._interceptors,
+                _stream_unary_interceptors,
                 request_iterator,
                 timeout,
                 metadata,
@@ -279,10 +289,10 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable
+    _BaseMultiCallable,
+    _base_channel.StreamStreamMultiCallable,
+    Generic[RequestType, ResponseType],
 ):
-    _interceptors: Sequence[StreamStreamClientInterceptor]
-
     def __call__(
         self,
         request_iterator: Optional[RequestIterableType] = None,
@@ -310,8 +320,11 @@ class StreamStreamMultiCallable(
                 self._loop,
             )
         else:
+            _stream_stream_interceptors = cast(
+                List[StreamStreamClientInterceptor], self._interceptors
+            )
             call = InterceptedStreamStreamCall(
-                self._interceptors,
+                _stream_stream_interceptors,
                 request_iterator,
                 timeout,
                 metadata,
