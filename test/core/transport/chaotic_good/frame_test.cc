@@ -29,14 +29,15 @@ namespace chaotic_good {
 namespace {
 
 template <typename T>
-void AssertRoundTrips(const T& input, FrameType expected_frame_type, uint32_t alignment) {
+void AssertRoundTrips(const T& input, FrameType expected_frame_type,
+                      uint32_t alignment) {
   SerializeContext ser_ctx{alignment};
   BufferPair output_buffer;
   input.Serialize(ser_ctx, &output_buffer);
-  EXPECT_GE(output_buffer.control.Length(),
-           FrameHeader::kFrameHeaderSize);
+  EXPECT_GE(output_buffer.control.Length(), FrameHeader::kFrameHeaderSize);
   uint8_t header_bytes[FrameHeader::kFrameHeaderSize];
-  output_buffer.control.MoveFirstNBytesIntoBuffer(FrameHeader::kFrameHeaderSize, header_bytes);
+  output_buffer.control.MoveFirstNBytesIntoBuffer(FrameHeader::kFrameHeaderSize,
+                                                  header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
     LOG(FATAL) << "Failed to parse header: " << header.status();
@@ -50,15 +51,15 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type, uint32_t al
     payload = std::move(output_buffer.control);
     EXPECT_EQ(output_buffer.data.Length(), 0);
   } else {
-    output_buffer.data.MoveFirstNBytesIntoSliceBuffer(header->payload_length, payload);
+    output_buffer.data.MoveFirstNBytesIntoSliceBuffer(header->payload_length,
+                                                      payload);
     EXPECT_EQ(output_buffer.control.Length(), 0);
     EXPECT_EQ(output_buffer.data.Length(), header->Padding(alignment));
   }
   T output;
   DeserializeContext deser_ctx{alignment};
   auto deser =
-      output.Deserialize(deser_ctx, header.value(),
-                      std::move(payload));
+      output.Deserialize(deser_ctx, header.value(), std::move(payload));
   CHECK_OK(deser);
   CHECK_EQ(output.ToString(), input.ToString());
 }

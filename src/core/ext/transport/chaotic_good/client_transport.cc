@@ -276,13 +276,13 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
     return Map(outgoing_frames.Send(std::move(frame)),
                BooleanSuccessToTransportError);
   };
-  auto send_fragment_acked = [stream_id,
-                              outgoing_frames = outgoing_frames_.MakeSender()](
-                                 auto frame) mutable {
-    frame.stream_id = stream_id;
-    return Map(outgoing_frames.SendAcked(std::move(frame)),
-               BooleanSuccessToTransportError);
-  };
+  auto send_fragment_acked =
+      [stream_id,
+       outgoing_frames = outgoing_frames_.MakeSender()](auto frame) mutable {
+        frame.stream_id = stream_id;
+        return Map(outgoing_frames.SendAcked(std::move(frame)),
+                   BooleanSuccessToTransportError);
+      };
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",
       TrySeq(

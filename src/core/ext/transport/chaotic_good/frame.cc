@@ -187,8 +187,8 @@ const NoDestruct<Slice> kZeroSlice{[] {
   return slice;
 }()};
 
-void AddFrame(FrameType frame_type, uint32_t stream_id, const SliceBuffer& payload,
-              uint32_t alignment, BufferPair* out) {
+void AddFrame(FrameType frame_type, uint32_t stream_id,
+              const SliceBuffer& payload, uint32_t alignment, BufferPair* out) {
   FrameHeader header;
   header.type = frame_type;
   header.stream_id = stream_id;
@@ -207,8 +207,7 @@ void AddFrame(FrameType frame_type, uint32_t stream_id, const SliceBuffer& paylo
 template <typename F>
 void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
                     BufferPair* out) {
-  const size_t header_slice = out->control.AppendIndexed(
-      kZeroHeader->Copy());
+  const size_t header_slice = out->control.AppendIndexed(kZeroHeader->Copy());
   const size_t size_before = out->control.Length();
   gen_frame(out->control);
   const size_t size_after = out->control.Length();
@@ -264,9 +263,9 @@ std::string SettingsFrame::ToString() const {
   return settings.ShortDebugString();
 }
 
-absl::Status ClientInitialMetadataFrame::Deserialize(const DeserializeContext& ctx,
-                                                     const FrameHeader& header,
-                                                     SliceBuffer payload) {
+absl::Status ClientInitialMetadataFrame::Deserialize(
+    const DeserializeContext& ctx, const FrameHeader& header,
+    SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kClientInitialMetadata);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -323,9 +322,11 @@ absl::Status MessageFrame::Deserialize(const DeserializeContext& ctx,
   return absl::OkStatus();
 }
 
-void MessageFrame::Serialize(const SerializeContext& ctx, BufferPair* out) const {
+void MessageFrame::Serialize(const SerializeContext& ctx,
+                             BufferPair* out) const {
   CHECK_NE(stream_id, 0u);
-  AddFrame(FrameType::kMessage, stream_id, *message->payload(), ctx.alignment, out);
+  AddFrame(FrameType::kMessage, stream_id, *message->payload(), ctx.alignment,
+           out);
 }
 
 std::string MessageFrame::ToString() const {
@@ -337,9 +338,9 @@ std::string MessageFrame::ToString() const {
   return out;
 }
 
-absl::Status ServerInitialMetadataFrame::Deserialize(const DeserializeContext& ctx,
-                                                     const FrameHeader& header,
-                                                     SliceBuffer payload) {
+absl::Status ServerInitialMetadataFrame::Deserialize(
+    const DeserializeContext& ctx, const FrameHeader& header,
+    SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerInitialMetadata);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -361,9 +362,9 @@ std::string ServerInitialMetadataFrame::ToString() const {
                       ", headers=", headers.ShortDebugString(), "}");
 }
 
-absl::Status ServerTrailingMetadataFrame::Deserialize(const DeserializeContext& ctx,
-                                                      const FrameHeader& header,
-                                                      SliceBuffer payload) {
+absl::Status ServerTrailingMetadataFrame::Deserialize(
+    const DeserializeContext& ctx, const FrameHeader& header,
+    SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerTrailingMetadata);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -390,20 +391,20 @@ absl::Status CancelFrame::Deserialize(const DeserializeContext& ctx,
                                       SliceBuffer payload) {
   // Ensure the frame type is Cancel
   CHECK_EQ(header.type, FrameType::kCancel);
-  
+
   // Ensure the stream_id is non-zero
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
   }
-  
+
   // Ensure there is no payload
   if (payload.Length() != 0) {
     return absl::InternalError("Unexpected payload for Cancel frame");
   }
-  
+
   // Set the stream_id
   stream_id = header.stream_id;
-  
+
   return absl::OkStatus();
 }
 
@@ -411,12 +412,12 @@ void CancelFrame::Serialize(const SerializeContext& ctx,
                             BufferPair* out) const {
   // Ensure the stream_id is non-zero
   CHECK_NE(stream_id, 0u);
-  
+
   // Create a FrameHeader for the Cancel frame
   FrameHeader header;
   header.type = FrameType::kCancel;
   header.stream_id = stream_id;
-  
+
   // Serialize the header into the output buffer
   header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
 }
