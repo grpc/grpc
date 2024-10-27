@@ -18,11 +18,13 @@
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 
 #include "absl/types/optional.h"
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -50,6 +52,10 @@ inline absl::optional<uint32_t> ParseUInt32Value(
   if (proto == nullptr) return absl::nullopt;
   return google_protobuf_UInt32Value_value(proto);
 }
+
+// Returns the IP address in URI form.
+absl::optional<grpc_resolved_address> ParseXdsAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors);
 
 CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,

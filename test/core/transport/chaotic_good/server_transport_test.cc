@@ -137,17 +137,16 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                 return Empty{};
               },
               [handler]() mutable { return handler.PullMessage(); },
-              [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              [](ClientToServerNextMessage msg) {
                 EXPECT_TRUE(msg.ok());
-                EXPECT_TRUE(msg.value().has_value());
-                EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                          "12345678");
+                EXPECT_TRUE(msg.has_value());
+                EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
                 return Empty{};
               },
               [handler]() mutable { return handler.PullMessage(); },
-              [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              [](ClientToServerNextMessage msg) {
                 EXPECT_TRUE(msg.ok());
-                EXPECT_FALSE(msg.value().has_value());
+                EXPECT_FALSE(msg.has_value());
                 return Empty{};
               },
               [handler]() mutable {

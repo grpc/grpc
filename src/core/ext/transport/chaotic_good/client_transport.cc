@@ -36,6 +36,8 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -199,6 +201,15 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4) {
+  // Set up TCP tracer if enabled.
+  if (args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false)) {
+    auto* epte = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::TcpTraceExtension>(
+        data_endpoint.GetEventEngineEndpoint().get());
+    if (epte != nullptr) {
+      epte->InitializeAndReturnTcpTracer();
+    }
+  }
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));
@@ -255,6 +266,13 @@ uint32_t ChaoticGoodClientTransport::MakeStream(CallHandler call_handler) {
   return stream_id;
 }
 
+namespace {
+absl::Status BooleanSuccessToTransportError(bool success) {
+  return success ? absl::OkStatus()
+                 : absl::UnavailableError("Transport closed.");
+}
+}  // namespace
+
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                                                   CallHandler call_handler) {
   auto send_fragment = [stream_id,
@@ -262,13 +280,14 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                            ClientFragmentFrame frame) mutable {
     frame.stream_id = stream_id;
     return Map(outgoing_frames.Send(std::move(frame)),
-               [](bool success) -> absl::Status {
-                 if (!success) {
-                   // Failed to send outgoing frame.
-                   return absl::UnavailableError("Transport closed.");
-                 }
-                 return absl::OkStatus();
-               });
+               BooleanSuccessToTransportError);
+  };
+  auto send_fragment_acked = [stream_id,
+                              outgoing_frames = outgoing_frames_.MakeSender()](
+                                 ClientFragmentFrame frame) mutable {
+    frame.stream_id = stream_id;
+    return Map(outgoing_frames.SendAcked(std::move(frame)),
+               BooleanSuccessToTransportError);
   };
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",
@@ -285,7 +304,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
           },
           // Continuously send client frame with client to server messages.
           ForEach(OutgoingMessages(call_handler),
-                  [send_fragment, aligned_bytes = aligned_bytes_](
+                  [send_fragment_acked, aligned_bytes = aligned_bytes_](
                       MessageHandle message) mutable {
                     ClientFragmentFrame frame;
                     // Construct frame header (flags, header_length and
@@ -299,7 +318,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                     CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
                     frame.message = FragmentMessage(std::move(message), padding,
                                                     message_length);
-                    return send_fragment(std::move(frame));
+                    return send_fragment_acked(std::move(frame));
                   }),
           [send_fragment]() mutable {
             ClientFragmentFrame frame;

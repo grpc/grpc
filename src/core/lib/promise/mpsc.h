@@ -76,14 +76,19 @@ class Center : public RefCounted<Center<T>> {
     return true;
   }
 
-  // Returns the batch number that the item was sent in, or kClosedBatch if the
-  // pipe is closed.
-  uint64_t Send(T t) {
+  // Return value:
+  //  - if the pipe is closed, returns kClosedBatch
+  //  - if await_receipt is false, returns the batch number the item was sent
+  //  in.
+  //  - if await_receipt is true, returns the first sending batch number that
+  //  guarantees the item has been received.
+  uint64_t Send(T t, bool await_receipt) {
     ReleasableMutexLock lock(&mu_);
     if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
-    const uint64_t batch = queue_.size() <= max_queued_ ? batch_ : batch_ + 1;
+    const uint64_t batch =
+        (!await_receipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
     return batch;
@@ -135,12 +140,25 @@ class MpscSender {
   // Return a promise that will send one item.
   // Resolves to true if sent, false if the receiver was closed (and the value
   // will never be successfully sent).
-  auto Send(T t) {
+  auto Send(T t) { return SendGeneric<false>(std::move(t)); }
+
+  // Per send, but do not resolve until the item has been received by the
+  // receiver.
+  auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
+
+  bool UnbufferedImmediateSend(T t) {
+    return center_->Send(std::move(t), false) !=
+           mpscpipe_detail::Center<T>::kClosedBatch;
+  }
+
+ private:
+  template <bool kAwaitReceipt>
+  auto SendGeneric(T t) {
     return [center = center_, t = std::move(t),
             batch = uint64_t(0)]() mutable -> Poll<bool> {
       if (center == nullptr) return false;
       if (batch == 0) {
-        batch = center->Send(std::move(t));
+        batch = center->Send(std::move(t), kAwaitReceipt);
         CHECK_NE(batch, 0u);
         if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
       }
@@ -150,12 +168,6 @@ class MpscSender {
     };
   }
 
-  bool UnbufferedImmediateSend(T t) {
-    return center_->Send(std::move(t)) !=
-           mpscpipe_detail::Center<T>::kClosedBatch;
-  }
-
- private:
   friend class MpscReceiver<T>;
   explicit MpscSender(RefCountedPtr<mpscpipe_detail::Center<T>> center)
       : center_(std::move(center)) {}

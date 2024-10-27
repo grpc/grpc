@@ -14,10 +14,8 @@
 
 from collections import defaultdict
 import datetime
-import json
 import logging
 import os
-import random
 import sys
 import time
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -258,68 +256,6 @@ class CSMObservabilityPluginTest(unittest.TestCase):
                 "xds://traffic-director-global.xds.googleapis.com/foo.bar"
             )
         )
-
-    def testGetMeshIdFromConfig(self):
-        config_json = {
-            "node": {
-                "id": "projects/12345/networks/mesh:test_mesh_id/nodes/abcdefg"
-            }
-        }
-        config_str = json.dumps(config_json)
-        with mock.patch.dict(
-            os.environ, {"GRPC_XDS_BOOTSTRAP_CONFIG": config_str}
-        ):
-            csm_plugin = CsmOpenTelemetryPlugin(
-                meter_provider=self._provider,
-            )
-            csm_label_injector = csm_plugin.plugin_options[
-                0
-            ].get_label_injector()
-            additional_labels = csm_label_injector.get_additional_labels(
-                include_exchange_labels=True
-            )
-            self.assertEqual(additional_labels["csm.mesh_id"], "test_mesh_id")
-
-    def testGetMeshIdFromFile(self):
-        config_json = {
-            "node": {
-                "id": "projects/12345/networks/mesh:test_mesh_id/nodes/abcdefg"
-            }
-        }
-        config_file_path = "/tmp/" + str(random.randint(0, 100000))
-        with open(config_file_path, "w", encoding="utf-8") as f:
-            f.write(json.dumps(config_json))
-
-        with mock.patch.dict(
-            os.environ, {"GRPC_XDS_BOOTSTRAP": config_file_path}
-        ):
-            csm_plugin = CsmOpenTelemetryPlugin(
-                meter_provider=self._provider,
-            )
-            csm_label_injector = csm_plugin.plugin_options[
-                0
-            ].get_label_injector()
-            additional_labels = csm_label_injector.get_additional_labels(
-                include_exchange_labels=True
-            )
-            self.assertEqual(additional_labels["csm.mesh_id"], "test_mesh_id")
-
-    def testGetMeshIdFromInvalidConfig(self):
-        config_json = {"node": {"id": "12345"}}
-        config_str = json.dumps(config_json)
-        with mock.patch.dict(
-            os.environ, {"GRPC_XDS_BOOTSTRAP_CONFIG": config_str}
-        ):
-            csm_plugin = CsmOpenTelemetryPlugin(
-                meter_provider=self._provider,
-            )
-            csm_label_injector = csm_plugin.plugin_options[
-                0
-            ].get_label_injector()
-            additional_labels = csm_label_injector.get_additional_labels(
-                include_exchange_labels=True
-            )
-            self.assertEqual(additional_labels["csm.mesh_id"], "unknown")
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
         self._validate_server_metrics_names(metric_names)
