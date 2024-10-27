@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.68.0-dev'
+  version = '1.69.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -38,9 +38,9 @@ Pod::Spec.new do |s|
   # which was released in Cocoapods v1.2.0.
   s.cocoapods_version = '>= 1.2.0'
 
-  s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '12.0'
+  s.ios.deployment_target = '11.0'
+  s.osx.deployment_target = '10.14'
+  s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
 
@@ -627,6 +627,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb.h',
+                      'src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.h',
@@ -1036,6 +1039,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c',
@@ -1207,6 +1212,8 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/http_connect/http_connect_handshaker.h',
                       'src/core/handshaker/http_connect/http_proxy_mapper.cc',
                       'src/core/handshaker/http_connect/http_proxy_mapper.h',
+                      'src/core/handshaker/http_connect/xds_http_proxy_mapper.cc',
+                      'src/core/handshaker/http_connect/xds_http_proxy_mapper.h',
                       'src/core/handshaker/proxy_mapper.h',
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
@@ -1820,7 +1827,6 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/xds/xds_wrr_locality.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc',
                       'src/core/plugin_registry/grpc_plugin_registry_extra.cc',
-                      'src/core/resolver/binder/binder_resolver.cc',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
@@ -2641,6 +2647,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb.h',
+                              'src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
@@ -2889,6 +2897,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.h',
@@ -2975,6 +2984,7 @@ Pod::Spec.new do |s|
                               'src/core/handshaker/handshaker_registry.h',
                               'src/core/handshaker/http_connect/http_connect_handshaker.h',
                               'src/core/handshaker/http_connect/http_proxy_mapper.h',
+                              'src/core/handshaker/http_connect/xds_http_proxy_mapper.h',
                               'src/core/handshaker/proxy_mapper.h',
                               'src/core/handshaker/proxy_mapper_registry.h',
                               'src/core/handshaker/security/secure_endpoint.h',

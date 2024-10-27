@@ -40,10 +40,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/env.h"
-#include "src/core/util/json/json_args.h"
-#include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/load_file.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "upb/base/string_view.h"
 
@@ -104,58 +100,6 @@ google_protobuf_Struct* DecodeMetadata(grpc_core::Slice slice,
                                         decoded_metadata.size(), arena);
   }
   return nullptr;
-}
-
-// A minimal class for helping with the information we need from the xDS
-// bootstrap file for GSM Observability reasons.
-class XdsBootstrapForGSM {
- public:
-  class Node {
-   public:
-    const std::string& id() const { return id_; }
-
-    static const grpc_core::JsonLoaderInterface* JsonLoader(
-        const grpc_core::JsonArgs&) {
-      static const auto* loader =
-          grpc_core::JsonObjectLoader<Node>().Field("id", &Node::id_).Finish();
-      return loader;
-    }
-
-   private:
-    std::string id_;
-  };
-
-  const Node& node() const { return node_; }
-
-  static const grpc_core::JsonLoaderInterface* JsonLoader(
-      const grpc_core::JsonArgs&) {
-    static const auto* loader =
-        grpc_core::JsonObjectLoader<XdsBootstrapForGSM>()
-            .Field("node", &XdsBootstrapForGSM::node_)
-            .Finish();
-    return loader;
-  }
-
- private:
-  Node node_;
-};
-
-// Returns an empty string if no bootstrap config is found.
-std::string GetXdsBootstrapContents() {
-  // First, try GRPC_XDS_BOOTSTRAP env var.
-  auto path = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP");
-  if (path.has_value()) {
-    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/true);
-    if (!contents.ok()) return "";
-    return std::string(contents->as_string_view());
-  }
-  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
-  auto env_config = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
-  if (env_config.has_value()) {
-    return std::move(*env_config);
-  }
-  // No bootstrap config found.
-  return "";
 }
 
 MeshLabelsIterable::GcpResourceType StringToGcpResourceType(
@@ -308,31 +252,6 @@ size_t MeshLabelsIterable::Size() const {
          GetAttributesForType(remote_type_).size();
 }
 
-// Returns the mesh ID by reading and parsing the bootstrap file. Returns
-// "unknown" if for some reason, mesh ID could not be figured out.
-std::string GetMeshId() {
-  auto json = grpc_core::JsonParse(GetXdsBootstrapContents());
-  if (!json.ok()) {
-    return "unknown";
-  }
-  auto bootstrap = grpc_core::LoadFromJson<XdsBootstrapForGSM>(*json);
-  if (!bootstrap.ok()) {
-    return "unknown";
-  }
-  // The format of the Node ID is -
-  // projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
-  std::vector<absl::string_view> parts =
-      absl::StrSplit(bootstrap->node().id(), '/');
-  if (parts.size() != 6) {
-    return "unknown";
-  }
-  absl::string_view mesh_id = parts[3];
-  if (!absl::ConsumePrefix(&mesh_id, "mesh:")) {
-    return "unknown";
-  }
-  return std::string(mesh_id);
-}
-
 //
 // ServiceMeshLabelsInjector
 //
@@ -397,7 +316,8 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // from the peer.
   local_labels_.emplace_back(kCanonicalServiceAttribute,
                              canonical_service_value);
-  local_labels_.emplace_back(kMeshIdAttribute, GetMeshId());
+  local_labels_.emplace_back(
+      kMeshIdAttribute, grpc_core::GetEnv("CSM_MESH_ID").value_or("unknown"));
 }
 
 std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(

@@ -69,9 +69,9 @@ Json::Object ValidateFilterConfig(
           envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_cache_size(
               cache_config))
           .value_or(10);
-  if (cache_size == 0 || cache_size >= INT64_MAX) {
+  if (cache_size == 0) {
     ValidationErrors::ScopedField field(errors, ".cache_config.cache_size");
-    errors->AddError("must be in the range (0, INT64_MAX)");
+    errors->AddError("must be greater than 0");
   }
   config["cache_size"] = Json::FromNumber(cache_size);
   return config;

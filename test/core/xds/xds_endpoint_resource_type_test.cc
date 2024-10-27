@@ -29,6 +29,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "envoy/config/core/v3/address.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/health_check.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/type/v3/percent.pb.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -46,11 +51,6 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/proto/grpc/testing/xds/v3/address.pb.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
-#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
-#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
@@ -1249,6 +1249,242 @@ TEST_F(XdsEndpointTest, EndpointHealthStatus) {
   EXPECT_EQ(*addr, "127.0.0.2:443");
   EXPECT_EQ(address->args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS),
             XdsHealthStatus::kDraining);
+}
+
+TEST_F(XdsEndpointTest, HttpProxyInEndpoint) {
+  testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* lb_endpoint = locality->add_lb_endpoints();
+  envoy::config::core::v3::Address address_proto;
+  auto* socket_address = address_proto.mutable_socket_address();
+  socket_address->set_address("1.2.3.4");
+  socket_address->set_port_value(123);
+  auto& typed_metadata_map =
+      *lb_endpoint->mutable_metadata()->mutable_typed_filter_metadata();
+  typed_metadata_map["envoy.http11_proxy_transport_socket.proxy_address"]
+      .PackFrom(address_proto);
+  socket_address = lb_endpoint->mutable_endpoint()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.priorities.size(), 1);
+  const auto& priority = resource.priorities[0];
+  ASSERT_EQ(priority.localities.size(), 1);
+  const auto& p = *priority.localities.begin();
+  ASSERT_EQ(p.first, p.second.name.get());
+  EXPECT_EQ(p.first->region(), "myregion");
+  EXPECT_EQ(p.first->zone(), "myzone");
+  EXPECT_EQ(p.first->sub_zone(), "mysubzone");
+  EXPECT_EQ(p.second.lb_weight, 1);
+  ASSERT_EQ(p.second.endpoints.size(), 1);
+  const auto& address = p.second.endpoints.front();
+  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  EXPECT_EQ(*addr, "127.0.0.1:443");
+  EXPECT_EQ(address.args(), ChannelArgs()
+                                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                                     XdsHealthStatus::HealthStatus::kUnknown)
+                                .Set(GRPC_ARG_XDS_HTTP_PROXY, "1.2.3.4:123"));
+  EXPECT_EQ(resource.drop_config, nullptr);
+}
+
+TEST_F(XdsEndpointTest, HttpProxyInLocality) {
+  testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  envoy::config::core::v3::Address address_proto;
+  auto* socket_address = address_proto.mutable_socket_address();
+  socket_address->set_address("1.2.3.4");
+  socket_address->set_port_value(123);
+  auto& typed_metadata_map =
+      *locality->mutable_metadata()->mutable_typed_filter_metadata();
+  typed_metadata_map["envoy.http11_proxy_transport_socket.proxy_address"]
+      .PackFrom(address_proto);
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* lb_endpoint = locality->add_lb_endpoints();
+  socket_address = lb_endpoint->mutable_endpoint()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.priorities.size(), 1);
+  const auto& priority = resource.priorities[0];
+  ASSERT_EQ(priority.localities.size(), 1);
+  const auto& p = *priority.localities.begin();
+  ASSERT_EQ(p.first, p.second.name.get());
+  EXPECT_EQ(p.first->region(), "myregion");
+  EXPECT_EQ(p.first->zone(), "myzone");
+  EXPECT_EQ(p.first->sub_zone(), "mysubzone");
+  EXPECT_EQ(p.second.lb_weight, 1);
+  ASSERT_EQ(p.second.endpoints.size(), 1);
+  const auto& address = p.second.endpoints.front();
+  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  EXPECT_EQ(*addr, "127.0.0.1:443");
+  EXPECT_EQ(address.args(), ChannelArgs()
+                                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                                     XdsHealthStatus::HealthStatus::kUnknown)
+                                .Set(GRPC_ARG_XDS_HTTP_PROXY, "1.2.3.4:123"));
+  EXPECT_EQ(resource.drop_config, nullptr);
+}
+
+TEST_F(XdsEndpointTest, HttpProxyEndpointSupercedesLocality) {
+  testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  envoy::config::core::v3::Address address_proto;
+  auto* socket_address = address_proto.mutable_socket_address();
+  socket_address->set_address("1.2.3.4");
+  socket_address->set_port_value(123);
+  auto& typed_metadata_map =
+      *locality->mutable_metadata()->mutable_typed_filter_metadata();
+  typed_metadata_map["envoy.http11_proxy_transport_socket.proxy_address"]
+      .PackFrom(address_proto);
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* lb_endpoint = locality->add_lb_endpoints();
+  socket_address->set_address("4.5.6.7");
+  socket_address->set_port_value(456);
+  auto& endpoint_typed_metadata_map =
+      *lb_endpoint->mutable_metadata()->mutable_typed_filter_metadata();
+  endpoint_typed_metadata_map
+      ["envoy.http11_proxy_transport_socket.proxy_address"]
+          .PackFrom(address_proto);
+  socket_address = lb_endpoint->mutable_endpoint()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.priorities.size(), 1);
+  const auto& priority = resource.priorities[0];
+  ASSERT_EQ(priority.localities.size(), 1);
+  const auto& p = *priority.localities.begin();
+  ASSERT_EQ(p.first, p.second.name.get());
+  EXPECT_EQ(p.first->region(), "myregion");
+  EXPECT_EQ(p.first->zone(), "myzone");
+  EXPECT_EQ(p.first->sub_zone(), "mysubzone");
+  EXPECT_EQ(p.second.lb_weight, 1);
+  ASSERT_EQ(p.second.endpoints.size(), 1);
+  const auto& address = p.second.endpoints.front();
+  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  EXPECT_EQ(*addr, "127.0.0.1:443");
+  EXPECT_EQ(address.args(), ChannelArgs()
+                                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                                     XdsHealthStatus::HealthStatus::kUnknown)
+                                .Set(GRPC_ARG_XDS_HTTP_PROXY, "4.5.6.7:456"));
+  EXPECT_EQ(resource.drop_config, nullptr);
+}
+
+TEST_F(XdsEndpointTest, HttpProxyIgnoredIfNotEnabled) {
+  ClusterLoadAssignment cla;
+  cla.set_cluster_name("foo");
+  auto* locality = cla.add_endpoints();
+  envoy::config::core::v3::Address address_proto;
+  auto* socket_address = address_proto.mutable_socket_address();
+  socket_address->set_address("1.2.3.4");
+  socket_address->set_port_value(123);
+  auto& typed_metadata_map =
+      *locality->mutable_metadata()->mutable_typed_filter_metadata();
+  typed_metadata_map["envoy.http11_proxy_transport_socket.proxy_address"]
+      .PackFrom(address_proto);
+  locality->mutable_load_balancing_weight()->set_value(1);
+  auto* locality_name = locality->mutable_locality();
+  locality_name->set_region("myregion");
+  locality_name->set_zone("myzone");
+  locality_name->set_sub_zone("mysubzone");
+  auto* lb_endpoint = locality->add_lb_endpoints();
+  socket_address->set_address("4.5.6.7");
+  socket_address->set_port_value(456);
+  auto& endpoint_typed_metadata_map =
+      *lb_endpoint->mutable_metadata()->mutable_typed_filter_metadata();
+  endpoint_typed_metadata_map
+      ["envoy.http11_proxy_transport_socket.proxy_address"]
+          .PackFrom(address_proto);
+  socket_address = lb_endpoint->mutable_endpoint()
+                       ->mutable_address()
+                       ->mutable_socket_address();
+  socket_address->set_address("127.0.0.1");
+  socket_address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(cla.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsEndpointResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsEndpointResource&>(**decode_result.resource);
+  ASSERT_EQ(resource.priorities.size(), 1);
+  const auto& priority = resource.priorities[0];
+  ASSERT_EQ(priority.localities.size(), 1);
+  const auto& p = *priority.localities.begin();
+  ASSERT_EQ(p.first, p.second.name.get());
+  EXPECT_EQ(p.first->region(), "myregion");
+  EXPECT_EQ(p.first->zone(), "myzone");
+  EXPECT_EQ(p.first->sub_zone(), "mysubzone");
+  EXPECT_EQ(p.second.lb_weight, 1);
+  ASSERT_EQ(p.second.endpoints.size(), 1);
+  const auto& address = p.second.endpoints.front();
+  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  EXPECT_EQ(*addr, "127.0.0.1:443");
+  EXPECT_EQ(address.args(), ChannelArgs()
+                                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                                     XdsHealthStatus::HealthStatus::kUnknown));
+  EXPECT_EQ(resource.drop_config, nullptr);
 }
 
 }  // namespace
