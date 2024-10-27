@@ -41,6 +41,31 @@ namespace chaotic_good {
 
 namespace {
 
+absl::Status ReadProto(SliceBuffer payload,
+                       google::protobuf::MessageLite& msg) {
+  auto payload_slice = payload.JoinIntoSlice();
+  const bool ok =
+      msg.ParseFromArray(payload_slice.data(), payload_slice.length());
+  return ok ? absl::OkStatus() : absl::InternalError("Protobuf parse error");
+}
+
+void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
+  auto length = msg.ByteSizeLong();
+  if (length <= GRPC_SLICE_INLINED_SIZE) {
+    CHECK(msg.SerializeToArray(output.AddTiny(length), length));
+  } else {
+    auto slice = MutableSlice::CreateUninitialized(length);
+    CHECK(msg.SerializeToArray(slice.data(), length));
+    output.AppendIndexed(Slice(std::move(slice)));
+  }
+}
+
+uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg) {
+  auto length = msg.ByteSizeLong();
+  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  return static_cast<uint32_t>(length);
+}
+
 struct ClientMetadataEncoder {
   void Encode(HttpPathMetadata,
               const typename HttpPathMetadata::ValueType& value) {
@@ -175,74 +200,7 @@ absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
   return ReadUnknownFields(metadata, std::move(md));
 }
 
-namespace {
-const NoDestruct<Slice> kZeroHeader{[] {
-  auto slice = GRPC_SLICE_MALLOC(FrameHeader::kFrameHeaderSize);
-  memset(GRPC_SLICE_START_PTR(slice), 0, FrameHeader::kFrameHeaderSize);
-  return slice;
-}()};
-const NoDestruct<Slice> kZeroSlice{[] {
-  auto slice = GRPC_SLICE_MALLOC(64);
-  memset(GRPC_SLICE_START_PTR(slice), 0, GRPC_SLICE_LENGTH(slice));
-  return slice;
-}()};
-
-void AddFrame(FrameType frame_type, uint32_t stream_id,
-              const SliceBuffer& payload, uint32_t alignment, BufferPair* out) {
-  FrameHeader header;
-  header.type = frame_type;
-  header.stream_id = stream_id;
-  header.payload_length = payload.Length();
-  header.payload_connection_id = header.payload_length > 1024 ? 1 : 0;
-  LOG(INFO) << "Serialize header: " << header;
-  header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
-  if (header.payload_connection_id == 0) {
-    out->control.Append(payload);
-  } else {
-    out->data.Append(payload);
-    out->data.Append(kZeroSlice->RefSubSlice(0, header.Padding(alignment)));
-  }
-}
-
-template <typename F>
-void AddInlineFrame(FrameType frame_type, uint32_t stream_id, F gen_frame,
-                    BufferPair* out) {
-  const size_t header_slice = out->control.AppendIndexed(kZeroHeader->Copy());
-  const size_t size_before = out->control.Length();
-  gen_frame(out->control);
-  const size_t size_after = out->control.Length();
-  FrameHeader header;
-  header.type = frame_type;
-  header.stream_id = stream_id;
-  header.payload_length = size_after - size_before;
-  header.payload_connection_id = 0;
-  header.Serialize(const_cast<uint8_t*>(
-      GRPC_SLICE_START_PTR(out->control.c_slice_at(header_slice))));
-}
-
-absl::Status ReadProto(SliceBuffer payload,
-                       google::protobuf::MessageLite& msg) {
-  auto payload_slice = payload.JoinIntoSlice();
-  const bool ok =
-      msg.ParseFromArray(payload_slice.data(), payload_slice.length());
-  return ok ? absl::OkStatus() : absl::InternalError("Protobuf parse error");
-}
-
-void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
-  auto length = msg.ByteSizeLong();
-  if (length <= GRPC_SLICE_INLINED_SIZE) {
-    CHECK(msg.SerializeToArray(output.AddTiny(length), length));
-  } else {
-    auto slice = MutableSlice::CreateUninitialized(length);
-    CHECK(msg.SerializeToArray(slice.data(), length));
-    output.AppendIndexed(Slice(std::move(slice)));
-  }
-}
-
-}  // namespace
-
-absl::Status SettingsFrame::Deserialize(const DeserializeContext& ctx,
-                                        const FrameHeader& header,
+absl::Status SettingsFrame::Deserialize(const FrameHeader& header,
                                         SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kSettings);
   if (header.stream_id != 0) {
@@ -251,20 +209,20 @@ absl::Status SettingsFrame::Deserialize(const DeserializeContext& ctx,
   return ReadProto(std::move(payload), settings);
 }
 
-void SettingsFrame::Serialize(const SerializeContext& ctx,
-                              BufferPair* out) const {
-  AddInlineFrame(
-      FrameType::kSettings, 0,
-      [this](SliceBuffer& out) { WriteProto(settings, out); }, out);
+FrameHeader SettingsFrame::MakeHeader() const {
+  return FrameHeader{FrameType::kSettings, 0, 0, ProtoPayloadSize(settings)};
+}
+
+void SettingsFrame::SerializePayload(SliceBuffer& payload) const {
+  WriteProto(settings, payload);
 }
 
 std::string SettingsFrame::ToString() const {
   return settings.ShortDebugString();
 }
 
-absl::Status ClientInitialMetadataFrame::Deserialize(
-    const DeserializeContext& ctx, const FrameHeader& header,
-    SliceBuffer payload) {
+absl::Status ClientInitialMetadataFrame::Deserialize(const FrameHeader& header,
+                                                     SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kClientInitialMetadata);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -273,12 +231,14 @@ absl::Status ClientInitialMetadataFrame::Deserialize(
   return ReadProto(std::move(payload), headers);
 }
 
-void ClientInitialMetadataFrame::Serialize(const SerializeContext& ctx,
-                                           BufferPair* out) const {
+FrameHeader ClientInitialMetadataFrame::MakeHeader() const {
+  return FrameHeader{FrameType::kClientInitialMetadata, 0, stream_id,
+                     ProtoPayloadSize(headers)};
+}
+
+void ClientInitialMetadataFrame::SerializePayload(SliceBuffer& payload) const {
   CHECK_NE(stream_id, 0u);
-  AddInlineFrame(
-      FrameType::kClientInitialMetadata, stream_id,
-      [this](SliceBuffer& out) { WriteProto(headers, out); }, out);
+  WriteProto(headers, payload);
 }
 
 std::string ClientInitialMetadataFrame::ToString() const {
@@ -286,8 +246,7 @@ std::string ClientInitialMetadataFrame::ToString() const {
                       ", headers=", headers.ShortDebugString(), "}");
 }
 
-absl::Status ClientEndOfStream::Deserialize(const DeserializeContext& ctx,
-                                            const FrameHeader& header,
+absl::Status ClientEndOfStream::Deserialize(const FrameHeader& header,
                                             SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kClientEndOfStream);
   if (header.stream_id == 0) {
@@ -301,16 +260,15 @@ absl::Status ClientEndOfStream::Deserialize(const DeserializeContext& ctx,
   return absl::OkStatus();
 }
 
-void ClientEndOfStream::Serialize(const SerializeContext& ctx,
-                                  BufferPair* out) const {
-  AddInlineFrame(
-      FrameType::kClientEndOfStream, stream_id, [](SliceBuffer&) {}, out);
+FrameHeader ClientEndOfStream::MakeHeader() const {
+  return FrameHeader{FrameType::kClientEndOfStream, 0, stream_id, 0};
 }
+
+void ClientEndOfStream::SerializePayload(SliceBuffer&) const {}
 
 std::string ClientEndOfStream::ToString() const { return "ClientEndOfStream"; }
 
-absl::Status MessageFrame::Deserialize(const DeserializeContext& ctx,
-                                       const FrameHeader& header,
+absl::Status MessageFrame::Deserialize(const FrameHeader& header,
                                        SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kMessage);
   if (header.stream_id == 0) {
@@ -321,25 +279,29 @@ absl::Status MessageFrame::Deserialize(const DeserializeContext& ctx,
   return absl::OkStatus();
 }
 
-void MessageFrame::Serialize(const SerializeContext& ctx,
-                             BufferPair* out) const {
+FrameHeader MessageFrame::MakeHeader() const {
+  auto length = message->payload()->Length();
+  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  return FrameHeader{FrameType::kMessage, 0, stream_id,
+                     static_cast<uint32_t>(length)};
+}
+
+void MessageFrame::SerializePayload(SliceBuffer& payload) const {
   CHECK_NE(stream_id, 0u);
-  AddFrame(FrameType::kMessage, stream_id, *message->payload(), ctx.alignment,
-           out);
+  payload.Append(*message->payload());
 }
 
 std::string MessageFrame::ToString() const {
-  std::string out = "MessageFrame{";
+  std::string out = absl::StrCat("MessageFrame{stream_id=", stream_id);
   if (message.get() != nullptr) {
-    absl::StrAppend(&out, "message=", message->DebugString().c_str());
+    absl::StrAppend(&out, ", message=", message->DebugString().c_str());
   }
   absl::StrAppend(&out, "}");
   return out;
 }
 
-absl::Status ServerInitialMetadataFrame::Deserialize(
-    const DeserializeContext& ctx, const FrameHeader& header,
-    SliceBuffer payload) {
+absl::Status ServerInitialMetadataFrame::Deserialize(const FrameHeader& header,
+                                                     SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerInitialMetadata);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -348,12 +310,14 @@ absl::Status ServerInitialMetadataFrame::Deserialize(
   return ReadProto(std::move(payload), headers);
 }
 
-void ServerInitialMetadataFrame::Serialize(const SerializeContext& ctx,
-                                           BufferPair* out) const {
+FrameHeader ServerInitialMetadataFrame::MakeHeader() const {
+  return FrameHeader{FrameType::kServerInitialMetadata, 0, stream_id,
+                     ProtoPayloadSize(headers)};
+}
+
+void ServerInitialMetadataFrame::SerializePayload(SliceBuffer& payload) const {
   CHECK_NE(stream_id, 0u);
-  AddInlineFrame(
-      FrameType::kServerInitialMetadata, stream_id,
-      [this](SliceBuffer& out) { WriteProto(headers, out); }, out);
+  WriteProto(headers, payload);
 }
 
 std::string ServerInitialMetadataFrame::ToString() const {
@@ -361,9 +325,8 @@ std::string ServerInitialMetadataFrame::ToString() const {
                       ", headers=", headers.ShortDebugString(), "}");
 }
 
-absl::Status ServerTrailingMetadataFrame::Deserialize(
-    const DeserializeContext& ctx, const FrameHeader& header,
-    SliceBuffer payload) {
+absl::Status ServerTrailingMetadataFrame::Deserialize(const FrameHeader& header,
+                                                      SliceBuffer payload) {
   CHECK_EQ(header.type, FrameType::kServerTrailingMetadata);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -372,12 +335,14 @@ absl::Status ServerTrailingMetadataFrame::Deserialize(
   return ReadProto(std::move(payload), trailers);
 }
 
-void ServerTrailingMetadataFrame::Serialize(const SerializeContext& ctx,
-                                            BufferPair* out) const {
+FrameHeader ServerTrailingMetadataFrame::MakeHeader() const {
+  return FrameHeader{FrameType::kServerTrailingMetadata, 0, stream_id,
+                     ProtoPayloadSize(trailers)};
+}
+
+void ServerTrailingMetadataFrame::SerializePayload(SliceBuffer& payload) const {
   CHECK_NE(stream_id, 0u);
-  AddInlineFrame(
-      FrameType::kServerTrailingMetadata, stream_id,
-      [this](SliceBuffer& out) { WriteProto(trailers, out); }, out);
+  WriteProto(trailers, payload);
 }
 
 std::string ServerTrailingMetadataFrame::ToString() const {
@@ -385,8 +350,7 @@ std::string ServerTrailingMetadataFrame::ToString() const {
                       ", trailers=", trailers.ShortDebugString(), "}");
 }
 
-absl::Status CancelFrame::Deserialize(const DeserializeContext& ctx,
-                                      const FrameHeader& header,
+absl::Status CancelFrame::Deserialize(const FrameHeader& header,
                                       SliceBuffer payload) {
   // Ensure the frame type is Cancel
   CHECK_EQ(header.type, FrameType::kCancel);
@@ -407,19 +371,11 @@ absl::Status CancelFrame::Deserialize(const DeserializeContext& ctx,
   return absl::OkStatus();
 }
 
-void CancelFrame::Serialize(const SerializeContext& ctx,
-                            BufferPair* out) const {
-  // Ensure the stream_id is non-zero
-  CHECK_NE(stream_id, 0u);
-
-  // Create a FrameHeader for the Cancel frame
-  FrameHeader header;
-  header.type = FrameType::kCancel;
-  header.stream_id = stream_id;
-
-  // Serialize the header into the output buffer
-  header.Serialize(out->control.AddTiny(FrameHeader::kFrameHeaderSize));
+FrameHeader CancelFrame::MakeHeader() const {
+  return FrameHeader{FrameType::kCancel, 0, stream_id, 0};
 }
+
+void CancelFrame::SerializePayload(SliceBuffer& payload) const {}
 
 std::string CancelFrame::ToString() const {
   return absl::StrCat("CancelFrame{stream_id=", stream_id, "}");

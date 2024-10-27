@@ -235,8 +235,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                     // Read Setting frame.
                     SettingsFrame frame;
                     // Deserialize frame from read buffer.
-                    auto status = frame.Deserialize(
-                        DeserializeContext{1}, frame_header, std::move(buffer));
+                    auto status =
+                        frame.Deserialize(frame_header, std::move(buffer));
                     if (!status.ok()) return status;
                     if (frame.settings.data_channel()) {
                       if (frame.settings.connection_id().empty()) {
@@ -315,12 +315,13 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   SettingsFrame frame;
   frame.settings.set_data_channel(false);
   frame.settings.set_connection_id(self->connection_->connection_id_);
-  BufferPair write_buffer;
-  frame.Serialize(SerializeContext{1}, &write_buffer);
+  SliceBuffer write_buffer;
+  frame.MakeHeader().Serialize(
+      write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+  frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return TrySeq(
-      self->connection_->endpoint_.Write(std::move(write_buffer.control)),
-      WaitForDataEndpointSetup(self));
+  return TrySeq(self->connection_->endpoint_.Write(std::move(write_buffer)),
+                WaitForDataEndpointSetup(self));
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -330,11 +331,13 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   frame.settings.set_data_channel(true);
   frame.settings.set_connection_id(self->connection_->connection_id_);
   frame.settings.set_alignment(self->connection_->data_alignment_);
-  BufferPair write_buffer;
-  frame.Serialize(SerializeContext{1}, &write_buffer);
+  SliceBuffer write_buffer;
+  frame.MakeHeader().Serialize(
+      write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+  frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
   return TrySeq(
-      self->connection_->endpoint_.Write(std::move(write_buffer.control)),
+      self->connection_->endpoint_.Write(std::move(write_buffer)),
       [self]() mutable {
         MutexLock lock(&self->connection_->listener_->mu_);
         // Set endpoint to latch

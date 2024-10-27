@@ -52,17 +52,34 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    BufferPair buffers;
-    frame.Serialize(SerializeContext{encode_alignment_}, &buffers);
+    SliceBuffer control;
+    SliceBuffer data;
+    FrameHeader header = frame.MakeHeader();
+    if (header.payload_length > 128 * 1024) {
+      header.payload_connection_id = 1;
+      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
+      frame.SerializePayload(data);
+      const size_t padding = header.Padding(encode_alignment_);
+      if (padding == 0) {
+      } else if (padding < GRPC_SLICE_INLINED_SIZE) {
+        memset(data.AddTiny(padding), 0, padding);
+      } else {
+        auto slice = MutableSlice::CreateUninitialized(padding);
+        memset(slice.data(), 0, padding);
+        data.AppendIndexed(Slice(std::move(slice)));
+      }
+    } else {
+      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
+      frame.SerializePayload(control);
+    }
     // ignore encoding errors: they will be logged separately already
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: WriteFrame to:"
         << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
-    return TryJoin<absl::StatusOr>(
-        control_endpoint_.Write(std::move(buffers.control)),
-        data_endpoint_.Write(std::move(buffers.data)));
+    return TryJoin<absl::StatusOr>(control_endpoint_.Write(std::move(control)),
+                                   data_endpoint_.Write(std::move(data)));
   }
 
   // Read frame header and payloads for control and data portions of one frame.
@@ -108,11 +125,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
         << absl::CEscape(payload.JoinIntoString());
     CHECK_EQ(header.payload_length, payload.Length());
-    auto s = frame.Deserialize(
-        DeserializeContext{
-            decode_alignment_,
-        },
-        header, std::move(payload));
+    auto s = frame.Deserialize(header, std::move(payload));
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: DeserializeFrame "
         << (s.ok() ? frame.ToString() : s.ToString());

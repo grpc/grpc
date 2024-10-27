@@ -29,44 +29,23 @@ namespace chaotic_good {
 namespace {
 
 template <typename T>
-void AssertRoundTrips(const T& input, FrameType expected_frame_type,
-                      uint32_t alignment) {
-  SerializeContext ser_ctx{alignment};
-  BufferPair output_buffer;
-  input.Serialize(ser_ctx, &output_buffer);
-  EXPECT_GE(output_buffer.control.Length(), FrameHeader::kFrameHeaderSize);
-  uint8_t header_bytes[FrameHeader::kFrameHeaderSize];
-  output_buffer.control.MoveFirstNBytesIntoBuffer(FrameHeader::kFrameHeaderSize,
-                                                  header_bytes);
-  auto header = FrameHeader::Parse(header_bytes);
-  if (!header.ok()) {
-    LOG(FATAL) << "Failed to parse header: " << header.status();
-  }
-  EXPECT_EQ(header->type, expected_frame_type);
-  if (header->type == FrameType::kSettings) {
-    EXPECT_EQ(header->payload_connection_id, 0);
-  }
-  SliceBuffer payload;
-  if (header->payload_connection_id == 0) {
-    payload = std::move(output_buffer.control);
-    EXPECT_EQ(output_buffer.data.Length(), 0);
-  } else {
-    output_buffer.data.MoveFirstNBytesIntoSliceBuffer(header->payload_length,
-                                                      payload);
-    EXPECT_EQ(output_buffer.control.Length(), 0);
-    EXPECT_EQ(output_buffer.data.Length(), header->Padding(alignment));
-  }
+void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
+  const auto hdr = input.MakeHeader();
+  EXPECT_EQ(hdr.type, expected_frame_type);
+  // Frames should always set connection id 0, though the transport may adjust
+  // it.
+  EXPECT_EQ(hdr.payload_connection_id, 0);
+  SliceBuffer output_buffer;
+  input.SerializePayload(output_buffer);
+  EXPECT_EQ(hdr.payload_length, output_buffer.Length());
   T output;
-  DeserializeContext deser_ctx{alignment};
-  auto deser =
-      output.Deserialize(deser_ctx, header.value(), std::move(payload));
+  auto deser = output.Deserialize(hdr, std::move(output_buffer));
   CHECK_OK(deser);
   CHECK_EQ(output.ToString(), input.ToString());
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {
-  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings, 64);
-  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings, 128);
+  AssertRoundTrips(SettingsFrame{}, FrameType::kSettings);
 }
 
 }  // namespace

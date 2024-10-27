@@ -116,10 +116,12 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
   frame.settings.set_data_channel(true);
   frame.settings.set_connection_id(self->connection_id_);
   frame.settings.set_alignment(kDataAlignmentBytes);
-  BufferPair write_buffer;
-  frame.Serialize(SerializeContext{1}, &write_buffer);
+  SliceBuffer write_buffer;
+  frame.MakeHeader().Serialize(
+      write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+  frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return self->data_endpoint_.Write(std::move(write_buffer.control));
+  return self->data_endpoint_.Write(std::move(write_buffer));
 }
 
 auto ChaoticGoodConnector::WaitForDataEndpointSetup(
@@ -188,8 +190,8 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                 [frame_header = *frame_header, self](SliceBuffer buffer) {
                   // Deserialize setting frame.
                   SettingsFrame frame;
-                  auto status = frame.Deserialize(
-                      DeserializeContext{1}, frame_header, std::move(buffer));
+                  auto status =
+                      frame.Deserialize(frame_header, std::move(buffer));
                   if (!status.ok()) return status;
                   if (frame.settings.connection_id().empty()) {
                     return absl::UnavailableError(
@@ -209,10 +211,12 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   SettingsFrame frame;
   // frame.header set connectiion_type: control
   frame.settings.set_data_channel(false);
-  BufferPair write_buffer;
-  frame.Serialize(SerializeContext{1}, &write_buffer);
+  SliceBuffer write_buffer;
+  frame.MakeHeader().Serialize(
+      write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+  frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return self->control_endpoint_.Write(std::move(write_buffer.control));
+  return self->control_endpoint_.Write(std::move(write_buffer));
 }
 
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
