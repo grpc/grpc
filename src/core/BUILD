@@ -16,9 +16,9 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_internal_targets",
+    "grpc_proto_library",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
-    "grpc_proto_library"
 )
 
 licenses(["reciprocal"])
@@ -827,8 +827,8 @@ grpc_cc_library(
     public_hdrs = ["lib/promise/switch.h"],
     deps = [
         "if",
-        "promise_variant",
         "promise_factory",
+        "promise_variant",
         "//:gpr_platform",
     ],
 )
