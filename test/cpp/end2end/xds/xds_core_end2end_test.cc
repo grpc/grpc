@@ -1115,9 +1115,16 @@ TEST_P(XdsFederationTest, FederationServer) {
 class XdsMetricsTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
-                        .UseDisabledByDefaultMetrics(true)
-                        .BuildAndRegister();
+    stats_plugin_ =
+        grpc_core::FakeStatsPluginBuilder()
+            .UseDisabledByDefaultMetrics(true)
+            .SetChannelFilter(
+                [](const grpc_core::experimental::StatsPluginChannelScope&
+                       scope) {
+                  return scope.target() == absl::StrCat("xds:", kServerName) &&
+                         scope.default_authority() == kServerName;
+                })
+            .BuildAndRegister();
     InitClient();
   }
 
