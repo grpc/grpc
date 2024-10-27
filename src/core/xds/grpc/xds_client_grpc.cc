@@ -261,7 +261,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
   if (!bootstrap.ok()) return bootstrap.status();
   // Instantiate XdsClient.
-  auto channel_args = ChannelArgs::FromC(g_channel_args);
+  auto channel_args =
+      g_channel_args != nullptr ? ChannelArgs::FromC(g_channel_args) : args;
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
       key, std::move(*bootstrap), channel_args,
       MakeRefCounted<GrpcXdsTransportFactory>(channel_args));
@@ -273,15 +274,20 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
 
 namespace {
 
-GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
-    absl::string_view key) {
+GlobalStatsPluginRegistry::StatsPluginGroup
+GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
+                                        const ChannelArgs& channel_args) {
   if (key == GrpcXdsClient::kServerKey) {
-    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
+    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(channel_args);
   }
   grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
       ChannelArgs{});
-  // TODO(roth): How do we set the authority here?
-  experimental::StatsPluginChannelScope scope(key, "", endpoint_config);
+  std::string authority =
+      channel_args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+          .value_or(
+              CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+                  key));
+  experimental::StatsPluginChannelScope scope(key, authority, endpoint_config);
   return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 
@@ -315,7 +321,7 @@ GrpcXdsClient::GrpcXdsClient(
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
               .certificate_providers())),
-      stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
+      stats_plugin_group_(GetStatsPluginGroupForKeyAndChannelArgs(key_, args)),
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
