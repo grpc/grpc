@@ -17,8 +17,16 @@ syntax = "proto3";
 package chaotic_good_frame;
 
 message Settings {
+    // Connection id
+    // - sent server->client on the control channel to specify the
+    //   data channel connection id
+    // - sent client->server on the data channel to complete the
+    //   connection
     bytes connection_id = 1;
+    // Flag true if this is a data channel (and not a control channel)
     bool data_channel = 2;
+    // Requested alignment for the data channel
+    // Client and server each send this with their preferences
     uint32 alignment = 3;    
 }
 
