@@ -300,6 +300,23 @@ TEST(CFEventEngineTest, TestResolveAgainInCallback) {
   resolve_signal.WaitForNotification();
 }
 
+TEST(CFEventEngineTest, TestLockOrder) {
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+  grpc_core::Mutex mutex;
+
+  {
+    grpc_core::MutexLock lock(&mutex);
+    dns_resolver->LookupHostname(
+        [&mutex](auto result) { grpc_core::MutexLock lock2(&mutex); },
+        "google.com", "80");
+  }
+
+  dns_resolver.reset();
+
+  sleep(1);
+}
+
 TEST(CFEventEngineTest, TestResolveMany) {
   std::atomic<int> times{10};
   grpc_core::Notification resolve_signal;
