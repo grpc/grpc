@@ -1797,6 +1797,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
         "//src/core:closure",
+        "//src/core:connection_quota",
         "//src/core:connectivity_state",
         "//src/core:context",
         "//src/core:dual_ref_counted",

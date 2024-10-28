@@ -124,11 +124,28 @@ void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
 // Server::ListenerState
 //
 
+Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
+                                     OrphanablePtr<ListenerInterface> l)
+    : server_(std::move(server)),
+      memory_quota_(
+          server_->channel_args().GetObject<ResourceQuota>()->memory_quota()),
+      connection_quota_(MakeRefCounted<ConnectionQuota>()),
+      event_engine_(
+          server_->channel_args()
+              .GetObject<grpc_event_engine::experimental::EventEngine>()),
+      listener_(std::move(l)) {
+  auto max_allowed_incoming_connections =
+      server_->channel_args().GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
+  if (max_allowed_incoming_connections.has_value()) {
+    connection_quota_->SetMaxIncomingConnections(
+        max_allowed_incoming_connections.value());
+  }
+}
+
 void Server::ListenerState::Start() {
   if (IsServerListenerEnabled()) {
     if (server_->config_fetcher() != nullptr) {
-      auto watcher =
-          std::make_unique<ListenerState::ConfigFetcherWatcher>(this);
+      auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
       config_fetcher_watcher_ = watcher.get();
       server_->config_fetcher()->StartWatch(
           grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
@@ -161,7 +178,7 @@ void Server::ListenerState::Stop() {
       server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
     }
   }
-  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_,
+  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_.get(),
                     grpc_schedule_on_exec_ctx);
   listener_->SetOnDestroyDone(&destroy_done_);
   listener_.reset();
@@ -214,8 +231,13 @@ absl::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
   return new_args;
 }
 
-void Server::ListenerState::RemoveLogicalConnection(
+void Server::ListenerState::OnHandshakeDone(
     ListenerInterface::LogicalConnection* connection) {
+  if (server_->config_fetcher() != nullptr) {
+    return;
+  }
+  // There is no config fetcher, so we can remove this connection from being
+  // tracked immediately.
   OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
   {
     // Remove the connection if it wasn't already removed.
@@ -225,6 +247,25 @@ void Server::ListenerState::RemoveLogicalConnection(
       connection_to_remove = std::move(connection_handle.value());
       return;
     }
+  }
+}
+
+void Server::ListenerState::RemoveLogicalConnection(
+    ListenerInterface::LogicalConnection* connection) {
+  if (server_->config_fetcher() == nullptr) {
+    // The connection was removed from being tracked in `OnHandshakeDone`.
+    return;
+  }
+  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
+  {
+    // Remove the connection if it wasn't already removed.
+    MutexLock lock(&mu_);
+    auto connection_handle = connections_.extract(connection);
+    if (!connection_handle.empty()) {
+      connection_to_remove = std::move(connection_handle.value());
+      return;
+    }
+    // The connection might be getting drained.
     for (auto it = connections_to_be_drained_list_.begin();
          it != connections_to_be_drained_list_.end(); ++it) {
       auto connection_handle = it->connections.extract(connection);
@@ -232,11 +273,12 @@ void Server::ListenerState::RemoveLogicalConnection(
         connection_to_remove = std::move(connection_handle.value());
         if (it->connections.empty()) {
           // Cancel the timer if the set of connections is now empty.
-          if (event_engine()->Cancel(it->drain_grace_timer_handle)) {
+          if (event_engine()->Cancel(drain_grace_timer_handle_)) {
             // Only remove the entry from the list if the cancellation was
             // actually successful. OnDrainGraceTimer() will remove if
             // cancellation is not successful.
             connections_to_be_drained_list_.erase(it);
+            MaybeStartNewGraceTimerLocked();
           }
         }
         return;
@@ -251,19 +293,17 @@ void Server::ListenerState::DrainConnectionsLocked() {
   for (auto& connection : connections_) {
     connection->SendGoAway();
   }
+  connections_to_be_drained_list_.emplace_back();
   auto& connections_to_be_drained = connections_to_be_drained_list_.back();
   connections_to_be_drained.connections = std::move(connections_);
-  connections_to_be_drained.drain_grace_timer_handle = event_engine()->RunAfter(
+  connections_to_be_drained.timestamp =
+      grpc_core::Timestamp::Now() +
       std::max(Duration::Zero(),
                server_->channel_args()
                    .GetDurationFromIntMillis(
                        GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
-                   .value_or(Duration::Minutes(10))),
-      [this]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
-        ExecCtx exec_ctx;
-        OnDrainGraceTimer();
-      });
+                   .value_or(Duration::Minutes(10)));
+  MaybeStartNewGraceTimerLocked();
 }
 
 void Server::ListenerState::OnDrainGraceTimer() {
@@ -277,10 +317,27 @@ void Server::ListenerState::OnDrainGraceTimer() {
     connections_to_be_drained =
         std::move(connections_to_be_drained_list_.front().connections);
     connections_to_be_drained_list_.pop_front();
+    MaybeStartNewGraceTimerLocked();
   }
   for (auto& connection : connections_to_be_drained) {
     connection->DisconnectImmediately();
   }
+}
+
+void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
+  if (connections_to_be_drained_list_.empty()) {
+    return;
+  }
+  drain_grace_timer_handle_ = event_engine()->RunAfter(
+      connections_to_be_drained_list_.front().timestamp -
+          grpc_core::Timestamp::Now(),
+      [self = Ref()]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->OnDrainGraceTimer();
+        // resetting within an active ExecCtx
+        self.reset();
+      });
 }
 
 //
@@ -1125,8 +1182,9 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
         listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
   ListenerInterface* ptr = listener.get();
-  listener_states_.emplace_back(this, std::move(listener));
-  ptr->SetServerListenerState(&listener_states_.back());
+  listener_states_.emplace_back(
+      grpc_core::MakeRefCounted<ListenerState>(Ref(), std::move(listener)));
+  ptr->SetServerListenerState(listener_states_.back());
 }
 
 void Server::Start() {
@@ -1159,7 +1217,7 @@ void Server::Start() {
     }
   }
   for (auto& listener_state : listener_states_) {
-    listener_state.Start();
+    listener_state->Start();
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
@@ -1414,14 +1472,14 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 
 void Server::StopListening() {
   for (auto& listener_state : listener_states_) {
-    if (listener_state.listener() == nullptr) continue;
+    if (listener_state->listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
-        listener_state.listener()->channelz_listen_socket_node();
+        listener_state->listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_node_->RemoveChildListenSocket(
           channelz_listen_socket_node->uuid());
     }
-    listener_state.Stop();
+    listener_state->Stop();
   }
 }
 

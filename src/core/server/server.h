@@ -55,6 +55,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -148,6 +149,20 @@ class Server : public ServerInterface,
   class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
    public:
     // State for a connection that is being managed by this listener.
+    // The LogicalConnection interface helps the server keep track of
+    // connections during handshake. If the server uses a config fetcher, the
+    // connection continues to be tracked by the server to drain connections on
+    // a config update. If not, the server stops the tracking after handshake is
+    // done. As such, implementations of `LogicalConnection` should cancel the
+    // handshake on `Orphan` if still in progress, but not close down the
+    // transport.
+    // TODO(yashykt): In the case where there is no config fetcher, we remove
+    // the connection from our map and instead use `ChannelData` to keep track
+    // of the connections. This is much cheaper (8 bytes per connection) as
+    // compared to implementations of LogicalConnection which can be more than
+    // 24 bytes based on the chttp2 implementation. This complexity causes
+    // weirdness for our interfaces. Figure out a way to combine these two
+    // tracking systems, without increasing memory utilization.
     class LogicalConnection : public InternallyRefCounted<LogicalConnection> {
      public:
       ~LogicalConnection() override = default;
@@ -167,7 +182,8 @@ class Server : public ServerInterface,
     /// supported.
     virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
 
-    virtual void SetServerListenerState(ListenerState* listener_state) = 0;
+    virtual void SetServerListenerState(
+        RefCountedPtr<ListenerState> listener_state) = 0;
 
     virtual const grpc_resolved_address* resolved_address() const = 0;
 
@@ -181,10 +197,10 @@ class Server : public ServerInterface,
   // Note that an alternative implementation would have been to combine the
   // ListenerInterface and ListenerState into a single parent class, but
   // they are being separated to make code simpler to understand.
-  class ListenerState {
+  class ListenerState : public RefCounted<ListenerState> {
    public:
-    explicit ListenerState(Server* server, OrphanablePtr<ListenerInterface> l)
-        : server_(server), listener_(std::move(l)) {}
+    explicit ListenerState(RefCountedPtr<Server> server,
+                           OrphanablePtr<ListenerInterface> l);
 
     void Start();
 
@@ -192,7 +208,7 @@ class Server : public ServerInterface,
 
     ListenerInterface* listener() { return listener_.get(); }
 
-    Server* server() const { return server_; }
+    Server* server() const { return server_.get(); }
 
     // Adds a LogicalConnection to the listener and updates the channel args if
     // needed, and returns ChannelArgs if successful.
@@ -201,12 +217,24 @@ class Server : public ServerInterface,
         const ChannelArgs& args, grpc_endpoint* endpoint)
         ABSL_LOCKS_EXCLUDED(mu_);
 
+    void OnHandshakeDone(ListenerInterface::LogicalConnection* connection);
+
     // Removes the logical connection from being tracked. This could happen for
     // reasons such as the connection being closed, or the connection has been
     // established (including handshake) and doesn't have a server config
     // fetcher.
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
+
+    const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
+
+    const ConnectionQuotaRefPtr& connection_quota() const {
+      return connection_quota_;
+    }
+
+    grpc_event_engine::experimental::EventEngine* event_engine() const {
+      return event_engine_;
+    }
 
    private:
     class ConfigFetcherWatcher
@@ -230,21 +258,19 @@ class Server : public ServerInterface,
     struct ConnectionsToBeDrained {
       absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
           connections;
-      grpc_event_engine::experimental::EventEngine::TaskHandle
-          drain_grace_timer_handle = grpc_event_engine::experimental::
-              EventEngine::TaskHandle::kInvalid;
+      grpc_core::Timestamp timestamp;
     };
 
     void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     void OnDrainGraceTimer();
 
-    grpc_event_engine::experimental::EventEngine* event_engine() {
-      return server_->channel_args()
-          .GetObject<grpc_event_engine::experimental::EventEngine>();
-    }
+    void MaybeStartNewGraceTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-    Server* const server_;
+    RefCountedPtr<Server> const server_;
+    MemoryQuotaRefPtr const memory_quota_;
+    ConnectionQuotaRefPtr connection_quota_;
+    grpc_event_engine::experimental::EventEngine* const event_engine_;
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
     ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
@@ -257,7 +283,11 @@ class Server : public ServerInterface,
     bool started_ ABSL_GUARDED_BY(mu_) = false;
     absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
         connections_ ABSL_GUARDED_BY(mu_);
-    std::deque<ConnectionsToBeDrained> connections_to_be_drained_list_;
+    std::deque<ConnectionsToBeDrained> connections_to_be_drained_list_
+        ABSL_GUARDED_BY(mu_);
+    grpc_event_engine::experimental::EventEngine::TaskHandle
+        drain_grace_timer_handle_ ABSL_GUARDED_BY(mu_) =
+            grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
   };
 
   explicit Server(const ChannelArgs& args);
@@ -645,7 +675,7 @@ class Server : public ServerInterface,
       connection_manager_ ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
-  std::list<ListenerState> listener_states_;
+  std::list<RefCountedPtr<ListenerState>> listener_states_;
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.
