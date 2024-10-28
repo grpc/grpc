@@ -65,9 +65,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    deps = [
-        "//:gpr_platform",
-    ],
 )
 
 grpc_cc_library(
@@ -676,6 +673,23 @@ grpc_cc_library(
     public_hdrs = ["lib/promise/map.h"],
     deps = [
         "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "match_promise",
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["lib/promise/match_promise.h"],
+    deps = [
+        "overload",
+        "poll",
+        "promise_factory",
         "promise_like",
         "//:gpr_platform",
     ],

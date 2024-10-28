@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.68.0-dev")
+set(PACKAGE_VERSION       "1.69.0-dev")
 set(gRPC_CORE_VERSION     "44.1.0")
 set(gRPC_CORE_SOVERSION   "44")
-set(gRPC_CPP_VERSION      "1.68.0-dev")
-set(gRPC_CPP_SOVERSION    "1.68")
+set(gRPC_CPP_VERSION      "1.69.0-dev")
+set(gRPC_CPP_SOVERSION    "1.69")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1629,6 +1629,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx loop_test)
   add_dependencies(buildtests_cxx lru_cache_test)
   add_dependencies(buildtests_cxx map_pipe_test)
+  add_dependencies(buildtests_cxx match_promise_test)
   add_dependencies(buildtests_cxx match_test)
   add_dependencies(buildtests_cxx matchers_test)
   add_dependencies(buildtests_cxx max_concurrent_streams_test)
@@ -19867,6 +19868,48 @@ target_link_libraries(map_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(match_promise_test
+  test/core/promise/match_promise_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(match_promise_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(match_promise_test PUBLIC cxx_std_14)
+target_include_directories(match_promise_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(match_promise_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::type_traits
   gpr
 )
 
