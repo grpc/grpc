@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/experiments")
 
@@ -35,7 +35,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_experiments",
     srcs = ["bm_experiments.cc"],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [
         "//src/core:experiments",
         "//test/core/test_util:grpc_test_util",

@@ -18,7 +18,7 @@ load(
     "grpc_cc_test",
     "grpc_package",
 )
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/load_balancing")
 
@@ -203,7 +203,7 @@ grpc_cc_benchmark(
         "absl/algorithm:container",
         "absl/log:check",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     uses_event_engine = False,
     deps = [
         "//src/core:no_destruct",
@@ -274,7 +274,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/strings",
     ],
-    monitoring = True,
+    monitoring = HISTORY,
     deps = [
         "//:config",
         "//:grpc",

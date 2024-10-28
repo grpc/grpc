@@ -29,7 +29,6 @@ Contains macros used throughout the repo.
 
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
-load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
@@ -290,7 +289,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "9.0",
+            minimum_os_version = "11.0",
             runner = test_runner,
             deps = ios_test_deps,
         )
@@ -794,9 +793,6 @@ def grpc_objc_library(
         sdk_frameworks = sdk_frameworks,
         visibility = visibility,
     )
-
-def grpc_cc_proto_library(name, deps):
-    cc_proto_library(name = name, deps = deps)
 
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 44.0.0
+PROJECT_NUMBER         = 44.1.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -975,7 +975,6 @@ src/core/ext/filters/stateful_session/stateful_session_filter.h \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
-src/core/ext/transport/binder/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
@@ -2489,8 +2488,6 @@ src/core/load_balancing/xds/xds_wrr_locality.cc \
 src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/plugin_registry/grpc_plugin_registry_extra.cc \
 src/core/resolver/README.md \
-src/core/resolver/binder/README.md \
-src/core/resolver/binder/binder_resolver.cc \
 src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/resolver/dns/c_ares/dns_resolver_ares.h \
 src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h \

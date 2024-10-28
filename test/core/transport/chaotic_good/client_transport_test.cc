@@ -154,17 +154,16 @@ TEST_F(TransportTest, AddOneStream) {
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "12345678");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
               return Empty{};
             },
             [initiator]() mutable { return initiator.PullMessage(); },
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_FALSE(msg.value().has_value());
+              EXPECT_FALSE(msg.has_value());
               return Empty{};
             },
             [initiator]() mutable {
@@ -245,25 +244,23 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "12345678");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "12345678");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_TRUE(msg.value().has_value());
-              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
-                        "87654321");
+              EXPECT_TRUE(msg.has_value());
+              EXPECT_EQ(msg.value().payload()->JoinIntoString(), "87654321");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+            [](ServerToClientNextMessage msg) {
               EXPECT_TRUE(msg.ok());
-              EXPECT_FALSE(msg.value().has_value());
+              EXPECT_FALSE(msg.has_value());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),

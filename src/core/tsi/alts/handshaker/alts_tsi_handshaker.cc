@@ -482,7 +482,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
 
 struct alts_tsi_handshaker_continue_handshaker_next_args {
   alts_tsi_handshaker* handshaker;
-  std::unique_ptr<unsigned char> received_bytes;
+  unsigned char* received_bytes;
   size_t received_bytes_size;
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
@@ -507,13 +507,13 @@ static void alts_tsi_handshaker_create_channel(
   grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(
-          handshaker, next_args->received_bytes.get(),
-          next_args->received_bytes_size, next_args->cb, next_args->user_data,
-          next_args->error);
+          handshaker, next_args->received_bytes, next_args->received_bytes_size,
+          next_args->cb, next_args->user_data, next_args->error);
   if (continue_next_result != TSI_OK) {
     next_args->cb(continue_next_result, next_args->user_data, nullptr, 0,
                   nullptr);
   }
+  gpr_free(next_args->received_bytes);
   delete next_args;
 }
 
@@ -537,6 +537,10 @@ static tsi_result handshaker_next(
       return TSI_HANDSHAKE_SHUTDOWN;
     }
   }
+
+  if (!handshaker->is_client && received_bytes_size == 0) {
+    return TSI_INCOMPLETE_DATA;
+  }
   if (handshaker->channel == nullptr && !handshaker->use_dedicated_cq) {
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         new alts_tsi_handshaker_continue_handshaker_next_args();
@@ -545,9 +549,9 @@ static tsi_result handshaker_next(
     args->received_bytes_size = received_bytes_size;
     args->error = error;
     if (received_bytes_size > 0) {
-      args->received_bytes = std::unique_ptr<unsigned char>(
-          static_cast<unsigned char*>(gpr_zalloc(received_bytes_size)));
-      memcpy(args->received_bytes.get(), received_bytes, received_bytes_size);
+      args->received_bytes =
+          static_cast<unsigned char*>(gpr_zalloc(received_bytes_size));
+      memcpy(args->received_bytes, received_bytes, received_bytes_size);
     }
     args->cb = cb;
     args->user_data = user_data;

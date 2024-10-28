@@ -112,11 +112,6 @@ class MeshLabelsIterable : public LabelsIterable {
   uint32_t pos_ = 0;
 };
 
-// Returns the mesh ID by reading and parsing the bootstrap file. Returns
-// "unknown" if for some reason, mesh ID could not be figured out.
-// EXPOSED FOR TESTING PURPOSES ONLY.
-std::string GetMeshId();
-
 }  // namespace internal
 }  // namespace grpc
 

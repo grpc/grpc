@@ -38,10 +38,7 @@ config_setting(
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
 exports_files(
-    glob(
-        ["**"],
-        exclude = ["ext/transport/binder/java/**"],
-    ),
+    glob(["**"]),
     visibility = ["//:__subpackages__"],
 )
 
@@ -679,6 +676,23 @@ grpc_cc_library(
     public_hdrs = ["lib/promise/map.h"],
     deps = [
         "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "match_promise",
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["lib/promise/match_promise.h"],
+    deps = [
+        "overload",
+        "poll",
+        "promise_factory",
         "promise_like",
         "//:gpr_platform",
     ],
@@ -2381,9 +2395,11 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
         "absl/log:check",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
+        "notification",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7200,33 +7216,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_binder",
-    srcs = [
-        "resolver/binder/binder_resolver.cc",
-    ],
-    external_deps = [
-        "absl/log:log",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "error",
-        "iomgr_port",
-        "resolved_address",
-        "status_helper",
-        "//:config",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_resolver",
-        "//:orphanable",
-        "//:uri",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_resolver_xds_attributes",
     hdrs = [
         "resolver/xds/xds_resolver_attributes.h",
@@ -7688,8 +7677,11 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
+        "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_tcp_socket_utils",
+        "event_engine_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
@@ -8043,6 +8035,8 @@ grpc_cc_library(
         "chaotic_good_transport",
         "context",
         "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "for_each",
         "grpc_promise_endpoint",
         "if",
@@ -8193,6 +8187,7 @@ grpc_cc_library(
         "call_final_info",
         "call_state",
         "dump_args",
+        "for_each",
         "if",
         "latch",
         "map",

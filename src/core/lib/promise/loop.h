@@ -140,7 +140,7 @@ class Loop {
 // Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
 // otherwise yield the returned value as the result of the loop.
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Loop<F> Loop(F f) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));
 }
 
