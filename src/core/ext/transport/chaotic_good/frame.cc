@@ -247,7 +247,7 @@ std::string ClientInitialMetadataFrame::ToString() const {
 }
 
 absl::Status ClientEndOfStream::Deserialize(const FrameHeader& header,
-                                            SliceBuffer payload) {
+                                            SliceBuffer) {
   CHECK_EQ(header.type, FrameType::kClientEndOfStream);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
@@ -375,7 +375,7 @@ FrameHeader CancelFrame::MakeHeader() const {
   return FrameHeader{FrameType::kCancel, 0, stream_id, 0};
 }
 
-void CancelFrame::SerializePayload(SliceBuffer& payload) const {}
+void CancelFrame::SerializePayload(SliceBuffer&) const {}
 
 std::string CancelFrame::ToString() const {
   return absl::StrCat("CancelFrame{stream_id=", stream_id, "}");
