@@ -28,6 +28,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -80,6 +82,25 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         << " " << frame.ToString();
     return TryJoin<absl::StatusOr>(control_endpoint_.Write(std::move(control)),
                                    data_endpoint_.Write(std::move(data)));
+  }
+
+  template <typename Frame>
+  auto TransportWriteLoop(MpscReceiver<Frame>& outgoing_frames) {
+    return Loop([self = Ref(), &outgoing_frames] {
+      return TrySeq(
+          // Get next outgoing frame.
+          outgoing_frames.Next(),
+          // Serialize and write it out.
+          [self = self.get()](Frame client_frame) {
+            return self->WriteFrame(GetFrameInterface(client_frame));
+          },
+          []() -> LoopCtl<absl::Status> {
+            // The write failures will be caught in TrySeq and exit loop.
+            // Therefore, only need to return Continue() in the last lambda
+            // function.
+            return Continue();
+          });
+    });
   }
 
   // Read frame header and payloads for control and data portions of one frame.

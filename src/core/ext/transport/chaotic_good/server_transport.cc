@@ -50,25 +50,6 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-auto ChaoticGoodServerTransport::TransportWriteLoop(
-    RefCountedPtr<ChaoticGoodTransport> transport) {
-  return Loop([this, transport = std::move(transport)] {
-    return TrySeq(
-        // Get next outgoing frame.
-        outgoing_frames_.Next(),
-        // Serialize and write it out.
-        [transport = transport.get()](ServerFrame client_frame) {
-          return transport->WriteFrame(GetFrameInterface(client_frame));
-        },
-        []() -> LoopCtl<absl::Status> {
-          // The write failures will be caught in TrySeq and exit loop.
-          // Therefore, only need to return Continue() in the last lambda
-          // function.
-          return Continue();
-        });
-  });
-}
-
 auto ChaoticGoodServerTransport::PushFrameIntoCall(CallInitiator call_initiator,
                                                    MessageFrame frame) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -326,10 +307,11 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  party_->Spawn("server-chaotic-writer",
-                GRPC_LATENT_SEE_PROMISE("ServerTransportWriteLoop",
-                                        TransportWriteLoop(transport)),
-                OnTransportActivityDone("writer"));
+  party_->Spawn(
+      "server-chaotic-writer",
+      GRPC_LATENT_SEE_PROMISE("ServerTransportWriteLoop",
+                              transport->TransportWriteLoop(outgoing_frames_)),
+      OnTransportActivityDone("writer"));
   party_->Spawn("server-chaotic-reader",
                 GRPC_LATENT_SEE_PROMISE("ServerTransportReadLoop",
                                         TransportReadLoop(transport)),

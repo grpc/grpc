@@ -109,7 +109,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   auto ReadOneFrame(ChaoticGoodTransport& transport);
-  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>

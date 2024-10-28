@@ -62,25 +62,6 @@ void ChaoticGoodClientTransport::Orphan() {
   Unref();
 }
 
-auto ChaoticGoodClientTransport::TransportWriteLoop(
-    RefCountedPtr<ChaoticGoodTransport> transport) {
-  return Loop([this, transport = std::move(transport)] {
-    return TrySeq(
-        // Get next outgoing frame.
-        outgoing_frames_.Next(),
-        // Serialize and write it out.
-        [transport = transport.get()](ClientFrame client_frame) {
-          return transport->WriteFrame(GetFrameInterface(client_frame));
-        },
-        []() -> LoopCtl<absl::Status> {
-          // The write failures will be caught in TrySeq and exit loop.
-          // Therefore, only need to return Continue() in the last lambda
-          // function.
-          return Continue();
-        });
-  });
-}
-
 absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
     uint32_t stream_id) {
   MutexLock lock(&mu_);
@@ -211,10 +192,11 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  party_->Spawn("client-chaotic-writer",
-                GRPC_LATENT_SEE_PROMISE("ClientTransportWriteLoop",
-                                        TransportWriteLoop(transport)),
-                OnTransportActivityDone("write_loop"));
+  party_->Spawn(
+      "client-chaotic-writer",
+      GRPC_LATENT_SEE_PROMISE("ClientTransportWriteLoop",
+                              transport->TransportWriteLoop(outgoing_frames_)),
+      OnTransportActivityDone("write_loop"));
   party_->Spawn(
       "client-chaotic-reader",
       GRPC_LATENT_SEE_PROMISE("ClientTransportReadLoop",

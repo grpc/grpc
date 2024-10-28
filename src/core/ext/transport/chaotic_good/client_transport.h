@@ -89,7 +89,6 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   absl::optional<CallHandler> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone(absl::string_view what);
-  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   template <typename T>
   auto DispatchFrame(ChaoticGoodTransport* transport, const FrameHeader& header,
                      SliceBuffer payload);
