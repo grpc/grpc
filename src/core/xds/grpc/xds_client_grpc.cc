@@ -232,7 +232,7 @@ GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
     return GlobalStatsPluginRegistry::GetStatsPluginsForServer(channel_args);
   }
   grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-      ChannelArgs{});
+      ChannelArgs{channel_args});
   std::string authority =
       channel_args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
           .value_or(
@@ -250,11 +250,6 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   // instance for the channel or server instead of using the global instance.
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
-  std::string channel_default_authority =
-      args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
-          .value_or(
-              CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
-                  key));
   if (bootstrap_config.has_value()) {
     auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
     if (!bootstrap.ok()) return bootstrap.status();

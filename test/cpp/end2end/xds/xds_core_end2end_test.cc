@@ -1122,10 +1122,16 @@ class XdsMetricsTest : public XdsEnd2endTest {
                 [](const grpc_core::experimental::StatsPluginChannelScope&
                        scope) {
                   return scope.target() == absl::StrCat("xds:", kServerName) &&
-                         scope.default_authority() == kServerName;
+                         scope.default_authority() == kServerName &&
+                         scope.experimental_args().GetString("test_only.arg") ==
+                             "test_only.value";
                 })
             .BuildAndRegister();
-    InitClient();
+    ChannelArguments args;
+    args.SetString("test_only.arg", "test_only.value");
+    InitClient(/*builder=*/absl::nullopt, /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"", /*args=*/&args);
   }
 
   std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
