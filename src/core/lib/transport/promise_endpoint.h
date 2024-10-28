@@ -41,6 +41,7 @@
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -63,66 +64,36 @@ class PromiseEndpoint {
   PromiseEndpoint(PromiseEndpoint&&) = default;
   PromiseEndpoint& operator=(PromiseEndpoint&&) = default;
 
-  // Returns a promise that resolves to a `absl::Status` indicating the result
-  // of the write operation.
+  // Returns a promise that resolves to a `absl::Status`.
+  // An Ok status indicates that the write is queued and may succeed,
+  // whilst a failure status indicates that the write was not queued
+  // and will never succeed.
+  // There is no way to determine whether a specific write succeeds or not.
   //
   // Concurrent writes are not supported, which means callers should not call
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
   auto Write(SliceBuffer data) {
-    // Start write and assert previous write finishes.
-    auto prev = write_state_->state.exchange(WriteState::kWriting,
-                                             std::memory_order_relaxed);
-    CHECK(prev == WriteState::kIdle);
-    bool completed;
-    if (data.Length() == 0) {
-      completed = true;
-    } else {
-      // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
-      // available.
-      grpc_slice_buffer_swap(write_state_->buffer.c_slice_buffer(),
-                             data.c_slice_buffer());
-      // If `Write()` returns true immediately, the callback will not be called.
-      // We still need to call our callback to pick up the result.
-      write_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
-      completed = endpoint_->Write(
-          [write_state = write_state_](absl::Status status) {
-            ApplicationCallbackExecCtx callback_exec_ctx;
-            ExecCtx exec_ctx;
-            write_state->Complete(std::move(status));
-          },
-          &write_state_->buffer, nullptr /* uses default arguments */);
-      if (completed) write_state_->waker = Waker();
-    }
-    return If(
-        completed,
-        [this]() {
-          return [write_state = write_state_]() {
-            auto prev = write_state->state.exchange(WriteState::kIdle,
-                                                    std::memory_order_relaxed);
-            CHECK(prev == WriteState::kWriting);
-            return absl::OkStatus();
-          };
-        },
-        GRPC_LATENT_SEE_PROMISE(
-            "DelayedWrite", ([this]() {
-              return [write_state = write_state_]() -> Poll<absl::Status> {
-                // If current write isn't finished return `Pending()`, else
-                // return write result.
-                WriteState::State expected = WriteState::kWritten;
-                if (write_state->state.compare_exchange_strong(
-                        expected, WriteState::kIdle, std::memory_order_acquire,
-                        std::memory_order_relaxed)) {
-                  // State was Written, and we changed it to Idle. We can return
-                  // the result.
-                  return std::move(write_state->result);
-                }
-                // State was not Written; since we're polling it must be
-                // Writing. Assert that and return Pending.
-                CHECK(expected == WriteState::kWriting);
-                return Pending();
-              };
-            })));
+    return [state = buffer_state_->Ref(),
+            data = std::move(data)]() -> Poll<absl::Status> {
+      Waker write_waker;
+      ReleasableMutexLock lock(&state->mu);
+      if (!state->failure_status.ok()) {
+        return state->failure_status;
+      }
+      if (state->queuing.Length() > 0 &&
+          state->queuing.Length() + data.Length() > state->queue_limit) {
+        state->buffer_waker = GetContext<Activity>()->MakeNonOwningWaker();
+        return Pending{};
+      }
+      if (state->queuing.Length() == 0) {
+        write_waker = std::move(state->write_waker);
+      }
+      state->queuing.Append(std::move(data));
+      lock.Release();
+      write_waker.Wakeup();
+      return absl::OkStatus();
+    };
   }
 
   // Returns a promise that resolves to `SliceBuffer` with
@@ -135,7 +106,7 @@ class PromiseEndpoint {
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
-    CHECK(read_state_->pending_buffer.Count() == 0u);
+    CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
       // Set read args with hinted bytes.
@@ -155,7 +126,7 @@ class PromiseEndpoint {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
-        DCHECK(read_state_->pending_buffer.Count() == 0u);
+        DCHECK_EQ(read_state_->pending_buffer.Count(), 0u);
       } else {
         complete = false;
         break;
@@ -284,34 +255,18 @@ class PromiseEndpoint {
     void Complete(absl::Status status, size_t num_bytes_requested);
   };
 
-  struct WriteState : public RefCounted<WriteState> {
-    enum State : uint8_t {
-      kIdle,     // Not writing.
-      kWriting,  // Write started, but not completed.
-      kWritten,  // Write completed.
-    };
-
-    std::atomic<State> state{kIdle};
-    // Write buffer used for `EventEngine::Endpoint::Write()` to ensure the
-    // memory behind the buffer is not lost.
-    grpc_event_engine::experimental::SliceBuffer buffer;
-    // Used for store the result from `EventEngine::Endpoint::Write()`.
-    absl::Status result;
-    Waker waker;
-
-    void Complete(absl::Status status) {
-      result = std::move(status);
-      auto w = std::move(waker);
-      auto prev = state.exchange(kWritten, std::memory_order_release);
-      // Previous state should be Writing. If we got anything else we've entered
-      // the callback path twice.
-      CHECK(prev == kWriting);
-      w.Wakeup();
-    }
+  struct BufferState : public RefCounted<BufferState> {
+    Mutex mu;
+    absl::Status failure_status ABSL_GUARDED_BY(mu);
+    size_t queue_limit ABSL_GUARDED_BY(mu);
+    Waker buffer_waker ABSL_GUARDED_BY(mu);
+    Waker write_waker ABSL_GUARDED_BY(mu);
+    SliceBuffer queuing ABSL_GUARDED_BY(mu);
   };
 
-  RefCountedPtr<WriteState> write_state_ = MakeRefCounted<WriteState>();
+  RefCountedPtr<BufferState> buffer_state_ = MakeRefCounted<BufferState>();
   RefCountedPtr<ReadState> read_state_ = MakeRefCounted<ReadState>();
+  RefCountedPtr<Party> write_party_;
 };
 
 }  // namespace grpc_core
