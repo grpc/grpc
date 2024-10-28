@@ -232,7 +232,7 @@ GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
     return GlobalStatsPluginRegistry::GetStatsPluginsForServer(channel_args);
   }
   grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-      ChannelArgs{channel_args});
+      channel_args);
   std::string authority =
       channel_args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
           .value_or(
