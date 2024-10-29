@@ -3668,7 +3668,11 @@ libs:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -5326,8 +5330,8 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
-  - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -5397,7 +5401,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
-  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -5769,7 +5772,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - gtest
@@ -8243,7 +8250,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/cfstream_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -8370,7 +8381,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/end2end/channelz_service_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -8557,7 +8572,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_call_test.cc
   - test/cpp/util/cli_credentials.cc
@@ -8641,7 +8660,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/client_callback_end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -8702,7 +8725,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/client_fork_test.cc
   deps:
   - gtest
@@ -8724,7 +8751,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/client_interceptors_end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -8740,13 +8771,19 @@ targets:
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
@@ -9217,7 +9254,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/context_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -9281,7 +9322,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/crl_provider_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -9387,7 +9432,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/delegating_channel_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -9643,7 +9692,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -9741,9 +9794,12 @@ targets:
   language: c++
   headers: []
   src:
-  - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/util/error_details_test.cc
   deps:
   - gtest
@@ -9891,7 +9947,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/exception_test.cc
   deps:
   - gtest
@@ -10312,7 +10372,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/flaky_network_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -10728,7 +10792,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
   - gtest
@@ -10966,7 +11034,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/authorization_policy_provider.cc
   - test/core/test_util/audit_logging_utils.cc
   - test/cpp/end2end/grpc_authz_end2end_test.cc
@@ -11346,11 +11418,17 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
@@ -11392,7 +11470,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -11528,7 +11610,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/health_service_end2end_test.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -11941,7 +12027,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/hybrid_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -13332,7 +13422,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/message_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -13450,7 +13544,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/test/mock_stream_test.cc
   deps:
   - grpc++_test
@@ -13465,7 +13563,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test
@@ -13756,7 +13858,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - gtest
@@ -13860,8 +13966,12 @@ targets:
   language: c++
   headers: []
   src:
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/orca_service.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/end2end/orca_service_end2end_test.cc
   deps:
@@ -13905,7 +14015,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/ext/otel/otel_client_call_tracer.cc
   - src/cpp/ext/otel/otel_plugin.cc
   - src/cpp/ext/otel/otel_server_call_tracer.cc
@@ -14487,7 +14601,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/port_sharing_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -14617,13 +14735,13 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/interop/pre_stop_hook_server.h
   - test/cpp/interop/xds_interop_server_lib.h
-  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -14693,7 +14811,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
-  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -14925,7 +15042,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/proto_server_reflection_test.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
@@ -15136,7 +15257,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/raw_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -15720,7 +15845,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/resource_quota_end2end_stress_test.cc
   deps:
   - gtest
@@ -18045,7 +18174,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/test_lb_policies.cc
@@ -18214,7 +18347,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/server_builder_plugin_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -18240,7 +18377,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
@@ -18279,7 +18420,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -18376,7 +18521,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - gtest
@@ -18456,7 +18605,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -18496,7 +18649,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -18616,7 +18773,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/service_config_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -18799,7 +18960,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - gtest
@@ -19381,7 +19546,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/streaming_throughput_test.cc
   deps:
   - gtest
@@ -20016,7 +20185,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -20156,7 +20329,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/thread_stress_test.cc
   deps:
   - gtest
@@ -20358,7 +20535,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/tls_credentials_test.cc
   deps:
@@ -20373,7 +20554,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
   - gtest
@@ -21022,8 +21207,12 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/cmdline.cc
@@ -21286,7 +21475,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21340,7 +21530,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -21391,6 +21580,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -21571,7 +21761,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21626,7 +21817,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -21677,6 +21867,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -21822,7 +22013,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21876,7 +22068,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -21927,6 +22118,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -21962,7 +22154,11 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
@@ -22015,7 +22211,9 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -22091,8 +22289,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
-  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -22143,6 +22339,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -22188,7 +22385,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22250,7 +22448,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -22301,6 +22498,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -22428,7 +22626,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22482,7 +22681,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -22533,6 +22731,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -22575,7 +22774,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22631,7 +22831,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -22682,6 +22881,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -22724,7 +22924,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22779,7 +22980,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -22830,6 +23030,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -22873,7 +23074,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22928,7 +23130,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -22979,6 +23180,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -23478,7 +23680,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23534,7 +23737,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -23585,6 +23787,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -23627,7 +23830,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23683,7 +23887,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/http/stateful_session/cookie/v3/cookie.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -23734,6 +23937,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -23806,7 +24010,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23862,7 +24067,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -23913,6 +24117,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -23957,7 +24162,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -24012,7 +24218,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -24063,6 +24268,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -24109,7 +24315,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -24163,7 +24370,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -24214,6 +24420,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -24369,7 +24576,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -24425,7 +24633,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -24476,6 +24683,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
@@ -24508,11 +24716,11 @@ targets:
   - src/cpp/server/csds/csds.h
   - test/cpp/interop/rpc_behavior_lb_policy.h
   - test/cpp/interop/xds_stats_watcher.h
-  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -24582,7 +24790,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
-  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
   - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
@@ -24672,7 +24879,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -24728,7 +24936,6 @@ targets:
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
-  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
@@ -24779,6 +24986,7 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - third_party/xds/xds/type/matcher/v3/cel.proto
   - third_party/xds/xds/type/matcher/v3/domain.proto
   - third_party/xds/xds/type/matcher/v3/http_inputs.proto
