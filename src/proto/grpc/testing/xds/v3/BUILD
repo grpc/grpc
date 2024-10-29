@@ -68,8 +68,8 @@ grpc_internal_proto_library(
     srcs = ["orca_service.proto"],
     has_services = True,
     deps = [
-        "@com_google_protobuf//:duration_proto",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg",
+        "@com_google_protobuf//:duration_proto",
     ],
 )
 
