@@ -81,7 +81,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     port_ = grpc_pick_unused_port_or_die();
     addr_ = absl::StrCat("[::1]:", port_);
     server_ = grpc_server_create(nullptr, nullptr);
-    grpc_server_add_chaotic_good_port(server_, addr_.c_str());
+    grpc_server_add_chaotic_good_legacy_port(server_, addr_.c_str());
     grpc_server_start(server_);
   }
 
