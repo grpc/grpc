@@ -22,12 +22,26 @@ grpc_package(
 )
 
 grpc_internal_proto_library(
+    name = "discovery_proto",
+    srcs = ["discovery.proto"],
+    has_services = True,
+    deps = [
+        "@envoy_api//envoy/config/core/v3:pkg",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "discovery_cc_proto",
+    deps = ["discovery_proto"],
+)
+
+grpc_internal_proto_library(
     name = "ads_proto",
     srcs = ["ads.proto"],
     has_services = True,
-    deps = [
-        "@envoy_api//envoy/service/discovery/v3:pkg",
-    ],
+    deps = ["discovery_proto"],
 )
 
 grpc_cc_proto_library(
