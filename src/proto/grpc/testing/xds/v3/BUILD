@@ -26,9 +26,9 @@ grpc_internal_proto_library(
     srcs = ["discovery.proto"],
     has_services = True,
     deps = [
-        "@envoy_api//envoy/config/core/v3:pkg",
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:duration_proto",
+        "@envoy_api//envoy/config/core/v3:pkg",
     ],
 )
 
