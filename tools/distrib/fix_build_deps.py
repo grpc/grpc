@@ -459,6 +459,7 @@ for dirname in [
             "grpc_clang_cl_settings": lambda **kwargs: None,
             "grpc_benchmark_args": lambda **kwargs: [],
             "LARGE_MACHINE": 1,
+            "HISTORY": 1,
         },
         {},
     )

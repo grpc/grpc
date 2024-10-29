@@ -57,6 +57,7 @@ TEST(StatsTest, IncrementHttp2MetadataSize) {
 }
 
 static int FindExpectedBucket(const HistogramView& h, int value) {
+  LOG(INFO) << "num_buckets: " << h.num_buckets;
   if (value < 0) {
     return 0;
   }

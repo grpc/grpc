@@ -261,6 +261,28 @@ struct TrySeqIterResultTraits {
   using Result = BasicSeqIter<IterTraits>;
 };
 
+template <typename Container, typename Factory, typename Argument>
+struct TrySeqContainerResultTraits {
+  using BaseResult =
+      typename TrySeqIterResultTraits<typename Container::iterator, Factory,
+                                      Argument>::Result;
+  class Result {
+   public:
+    Result(Container container, Factory factory, Argument argument)
+        : container_(std::move(container)),
+          base_result_(container_.begin(), container_.end(), std::move(factory),
+                       std::move(argument)) {}
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
+    Result(Result&&) = default;
+    Result& operator=(Result&&) = default;
+
+   private:
+    Container container_;
+    BaseResult base_result_;
+  };
+};
+
 }  // namespace promise_detail
 
 // Try a sequence of operations.
@@ -360,6 +382,14 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
       typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
                                                       Argument>::Result;
   return Result(begin, end, std::move(factory), std::move(argument));
+}
+
+template <typename Container, typename Factory, typename Argument>
+auto TrySeqContainer(Container container, Argument argument, Factory factory) {
+  using Result =
+      typename promise_detail::TrySeqContainerResultTraits<Container, Factory,
+                                                           Argument>::Result;
+  return Result(std::move(container), std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

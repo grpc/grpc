@@ -20,17 +20,16 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/random/random.h"
 #include "absl/strings/escaping.h"
+#include "src/core/ext/transport/chaotic_good/control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -44,44 +43,51 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                        PromiseEndpoint data_endpoint, uint32_t encode_alignment,
                        uint32_t decode_alignment)
       : control_endpoint_(std::move(control_endpoint)),
-        data_endpoint_(std::move(data_endpoint)),
+        data_endpoints_([ep = std::move(data_endpoint)]() mutable {
+          // Surely there's a better way of initializing a one element vector...
+          std::vector<PromiseEndpoint> endpoints;
+          endpoints.emplace_back(std::move(ep));
+          return endpoints;
+        }()),
         encode_alignment_(encode_alignment),
-        decode_alignment_(decode_alignment) {
-    // Enable RxMemoryAlignment and RPC receive coalescing after the transport
-    // setup is complete. At this point all the settings frames should have
-    // been read.
-    data_endpoint_.EnforceRxMemoryAlignmentAndCoalescing();
-  }
+        decode_alignment_(decode_alignment) {}
 
   auto WriteFrame(const FrameInterface& frame) {
-    SliceBuffer control;
-    SliceBuffer data;
     FrameHeader header = frame.MakeHeader();
-    if (header.payload_length > 128 * 1024) {
-      header.payload_connection_id = 1;
-      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
-      frame.SerializePayload(data);
-      const size_t padding = header.Padding(encode_alignment_);
-      if (padding == 0) {
-      } else if (padding < GRPC_SLICE_INLINED_SIZE) {
-        memset(data.AddTiny(padding), 0, padding);
-      } else {
-        auto slice = MutableSlice::CreateUninitialized(padding);
-        memset(slice.data(), 0, padding);
-        data.AppendIndexed(Slice(std::move(slice)));
-      }
-    } else {
-      header.Serialize(control.AddTiny(FrameHeader::kFrameHeaderSize));
-      frame.SerializePayload(control);
-    }
-    // ignore encoding errors: they will be logged separately already
     GRPC_TRACE_LOG(chaotic_good, INFO)
         << "CHAOTIC_GOOD: WriteFrame to:"
         << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                .value_or("<<unknown peer address>>")
         << " " << frame.ToString();
-    return TryJoin<absl::StatusOr>(control_endpoint_.Write(std::move(control)),
-                                   data_endpoint_.Write(std::move(data)));
+    return If(
+        data_endpoints_.empty() || header.payload_length < 128 * 1024,
+        [this, &header, &frame]() {
+          SliceBuffer output;
+          header.Serialize(output.AddTiny(FrameHeader::kFrameHeaderSize));
+          frame.SerializePayload(output);
+          return control_endpoint_.Write(std::move(output));
+        },
+        [this, header, &frame]() {
+          SliceBuffer payload;
+          frame.SerializePayload(payload);
+          const size_t padding = header.Padding(encode_alignment_);
+          if (padding == 0) {
+          } else if (padding < GRPC_SLICE_INLINED_SIZE) {
+            memset(payload.AddTiny(padding), 0, padding);
+          } else {
+            auto slice = MutableSlice::CreateUninitialized(padding);
+            memset(slice.data(), 0, padding);
+            payload.AppendIndexed(Slice(std::move(slice)));
+          }
+          return Seq(data_endpoints_.Write(std::move(payload)),
+                     [this, header](uint32_t connection_id) mutable {
+                       header.payload_connection_id = connection_id + 1;
+                       SliceBuffer header_frame;
+                       header.Serialize(
+                           header_frame.AddTiny(FrameHeader::kFrameHeaderSize));
+                       return control_endpoint_.Write(std::move(header_frame));
+                     });
+        });
   }
 
   template <typename Frame>
@@ -123,11 +129,19 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         },
         [this](FrameHeader frame_header) {
           current_frame_header_ = frame_header;
-          auto con = frame_header.payload_connection_id == 0
-                         ? &control_endpoint_
-                         : &data_endpoint_;
-          return con->Read(frame_header.payload_length +
-                           frame_header.Padding(decode_alignment_));
+          return If(
+              frame_header.payload_connection_id == 0,
+              [this]() {
+                CHECK_EQ(current_frame_header_.payload_length, 0);
+                return control_endpoint_.Read(
+                    current_frame_header_.payload_length);
+              },
+              [this]() {
+                return data_endpoints_.Read(
+                    current_frame_header_.payload_connection_id - 1,
+                    current_frame_header_.payload_length +
+                        current_frame_header_.Padding(decode_alignment_));
+              });
         },
         [this](SliceBuffer payload)
             -> absl::StatusOr<std::tuple<FrameHeader, SliceBuffer>> {
@@ -155,8 +169,8 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
  private:
-  PromiseEndpoint control_endpoint_;
-  PromiseEndpoint data_endpoint_;
+  ControlEndpoint control_endpoint_;
+  DataEndpoints data_endpoints_;
   FrameHeader current_frame_header_;
   const uint32_t encode_alignment_;
   const uint32_t decode_alignment_;
