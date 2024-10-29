@@ -52,6 +52,11 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: chaotic_good_legacy_protocol
+  description: If set, use the first version of the chaotic-good protocol when that protocol is enabled.
+  expiry: 2024/12/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: client_privacy
   description:
     If set, client privacy

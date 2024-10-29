@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
+#include "src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -31,11 +31,10 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/ext/transport/chaotic_good/frame.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chaotic_good/server_transport.h"
-#include "src/core/ext/transport/chaotic_good/settings_metadata.h"
-#include "src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h"
+#include "src/core/ext/transport/chaotic_good_legacy/frame.h"
+#include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
+#include "src/core/ext/transport/chaotic_good_legacy/server_transport.h"
+#include "src/core/ext/transport/chaotic_good_legacy/settings_metadata.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -70,7 +69,7 @@
 #include "src/core/util/time.h"
 
 namespace grpc_core {
-namespace chaotic_good {
+namespace chaotic_good_legacy {
 
 namespace {
 const Duration kConnectionDeadline = Duration::Seconds(120);
@@ -459,13 +458,11 @@ void ChaoticGoodServerListener::Orphan() {
   Unref();
 };
 
-}  // namespace chaotic_good
+}  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
-int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
-  if (grpc_core::IsChaoticGoodLegacyProtocolEnabled()) {
-    return grpc_server_add_chaotic_good_legacy_port(server, addr);
-  }
+int grpc_server_add_chaotic_good_legacy_port(grpc_server* server,
+                                             const char* addr) {
   grpc_core::ExecCtx exec_ctx;
   auto* const core_server = grpc_core::Server::FromC(server);
   const std::string parsed_addr = grpc_core::URI::PercentDecode(addr);
@@ -480,7 +477,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   std::vector<std::pair<std::string, absl::Status>> error_list;
   for (const auto& resolved_addr : resolved_or.value()) {
     auto listener = grpc_core::MakeOrphanable<
-        grpc_core::chaotic_good::ChaoticGoodServerListener>(
+        grpc_core::chaotic_good_legacy::ChaoticGoodServerListener>(
         core_server, core_server->channel_args());
     const auto ee_addr =
         grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr);

@@ -19,6 +19,7 @@
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
     "canary_client_privacy": "canary_client_privacy",
+    "chaotic_good_legacy_protocol": "chaotic_good_legacy_protocol",
     "client_privacy": "client_privacy",
     "event_engine_application_callbacks": "event_engine_application_callbacks",
     "event_engine_callback_cq": "event_engine_application_callbacks,event_engine_callback_cq",
@@ -57,6 +58,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
             ],
@@ -107,6 +109,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
             ],
@@ -141,6 +144,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
+                "chaotic_good_legacy_protocol",
                 "event_engine_dns_non_client_channel",
                 "local_connector_secure",
             ],
