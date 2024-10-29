@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
-#define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_LEGACY_TRANSPORT_TEST_H
+#define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_LEGACY_TRANSPORT_TEST_H
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -80,4 +80,4 @@ grpc_event_engine::experimental::Slice Zeros(uint32_t length);
 }  // namespace chaotic_good_legacy
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TRANSPORT_TEST_H
+#endif  // GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_LEGACY_TRANSPORT_TEST_H
