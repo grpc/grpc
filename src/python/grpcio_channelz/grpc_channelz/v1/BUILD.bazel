@@ -18,7 +18,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_proto_library(
     name = "channelz_py_pb2",
-    imports = ["../../"],
+    # imports = ["../../"],
     deps = ["//src/proto/grpc/channelz:channelz_proto_only"],
 )
 
