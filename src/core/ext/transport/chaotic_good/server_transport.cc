@@ -292,7 +292,7 @@ auto ChaoticGoodServerTransport::OnTransportActivityDone(
 
 ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     const ChannelArgs& args, PromiseEndpoint control_endpoint,
-    PromiseEndpoint data_endpoint,
+    std::vector<PromiseEndpoint> data_endpoints,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
@@ -302,7 +302,7 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
       event_engine_(event_engine),
       outgoing_frames_(4) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoint), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoints), 64, 64);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

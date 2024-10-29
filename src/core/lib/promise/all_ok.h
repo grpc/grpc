@@ -23,6 +23,7 @@
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "detail/promise_factory.h"
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -79,6 +80,42 @@ class AllOk {
 template <typename Result, typename... Promises>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AllOk(Promises... promises) {
   return promise_detail::AllOk<Result, Promises...>(std::move(promises)...);
+}
+
+// Construct a promise for each element of the set, then run them all.
+// If any fail, cancel the rest and return the failure.
+// If all succeed, return Ok.
+template <typename Result, typename Iter, typename FactoryFn>
+inline auto AllOkIter(Iter begin, Iter end, FactoryFn factory_fn) {
+  using Factory =
+      promise_detail::RepeatedPromiseFactory<decltype(*begin), FactoryFn>;
+  Factory factory(std::move(factory_fn));
+  using Promise = typename Factory::Promise;
+  std::vector<Promise> promises;
+  std::vector<bool> done;
+  for (auto it = begin; it != end; ++it) {
+    promises.emplace_back(factory.Make(*it));
+    done.push_back(false);
+  }
+  return [promises = std::move(promises),
+          done = std::move(done)]() mutable -> Poll<Result> {
+    using Traits = promise_detail::AllOkTraits<Result>;
+    bool still_working = false;
+    for (size_t i = 0; i < promises.size(); ++i) {
+      if (done[i]) continue;
+      auto p = promises[i]();
+      if (auto* r = p.value_if_ready()) {
+        if (!Traits::IsOk(*r)) {
+          return Traits::template EarlyReturn<Result>(std::move(*r));
+        }
+        done[i] = true;
+      } else {
+        still_working = true;
+      }
+    }
+    if (still_working) return Pending{};
+    return Traits::FinalReturn();
+  };
 }
 
 }  // namespace grpc_core

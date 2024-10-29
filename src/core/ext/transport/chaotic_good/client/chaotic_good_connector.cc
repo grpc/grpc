@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/latch.h"
@@ -89,9 +90,10 @@ ChaoticGoodConnector::~ChaoticGoodConnector() {
 }
 
 auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
-    RefCountedPtr<ChaoticGoodConnector> self) {
-  return TrySeq(self->data_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
-                [self](Slice slice) mutable {
+    RefCountedPtr<ChaoticGoodConnector> self, uint32_t data_connection_index) {
+  return TrySeq(self->data_endpoints_[data_connection_index].ReadSlice(
+                    FrameHeader::kFrameHeaderSize),
+                [self, data_connection_index](Slice slice) mutable {
                   // Read setting frame;
                   // Parse frame header
                   auto frame_header_ =
@@ -99,10 +101,12 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
                           GRPC_SLICE_START_PTR(slice.c_slice())));
                   return If(
                       frame_header_.ok(),
-                      [frame_header_ = *frame_header_, self]() {
+                      [data_connection_index, frame_header_ = *frame_header_,
+                       self]() {
                         auto frame_header_length = frame_header_.payload_length;
                         return TrySeq(
-                            self->data_endpoint_.Read(frame_header_length),
+                            self->data_endpoints_[data_connection_index].Read(
+                                frame_header_length),
                             []() { return absl::OkStatus(); });
                       },
                       [status = frame_header_.status()]() { return status; });
@@ -110,27 +114,30 @@ auto ChaoticGoodConnector::DataEndpointReadSettingsFrame(
 }
 
 auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
-    RefCountedPtr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self, uint32_t data_connection_index) {
   // Serialize setting frame.
   SettingsFrame frame;
   frame.settings.set_data_channel(true);
-  frame.settings.set_connection_id(self->connection_id_);
+  frame.settings.add_connection_id(
+      self->connection_ids_[data_connection_index]);
   frame.settings.set_alignment(kDataAlignmentBytes);
   SliceBuffer write_buffer;
   frame.MakeHeader().Serialize(
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return self->data_endpoint_.Write(std::move(write_buffer));
+  return self->data_endpoints_[data_connection_index].Write(
+      std::move(write_buffer));
 }
 
 auto ChaoticGoodConnector::WaitForDataEndpointSetup(
-    RefCountedPtr<ChaoticGoodConnector> self) {
+    RefCountedPtr<ChaoticGoodConnector> self, uint32_t data_connection_index) {
   // Data endpoint on_connect callback.
   grpc_event_engine::experimental::EventEngine::OnConnectCallback
       on_data_endpoint_connect =
-          [self](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
-                     endpoint) mutable {
+          [self, data_connection_index](
+              absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+                  endpoint) mutable {
             ExecCtx exec_ctx;
             if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
               MutexLock lock(&self->mu_);
@@ -149,9 +156,9 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
               chaotic_good_ext->EnableStatsCollection(
                   /*is_control_channel=*/false);
             }
-            self->data_endpoint_ =
+            self->data_endpoints_[data_connection_index] =
                 PromiseEndpoint(std::move(endpoint.value()), SliceBuffer());
-            self->data_endpoint_ready_.Set();
+            self->data_endpoint_ready_[data_connection_index]->Set();
           };
   self->event_engine_->Connect(
       std::move(on_data_endpoint_connect), *self->resolved_addr_,
@@ -160,13 +167,13 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
       std::chrono::seconds(kTimeoutSecs));
-
   return TrySeq(Race(
-      TrySeq(self->data_endpoint_ready_.Wait(),
-             [self]() mutable {
-               return TrySeq(DataEndpointWriteSettingsFrame(self),
-                             DataEndpointReadSettingsFrame(self),
-                             []() -> absl::Status { return absl::OkStatus(); });
+      TrySeq(self->data_endpoint_ready_[data_connection_index]->Wait(),
+             [self, data_connection_index]() mutable {
+               return TrySeq(
+                   DataEndpointWriteSettingsFrame(self, data_connection_index),
+                   DataEndpointReadSettingsFrame(self, data_connection_index),
+                   []() -> absl::Status { return absl::OkStatus(); });
              }),
       TrySeq(Sleep(Timestamp::Now() + Duration::Seconds(kTimeoutSecs)),
              []() -> absl::Status {
@@ -197,10 +204,29 @@ auto ChaoticGoodConnector::ControlEndpointReadSettingsFrame(
                     return absl::UnavailableError(
                         "no connection id in settings frame");
                   }
-                  self->connection_id_ = frame.settings.connection_id();
+                  for (const auto& connection_id :
+                       frame.settings.connection_id()) {
+                    self->connection_ids_.push_back(connection_id);
+                  }
+                  self->data_endpoints_.resize(self->connection_ids_.size());
+                  for (size_t i = 0; i < self->connection_ids_.size(); ++i) {
+                    self->data_endpoint_ready_.emplace_back(
+                        std::make_unique<InterActivityLatch<void>>());
+                  }
                   return absl::OkStatus();
                 },
-                WaitForDataEndpointSetup(self)),
+                [self]() {
+                  // TODO(ctiller): find a better way than this
+                  std::vector<uint32_t> connection_ids;
+                  for (uint32_t i = 0; i < self->connection_ids_.size(); i++) {
+                    connection_ids.push_back(i);
+                  }
+                  return AllOkIter<absl::Status>(
+                      connection_ids.begin(), connection_ids.end(),
+                      [self](uint32_t connection_id) {
+                        return WaitForDataEndpointSetup(self, connection_id);
+                      });
+                }),
             [status = frame_header.status()]() { return status; });
       });
 }
@@ -317,7 +343,7 @@ void ChaoticGoodConnector::OnHandshakeDone(
           if (status.ok()) {
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
-                std::move(self->data_endpoint_), self->args_.channel_args,
+                std::move(self->data_endpoints_), self->args_.channel_args,
                 self->event_engine_);
             self->result_->channel_args = self->args_.channel_args;
             ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),

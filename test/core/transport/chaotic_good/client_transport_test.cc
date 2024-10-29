@@ -118,8 +118,8 @@ TEST_F(TransportTest, AddOneStream) {
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      MakeChannelArgs(), event_engine());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -207,8 +207,8 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
-      event_engine());
+      OneDataEndpoint(std::move(data_endpoint.promise_endpoint)),
+      MakeChannelArgs(), event_engine());
   auto call = MakeCall(TestInitialMetadata());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());

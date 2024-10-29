@@ -64,7 +64,8 @@ namespace chaotic_good {
 class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(
-      PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
+      PromiseEndpoint control_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
       const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);

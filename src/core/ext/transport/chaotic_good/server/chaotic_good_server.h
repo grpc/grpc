@@ -109,7 +109,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
 
    private:
     void Done();
-    void NewConnectionID();
+    void NewConnectionIDs(size_t count);
     RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
     const RefCountedPtr<ChaoticGoodServerListener> listener_;
     RefCountedPtr<HandshakingState> handshaking_state_;
@@ -117,9 +117,9 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
-    absl::BitGen bitgen_;
-    std::string connection_id_;
+    std::vector<std::string> connection_ids_;
     int32_t data_alignment_;
+    absl::BitGen bitgen_;
   };
 
   void Start(Server*, const std::vector<grpc_pollset*>*) override {

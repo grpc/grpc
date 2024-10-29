@@ -77,7 +77,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
-      PromiseEndpoint data_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 

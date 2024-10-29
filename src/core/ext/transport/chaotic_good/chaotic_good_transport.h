@@ -37,18 +37,19 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
+  std::vector<PromiseEndpoint> ep;
+  ep.emplace_back(std::move(endpoint));
+  return ep;
+}
+
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
   ChaoticGoodTransport(PromiseEndpoint control_endpoint,
-                       PromiseEndpoint data_endpoint, uint32_t encode_alignment,
-                       uint32_t decode_alignment)
+                       std::vector<PromiseEndpoint> data_endpoints,
+                       uint32_t encode_alignment, uint32_t decode_alignment)
       : control_endpoint_(std::move(control_endpoint)),
-        data_endpoints_([ep = std::move(data_endpoint)]() mutable {
-          // Surely there's a better way of initializing a one element vector...
-          std::vector<PromiseEndpoint> endpoints;
-          endpoints.emplace_back(std::move(ep));
-          return endpoints;
-        }()),
+        data_endpoints_(std::move(data_endpoints)),
         encode_alignment_(encode_alignment),
         decode_alignment_(decode_alignment) {}
 
