@@ -44,7 +44,7 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"

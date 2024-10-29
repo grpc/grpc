@@ -65,9 +65,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    deps = [
-        "//:gpr_platform",
-    ],
 )
 
 grpc_cc_library(
@@ -676,6 +673,23 @@ grpc_cc_library(
     public_hdrs = ["lib/promise/map.h"],
     deps = [
         "poll",
+        "promise_like",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "match_promise",
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["lib/promise/match_promise.h"],
+    deps = [
+        "overload",
+        "poll",
+        "promise_factory",
         "promise_like",
         "//:gpr_platform",
     ],
@@ -2378,9 +2392,11 @@ grpc_cc_library(
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
         "absl/log:check",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
+        "notification",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -3649,6 +3665,17 @@ grpc_cc_library(
         "event_engine_common",
         "lb_policy",
         "metadata_batch",
+    ],
+)
+
+grpc_cc_library(
+    name = "connection_context",
+    srcs = ["lib/surface/connection_context.cc"],
+    hdrs = ["lib/surface/connection_context.h"],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+        "//:orphanable",
     ],
 )
 
@@ -7658,8 +7685,11 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
+        "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_tcp_socket_utils",
+        "event_engine_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
@@ -8162,6 +8192,7 @@ grpc_cc_library(
         "call_final_info",
         "call_state",
         "dump_args",
+        "for_each",
         "if",
         "latch",
         "map",
@@ -8852,7 +8883,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+    deps = ["//src/proto/grpc/health/v1:health_proto"],
 )
 
 grpc_upb_proto_library(
@@ -8872,7 +8903,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto"],
 )
 
 grpc_upb_proto_library(
@@ -8882,17 +8913,17 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_proto"],
 )
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
-    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

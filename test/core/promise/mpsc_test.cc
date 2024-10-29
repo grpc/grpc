@@ -88,6 +88,19 @@ TEST(MpscTest, SendOneThingInstantly) {
   EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(true));
 }
 
+TEST(MpscTest, SendAckedOneThingWaitsForRead) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+  auto send = sender.SendAcked(MakePayload(1));
+  EXPECT_THAT(send(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  EXPECT_THAT(receiver.Next()(), IsReady());
+  EXPECT_THAT(send(), IsReady(true));
+  activity.Deactivate();
+}
+
 TEST(MpscTest, SendOneThingInstantlyAndReceiveInstantly) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();

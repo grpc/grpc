@@ -55,9 +55,7 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
                       return md.status();
                     }),
                 Map(handler.PullMessage(),
-                    [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-                      return msg.status();
-                    }),
+                    [](ClientToServerNextMessage msg) { return msg.status(); }),
                 handler.PushMessage(fixture.MakePayload())),
             [&handler_done, &fixture, handler](StatusFlag status) mutable {
               CHECK(status.ok());
@@ -67,29 +65,27 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
               return Empty{};
             });
       });
-      call.initiator.SpawnInfallible(
-          "initiator",
-          [initiator = call.initiator, &fixture, &initiator_done]() mutable {
-            return Map(
-                AllOk<StatusFlag>(
-                    Map(initiator.PushMessage(fixture.MakePayload()),
-                        [](StatusFlag) { return Success{}; }),
-                    Map(initiator.PullServerInitialMetadata(),
-                        [](absl::optional<ServerMetadataHandle> md) {
-                          return Success{};
-                        }),
-                    Map(initiator.PullMessage(),
-                        [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-                          return msg.status();
-                        }),
-                    Map(initiator.PullServerTrailingMetadata(),
-                        [](ServerMetadataHandle) { return Success(); })),
-                [&initiator_done](StatusFlag result) {
-                  CHECK(result.ok());
-                  initiator_done.Notify();
-                  return Empty{};
-                });
-          });
+      call.initiator.SpawnInfallible("initiator", [initiator = call.initiator,
+                                                   &fixture,
+                                                   &initiator_done]() mutable {
+        return Map(
+            AllOk<StatusFlag>(
+                Map(initiator.PushMessage(fixture.MakePayload()),
+                    [](StatusFlag) { return Success{}; }),
+                Map(initiator.PullServerInitialMetadata(),
+                    [](absl::optional<ServerMetadataHandle> md) {
+                      return Success{};
+                    }),
+                Map(initiator.PullMessage(),
+                    [](ServerToClientNextMessage msg) { return msg.status(); }),
+                Map(initiator.PullServerTrailingMetadata(),
+                    [](ServerMetadataHandle) { return Success(); })),
+            [&initiator_done](StatusFlag result) {
+              CHECK(result.ok());
+              initiator_done.Notify();
+              return Empty{};
+            });
+      });
     }
     handler_done.WaitForNotification();
     initiator_done.WaitForNotification();
@@ -127,7 +123,7 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
           [](ValueOrFailure<ClientMetadataHandle> md) { CHECK(md.ok()); });
       handler_spawner.Spawn(
           "HANDLER:PullMessage", [&]() { return call.handler.PullMessage(); },
-          [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+          [&](ClientToServerNextMessage msg) {
             CHECK(msg.ok());
             call.handler.SpawnInfallible(
                 "HANDLER:PushServerTrailingMetadata", [&]() {
@@ -155,9 +151,7 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
       initiator_spawner.Spawn(
           "INITIATOR:PullMessage",
           [&]() { return call.initiator.PullMessage(); },
-          [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-            CHECK(msg.ok());
-          });
+          [](ServerToClientNextMessage msg) { CHECK(msg.ok()); });
       initiator_spawner.Spawn(
           "INITIATOR:PullServerTrailingMetadata",
           [&]() { return call.initiator.PullServerTrailingMetadata(); },
@@ -202,7 +196,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
     Notification initiator_done;
     call.handler.SpawnInfallible("handler", [&]() {
       return Map(call.handler.PullMessage(),
-                 [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                 [&](ClientToServerNextMessage msg) {
                    CHECK(msg.ok());
                    handler_done.Notify();
                    return Empty{};

@@ -40,8 +40,8 @@
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 
-#include "envoy/service/status/v3/csds.grpc.pb.h"
 #include "src/cpp/server/csds/csds.h"
+#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

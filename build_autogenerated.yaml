@@ -6447,6 +6447,7 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -9054,6 +9055,38 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
+- name: connection_context_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/surface/connection_context.h
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  src:
+  - src/core/lib/surface/connection_context.cc
+  - test/core/surface/connection_context_test.cc
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
   uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
@@ -12945,6 +12978,25 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - gpr
+  uses_polling: false
+- name: match_promise_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/util/overload.h
+  - test/core/promise/poll_matcher.h
+  src:
+  - test/core/promise/match_promise_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
   - gpr
   uses_polling: false
 - name: match_test

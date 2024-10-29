@@ -867,7 +867,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python38_config,
-                    python312_config,
+                    python313_config,
                 )
         elif args.compiler == "python3.8":
             return (python38_config,)
@@ -910,13 +910,46 @@ class RubyLanguage(object):
         _check_compiler(self.args.compiler, ["default"])
 
     def test_specs(self):
-        tests = [
-            self.config.job_spec(
-                ["tools/run_tests/helper_scripts/run_ruby.sh"],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        tests = []
+        for test in [
+            "src/ruby/spec/google_rpc_status_utils_spec.rb",
+            "src/ruby/spec/client_server_spec.rb",
+            "src/ruby/spec/errors_spec.rb",
+            "src/ruby/spec/pb/codegen/package_option_spec.rb",
+            "src/ruby/spec/pb/health/checker_spec.rb",
+            "src/ruby/spec/pb/duplicate/codegen_spec.rb",
+            "src/ruby/spec/server_spec.rb",
+            "src/ruby/spec/error_sanity_spec.rb",
+            "src/ruby/spec/channel_spec.rb",
+            "src/ruby/spec/user_agent_spec.rb",
+            "src/ruby/spec/call_credentials_spec.rb",
+            "src/ruby/spec/channel_credentials_spec.rb",
+            "src/ruby/spec/channel_connection_spec.rb",
+            "src/ruby/spec/compression_options_spec.rb",
+            "src/ruby/spec/time_consts_spec.rb",
+            "src/ruby/spec/server_credentials_spec.rb",
+            "src/ruby/spec/generic/server_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_server_pool_spec.rb",
+            "src/ruby/spec/generic/client_stub_spec.rb",
+            "src/ruby/spec/generic/active_call_spec.rb",
+            "src/ruby/spec/generic/rpc_server_spec.rb",
+            "src/ruby/spec/generic/service_spec.rb",
+            "src/ruby/spec/generic/client_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_desc_spec.rb",
+            "src/ruby/spec/generic/interceptor_registry_spec.rb",
+            "src/ruby/spec/debug_message_spec.rb",
+            "src/ruby/spec/logconfig_spec.rb",
+            "src/ruby/spec/call_spec.rb",
+            "src/ruby/spec/client_auth_spec.rb",
+        ]:
+            tests.append(
+                self.config.job_spec(
+                    ["rspec", test],
+                    shortname=test,
+                    timeout_seconds=20 * 60,
+                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                )
             )
-        ]
         # TODO(apolcyn): re-enable the following tests after
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled

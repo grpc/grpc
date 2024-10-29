@@ -35,7 +35,6 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing/xds/v3:ads_cc_grpc",
-        "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
         "//src/proto/grpc/testing/xds/v3:lrs_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
@@ -43,6 +42,7 @@ grpc_cc_library(
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 
@@ -53,7 +53,6 @@ grpc_cc_library(
     visibility = ["@grpc:xds_end2end_test_utils"],
     deps = [
         ":xds_server",
-        "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
         "//test/core/test_util:grpc_test_util_base",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
@@ -61,6 +60,7 @@ grpc_cc_library(
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 
@@ -82,8 +82,8 @@ grpc_cc_library(
         "//:grpc_resolver_fake",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_proto",
-        "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
+        "//src/proto/grpc/testing/xds/v3:ads_cc_grpc",
         "//src/proto/grpc/testing/xds/v3:lrs_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
@@ -97,6 +97,7 @@ grpc_cc_library(
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 
@@ -135,7 +136,7 @@ grpc_cc_test(
         "//src/core:grpc_audit_logging",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:audit_logging_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
@@ -440,8 +441,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/lookup/v1:rls_config_proto",
-        "//src/proto/grpc/lookup/v1:rls_proto",
+        "//src/proto/grpc/lookup/v1:rls_cc_proto",
+        "//src/proto/grpc/lookup/v1:rls_config_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/end2end:rls_server",
