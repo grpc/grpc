@@ -197,7 +197,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
         "//src/proto/grpc/testing:simple_messages.proto",
-        "@com_github_cncf_xds//xds/data/orca/v3:pkg",
     ],
     external_deps = [
         "absl/flags:flag",
@@ -218,7 +217,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
-        "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
 )
 
