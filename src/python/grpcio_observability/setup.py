@@ -138,6 +138,21 @@ class BuildExt(build_ext.build_ext):
         return filename
 
 
+# When building extensions for macOS on a system running macOS 10.14 or newer,
+# make sure they target macOS 10.14 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.14"
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
