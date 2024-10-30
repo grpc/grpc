@@ -42,10 +42,10 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
     Add(key, value);
   } else {
     // If the type of metadata is not in the allow list, we want to prevent it
-    // from getting logged. Custom metadata types may
-    // have sensitive information that should never be logged. Programatically,
-    // we have know way to know which data is sensitive and what is not
-    // senstivie. So we redact all values which are not in the allow list.
+    // from getting logged. Custom metadata types may have sensitive information
+    // that should never be logged. Programatically, we have know way to know
+    // which data is sensitive and what is not senstivie. So we redact all
+    // values which are not in the allow list.
     Add(key,
         absl::StrCat(value.size(), " bytes redacted for security reasons."));
   }
@@ -54,7 +54,8 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
 bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
   // We have intentionally not allowed for any way to add to the allow list at
   // run time, (using a flag or some other setting) because such work arounds
-  // may lead to security issues.
+  // may lead to security issues. If a new metadata type is added, we must add
+  // it to this initialization list.
   static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list(
       [] {
         absl::flat_hash_set<std::string> allow_list;
