@@ -248,7 +248,7 @@ def grpc_internal_proto_library(
         srcs = [],
         deps = [],
         visibility = None,
-        **kwds):
+        has_services = False):  # buildifier: disable=unused-variable
     proto_library(
         name = name,
         srcs = srcs,
