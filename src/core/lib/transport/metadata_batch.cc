@@ -43,7 +43,7 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
   } else {
     // If the type of metadata is not in the allow list, we want to prevent it
     // from getting logged. Custom metadata types may have sensitive information
-    // that should never be logged. Programatically, we have know way to know
+    // that should never be logged. Programatically, we have no way to know
     // which data is sensitive and which is not. So we redact all values which
     // are not in the allow list.
     Add(key,
@@ -53,7 +53,7 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
 
 bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
   // We have intentionally not allowed for any way to add to the allow list at
-  // run time, (using a flag or some other setting) because such work arounds
+  // run time, (using a flag or some other setting) because such workarounds
   // may lead to security issues.
   static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list(
       [] {
