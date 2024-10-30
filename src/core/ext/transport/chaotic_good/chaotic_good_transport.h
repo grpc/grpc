@@ -111,7 +111,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   // Read frame header and payloads for control and data portions of one frame.
-  // Resolves to StatusOr<tuple<FrameHeader, BufferPair>>.
+  // Resolves to StatusOr<tuple<FrameHeader, SliceBuffer>>.
   auto ReadFrameBytes() {
     return TrySeq(
         control_endpoint_.ReadSlice(FrameHeader::kFrameHeaderSize),
