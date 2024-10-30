@@ -54,8 +54,7 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
 bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
   // We have intentionally not allowed for any way to add to the allow list at
   // run time, (using a flag or some other setting) because such work arounds
-  // may lead to security issues. If a new metadata type is added, we must add
-  // it to this initialization list.
+  // may lead to security issues.
   static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list(
       [] {
         absl::flat_hash_set<std::string> allow_list;
