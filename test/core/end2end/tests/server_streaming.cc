@@ -103,6 +103,7 @@ CORE_END2END_TEST(Http2Test, ServerStreamingEmptyStream) {
 }
 
 CORE_END2END_TEST(Http2Test, ServerStreaming10Messages) {
+  // TODO(yashykt): Remove this once b/376283636 is fixed.
   grpc_core::ConfigVars::Overrides overrides;
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
   overrides.trace =
