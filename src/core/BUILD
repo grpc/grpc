@@ -65,9 +65,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    deps = [
-        "//:gpr_platform",
-    ],
 )
 
 grpc_cc_library(
@@ -3668,6 +3665,17 @@ grpc_cc_library(
         "event_engine_common",
         "lb_policy",
         "metadata_batch",
+    ],
+)
+
+grpc_cc_library(
+    name = "connection_context",
+    srcs = ["lib/surface/connection_context.cc"],
+    hdrs = ["lib/surface/connection_context.h"],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+        "//:orphanable",
     ],
 )
 
