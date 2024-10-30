@@ -807,7 +807,7 @@ TEST_P(XdsSecurityTest, MtlsWithAggregateCluster) {
   EXPECT_EQ(backends_[0]->backend_service()->last_peer_identity(),
             authenticated_identity_);
   // Now stop backend 0 and wait for backend 1.
-  ShutdownBackend(0);
+  backends_[0]->StopListeningAndSendGoaways();
   WaitForBackend(DEBUG_LOCATION, 1);
   // Make sure the backend saw the right client identity.
   EXPECT_EQ(backends_[1]->backend_service()->last_peer_identity(),
