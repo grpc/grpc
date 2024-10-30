@@ -65,9 +65,6 @@ void CoreEnd2endTest::SetUp() {
   CoreConfiguration::Reset();
   initialized_ = false;
   grpc_prewarm_os_for_tests();
-#ifdef GPR_WINDOWS
-  GTEST_SKIP() << "Disabled on Windows due to high flake rate";
-#endif
 }
 
 void CoreEnd2endTest::TearDown() {
