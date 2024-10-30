@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict")
+
 licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
-
-load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict")
 
 # The default toolchain suite for RBE linux, pass it to --crosstool_top
 alias(
