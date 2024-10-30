@@ -332,7 +332,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
-  self->connection_->NewConnectionIDs(1);
+  self->connection_->NewConnectionIDs(
+      self->connection_->listener_->args()
+          .GetInt(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS)
+          .value_or(1));
   SettingsFrame frame;
   frame.settings.set_data_channel(false);
   for (const auto& connection_id : self->connection_->connection_ids_) {
