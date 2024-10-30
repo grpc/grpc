@@ -13,11 +13,12 @@
 # limitations under the License.
 """Reference implementation for health checking in gRPC Python."""
 
+import abc
 import collections
 from concurrent import futures
 import sys
 import threading
-from typing import Any, Callable, Dict, Optional, Protocol, Set
+from typing import Callable, Dict, Optional, Set
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -33,17 +34,20 @@ SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name["Health"].full_name
 OVERALL_HEALTH = ""
 
 
-class WatcherProtocol(Protocol):
+class WatcherProtocol(metaclass=abc.ABCMeta):
     """Interface for watching service health status."""
 
+    @abc.abstractmethod
     def add(self, response: Optional[_health_pb2.HealthCheckResponse]) -> None:
-        ...
+        pass
 
+    @abc.abstractmethod
     def close(self) -> None:
-        ...
+        pass
 
+    @abc.abstractmethod
     def __iter__(self):
-        ...
+        pass
 
 
 class _Watcher(WatcherProtocol):
