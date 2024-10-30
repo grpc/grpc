@@ -93,6 +93,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = [], flaky = False):
             "//test/core/test_util:grpc_test_util",
             "//test/core/test_util:test_lb_policies",
         ],
+        alwayslink = 1,
     )
 
     grpc_cc_test(
