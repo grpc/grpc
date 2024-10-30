@@ -49,7 +49,7 @@ grpc_cc_library(
     deps = [
         "//:grpc++",
         "//:grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_cc_grpc",
     ],
 )
 
@@ -106,7 +106,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
     ],
 )
 
@@ -150,7 +150,7 @@ grpc_cc_library(
     deps = [
         ":grpc++_proto_reflection_desc_db",
         "//:grpc++",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_cc_grpc",
     ],
 )
 
@@ -181,7 +181,7 @@ grpc_cc_library(
     external_deps = ["absl/log:log"],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:metrics_proto",
+        "//src/proto/grpc/testing:metrics_cc_grpc",
     ],
 )
 
@@ -213,10 +213,10 @@ grpc_cc_test(
         ":grpc_cli_libs",
         ":test_util",
         "//:grpc++_reflection",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing:simple_messages_proto",
-        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//src/proto/grpc/testing:simple_messages_cc_proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -294,7 +294,7 @@ grpc_cc_test(
     deps = [
         ":grpc_cli_libs",
         ":test_util",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -310,8 +310,8 @@ grpc_cc_test(
     tags = ["no_test_ios"],
     deps = [
         "//:grpc++_error_details",
-        "//src/proto/grpc/status:status_proto",
-        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/status:status_cc_proto",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -332,7 +332,7 @@ grpc_cc_binary(
         ":grpc_cli_libs",
         ":test_config",
         "//:grpc++",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_cc_grpc",
     ],
 )
 
@@ -353,7 +353,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_grpc",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -384,8 +384,8 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
-        "//src/proto/grpc/testing:test_proto",
+        "//src/proto/grpc/channelz:channelz_cc_grpc",
+        "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
