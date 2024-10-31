@@ -834,7 +834,6 @@ bool ShouldUseAresDnsResolver() {
 
 absl::Status AresInit() {
   if (ShouldUseAresDnsResolver()) {
-    address_sorting_init();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.
@@ -850,7 +849,6 @@ absl::Status AresInit() {
 }
 void AresShutdown() {
   if (ShouldUseAresDnsResolver()) {
-    address_sorting_shutdown();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
     // the binary calls these functions concurrently.

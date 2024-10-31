@@ -976,6 +976,7 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.

@@ -665,15 +665,10 @@ def _expand_upb_proto_library_rules(bazel_rules):
 
 def _patch_grpc_proto_library_rules(bazel_rules):
     for name, bazel_rule in bazel_rules.items():
-        contains_proto = any(
-            src.endswith(".proto") for src in bazel_rule.get("srcs", [])
-        )
         generator_func = bazel_rule.get("generator_function", None)
-
-        if (
-            name.startswith("//")
-            and contains_proto
-            and generator_func == "grpc_proto_library"
+        if name.startswith("//") and (
+            generator_func == "grpc_proto_library"
+            or bazel_rule["class"] == "cc_proto_library"
         ):
             # Add explicit protobuf dependency for internal c++ proto targets.
             bazel_rule["deps"].append("//third_party:protobuf")
