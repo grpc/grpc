@@ -6524,6 +6524,7 @@ target_link_libraries(activity_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -9182,6 +9183,7 @@ target_link_libraries(call_state_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -14229,6 +14231,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   upb_wire_lib
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -18509,6 +18512,7 @@ target_link_libraries(inter_activity_pipe_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -19393,6 +19397,7 @@ target_link_libraries(latch_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -20877,6 +20882,7 @@ target_link_libraries(mpsc_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -21380,6 +21386,7 @@ target_link_libraries(observable_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -23257,6 +23264,7 @@ target_link_libraries(promise_mutex_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -33052,6 +33060,7 @@ target_link_libraries(wait_for_callback_test
   gtest
   absl::config
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor

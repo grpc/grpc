@@ -50,8 +50,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/util/bitset.h"
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "third_party/grpc/src/core/util/latent_see.h"
 
 namespace grpc_core {
