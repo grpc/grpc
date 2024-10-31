@@ -16,10 +16,12 @@
 
 #include <stdlib.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
 
@@ -181,6 +183,22 @@ TEST(TrySeqIterTest, ErrorAt3) {
                          };
                        })(),
             Poll<absl::StatusOr<int>>(absl::CancelledError()));
+}
+
+TEST(TrySeqContainer, Ok) {
+  std::vector<std::unique_ptr<int>> v;
+  v.emplace_back(std::make_unique<int>(1));
+  v.emplace_back(std::make_unique<int>(2));
+  v.emplace_back(std::make_unique<int>(3));
+  int expect = 1;
+  auto p = TrySeqContainer(std::move(v), Empty{},
+                           [&expect](const std::unique_ptr<int>& i, Empty) {
+                             EXPECT_EQ(*i, expect);
+                             ++expect;
+                             return Empty{};
+                           });
+  EXPECT_THAT(p(), IsReady());
+  EXPECT_EQ(expect, 4);
 }
 
 }  // namespace grpc_core

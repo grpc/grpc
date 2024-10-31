@@ -58,7 +58,12 @@ struct TrySeqTraitsWithSfinae {
                                                                   Elem&& elem,
                                                                   T&& value)
       -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
-    return f(std::forward<Elem>(elem), std::forward<T>(value));
+    auto factory = [&f, elem = std::forward<Elem>(elem),
+                    value = std::forward<T>(value)]() mutable {
+      return f(std::move(elem), std::move(value));
+    };
+    OncePromiseFactory<void, decltype(factory)> pf(std::move(factory));
+    return pf.Make();
   }
   template <typename Result, typename RunNext>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Poll<Result>

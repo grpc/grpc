@@ -47,10 +47,11 @@ DATA_ENDPOINTS_TEST(CanWrite) {
   chaotic_good::testing::MockPromiseEndpoint ep(1234);
   std::vector<PromiseEndpoint> endpoints;
   endpoints.push_back(std::move(ep.promise_endpoint));
-  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints));
+  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints),
+                                             event_engine().get());
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
-      nullptr);
+      event_engine().get());
   SpawnTestSeqWithoutContext(
       "write",
       data_endpoints.Write(SliceBuffer(Slice::FromCopiedString("hello"))),
@@ -67,7 +68,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   std::vector<PromiseEndpoint> endpoints;
   endpoints.push_back(std::move(ep1.promise_endpoint));
   endpoints.push_back(std::move(ep2.promise_endpoint));
-  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints));
+  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints),
+                                             event_engine().get());
   SliceBuffer writes1;
   SliceBuffer writes2;
   ep1.CaptureWrites(writes1, event_engine().get());
@@ -94,6 +96,24 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
   expect[write2_ep] += "world";
   EXPECT_EQ(writes1.JoinIntoString(), expect[0]);
   EXPECT_EQ(writes2.JoinIntoString(), expect[1]);
+}
+
+DATA_ENDPOINTS_TEST(CanRead) {
+  chaotic_good::testing::MockPromiseEndpoint ep(1234);
+  std::vector<PromiseEndpoint> endpoints;
+  endpoints.push_back(std::move(ep.promise_endpoint));
+  chaotic_good::DataEndpoints data_endpoints(std::move(endpoints),
+                                             event_engine().get());
+  ep.ExpectRead(
+      {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
+      event_engine().get());
+  SpawnTestSeqWithoutContext("read", data_endpoints.Read(0, 5),
+                             [](absl::StatusOr<SliceBuffer> result) {
+                               EXPECT_TRUE(result.ok());
+                               EXPECT_EQ(result->JoinIntoString(), "hello");
+                               return Empty{};
+                             });
+  WaitForAllPendingWork();
 }
 
 }  // namespace grpc_core

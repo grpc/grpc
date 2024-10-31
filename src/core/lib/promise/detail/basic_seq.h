@@ -45,7 +45,7 @@ class BasicSeqIter {
     if (cur_ == end_) {
       Construct(&result_, std::move(arg));
     } else {
-      Construct(&state_, f_(*cur_, std::move(arg)));
+      Construct(&state_, Traits::CallSeqFactory(f_, *cur_, std::move(arg)));
     }
   }
 

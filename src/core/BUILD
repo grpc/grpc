@@ -1024,7 +1024,6 @@ grpc_cc_library(
         "promise_status",
         "seq_state",
         "status_flag",
-        "//:debug_location",
         "//:gpr_platform",
     ],
 )
@@ -8014,7 +8013,10 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/data_endpoints.h",
     ],
-    external_deps = ["absl/cleanup"],
+    external_deps = [
+        "absl/cleanup",
+        "absl/strings",
+    ],
     deps = [
         "1999",
         "event_engine_context",

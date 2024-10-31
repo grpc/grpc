@@ -17,6 +17,7 @@
 #include <cstddef>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/strings/escaping.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
@@ -87,7 +88,8 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
     return absl::UnavailableError(
         absl::StrCat("Invalid connection id: ", connection_id));
   }
-  uint64_t ticket = ++next_ticket_id_;
+  uint64_t ticket = next_ticket_id_;
+  ++next_ticket_id_;
   read_requests_[connection_id].push_back(ReadRequest{length, ticket});
   waker = std::move(read_request_waker_[connection_id]);
   return ticket;
@@ -104,6 +106,7 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
 Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
     uint32_t connection_id) {
   MutexLock lock(&mu_);
+  LOG(INFO) << "pollnext conn_id = " << connection_id;
   auto& q = read_requests_[connection_id];
   if (q.empty()) {
     read_request_waker_[connection_id] =
@@ -169,11 +172,15 @@ DataEndpoints::DataEndpoints(
                           data_endpoints_detail::InputQueues::ReadRequest
                               read_request,
                           Empty) {
+                        LOG(INFO) << "[" << i << "] perform " << read_request;
                         return Seq(
                             endpoints->endpoints[i].Read(read_request.length),
                             [ticket = read_request.ticket,
 
                              input_queues](absl::StatusOr<SliceBuffer> buffer) {
+                              LOG(INFO)
+                                  << "#" << ticket << " done: "
+                                  << absl::CEscape(buffer->JoinIntoString());
                               input_queues->CompleteRead(ticket,
                                                          std::move(buffer));
                               return absl::OkStatus();

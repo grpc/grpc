@@ -70,6 +70,11 @@ class InputQueues : public RefCounted<InputQueues> {
   struct ReadRequest {
     size_t length;
     uint64_t ticket;
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const ReadRequest& req) {
+      sink.Append(absl::StrCat("read#", req.ticket, ":", req.length, "b"));
+    }
   };
 
   explicit InputQueues(uint32_t num_connections);
