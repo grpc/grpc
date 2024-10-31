@@ -209,12 +209,12 @@ grpc_proto_fuzzer(
         # These proto deps are needed to ensure that we can read these
         # resource types out of the google.protobuf.Any fields in the
         # textproto files in the corpora.
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//src/proto/grpc/testing/xds/v3:listener_cc_proto",
+        "//src/proto/grpc/testing/xds/v3:route_cc_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_cc_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_cc_proto",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_cc_proto",
+        "//src/proto/grpc/testing/xds/v3:router_cc_proto",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
     ],
@@ -326,7 +326,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++_codegen_proto",
         "//src/core:grpc_xds_client",
-        "//src/proto/grpc/lookup/v1:rls_config_proto",
+        "//src/proto/grpc/lookup/v1:rls_config_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
