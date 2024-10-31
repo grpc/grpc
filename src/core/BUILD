@@ -7998,6 +7998,7 @@ grpc_cc_library(
     external_deps = ["absl/cleanup"],
     deps = [
         "1999",
+        "event_engine_context",
         "grpc_promise_endpoint",
         "loop",
         "try_seq",
@@ -8016,6 +8017,7 @@ grpc_cc_library(
     external_deps = ["absl/cleanup"],
     deps = [
         "1999",
+        "event_engine_context",
         "grpc_promise_endpoint",
         "loop",
         "seq",

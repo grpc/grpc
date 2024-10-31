@@ -106,17 +106,21 @@ class InputQueues : public RefCounted<InputQueues> {
 
 class DataEndpoints {
  public:
-  explicit DataEndpoints(std::vector<PromiseEndpoint> endpoints);
+  explicit DataEndpoints(
+      std::vector<PromiseEndpoint> endpoints,
+      grpc_event_engine::experimental::EventEngine* event_engine);
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id
   // selected.
+  // Connection ids returned by this class are 0 based (which is different
+  // to how chaotic good communicates them on the wire - those are 1 based
+  // to allow for the control channel identification)
   auto Write(SliceBuffer output_buffer) {
     return output_buffers_->Write(std::move(output_buffer));
   }
 
   auto Read(uint32_t connection_id, size_t length) {
-    DCHECK_NE(connection_id, 0);
     return input_queues_->Read(connection_id, length);
   }
 

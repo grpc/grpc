@@ -14,6 +14,7 @@
 
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/try_seq.h"
 
@@ -34,10 +35,14 @@ auto ControlEndpoint::Buffer::Pull() {
   };
 }
 
-ControlEndpoint::ControlEndpoint(PromiseEndpoint endpoint)
+ControlEndpoint::ControlEndpoint(
+    PromiseEndpoint endpoint,
+    grpc_event_engine::experimental::EventEngine* event_engine)
     : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))) {
+  CHECK(event_engine != nullptr);
+  write_party_->arena()->SetContext(event_engine);
   write_party_->Spawn(
-      "flush",
+      "flush-control",
       GRPC_LATENT_SEE_PROMISE(
           "FlushLoop", Loop([endpoint = endpoint_, buffer = buffer_]() {
             return TrySeq(

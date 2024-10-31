@@ -17,6 +17,7 @@
 #include <cstddef>
 
 #include "absl/cleanup/cleanup.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -118,11 +119,14 @@ Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
 ///////////////////////////////////////////////////////////////////////////////
 // DataEndpoints
 
-DataEndpoints::DataEndpoints(std::vector<PromiseEndpoint> endpoints_vec)
+DataEndpoints::DataEndpoints(
+    std::vector<PromiseEndpoint> endpoints_vec,
+    grpc_event_engine::experimental::EventEngine* event_engine)
     : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
           endpoints_vec.size())),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueues>(
           endpoints_vec.size())) {
+  CHECK(event_engine != nullptr);
   for (auto& endpoint : endpoints_vec) {
     // Enable RxMemoryAlignment and RPC receive coalescing after the transport
     // setup is complete. At this point all the settings frames should have
@@ -133,10 +137,12 @@ DataEndpoints::DataEndpoints(std::vector<PromiseEndpoint> endpoints_vec)
   endpoints->endpoints = std::move(endpoints_vec);
   parties_.reserve(2 * endpoints->endpoints.size());
   auto arena = SimpleArenaAllocator(0)->MakeArena();
+  arena->SetContext(event_engine);
   for (size_t i = 0; i < endpoints->endpoints.size(); ++i) {
     auto write_party = Party::Make(arena);
+    auto read_party = Party::Make(arena);
     write_party->Spawn(
-        "flush",
+        "flush-data",
         [i, endpoints, output_buffers = output_buffers_]() {
           return Loop([i, endpoints, output_buffers]() {
             return TrySeq(
@@ -148,9 +154,8 @@ DataEndpoints::DataEndpoints(std::vector<PromiseEndpoint> endpoints_vec)
           });
         },
         [](absl::Status) {});
-    auto read_party = Party::Make(arena);
     read_party->Spawn(
-        "read",
+        "read-data",
         [i, endpoints, input_queues = input_queues_]() {
           return Loop([i, endpoints, input_queues]() {
             return TrySeq(

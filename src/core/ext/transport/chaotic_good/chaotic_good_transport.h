@@ -26,6 +26,7 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -45,11 +46,15 @@ inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
 
 class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
-  ChaoticGoodTransport(PromiseEndpoint control_endpoint,
-                       std::vector<PromiseEndpoint> data_endpoints,
-                       uint32_t encode_alignment, uint32_t decode_alignment)
-      : control_endpoint_(std::move(control_endpoint)),
-        data_endpoints_(std::move(data_endpoints)),
+  ChaoticGoodTransport(
+      PromiseEndpoint control_endpoint,
+      std::vector<PromiseEndpoint> data_endpoints,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      uint32_t encode_alignment, uint32_t decode_alignment)
+      : event_engine_(std::move(event_engine)),
+        control_endpoint_(std::move(control_endpoint), event_engine_.get()),
+        data_endpoints_(std::move(data_endpoints), event_engine_.get()),
         encode_alignment_(encode_alignment),
         decode_alignment_(decode_alignment) {}
 
@@ -133,7 +138,6 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           return If(
               frame_header.payload_connection_id == 0,
               [this]() {
-                CHECK_EQ(current_frame_header_.payload_length, 0);
                 return control_endpoint_.Read(
                     current_frame_header_.payload_length);
               },
@@ -170,6 +174,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
  private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   FrameHeader current_frame_header_;

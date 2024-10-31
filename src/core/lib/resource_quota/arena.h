@@ -289,6 +289,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   template <typename T>
   void SetContext(T* context) {
+    LOG(INFO) << this << " " << __PRETTY_FUNCTION__ << " context=" << context;
     void*& slot = contexts()[arena_detail::ArenaContextTraits<T>::id()];
     if (slot != nullptr) {
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));

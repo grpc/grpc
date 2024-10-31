@@ -302,11 +302,13 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
       event_engine_(event_engine),
       outgoing_frames_(4) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoints), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoints), event_engine, 64,
+      64);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
+  party_->SetContext(event_engine.get());
   party_->Spawn(
       "server-chaotic-writer",
       GRPC_LATENT_SEE_PROMISE("ServerTransportWriteLoop",

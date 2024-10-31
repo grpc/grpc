@@ -177,6 +177,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4) {
+  CHECK(event_engine != nullptr);
   // Set up TCP tracer if enabled.
   if (args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false)) {
     for (auto& ep : data_endpoints) {
@@ -188,8 +189,10 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       }
     }
   }
+  CHECK(event_engine != nullptr);
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
-      std::move(control_endpoint), std::move(data_endpoints), 64, 64);
+      std::move(control_endpoint), std::move(data_endpoints), event_engine, 64,
+      64);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());

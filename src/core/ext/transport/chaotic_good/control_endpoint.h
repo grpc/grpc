@@ -54,7 +54,8 @@ class ControlEndpoint {
   };
 
  public:
-  explicit ControlEndpoint(PromiseEndpoint endpoint);
+  ControlEndpoint(PromiseEndpoint endpoint,
+                  grpc_event_engine::experimental::EventEngine* event_engine);
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.
