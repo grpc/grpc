@@ -40,7 +40,7 @@ then
   source "../${GRPC_RUNTESTS_PREPARE_SCRIPT}"
 fi
 
-python3 tools/run_tests/run_tests.py -t -j "$(nproc)" -x "${REPORT_XML_FILE}" --report_suite_name "${REPORT_SUITE_NAME}" "$@" || FAILED="true"
+${SETARCH_CMD} python3 tools/run_tests/run_tests.py -t -j "$(nproc)" -x "${REPORT_XML_FILE}" --report_suite_name "${REPORT_SUITE_NAME}" "$@" || FAILED="true"
 
 if [ -x "$(command -v ccache)" ]
 then

@@ -36,6 +36,7 @@ def generate_run_tests_portability_tests(name):
         args = ["-l c -c dbg --build_only"],
         docker_image_version = "tools/dockerfile/test/cxx_debian11_x86.current_version",
         size = "enormous",
+        arch = "linux32",
     )
     test_names.append("runtests_c_linux_dbg_x86_build_only")
 
