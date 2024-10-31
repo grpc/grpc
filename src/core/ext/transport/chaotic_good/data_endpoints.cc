@@ -117,6 +117,17 @@ Poll<std::vector<InputQueues::ReadRequest>> InputQueues::PollNext(
   q.clear();
   return r;
 }
+
+void InputQueues::CompleteRead(uint64_t ticket,
+                               absl::StatusOr<SliceBuffer> buffer) {
+  Waker waker;
+  auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
+  MutexLock lock(&mu_);
+  completed_reads_.emplace(ticket, std::move(buffer));
+  auto x = completed_read_wakers_.extract(ticket);
+  if (x) waker = std::move(x.mapped());
+}
+
 }  // namespace data_endpoints_detail
 
 ///////////////////////////////////////////////////////////////////////////////
