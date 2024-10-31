@@ -15,8 +15,9 @@
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_proto_library",
     "grpc_generate_one_off_internal_targets",
-    "grpc_proto_library",
+    "grpc_internal_proto_library",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
@@ -7793,10 +7794,15 @@ grpc_cc_library(
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "chaotic_good_frame_proto",
     srcs = ["ext/transport/chaotic_good/chaotic_good_frame.proto"],
     has_services = False,
+)
+
+grpc_cc_proto_library(
+    name = "chaotic_good_frame_cc_proto",
+    deps = ["chaotic_good_frame_proto"],
 )
 
 grpc_cc_library(
@@ -7817,8 +7823,8 @@ grpc_cc_library(
     deps = [
         "arena",
         "bitset",
+        "chaotic_good_frame_cc_proto",
         "chaotic_good_frame_header",
-        "chaotic_good_frame_proto",
         "context",
         "match",
         "message",
