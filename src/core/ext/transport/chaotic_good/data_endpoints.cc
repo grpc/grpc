@@ -183,7 +183,7 @@ DataEndpoints::DataEndpoints(
                                   << absl::CEscape(buffer->JoinIntoString());
                               input_queues->CompleteRead(ticket,
                                                          std::move(buffer));
-                              return absl::OkStatus();
+                              return Empty{};
                             });
                       });
                 },

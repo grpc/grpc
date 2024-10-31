@@ -27,7 +27,7 @@ namespace promise_detail {
 template <typename FactoryFn>
 auto BindFactoryFnArgs(FactoryFn fn) {
   return [fn = std::move(fn)](auto x) mutable {
-    return fn(std::get<0>(x), std::get<1>(x));
+    return fn(std::get<0>(x), std::move(std::get<1>(x)));
   };
 }
 
