@@ -50,6 +50,9 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/util/bitset.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
+#include "third_party/grpc/src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -193,13 +196,18 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                      });
         });
     call_handler_.SpawnInfallible(
-        "final-batch", InfallibleBatch(std::move(primary_ops),
-                                       std::move(recv_trailing_metadata),
-                                       is_notify_tag_closure, notify_tag, cq_));
+        "final-batch",
+        GRPC_LATENT_SEE_PROMISE(
+            "ServerCallBatch",
+            InfallibleBatch(std::move(primary_ops),
+                            std::move(recv_trailing_metadata),
+                            is_notify_tag_closure, notify_tag, cq_)));
   } else {
     call_handler_.SpawnInfallible(
-        "batch", FallibleBatch(std::move(primary_ops), is_notify_tag_closure,
-                               notify_tag, cq_));
+        "batch", GRPC_LATENT_SEE_PROMISE(
+                     "ServerCallBatch",
+                     FallibleBatch(std::move(primary_ops),
+                                   is_notify_tag_closure, notify_tag, cq_)));
   }
 }
 
