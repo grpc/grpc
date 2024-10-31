@@ -173,10 +173,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kServerInitialMetadata, 0, 1,
                              server_initial_metadata.length()),
-       server_initial_metadata.Copy()},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
+       server_initial_metadata.Copy(),
+       SerializedFrameHeader(FrameType::kMessage, 0, 1, 8),
        EventEngineSlice::FromCopiedString("87654321")},
       nullptr);
   control_endpoint.ExpectWrite(

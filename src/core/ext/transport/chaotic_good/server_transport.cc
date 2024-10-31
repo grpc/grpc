@@ -308,7 +308,6 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  party_->SetContext(event_engine.get());
   party_->Spawn(
       "server-chaotic-writer",
       GRPC_LATENT_SEE_PROMISE("ServerTransportWriteLoop",
