@@ -366,7 +366,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       [self]() mutable {
         MutexLock lock(&self->connection_->listener_->mu_);
         // Set endpoint to latch
-        CHECK_EQ(self->connection_->connection_ids_.size(), 1);
+        CHECK_EQ(self->connection_->connection_ids_.size(), 1ull);
         auto it = self->connection_->listener_->connectivity_map_.find(
             self->connection_->connection_ids_[0]);
         if (it == self->connection_->listener_->connectivity_map_.end()) {
