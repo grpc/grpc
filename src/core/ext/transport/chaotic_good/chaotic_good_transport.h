@@ -73,10 +73,16 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           frame.SerializePayload(output);
           return control_endpoint_.Write(std::move(output));
         },
-        [this, header, &frame]() {
+        [this, header, &frame]() mutable {
           SliceBuffer payload;
-          frame.SerializePayload(payload);
+          // Temporarily give a bogus connection id to get padding right
+          header.payload_connection_id = 1;
           const size_t padding = header.Padding(encode_alignment_);
+          frame.SerializePayload(payload);
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: Send " << payload.Length()
+              << "b payload on data channel; add " << padding << " bytes for "
+              << encode_alignment_ << " alignment";
           if (padding == 0) {
           } else if (padding < GRPC_SLICE_INLINED_SIZE) {
             memset(payload.AddTiny(padding), 0, padding);

@@ -15,6 +15,7 @@
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 
 #include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/try_seq.h"
 
@@ -47,7 +48,12 @@ ControlEndpoint::ControlEndpoint(
           "FlushLoop", Loop([endpoint = endpoint_, buffer = buffer_]() {
             return TrySeq(
                 buffer->Pull(),
-                [endpoint](SliceBuffer flushing) {
+                [endpoint, buffer = buffer.get()](SliceBuffer flushing) {
+                  GRPC_TRACE_LOG(chaotic_good, INFO)
+                      << "CHAOTIC_GOOD: Flush " << flushing.Length()
+                      << " bytes from " << buffer << " to "
+                      << ResolvedAddressToString(endpoint->GetPeerAddress())
+                             .value_or("<<unknown peer address>>");
                   return endpoint->Write(std::move(flushing));
                 },
                 []() -> LoopCtl<absl::Status> { return Continue{}; });

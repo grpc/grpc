@@ -32,10 +32,19 @@ class ControlEndpoint {
         Waker waker;
         auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
         MutexLock lock(&mu_);
-        if (queued_output_.Length() + buffer.Length() > MaxQueued()) {
+        if (queued_output_.Length() != 0 &&
+            queued_output_.Length() + buffer.Length() > MaxQueued()) {
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: Delay control write"
+              << " write_length=" << buffer.Length()
+              << " already_buffered=" << queued_output_.Length()
+              << " queue=" << this;
           write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
           return Pending{};
         }
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: Queue control write " << buffer.Length()
+            << " bytes on " << this;
         waker = std::move(flush_waker_);
         queued_output_.Append(buffer);
         return Empty{};

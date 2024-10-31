@@ -8007,6 +8007,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "event_engine_context",
+        "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
         "try_seq",

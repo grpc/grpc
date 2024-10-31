@@ -49,13 +49,20 @@ OutputBuffers::OutputBuffers(uint32_t num_connections)
 Poll<uint32_t> OutputBuffers::PollWrite(SliceBuffer& output_buffer) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
+  const auto length = output_buffer.Length();
   MutexLock lock(&mu_);
   for (size_t i = 0; i < buffers_.size(); ++i) {
     if (buffers_[i].Accept(output_buffer)) {
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint " << i
+          << " queue " << this;
       waker = buffers_[i].TakeWaker();
       return i;
     }
   }
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: No data endpoint ready for " << length
+      << " bytes on queue " << this;
   write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   return Pending{};
 }
@@ -90,7 +97,10 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
   }
   uint64_t ticket = next_ticket_id_;
   ++next_ticket_id_;
-  read_requests_[connection_id].push_back(ReadRequest{length, ticket});
+  auto r = ReadRequest{length, ticket};
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: New read ticket on #" << connection_id << " " << r;
+  read_requests_[connection_id].push_back(r);
   waker = std::move(read_request_waker_[connection_id]);
   return ticket;
 }
@@ -98,7 +108,12 @@ absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
 Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
   MutexLock lock(&mu_);
   auto ex_rd = completed_reads_.extract(ticket);
-  if (!ex_rd.empty()) return std::move(ex_rd.mapped());
+  if (!ex_rd.empty()) {
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: Poll for ticket #" << ticket
+        << " completes: " << ex_rd.mapped().status();
+    return std::move(ex_rd.mapped());
+  }
   completed_read_wakers_[ticket] = GetContext<Activity>()->MakeNonOwningWaker();
   return Pending{};
 }
@@ -122,6 +137,8 @@ void InputQueues::CompleteRead(uint64_t ticket,
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: Complete ticket #" << ticket << ": " << buffer.status();
   completed_reads_.emplace(ticket, std::move(buffer));
   auto x = completed_read_wakers_.extract(ticket);
   if (x) waker = std::move(x.mapped());
@@ -161,6 +178,9 @@ DataEndpoints::DataEndpoints(
             return TrySeq(
                 output_buffers->Next(i),
                 [endpoints = endpoints.get(), i](SliceBuffer buffer) {
+                  GRPC_TRACE_LOG(chaotic_good, INFO)
+                      << "CHAOTIC_GOOD: Write " << buffer.Length()
+                      << "b to data endpoint #" << i;
                   return endpoints->endpoints[i].Write(std::move(buffer));
                 },
                 []() -> LoopCtl<absl::Status> { return Continue{}; });
@@ -187,9 +207,6 @@ DataEndpoints::DataEndpoints(
                             [ticket = read_request.ticket,
 
                              input_queues](absl::StatusOr<SliceBuffer> buffer) {
-                              LOG(INFO)
-                                  << "#" << ticket << " done: "
-                                  << absl::CEscape(buffer->JoinIntoString());
                               input_queues->CompleteRead(ticket,
                                                          std::move(buffer));
                               return Empty{};
