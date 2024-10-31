@@ -28,7 +28,7 @@ if(gRPC_RE2_PROVIDER STREQUAL "module")
       # re2 will be installed along with gRPC for convenience.
       set(RE2_ENABLE_INSTALL ON)
     endif()
-    add_subdirectory(${RE2_ROOT_DIR} third_party/re2)
+    #add_subdirectory(${RE2_ROOT_DIR} third_party/re2)
   else()
     message(WARNING "gRPC_RE2_PROVIDER is \"module\" but RE2_ROOT_DIR(${RE2_ROOT_DIR}) is wrong")
   endif()
